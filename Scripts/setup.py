@@ -24,6 +24,7 @@ def current_working_dir(dir):
     finally:
         os.chdir(curdir)
 
+# TODO: urlopen is so slow, use better way
 def download_url(url, dir, force = False):
     max_retries = 5
     last_error = None
@@ -186,6 +187,17 @@ dependency_dxc = dependency(
     url = "https://github.com/microsoft/DirectXShaderCompiler/releases/download/v1.8.2403.1/dxc_2024_03_22.zip",
     dst = "dxc")
 
+def install_meshoptimizer(manager, dep, args = None):
+    dst_dir = os.path.join(manager.install_dir, dep.dst)
+    downloaded_file = download_url(dep.url, manager.download_dir, False)
+    extract_dir = extract_zip_file(downloaded_file, dst_dir)
+
+dependency_meshoptimizer = dependency(
+    name = "meshoptimizer",
+    install = install_meshoptimizer,
+    url = "https://github.com/zeux/meshoptimizer/archive/refs/tags/v0.20.zip",
+    dst = "meshoptimizer")
+
 # parser = argparse.ArgumentParser()
 # parser.add_argument(
 #    "install_dir",
@@ -212,6 +224,7 @@ manager.add_dependency(dependency_ImGuizmo)
 manager.add_dependency(dependency_googletest)
 manager.add_dependency(dependency_optick)
 manager.add_dependency(dependency_dxc)
+manager.add_dependency(dependency_meshoptimizer)
 
 required_dependencies = list()
 required_dependencies.append("glfw")
@@ -220,6 +233,7 @@ required_dependencies.append("ImGuizmo")
 required_dependencies.append("googletest")
 required_dependencies.append("optick")
 required_dependencies.append("dxc")
+required_dependencies.append("meshoptimizer")
 
 try:
     for dependency_name in required_dependencies:
