@@ -1,0 +1,204 @@
+#include "BindlessResources.hsh"
+
+const static float PI = 3.1415926535897932f;
+
+#define INV_PI       0.3183098861837067
+
+#define HALF_POS_MIN 6.103515625e-5  // 2^-14, the same value for 10, 11 and 16-bit: https://www.khronos.org/opengl/wiki/Small_Float_Formats
+static const float HALF_POS_INF = 65504.0;
+
+#define FLOAT_MIN    1.175494351e-38f
+#define FLOAT_MAX    3.402823466e+38f
+
+float Square(float x)
+{
+    return x * x;
+}
+
+void CreateOrthonormalBasis(inout float3 T, inout float3 B, float3 N)
+{
+    float3 up = abs(N.z) < 0.999 ? float3(0.0, 0.0, 1.0) : float3(1.0, 0.0, 0.0);
+    T = normalize(cross(up, N));
+    B = normalize(cross(N, T));
+}
+
+static const float3x3 CUBE_ROTATIONS[6] =
+{
+    float3x3(float3(0.0, 0.0, -1.0), float3(0.0, -1.0, 0.0), float3(-1.0, 0.0, 0.0)),
+    float3x3(float3(0.0, 0.0, 1.0),  float3(0.0, -1.0, 0.0), float3(1.0, 0.0, 0.0)),
+    float3x3(float3(1.0, 0.0, 0.0),  float3(0.0, 0.0, 1.0),  float3(0.0, -1.0, 0.0)),
+    float3x3(float3(1.0, 0.0, 0.0),  float3(0.0, 0.0, -1.0), float3(0.0, 1.0, 0.0)),
+    float3x3(float3(1.0, 0.0, 0.0),  float3(0.0, -1.0, 0.0), float3(0.0, 0.0, -1.0)),
+    float3x3(float3(-1.0, 0.0, 0.0), float3(0.0, -1.0, 0.0), float3(0.0, 0.0, 1.0))
+};
+
+float3 CalculateCubemapVector(float2 uv, uint face)
+{
+    //return normalize(mul(CUBE_ROTATIONS[face], float3(uv * 2.0 - 1.0, 1.0)));
+    uv = 2.0 * float2(uv.x, uv.y) - 1.0;
+    switch (face)
+    {
+    case 0: return normalize(float3(  1.0, -uv.y, -uv.x));
+    case 1: return normalize(float3( -1.0, -uv.y,  uv.x));
+    case 2: return normalize(float3( uv.x,   1.0,  uv.y));
+    case 3: return normalize(float3( uv.x,  -1.0, -uv.y));
+    case 4: return normalize(float3( uv.x, -uv.y,   1.0));
+    case 5: return normalize(float3(-uv.x, -uv.y,  -1.0));
+    }
+    return 0;
+}
+
+float3 TangentToWorld(const float3 vec, const float3 T, const float3 B, const float3 N)
+{
+    return normalize(T * vec.x + B * vec.y + N * vec.z);
+}
+
+float2 UVToClipSpace(float2 uv)
+{
+    float2 xy = uv * float2(2.0f, -2.0f) + float2(-1.0f, 1.0f);
+    return xy;
+}
+
+float2 ClipSpaceToUV(float2 xy)
+{
+    float2 uv = xy * float2(0.5f, -0.5f) + float2(0.5f, 0.5f);
+    return uv;
+}
+
+float3 ViewSpaceToClipSpacePosition(float3 position, float4x4 projectionMatrix)
+{
+    float4 clipSpacePosition = mul(projectionMatrix, float4(position, 1.0));
+    return float3(clipSpacePosition.xyz / clipSpacePosition.w);
+}
+
+float4x4 ConvertFloat3x3To4x4(float3x3 m)
+{
+    return float4x4(
+        m[0][0], m[0][1], m[0][2], 0,
+        m[1][0], m[1][1], m[1][2], 0,
+        m[2][0], m[2][1], m[2][2], 0,
+        0,       0,       0,       1);
+}
+
+float3x3 ConvertFloat4x4To3x3(float4x4 m)
+{
+    return float3x3(
+        m[0][0], m[0][1], m[0][2],
+        m[1][0], m[1][1], m[1][2],
+        m[2][0], m[2][1], m[2][2]);
+}
+
+float2 RaySphereIntersection(float3 rayOrigin, float3 rayDirection, float4 sphere)
+{
+    float3 localPosition = rayOrigin - sphere.xyz;
+    float localPositionSqr = dot(localPosition, localPosition);
+
+    float3 quadraticCoef;
+    quadraticCoef.x = dot(rayDirection, rayDirection);
+    quadraticCoef.y = 2 * dot(rayDirection, localPosition);
+    quadraticCoef.z = localPositionSqr - sphere.w * sphere.w;
+
+    float discriminant = quadraticCoef.y * quadraticCoef.y - 4 * quadraticCoef.x * quadraticCoef.z;
+
+    float2 intersections = -1;
+
+    [flatten]
+    if (discriminant >= 0)
+    {
+        float sqrtDiscriminant = sqrt(discriminant);
+        intersections = (-quadraticCoef.y + float2(-1, 1) * sqrtDiscriminant) / (2 * quadraticCoef.x);
+    }
+
+    return intersections;
+}
+
+
+// FAST_SRGB_APPROXIMATION path form: http://chilliant.blogspot.com.au/2012/08/srgb-approximations-for-hlsl.html?m=1
+
+float sRGBToLinear(float sRGB)
+{
+#if FAST_SRGB_APPROXIMATION
+    return sRGB * (sRGB * (sRGB * 0.305306011 + 0.682171111) + 0.012522878);
+#else
+    return sRGB <= 0.04045 ? sRGB / 12.92 : pow((sRGB + 0.055) / 1.055, 2.4);
+#endif
+}
+
+float3 sRGBToLinear(float3 sRGB)
+{
+#if FAST_SRGB_APPROXIMATION
+    return sRGB * (sRGB * (sRGB * 0.305306011 + 0.682171111) + 0.012522878);
+#else
+    return select(sRGB <= 0.04045, sRGB / 12.92, pow((sRGB + 0.055) / 1.055, 2.4));
+#endif
+}
+
+float LinearTosRGB(float linearRGB)
+{
+#if FAST_SRGB_APPROXIMATION
+    return max(1.055 * pow(linearRGB, 0.416666667) - 0.055, 0.0);
+#else
+    return linearRGB < 0.0031308 ? linearRGB * 12.92 : pow(linearRGB, (1.0 / 2.4)) * 1.055 - 0.055;
+#endif
+}
+
+half3 LinearTosRGB(half3 linearRGB)
+{
+#if FAST_SRGB_APPROXIMATION
+    return max(1.055 * pow(linearRGB, 0.416666667) - 0.055, 0.0);
+#else
+    return select(linearRGB < 0.0031308, linearRGB * 12.92, pow(linearRGB, (1.0 / 2.4)) * 1.055 - 0.055);
+#endif
+}
+
+float GammaCorrection(float linearColor)
+{
+    if (linearColor < 0.00313067) return linearColor * 12.92;
+    return pow(linearColor, (1.0 / 2.4)) * 1.055 - 0.055;
+}
+
+float3 GammaCorrection(float3 linearColor)
+{
+    return float3(GammaCorrection(linearColor.r), GammaCorrection(linearColor.g), GammaCorrection(linearColor.b));
+}
+
+// https://en.wikipedia.org/wiki/Relative_luminance
+// form the middle row of the RGB-to-XYZ color transformation matrix: http://brucelindbloom.com/index.html?Eqn_RGB_XYZ_Matrix.html
+float RelativeLuminance(float3 linearRGB)
+{
+    return dot(linearRGB, float3(0.2126729, 0.7151522, 0.0721750));
+}
+
+float RelativeLuminance(float4 linearRGBA)
+{
+    return RelativeLuminance(linearRGBA.rgb);
+}
+
+float3 HSV2RGB(float3 hsv)
+{
+    float r = abs(hsv.x * 6 - 3) - 1;
+    float g = 2 - abs(hsv.x * 6 - 2);
+    float b = 2 - abs(hsv.x * 6 - 4);
+    float3 rgb = saturate(float3(r, g, b));
+    return ((rgb - 1) * hsv.y + 1) * hsv.z;
+}
+
+ // Convert luminance (cd·m−2) to EV100
+float LuminanceToEV100(float luminance)
+{
+#if 1
+    return log2(luminance);
+#else // ISO standard: 12232:2019
+    return log2(luminance / 1.2);
+#endif
+}
+
+// Convert EV100 to luminance (cd·m−2)
+float EV100ToLuminance(float EV100)
+{
+#if 1
+    return pow(2.0f, EV100);
+#else // ISO standard: 12232:2019
+    return 1.2 * pow(2.0f, EV100);
+#endif
+}

@@ -1,0 +1,117 @@
+#include "../ShaderCommon.hsh"
+#include "../BRDFCommon.hsh"
+#include "../../PrincipledBSDF.hsh"
+#include "../../SphericalHarmonics.hsh"
+#include "RealTimeRendererCommon.hsh"
+#include "LightingCommon.hsh"
+
+BIND_BUFFER_ELEMENT(0, PerFrameData, PerFrameData);
+BIND_TEXTURE_2D_SRV(1, GBuffer0);
+BIND_TEXTURE_2D_SRV(2, GBuffer1);
+BIND_TEXTURE_2D_SRV(3, SceneDepthTexture);
+BIND_TEXTURE_2D_SRV(4, AmbientOcclusionTexture);
+BIND_TEXTURE_2D_TYPED_SRV(5, float2, EnvironmentBRDFLut);
+BIND_TEXTURE_CUBE_SRV(6, FilteredEnvironmentMap);
+BIND_TEXTURE_2D_SRV(7, GBuffer2);
+
+// IBL
+float3 ComputeImageBasedLightingSpecular(Surface surface)
+{
+    float3 color = 0;
+
+    float3 N = normalize(surface.N);
+    float3 V = normalize(surface.V);
+    float3 R = normalize(surface.R);
+
+    float NdotV = saturate(dot(N, V));
+
+    float3 baseColor = surface.baseColor.rgb;
+    float metallic = surface.metallic;
+    float roughness = surface.roughness;
+    float specular = surface.specular;
+    float specularOcculusion = surface.specularOcclusion;
+
+    float dielectricSpecular = 0.08 * specular;
+    float3 F0 = lerp(dielectricSpecular, baseColor, metallic);
+    //float3 F90 = saturate(50.0 * dot(F0, 0.33));
+    //float3 F = FresnelSchlick1994(F0, F90, NdotV);
+
+    Texture2D<float2> brdfLut = GetEnvironmentBRDFLutSRV();
+    TextureCube filteredEnvironmentMap = GetFilteredEnvironmentMapSRV();
+
+    float3 F = F_SchlickR(F0, NdotV, roughness);
+
+    // Specular
+    uint width; uint height; uint numMipLevels;
+    filteredEnvironmentMap.GetDimensions(0, width, height, numMipLevels);
+
+    float mipLevel = roughness * (numMipLevels - 1);
+    float3 prefilteredColor = filteredEnvironmentMap.SampleLevel(GlobalSamplerLinearWarp, R, mipLevel).rgb;
+
+    // @note: When loading the texture, use CLAMP_TO_EDGE to ensure that values are read correctly.
+    float2 brdfLutValue = brdfLut.SampleLevel(GlobalSamplerLinearClamp, float2(NdotV, roughness), 0).rg;
+    color += (F * brdfLutValue.x + brdfLutValue.y) * prefilteredColor * specularOcculusion;
+
+    return color;
+}
+
+void IndirectLightingSpecularVS(uint vertexID : SV_VertexID, out float4 outPosition : SV_Position)
+{
+    outPosition = float4(float2((vertexID << 1) & 2, vertexID & 2) * 2.0f - 1.0f, 0.0f, 1.0f);
+}
+
+void IndirectLightingSpecularPS(float4 svPosition : SV_Position, out float4 outSceneColor : SV_Target0)
+{
+    PerFrameData perFrameData = GetPerFrameData();
+    Texture2D gbuffer0 = GetGBuffer0SRV();
+    Texture2D gbuffer1 = GetGBuffer1SRV();
+    Texture2D gbuffer2 = GetGBuffer2SRV();
+    Texture2D sceneDepthTexture = GetSceneDepthTextureSRV();
+    Texture2D ambientOcclusionTexture = GetAmbientOcclusionTextureSRV();
+
+    const uint2 pixelCoord = uint2(svPosition.xy);
+    const float2 uv = (float2(pixelCoord) + 0.5f) / float2(perFrameData.renderResolutionX, perFrameData.renderResolutionY);
+
+    float4 gbuffer0Data = gbuffer0[pixelCoord];
+    float4 gbuffer1Data = gbuffer1[pixelCoord];
+    float4 gbuffer2Data = gbuffer2[pixelCoord];
+    float sceneDepth = sceneDepthTexture[pixelCoord].r;
+    float ambientOcclusion = ambientOcclusionTexture[pixelCoord].r;
+
+    float3 position = ReconstructWorldSpacePositionFromDepth(uv, sceneDepth, perFrameData.invViewProjectionMatrix);
+    float3 normal = DecodeNormalFromGBuffer(gbuffer0Data.xyz);
+    float metallic = gbuffer1Data.x;
+    float specular = gbuffer1Data.y;
+    float roughness = gbuffer1Data.z;
+    float4 baseColor = gbuffer2Data;
+    ambientOcclusion = 1;
+
+    Surface surface;
+    surface.uv = uv;
+    surface.P = position;
+    surface.N = normal;
+    surface.V = normalize(perFrameData.cameraPosition - position);
+    surface.R = normalize(reflect(-surface.V, surface.N));
+    surface.baseColor = baseColor;
+    surface.subsurface = 0.0;
+    surface.metallic = saturate(metallic);
+    surface.specular = saturate(specular);
+    surface.specularTint = 0.0;
+    surface.roughness = saturate(roughness);
+    surface.anisotropic = 0.0;
+    surface.sheen = 0.0;
+    surface.sheenTint = 0.5;
+    surface.clearcoat = 0.0;
+    surface.clearcoatGloss = 1.0;
+    surface.emission = 0;
+    surface.emissionStrength = 1.0;
+    surface.ambientOcclusion = ambientOcclusion;
+    surface.specularOcclusion = 1.0;
+
+    float3 indirectSpecular = ComputeImageBasedLightingSpecular(surface);
+    indirectSpecular *= perFrameData.indirectLightingFactor;
+    indirectSpecular *= perFrameData.sceneColorPreExposure;
+
+    outSceneColor = 0;
+    outSceneColor.rgb += indirectSpecular;
+}

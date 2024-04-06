@@ -1,0 +1,60 @@
+#include "../ShaderCommon.hsh"
+#include "RealTimeRendererCommon.hsh"
+#define SKY_ATMOSPHERE_TRANSMITTANCE_LUT_PASS 1
+#include "SkyAtmosphereCommon.hsh"
+
+BIND_BUFFER_ELEMENT(0, PerFrameData, PerFrameData);
+BIND_BUFFER_ELEMENT(1, SkyAtmosphereShaderParameters, SkyAtmosphereShaderParameters);
+BIND_TEXTURE_2D_UAV(2, float3, TransmittanceLutTexture);
+
+[numthreads(8, 8, 1)]
+void SkyAtmosphereTransmittanceLutCS(uint3 DispatchThreadID : SV_DispatchThreadID)
+{
+    PerFrameData perFrameData = GetPerFrameData();
+    SkyAtmosphereShaderParameters skyAtmosphereParameters = GetSkyAtmosphereShaderParameters();
+    RWTexture2D<float3> transmittanceLutTexture = GetTransmittanceLutTextureUAV();
+
+    float4 transmittanceLutSizeAndInvSize = skyAtmosphereParameters.transmittanceLutSizeAndInvSize;
+
+    uint2 pixelCoord = DispatchThreadID.xy;
+    float2 uv = (float2(pixelCoord) + 0.5f) * transmittanceLutSizeAndInvSize.zw;
+
+    float viewHeight;
+    float viewZenithCosAngle;
+    UvToLutTransmittanceParams(viewHeight, viewZenithCosAngle, skyAtmosphereParameters.bottomRadius, skyAtmosphereParameters.topRadius, uv);
+
+    float3 worldPos = float3(0.0f, 0.0f, viewHeight);
+    float3 worldDir = float3(0.0f, sqrt(1.0f - viewZenithCosAngle * viewZenithCosAngle), viewZenithCosAngle);
+
+    const bool ground = false;
+    const bool variableSampleCount = false;
+    const float transmittanceLutSampleCount = skyAtmosphereParameters.transmittanceLutSampleCount;
+    const float minSampleCount = 0.0f;
+    const float maxSampleCount = 0.0f;
+    const float depthBufferValue = FarClipPlaneDepthValue;
+    const float4 planetTranslatedWorldCenterAndViewHeight = float4(0.0f, 0.0f, 0.0f, 0.0f);
+    const bool mieRayPhase = false;
+    const float3 lightDirection = float3(0.0f, 0.0f, 1.0f);
+    const float3 lightIlluminance = float3(0.0f, 0.0f, 0.0f);
+
+    SingleScatteringResult result = IntegrateSingleScatteredLuminance(
+        perFrameData,
+        skyAtmosphereParameters,
+        uv,
+        worldPos,
+        worldDir,
+        ground,
+        variableSampleCount,
+        transmittanceLutSampleCount,
+        minSampleCount,
+        maxSampleCount,
+        depthBufferValue,
+        mieRayPhase,
+        lightDirection,
+        lightIlluminance);
+
+    float3 transmittance = exp(-result.opticalDepth);
+
+    // Opetical depth to transmittance
+    transmittanceLutTexture[pixelCoord] = transmittance;
+}

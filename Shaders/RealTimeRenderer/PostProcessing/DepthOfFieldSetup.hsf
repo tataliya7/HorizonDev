@@ -1,0 +1,75 @@
+#include "../ShaderCommon.hsh"
+#include "RealTimeRendererCommon.hsh"
+#include "PostProcessingCommon.hsh"
+
+BIND_BUFFER_ELEMENT(0, PerFrameData, PerFrameData);
+BIND_TEXTURE_2D_SRV(1, SceneColorTexture);
+BIND_TEXTURE_2D_SRV(2, SceneDepthTexture);
+BIND_TEXTURE_2D_UAV(3, float, DOFCoCTexture);
+BIND_TEXTURE_2D_UAV(4, float4, DOFNearRegionTexture);
+BIND_TEXTURE_2D_UAV(5, float4, DOFFarRegionTexture);
+
+float ComputeNearRegionMask(float depth, float focalDistance, float focalRegion, float nearTransitionRegion)
+{
+    return saturate((focalDistance - 0.5 * focalRegion - depth) / nearTransitionRegion);
+}
+
+float ComputeFarRegionMask(float depth, float focalDistance, float focalRegion, float farTransitionRegion)
+{
+    return saturate((depth - focalDistance - 0.5 * focalRegion) / farTransitionRegion);
+}
+
+float ComputeCoC(float linearDepth, float focalDistance, float focalRegion, float nearTransitionRegion, float farTransitionRegion)
+{
+    float N = ComputeNearRegionMask(linearDepth, focalDistance, focalRegion, nearTransitionRegion);
+    float F = ComputeFarRegionMask(linearDepth, focalDistance, focalRegion, farTransitionRegion);
+    if (F > N)
+    {
+        return (F * 0.5) + 0.5;
+    }
+    return (1.0 - N) * 0.5;
+}
+
+// float ComputeCoC(float linearDepth, float focalDistance, float focalRegion)
+// {
+//     float focusNear = focalDistance - 0.5 * focalRegion;
+//     float focusFar = focalDistance + 0.5 * focalRegion;
+
+//     float clampedDepth = clamp(linearDepth, focalDistance, focalDistance);
+//     float coc = ((linearDepth - clampedDepth) / linearDepth);
+//     return saturate(coc + 0.5);
+// }
+
+[numthreads(POST_PROCESS_THREAD_GROUP_SIZE, POST_PROCESS_THREAD_GROUP_SIZE, 1)]
+void DepthOfFieldSetupCS(uint3 DispatchThreadID : SV_DispatchThreadID)
+{
+    PerFrameData perFrameData = GetPerFrameData();
+    uint width = perFrameData.targetResolutionX;
+    uint height = perFrameData.targetResolutionY;
+    if (DispatchThreadID.x >= width || DispatchThreadID.y >= height)
+    {
+        return;
+    }
+
+    uint2 pixelCoord = DispatchThreadID.xy;
+    float2 uv = (pixelCoord + 0.5) / float2(width, height);
+
+    Texture2D sceneColorTexture = GetSceneColorTextureSRV();
+    Texture2D sceneDepthTexture = GetSceneDepthTextureSRV();
+    RWTexture2D<float> cocTexture = GetDOFCoCTextureUAV();
+
+    float focalDistance = SHADER_ARGUMENTS_DATA(0);
+    float focalRegion = SHADER_ARGUMENTS_DATA(1);
+    float nearTransitionRegion = SHADER_ARGUMENTS_DATA(2);
+    float farTransitionRegion = SHADER_ARGUMENTS_DATA(3);
+
+    float4 color = sceneColorTexture.SampleLevel(GlobalSamplerLinearClamp, uv, 0);
+    float depth = sceneDepthTexture.SampleLevel(GlobalSamplerPointClamp, uv, 0).r;
+    float linearDepth = LinearDepthNearFar(depth, perFrameData.nearClippingPlane, perFrameData.farClippingPlane);
+
+    // float nearRegionMask = ComputeNearRegionMask(linearDepth, focalDistance, focalRegion, nearTransitionRegion);
+    // float farRegionMask = ComputeFarRegionMask(linearDepth, focalDistance, focalRegion, farTransitionRegion);
+    float coc = ComputeCoC(linearDepth, focalDistance, focalRegion, nearTransitionRegion, farTransitionRegion);
+
+    cocTexture[pixelCoord] = coc;
+}

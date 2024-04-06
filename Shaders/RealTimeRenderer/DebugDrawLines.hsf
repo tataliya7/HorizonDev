@@ -1,0 +1,30 @@
+#include "../ShaderCommon.hsh"
+#include "RealTimeRendererCommon.hsh"
+
+BIND_BUFFER_ELEMENT(0, PerFrameData, PerFrameData);
+BIND_BYTE_ADDRESS_BUFFER_SRV(1, LineVertexBuffer);
+
+struct DebugDrawLinesVSToPS
+{
+    float4 color : COLOR;
+};
+
+void DebugDrawLinesVS(uint vertexIndex : SV_VertexID, out float4 svPosition : SV_Position, out DebugDrawLinesVSToPS output)
+{
+    PerFrameData perFrameData = GetPerFrameData();
+
+    ByteAddressBuffer vertexBuffer = GetLineVertexBufferSRV();
+    uint bufferIndex = SHADER_ARGUMENTS_INDEX(1);
+    float3 vertexPosition = vertexBuffer.Load<float3>((bufferIndex & 0xffff) + vertexIndex * sizeof(float3));
+
+    float4 clipPosition = mul(perFrameData.nonJitteredViewProjectionMatrix, float4(vertexPosition, 1.0));
+
+    output.color = float4(1, 0, 0, 1);
+    // output.color = color;
+    svPosition = clipPosition;
+}
+
+void DebugDrawLinesPS(in DebugDrawLinesVSToPS input, out float4 outColor : SV_Target0)
+{
+    outColor = input.color;
+}

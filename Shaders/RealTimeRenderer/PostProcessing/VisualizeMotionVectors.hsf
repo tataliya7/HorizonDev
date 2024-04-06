@@ -1,0 +1,48 @@
+#include "../ShaderCommon.hsh"
+#include "RealTimeRendererCommon.hsh"
+
+BIND_BUFFER_ELEMENT(0, PerFrameData, PerFrameData);
+BIND_TEXTURE_2D_SRV(1, MotionVectorTexture);
+BIND_TEXTURE_2D_UAV(2, float4, OutputTexture);
+
+[numthreads(8, 8, 1)]
+void VisualizeMotionVectorsCS(uint3 DispatchThreadID : SV_DispatchThreadID)
+{
+    PerFrameData perFrameData = GetPerFrameData();
+    Texture2D motionVectorTexture = GetMotionVectorTextureSRV();
+    RWTexture2D<float4> outputTexture = GetOutputTextureUAV();
+
+    uint2 pixelCoord = DispatchThreadID.xy;
+
+    uint width, height;
+    outputTexture.GetDimensions(width, height);
+    if (pixelCoord.x >= width || pixelCoord.y >= height)
+    {
+        return;
+    }
+
+    float2 uv = (pixelCoord + 0.5) * float2(1.0 / width, 1.0 / height);
+
+    // TODO: process motion vectors at lower resolution
+    float2 motionVector = motionVectorTexture.SampleLevel(GlobalSamplerPointClamp, uv, 0).xy;
+    motionVector *= float2(perFrameData.renderResolutionX, perFrameData.renderResolutionY);
+
+    float angle = atan2(motionVector.y, motionVector.x) * 180.0 / PI;
+    if (angle < 0)
+    {
+        angle += 360.0;
+    }
+
+    // TODO: promote to parameter
+    float maxVisibleMotionVectorLength = 30.0f;
+    float magnitude = length(motionVector) / maxVisibleMotionVectorLength; // normalize to [0, 1]
+
+    float hue = angle / 360.0;
+    float saturation = magnitude;
+    float value = 1.0;
+
+    float3 hsv = float3(hue, saturation, value);
+    float3 rgb = HSV2RGB(hsv);
+
+    outputTexture[pixelCoord] = float4(rgb, 1.0);
+}

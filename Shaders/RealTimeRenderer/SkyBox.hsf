@@ -1,0 +1,35 @@
+#include "../ShaderCommon.hsh"
+#include "RealTimeRendererCommon.hsh"
+
+BIND_BUFFER_ELEMENT(0, PerFrameData, PerFrameData);
+BIND_TEXTURE_CUBE_SRV(1, EnvironmentMap);
+
+struct SkyBoxVSToPS
+{
+    float4 position : SV_Position;
+    float3 uvw : POSITION0;
+};
+
+void SkyBoxVS(uint vertexIndex : SV_VertexID, out SkyBoxVSToPS output)
+{
+    PerFrameData perFrameData = GetPerFrameData();
+
+    // @see https://www.saschawillems.de/blog/2016/08/13/vulkan-tutorial-on-rendering-a-fullscreen-quad-without-buffers/
+    float2 uv = float2((vertexIndex << 1) & 2, vertexIndex & 2);
+    float4 clipPosition = float4(uv * 2.0f - 1.0f, 1.0f, 1.0f);
+
+    // If A is a rotation matrix, then inverse(A) is equal to transpose(A).
+    output.uvw = mul(transpose(ConvertFloat3x3To4x4(ConvertFloat4x4To3x3(perFrameData.viewMatrix))), mul(perFrameData.invProjectionMatrix, clipPosition)).xyz;
+    output.position = clipPosition;
+    output.position.z = 0.0f; // Let the depth value always be 0.
+}
+
+void SkyBoxPS(SkyBoxVSToPS input, out float4 color : SV_Target)
+{
+    TextureCube environmentMap = GetEnvironmentMapSRV();
+
+    float lod = SHADER_ARGUMENTS_DATA(0);
+
+    color = float4(environmentMap.Sample(GlobalSamplerLinearWarp, input.uvw, 0).rgb, 1.0f);
+    // color = float4(input.position.xy, 0.0, 1.0);
+}

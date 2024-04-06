@@ -1,0 +1,355 @@
+static const uint  RayCastingMaxNumIterations = 128; // primary ray march step count (higher will find more in distance, but slower)
+static const float RayCastingRayStep = 0.5f; // primary ray march step increase (higher will travel more distance, but can miss details)
+static const uint  RayCastingMaxNumBinarySearchIterations = 2; // binary step count (higher is nicer but slower)
+static const float RayCastingCompareTolerance = 0.000002; // early exit factor for binary search (smaller is nicer but slower)
+static const float RayCastingHizMipLevelIncrement = 0.3; // level increment based on ray travel distance and roughness (higher values improves performance, but traces at lower resolution)
+static const float HiZTraceStartMipLevel = 1.0;
+static const uint  HiZTraceMaxNumIterations = 128;
+
+#define SSR_FLOAT_MAX 3.402823466e+38
+
+void PrintSample(RWTexture2D<float4> debugOutput, float2 uv, float4 color)
+{
+    uint w, h;
+    debugOutput.GetDimensions(w, h);
+
+    uint2 position = uint2(uv.x * w, uv.y * h);
+    debugOutput[position] = color;
+    debugOutput[position + uint2(0, 1)] = color;
+    debugOutput[position + uint2(1, 0)] = color;
+    debugOutput[position + uint2(1, 1)] = color;
+}
+
+float3 intersectDepthPlane(float3 o, float3 d, float z)
+{
+    return o + d * z;
+}
+
+float2 getCell(float2 pos, float2 cell_count)
+{
+    return float2(floor(pos * cell_count));
+}
+
+#if 1
+float3 intersectCellBoundary(float3 pos, float3 dir, float2 cell_id, float2 cell_count, float2 cross_step, float2 cross_offset)
+{
+    float2 cell_size = 1.0 / cell_count;
+    float2 planes = cell_id / cell_count + cell_size * cross_step;
+
+    float2 solutions = (planes - pos.xy) / dir.xy;
+    float3 intersection_pos = pos + dir * min(solutions.x, solutions.y);
+
+    intersection_pos.xy += (solutions.x < solutions.y) ? float2(cross_offset.x, 0.0) : float2(0.0, cross_offset.y);
+
+    return intersection_pos;
+}
+#else
+float3 intersectCellBoundary(float3 o, float3 d, float2 cell, float2 cell_count, float2 crossStep, float2 crossOffset)
+{
+    float3 intersection = 0;
+
+    float2 index = cell + crossStep;
+    float2 boundary = index / cell_count;
+    boundary += crossOffset;
+
+    float2 delta = boundary - o.xy;
+    delta /= d.xy;
+    float t = min(delta.x, delta.y);
+
+    intersection = intersectDepthPlane(o, d, t);
+
+    return intersection;
+}
+#endif
+
+bool crossedCellBoundary(float2 oldCellIndex, float2 newCellIndex)
+{
+    return (oldCellIndex.x != newCellIndex.x) || (oldCellIndex.y != newCellIndex.y);
+}
+
+struct ScreenSpaceRay
+{
+    float3 rayStartUVZ;
+    float3 rayStepUVZ;
+    float compareTolerance;
+};
+
+// @note worldSpaceRayDirection must be normalized
+ScreenSpaceRay CreateScreenSpaceRay(
+    float3 worldSpaceRayOrigin,
+    float3 worldSpaceRayDirection,
+    float worldSpaceMaxDistance,
+    float4x4 worldSpaceToClipSpace,
+    float SceneDepth,
+    float SlopeCompareToleranceScale,
+    bool extendRayToScreenBorder,
+    out bool bRayWasClipped)
+{
+    worldSpaceMaxDistance = min(worldSpaceMaxDistance, 1000000);
+
+    float3 worldSpaceRayEnd = worldSpaceRayOrigin + worldSpaceRayDirection * worldSpaceMaxDistance;
+
+    float4 clipSpaceRayStart = mul(worldSpaceToClipSpace, float4(worldSpaceRayOrigin, 1.0));
+    float4 clipSpaceRayEnd = mul(worldSpaceToClipSpace, float4(worldSpaceRayEnd, 1.0));
+
+    float3 ndcSpaceRayStart = clipSpaceRayStart.xyz * rcp(clipSpaceRayStart.w);
+    float3 ndcSpaceRayEnd = clipSpaceRayEnd.xyz * rcp(clipSpaceRayEnd.w);
+
+    float3 rayStartUVZ = float3(ndcSpaceRayStart.xy * float2(0.5, -0.5) + float2(0.5, 0.5), ndcSpaceRayStart.z);
+    float3 rayEndUVZ = float3(ndcSpaceRayEnd.xy * float2(0.5, -0.5) + float2(0.5, 0.5), ndcSpaceRayEnd.z);
+
+    float3 rayStepUVZ = rayEndUVZ - rayStartUVZ;
+
+    float rayStepFactor = 1;
+
+    ScreenSpaceRay ray;
+    ray.rayStartUVZ = rayStartUVZ;
+    ray.rayStepUVZ = rayStepFactor * rayStepUVZ;
+    // ray.compareTolerance = max(abs(ray.rayStep.z), (screenSpaceRayStart.z - RayDepthScreen.z) * SlopeCompareToleranceScale);
+
+    return ray;
+}
+
+// Requires origin and direction of the ray to be in screen space [0, 1] x [0, 1]
+void CastScreenSpaceRayHZB(
+    Texture2D hiz,
+    float startMipLevel,
+    float maxMipLevel,
+    float3 rayStartUVz,
+    float3 rayDirection,
+    uint numSteps,
+    float4 hzbSizeAndInvSize,
+    float4 hzbUVFactorAndInvFactor,
+    bool debug,
+    RWTexture2D<float4> debugOutput,
+    out float3 hit,
+    out float mipLevel,
+    out bool foundHit,
+    out bool uncertain)
+{
+    // Start on mip with highest detail.
+    mipLevel = startMipLevel;
+
+    float2 currentMipResolution = hzbSizeAndInvSize.xy * pow(0.5, mipLevel);
+    float2 currentMipResolutionInv = rcp(currentMipResolution);
+
+    float2 crossStep = float2(rayDirection.x >= 0 ? 1.0 : -1.0, rayDirection.y >= 0 ? 1.0 : -1.0);
+    float2 crossOffset = crossStep * currentMipResolutionInv * 0.01;
+    crossStep = saturate(crossStep);
+
+    float2 startCellCount = currentMipResolution;
+    //rayStartUVz.xy = (floor(rayStartUVz.xy * startCellCount) + 0.25) / startCellCount;
+
+    float3 ray = rayStartUVz.xyz;
+    float minZ = ray.z;
+    float maxZ = 0;
+    float deltaZ = (maxZ - minZ);
+
+    float3 o = ray;
+    float3 d = rayDirection;
+
+    float2 rayCell = getCell(ray.xy, startCellCount);
+    ray = intersectCellBoundary(o, d, rayCell, startCellCount, crossStep, crossOffset * 128);
+
+    bool isBackwardRay = rayDirection.z > 0;
+    float rayDir = isBackwardRay ? -1.0 : 1.0;
+
+    float3 first = o;
+
+    foundHit = false;
+    uncertain = false;
+
+    uint maxNumIterations = numSteps;
+
+    uint i;
+    [loop]
+    for (i = 0; i < maxNumIterations; i++)
+    {
+        if (mipLevel < 0)
+        {
+            break;
+        }
+
+        if (any(ray.xy < 0.0) || any(ray.xy > 1.0))
+        {
+            break;
+        }
+
+        const float2 cellCount = currentMipResolution;
+        const float2 oldCellIdx = getCell(ray.xy, cellCount);
+
+        float cell_minZ = hiz.SampleLevel(GlobalSamplerPointClamp, (oldCellIdx + 0.5f) / cellCount, mipLevel).r;
+
+#if 1
+        float3 tmpRay = ((cell_minZ < ray.z) && !isBackwardRay) ? intersectDepthPlane(o, d, (cell_minZ - minZ) / deltaZ) : ray;
+
+        const float2 newCellIdx = getCell(tmpRay.xy, cellCount);
+        float thickness = 0;
+
+        float MAX_THICKNESS = 0.0001;
+        bool skippedTile = (isBackwardRay && (cell_minZ < ray.z)) || (thickness > (MAX_THICKNESS)) || crossedCellBoundary(oldCellIdx, newCellIdx);
+        ray = skippedTile ? intersectCellBoundary(o, d, oldCellIdx, cellCount, crossStep, crossOffset) : tmpRay;
+        mipLevel += skippedTile ? 1.0 : -1.0;
+        if (mipLevel > maxMipLevel)
+        {
+            mipLevel = maxMipLevel;
+        }
+        else
+        {
+            currentMipResolution *= skippedTile ? 0.5 : 2.0;
+            currentMipResolutionInv *= skippedTile ? 2.0 : 0.5;
+        }
+#else
+         float3 tmp_ray = ray;
+        float3 v = rayDirection;
+        float2 cross_step = crossStep;
+        float2 cross_offset = crossOffset;
+        float2 current_cell_count = cellCount;
+        float min_z = minZ;
+
+        if (v.z < 0)
+        {
+            float min_minus_ray = min_z - ray.z;
+            tmp_ray = min_minus_ray > 0 ? ray + v_z * min_minus_ray : tmp_ray;
+            float2 new_cell_id = cell(tmp_ray.xy, current_cell_count);
+            if (crossedCellBoundary(old_cell_id, new_cell_id))
+            {
+                tmp_ray = intersectCellBoundary(ray, v, old_cell_id, current_cell_count, cross_step, cross_offset);
+                level = min(maxMipLevel, level + 1.0f);
+            }
+            else
+            {
+                if (level == 1 && abs(min_minus_ray) > 0.0001)
+                {
+                    tmp_ray = intersectCellBoundary(ray, v, old_cell_id, current_cell_count, cross_step, cross_offset);
+                    level = 1;
+                }
+            }
+        }
+        else if (ray.z < min_z)
+        {
+            tmp_ray = intersectCellBoundary(ray, v, old_cell_id, current_cell_count, cross_step, cross_offset);
+            level = min(maxMipLevel, level + 1.0f);
+        }
+        ray.xyz = tmp_ray.xyz;
+#endif
+        if (debug)
+        {
+            PrintSample(debugOutput, ray.xy, float4(0, 1, 0, 1));
+        }
+    }
+
+    if (debug)
+    {
+        PrintSample(debugOutput, rayStartUVz.xy, float4(1, 0, 0, 1));
+    }
+
+    if (debug)
+    {
+        PrintSample(debugOutput, first.xy, float4(0, 0, 1, 1));
+    }
+
+    hit = ray;
+    foundHit = (mipLevel < 0);
+}
+
+void CastScreenSpaceRayLinear(
+    Texture2D depthBuffer,
+    float3 rayStartUVZ,
+    float3 rayStepUVZ,
+    float rayStepOffset,
+    // float roughness,
+    bool debug,
+    RWTexture2D<float4> debugOutput,
+    inout float3 outHitUVZ,
+    inout bool outFoundHit)
+{
+    uint maxNumIterations = RayCastingMaxNumIterations;
+
+    rayStepUVZ /= maxNumIterations;
+    rayStepUVZ *= 3;
+
+    float3 rayUVZ = rayStartUVZ + rayStepUVZ * rayStepOffset;
+
+    if (debug)
+    {
+        PrintSample(debugOutput, rayStartUVZ.xy, float4(1, 0, 0, 1));
+        PrintSample(debugOutput, rayUVZ.xy, float4(0, 0, 1, 1));
+    }
+
+    float thickness = 0.01;
+
+    float4 deltaDepth;
+    bool4 anyHit;
+
+    uint i, j;
+    [loop]
+    for (i = 0; i < maxNumIterations; i += 4)
+    {
+        float2 samplesUV[4];
+        float4 samplesZ;
+        float4 samplesMip;
+
+        for (j = 0; j < 4; j++)
+        {
+            samplesUV[j] = rayUVZ.xy + (float(i) + float(j + 1)) * rayStepUVZ.xy;
+            samplesZ[j] = rayUVZ.z + (float(i) + float(j + 1)) * rayStepUVZ.z;
+
+            samplesMip[j] = 0;
+
+            if (debug)
+            {
+                PrintSample(debugOutput, samplesUV[j].xy, float4(0, 1, 0, 1));
+            }
+        }
+
+        float4 surfacesZ;
+
+        for (j = 0; j < 4; j++)
+        {
+            surfacesZ[j] = depthBuffer.SampleLevel(GlobalSamplerPointClamp, samplesUV[j], samplesMip[j]).r;
+        }
+
+        deltaDepth = samplesZ - surfacesZ;
+        anyHit = abs(deltaDepth + thickness) < thickness;
+
+        for (j = 0; j < 4; j++)
+        {
+            outFoundHit = outFoundHit || anyHit[j];
+        }
+
+        [branch]
+        if (outFoundHit)
+        {
+            break;
+        }
+    }
+
+    if (outFoundHit)
+    {
+        float t = float(i);
+
+        if (anyHit[0])
+        {
+            t += 0.0;
+        }
+        if (anyHit[1])
+        {
+            t += 1.0;
+        }
+        if (anyHit[2])
+        {
+            t += 2.0;
+        }
+        if (anyHit[3])
+        {
+            t += 3.0;
+        }
+
+        outHitUVZ = rayUVZ + rayStepUVZ * t;
+    }
+    else
+    {
+        outHitUVZ = rayUVZ + rayStepUVZ * float(i);
+    }
+}

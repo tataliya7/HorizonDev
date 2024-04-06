@@ -1,0 +1,186 @@
+#include "../ShaderCommon.hsh"
+#include "PathTracingRendererCommon.hsh"
+
+BIND_BUFFER_ELEMENT(0, PerFrameData, PerFrameData);
+BIND_TLAS_SRV(1, TopLevelAS);
+BIND_TEXTURE_CUBE_SRV(1, SkyLightTexture);
+BIND_TEXTURE_2D_UAV(4, float4, RadianceTexture);
+
+struct PathTracingPayload
+{
+    float hitT;
+
+    bool IsDone()
+    {
+        return hitT < 0;
+    }
+};
+
+Ray CreateCameraRay()
+{
+    return ray;
+}
+
+[shader("closesthit")]
+void PathTracingDefaultOpaqueClosestHit(inout PathTracingPayload payload : SV_RayPayload)
+{
+    const float3 ray_origin = WorldRayOrigin();
+    const float3 ray_direction = WorldRayDirection();
+    const float tmax = RayTCurrent();
+
+    const int primitive_index = optixGetPrimitiveIndex();
+
+    const unsigned int vertex_index_offset = primitive_index * 3;
+    const float3 v0 = launch_params.vertices[vertex_index_offset + 0];
+    const float3 v1 = launch_params.vertices[vertex_index_offset + 1];
+    const float3 v2 = launch_params.vertices[vertex_index_offset + 2];
+
+    const float3 Ng = normalize(cross(v1 - v0, v2 - v0));
+    const float3 N = faceforward(Ng, ray_direction, Ng);
+
+    const float3 shading_point = ray_origin + tmax * ray_direction;
+
+    if (payload->primary_ray == 1)
+    {
+        payload->emitted = rt_data->emission_color;
+        payload->primary_ray = 0;
+    }
+    else
+    {
+        payload->emitted = make_float3(0.0f);
+    }
+
+    // BSDF bsdf = eval_bsdf();
+
+    unsigned int seed = payload->seed;
+    {
+        const float randu = randf(seed);
+        const float randv = randf(seed);
+
+        float3 wi;
+        float pdf;
+        sample_uniform_hemisphere(N, randu, randv, wi, pdf);
+
+        // Secondary ray
+        payload->ray_origin    = shading_point;
+        payload->ray_direction = wi;
+        payload->throughput   *= rt_data->diffuse_color;
+    }
+
+    const float randu = randf(seed);
+    const float randv = randf(seed);
+
+    const KernelLight& light = launch_params.light;
+
+    LightSample light_sample;
+    sample_light(light, randu, randv, shading_point, light_sample);
+
+    float3 light_eval = light.emission;
+
+    const float distance = light_sample.t;
+    const float cos_theta = dot(N, light_sample.wi);
+    const float cos_phi   = dot(light_sample.Ng, -light_sample.wi);
+
+    float weight = 0.0f;
+    if (cos_theta > 0.0f && cos_phi > 0.0f)
+    {
+        const float3 shadow_ray_origin = shading_point;
+        const float3 shadow_ray_direction = light_sample.wi;
+        const float shadow_ray_tmin = 0.01f;
+        const float shadow_ray_tmax = light_sample.t - 0.01f;
+
+        RayDesc rayDesc;
+        rayDesc.Origin = worldSpacePosition.xyz;
+        rayDesc.Direction = randDirection;
+        rayDesc.TMin = 0.001;
+        rayDesc.TMax = 10000.0;
+
+        uint rayFlags = RAY_FLAG_ACCEPT_FIRST_HIT_AND_END_SEARCH | RAY_FLAG_SKIP_CLOSEST_HIT_SHADER;
+
+        TraceRay(
+            topLevelAS,
+            rayFlags,
+            0xff,
+            1, // SBToffset
+            2, // SBTstride
+            1, // missSBTIndex
+            rayDesc,
+            payload);
+
+        if (visibility == 1)
+        {
+            weight = cos_theta * cos_phi / (M_PI_F * distance * distance * light_sample.pdf);
+        }
+    }
+
+    payload->light_eval = light_eval * weight;
+}
+
+[shader("miss")]
+void PathTracingDefaultMiss(inout PathTracingPayload payload : SV_RayPayload)
+{
+    TextureCube skyLightTexture = GetSkyLightTextureSRV();
+    float3 skyColor = skyLightTexture.SampleLevel(GlobalSamplerLinearWarp, payload.rayDirection, 0).rgb;
+
+    payload. = ;
+    payload.hitT = -1.0f;
+}
+
+[shader("raygeneration")]
+void PathTracingRG()
+{
+    uint3 dispatchRaysIndex = DispatchRaysIndex();
+    uint3 dispatchRaysDimensions = DispatchRaysDimensions();
+
+    PerFrameData perFrameData = GetPerFrameData();
+    RaytracingAccelerationStructure topLevelAS = GetTopLevelAS();
+    RWTexture2D<float4> radianceTexture = GetRadianceTextureUAV();
+
+    float2 subpixelJitter = 0.5f;//float2(randf(seed), randf(seed));
+
+    uint2 pixelCoord = dispatchRaysIndex.xy;
+    float2 uv = (float2(pixelCoord) + subpixelJitter) * perFrameData.outputSizeAndInvOutputSize.zw;
+    float2 position = UVToClipSpace(uv);
+
+    uint maxBounces = perFrameData.maxBounces;
+
+    float throughput = 1.0f;
+
+    // Create camera ray
+    float4 nearPoint = mul(perFrameData.invViewProjectionMatrix, float4(position, 1.0f, 1.0f));
+    float4 farPoint = mul(perFrameData.invViewProjectionMatrix, float4(position, 0.0f, 1.0f));
+    float3 rayOrigin = nearPoint.xyz / nearPoint.w;
+    float3 rayDirection = normalize(farPoint.xyz / farPoint.w - nearPoint.xyz / nearPoint.w);
+
+    uint rayFlags = RAY_FLAG_FORCE_NON_OPAQUE;
+
+    for (uint bounce = 0; bounce < maxBounces; bounce++)
+    {
+        RayDesc ray;
+        ray.Origin = rayOrigin;
+        ray.Direction = rayDirection;
+        ray.TMin = 0.0f;
+        ray.TMax = 100000.0f;
+
+        TraceRay(
+            topLevelAS,
+            rayFlags,
+            0xff,
+            0,
+            0,
+            0,
+            ray,
+            payload);
+
+        // Ray hit sky
+        if (payload.IsDone())
+        {
+            break;
+        }
+
+        rayOrigin = payload.rayOrigin;
+        rayDirection = payload.rayDirection;
+    }
+
+    radianceTexture[pixelCoord] = float4(radiance, 0.0f);
+}

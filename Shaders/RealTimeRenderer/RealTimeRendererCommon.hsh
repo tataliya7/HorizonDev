@@ -1,0 +1,524 @@
+struct PerFrameData
+{
+    uint frameIndex;
+    float blueNoisePhase;
+    float deltaTime;
+    float gamma;
+    float exposure;
+    float mipLodBias;
+    float sceneColorPreExposure;
+    float sceneColorOneOverPreExposure;
+    float historySceneColorPreExposureCorrection;
+    float3 skyAtmosphereLightOuterSpaceIlluminance;
+    float4 skyAtmospherePlanetCenterAndViewHeight;
+    float skyAtmosphereBottomRadiusInKilometers;
+    float skyAtmosphereTopRadiusInKilometers;
+    float3x3 skyAtmosphereSkyViewLUTReferential;
+    float3 skyAtmosphereSkyLuminanceFactor;
+    float3 atmosphereLightDirection;
+    float3 atmosphereLightDiscLuminance;
+    float atmosphereLightDiscCosHalfApexAngle;
+    float3 indirectLightingFactor;
+    float3 cameraPosition;
+    float3 prevCameraPosition;
+    float3 cameraUp;
+    float3 cameraRight;
+    float3 cameraForward;
+    float2 cameraJitterOffset;
+    float2 prevCameraJitterOffset;
+    float nearClippingPlane;
+    float farClippingPlane;
+    float halfFovRad;
+    float cameraAspectRatio;
+    float4 frustumPlanes[6];
+    float4x4 viewMatrix;
+    float4x4 invViewMatrix;
+    float4x4 projectionMatrix;
+    float4x4 invProjectionMatrix;
+    float4x4 viewProjectionMatrix;
+    float4x4 invViewProjectionMatrix;
+    float4x4 prevProjectionMatrix;
+    float4x4 prevViewProjectionMatrix;
+    float4x4 prevInvViewProjectionMatrix;
+    float4x4 nonJitteredProjectionMatrix;
+    float4x4 nonJitteredInvProjectionMatrix;
+    float4x4 nonJitteredViewProjectionMatrix;
+    float4x4 nonJitteredInvViewProjectionMatrix;
+    float4x4 nonJitteredPrevProjectionMatrix;
+    float4x4 nonJitteredPrevViewProjectionMatrix;
+    float4x4 nonJitteredPrevInvViewProjectionMatrix;
+    uint renderResolutionX;
+    uint renderResolutionY;
+    uint targetResolutionX;
+    uint targetResolutionY;
+    float4 renderResolutionAndInvRenderResolution;
+    float4 targetResolutionAndInvTargetResolution;
+    // bool screenSpaceAmbientOcclusionEnabled;
+    // bool screenSpaceReflectionsEnabled;
+    float fixedExposureValue;
+    float autoExposureExposureCompensation;
+    float autoExposureMinExposureValue;
+    float autoExposureMaxExposureValue;
+    float autoExposureHistogramLowPercent;
+    float autoExposureHistogramHighPercent;
+    float autoExposureHistogramMinEV100;
+    float autoExposureHistogramMaxEV100;
+    float autoExposureSpeedDarkToBright;
+    float autoExposureSpeedBrightToDark;
+    int autoExposureUseTargetExposure;
+    float dofScale;
+    float dofFocalDistance;
+    float dofFocalRegion;
+    float dofNearTransitionRegion;
+    float dofFarTransitionRegion;
+    float dofNearRegionBlurSize;
+    float dofFarRegionBlurSize;
+    float localExposureShadows;
+    float localExposureHighlights;
+    int localExposureCoarsestMipLevel;
+    int localExposureDisplayMipLevel;
+    float localExposurePreferenceSigma;
+    float bloomIntensity;
+    float bloomRadius;
+    float lensDirtIntensity;
+    float4 lensDirtTint;
+    float lensFlaresIntensity;
+    float chromaticAberrationIntensity;
+    float chromaticAberrationOffset;
+    float4 colorCorrectionSaturation;
+    float4 colorCorrectionContrast;
+    float4 colorCorrectionGamma;
+    float4 colorCorrectionGain;
+    float4 colorCorrectionOffset;
+    float colorGradingWhiteBalanceColorTemperature;
+    bool localExposureEnabled;
+};
+
+struct DrawIndexedIndirectCommand
+{
+    uint indexCount;
+    uint instanceCount;
+    uint firstIndex;
+    int vertexOffset;
+    uint firstInstance;
+};
+
+struct TextureSlot
+{
+    int bindlessTexture2DIndex;
+};
+
+#define NearClipPlaneDepthValue 1.0f
+#define FarClipPlaneDepthValue 0.0f
+
+#define MAX_MATERIAL_TEXTURE_SLOT_COUNT 16
+#define DEFAULT_MATERIAL_TEXTURE_SLOT_BASE_COLOR_MAP 0
+#define DEFAULT_MATERIAL_TEXTURE_SLOT_METALLIC_ROUGHNESS_MAP 1
+#define DEFAULT_MATERIAL_TEXTURE_SLOT_SPECULAR_GLOSSINESS_MAP 2
+#define DEFAULT_MATERIAL_TEXTURE_SLOT_NORMAL_MAP 3
+#define DEFAULT_MATERIAL_TEXTURE_SLOT_EMISSIVE_MAP 4
+
+#define MATERIAL_FLAGS_BIT_USE_METALLIC_ROUGHNESS_WORKFLOW (1 << 0)
+
+#define INVALID_VISIBILIY_ID 0x0FFFFFFF // TODO
+
+struct Material
+{
+    float4 baseColor;
+    float metallic;
+    float roughness;
+    float specular;
+    float specularTint;
+    float4 emission;
+    float emissionStrength;
+    float4 sssSurfaceAlbedo;
+    float4 sssMFP;
+    float secondRoughness;
+    float lobeMix;
+    uint flags;
+    TextureSlot textures[MAX_MATERIAL_TEXTURE_SLOT_COUNT];
+
+    bool UseMetallicRoughnessWorkflow() { return (flags & MATERIAL_FLAGS_BIT_USE_METALLIC_ROUGHNESS_WORKFLOW); }
+    int GetBaseColorMapIndex() { return textures[DEFAULT_MATERIAL_TEXTURE_SLOT_BASE_COLOR_MAP].bindlessTexture2DIndex; }
+    int GetMetallicRoughnessMapIndex() { return textures[DEFAULT_MATERIAL_TEXTURE_SLOT_METALLIC_ROUGHNESS_MAP].bindlessTexture2DIndex; }
+    int GetSpecularGlossinessMapIndex() { return textures[DEFAULT_MATERIAL_TEXTURE_SLOT_SPECULAR_GLOSSINESS_MAP].bindlessTexture2DIndex; }
+    int GetNormalMapIndex() { return textures[DEFAULT_MATERIAL_TEXTURE_SLOT_NORMAL_MAP].bindlessTexture2DIndex; }
+    int GetEmissiveMapIndex() { return textures[DEFAULT_MATERIAL_TEXTURE_SLOT_EMISSIVE_MAP].bindlessTexture2DIndex; }
+};
+
+struct Geometry
+{
+    int vertexBuffer0;
+    int vertexBuffer1;
+    int vertexBuffer2;
+    int vertexBuffer3;
+    int prevVertexBuffer0;
+    int indexBuffer;
+    int transformBuffer;
+    int previousTransformBuffer;
+    int transformIndex;
+    int previousTransformIndex;
+    int materialIndexBuffer;
+    int materialBufferOffset;
+    uint baseVertex;
+    uint vertexCount;
+    uint baseIndex;
+    uint indexCount;
+    float3 boundsMin;
+    float3 boundsMax;
+};
+
+#define LIGHT_TYPE_DIRECTIONAL 0
+#define LIGHT_TYPE_POINT 1
+#define LIGHT_TYPE_SPOT 2
+
+struct LightData
+{
+    float3 color;
+    float3 position;
+    float3 forwardVec;
+    float3 rightVec;
+    float3 upVec;
+    uint type;
+    float radius;
+    float sizeX;
+    float sizeY;
+    int shadowMapIndex;
+};
+
+// @see https://media.contentapi.ea.com/content/dam/ea/seed/presentations/2019-ray-tracing-gems-chapter-20-akenine-moller-et-al.pdf
+float ComputeTextureLODRayCones(float baseTriangleLOD, uint textureWidth, uint textureHeight, float rayConeWidth, float3 rayDirection, float3 surfaceNormal)
+{
+    float lambda = baseTriangleLOD;
+    lambda += log2(abs(rayConeWidth));
+    lambda += 0.5 * log2(textureWidth * textureHeight);
+    lambda -= log2(abs(dot(rayDirection, surfaceNormal)));
+    return lambda;
+}
+
+struct Surface
+{
+    float2 uv;
+
+    float3 P; // World space position
+    float3 N; // World space normal
+    float3 V; // World space view vector
+    float3 R; // World space reflection vector
+    float distance; // World space distance to first hit
+
+    float NdotV;
+
+    // Principled BRDF
+    float4 baseColor;
+    float subsurface;
+    float metallic;
+    float specular;
+    float roughness;
+    float specularTint;
+    float anisotropic;
+    float anisotropicRotation;
+    float sheen;
+    float sheenTint;
+    float clearcoat;
+    float clearcoatGloss;
+
+    float3 emission;
+    float emissionStrength;
+    float ambientOcclusion;
+    float specularOcclusion;
+
+    float3 F0;
+    float3 F;
+
+    void Init(PerFrameData view, float2 uv, Geometry geometry, uint primitiveID, float3 barycentrics, Material material)
+    {
+        uint index0 = GetRWByteAddressBufferNonUniform(geometry.indexBuffer).Load<uint>((geometry.baseIndex + primitiveID * 3 + 0) * sizeof(uint));
+        uint index1 = GetRWByteAddressBufferNonUniform(geometry.indexBuffer).Load<uint>((geometry.baseIndex + primitiveID * 3 + 1) * sizeof(uint));
+        uint index2 = GetRWByteAddressBufferNonUniform(geometry.indexBuffer).Load<uint>((geometry.baseIndex + primitiveID * 3 + 2) * sizeof(uint));
+
+        RWByteAddressBuffer vertexBuffer0 = GetRWByteAddressBufferNonUniform(geometry.vertexBuffer0);
+        float3 vertex0 = vertexBuffer0.Load<float3>(index0 * sizeof(float3));
+        float3 vertex1 = vertexBuffer0.Load<float3>(index1 * sizeof(float3));
+        float3 vertex2 = vertexBuffer0.Load<float3>(index2 * sizeof(float3));
+
+        RWByteAddressBuffer vertexBuffer1 = GetRWByteAddressBufferNonUniform(geometry.vertexBuffer1);
+#if 1 //FACE_VARYING
+        float3 normal0 = vertexBuffer1.Load<float3>((primitiveID * 3 + 0) * sizeof(float3));
+        float3 normal1 = vertexBuffer1.Load<float3>((primitiveID * 3 + 1) * sizeof(float3));
+        float3 normal2 = vertexBuffer1.Load<float3>((primitiveID * 3 + 2) * sizeof(float3));
+#else
+        float3 normal0 = vertexBuffer1.Load<float3>(index0 * sizeof(float3));
+        float3 normal1 = vertexBuffer1.Load<float3>(index1 * sizeof(float3));
+        float3 normal2 = vertexBuffer1.Load<float3>(index2 * sizeof(float3));
+#endif
+        float4 tangent0 = GetRWByteAddressBufferNonUniform(geometry.vertexBuffer2).Load<float4>(index0 * sizeof(float4));
+        float4 tangent1 = GetRWByteAddressBufferNonUniform(geometry.vertexBuffer2).Load<float4>(index1 * sizeof(float4));
+        float4 tangent2 = GetRWByteAddressBufferNonUniform(geometry.vertexBuffer2).Load<float4>(index2 * sizeof(float4));
+
+        float4x4 worldTransform = GetRWByteAddressBufferNonUniform(geometry.transformBuffer).Load<float4x4>(geometry.transformIndex * sizeof(float4x4));
+
+        float3 worldPosition0 = mul(worldTransform, float4(vertex0, 1.0)).xyz;
+        float3 worldPosition1 = mul(worldTransform, float4(vertex1, 1.0)).xyz;
+        float3 worldPosition2 = mul(worldTransform, float4(vertex2, 1.0)).xyz;
+
+        float3 worldNormal0 = normalize(mul((float3x3)worldTransform, normal0));
+        float3 worldNormal1 = normalize(mul((float3x3)worldTransform, normal1));
+        float3 worldNormal2 = normalize(mul((float3x3)worldTransform, normal2));
+
+        float3 worldTangent0 = normalize(mul((float3x3)worldTransform, tangent0.xyz));
+        float3 worldTangent1 = normalize(mul((float3x3)worldTransform, tangent1.xyz));
+        float3 worldTangent2 = normalize(mul((float3x3)worldTransform, tangent2.xyz));
+
+        float3 worldBitangent0 = normalize(cross(worldNormal0, worldTangent0) * tangent0.w);
+        float3 worldBitangent1 = normalize(cross(worldNormal1, worldTangent1) * tangent1.w);
+        float3 worldBitangent2 = normalize(cross(worldNormal2, worldTangent2) * tangent2.w);
+
+        float3x3 tangentSpace0 = float3x3(worldTangent0, worldBitangent0, worldNormal0);
+        float3x3 tangentSpace1 = float3x3(worldTangent1, worldBitangent1, worldNormal1);
+        float3x3 tangentSpace2 = float3x3(worldTangent2, worldBitangent2, worldNormal2);
+
+        P = barycentrics.x * worldPosition0 + barycentrics.y * worldPosition1 + barycentrics.z * worldPosition2;
+        N = normalize(barycentrics.x * worldNormal0 + barycentrics.y * worldNormal1 + barycentrics.z * worldNormal2);
+        V = normalize(view.cameraPosition - P);
+        distance = length(view.cameraPosition - P);
+
+        float3 B = normalize(barycentrics.x * worldBitangent0 + barycentrics.y * worldBitangent1 + barycentrics.z * worldBitangent2);
+        float3 T = normalize(barycentrics.x * worldTangent0 + barycentrics.y * worldTangent1 + barycentrics.z * worldTangent2);
+        float3x3 TBN = float3x3(T, B, N);
+
+        baseColor = material.baseColor;
+
+        [branch]
+        if (geometry.vertexBuffer3 >= 0)
+        {
+            RWByteAddressBuffer vertexBuffer3 = GetRWByteAddressBufferNonUniform(geometry.vertexBuffer3);
+            float2 texCoord00 = vertexBuffer3.Load<float2>((primitiveID * 3 + 0) * sizeof(float2));
+            float2 texCoord01 = vertexBuffer3.Load<float2>((primitiveID * 3 + 1) * sizeof(float2));
+            float2 texCoord02 = vertexBuffer3.Load<float2>((primitiveID * 3 + 2) * sizeof(float2));
+
+            const float gamma = view.gamma;
+            const float mipLodBias = view.mipLodBias;
+
+            const float2 texCoord0 = barycentrics.x * texCoord00 + barycentrics.y * texCoord01 + barycentrics.z * texCoord02;
+
+            const float P_a = length(cross(worldPosition1 - worldPosition0, worldPosition2 - worldPosition0));
+            const float T_a = abs((texCoord01.x - texCoord00.x) * (texCoord02.y - texCoord00.y) - (texCoord02.x - texCoord00.x) * (texCoord01.y - texCoord00.y));
+            const float baseTriangleLOD = 0.5 * log2(T_a / P_a);
+
+            // because it generates good results and we have not seen any discrepancies in the periphery.
+            const float spreadAngle = atan(2.0 * view.invProjectionMatrix[1][1] / view.renderResolutionY); // Eq. 30
+            const float rayConeWidth = distance * spreadAngle;
+            const float3 surfaceNormal = normalize(cross(worldPosition2 - worldPosition1, worldPosition1 - worldPosition0));
+
+            if (material.GetNormalMapIndex() >= 0) // In some cases, using normal mapping will result in some pixels having a normal value of NaN. Needs to be fixed!
+            {
+                Texture2D normalMap = GetTexture2D(material.GetNormalMapIndex());
+                uint textureWidth, textureHeight;
+                normalMap.GetDimensions(textureWidth, textureHeight);
+                float mipLod = ComputeTextureLODRayCones(baseTriangleLOD, textureWidth, textureHeight, rayConeWidth, V, surfaceNormal);
+                float3 tangentNormal = normalize(normalize(normalMap.SampleLevel(GlobalSamplerLinearWarp, texCoord0, mipLod + mipLodBias).xyz) * 2.0 - 1.0);
+                N = normalize(mul(tangentNormal, TBN));
+            }
+
+            if (material.GetBaseColorMapIndex() >= 0)
+            {
+                Texture2D baseColorMap = GetTexture2DNonUniform(material.GetBaseColorMapIndex());
+                uint textureWidth, textureHeight;
+                baseColorMap.GetDimensions(textureWidth, textureHeight);
+                float mipLod = ComputeTextureLODRayCones(baseTriangleLOD, textureWidth, textureHeight, rayConeWidth, V, surfaceNormal);
+                baseColor *= baseColorMap.SampleLevel(GlobalSamplerLinearWarp, texCoord0, mipLod + mipLodBias);
+            }
+
+            metallic = material.metallic;
+            roughness = material.roughness;
+            //if (material.UseMetallicRoughnessWorkflow()) // Metallic-roughness workflow
+            {
+                if (material.GetMetallicRoughnessMapIndex() >= 0)
+                {
+                    Texture2D metallicRoughnessMap =  GetTexture2DNonUniform(material.GetMetallicRoughnessMapIndex());
+                    uint textureWidth, textureHeight;
+                    metallicRoughnessMap.GetDimensions(textureWidth, textureHeight);
+                    float mipLod = ComputeTextureLODRayCones(baseTriangleLOD, textureWidth, textureHeight, rayConeWidth, V, surfaceNormal);
+                    float4 metallicRoughness = metallicRoughnessMap.SampleLevel(GlobalSamplerLinearWarp, texCoord0, mipLod + mipLodBias);
+                    metallic *= metallicRoughness.b;
+                    roughness *= metallicRoughness.g;
+                }
+            }
+            // else // Specular-glossiness workflow
+            // {
+            //    if (material.GetSpecularGlossinessMapIndex() >= 0)
+            //    {
+            //        Texture2D specularMap =  GetTexture2DNonUniform(material.GetSpecularGlossinessMapIndex());
+            //        uint textureWidth, textureHeight;
+            //        specularMap.GetDimensions(textureWidth, textureHeight);
+            //        float mipLod = ComputeTextureLODRayCones(baseTriangleLOD, textureWidth, textureHeight, rayConeWidth, V, surfaceNormal);
+            //        float4 specularGlossiness = specularMap.SampleLevel(GlobalSamplerLinearWarp, texCoord0, mipLod + mipLodBias);
+            //        roughness = saturate(1.0 - specularGlossiness.a);
+            //    }
+            // }
+        }
+    }
+};
+
+float3 GetPerpendicularVector(float3 u)
+{
+    float3 a = abs(u);
+    uint xm = ((a.x - a.y) < 0 && (a.x - a.z) < 0) ? 1 : 0;
+    uint ym = (a.y - a.z) < 0 ? (1 ^ xm) : 0;
+    uint zm = 1 ^ (xm | ym);
+    return cross(u, float3(xm, ym, zm));
+}
+
+float LinearDepth01(float depth, float near, float far)
+{
+    // Standard z
+    // float x = 1.0 - far / near;
+    // float y = far / near;
+
+    // Reversed-z
+    float x = -1.0 + far / near;
+    float y = 1.0;
+    return 1.0 / (x * depth + y);
+}
+
+float LinearDepthNearFar(float depth, float near, float far)
+{
+    return LinearDepth01(depth, near, far) * far;
+}
+
+float ComputeDepthFromLinearDepthNearFar(float linearDepth, float near, float far)
+{
+    float x = -1.0 + far / near;
+    float y = 1.0;
+    return (far / linearDepth - y) / x;
+}
+
+float4 ComputeClipSpacePosition(float2 uv, float depth)
+{
+    return float4(uv.x * 2.0 - 1.0, (1.0 - uv.y) * 2.0 - 1.0, depth, 1.0);
+}
+
+float3 ReconstructWorldSpacePositionFromDepth(float2 uv, float depth, float4x4 invViewProjectionMatrix)
+{
+    float2 xy = float2(uv.x * 2.0 - 1.0, (1.0 - uv.y) * 2.0 - 1.0);
+    float4 clipSpacePosition = float4(xy, depth, 1.0);
+    float4 position = mul(invViewProjectionMatrix, clipSpacePosition);
+    return position.xyz / position.w;
+}
+
+float3 ReconstructViewSpacePositionFromDepth(float2 uv, float depth, float4x4 invProjectionMatrix)
+{
+    float2 xy = float2(uv.x * 2.0 - 1.0, (1.0 - uv.y) * 2.0 - 1.0);
+    float4 clipSpacePosition = float4(xy, depth, 1.0);
+    float4 position = mul(invProjectionMatrix, clipSpacePosition);
+    return position.xyz / position.w;
+}
+
+float2 uv_to_clipspace(in float2 uv)
+{
+    float2 clipspace = uv * 2 - 1;
+    clipspace.y *= -1;
+    return clipspace;
+}
+
+float2 clipspace_to_uv(in float2 clipspace)
+{
+    return clipspace * float2(0.5, -0.5) + 0.5;
+}
+
+float3 clipspace_to_uv(in float3 clipspace)
+{
+    return clipspace * float3(0.5, -0.5, 0.5) + 0.5;
+}
+
+float CalculateScreenEdgeVignette(float2 uv, float fadeFactor)
+{
+    float2 ndc = uv_to_clipspace(uv);
+    float2 attenuation = saturate(abs(ndc) * fadeFactor - (fadeFactor - 1.0f));
+    float vignette = saturate(1.0 - dot(attenuation, attenuation));
+    return vignette;
+}
+
+// Octahedral Normal Vectors (ONV)
+// https://jcgt.org/published/0003/02/01/
+// TODO: Test the difference between encoded normals and ground truth.
+
+float2 SignNotZero(float2 v)
+{
+    return float2((v.x >= 0.0) ? +1.0 : -1.0, (v.y >= 0.0) ? +1.0 : -1.0);
+}
+
+// Encode normal to ONV
+float2 EncodeNormalToONV(float3 v)
+{
+    float2 p = v.xy * (1.0 / (abs(v.x) + abs(v.y) + abs(v.z)));
+    return (v.z <= 0.0) ? ((1.0 - abs(p.yx)) * SignNotZero(p)) : p;
+}
+
+// Decode normal fropm ONV
+float3 DecodeNormalFromONV(float2 p)
+{
+    float3 v = float3(p.xy, 1.0 - abs(p.x) - abs(p.y));
+    if (v.z < 0) v.xy = (1.0 - abs(v.yx)) * SignNotZero(v.xy);
+    return normalize(v);
+}
+
+float3 EncodeNormalToGBuffer(float3 n)
+{
+    return n * 0.5f + 0.5f;
+}
+
+float3 DecodeNormalFromGBuffer(float3 n)
+{
+    return n * 2.0f - 1.0f;
+}
+
+float3 CalculatePerspectiveCorrectBarycentric(float4 clip0, float4 clip1, float4 clip2, float2 pixelNDC)
+{
+    float3 invW = 1.0 / (float3(clip0.w, clip1.w, clip2.w));
+
+    float2 ndc0 = clip0.xy * invW.x;
+    float2 ndc1 = clip1.xy * invW.y;
+    float2 ndc2 = clip2.xy * invW.z;
+
+    float invDet = rcp(determinant(float2x2(ndc2 - ndc1, ndc0 - ndc1)));
+    float3 ddx = float3(ndc1.y - ndc2.y, ndc2.y - ndc0.y, ndc0.y - ndc1.y) * invDet * invW;
+    float3 ddy = float3(ndc2.x - ndc1.x, ndc0.x - ndc2.x, ndc1.x - ndc0.x) * invDet * invW;
+
+    float2 deltaVec = pixelNDC - ndc0;
+    float interpolatedInvW = invW.x + deltaVec.x * dot(ddx, float3(1, 1, 1)) + deltaVec.y * dot(ddy, float3(1, 1, 1));
+    float interpolatedW = rcp(interpolatedInvW);
+
+    float3 bary;
+    bary.x = interpolatedW * (invW.x + deltaVec.x * ddx.x + deltaVec.y * ddy.x);
+    bary.y = interpolatedW * (0.0f   + deltaVec.x * ddx.y + deltaVec.y * ddy.y);
+    bary.z = interpolatedW * (0.0f   + deltaVec.x * ddx.z + deltaVec.y * ddy.z);
+    return bary;
+}
+
+uint MurmurHash_fmix32(uint hash)
+{
+    hash ^= hash >> 16;
+    hash *= 0x85ebca6b;
+    hash ^= hash >> 13;
+    hash *= 0xc2b2ae35;
+    hash ^= hash >> 16;
+    return hash;
+}
+
+float3 UintToColor(uint index)
+{
+    uint hash = MurmurHash_fmix32(index);
+    float3 color = float3(
+        ((hash >>  0) & 0xFF) / 255.0f,
+        ((hash >>  8) & 0xFF) / 255.0f,
+        ((hash >> 16) & 0xFF) / 255.0f
+    );
+    return color;
+}
+
+float Vignette(float2 ndcPos)
+{
+    float x = saturate(1.0f - dot(ndcPos, ndcPos));
+    return x * x;
+}

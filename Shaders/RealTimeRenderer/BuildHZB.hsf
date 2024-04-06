@@ -1,0 +1,40 @@
+#include "../ShaderCommon.hsh"
+#include "RealTimeRendererCommon.hsh"
+
+BIND_TEXTURE_2D_SRV(0, InputTexture);
+#if BUILD_CLOSEST_HZB
+BIND_TEXTURE_2D_UAV(1, float, ClosestHZBTexture);
+#endif
+#if BUILD_FURTHEST_HZB
+BIND_TEXTURE_2D_UAV(2, float, FurthestHZBTexture);
+#endif
+
+[numthreads(8, 8, 1)]
+void BuildHZBCS(uint2 DispatchThreadID : SV_DispatchThreadID, uint GroupIndex : SV_GroupIndex)
+{
+    Texture2D inputTexture = GetInputTextureSRV();
+#if BUILD_CLOSEST_HZB
+    RWTexture2D<float> closestHZBTexture = GetClosestHZBTextureUAV();
+#endif
+#if BUILD_FURTHEST_HZB
+    RWTexture2D<float> furthestHZBTexture = GetFurthestHZBTextureUAV();
+#endif
+
+    float2 inputTextureInvSize = float2(SHADER_ARGUMENTS_DATA(0), SHADER_ARGUMENTS_DATA(1));
+
+    uint2 pixelCoord = DispatchThreadID.xy;
+    float2 inputTextureUV = (pixelCoord + 0.5f) * 2.0f * inputTextureInvSize - 0.25f * inputTextureInvSize;
+
+    float4 deviceDepth4 = inputTexture.GatherRed(GlobalSamplerPointClamp, inputTextureUV);
+
+    float minDeviceDepth = min(min(deviceDepth4.x, deviceDepth4.y), min(deviceDepth4.z, deviceDepth4.w));
+    float maxDeviceDepth = max(max(deviceDepth4.x, deviceDepth4.y), max(deviceDepth4.z, deviceDepth4.w));
+
+#if BUILD_CLOSEST_HZB
+    closestHZBTexture[pixelCoord] = maxDeviceDepth;
+#endif
+
+#if BUILD_FURTHEST_HZB
+    furthestHZBTexture[pixelCoord] = minDeviceDepth;
+#endif
+}

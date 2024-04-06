@@ -1,0 +1,120 @@
+#ifndef SURFEL_GI_DEBUG_ENABLED
+    #define SURFEL_GI_DEBUG_ENABLED 0
+#endif
+
+static const uint SurfelGIIndirectDispatchGroupThreadCount = 64;
+static const uint SurfelGIMaxSurfelCount = 100000;
+static const uint SurfelGIMaxSurfelCountPerCell = 10;
+static const uint SurfelGIUniformGridCellSize = 2;
+static const int3 SurfelGIUniformGridDimensions = int3(128, 128, 64); // The size of each dimension must be a multiple of 2!
+static const uint SurfelGIUniformGridCellCount = SurfelGIUniformGridDimensions.x * SurfelGIUniformGridDimensions.y * SurfelGIUniformGridDimensions.z;
+static const float SurfelGICoverageThreshold = 0.5f;
+static const uint SurfelGIScreenTileSize = 16;
+
+static const uint SurfelGIInfoBufferOffset_AliveSurfelCount = 0;
+static const uint SurfelGIInfoBufferOffset_DeadSurfelCount = SurfelGIInfoBufferOffset_AliveSurfelCount + 4;
+static const uint SurfelGIInfoBufferSize = SurfelGIInfoBufferOffset_DeadSurfelCount + 4;
+
+// Surface element hot and cold data separation
+
+// Surfel hot data
+struct SurfelHotData
+{
+    float3 position;
+    float3 normal;
+    float radius;
+};
+
+// Surfel cold data
+struct SurfelColdData
+{
+    float3 position;
+    float3 normal;
+    uint2 primitiveID;
+};
+
+struct CellHeader
+{
+    uint capacity;
+    uint offset;
+};
+
+int3 GetUniformGridCellID(float3 pixelPosition, float3 cameraPosition)
+{
+    return floor((pixelPosition - floor(cameraPosition)) / SurfelGIUniformGridCellSize) + SurfelGIUniformGridDimensions / 2;
+}
+
+uint GetUniformGridCellIndex(int3 cellID)
+{
+    return (cellID.z * SurfelGIUniformGridDimensions.x * SurfelGIUniformGridDimensions.y) + (cellID.y * SurfelGIUniformGridDimensions.x) + cellID.x;
+}
+
+bool IsUniformGridCellIDValid(int3 cellID)
+{
+    if (any(cellID) < 0 ||
+        cellID.x >= SurfelGIUniformGridDimensions.x ||
+        cellID.y >= SurfelGIUniformGridDimensions.y ||
+        cellID.z >= SurfelGIUniformGridDimensions.z)
+    {
+        return false;
+    }
+    return true;
+}
+
+int GetUniformGridCellIndex(float3 pixelPosition, float3 cameraPosition)
+{
+    int3 cellID = GetUniformGridCellID(pixelPosition, cameraPosition);
+    if (!IsUniformGridCellIDValid(cellID))
+    {
+        return -1;
+    }
+    int cellIndex = GetUniformGridCellIndex(cellID);
+    return cellIndex;
+}
+
+inline bool SurfelUniformGridCellIntersection(float3 surfelPosition, float surfelRadius, float3 cameraPosition, int3 cellID)
+{
+    if (!IsUniformGridCellIDValid(cellID))
+    {
+        return false;
+    }
+
+    float3 cellMin = floor(cameraPosition) + SurfelGIUniformGridCellSize * (cellID + 0 - SurfelGIUniformGridDimensions / 2);
+    float3 cellMax = floor(cameraPosition) + SurfelGIUniformGridCellSize * (cellID + 1 - SurfelGIUniformGridDimensions / 2);
+    float distSquare = dot(min(max(surfelPosition, cellMin), cellMax), surfelPosition);
+    if (distSquare < surfelRadius * surfelRadius)
+    {
+        return true;
+    }
+    return false;
+}
+
+static const int3 SurfelGICellIDOffsets[27] = {
+    int3(-1, -1, -1),
+    int3(-1, -1,  0),
+    int3(-1, -1,  1),
+    int3(-1,  0, -1),
+    int3(-1,  0,  0),
+    int3(-1,  0,  1),
+    int3(-1,  1, -1),
+    int3(-1,  1,  0),
+    int3(-1,  1,  1),
+    int3( 0, -1, -1),
+    int3( 0, -1,  0),
+    int3( 0, -1,  1),
+    int3( 0,  0, -1),
+    int3( 0,  0,  0),
+    int3( 0,  0,  1),
+    int3( 0,  1, -1),
+    int3( 0,  1,  0),
+    int3( 0,  1,  1),
+    int3( 1, -1, -1),
+    int3( 1, -1,  0),
+    int3( 1, -1,  1),
+    int3( 1,  0, -1),
+    int3( 1,  0,  0),
+    int3( 1,  0,  1),
+    int3( 1,  1, -1),
+    int3( 1,  1,  0),
+    int3( 1,  1,  1),
+};

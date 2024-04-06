@@ -1,0 +1,28 @@
+#include "ShaderCommon.hsh"
+
+BIND_TEXTURE_CUBE_SRV(0, Cubemap);
+BIND_TEXTURE_2D_ARRAY_UAV(1, float4, OutputCubemapMip);
+
+[numthreads(8, 8, 6)]
+void DownsampleCubemapCS(uint3 DispatchThreadID : SV_DispatchThreadID)
+{
+    RWTexture2DArray<float4> outputCubemapMip = GetOutputCubemapMipUAV();
+
+    uint width, height, faces;
+    outputCubemapMip.GetDimensions(width, height, faces);
+    if (DispatchThreadID.x >= width || DispatchThreadID.y >= height)
+    {
+        return;
+    }
+
+    uint3 coord = DispatchThreadID;
+    float2 uv = (coord.xy + 0.5) / float2(width, height);
+    float3 uvw = CalculateCubemapVector(uv, coord.z);
+    uint sourceMipLevel = (uint)SHADER_ARGUMENTS_DATA(0);
+    //uint sourceMipLevel = (uint)SHADER_ARGUMENTS.sourceMipLevel;
+
+    TextureCube cubemap = GetCubemapSRV();
+    float4 color = cubemap.SampleLevel(GlobalSamplerLinearWarp, uvw, sourceMipLevel);
+
+    outputCubemapMip[coord] = color;
+}

@@ -1,0 +1,33 @@
+#include "../../ShaderCommon.hsh"
+#include "../RealTimeRendererCommon.hsh"
+#include "SubsurfaceScatteringCommon.hsh"
+
+BIND_BUFFER_ELEMENT(0, PerFrameData, PerFrameData);
+BIND_BYTE_ADDRESS_BUFFER_SRV(1, SubsurfaceScatteringTileDataBuffer);
+BIND_TEXTURE_2D_SRV(2, SubsurfaceScatteringTexture);
+
+struct SubsurfaceScatteringCopyResultsVSOutput
+{
+    float4 position : SV_Position;
+    float2 uv : TEXCOORD0;
+};
+
+void SubsurfaceScatteringCopyResultsVS(uint VertexID : SV_VertexID, uint InstanceID : SV_InstanceID, out SubsurfaceScatteringCopyResultsVSOutput output)
+{
+    PerFrameData perFrameData = GetPerFrameData();
+    ByteAddressBuffer tileDataBuffer = GetSubsurfaceScatteringTileDataBufferSRV();
+
+    uint2 tileIndex = tileDataBuffer.Load<uint2>(InstanceID * sizeof(uint2));
+    uint2 vertexPosition = tileIndex * SUBSURFACE_SCATTERING_TILE_SIZE + SubsurfaceScatteringTileVertexPositionOffets[VertexID];
+
+    output.position = float4(output.uv * float2(2.0f, -2.0f) + float2(-1.0, 1.0f), 0.0f, 1.0f);
+    output.uv = float2(vertexPosition) * perFrameData.renderResolutionAndInvRenderResolution.zw;
+}
+
+void SubsurfaceScatteringCopyResultsPS(SubsurfaceScatteringCopyResultsVSOutput vsOutput, out float4 outColor : SV_Target0)
+{
+    float2 uv = vsOutput.uv;
+
+    Texture2D subsurfaceScatteringTexture = GetSubsurfaceScatteringTextureSRV();
+    outColor = subsurfaceScatteringTexture.SampleLevel(GlobalSamplerPointClamp, uv, 0.0f);
+}

@@ -1,0 +1,209 @@
+#include "Rendering/Renderer/RealTimeRenderer/RealTimeRenderer.h"
+#include "PostProcessing.h"
+
+namespace HE
+{
+    void RealTimeRenderer::AddPostProcessingPasses(
+        RenderGraph& renderGraph,
+        const SceneView& view)
+    {
+        auto& sceneTextures = renderGraph.blackboard.Get<RealTimeRendererSceneTextures>();
+
+        RenderGraphTextureHandle sceneColorTexture = sceneTextures.sceneColorTexture;
+        RenderGraphTextureHandle sceneDepthTexture = sceneTextures.sceneDepthTexture;
+        RenderGraphTextureHandle motionVectorTexture = sceneTextures.motionVectorTexture;
+
+        RenderGraphBufferHandle historyAutoExposureBuffer = renderGraph.ImportExternalBuffer(&historyAutoExposureBufferPersistent);
+        RenderGraphBufferHandle autoExposureBuffer = historyAutoExposureBuffer;
+
+        const bool isMotionBlurEnabled = false;
+        const bool isAutoExposureEnabled = (settings.exposureMethod == ExposureMethod::AutoExposure) || (settings.exposureMethod == ExposureMethod::FixedExposure);
+        const bool isBloomEnabled = settings.postProcessingSettings.bloomIntensity > 0.0f;
+        const bool isLensFlaresEnabled = isBloomEnabled && settings.postProcessingSettings.lensFlaresIntensity > 0.0f;
+        const bool isConvolutionBloomEnabled = false;
+        const bool isToneMappingEnabled = true;
+        const bool isLocalExposureEnabled = isToneMappingEnabled && settings.postProcessingSettings.localExposureEnabled;
+        const bool generateSceneColorMipChain = isBloomEnabled;
+
+#if WITH_HORIZON_EDITOR
+        const bool isEditorSelectionOutlineEnabled = true;
+        const bool isEditorGizmosEnabled = true;
+#endif
+
+        const bool isVisualizePrimitiveIDEnabled = (view.debugViewMode == DebugViewMode::PrimitiveID);
+        const bool isVisualizeMaterialIDEnabled = (view.debugViewMode == DebugViewMode::MaterialID);
+        const bool isVisualizeWorldSpaceNormalEnabled = (view.debugViewMode == DebugViewMode::WorldSpaceNormal);
+        const bool isVisualizeMotionVectorsEnabled = (view.debugViewMode == DebugViewMode::MotionVectors);
+        const bool isVisualizeAmbientOcclusionEnabled = (view.debugViewMode == DebugViewMode::AmbientOcclusion);
+        const bool isVisualizeShadowMaskEnabled = (view.debugViewMode == DebugViewMode::ShadowMask);
+
+        if (isMotionBlurEnabled)
+        {
+
+        }
+
+        bool depthOfFieldEnabled = settings.postProcessingSettings.dofScale > 0;
+        if (depthOfFieldEnabled)
+        {
+            sceneColorTexture = AddDepthOfFieldPass(renderGraph, view, sceneColorTexture);
+        }
+
+        if (IsSuperResolutionEnabled())
+        {
+            if (IsFSR2Enabled())
+            {
+
+                sceneColorTexture = AddFSR2Pass(renderGraph, view, sceneColorTexture, sceneDepthTexture, motionVectorTexture);
+            }
+            else if (IsDLSSEnabled())
+            {
+                sceneColorTexture = AddDLSSPass(renderGraph, view, sceneColorTexture, sceneDepthTexture, motionVectorTexture);
+            }
+        }
+        else
+        {
+            if (IsTemporalAAEnabled())
+            {
+                sceneColorTexture = AddTemporalSuperSamplingPass(renderGraph, view, sceneColorTexture, sceneDepthTexture, motionVectorTexture);
+            }
+            else if (IsDLAAEnabled())
+            {
+                sceneColorTexture = AddDLSSPass(renderGraph, view, sceneColorTexture, sceneDepthTexture, motionVectorTexture);
+            }
+        }
+
+        //sceneColorTexture = renderGraph.ImportExternalTexture(localExposureTestTexture, localExposureTestTextureDesc, RenderBackendResourceState::ShaderResource, "Test");
+
+        RenderGraphTextureHandle autoExposureTexture = RenderGraphTextureHandle::Null;
+        if (isAutoExposureEnabled)
+        {
+            RenderGraphTextureHandle autoExposureHistogramTexture = AddAutoExposureBuildHistogramPass(renderGraph, view, sceneColorTexture);
+
+            autoExposureBuffer = AddAutoExposureComputeExposurePass(renderGraph, view, autoExposureHistogramTexture, historyAutoExposureBuffer);
+        }
+
+        PostProcessingSceneColorMipChain sceneColorMipChain;
+        if (generateSceneColorMipChain)
+        {
+            AddGenerateSceneColorMipChainPass(renderGraph, view, sceneColorTexture, &sceneColorMipChain);
+        }
+        RenderGraphTextureHandle halfResolutionSceneColorTexture = sceneColorMipChain.textures[0];
+
+        RenderGraphTextureHandle localExposureTexture = RenderGraphTextureHandle::Null;
+        if (isLocalExposureEnabled)
+        {
+            localExposureTexture = AddLocalExposurePass(renderGraph, view, sceneColorTexture, autoExposureTexture);
+        }
+
+        RenderGraphTextureHandle bloomTexture = RenderGraphTextureHandle::Null;
+        if (isBloomEnabled)
+        {
+            if (isConvolutionBloomEnabled)
+            {
+                bloomTexture = AddConvolutionBloomPass(renderGraph, view, sceneColorTexture, autoExposureTexture);
+            }
+            else
+            {
+                bloomTexture = AddGaussianBloomPass(renderGraph, view, halfResolutionSceneColorTexture);
+            }
+
+            if (isLensFlaresEnabled)
+            {
+                bloomTexture = AddLensFlaresPass(renderGraph, view, sceneColorMipChain.textures[1], bloomTexture);
+            }
+        }
+
+        if (isToneMappingEnabled)
+        {
+            RenderGraphTextureHandle colorLUTTexture = AddColorLUTPass(renderGraph, view);
+
+            bool outputInHDR = false;
+
+            sceneColorTexture = AddToneMappingPass(renderGraph, view, sceneColorTexture, bloomTexture, autoExposureBuffer, colorLUTTexture, localExposureTexture, outputInHDR);
+        }
+        RenderGraphTextureHandle sceneColorTextureAfterToneMapping = sceneColorTexture;
+
+#if WITH_HORIZON_EDITOR
+        if (isEditorSelectionOutlineEnabled)
+        {
+            sceneColorTexture = AddEditorSelectionOutlinePass(renderGraph, view, sceneColorTexture);
+        }
+
+        /*if (isEditorGizmosEnabled)
+        {
+            sceneColorTexture = AddEditorGizmosPass(renderGraph, view, sceneColorTexture);
+        }*/
+#endif
+        if (isVisualizePrimitiveIDEnabled)
+        {
+            sceneColorTexture = AddVisualizePrimitiveIDPass(renderGraph, view);
+        }
+        else if (isVisualizeMaterialIDEnabled)
+        {
+            sceneColorTexture = AddVisualizeMaterialIDPass(renderGraph, view);
+        }
+        else if (isVisualizeWorldSpaceNormalEnabled)
+        {
+            sceneColorTexture = AddVisualizeWorldSpaceNormalPass(renderGraph, view);
+        }
+        else if (isVisualizeMotionVectorsEnabled)
+        {
+            sceneColorTexture = AddVisualizeMotionVectorsPass(renderGraph, view);
+        }
+        else if (isVisualizeAmbientOcclusionEnabled)
+        {
+            sceneColorTexture = AddVisualizeAmbientOcclusionPass(renderGraph, view);
+        }
+        else if (isVisualizeShadowMaskEnabled)
+        {
+            sceneColorTexture = AddVisualizeShadowMaskPass(renderGraph, view, sceneColorTexture);
+        }
+
+        // TODO
+        auto& finalTextureData = renderGraph.blackboard.Get<RenderGraphFinalTexture>();
+        finalTextureData.finalTexture = sceneColorTexture;
+
+        // TODO: distortion, screenshot
+
+        if (false)
+        {
+            renderGraph.AddPass("DebugDrawLinesPass", RenderGraphPassFlags::Graphics,
+                [&](RenderGraphBuilder& builder)
+                {
+                    auto& sceneTextures = renderGraph.blackboard.Get<RealTimeRendererSceneTextures>();
+                    auto& finalTextureData = renderGraph.blackboard.Get<RenderGraphFinalTexture>();
+
+                    auto sceneDepthTexture = sceneTextures.sceneDepthTexture = builder.ReadWriteTexture(sceneTextures.sceneDepthTexture, RenderBackendResourceState::DepthStencil);
+                    auto finalTexture = finalTextureData.finalTexture = builder.ReadWriteTexture(finalTextureData.finalTexture, RenderBackendResourceState::RenderTarget);
+
+                    builder.BindColorTarget(0, finalTexture, RenderBackendRenderTargetLoadOp::Load, RenderBackendRenderTargetStoreOp::Store);
+                    builder.BindDepthTarget(sceneDepthTexture, RenderBackendRenderTargetLoadOp::Load, RenderBackendRenderTargetStoreOp::Store);
+
+                    return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
+                    {
+                        RenderBackendGraphicsPipelineState graphicsPipelineState = {};
+                        graphicsPipelineState.rasterizationState.cullMode = RenderBackendRasterizationCullMode::None;
+                        graphicsPipelineState.rasterizationState.lineWidth = 2.0f;
+                        graphicsPipelineState.depthStencilState.depthTestEnable = true;
+                        graphicsPipelineState.depthStencilState.depthWriteEnable = true;
+                        graphicsPipelineState.depthStencilState.depthCompareFunction = RenderBackendCompareOp::GreaterOrEqual;
+
+                        RenderBackendShaderArguments shaderArguments = {};
+                        shaderArguments.BindBuffer(0, sceneViewShaderParametersBuffer, 0);
+                        shaderArguments.BindBuffer(1, renderEngine->debugDrawLinesVertexBuffer, 0);
+
+                        RenderBackendShaderHandle graphicsShader = shaderLibrary->GetShaderHandle((uint32)RealTimeRendererShaderPiplineID::DebugDraw);
+                        commandList.Draw(
+                            graphicsShader,
+                            graphicsPipelineState,
+                            shaderArguments,
+                            (uint32)renderEngine->debugDrawLinesVertices.size(),
+                            1,
+                            0,
+                            0,
+                            RenderBackendPrimitiveTopology::LineList);
+                    };
+                });
+        }
+    }
+}

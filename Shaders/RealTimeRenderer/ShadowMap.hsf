@@ -1,0 +1,66 @@
+#include "../ShaderCommon.hsh"
+#include "RealTimeRendererCommon.hsh"
+#include "ShadowMapCommon.hsh"
+
+BIND_BUFFER_ELEMENT(0, PerFrameData, PerFrameData);
+BIND_BUFFER_ELEMENT(1, Geometry, Geometry);
+BIND_BYTE_ADDRESS_BUFFER_SRV(2, MaterialBuffer);
+BIND_BUFFER_ELEMENT(3, CascadedShadowMapShaderParameters, CascadedShadowMapShaderParameters);
+BIND_BUFFER_ELEMENT(4, CubeShadowMapShaderParameters, CubeShadowMapShaderParameters);
+
+struct ShadowMapVSToPS
+{
+    float4 svPosition : SV_Position;
+    float2 texCoord0 : TEXCOORD0;
+};
+
+void ShadowMapVS(uint vertexIndex : SV_VertexID, out ShadowMapVSToPS output)
+{
+    PerFrameData perFrameData = GetPerFrameData();
+    Geometry geometry = GetGeometry();
+
+    float3 vertexPosition = GetRWByteAddressBuffer(geometry.vertexBuffer0).Load<float3>(vertexIndex * sizeof(float3));
+    float3 vertexNormal = GetRWByteAddressBuffer(geometry.vertexBuffer1).Load<float3>(vertexIndex * sizeof(float3));
+    float2 vertexTexCoord0 = GetRWByteAddressBuffer(geometry.vertexBuffer3).Load<float2>(vertexIndex * sizeof(float2));
+
+    float4x4 worldTransform = GetRWByteAddressBuffer(geometry.transformBuffer).Load<float4x4>(geometry.transformIndex * sizeof(float4x4));
+    float3 worldPosition = mul(worldTransform, float4(vertexPosition, 1.0)).xyz;
+    float3 worldNormal = normalize(mul((float3x3)worldTransform, vertexNormal));
+
+#if SHADOW_MAP_TYPE == 0 // Cacaded shadow map
+    CascadedShadowMapShaderParameters shadowMapShaderParameters = GetCascadedShadowMapShaderParameters();
+    float cascadeIndex = SHADER_ARGUMENTS_DATA(0);
+    float4x4 viewProjectionMatrix = shadowMapShaderParameters.viewProjectionMatrix[cascadeIndex];
+#else // Cube shadow map
+    CubeShadowMapShaderParameters shadowMapShaderParameters = GetCubeShadowMapShaderParameters();
+    float faceIndex = SHADER_ARGUMENTS_DATA(0);
+    float4x4 viewProjectionMatrix = shadowMapShaderParameters.viewProjectionMatrix[faceIndex];
+#endif
+
+    output.svPosition = mul(viewProjectionMatrix, float4(worldPosition, 1.0));
+    output.texCoord0 = vertexTexCoord0;
+}
+
+void ShadowMapPS(in ShadowMapVSToPS input, in uint primitiveID : SV_PrimitiveID)
+{
+    PerFrameData perFrameData = GetPerFrameData();
+    Geometry geometry = GetGeometry();
+
+    float2 texCoord0 = input.texCoord0;
+
+    ByteAddressBuffer materialBuffer = GetMaterialBufferSRV();
+    ByteAddressBuffer materialIndexBuffer = GetByteAddressBuffer(geometry.materialIndexBuffer);
+
+    uint materialIndex = materialIndexBuffer.Load<uint>(primitiveID * sizeof(uint));
+    Material material = materialBuffer.Load<Material>(geometry.materialBufferOffset + (materialIndex * sizeof(Material)));
+
+    float4 baseColor = material.baseColor;
+    if (material.GetBaseColorMapIndex() > 0)
+    {
+        Texture2D baseColorMap = GetTexture2D(material.GetBaseColorMapIndex());
+        baseColor = baseColorMap.Sample(GlobalSamplerLinearWarp, texCoord0);
+    }
+
+    float alphaCutoff = 0.2;
+    clip(baseColor.a - alphaCutoff);
+}

@@ -1,0 +1,21 @@
+#include "../../ShaderCommon.hsh"
+#include "../RealTimeRendererCommon.hsh"
+#include "SurfelGICommon.hsh"
+
+BIND_BYTE_ADDRESS_BUFFER_UAV(9, SurfelGIConstantsBuffer);
+BIND_BYTE_ADDRESS_BUFFER_UAV(6, SurfelGICellHeaderBuffer);
+BIND_BYTE_ADDRESS_BUFFER_UAV(7, SurfelGICellDataBuffer);
+
+[numthreads(64, 1, 1)]
+void SurfelGIGridClearCS(uint3 DispatchThreadID : SV_DispatchThreadID)
+{
+    surfelGridBuffer[DTid.x].count;
+    if ( >= 0)
+    {
+        return;
+    }
+
+    RWByteAddressBuffer cellHeaderBuffer = GetSurfelGICellHeaderBufferUAV();
+    surfelStatsBuffer.InterlockedAdd(SURFEL_STATS_OFFSET_CELLALLOCATOR, surfelGridBuffer[DTid.x].count, surfelGridBuffer[DTid.x].offset);
+    surfelGridBuffer[DTid.x].count = 0;
+}

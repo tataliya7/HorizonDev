@@ -1,0 +1,63 @@
+#define SUBSURFACE_SCATTERING_TILE_SIZE 16
+
+struct BurleyNormalizedDiffusionParameters
+{
+    float4 surfaceAlbedo;
+    float4 diffuseMeanFreePath;
+};
+
+// R(d, r) = (e^(-r / d) + e^(-r / (3 * d))) / (8 * pi * d * r)
+float3 ComputeDiffuseReflectanceProfile(float3 d, float r)
+{
+    return (exp(-r / d) + exp(-r / (3.0 * d))) / (8.0 * PI * d * r);
+}
+
+float3 ComputeScalingFactor(float3 A)
+{
+#if 0
+    return (1.85 - A + 7.0 * (A - 0.8) * (A - 0.8) * (A - 0.8));
+#elif 0
+    return (1.9 - A + 3.5 * (A - 0.8) * (A - 0.8));
+#else
+    return (3.5 + 100 * (A - 0.33) * (A - 0.33) * (A - 0.33) * (A - 0.33));
+#endif
+}
+
+float3 ComputeDiffuseReflectanceProfile(float3 l, float3 s, float r)
+{
+    float3 d = l / s;
+    return ComputeDiffuseReflectanceProfile(d, r);
+}
+
+float3 ComputeBurleyNormalizedDiffusionCDF(float r, float3 d)
+{
+    return 1.0 - 0.25 * exp(-r / d) - 0.75 * exp(-r / (3.0 * d));
+}
+
+struct SubsurfaceScatteringDiffuseAndSpecluar
+{
+    float3 diffuse;
+    float3 specular;
+};
+
+SubsurfaceScatteringDiffuseAndSpecluar ReconstructDiffuseAndSpecluar(float3 color, float diffuseLuminance)
+{
+    float luminance = RelativeLuminance(color);
+    float diffuseFactor = saturate(diffuseLuminance / luminance);
+    float specularFactor = 1.0f - diffuseFactor;
+
+    SubsurfaceScatteringDiffuseAndSpecluar result = (SubsurfaceScatteringDiffuseAndSpecluar)0;
+    result.diffuse = color * diffuseFactor;
+    result.specular = color * specularFactor;
+    return result;
+}
+
+static uint2 SubsurfaceScatteringTileVertexPositionOffets[6] =
+{
+    uint2(0,                               0                              ),
+    uint2(SUBSURFACE_SCATTERING_TILE_SIZE, 0                              ),
+    uint2(SUBSURFACE_SCATTERING_TILE_SIZE, SUBSURFACE_SCATTERING_TILE_SIZE),
+    uint2(0,                               0                              ),
+    uint2(SUBSURFACE_SCATTERING_TILE_SIZE, SUBSURFACE_SCATTERING_TILE_SIZE),
+    uint2(0,                               SUBSURFACE_SCATTERING_TILE_SIZE),
+};

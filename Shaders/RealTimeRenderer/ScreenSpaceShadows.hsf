@@ -1,0 +1,69 @@
+#include "../ShaderCommon.hsh"
+#include "../Random.hsh"
+#include "RealTimeRendererCommon.hsh"
+#include "ShadowMapCommon.hsh"
+
+BIND_BUFFER_ELEMENT(0, PerFrameData, PerFrameData);
+BIND_TEXTURE_2D_SRV(2, SceneDepthTexture);
+BIND_TEXTURE_2D_ARRAY_SRV(3, ShadowMap);
+BIND_BUFFER_ELEMENT(4, CascadedShadowMapShaderParameters, CascadedShadowMapShaderParameters);
+BIND_TEXTURE_2D_UAV(5, float4, ScreenSpaceShadowMaskTexture);
+
+[numthreads(8, 8, 1)]
+void ScreenSpaceShadowsDirectionalLightCS(uint3 DispatchThreadID : SV_DispatchThreadID)
+{
+    PerFrameData perFrameData = GetPerFrameData();
+    uint width = perFrameData.renderResolutionX;
+    uint height = perFrameData.renderResolutionY;
+    if (DispatchThreadID.x >= width || DispatchThreadID.y >= height)
+    {
+        return;
+    }
+
+    uint2 pixelCoord = DispatchThreadID.xy;
+    float2 uv = (pixelCoord + 0.5) / float2(width, height);
+
+    Texture2D sceneDepthTexture = GetSceneDepthTextureSRV();
+    Texture2DArray shadowMap = GetShadowMapSRV();
+    RWTexture2D<float4> shadowMaskTexture = GetScreenSpaceShadowMaskTextureUAV();
+
+    CascadedShadowMapShaderParameters shadowMapShaderParameters = GetCascadedShadowMapShaderParameters();
+
+    float sceneDepth = sceneDepthTexture[pixelCoord].r;
+    float3 worldSpacePosition = ReconstructWorldSpacePositionFromDepth(uv, sceneDepth, perFrameData.invViewProjectionMatrix);
+    float4 cameraSpacePosition = mul(perFrameData.viewMatrix, float4(worldSpacePosition, 1.0));
+    uint cascadeIndex = CalculateCascadeIndex(cameraSpacePosition.z, shadowMapShaderParameters);
+
+    float4 shadowMapCoord = mul(shadowMapShaderParameters.viewProjectionMatrix[cascadeIndex], float4(worldSpacePosition, 1.0));
+    shadowMapCoord /= shadowMapCoord.w;
+    shadowMapCoord.x = (1.0 + shadowMapCoord.x) * 0.5;
+    shadowMapCoord.y = (1.0 - shadowMapCoord.y) * 0.5;
+
+    float visibility = 1.0;
+    if (shadowMapCoord.x > 0.0 && shadowMapCoord.x < 1.0 &&
+        shadowMapCoord.y > 0.0 && shadowMapCoord.y < 1.0 &&
+        shadowMapCoord.z > 0.0 && shadowMapCoord.z < 1.0)
+    {
+        uint randSeed = RandInit(pixelCoord.x + pixelCoord.y * width, perFrameData.frameIndex);
+        float random = Rand(randSeed);
+
+        float rotationAngle = random * 3.1415926;
+        float2 rotation = float2(cos(rotationAngle), sin(rotationAngle));
+
+#if 0
+        float shadowMapDepth = shadowMap.SampleLevel(GlobalSamplerPointClamp, float3(shadowMapCoord.xy, cascadeIndex), 0).r;
+        visibility = (shadowMapDepth > shadowMapCoord.z) ? 0 : 1;
+#else
+        visibility = PCF(
+            shadowMap,
+            shadowMapCoord.xy,
+            cascadeIndex,
+            shadowMapCoord.z,
+            5,
+            1.0 / 4096,//shadowMapShaderParameters.shadowMapInvSize,
+            rotation);
+#endif
+    }
+
+    shadowMaskTexture[pixelCoord] = float4(visibility, 0.0, 0.0, 0.0);
+}

@@ -1,0 +1,528 @@
+#include "ShaderCommon.hsh"
+
+#define Complex float2
+
+#define TWO_FOR_ONE 0
+
+#define SIGNAL_LENGTH 1024
+#define RADIX 8
+
+BIND_TEXTURE_2D_SRV(0, InputTexture);
+BIND_TEXTURE_2D_UAV(1, float4, OutputTexture);
+BIND_TEXTURE_2D_SRV(2, KernelTexture);
+
+groupshared float2 v[SIGNAL_LENGTH];
+
+Complex ComplexMultiply(in Complex z1, in Complex z2)
+{
+    return Complex(z1.x * z2.x - z1.y * z2.y, z1.x * z2.y + z1.y * z2.x);
+}
+
+Complex ComplexConjugate(in Complex z)
+{
+    return Complex(z.x, -z.y);
+}
+
+int Expand(int idxL, int N1, int N2)
+{
+    return (idxL / N1) * N1 * N2 + (idxL % N1);
+}
+
+// void StockhamRadix2FFTForward(inout Complex v0, inout Complex v1)
+// {
+//    Complex t = v0;
+//    v0 = t + v1;
+//     v1 = t - v1;
+// }
+
+// void StockhamRadix4FFTForward(inout Complex v0, inout Complex v1, inout Complex v2, inout Complex v3)
+// {
+//    StockhamRadix2FFTForward(v0, v2);
+//     StockhamRadix2FFTForward(v1, v3);
+
+//     Complex F[4];
+//     F[0] = v0 + v1;
+//     F[1] = v2 + Complex(-v3.y, v3.x);
+//     F[2] = v0 - v1;
+//     F[3] = v2 - Complex(-v3.y, v3.x);
+
+//     v0 = F[0];
+//     v1 = F[1];
+//     v2 = F[2];
+//     v3 = F[3];
+// }
+
+// void StockhamRadix8FFTForward(inout Complex v0, inout Complex v1, inout Complex v2, inout Complex v3, inout Complex v4, inout Complex v5, inout Complex v6, inout Complex v7)
+// {
+//     StockhamRadix4FFTForward(v0, v2, v4, v6);
+//     StockhamRadix4FFTForward(v1, v3, v5, v7);
+
+//     float cos_pi_4 = 1.0 / sqrt(2.0); // cos(PI/4)
+//     Complex twiddleA = Complex(cos_pi_4, cos_pi_4);
+//     Complex twiddleB = Complex(-cos_pi_4, cos_pi_4);
+
+//     Complex F[8];
+//     F[0] = v0 + v1;
+//     F[1] = v2 + ComplexMultiply(twiddleA, v3);
+//  F[2] = Complex(v4.x - v5.y, v4.y + v5.x);
+//     F[3] = v6 + ComplexMultiply(twiddleB, v7);
+//     F[4] = v0 - v1;
+//     F[5] = v2 - ComplexMultiply(twiddleA, v3);
+//  F[6] = Complex(v4.x + v5.y, v4.y - v5.x);
+//     F[7] = v6 - ComplexMultiply(twiddleB, v7);
+
+//     v0 = F[0];
+//     v1 = F[1];
+//     v2 = F[2];
+//     v3 = F[3];
+//     v4 = F[4];
+//     v5 = F[5];
+//     v6 = F[6];
+//     v7 = F[7];
+// }
+
+// void SharedMemoryFFT(inout Complex Local[8], in uint ArrayLength, in uint ThreadIdx)
+// {
+//    int R = 8;
+//    for (int Ns = 1; Ns < N; Ns *= R)
+//    {
+
+//    }
+// }
+
+Complex W_N_k(uint N, uint k)
+{
+    float theta = 2 * PI * float(k) / float(N);
+    return Complex(cos(theta), -sin(theta));
+}
+
+uint ReverseBits32(uint bits)
+{
+    bits = ( bits << 16) | ( bits >> 16);
+    bits = ( (bits & 0x00ff00ff) << 8 ) | ( (bits & 0xff00ff00) >> 8 );
+    bits = ( (bits & 0x0f0f0f0f) << 4 ) | ( (bits & 0xf0f0f0f0) >> 4 );
+    bits = ( (bits & 0x33333333) << 2 ) | ( (bits & 0xcccccccc) >> 2 );
+    bits = ( (bits & 0x55555555) << 1 ) | ( (bits & 0xaaaaaaaa) >> 1 );
+    return bits;
+}
+
+uint ReversLowerNBits(uint bits, uint N)
+{
+    return ReverseBits32(bits) >> (32 - N);
+}
+
+Complex CooleyTukeyFFT(in bool inverse, in Complex f_n, in uint index)
+{
+    uint reverseIndex = ReversLowerNBits(index, log2(SIGNAL_LENGTH));
+
+    GroupMemoryBarrierWithGroupSync();
+
+    v[reverseIndex] = f_n;
+
+    for(uint N=2; N<=SIGNAL_LENGTH; N*=2)
+    {
+        uint i = index % N;
+        uint k = index % (N / 2);
+        uint evenStartIndex = index - i;
+        uint oddStartIndex  = evenStartIndex + N / 2;
+
+        GroupMemoryBarrierWithGroupSync();
+
+        Complex F_even_k = v[evenStartIndex + k];
+        Complex F_odd_k  = v[oddStartIndex  + k];
+
+        Complex W = W_N_k(N, k);
+        if (inverse)
+        {
+            W = ComplexConjugate(W);
+        }
+
+        Complex F_k;
+        if (i < N/2)
+        {
+            F_k = F_even_k + ComplexMultiply(W, F_odd_k);
+        }
+        else
+        {
+            F_k = F_even_k - ComplexMultiply(W, F_odd_k);
+        }
+
+        GroupMemoryBarrierWithGroupSync();
+        v[index] = F_k;
+    }
+
+    GroupMemoryBarrierWithGroupSync();
+
+    Complex F_k = v[index];
+
+    return F_k / float(sqrt(SIGNAL_LENGTH));
+}
+
+void RemoveNANs(inout Complex x[4])
+{
+    [unroll]
+    for (uint i = 0; i < 4; i++)
+    {
+        x[i] = -min(-x[i], Complex(0, 0));
+    }
+}
+
+void RemoveNANs(inout Complex x[2])
+{
+    [unroll]
+    for (uint i = 0; i < 2; i++)
+    {
+        x[i] = -min(-x[i], Complex(0, 0));
+    }
+}
+
+[numthreads(SIGNAL_LENGTH, 1, 1)]
+void SharedMemoryComplexFFTCS(uint3 GroupID : SV_GroupID, uint3 GroupThreadID : SV_GroupThreadID)
+{
+#if !TWO_FOR_ONE
+    const uint groupIndex = GroupID.y;
+    const uint groupThreadIndex = GroupThreadID.x;
+
+    Texture2D inputTexture = GetInputTextureSRV();
+    RWTexture2D<float4> outputTexture = GetOutputTextureUAV();
+
+    uint2 pixelCoord = uint2(groupIndex, groupThreadIndex);
+    uint2 pixelCoordRG = pixelCoord;
+    uint2 pixelCoordBA = uint2(pixelCoord.x + SIGNAL_LENGTH, pixelCoord.y);
+
+    float4 srcValueRG = inputTexture[pixelCoordRG];
+    float4 srcValueBA = inputTexture[pixelCoordBA];
+
+    Complex inputs[4]  = { Complex(srcValueRG.x, srcValueRG.y), Complex(srcValueRG.z, srcValueRG.w), Complex(srcValueBA.x, srcValueBA.y), Complex(srcValueBA.z, srcValueBA.w) };
+    Complex outputs[4] = { Complex(0, 0), Complex(0, 0), Complex(0, 0), Complex(0, 0)};
+
+    //RemoveNANs(inputs);
+
+    for(uint channel = 0; channel < 4; channel++)
+    {
+        Complex fn = inputs[channel];
+        Complex Fk = CooleyTukeyFFT(false, fn, groupThreadIndex);
+        outputs[channel] = Fk;
+    }
+
+    //RemoveNANs(outputs);
+
+    outputTexture[pixelCoordRG] = float4(outputs[0].x, outputs[0].y, outputs[1].x, outputs[1].y);
+    outputTexture[pixelCoordBA] = float4(outputs[2].x, outputs[2].y, outputs[3].x, outputs[3].y);
+#else
+    const uint groupIndex = GroupID.y;
+    const uint groupThreadIndex = GroupThreadID.x;
+
+    Texture2D inputTexture = GetInputTextureSRV();
+    RWTexture2D<float4> outputTexture = GetOutputTextureUAV();
+
+    uint2 pixelCoord = uint2(groupIndex, groupThreadIndex);
+    float4 srcValue = inputTexture[pixelCoord];
+
+    Complex inputs[2]  = { Complex(srcValue.x, srcValue.y), Complex(srcValue.z, srcValue.w) };
+    Complex outputs[2] = { Complex(0, 0), Complex(0, 0) };
+
+    //RemoveNANs(inputs);
+
+    for(uint channel = 0; channel < 2; channel++)
+    {
+        Complex fn = inputs[channel];
+        Complex Fk = CooleyTukeyFFT(false, fn, groupThreadIndex);
+        outputs[channel] = Fk;
+    }
+
+    //RemoveNANs(outputs);
+
+    outputTexture[pixelCoord] = float4(outputs[0].x, outputs[0].y, outputs[1].x, outputs[1].y);
+#endif
+}
+
+[numthreads(SIGNAL_LENGTH, 1, 1)]
+void SharedMemoryComplexIFFTCS(uint3 GroupID : SV_GroupID, uint3 GroupThreadID : SV_GroupThreadID)
+{
+#if !TWO_FOR_ONE
+    const uint groupIndex = GroupID.y;
+    const uint groupThreadIndex = GroupThreadID.x;
+
+    Texture2D inputTexture = GetInputTextureSRV();
+    RWTexture2D<float4> outputTexture = GetOutputTextureUAV();
+
+    uint2 pixelCoord = uint2(groupIndex, groupThreadIndex);
+    uint2 pixelCoordRG = pixelCoord;
+    uint2 pixelCoordBA = uint2(pixelCoord.x + SIGNAL_LENGTH, pixelCoord.y);
+
+    float4 srcValueRG = inputTexture[pixelCoordRG];
+    float4 srcValueBA = inputTexture[pixelCoordBA];
+
+    Complex inputs[4]  = { Complex(srcValueRG.x, srcValueRG.y), Complex(srcValueRG.z, srcValueRG.w), Complex(srcValueBA.x, srcValueBA.y), Complex(srcValueBA.z, srcValueBA.w) };
+    Complex outputs[4] = { Complex(0, 0), Complex(0, 0), Complex(0, 0), Complex(0, 0)};
+
+    //RemoveNANs(inputs);
+
+    for(uint channel = 0; channel < 4; channel++)
+    {
+        Complex fn = inputs[channel];
+        Complex Fk = CooleyTukeyFFT(true, fn, groupThreadIndex);
+        outputs[channel] = Fk;
+    }
+
+    //RemoveNANs(outputs);
+
+    outputTexture[pixelCoordRG] = float4(outputs[0].x, outputs[0].y, outputs[1].x, outputs[1].y);
+    outputTexture[pixelCoordBA] = float4(outputs[2].x, outputs[2].y, outputs[3].x, outputs[3].y);
+#else
+    const uint groupIndex = GroupID.y;
+    const uint groupThreadIndex = GroupThreadID.x;
+
+    Texture2D inputTexture = GetInputTextureSRV();
+    RWTexture2D<float4> outputTexture = GetOutputTextureUAV();
+
+    uint2 pixelCoord = uint2(groupIndex, groupThreadIndex);
+    float4 srcValue = inputTexture[pixelCoord];
+
+    Complex inputs[2]  = { Complex(srcValue.x, srcValue.y), Complex(srcValue.z, srcValue.w) };
+    Complex outputs[2] = { Complex(0, 0), Complex(0, 0) };
+
+    //RemoveNANs(inputs);
+
+    for(uint channel = 0; channel < 2; channel++)
+    {
+        Complex fn = inputs[channel];
+        Complex Fk = CooleyTukeyFFT(true, fn, groupThreadIndex);
+        outputs[channel] = Fk;
+    }
+
+    //RemoveNANs(outputs);
+
+    outputTexture[pixelCoord] = float4(outputs[0].x, outputs[0].y, outputs[1].x, outputs[1].y);
+#endif
+}
+
+[numthreads(SIGNAL_LENGTH, 1, 1)]
+void SharedMemoryTwoForOneRealFFTCS(uint3 GroupID : SV_GroupID, uint3 GroupThreadID : SV_GroupThreadID)
+{
+#if !TWO_FOR_ONE
+    const uint groupIndex = GroupID.y;
+    const uint groupThreadIndex = GroupThreadID.x;
+
+    Texture2D inputTexture = GetInputTextureSRV();
+    RWTexture2D<float4> outputTexture = GetOutputTextureUAV();
+
+    uint2 pixelCoord = uint2(groupThreadIndex, groupIndex);
+    uint2 pixelCoordRG = pixelCoord;
+    uint2 pixelCoordBA = uint2(pixelCoord.x + SIGNAL_LENGTH, pixelCoord.y);
+
+    uint inputWidth, inputHeight;
+    inputTexture.GetDimensions(inputWidth, inputHeight);
+
+    float4 srcValue = 0;
+    if (pixelCoord.x < inputWidth && pixelCoord.y < inputHeight)
+    {
+        srcValue = inputTexture[pixelCoord];
+    }
+
+    Complex inputs[4]  = { Complex(srcValue.r, 0), Complex(srcValue.g, 0), Complex(srcValue.b, 0), Complex(srcValue.a, 0) };
+    Complex outputs[4] = { Complex(0, 0), Complex(0, 0), Complex(0, 0), Complex(0, 0)};
+
+    for(uint channel = 0; channel < 4; channel++)
+    {
+        Complex fn = inputs[channel];
+        Complex Fk = CooleyTukeyFFT(false, fn, groupThreadIndex);
+        outputs[channel] = Fk;
+    }
+
+    outputTexture[pixelCoordRG] = float4(outputs[0].x, outputs[0].y, outputs[1].x, outputs[1].y);
+    outputTexture[pixelCoordBA] = float4(outputs[2].x, outputs[2].y, outputs[3].x, outputs[3].y);
+#else
+    const uint groupIndex = GroupID.y;
+    const uint groupThreadIndex = GroupThreadID.x;
+
+    Texture2D inputTexture = GetInputTextureSRV();
+    RWTexture2D<float4> outputTexture = GetOutputTextureUAV();
+
+    uint2 pixelCoord = uint2(groupThreadIndex, groupIndex);
+    float4 srcValue = inputTexture[pixelCoord];
+
+    Complex inputs[2]  = { Complex(srcValue.r, srcValue.g), Complex(srcValue.b, srcValue.a) };
+    Complex outputs[2] = { Complex(0, 0), Complex(0, 0) };
+
+    for(uint channel = 0; channel < 2; channel++)
+    {
+        Complex fn = inputs[channel];
+        Complex Fk = CooleyTukeyFFT(false, fn, groupThreadIndex);
+        outputs[channel] = Fk;
+    }
+
+    outputTexture[pixelCoord] = float4(outputs[0].x, outputs[0].y, outputs[1].x, outputs[1].y);
+#endif
+}
+
+[numthreads(SIGNAL_LENGTH, 1, 1)]
+void SharedMemoryTwoForOneRealIFFTCS(uint3 GroupID : SV_GroupID, uint3 GroupThreadID : SV_GroupThreadID)
+{
+#if !TWO_FOR_ONE
+    const uint groupIndex = GroupID.y;
+    const uint groupThreadIndex = GroupThreadID.x;
+
+    Texture2D inputTexture = GetInputTextureSRV();
+    RWTexture2D<float4> outputTexture = GetOutputTextureUAV();
+
+    uint2 pixelCoord = uint2(groupThreadIndex, groupIndex);
+    uint2 pixelCoordRG = pixelCoord;
+    uint2 pixelCoordBA = uint2(pixelCoord.x + SIGNAL_LENGTH, pixelCoord.y);
+
+    uint outputWidth, outputHeight;
+    outputTexture.GetDimensions(outputWidth, outputHeight);
+    if (pixelCoord.x >= outputWidth || pixelCoord.y >= outputHeight)
+    {
+        return;
+    }
+
+    float4 srcValueRG = inputTexture[pixelCoordRG];
+    float4 srcValueBA = inputTexture[pixelCoordBA];
+
+    Complex inputs[4]  = { Complex(srcValueRG.x, srcValueRG.y), Complex(srcValueRG.z, srcValueRG.w), Complex(srcValueBA.x, srcValueBA.y), Complex(srcValueBA.z, srcValueBA.w) };
+    Complex outputs[4] = { Complex(0, 0), Complex(0, 0), Complex(0, 0), Complex(0, 0)};
+
+    for(uint channel = 0; channel < 4; channel++)
+    {
+        Complex Fk = inputs[channel];
+        Complex fn = CooleyTukeyFFT(true, Fk, groupThreadIndex);
+        outputs[channel] = fn;
+    }
+
+    //RemoveNANs(outputs);
+
+    outputTexture[pixelCoord] = float4(outputs[0].x, outputs[1].x, outputs[2].x, outputs[3].x);
+#else
+    const uint groupIndex = GroupID.y;
+    const uint groupThreadIndex = GroupThreadID.x;
+
+    Texture2D inputTexture = GetInputTextureSRV();
+    RWTexture2D<float4> outputTexture = GetOutputTextureUAV();
+
+    uint2 pixelCoord = uint2(groupThreadIndex, groupIndex);
+    float4 srcValue = inputTexture[pixelCoord];
+
+    Complex inputs[2]  = { Complex(srcValue.r, srcValue.g), Complex(srcValue.b, srcValue.a) };
+    Complex outputs[2] = { Complex(0, 0), Complex(0, 0) };
+
+    for(uint channel = 0; channel < 2; channel++)
+    {
+        Complex fn = inputs[channel];
+        Complex Fk = CooleyTukeyFFT(false, fn, groupThreadIndex);
+        outputs[channel] = Fk;
+    }
+
+    RemoveNANs(outputs);
+
+    outputTexture[pixelCoord] = float4(outputs[0].x, outputs[0].y, outputs[1].x, outputs[1].y);
+#endif
+}
+
+[numthreads(SIGNAL_LENGTH, 1, 1)]
+void SharedMemoryComplexFFTConvolutionCS(uint3 GroupID : SV_GroupID, uint3 GroupThreadID : SV_GroupThreadID)
+{
+#if !TWO_FOR_ONE
+    const uint groupIndex = GroupID.y;
+    const uint groupThreadIndex = GroupThreadID.x;
+
+    Texture2D inputTexture = GetInputTextureSRV();
+    RWTexture2D<float4> outputTexture = GetOutputTextureUAV();
+
+    uint2 pixelCoord = uint2(groupIndex, groupThreadIndex);
+    uint2 pixelCoordRG = pixelCoord;
+    uint2 pixelCoordBA = uint2(pixelCoord.x + SIGNAL_LENGTH, pixelCoord.y);
+
+    float4 srcValueRG = inputTexture[pixelCoordRG];
+    float4 srcValueBA = inputTexture[pixelCoordBA];
+
+    Complex inputs[4]  = { Complex(srcValueRG.x, srcValueRG.y), Complex(srcValueRG.z, srcValueRG.w), Complex(srcValueBA.x, srcValueBA.y), Complex(srcValueBA.z, srcValueBA.w) };
+    Complex outputs[4] = { Complex(0, 0), Complex(0, 0), Complex(0, 0), Complex(0, 0)};
+
+    for (uint channel = 0; channel < 4; channel++)
+    {
+        Complex fn = inputs[channel];
+        Complex Fk = CooleyTukeyFFT(false, fn, groupThreadIndex);
+        outputs[channel] = Fk;
+    }
+
+    Texture2D kernelTexure = GetKernelTextureSRV();
+    float4 kernelValueRG = kernelTexure[pixelCoordRG];
+    float4 kernelValueBA = kernelTexure[pixelCoordBA];
+    Complex kernels[4]  = { Complex(kernelValueRG.x, kernelValueRG.y), Complex(kernelValueRG.z, kernelValueRG.w), Complex(kernelValueBA.x, kernelValueBA.y), Complex(kernelValueBA.z, kernelValueBA.w) };
+
+    float norm[4];
+    norm[0] = kernelTexure[uint2(0, 0)].x;
+    norm[1] = kernelTexure[uint2(0, 0)].z;
+    norm[2] = kernelTexure[uint2(SIGNAL_LENGTH, 0)].x;
+    norm[3] = kernelTexure[uint2(SIGNAL_LENGTH, 0)].z;
+
+    for (uint channel = 0; channel < 4; channel++)
+    {
+        // Normalize the kernel using the 'DC' term in FFT.
+        kernels[channel] /= norm[channel];
+        outputs[channel] = ComplexMultiply(outputs[channel], kernels[channel]);
+    }
+
+    for (uint channel = 0; channel < 4; channel++)
+    {
+        Complex Fk = outputs[channel];
+        Complex fn = CooleyTukeyFFT(true, Fk, groupThreadIndex);
+        inputs[channel] = fn;
+    }
+
+    // inputs[0] *= 10;
+    // inputs[1] *= 10;
+    // inputs[2] *= 10;
+    // inputs[3] *= 1;
+
+    outputTexture[pixelCoordRG] = float4(inputs[0].x, inputs[0].y, inputs[1].x, inputs[1].y);
+    outputTexture[pixelCoordBA] = float4(inputs[2].x, inputs[2].y, inputs[3].x, inputs[3].y);
+#else
+    const uint groupIndex = GroupID.y;
+    const uint groupThreadIndex = GroupThreadID.x;
+
+    Texture2D inputTexture = GetInputTextureSRV();
+    RWTexture2D<float4> outputTexture = GetOutputTextureUAV();
+
+    uint2 pixelCoord = uint2(groupIndex, groupThreadIndex);
+    float4 srcValue = inputTexture[pixelCoord];
+
+    Complex inputs[2]  = { Complex(srcValue.x, srcValue.y), Complex(srcValue.z, srcValue.w) };
+    Complex outputs[2] = { Complex(0, 0), Complex(0, 0) };
+
+    for (uint channel = 0; channel < 2; channel++)
+    {
+        Complex fn = inputs[channel];
+        Complex Fk = CooleyTukeyFFT(false, fn, groupThreadIndex);
+        outputs[channel] = Fk;
+    }
+
+    Texture2D kernelTexure = GetKernelTextureSRV();
+    float4 kernelValue = kernelTexure[pixelCoord];
+    Complex kernels[2]  = { Complex(kernelValue.x, kernelValue.y), Complex(kernelValue.z, kernelValue.w) };
+
+    // float norm[4];
+    // norm[0] = kernelTexure[uint2(0, 0)].x;
+    // norm[1] = kernelTexure[uint2(0, 0)].z;
+    // norm[2] = kernelTexure[uint2(SIGNAL_LENGTH, 0)].x;
+    // norm[3] = kernelTexure[uint2(SIGNAL_LENGTH, 0)].z;
+
+    for (uint channel = 0; channel < 2; channel++)
+    {
+        // Normalize the kernel using the 'DC' term in FFT.
+        //kernels[channel] /= norm[channel];
+        outputs[channel] = ComplexMultiply(outputs[channel], kernels[channel]);
+    }
+
+    for (uint channel = 0; channel < 2; channel++)
+    {
+        Complex Fk = outputs[channel];
+        Complex fn = CooleyTukeyFFT(true, Fk, groupThreadIndex);
+        inputs[channel] = fn;
+    }
+
+    outputTexture[pixelCoord] = float4(inputs[0].x, inputs[0].y, inputs[1].x, inputs[1].y);
+#endif
+}

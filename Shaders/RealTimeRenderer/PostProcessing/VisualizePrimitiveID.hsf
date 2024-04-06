@@ -1,0 +1,42 @@
+#include "../ShaderCommon.hsh"
+#include "RealTimeRendererCommon.hsh"
+
+BIND_BUFFER_ELEMENT(0, PerFrameData, PerFrameData);
+BIND_TEXTURE_2D_TYPED_SRV(1, uint2, VBuffer0);
+BIND_TEXTURE_2D_UAV(2, float4, OutputTexture);
+
+[numthreads(8, 8, 1)]
+void VisualizePrimitiveIDCS(uint3 DispatchThreadID : SV_DispatchThreadID)
+{
+    PerFrameData perFrameData = GetPerFrameData();
+    Texture2D<uint2> vbuffer0 = GetVBuffer0SRV();
+    RWTexture2D<float4> outputTexture = GetOutputTextureUAV();
+
+    uint2 pixelCoord = DispatchThreadID.xy;
+
+    uint width, height;
+    outputTexture.GetDimensions(width, height);
+    if (pixelCoord.x >= width || pixelCoord.y >= height)
+    {
+        return;
+    }
+
+    float2 uv = (pixelCoord + 0.5) * float2(1.0 / width, 1.0 / height);
+
+    //uint2 vbufferData = vbuffer0.SampleLevel(GlobalSamplerPointClamp, uv, 0).xy;
+    uint2 vbufferData = vbuffer0[pixelCoord].xy;
+
+    uint geometryID = vbufferData.r;
+    uint primitiveID = vbufferData.g;
+
+    if (geometryID == INVALID_VISIBILIY_ID)
+    {
+        outputTexture[pixelCoord] = float4(0, 0, 0, 1);
+        return;
+    }
+
+    // +1 to avoid zero
+    float3 color = UintToColor(primitiveID + 1);
+
+    outputTexture[pixelCoord] = float4(color, 1.0);
+}

@@ -1,0 +1,322 @@
+#include "../ShaderCommon.hsh"
+#include "../Random.hsh"
+#include "RealTimeRendererCommon.hsh"
+#include "ScreenSpaceReflectionsCommon.hsh"
+#include "ScreenSpaceRayTracing.hsh"
+
+BIND_BUFFER_ELEMENT(0, PerFrameData, PerFrameData);
+BIND_TEXTURE_2D_SRV(1, GBuffer1);
+BIND_TEXTURE_2D_SRV(2, VelocityBuffer);
+BIND_TEXTURE_2D_SRV(3, SceneDepth);
+BIND_TEXTURE_2D_SRV(4, DepthPyramid);
+BIND_TEXTURE_2D_TYPED_SRV(5, uint, TilesBuffer);
+BIND_TEXTURE_2D_SRV(6, HistorySceneColor);
+BIND_TEXTURE_2D_UAV(7, float4, RayIndirectSpecular);
+BIND_TEXTURE_2D_UAV(8, float4, RayDirectionPDF);
+BIND_TEXTURE_2D_UAV(9, float, RayLength);
+BIND_TEXTURE_2D_SRV(10, BlueNoiseTexture);
+BIND_TEXTURE_2D_UAV(15, float4, DebugOutput);
+
+static const float DepthBufferThickness = 1.5;
+static const float SSRScreenEdgeVignetteFactor = 5.0f;
+
+float4 BlueNoise(uint2 coord, float phase)
+{
+    Texture2D blueNoiseTexture = GetBlueNoiseTextureSRV();
+    return frac(blueNoiseTexture[coord % 128].rgba + phase);
+}
+
+float4 BlueNoise(uint2 pixelCoord, float phase, float depth)
+{
+    Texture2D blueNoiseTexture = GetBlueNoiseTextureSRV();
+    return frac(blueNoiseTexture[pixelCoord % 128].rgba + phase + depth);
+}
+
+float ValidateHit(float2 originUV, float3 worldSpaceRayDirection, float3 hit, float3 hitNormal, float surfaceDepth, float2 prevHitUV, float4 hzbSizeAndInvSize, float4x4 invProjectionMatrix)
+{
+    // Reject hits outside the view frustum
+    if (any(hit.xy < 0) || any(hit.xy > 1))
+    {
+        return 0;
+    }
+
+    // // Reject the hit if we didn't advance the ray significantly to avoid immediate self reflection
+    // float2 dist = abs(hit.xy - originUV);
+    // if(all(dist < (2.0 / hzbSizeAndInvSize.xy)))
+    // {
+    //     return 0;
+    // }
+
+    // Don't lookup radiance from the background.
+    if (surfaceDepth == FarClipPlaneDepthValue)
+    {
+        return 0;
+    }
+
+    // We check if we hit the surface from back, these should be rejected.
+    if (dot(hitNormal, worldSpaceRayDirection) > 0)
+    {
+        return 0;
+    }
+
+    return 1;
+}
+
+inline uint2 unflatten2D(uint idx, uint2 dim)
+{
+    return uint2(idx % dim.x, idx / dim.x);
+}
+
+uint2 GetReflectionIndirectDispatchCoord(uint3 GroupID, uint3 GroupThreadID, Texture2D<uint> tilesBuffer)
+{
+    uint tile_replicate = (SSR_TILE_SIZE / SSR_DOWN_SAMPLE_FACTOR / SSR_THREAD_GROUP_SIZE) * (SSR_TILE_SIZE / SSR_DOWN_SAMPLE_FACTOR / SSR_THREAD_GROUP_SIZE);
+    uint tile_idx = GroupID.x / tile_replicate;
+    uint tile_packed = tilesBuffer[uint2(tile_idx, 0)].r;
+    uint2 tile = uint2(tile_packed & 0xFFFF, (tile_packed >> 16) & 0xFFFF);
+    uint subtile_idx = GroupID.x % tile_replicate;
+    uint2 subtile = unflatten2D(subtile_idx, SSR_TILE_SIZE / SSR_DOWN_SAMPLE_FACTOR / SSR_THREAD_GROUP_SIZE);
+    uint2 subtile_upperleft = tile * SSR_TILE_SIZE / SSR_DOWN_SAMPLE_FACTOR + subtile * SSR_THREAD_GROUP_SIZE;
+    return subtile_upperleft + unflatten2D(GroupThreadID.x, SSR_THREAD_GROUP_SIZE);
+}
+
+[numthreads(SSR_THREAD_GROUP_SIZE * SSR_THREAD_GROUP_SIZE, 1, 1)]
+void ScreenSpaceReflectionsCS(uint3 GroupID : SV_GroupID, uint3 GroupThreadID : SV_GroupThreadID)
+{
+    PerFrameData perFrameData = GetPerFrameData();
+    Texture2D gbuffer1 = GetGBuffer1SRV();
+    Texture2D velocityBuffer = GetVelocityBufferSRV();
+    Texture2D sceneDepth = GetSceneDepthSRV();
+    Texture2D depthPyramid = GetDepthPyramidSRV();
+    Texture2D<uint> tilesBuffer = GetTilesBufferSRV();
+    Texture2D historySceneColor = GetHistorySceneColorSRV();
+
+    float2 resolution = float2(SHADER_ARGUMENTS_DATA(0), SHADER_ARGUMENTS_DATA(1));
+    float4 screenSize = float4(resolution.x, resolution.y, 1.0 / resolution.x, 1.0 / resolution.y);
+
+    uint hzbWidth, hzbHeight;
+    depthPyramid.GetDimensions(hzbWidth, hzbHeight);
+    float4 hzbSizeAndInvSize = float4(float(hzbWidth), float(hzbHeight), 1.0 / float(hzbWidth), 1.0 / float(hzbHeight));
+    float4 hzbUVFactorAndInvFactor = float4(SHADER_ARGUMENTS_DATA(2), SHADER_ARGUMENTS_DATA(3), SHADER_ARGUMENTS_DATA(4), SHADER_ARGUMENTS_DATA(5));
+
+    uint2 pixelCoord = GetReflectionIndirectDispatchCoord(GroupID, GroupThreadID, tilesBuffer);
+    float2 uv = (pixelCoord + 0.5) * float2(1.0 / resolution.x, 1.0 / resolution.y);
+
+    RWTexture2D<float4> rayIndirectSpecular = GetRayIndirectSpecularUAV();
+    RWTexture2D<float4> rayDirectionPDF = GetRayDirectionPDFUAV();
+    RWTexture2D<float> rayLength = GetRayLengthUAV();
+    RWTexture2D<float4> debugOutput = GetDebugOutputUAV();
+
+#ifdef SSR_EARLY_EXIT_RAYS
+    rayIndirectSpecular[pixelCoord] = 0.0;
+    rayDirectionPDF[pixelCoord] = 0.0;
+    rayLength[pixelCoord] = 0.0;
+#else
+
+    // This is necessary for accurate upscaling. This is so we don't reuse the same half-res pixels
+    float2 jitterOffset = floor(BlueNoise(uint2(0, 0), perFrameData.blueNoisePhase).xy);
+    jitterOffset = 0;
+    uint2 jitteredPixel = (jitterOffset + pixelCoord) * SSR_DOWN_SAMPLE_FACTOR;
+    float2 jitteredUV = (jitteredPixel + 0.5) * float2(1.0 / perFrameData.renderResolutionX, 1.0 / perFrameData.renderResolutionY);// T
+
+    // Due to HiZ tracing, the tracing and the pass components must match depth.
+    //float depth = sceneDepth[jitteredPixel].r;
+    float depth = depthPyramid.SampleLevel(GlobalSamplerPointClamp, jitteredUV, 0).r;
+    float roughness = gbuffer1[jitteredPixel].w;
+
+    if (!NeedReflection(roughness, depth, SSRRoughnessCutoff))
+    {
+        rayIndirectSpecular[pixelCoord] = 0.0;
+        rayDirectionPDF[pixelCoord] = 0.0;
+        rayLength[pixelCoord] = 0.0;
+        return;
+    }
+
+    float3 P = ReconstructWorldSpacePositionFromDepth(jitteredUV, depth, perFrameData.invViewProjectionMatrix);
+    float3 N = gbuffer1[jitteredPixel].rgb;
+    float3 V = normalize(perFrameData.cameraPosition - P);
+
+    float4 H;
+    float3 L;
+    if (roughness > 0.05f)
+    {
+        float3 T;
+        float3 B;
+        CreateOrthonormalBasis(T, B, N);
+        float3x3 tangentBasis = float3x3(T, B, N);
+
+        float3 tangentV = mul(tangentBasis, V);
+        const float2 blueNoise = BlueNoise(pixelCoord, perFrameData.blueNoisePhase).xy;
+        float2 Xi = blueNoise.xy;
+        Xi.y = lerp(Xi.y, 0.0f, GGX_IMPORTANCE_SAMPLE_BIAS);
+        H = ImportanceSampleVisibleGGX(SampleDisk(Xi), roughness, tangentV);
+        // Tangent to world
+        H.xyz = mul(H.xyz, tangentBasis);
+        L = reflect(-V, H.xyz);
+    }
+    else
+    {
+        H = float4(N.xyz, 1.0f);
+        L = reflect(-V, N);
+    }
+
+    float4 rayStartClip = mul(perFrameData.viewProjectionMatrix, float4(P, 1.0));
+    float4 rayEndClip = mul(perFrameData.viewProjectionMatrix, float4(P + L, 1.0));
+
+    float3 rayStartScreen = rayStartClip.xyz / rayStartClip.w;
+    float3 rayEndScreen = rayEndClip.xyz / rayEndClip.w;
+
+    rayStartScreen.xy = rayStartScreen.xy * float2(0.5, -0.5) + float2(0.5, 0.5);
+    rayEndScreen.xy = rayEndScreen.xy * float2(0.5, -0.5) + float2(0.5, 0.5);
+
+#if SSR_QUALITY == 0
+    uint numSteps = 8;
+    uint numRays = 1;
+    bool bGlossy = false;
+#elif SSR_QUALITY == 1
+    uint numSteps = 16;
+    uint numRays = 1;
+    #if SSR_OUTPUT_FOR_DENOISER
+        bool bGlossy = true;
+    #else
+        bool bGlossy = false;
+    #endif
+#elif SSR_QUALITY == 2
+    uint numSteps = 8;
+    uint numRays = 4;
+    bool bGlossy = true;
+#elif SSR_QUALITY == 3
+    uint numSteps = 12;
+    uint numRays = 12;
+    bool bGlossy = true;
+#endif
+
+#ifdef SSR_CHEAP_RAYS
+
+    float4 params = float4(SHADER_ARGUMENTS_DATA(2), SHADER_ARGUMENTS_DATA(3), SHADER_ARGUMENTS_DATA(4), SHADER_ARGUMENTS_DATA(5));
+    rayStartScreen.xy *= params.xy; // Ratio factor between hierarchy and pass
+    rayEndScreen.xy *= params.xy;
+
+    float3 rayDirectionScreen = rayEndScreen - rayStartScreen;
+
+    bool debug = all(pixelCoord == uint2(perFrameData.renderResolutionX, perFrameData.renderResolutionY) / 2);
+    // The ray marching benefits from jittering to create a smoother transition between samples and LOD
+    float jitter = InterleavedGradientNoise(pixelCoord, perFrameData.frameIndex % 8); // Temporally stabilize
+
+    float3 hit;
+    bool foundHit = false;
+    // CastScreenSpaceRayLinear(depthPyramid, rayStartScreen, rayDirectionScreen, jitter, roughness, hit, foundHit);
+
+    // hit.xy *= params.zw; // Undo ratio
+
+#else // SSR_EXPENSIVE_RAYS
+
+    // if (numRays > 1)
+    // {
+
+    // }
+    // else
+    // {
+
+    // }
+
+    float3 rayDirectionScreen = rayEndScreen - rayStartScreen;
+
+    bool debug = all(pixelCoord == uint2(perFrameData.renderResolutionX, perFrameData.renderResolutionY) / 2);
+
+    uint www; uint hhh; uint numMipLevels;
+    depthPyramid.GetDimensions(0, www, hhh, numMipLevels);
+
+    float3 hit;
+    float hitMipLevel;
+    bool foundHit = false;
+    bool uncertain;
+
+#if 0
+    CastScreenSpaceRayHZB(
+        depthPyramid,
+        HiZTraceStartMipLevel,
+        float(numMipLevels - 1),
+        rayStartScreen,
+        rayDirectionScreen,
+        HiZTraceMaxNumIterations,
+        screenSize,
+        hzbUVFactorAndInvFactor,
+        debug,
+        debugOutput,
+        hit,
+        hitMipLevel,
+        foundHit,
+        uncertain);
+#else
+    float rayStepOffset = InterleavedGradientNoise(pixelCoord, perFrameData.frameIndex % 8);
+    //rayStepOffset = 1;
+    CastScreenSpaceRayLinear(
+        sceneDepth,
+        rayStartScreen,
+        rayDirectionScreen,
+        rayStepOffset,
+        debug,
+        debugOutput,
+        hit,
+        foundHit);
+#endif
+
+    if (debug)
+    {
+        PrintSample(debugOutput, rayStartScreen.xy, float4(1, 1, 0, 1));
+        PrintSample(debugOutput, rayEndScreen.xy, float4(1, 1, 1, 1));
+    }
+
+#endif // SSR_CHEAP_RAYS
+
+    float3 worldSpaceHitPoint = ReconstructWorldSpacePositionFromDepth(hit.xy, hit.z, perFrameData.invViewProjectionMatrix);
+    float3 worldSpaceRayDirection = normalize(worldSpaceHitPoint - P);
+    float worldSpaceRayLength = length(worldSpaceHitPoint - P);
+
+    float4 worldSpaceHitPointClip = mul(perFrameData.viewProjectionMatrix, float4(worldSpaceHitPoint, 1.0));
+    float3 worldSpaceHitPointScreen = worldSpaceHitPointClip.xyz / worldSpaceHitPointClip.w;
+    float2 worldSpaceHitPointUV = clipspace_to_uv(worldSpaceHitPointScreen.xy);
+
+    float3 hitNormal = gbuffer1.SampleLevel(GlobalSamplerPointClamp, hit.xy, 0).xyz;
+    float surfaceDepth = depthPyramid.SampleLevel(GlobalSamplerPointClamp, hit.xy, 0).r;
+    float2 motionVector = velocityBuffer.SampleLevel(GlobalSamplerPointClamp, hit.xy, 0).xy;
+    motionVector = 0;
+    float2 prevHitUV = hit.xy + motionVector;
+
+    float confidence = foundHit ? ValidateHit(jitteredUV, worldSpaceRayDirection, hit, hitNormal, surfaceDepth, prevHitUV, screenSize, perFrameData.invProjectionMatrix) : 0;
+
+    if (debug)
+    {
+        PrintSample(debugOutput, worldSpaceHitPointUV.xy, float4(1, 0, 0, 1));
+    }
+
+    float4 radiance = 0;
+
+    // if (foundHit)
+    {
+        // Fade out hits near the screen borders
+        float vignetteHitCurr = CalculateScreenEdgeVignette(hit.xy, SSRScreenEdgeVignetteFactor);
+        float vignetteHitPrev = CalculateScreenEdgeVignette(prevHitUV.xy, SSRScreenEdgeVignetteFactor);
+        float vignette = min(vignetteHitCurr, vignetteHitPrev);
+        confidence *= vignette;
+
+    #if 0
+        float3 viewSpaceSurfacePosition = ReconstructViewSpacePositionFromDepth(hit.xy, surfaceDepth, perFrameData.invProjectionMatrix);
+        float3 viewSpaceHitPosition = ReconstructViewSpacePositionFromDepth(hit.xy, hit.z, perFrameData.invProjectionMatrix);
+        float distance = length(viewSpaceSurfacePosition - viewSpaceHitPosition);
+        // We accept all hits that are within a reasonable distance below the surface.
+        confidence *= (1.0 - smoothstep(0.0, DepthBufferThickness, distance));
+        //confidence *= confidence;
+    #endif
+
+        radiance.rgb = historySceneColor.SampleLevel(GlobalSamplerLinearClamp, prevHitUV, 0).rgb;
+        //radiance.rgb = historySceneColor.SampleLevel(GlobalSamplerLinearClamp, hit.xy, 0).rgb;
+    }
+    radiance.a = confidence;
+    radiance.a = 1.0;
+
+    rayIndirectSpecular[pixelCoord] = radiance;
+    rayDirectionPDF[pixelCoord] = float4(L, H.w);
+    rayLength[pixelCoord] = worldSpaceRayLength;
+#endif // SSR_EARLY_EXIT_RAYS
+}

@@ -1,0 +1,95 @@
+*
+!*/
+
+!FAQ
+!README
+!LICENSE
+!VERSION
+
+# Git files
+!*.git*
+
+# C/C++ source files
+!*.c
+!*.cc
+!*.cpp
+!*.cppm
+!*.h
+!*.hpp
+!*.inl
+!*.inc
+!*.cu
+
+# Binary files
+!*.exe
+!*.dll
+!*.lib
+!*.pdb
+
+# Configuration files
+!*.ini
+!*.xml
+!*.toml
+!*.yaml
+!*.json
+
+# Shader files
+!*.hsf
+!*.hsh
+!*.hlsl
+!*.glsl
+
+# Doc files
+!*.md
+!*.txt
+!*.html
+
+# Script files
+!*.bat
+!*.sh
+!*.command
+
+!*.lua
+!*.py*
+!*.js
+
+# Assets
+!*.ttf
+!*.bin
+!*.glb
+!*.gltf
+!*.obj
+!*.mtl
+!*.fbx
+!*.png
+!*.jpg
+!*.tga
+!*.tex
+!*.hdr
+!*.horizon
+
+# USD files
+!*.glslfx
+!*.usd*
+
+.vs
+.vscode
+
+/*.sln
+
+/Build/
+/Assets/*
+
+# TODO: remove this
+!/Assets/Fonts
+!/Assets/Icons
+!/Assets/HDRIs
+!/Assets/Textures
+!/Assets/Test
+
+/ThirdParty/glfw
+/ThirdParty/imgui/imgui-1.89.9-docking
+/ThirdParty/ImGuizmo/ImGuizmo-1.83
+/ThirdParty/googletest/googletest-1.14.0
+/ThirdParty/optick
+/ThirdParty/dxc

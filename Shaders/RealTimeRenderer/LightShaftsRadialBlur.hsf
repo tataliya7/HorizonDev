@@ -1,0 +1,52 @@
+#include "../ShaderCommon.hsh"
+#include "RealTimeRendererCommon.hsh"
+
+BIND_BUFFER_ELEMENT(0, PerFrameData, PerFrameData);
+BIND_TEXTURE_2D_SRV(1, InputTexture);
+BIND_TEXTURE_2D_UAV(2, float3, OutputTexture);
+
+static const uint NumSamples = 12;
+
+[numthreads(8, 8, 1)]
+void LightShaftsRadialBlurCS(uint3 DispatchThreadID : SV_DispatchThreadID)
+{
+    PerFrameData perFrameData = GetPerFrameData();
+    // uint width = perFrameData.renderResolutionX;
+    // uint height = perFrameData.renderResolutionY;
+    uint width = 1920;//asuint(SHADER_ARGUMENTS_DATA(0));
+    uint height = 1027;//asuint(SHADER_ARGUMENTS_DATA(1));
+    if (DispatchThreadID.x >= width || DispatchThreadID.y >= height)
+    {
+        return;
+    }
+
+    Texture2D inputTexture = GetInputTextureSRV();
+
+    float2 textureSpaceBlurOrigin;
+    textureSpaceBlurOrigin.x = SHADER_ARGUMENTS_DATA(2);
+    textureSpaceBlurOrigin.y = SHADER_ARGUMENTS_DATA(3);
+
+    float passIndex = SHADER_ARGUMENTS_DATA(4);
+    float passScale = pow(0.4 * NumSamples, passIndex);
+
+    uint2 coord = DispatchThreadID.xy;
+    float2 uv = (coord.xy + 0.5) * float2(1.0 / width, 1.0 / height);
+    float2 aspectCorrectedUV = uv;
+
+    float GLightShaftFirstPassDistance = 0.1;
+    float2 aspectCorrectedBlurVector = (textureSpaceBlurOrigin.xy - aspectCorrectedUV) * min(GLightShaftFirstPassDistance * passScale, 1);
+
+    float3 blurredColor = 0;
+
+    [unroll]
+    for (uint sampleIndex = 0; sampleIndex < NumSamples; sampleIndex++)
+    {
+        float2 sampleUV = (aspectCorrectedUV + aspectCorrectedBlurVector * sampleIndex / (float)NumSamples);
+        float3 sampleColor = inputTexture.SampleLevel(GlobalSamplerLinearClamp, sampleUV, 0).rgb;
+        blurredColor += sampleColor;
+    }
+    blurredColor /= (float)NumSamples;
+
+    RWTexture2D<float3> outputTexture = GetOutputTextureUAV();
+    outputTexture[coord] = blurredColor;
+}

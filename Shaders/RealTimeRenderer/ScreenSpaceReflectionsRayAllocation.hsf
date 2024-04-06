@@ -1,0 +1,24 @@
+#include "../ShaderCommon.hsh"
+#include "RealTimeRendererCommon.hsh"
+#include "ScreenSpaceReflectionsCommon.hsh"
+
+BIND_BYTE_ADDRESS_BUFFER_UAV(0, RayAllocationBuffer);
+
+[numthreads(1, 1, 1)]
+void SSRRayAllocationCS(uint3 DispatchThreadID : SV_DispatchThreadID)
+{
+    RWByteAddressBuffer rayAllocationBuffer = GetRayAllocationBufferUAV();
+
+    const uint earlyExitTilesCount = rayAllocationBuffer.Load(RAY_ALLOCATION_BUFFER_OFFSET_EARLY_EXIT_TILES_COUNT);
+    const uint cheapTilesCount     = rayAllocationBuffer.Load(RAY_ALLOCATION_BUFFER_OFFSET_CHEAP_TILES_COUNT);
+    const uint expensiveTilesCount = rayAllocationBuffer.Load(RAY_ALLOCATION_BUFFER_OFFSET_EXPENSIVE_TILES_COUNT);
+
+    rayAllocationBuffer.Store(RAY_ALLOCATION_BUFFER_OFFSET_EARLY_EXIT_TILES_COUNT, 0);
+    rayAllocationBuffer.Store(RAY_ALLOCATION_BUFFER_OFFSET_CHEAP_TILES_COUNT,      0);
+    rayAllocationBuffer.Store(RAY_ALLOCATION_BUFFER_OFFSET_EXPENSIVE_TILES_COUNT,  0);
+
+    const uint numRaysPerTile = (SSR_TILE_SIZE / SSR_DOWN_SAMPLE_FACTOR / SSR_THREAD_GROUP_SIZE) * (SSR_TILE_SIZE / SSR_DOWN_SAMPLE_FACTOR / SSR_THREAD_GROUP_SIZE);
+    rayAllocationBuffer.Store3(RAY_ALLOCATION_BUFFER_OFFSET_INDIRECT_ARGUMENTS_EARLY_EXIT_RAYS, uint3(earlyExitTilesCount * numRaysPerTile, 1, 1));
+    rayAllocationBuffer.Store3(RAY_ALLOCATION_BUFFER_OFFSET_INDIRECT_ARGUMENTS_CHEAP_RAYS,      uint3(cheapTilesCount     * numRaysPerTile, 1, 1));
+    rayAllocationBuffer.Store3(RAY_ALLOCATION_BUFFER_OFFSET_INDIRECT_ARGUMENTS_EXPENSIVE_RAYS,  uint3(expensiveTilesCount * numRaysPerTile, 1, 1));
+}

@@ -1,0 +1,60 @@
+#include "../ShaderCommon.hsh"
+#include "RealTimeRendererCommon.hsh"
+
+BIND_BUFFER_ELEMENT(0, PerFrameData, PerFrameData);
+BIND_BYTE_ADDRESS_BUFFER_SRV(1, GeometryBuffer);
+BIND_BYTE_ADDRESS_BUFFER_SRV(2, MaterialBuffer);
+BIND_TEXTURE_2D_TYPED_SRV(3, uint2, VBuffer0);
+BIND_TEXTURE_2D_TYPED_SRV(4, float3, VBuffer1);
+BIND_TEXTURE_2D_UAV(5, float4, GBuffer0);
+BIND_TEXTURE_2D_UAV(6, float4, GBuffer1);
+BIND_TEXTURE_2D_UAV(7, float4, GBuffer2);
+
+[numthreads(8, 8, 1)]
+void GBufferCS(uint3 DispatchThreadID : SV_DispatchThreadID)
+{
+    PerFrameData perFrameData = GetPerFrameData();
+
+    uint2 pixelCoord = DispatchThreadID.xy;
+    float2 uv = (pixelCoord.xy + 0.5) / float2(perFrameData.renderResolutionX, perFrameData.renderResolutionY);
+
+    Texture2D<uint2> vBuffer0 = GetVBuffer0SRV();
+    Texture2D<float3> vBuffer1 = GetVBuffer1SRV();
+
+    uint2 visibilityID = vBuffer0[pixelCoord];
+    float3 barycentrics = vBuffer1[pixelCoord];
+
+    RWTexture2D<float4> gbuffer0 = GetGBuffer0UAV();
+    RWTexture2D<float4> gbuffer1 = GetGBuffer1UAV();
+    RWTexture2D<float4> gbuffer2 = GetGBuffer2UAV();
+
+    if (visibilityID.x != INVALID_VISIBILIY_ID)
+    {
+        uint geometryID = visibilityID.r;
+        uint primitiveID = visibilityID.g;
+
+        ByteAddressBuffer geometryBuffer = GetGeometryBufferSRV();
+        Geometry geometry = geometryBuffer.Load<Geometry>(geometryID * sizeof(Geometry));
+
+        ByteAddressBuffer materialIndexBuffer = GetByteAddressBuffer(geometry.materialIndexBuffer);
+        uint materialIndex = materialIndexBuffer.Load<uint>(primitiveID * sizeof(uint));
+
+        ByteAddressBuffer materialBuffer = GetMaterialBufferSRV();
+        Material material = materialBuffer.Load<Material>(geometry.materialBufferOffset + (materialIndex * sizeof(Material)));
+
+        Surface surface;
+        surface.Init(perFrameData, uv, geometry, primitiveID, barycentrics, material);
+
+        surface.specular = 0.5;
+
+        gbuffer0[pixelCoord] = float4(EncodeNormalToGBuffer(surface.N), 0/* unsued */);
+        gbuffer1[pixelCoord] = float4(surface.metallic, surface.specular, surface.roughness, 0/* unsued */);
+        gbuffer2[pixelCoord] = float4(surface.baseColor.rgb, 1/* unsued */);
+    }
+    else
+    {
+        gbuffer0[pixelCoord] = 0;
+        gbuffer1[pixelCoord] = 0;
+        gbuffer2[pixelCoord] = 0;
+    }
+}

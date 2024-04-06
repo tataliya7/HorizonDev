@@ -1,0 +1,6 @@
+#include "ShaderCommon.hsh"
+
+void FinalizeVirtualTextureFeedback(in VirtualTextureFeedbackParameters parameters, RWBuffer<uint> feadbackBuffer)
+{
+
+}

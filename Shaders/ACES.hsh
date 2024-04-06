@@ -1,0 +1,1018 @@
+/**
+ * Academy Color Encoding System (ACES)
+ * https://github.com/ampas/aces-dev
+ *
+ * # License Terms for Academy Color Encoding System Components #
+ *
+ * Academy Color Encoding System (ACES) software and tools are provided by the
+ * Academy under the following terms and conditions: A worldwide, royalty-free,
+ * non-exclusive right to copy, modify, create derivatives, and use, in source and
+ * binary forms, is hereby granted, subject to acceptance of this license.
+ *
+ * Copyright © 2015 Academy of Motion Picture Arts and Sciences (A.M.P.A.S.).
+ * Portions contributed by others as indicated. All rights reserved.
+ *
+ * Performance of any of the aforementioned acts indicates acceptance to be bound
+ * by the following terms and conditions:
+ *
+ * * Copies of source code, in whole or in part, must retain the above copyright
+ * notice, this list of conditions and the Disclaimer of Warranty.
+ *
+ * * Use in binary form must retain the above copyright notice, this list of
+ * conditions and the Disclaimer of Warranty in the documentation and/or other
+ * materials provided with the distribution.
+ *
+ * * Nothing in this license shall be deemed to grant any rights to trademarks,
+ * copyrights, patents, trade secrets or any other intellectual property of
+ * A.M.P.A.S. or any contributors, except as expressly stated herein.
+ *
+ * * Neither the name "A.M.P.A.S." nor the name of any other contributors to this
+ * software may be used to endorse or promote products derivative of or based on
+ * this software without express prior written permission of A.M.P.A.S. or the
+ * contributors, as appropriate.
+ *
+ * This license shall be construed pursuant to the laws of the State of
+ * California, and any disputes related thereto shall be subject to the
+ * jurisdiction of the courts therein.
+ *
+ * Disclaimer of Warranty: THIS SOFTWARE IS PROVIDED BY A.M.P.A.S. AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+ * THE IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND
+ * NON-INFRINGEMENT ARE DISCLAIMED. IN NO EVENT SHALL A.M.P.A.S., OR ANY
+ * CONTRIBUTORS OR DISTRIBUTORS, BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, RESITUTIONARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+ * PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+ * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
+ * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+ * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ * WITHOUT LIMITING THE GENERALITY OF THE FOREGOING, THE ACADEMY SPECIFICALLY
+ * DISCLAIMS ANY REPRESENTATIONS OR WARRANTIES WHATSOEVER RELATED TO PATENT OR
+ * OTHER INTELLECTUAL PROPERTY RIGHTS IN THE ACADEMY COLOR ENCODING SYSTEM, OR
+ * APPLICATIONS THEREOF, HELD BY PARTIES OTHER THAN A.M.P.A.S.,WHETHER DISCLOSED OR
+ * UNDISCLOSED.
+ */
+
+// TODO: Figure out how sRGB is converted to CIE-XYZ
+// This matrix is different from http://brucelindbloom.com/index.html?Eqn_RGB_XYZ_Matrix.html
+// Why?
+static const float3x3 sRGB_2_AP0_MAT =
+{
+    0.4397010, 0.3829780, 0.1773350,
+    0.0897923, 0.8134230, 0.0967616,
+    0.0175440, 0.1115440, 0.8707040,
+};
+
+#if 1
+// https://github.com/colour-science/colour-unity/blob/master/Assets/Colour/Notebooks/CIECAM02_Unity.ipynb
+static const float3x3 sRGB_2_AP1_MAT =
+{
+    0.613117812906440,  0.341181995855625,  0.045787344282337,
+    0.069934082307513,  0.918103037508581,  0.011932775530201,
+    0.020462992637737,  0.106768663382511,  0.872715910619442,
+};
+#else
+static const float3x3 sRGB_2_AP1_MAT =
+{
+    0.61319, 0.33951, 0.04737,
+    0.07021, 0.91634, 0.01345,
+    0.02062, 0.10957, 0.86961,
+};
+#endif
+
+static const float3x3 AP0_2_sRGB_MAT = {
+    2.52169, -1.13413, -0.38756,
+    -0.27648, 1.37272, -0.09624,
+    -0.01538, -0.15298, 1.16835,
+};
+
+static const float3x3 AP1_2_sRGB_MAT = {
+    1.70505, -0.62179, -0.08326,
+    -0.13026, 1.14080, -0.01055,
+    -0.02400, -0.12897, 1.15297,
+};
+
+static const float3x3 sRGB_2_XYZ_MAT = {
+    0.4123907993, 0.3575843394, 0.1804807884,
+    0.2126390059, 0.7151686788, 0.0721923154,
+    0.0193308187, 0.1191947798, 0.9505321522,
+};
+
+static const float3x3 XYZ_2_sRGB_MAT = {
+     3.2409699419, -1.5373831776, -0.4986107603,
+    -0.9692436363,  1.8759675015,  0.0415550574,
+     0.0556300797, -0.2039769589,  1.0569715142,
+};
+
+// Bradford chromatic adaptation transforms between ACES white point (D60) and sRGB white point (D65)
+static const float3x3 D65_2_D60_CAT =
+{
+     1.0130349146, 0.0061052578, -0.0149709436,
+     0.0076982301, 0.9981633521, -0.0050320385,
+    -0.0028413174, 0.0046851567,  0.9245061375,
+};
+
+static const float3x3 D60_2_D65_CAT =
+{
+     0.9872240087, -0.0061132286, 0.0159532883,
+    -0.0075983718,  1.0018614847, 0.0053300358,
+     0.0030725771, -0.0050959615, 1.0816806031,
+};
+
+/* ---- Precomputed matrices ---- */
+// See https://github.com/ampas/aces-dev/blob/master/transforms/ctl/README-MATRIX.md
+static const float3x3 AP0_to_XYZ_MAT =
+{
+     0.9525523959,  0.0000000000,  0.0000936786,
+     0.3439664498,  0.7281660966, -0.0721325464,
+     0.0000000000,  0.0000000000,  1.0088251844,
+};
+
+static const float3x3 XYZ_to_AP0_MAT =
+{
+     1.0498110175,  0.0000000000, -0.0000974845,
+    -0.4959030231,  1.3733130458,  0.0982400361,
+     0.0000000000,  0.0000000000,  0.9912520182,
+};
+
+static const float3x3 AP1_2_XYZ_MAT =
+{
+     0.6624541811,  0.1340042065,  0.1561876870,
+     0.2722287168,  0.6740817658,  0.0536895174,
+    -0.0055746495,  0.0040607335,  1.0103391003,
+};
+
+static const float3x3 XYZ_2_AP1_MAT =
+{
+     1.6410233797, -0.3248032942, -0.2364246952,
+    -0.6636628587,  1.6153315917,  0.0167563477,
+     0.0117218943, -0.0082844420,  0.9883948585,
+};
+
+static const float3x3 AP0_2_AP1_MAT =
+{
+     1.4514393161, -0.2365107469, -0.2149285693,
+    -0.0765537734,  1.1762296998, -0.0996759264,
+     0.0083161484, -0.0060324498,  0.9977163014,
+};
+
+static const float3x3 AP1_2_AP0_MAT =
+{
+     0.6954522414, 0.1406786965, 0.1638690622,
+     0.0447945634, 0.8596711185, 0.0955343182,
+    -0.0055258826, 0.0040252103, 1.0015006723,
+};
+
+static const float3x3 XYZ_2_P3D60_PRI_MAT =
+{
+     2.4027414142, -0.8974841639, -0.3880533700,
+    -0.8325796487,  1.7692317536,  0.0237127115,
+     0.0388233815, -0.0824996856,  1.0363685997,
+};
+
+static const float3x3 P3D60_2_XYZ_MAT =
+{
+     0.5049495342,  0.2646814889,  0.1830150515,
+     0.2376233102,  0.6891706692,  0.0732060206,
+     0.0000000000,  0.0449459132,  0.9638792711,
+};
+
+static const float3x3 XYZ_2_P3DCI_PRI_MAT =
+{
+     2.7253940305, -1.0180030062, -0.4401631952,
+    -0.7951680258,  1.6897320548,  0.0226471906,
+     0.0412418914, -0.0876390192,  1.1009293786,
+};
+
+static const float3x3 XYZ_2_REC709_PRI_MAT =
+{
+     3.2409699419, -1.5373831776, -0.4986107603,
+    -0.9692436363,  1.8759675015,  0.0415550574,
+     0.0556300797, -0.2039769589,  1.0569715142,
+};
+
+static const float3x3 XYZ_2_REC2020_PRI_MAT =
+{
+     1.7166511880, -0.3556707838, -0.2533662814,
+    -0.6666843518,  1.6164812366,  0.0157685458,
+     0.0176398574, -0.0427706133,  0.9421031212,
+};
+
+/* ---- Conversion Functions ---- */
+// Various transformations between color encodings and data representations
+// See https://github.com/ampas/aces-dev/blob/master/transforms/ctl/lib/ACESlib.Utilities_Color.ctl
+
+// Transformations between CIE XYZ tristimulus values and CIE x,y
+// chromaticity coordinates
+float3 XYZ_2_xyY(float3 XYZ)
+{
+    float3 xyY;
+    float divisor = (XYZ[0] + XYZ[1] + XYZ[2]);
+    if (divisor == 0.0) divisor = 1e-10;
+    xyY[0] = XYZ[0] / divisor;
+    xyY[1] = XYZ[1] / divisor;
+    xyY[2] = XYZ[1];
+    return xyY;
+}
+
+float3 xyY_2_XYZ(float3 xyY)
+{
+    float3 XYZ;
+    XYZ[0] = xyY[0] * xyY[2] / max(xyY[1], 1e-10);
+    XYZ[1] = xyY[2];
+    XYZ[2] = (1.0 - xyY[0] - xyY[1]) * xyY[2] / max(xyY[1], 1e-10);
+    return XYZ;
+}
+
+// Transformations from RGB to other color representations
+float rgb_2_hue(float3 rgb)
+{
+    // Returns a geometric hue angle in degrees (0-360) based on RGB values.
+    // For neutral colors, hue is undefined and the function will return a quiet NaN value.
+    float hue;
+    if (rgb[0] == rgb[1] && rgb[1] == rgb[2])
+    {
+        //hue = FLT_NAN; // RGB triplets where RGB are equal have an undefined hue
+        hue = 0.0;
+    }
+    else
+    {
+        hue = (180.0 / PI) * atan2(sqrt(3.0) * (rgb[1] - rgb[2]), 2.0 * rgb[0] - rgb[1] - rgb[2]);
+    }
+    if (hue < 0.0)
+    {
+        hue = hue + 360.0;
+    }
+    return clamp(hue, 0.0, 360.0);
+}
+
+float rgb_2_yc(float3 rgb, float ycRadiusWeight = 1.75)
+{
+    // Converts RGB to a luminance proxy, here called YC
+    // YC is ~ Y + K * Chroma
+    // Constant YC is a cone-shaped surface in RGB space, with the tip on the
+    // neutral axis, towards white.
+    // YC is normalized: RGB 1 1 1 maps to YC = 1
+    //
+    // ycRadiusWeight defaults to 1.75, although can be overridden in function
+    // call to rgb_2_yc
+    // ycRadiusWeight = 1 -> YC for pure cyan, magenta, yellow == YC for neutral
+    // of same value
+    // ycRadiusWeight = 2 -> YC for pure red, green, blue  == YC for  neutral of
+    // same value.
+
+    float r = rgb[0];
+    float g = rgb[1];
+    float b = rgb[2];
+
+    float chroma = sqrt(b * (b - g) + g * (g - r) + r * (r - b));
+
+    return (b + g + r + ycRadiusWeight * chroma) / 3.0;
+}
+
+/* ---- Chromatic Adaptation ---- */
+// See https://github.com/ampas/aces-dev/blob/master/transforms/ctl/lib/ACESlib.Utilities_Color.ctl
+
+// Orginal code:
+// const float CONE_RESP_MAT_BRADFORD[3][3] = {
+//   { 0.89510, -0.75020,  0.03890},
+//   { 0.26640,  1.71350, -0.06850},
+//   {-0.16140,  0.03670,  1.02960}
+// };
+//
+// const float CONE_RESP_MAT_CAT02[3][3] = {
+//   { 0.73280, -0.70360,  0.00300},
+//   { 0.42960,  1.69750,  0.01360},
+//   {-0.16240,  0.00610,  0.98340}
+// };
+//
+// float[3][3] calculate_cat_matrix
+//   ( float src_xy[2],         // x,y chromaticity of source white
+//     float des_xy[2],         // x,y chromaticity of destination white
+//     float coneRespMat[3][3] = CONE_RESP_MAT_BRADFORD
+//   )
+// {
+//   //
+//   // Calculates and returns a 3x3 Von Kries chromatic adaptation transform
+//   // from src_xy to des_xy using the cone response primaries defined
+//   // by coneRespMat. By default, coneRespMat is set to CONE_RESP_MAT_BRADFORD.
+//   // The default coneRespMat can be overridden at runtime.
+//   //
+//
+//   const float src_xyY[3] = { src_xy[0], src_xy[1], 1. };
+//   const float des_xyY[3] = { des_xy[0], des_xy[1], 1. };
+//
+//   float src_XYZ[3] = xyY_2_XYZ( src_xyY );
+//   float des_XYZ[3] = xyY_2_XYZ( des_xyY );
+//
+//   float src_coneResp[3] = mult_f3_f33( src_XYZ, coneRespMat);
+//   float des_coneResp[3] = mult_f3_f33( des_XYZ, coneRespMat);
+//
+//   float vkMat[3][3] = {
+//       { des_coneResp[0] / src_coneResp[0], 0.0, 0.0 },
+//       { 0.0, des_coneResp[1] / src_coneResp[1], 0.0 },
+//       { 0.0, 0.0, des_coneResp[2] / src_coneResp[2] }
+//   };
+//
+//   float cat_matrix[3][3] = mult_f33_f33( coneRespMat, mult_f33_f33( vkMat, invert_f33( coneRespMat ) ) );
+//
+//   return cat_matrix;
+// }
+
+// Bradford method
+static const float3x3 BradfordConeResponseMatrix =
+{
+     0.8951,  0.2664, -0.1614,
+    -0.7502,  1.7135,  0.0367,
+     0.0389, -0.0685,  1.0296,
+};
+static const float3x3 BradfordInvConeResponseMatrix =
+{
+     0.9869929, -0.1470543,  0.1599627,
+     0.4323053,  0.5183603,  0.0492912,
+    -0.0085287,  0.0400428,  0.9684867,
+};
+
+float3x3 ChromaticAdaptation(float2 src_xy, float2 dst_xy)
+{
+    const float3 src_xyY = float3(src_xy, 1.0);
+    const float3 dst_xyY = float3(dst_xy, 1.0);
+
+    float3 src_XYZ = xyY_2_XYZ(src_xyY);
+    float3 dst_XYZ = xyY_2_XYZ(dst_xyY);
+
+    float3 src_coneResp = mul(BradfordConeResponseMatrix, src_XYZ);
+    float3 dst_coneResp = mul(BradfordConeResponseMatrix, dst_XYZ);
+
+    float3x3 vkMat = {
+        { dst_coneResp[0] / src_coneResp[0], 0.0, 0.0 },
+        { 0.0, dst_coneResp[1] / src_coneResp[1], 0.0 },
+        { 0.0, 0.0, dst_coneResp[2] / src_coneResp[2] }
+    };
+
+    float3x3 cat_matrix = mul(BradfordInvConeResponseMatrix, mul(vkMat, BradfordConeResponseMatrix));
+
+    return cat_matrix;
+}
+
+/* ---- Signal encode/decode functions ---- */
+
+float moncurve_f(float x, float gamma, float offs)
+{
+    // Forward monitor curve
+    float y;
+    const float fs = ((gamma - 1.0) / offs) * pow(offs * gamma / ((gamma - 1.0) * (1.0 + offs)), gamma);
+    const float xb = offs / (gamma - 1.0);
+    if (x >= xb)
+        y = pow((x + offs) / (1.0 + offs), gamma);
+    else
+        y = x * fs;
+    return y;
+}
+
+float moncurve_r(float y, float gamma, float offs)
+{
+    // Reverse monitor curve
+    float x;
+    const float yb = pow(offs * gamma / ((gamma - 1.0) * (1.0 + offs)), gamma);
+    const float rs = pow((gamma - 1.0) / offs, gamma - 1.0) * pow((1.0 + offs) / gamma, gamma);
+    if (y >= yb)
+        x = (1.0 + offs) * pow(y, 1.0 / gamma) - offs;
+    else
+        x = y * rs;
+    return x;
+}
+
+float3 moncurve_f_f3(float3 x, float gamma, float offs)
+{
+    float3 y;
+    y[0] = moncurve_f(x[0], gamma, offs);
+    y[1] = moncurve_f(x[1], gamma, offs);
+    y[2] = moncurve_f(x[2], gamma, offs);
+    return y;
+}
+
+float3 moncurve_r_f3(float3 y, float gamma, float offs)
+{
+    float3 x;
+    x[0] = moncurve_r(y[0], gamma, offs);
+    x[1] = moncurve_r(y[1], gamma, offs);
+    x[2] = moncurve_r(y[2], gamma, offs);
+    return x;
+}
+
+float bt1886_f(float V, float gamma, float Lw, float Lb)
+{
+    // The reference EOTF specified in Rec. ITU-R BT.1886
+    // L = a(max[(V+b),0])^g
+    float a = pow(pow(Lw, 1.0 / gamma) - pow(Lb, 1.0 / gamma), gamma);
+    float b = pow(Lb, 1.0 / gamma) / (pow(Lw, 1.0 / gamma) - pow(Lb, 1.0 / gamma));
+    float L = a * pow(max(V + b, 0.0), gamma);
+    return L;
+}
+
+float bt1886_r(float L, float gamma, float Lw, float Lb)
+{
+    // The reference EOTF specified in Rec. ITU-R BT.1886
+    // L = a(max[(V+b),0])^g
+    float a = pow(pow(Lw, 1.0 / gamma) - pow(Lb, 1.0 / gamma), gamma);
+    float b = pow(Lb, 1.0 / gamma) / (pow(Lw, 1.0 / gamma) - pow(Lb, 1.0 / gamma));
+    float V = pow(max(L / a, 0.0), 1.0 / gamma) - b;
+    return V;
+}
+
+float3 bt1886_f_f3(float3 V, float gamma, float Lw, float Lb)
+{
+    float3 L;
+    L[0] = bt1886_f(V[0], gamma, Lw, Lb);
+    L[1] = bt1886_f(V[1], gamma, Lw, Lb);
+    L[2] = bt1886_f(V[2], gamma, Lw, Lb);
+    return L;
+}
+
+float3 bt1886_r_f3(float3 L, float gamma, float Lw, float Lb)
+{
+    float3 V;
+    V[0] = bt1886_r(L[0], gamma, Lw, Lb);
+    V[1] = bt1886_r(L[1], gamma, Lw, Lb);
+    V[2] = bt1886_r(L[2], gamma, Lw, Lb);
+    return V;
+}
+
+// https://github.com/ampas/aces-dev/blob/fc189808208e28019a8c5a27cdb2d50312939232/transforms/ctl/lib/ACESlib.Tonescales.ctl#L21
+// <ACEStransformID>urn:ampas:aces:transformId:v1.5:ACESlib.Tonescales.a1.0.3</ACEStransformID>
+// <ACESuserName>ACES 1.0 Lib - Tonescales</ACESuserName>
+
+
+// Textbook monomial to basis-function conversion matrix.
+// Note: Transpose of original matrix
+static const float3x3 M =
+{
+     0.5, -1.0,  0.5,
+    -1.0,  1.0,  0.0,
+     0.5,  0.5,  0.0,
+};
+
+struct SegmentedSplineParams_c5
+{
+    float coefsLow[6];    // coefs for B-spline between minPoint and midPoint (units of log luminance)
+    float coefsHigh[6];   // coefs for B-spline between midPoint and maxPoint (units of log luminance)
+    float2 minPoint; // {luminance, luminance} linear extension below this
+    float2 midPoint; // {luminance, luminance}
+    float2 maxPoint; // {luminance, luminance} linear extension above this
+    float slopeLow;       // log-log slope of low linear extension
+    float slopeHigh;      // log-log slope of high linear extension
+};
+
+struct SegmentedSplineParams_c9
+{
+    float coefsLow[10];    // coefs for B-spline between minPoint and midPoint (units of log luminance)
+    float coefsHigh[10];   // coefs for B-spline between midPoint and maxPoint (units of log luminance)
+    float2 minPoint; // {luminance, luminance} linear extension below this
+    float2 midPoint; // {luminance, luminance}
+    float2 maxPoint; // {luminance, luminance} linear extension above this
+    float slopeLow;       // log-log slope of low linear extension
+    float slopeHigh;      // log-log slope of high linear extension
+};
+
+static const SegmentedSplineParams_c5 RRT_PARAMS =
+{
+    // coefsLow[6]
+    { -4.0000000000, -4.0000000000, -3.1573765773, -0.4852499958, 1.8477324706, 1.8477324706 },
+    // coefsHigh[6]
+    { -0.7185482425, 2.0810307172, 3.6681241237, 4.0000000000, 4.0000000000, 4.0000000000 },
+    { 0.18*exp2(-15), 0.0001},    // minPoint
+    { 0.18,              4.8},    // midPoint
+    { 0.18*exp2(18), 10000.0},    // maxPoint
+    0.0,  // slopeLow
+    0.0   // slopeHigh
+};
+
+float segmented_spline_c5_fwd(float x, SegmentedSplineParams_c5 C = RRT_PARAMS)
+{
+    const int N_KNOTS_LOW = 4;
+    const int N_KNOTS_HIGH = 4;
+
+    // Check for negatives or zero before taking the log. If negative or zero,
+    // set to HALF_MIN.
+    float logx = log10(max(x, HALF_POS_MIN));
+
+    float logy;
+
+    if (logx <= log10(C.minPoint.x))
+    {
+        logy = logx * C.slopeLow + (log10(C.minPoint.y) - C.slopeLow * log10(C.minPoint.x));
+    }
+    else if ((logx > log10(C.minPoint.x)) && (logx < log10(C.midPoint.x)))
+    {
+        float knot_coord = (N_KNOTS_LOW - 1) * (logx - log10(C.minPoint.x)) / (log10(C.midPoint.x) - log10(C.minPoint.x));
+        int j = knot_coord;
+        float t = knot_coord - j;
+
+        float3 cf = float3(C.coefsLow[j], C.coefsLow[j + 1], C.coefsLow[j + 2]);
+        // NOTE: If the running a version of CTL < 1.5, you may get an
+        // exception thrown error, usually accompanied by "Array index out of range"
+        // If you receive this error, it is recommended that you update to CTL v1.5,
+        // which contains a number of important bug fixes. Otherwise, you may try
+        // uncommenting the below, which is longer, but equivalent to, the above
+        // line of code.
+        //
+        // float cf[ 3];
+        // if ( j <= 0) {
+        //     cf[ 0] = C.coefsLow[0];  cf[ 1] = C.coefsLow[1];  cf[ 2] = C.coefsLow[2];
+        // } else if ( j == 1) {
+        //     cf[ 0] = C.coefsLow[1];  cf[ 1] = C.coefsLow[2];  cf[ 2] = C.coefsLow[3];
+        // } else if ( j == 2) {
+        //     cf[ 0] = C.coefsLow[2];  cf[ 1] = C.coefsLow[3];  cf[ 2] = C.coefsLow[4];
+        // } else if ( j == 3) {
+        //     cf[ 0] = C.coefsLow[3];  cf[ 1] = C.coefsLow[4];  cf[ 2] = C.coefsLow[5];
+        // } else if ( j == 4) {
+        //     cf[ 0] = C.coefsLow[4];  cf[ 1] = C.coefsLow[5];  cf[ 2] = C.coefsLow[6];
+        // } else if ( j == 5) {
+        //     cf[ 0] = C.coefsLow[5];  cf[ 1] = C.coefsLow[6];  cf[ 2] = C.coefsLow[7];
+        // } else if ( j == 6) {
+        //     cf[ 0] = C.coefsLow[6];  cf[ 1] = C.coefsLow[7];  cf[ 2] = C.coefsLow[8];
+        // }
+
+        float3 monomials = float3(t * t, t, 1.0);
+        logy = dot(monomials, mul(M, cf));
+    }
+    else if ((logx >= log10(C.midPoint.x)) && (logx < log10(C.maxPoint.x)))
+    {
+        float knot_coord = (N_KNOTS_HIGH - 1) * (logx - log10(C.midPoint.x)) / (log10(C.maxPoint.x) - log10(C.midPoint.x));
+        int j = knot_coord;
+        float t = knot_coord - j;
+
+        float3 cf = float3(C.coefsHigh[j], C.coefsHigh[j + 1], C.coefsHigh[j + 2]);
+        // NOTE: If the running a version of CTL < 1.5, you may get an
+        // exception thrown error, usually accompanied by "Array index out of range"
+        // If you receive this error, it is recommended that you update to CTL v1.5,
+        // which contains a number of important bug fixes. Otherwise, you may try
+        // uncommenting the below, which is longer, but equivalent to, the above
+        // line of code.
+        //
+        // float cf[ 3];
+        // if ( j <= 0) {
+        //     cf[ 0] = C.coefsHigh[0];  cf[ 1] = C.coefsHigh[1];  cf[ 2] = C.coefsHigh[2];
+        // } else if ( j == 1) {
+        //     cf[ 0] = C.coefsHigh[1];  cf[ 1] = C.coefsHigh[2];  cf[ 2] = C.coefsHigh[3];
+        // } else if ( j == 2) {
+        //     cf[ 0] = C.coefsHigh[2];  cf[ 1] = C.coefsHigh[3];  cf[ 2] = C.coefsHigh[4];
+        // } else if ( j == 3) {
+        //     cf[ 0] = C.coefsHigh[3];  cf[ 1] = C.coefsHigh[4];  cf[ 2] = C.coefsHigh[5];
+        // } else if ( j == 4) {
+        //     cf[ 0] = C.coefsHigh[4];  cf[ 1] = C.coefsHigh[5];  cf[ 2] = C.coefsHigh[6];
+        // } else if ( j == 5) {
+        //     cf[ 0] = C.coefsHigh[5];  cf[ 1] = C.coefsHigh[6];  cf[ 2] = C.coefsHigh[7];
+        // } else if ( j == 6) {
+        //     cf[ 0] = C.coefsHigh[6];  cf[ 1] = C.coefsHigh[7];  cf[ 2] = C.coefsHigh[8];
+        // }
+
+        float3 monomials = float3(t * t, t, 1.0);
+        logy = dot(monomials, mul(M, cf));
+    }
+    else
+    {
+        logy = logx * C.slopeHigh + (log10(C.maxPoint.y) - C.slopeHigh * log10(C.maxPoint.x));
+    }
+
+    return pow(10.0, logy);
+}
+
+static const SegmentedSplineParams_c9 ODT_48nits =
+{
+    // coefsLow[10]
+    { -1.6989700043, -1.6989700043, -1.4779000000, -1.2291000000, -0.8648000000, -0.4480000000, 0.0051800000, 0.4511080334, 0.9113744414, 0.9113744414},
+    // coefsHigh[10]
+    { 0.5154386965, 0.8470437783, 1.1358000000, 1.3802000000, 1.5197000000, 1.5985000000, 1.6467000000, 1.6746091357, 1.6878733390, 1.6878733390 },
+    {segmented_spline_c5_fwd( 0.18*exp2(-6.5) ),  0.02},    // minPoint
+    {segmented_spline_c5_fwd( 0.18 ),              4.8},    // midPoint
+    {segmented_spline_c5_fwd( 0.18*exp2(6.5) ),   48.0},    // maxPoint
+    0.0,  // slopeLow
+    0.04  // slopeHigh
+};
+
+float segmented_spline_c9_fwd(float x, SegmentedSplineParams_c9 C = ODT_48nits)
+{
+    const int N_KNOTS_LOW = 8;
+    const int N_KNOTS_HIGH = 8;
+
+    // Check for negatives or zero before taking the log. If negative or zero,
+    // set to HALF_MIN.
+    float logx = log10(max(x, HALF_POS_MIN));
+
+    float logy;
+
+    if (logx <= log10(C.minPoint.x))
+    {
+        logy = logx * C.slopeLow + (log10(C.minPoint.y) - C.slopeLow * log10(C.minPoint.x));
+    }
+    else if ((logx > log10(C.minPoint.x)) && (logx < log10(C.midPoint.x)))
+    {
+        float knot_coord = (N_KNOTS_LOW - 1) * (logx - log10(C.minPoint.x)) / (log10(C.midPoint.x) - log10(C.minPoint.x));
+        int j = knot_coord;
+        float t = knot_coord - j;
+
+        float3 cf = float3(C.coefsLow[j], C.coefsLow[j + 1], C.coefsLow[j + 2]);
+        // NOTE: If the running a version of CTL < 1.5, you may get an
+        // exception thrown error, usually accompanied by "Array index out of range"
+        // If you receive this error, it is recommended that you update to CTL v1.5,
+        // which contains a number of important bug fixes. Otherwise, you may try
+        // uncommenting the below, which is longer, but equivalent to, the above
+        // line of code.
+        //
+        // float cf[ 3];
+        // if ( j <= 0) {
+        //     cf[ 0] = C.coefsLow[0];  cf[ 1] = C.coefsLow[1];  cf[ 2] = C.coefsLow[2];
+        // } else if ( j == 1) {
+        //     cf[ 0] = C.coefsLow[1];  cf[ 1] = C.coefsLow[2];  cf[ 2] = C.coefsLow[3];
+        // } else if ( j == 2) {
+        //     cf[ 0] = C.coefsLow[2];  cf[ 1] = C.coefsLow[3];  cf[ 2] = C.coefsLow[4];
+        // } else if ( j == 3) {
+        //     cf[ 0] = C.coefsLow[3];  cf[ 1] = C.coefsLow[4];  cf[ 2] = C.coefsLow[5];
+        // } else if ( j == 4) {
+        //     cf[ 0] = C.coefsLow[4];  cf[ 1] = C.coefsLow[5];  cf[ 2] = C.coefsLow[6];
+        // } else if ( j == 5) {
+        //     cf[ 0] = C.coefsLow[5];  cf[ 1] = C.coefsLow[6];  cf[ 2] = C.coefsLow[7];
+        // } else if ( j == 6) {
+        //     cf[ 0] = C.coefsLow[6];  cf[ 1] = C.coefsLow[7];  cf[ 2] = C.coefsLow[8];
+        // }
+
+        float3 monomials = float3(t * t, t, 1.0);
+        logy = dot(monomials, mul(M, cf));
+    }
+    else if ((logx >= log10(C.midPoint.x)) && (logx < log10(C.maxPoint.x)))
+    {
+        float knot_coord = (N_KNOTS_HIGH - 1) * (logx - log10(C.midPoint.x)) / (log10(C.maxPoint.x) - log10(C.midPoint.x));
+        int j = knot_coord;
+        float t = knot_coord - j;
+
+        float3 cf = float3(C.coefsHigh[j], C.coefsHigh[j + 1], C.coefsHigh[j + 2]);
+        // NOTE: If the running a version of CTL < 1.5, you may get an
+        // exception thrown error, usually accompanied by "Array index out of range"
+        // If you receive this error, it is recommended that you update to CTL v1.5,
+        // which contains a number of important bug fixes. Otherwise, you may try
+        // uncommenting the below, which is longer, but equivalent to, the above
+        // line of code.
+        //
+        // float cf[ 3];
+        // if ( j <= 0) {
+        //     cf[ 0] = C.coefsHigh[0];  cf[ 1] = C.coefsHigh[1];  cf[ 2] = C.coefsHigh[2];
+        // } else if ( j == 1) {
+        //     cf[ 0] = C.coefsHigh[1];  cf[ 1] = C.coefsHigh[2];  cf[ 2] = C.coefsHigh[3];
+        // } else if ( j == 2) {
+        //     cf[ 0] = C.coefsHigh[2];  cf[ 1] = C.coefsHigh[3];  cf[ 2] = C.coefsHigh[4];
+        // } else if ( j == 3) {
+        //     cf[ 0] = C.coefsHigh[3];  cf[ 1] = C.coefsHigh[4];  cf[ 2] = C.coefsHigh[5];
+        // } else if ( j == 4) {
+        //     cf[ 0] = C.coefsHigh[4];  cf[ 1] = C.coefsHigh[5];  cf[ 2] = C.coefsHigh[6];
+        // } else if ( j == 5) {
+        //     cf[ 0] = C.coefsHigh[5];  cf[ 1] = C.coefsHigh[6];  cf[ 2] = C.coefsHigh[7];
+        // } else if ( j == 6) {
+        //     cf[ 0] = C.coefsHigh[6];  cf[ 1] = C.coefsHigh[7];  cf[ 2] = C.coefsHigh[8];
+        // }
+
+        float3 monomials = float3(t * t, t, 1.0);
+        logy = dot(monomials, mul(M, cf));
+    }
+    else //if (logIn >= log10(C.maxPoint.x))
+    {
+        logy = logx * C.slopeHigh + (log10(C.maxPoint.y) - C.slopeHigh * log10(C.maxPoint.x));
+    }
+
+    return pow(10.0, logy);
+}
+
+static const float3 AP1_RGB2Y = { AP1_2_XYZ_MAT[0][1], AP1_2_XYZ_MAT[1][1], AP1_2_XYZ_MAT[2][1] };
+
+float rgb_2_saturation(float3 rgb)
+{
+    float minrgb = min(rgb.r, min(rgb.g, rgb.b));
+    float maxrgb = max(rgb.r, max(rgb.g, rgb.b));
+    return (max(maxrgb, 1e-10) - max(minrgb, 1e-10)) / max(maxrgb, 1e-2);
+}
+
+// "Glow" module constants
+static const float RRT_GLOW_GAIN = 0.05;
+static const float RRT_GLOW_MID = 0.08;
+
+// Red modifier constants
+static const float RRT_RED_SCALE = 0.82;
+static const float RRT_RED_PIVOT = 0.03;
+static const float RRT_RED_HUE = 0.0;
+static const float RRT_RED_WIDTH = 135.0;
+
+// Desaturation contants
+static const float RRT_SAT_FACTOR = 0.96;
+static const float3x3 RRT_SAT_MAT =
+{
+    0.9708891511, 0.0269632842, 0.0021475819,
+    0.0108891549, 0.9869632721, 0.0021475819,
+    0.0108891549, 0.0269632842, 0.9621475339,
+};
+
+// ------- Glow module functions
+float glow_fwd(float ycIn, float glowGainIn, float glowMid)
+{
+    float glowGainOut;
+    if (ycIn <= 2.0 / 3.0 * glowMid)
+    {
+        glowGainOut = glowGainIn;
+    }
+    else if (ycIn >= 2.0 * glowMid)
+    {
+        glowGainOut = 0.0;
+    }
+    else
+    {
+        glowGainOut = glowGainIn * (glowMid / ycIn - 0.5);
+    }
+    return glowGainOut;
+}
+
+float sigmoid_shaper(float x)
+{
+    // Sigmoid function in the range 0 to 1 spanning -2 to +2.
+    float t = max(1.0 - abs(0.5 * x), 0.0);
+    float y = 1.0 + sign(x) * (1.0 - t * t);
+    return 0.5 * y;
+}
+
+// ------- Red modifier functions
+float cubic_basis_shaper
+(
+    float x,
+    float w   // full base width of the shaper function (in degrees)
+)
+{
+    float M[4][4] = { { -1.0 / 6,  3.0 / 6, -3.0 / 6,  1.0 / 6 },
+                      {  3.0 / 6, -6.0 / 6,  3.0 / 6,  0.0 / 6 },
+                      { -3.0 / 6,  0.0 / 6,  3.0 / 6,  0.0 / 6 },
+                      {  1.0 / 6,  4.0 / 6,  1.0 / 6,  0.0 / 6 } };
+
+    float knots[5] = { -0.5 * w, -0.25 * w, 0, 0.25 * w, 0.5 * w };
+
+    float y = 0.0;
+    if ((x > knots[0]) && (x < knots[4]))
+    {
+        float knot_coord = (x - knots[0]) * 4.0 / w;
+        int j = knot_coord;
+        float t = knot_coord - j;
+
+        float monomials[4] = { t * t * t, t * t, t, 1.0 };
+
+        // (if/else structure required for compatibility with CTL < v1.5.)
+        if (j == 3)
+        {
+            y = monomials[0] * M[0][0] + monomials[1] * M[1][0] +
+                monomials[2] * M[2][0] + monomials[3] * M[3][0];
+        }
+        else if (j == 2)
+        {
+            y = monomials[0] * M[0][1] + monomials[1] * M[1][1] +
+                monomials[2] * M[2][1] + monomials[3] * M[3][1];
+        }
+        else if (j == 1)
+        {
+            y = monomials[0] * M[0][2] + monomials[1] * M[1][2] +
+                monomials[2] * M[2][2] + monomials[3] * M[3][2];
+        }
+        else if (j == 0)
+        {
+            y = monomials[0] * M[0][3] + monomials[1] * M[1][3] +
+                monomials[2] * M[2][3] + monomials[3] * M[3][3];
+        }
+        else
+        {
+            y = 0.0;
+        }
+    }
+
+    return y * 1.5;
+}
+
+float center_hue(float hue, float centerH)
+{
+    float hueCentered = hue - centerH;
+    if (hueCentered < -180.0) hueCentered = hueCentered + 360.0;
+    else if (hueCentered > 180.0) hueCentered = hueCentered - 360.0;
+    return hueCentered;
+}
+
+float uncenter_hue(float hueCentered, float centerH)
+{
+    float hue = hueCentered + centerH;
+    if (hue < 0.0) hue = hue + 360.0;
+    else if (hue > 360.0) hue = hue - 360.0;
+    return hue;
+}
+
+float3 RRT(float3 aces)
+{
+    // --- Glow module --- //
+    float saturation = rgb_2_saturation(aces);
+    float ycIn = rgb_2_yc(aces);
+    float s = sigmoid_shaper((saturation - 0.4) / 0.2);
+    float addedGlow = 1.0 + glow_fwd(ycIn, RRT_GLOW_GAIN * s, RRT_GLOW_MID);
+    aces *= addedGlow;
+
+    // --- Red modifier --- //
+    float hue = rgb_2_hue(aces);
+    float centeredHue = center_hue(hue, RRT_RED_HUE);
+    float hueWeight = cubic_basis_shaper(centeredHue, RRT_RED_WIDTH);
+
+    aces[0] = aces[0] + hueWeight * saturation * (RRT_RED_PIVOT - aces[0]) * (1.0 - RRT_RED_SCALE);
+
+    // --- ACES to RGB rendering space --- //
+    aces = clamp(aces, 0.0, HALF_POS_INF);  // avoids saturated negative colors from becoming positive in the matrix
+
+    float3 rgbPre = mul(AP0_2_AP1_MAT, aces);
+
+    rgbPre = clamp(rgbPre, 0.0, HALF_POS_INF);
+
+    // --- Global desaturation --- //
+    rgbPre = mul(RRT_SAT_MAT, rgbPre);
+
+    // --- Apply the tonescale independently in rendering-space RGB --- //
+    float3 rgbPost;
+    rgbPost[0] = segmented_spline_c5_fwd(rgbPre[0]);
+    rgbPost[1] = segmented_spline_c5_fwd(rgbPre[1]);
+    rgbPost[2] = segmented_spline_c5_fwd(rgbPre[2]);
+
+    // --- RGB rendering space to OCES --- //
+    float3 rgbOces = mul(AP1_2_AP0_MAT, rgbPost);
+
+    return rgbOces;
+}
+
+// Target white and black points for cinema system tonescale
+static const float CINEMA_WHITE = 48.0;
+static const float CINEMA_BLACK = CINEMA_WHITE / 2400.0; // pow10(log10(0.02));
+    // CINEMA_BLACK is defined in this roundabout manner in order to be exactly equal to
+    // the result returned by the cinema 48-nit ODT tonescale.
+    // Though the min point of the tonescale is designed to return 0.02, the tonescale is
+    // applied in log-log space, which loses precision on the antilog. The tonescale
+    // return value is passed into Y_2_linCV, where CINEMA_BLACK is subtracted. If
+    // CINEMA_BLACK is defined as simply 0.02, then the return value of this subfunction
+    // is very, very small but not equal to 0, and attaining a CV of 0 is then impossible.
+    // For all intents and purposes, CINEMA_BLACK=0.02.
+
+float Y_2_linCV(float Y, float Ymax, float Ymin)
+{
+    return (Y - Ymin) / (Ymax - Ymin);
+}
+
+float linCV_2_Y(float linCV, float Ymax, float Ymin)
+{
+    return linCV * (Ymax - Ymin) + Ymin;
+}
+
+float3 Y_2_linCV_f3(float3 Y, float Ymax, float Ymin)
+{
+    float3 linCV;
+    linCV[0] = Y_2_linCV(Y[0], Ymax, Ymin);
+    linCV[1] = Y_2_linCV(Y[1], Ymax, Ymin);
+    linCV[2] = Y_2_linCV(Y[2], Ymax, Ymin);
+    return linCV;
+}
+
+float3 linCV_2_Y_f3(float3 linCV, float Ymax, float Ymin)
+{
+    float3 Y;
+    Y[0] = linCV_2_Y(linCV[0], Ymax, Ymin);
+    Y[1] = linCV_2_Y(linCV[1], Ymax, Ymin);
+    Y[2] = linCV_2_Y(linCV[2], Ymax, Ymin);
+    return Y;
+}
+
+// Gamma compensation factor
+static const float DIM_SURROUND_GAMMA = 0.9811;
+
+float3 darkSurround_to_dimSurround(float3 linearCV)
+{
+    float3 XYZ = mul(AP1_2_XYZ_MAT, linearCV);
+
+    float3 xyY = XYZ_2_xyY(XYZ);
+    xyY[2] = clamp(xyY[2], 0.0, HALF_POS_INF);
+    xyY[2] = pow(xyY[2], DIM_SURROUND_GAMMA);
+    XYZ = xyY_2_XYZ(xyY);
+
+    return mul(XYZ_2_AP1_MAT, XYZ);
+}
+
+float3 dimSurround_to_darkSurround(float3 linearCV)
+{
+    float3 XYZ = mul(AP1_2_XYZ_MAT, linearCV);
+
+    float3 xyY = XYZ_2_xyY(XYZ);
+    xyY[2] = clamp(xyY[2], 0.0, HALF_POS_INF);
+    xyY[2] = pow(xyY[2], 1.0 / DIM_SURROUND_GAMMA);
+    XYZ = xyY_2_XYZ(xyY);
+
+    return mul(XYZ_2_AP1_MAT, XYZ);
+}
+
+// <ACEStransformID>urn:ampas:aces:transformId:v1.5:ODT.Academy.RGBmonitor_100nits_dim.a1.0.3</ACEStransformID>
+// <ACESuserName>ACES 1.0 Output - sRGB</ACESuserName>
+
+//
+// Output Device Transform - RGB computer monitor
+//
+
+//
+// Summary :
+//  This transform is intended for mapping OCES onto a desktop computer monitor
+//  typical of those used in motion picture visual effects production. These
+//  monitors may occasionally be referred to as "sRGB" displays, however, the
+//  monitor for which this transform is designed does not exactly match the
+//  specifications in IEC 61966-2-1:1999.
+//
+//  The assumed observer adapted white is D65, and the viewing environment is
+//  that of a dim surround.
+//
+//  The monitor specified is intended to be more typical of those found in
+//  visual effects production.
+//
+// Device Primaries :
+//  Primaries are those specified in Rec. ITU-R BT.709
+//  CIE 1931 chromaticities:  x         y         Y
+//              Red:          0.64      0.33
+//              Green:        0.3       0.6
+//              Blue:         0.15      0.06
+//              White:        0.3127    0.329     100 cd/m^2
+//
+// Display EOTF :
+//  The reference electro-optical transfer function specified in
+//  IEC 61966-2-1:1999.
+//  Note: This EOTF is *NOT* gamma 2.2
+//
+// Signal Range:
+//    This transform outputs full range code values.
+//
+// Assumed observer adapted white point:
+//         CIE 1931 chromaticities:    x            y
+//                                     0.3127       0.329
+//
+// Viewing Environment:
+//   This ODT has a compensation for viewing environment variables more typical
+//   of those associated with video mastering.
+//
+
+// Saturation compensation factor
+static const float ODT_SAT_FACTOR = 0.93;
+static const float3x3 ODT_SAT_MAT =
+{
+    0.9490560293, 0.0471857190, 0.0037582659,
+    0.0190560091, 0.9771857262, 0.0037582659,
+    0.0190560091, 0.0471857190, 0.9337582588,
+};
+
+float3 ODT_sRGB_100nits_dim(float3 oces)
+{
+    // OCES to RGB rendering space
+    float3 rgbPre = mul(AP0_2_AP1_MAT, oces);
+
+    // Apply the tonescale independently in rendering-space RGB
+    float3 rgbPost;
+    rgbPost[0] = segmented_spline_c9_fwd(rgbPre[0]);
+    rgbPost[1] = segmented_spline_c9_fwd(rgbPre[1]);
+    rgbPost[2] = segmented_spline_c9_fwd(rgbPre[2]);
+
+    // Scale luminance to linear code value
+    float3 linearCV;
+    linearCV[0] = Y_2_linCV(rgbPost[0], CINEMA_WHITE, CINEMA_BLACK);
+    linearCV[1] = Y_2_linCV(rgbPost[1], CINEMA_WHITE, CINEMA_BLACK);
+    linearCV[2] = Y_2_linCV(rgbPost[2], CINEMA_WHITE, CINEMA_BLACK);
+
+    // Apply gamma adjustment to compensate for dim surround
+    linearCV = darkSurround_to_dimSurround(linearCV);
+
+    // Apply desaturation to compensate for luminance difference
+    linearCV = mul(ODT_SAT_MAT, linearCV);
+
+    // Convert to display primary encoding
+    // Rendering space RGB to XYZ
+    float3 XYZ = mul(AP1_2_XYZ_MAT, linearCV);
+
+    // Apply CAT from ACES white point to assumed observer adapted white point
+    XYZ = mul(D60_2_D65_CAT, XYZ);
+
+    // CIE XYZ to display primaries
+    linearCV = mul(XYZ_2_REC709_PRI_MAT, XYZ);
+
+    // Handle out-of-gamut values
+    // Clip values < 0 or > 1 (i.e. projecting outside the display primaries)
+    linearCV = saturate(linearCV);
+
+    // Encode linear code values with transfer function
+    float3 outputCV;
+    // moncurve_r with gamma of 2.4 and offset of 0.055 matches the EOTF found in IEC 61966-2-1:1999 (sRGB)
+    const float DISPGAMMA = 2.4;
+    const float OFFSET = 0.055;
+    outputCV.x = moncurve_r(linearCV.x, DISPGAMMA, OFFSET);
+    outputCV.y = moncurve_r(linearCV.y, DISPGAMMA, OFFSET);
+    outputCV.z = moncurve_r(linearCV.z, DISPGAMMA, OFFSET);
+
+    return outputCV;
+}

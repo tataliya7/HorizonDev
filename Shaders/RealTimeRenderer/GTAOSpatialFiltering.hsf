@@ -1,0 +1,66 @@
+
+#include "../ShaderCommon.hsh"
+#include "../Random.hsh"
+#include "RealTimeRendererCommon.hsh"
+
+BIND_BUFFER_ELEMENT(0, PerFrameData, PerFrameData);
+BIND_TEXTURE_2D_SRV(1, SceneDepthTexture);
+BIND_TEXTURE_2D_SRV(2, GTAOHorizonSearchAndIntegralTexture);
+BIND_TEXTURE_2D_UAV(3, float, GTAOSpatialFilteringTexture);
+
+[numthreads(8, 8, 1)]
+void GTAOSpatialFilteringCS(uint3 DispatchThreadID : SV_DispatchThreadID)
+{
+    PerFrameData perFrameData = GetPerFrameData();
+    Texture2D sceneDepthTexture = GetSceneDepthTextureSRV();
+    Texture2D horizonSearchAndIntegralTexture = GetGTAOHorizonSearchAndIntegralTextureSRV();
+    RWTexture2D<float> outputTexture = GetGTAOSpatialFilteringTextureUAV();
+
+    uint2 pixelCoord = DispatchThreadID.xy;
+
+    float result = horizonSearchAndIntegralTexture[pixelCoord].r;
+    // uint width = perFrameData.renderResolutionX / 2;
+    // uint height = perFrameData.renderResolutionY / 2;
+    // if (pixelCoord.x >= width || pixelCoord.y >= height)
+    // {
+    //     return;
+    // }
+
+    // float2 uv = (pixelCoord + 0.5) / float2(width, height);
+    // float deltaU = SHADER_ARGUMENTS_DATA(0);
+    // float deltaV = SHADER_ARGUMENTS_DATA(1);
+    // float2 deltaUV = float2(deltaU, deltaV);
+
+
+    // float totalAO, depth;
+    // FetchAoAndDepth(uv, totalAO, depth);
+
+    // float totalWeight = 1.0;
+    // ProcessRadius(uv, -deltaUV, depth, totalAO, totalWeight);
+    // ProcessRadius(uv,  deltaUV, depth, totalAO, totalWeight);
+
+#if 0
+    GroupMemoryBarrierWithGroupSync();
+
+    float totalAO = 0.0f;
+    float totalWeight = 0.0f;
+    for (int x = -2; int x <= 2; x++)
+    {
+        for (int y = -2; int y <= 2; y++)
+        {
+            float sampleAO = ;
+            float sampleDepth = ;
+
+            float deltaDepth = abs(PlaneZ - SampleZ);
+
+            float sampleWeight = 1.0f - saturate(deltaDepth / 0.1f);
+
+            totalAO += sampleWeight * sampleAO;
+            totalWeight += sampleWeight;
+        }
+    }
+    float result = totalAO / totalWeight;
+#endif
+
+    outputTexture[pixelCoord] = result;
+}

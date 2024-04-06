@@ -1,0 +1,23 @@
+#include "../../ShaderCommon.hsh"
+#include "../RealTimeRendererCommon.hsh"
+#include "SubsurfaceScatteringCommon.hsh"
+
+BIND_BYTE_ADDRESS_BUFFER_SRV(0, SubsurfaceScatteringTileCountBuffer);
+BIND_BYTE_ADDRESS_BUFFER_UAV(1, SubsurfaceScatteringDispatchIndirectArgumentBuffer);
+BIND_BYTE_ADDRESS_BUFFER_UAV(2, SubsurfaceScatteringDrawIndirectArgumentBuffer);
+
+[numthreads(1, 1, 1)]
+void SubsurfaceScatteringBuildIndirectArgumentsCS(uint3 DispatchThreadID : SV_DispatchThreadID)
+{
+    ByteAddressBuffer tileCountBuffer = GetSubsurfaceScatteringTileCountBufferSRV();
+    RWByteAddressBuffer dispatchIndirectArgumentBuffer = GetSubsurfaceScatteringDispatchIndirectArgumentBufferUAV();
+    RWByteAddressBuffer drawIndirectArgumentBuffer = GetSubsurfaceScatteringDrawIndirectArgumentBufferUAV();
+
+    uint tileCount = tileCountBuffer.Load<uint>(0);
+
+    // (threadGroupCountX, threadGroupCountY, threadGroupCountZ)
+    dispatchIndirectArgumentBuffer.Store<uint3>(0, uint3(tileCount, 1, 1));
+
+    // (numVertices, numInstances, firstVertex, firstInstance)
+    drawIndirectArgumentBuffer.Store<uint4>(0, uint4(6, tileCount, 0, 0));
+}

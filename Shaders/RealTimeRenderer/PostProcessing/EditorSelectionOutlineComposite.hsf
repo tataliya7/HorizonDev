@@ -1,0 +1,47 @@
+#include "../ShaderCommon.hsh"
+#include "RealTimeRendererCommon.hsh"
+#include "PostProcessingCommon.hsh"
+#include "EditorSelectionOutlineCommon.hsh"
+
+BIND_BUFFER_ELEMENT(0, PerFrameData, PerFrameData);
+BIND_TEXTURE_2D_SRV(1, InputTexture);
+BIND_TEXTURE_2D_UAV(2, float4, OutputTexture);
+
+[numthreads(POST_PROCESS_THREAD_GROUP_SIZE, POST_PROCESS_THREAD_GROUP_SIZE, 1)]
+void EditorSelectionOutlineCompositeCS(uint3 DispatchThreadID : SV_DispatchThreadID)
+{
+    PerFrameData perFrameData = GetPerFrameData();
+    uint2 pixelCoord = DispatchThreadID.xy;
+    uint width = perFrameData.targetResolutionX;
+    uint height = perFrameData.targetResolutionY;
+    if (pixelCoord.x >= width || pixelCoord.y >= height)
+    {
+        return;
+    }
+
+    float outlineWidth = 1.0f;
+    float4 outlineColor = float4(1.0f, 0.5f, 0.0f, 1.0f);
+
+    Texture2D inputTexture = GetInputTextureSRV();
+    RWTexture2D<float4> outputTexture = GetOutputTextureUAV();
+
+    float4 input = inputTexture[pixelCoord];
+    if (input.z == EDITOR_SELECTION_OUTLINE_JUMP_FLOOD_INVALID_VALUE || input.w > 0.99) // early out if null nearest position or in interior region
+    {
+        return;
+    }
+
+    float dist = sqrt(input.z);
+
+    // calculate outline
+    // + 1.0 is because encoded nearest position is half a pixel inset
+    // not + 0.5 because we want the anti-aliased edge to be aligned between pixels
+    // distance is already in pixels, so this is already perfectly anti-aliased!
+    float outline = saturate(outlineWidth - dist + 1.0);
+
+    // apply outline to alpha
+    float4 color = outlineColor;
+    color.a *= outline;
+
+    outputTexture[pixelCoord] = color;
+}

@@ -1,0 +1,112 @@
+#include "../ShaderCommon.hsh"
+#include "../RealTimeRenderer/RealTimeRendererCommon.hsh"
+
+BIND_TEXTURE_2D_SRV(0, InputTexture);
+BIND_TEXTURE_2D_SRV(1, SceneDepth);
+BIND_TEXTURE_2D_UAV(2, float4, OutputTexture);
+BIND_BUFFER_ELEMENT(3, PerFrameData, PerFrameData);
+
+#if SSD_CONFIG_SIGNAL_TYPE == SIGNAL_PROCESSING_SHADOW_VISIBILITY_MASK
+
+#endif
+
+struct SSDKernelConfig
+{
+    uint kernelRadius;
+};
+
+static float gaussian[64];
+
+void SSDAccumulateSample(SSDKernelConfig kernelConfig, Texture2D inputTexture, Texture2D sceneDepth, float2 uv, float2 offset, float x, float center_c, float center_d, inout float c_total, inout float w_total)
+{
+    uint kernelRadius = kernelConfig.kernelRadius;
+
+    PerFrameData perFrameData = GetPerFrameData();
+    float signal = inputTexture.SampleLevel(GlobalSamplerLinearClamp, uv + offset, 0).r;
+    //float depth = LinearDepth01(sceneDepth.SampleLevel(GlobalSamplerLinearClamp, uv + offset, 0).r, perFrameData.nearClippingPlane, perFrameData.farClippingPlane);
+    float depth = sceneDepth.SampleLevel(GlobalSamplerLinearClamp, uv + offset, 0).r;
+
+    float c = signal;
+    float d = depth;
+
+    const float BlurSigma = float(kernelRadius) * 0.1;
+    const float BlurFalloff = 1.0 / (2.0 * BlurSigma * BlurSigma);
+
+    float g_Sharpness = 40.0;
+    float ddiff = (d - center_d) * g_Sharpness;
+    float w = exp(-(x * x) * BlurFalloff - ddiff * ddiff);
+
+    c_total += c * w;
+    w_total += w;
+}
+
+float EuclideanLen(float a, float b, float d)
+{
+    return exp(-(a - b) * (a - b) / (2.0 * d * d));
+}
+
+float SSDBilateralFilter(SSDKernelConfig kernelConfig, Texture2D inputTexture, float2 invSize, float2 uv)
+{
+    // @note Convert uint to int!
+    int kernelRadius = kernelConfig.kernelRadius;
+
+    Texture2D sceneDepth = GetSceneDepthSRV();
+
+    float centerPixel = inputTexture.SampleLevel(GlobalSamplerLinearClamp, uv, 0).r;
+
+    float t = 0.0;
+    float sum = 0.0;
+
+    [unroll]
+    for (int x = -kernelRadius; x <= kernelRadius; x++)
+    {
+        [unroll]
+        for (int y = -kernelRadius; y <= kernelRadius; y++)
+        {
+            float2 offset = float2(x, y) * invSize;
+            float curPixel = inputTexture.SampleLevel(GlobalSamplerLinearClamp, uv + offset, 0).r;
+            float factor = gaussian[x + kernelRadius] * gaussian[y + kernelRadius] * EuclideanLen(curPixel, centerPixel, 0.4);
+
+            t += factor * curPixel;
+            sum += factor;
+        }
+    }
+
+    float result = t / sum;
+    return result;
+}
+
+void UpdateGaussian(float delta, uint radius)
+{
+    for (uint i = 0; i <= (radius + radius); i++)
+    {
+        float x = float(i - radius);
+        gaussian[i] = exp(-(x * x) / (2.0 * delta * delta));
+    }
+}
+
+[numthreads(8, 8, 1)]
+void SDDSpatialFilteringCS(uint2 DispatchThreadId : SV_DispatchThreadID)
+{
+    // Texture2D inputeTexture = GetInputTextureSRV();
+
+    // uint width, height;
+    // inputeTexture.GetDimensions(width, height);
+    // if (DispatchThreadId.x >= width || DispatchThreadId.y >= height)
+    // {
+    //     return;
+    // }
+
+    // uint2 coord = DispatchThreadId.xy;
+    // float2 uv = (coord + 0.5) / float2(width, height);
+
+    // float2 invSize = float2(1.0 / width, 1.0 / height);
+    // SSDKernelConfig kernelConfig;
+    // kernelConfig.kernelRadius = 5;
+
+    // UpdateGaussian(8.0, kernelConfig.kernelRadius);
+    // float result = SSDBilateralFilter(kernelConfig, inputeTexture, invSize, uv);
+
+    // RWTexture2D<float4> outputTexture = GetOutputTextureUAV();
+    // outputTexture[coord] = float4(result, 0.0, 0.0, 0.0);
+}

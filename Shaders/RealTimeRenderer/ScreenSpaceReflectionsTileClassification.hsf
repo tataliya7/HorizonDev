@@ -1,0 +1,116 @@
+#include "../ShaderCommon.hsh"
+#include "RealTimeRendererCommon.hsh"
+#include "ScreenSpaceReflectionsCommon.hsh"
+
+BIND_TEXTURE_2D_SRV(0, SceneDepth);
+BIND_TEXTURE_2D_SRV(1, GBuffer1);
+BIND_TEXTURE_2D_SRV(2, TileClassificationHorizontalBuffer);
+BIND_TEXTURE_2D_UAV(3, float2, TileClassificationHorizontalBuffer);
+BIND_TEXTURE_2D_UAV(4, float2, TileClassificationBuffer);
+BIND_TEXTURE_2D_UAV(5, uint, EarlyExitTilesBuffer);
+BIND_TEXTURE_2D_UAV(6, uint, CheapTilesBuffer);
+BIND_TEXTURE_2D_UAV(7, uint, ExpensiveTilesBuffer);
+BIND_BYTE_ADDRESS_BUFFER_UAV(8, RayAllocationBuffer);
+
+struct SSRTTileInfo
+{
+    uint2 coord;
+};
+
+[numthreads(SSR_THREAD_GROUP_SIZE, SSR_THREAD_GROUP_SIZE, 1)]
+void SSRTileClassificationHorizontalCS(uint3 DispatchThreadID : SV_DispatchThreadID)
+{
+    const uint2 tileUpperLeftCoord = uint2(DispatchThreadID.x * SSR_TILE_SIZE, DispatchThreadID.y);
+
+    Texture2D sceneDepth = GetSceneDepthSRV();
+    Texture2D gbuffer1 = GetGBuffer1SRV();
+
+    uint depthBufferWidth, depthBufferHeight;
+    sceneDepth.GetDimensions(depthBufferWidth, depthBufferHeight);
+
+    float minRoughness = 1.0;
+    float maxRoughness = 0.0;
+
+    [loop]
+    for (uint i = 0; i < SSR_TILE_SIZE; i++)
+    {
+        const uint2 coord = uint2(tileUpperLeftCoord.x + i, tileUpperLeftCoord.y);
+        if (coord.x >= 0 && coord.y >= 0 && coord.x < depthBufferWidth && coord.y < depthBufferHeight)
+        {
+            float depth = sceneDepth[coord].r;
+            if (depth == 0.0) // inversed-z
+            {
+                maxRoughness = max(maxRoughness, 1.0);
+                minRoughness = min(minRoughness, 1.0);
+            }
+            else
+            {
+                float roughness = gbuffer1[coord].w;
+                maxRoughness = max(maxRoughness, roughness);
+                minRoughness = min(minRoughness, roughness);
+            }
+        }
+    }
+
+    RWTexture2D<float2> tileClassificationHorizontalBuffer = GetTileClassificationHorizontalBufferUAV();
+    tileClassificationHorizontalBuffer[DispatchThreadID.xy] = float2(minRoughness, maxRoughness);
+}
+
+[numthreads(SSR_THREAD_GROUP_SIZE, SSR_THREAD_GROUP_SIZE, 1)]
+void SSRTileClassificationVerticalCS(uint3 DispatchThreadID : SV_DispatchThreadID)
+{
+    RWTexture2D<float2> tileClassificationBuffer = GetTileClassificationBufferUAV();
+    uint width, height;
+    tileClassificationBuffer.GetDimensions(width, height);
+    if (DispatchThreadID.x >= width || DispatchThreadID.y >= height)
+    {
+        return;
+    }
+
+    const uint2 tileUpperLeftCoord = uint2(DispatchThreadID.x, DispatchThreadID.y * SSR_TILE_SIZE);
+
+    RWByteAddressBuffer rayAllocationBuffer = GetRayAllocationBufferUAV();
+    Texture2D tileClassificationHorizontalBuffer = GetTileClassificationHorizontalBufferSRV();
+    uint tileClassificationHorizontalBufferWidth, tileClassificationHorizontalBufferHeight;
+    tileClassificationHorizontalBuffer.GetDimensions(tileClassificationHorizontalBufferWidth, tileClassificationHorizontalBufferHeight);
+
+    float minRoughness = 1.0;
+    float maxRoughness = 0.0;
+
+    [loop]
+    for (uint i = 0; i < SSR_TILE_SIZE; i++)
+    {
+        const uint2 coord = uint2(tileUpperLeftCoord.x, tileUpperLeftCoord.y + i);
+        if (coord.x >= 0 && coord.y >= 0 && coord.x < tileClassificationHorizontalBufferWidth && coord.y < tileClassificationHorizontalBufferHeight)
+        {
+            float2 minMaxRoughness = tileClassificationHorizontalBuffer[coord].xy;
+            minRoughness = min(minRoughness, minMaxRoughness.r);
+            maxRoughness = max(maxRoughness, minMaxRoughness.g);
+        }
+    }
+
+    RWTexture2D<uint> earlyExitTilesBuffer = GetEarlyExitTilesBufferUAV();
+    RWTexture2D<uint> cheapTilesBuffer = GetCheapTilesBufferUAV();
+    RWTexture2D<uint> expensiveTilesBuffer = GetExpensiveTilesBufferUAV();
+
+    const uint tileCoord = (DispatchThreadID.x & 0xFFFF) | ((DispatchThreadID.y & 0xFFFF) << 16);
+
+    uint tileIndex = 0;
+    if (minRoughness < SSRRoughnessCheap)
+    {
+        rayAllocationBuffer.InterlockedAdd(RAY_ALLOCATION_BUFFER_OFFSET_EXPENSIVE_TILES_COUNT, 1, tileIndex);
+        expensiveTilesBuffer[uint2(tileIndex, 0)] = tileCoord;
+    }
+    else if (maxRoughness > SSRRoughnessCheap && minRoughness < SSRRoughnessCutoff)
+    {
+        rayAllocationBuffer.InterlockedAdd(RAY_ALLOCATION_BUFFER_OFFSET_CHEAP_TILES_COUNT, 1, tileIndex);
+        cheapTilesBuffer[uint2(tileIndex, 0)] = tileCoord;
+    }
+    else
+    {
+        rayAllocationBuffer.InterlockedAdd(RAY_ALLOCATION_BUFFER_OFFSET_EARLY_EXIT_TILES_COUNT, 1, tileIndex);
+        earlyExitTilesBuffer[uint2(tileIndex, 0)] = tileCoord;
+    }
+
+    tileClassificationBuffer[DispatchThreadID.xy] = float2(minRoughness, maxRoughness);
+}

@@ -1,0 +1,40 @@
+#include "../ShaderCommon.hsh"
+#include "RealTimeRendererCommon.hsh"
+#include "PostProcessingCommon.hsh"
+
+BIND_BUFFER_ELEMENT(0, PerFrameData, PerFrameData);
+BIND_TEXTURE_2D_SRV(1, SceneColorTexture);
+BIND_TEXTURE_2D_SRV(2, DOFPostfilterTexture);
+BIND_TEXTURE_2D_SRV(3, DOFCoCTexture);
+BIND_TEXTURE_2D_UAV(4, float4, DOFOutputTexture);
+
+[numthreads(POST_PROCESS_THREAD_GROUP_SIZE, POST_PROCESS_THREAD_GROUP_SIZE, 1)]
+void DepthOfFieldRecombineCS(uint3 DispatchThreadID : SV_DispatchThreadID)
+{
+    PerFrameData perFrameData = GetPerFrameData();
+    uint width = perFrameData.targetResolutionX;
+    uint height = perFrameData.targetResolutionY;
+    if (DispatchThreadID.x >= width || DispatchThreadID.y >= height)
+    {
+        return;
+    }
+
+    uint2 pixelCoord = DispatchThreadID.xy;
+    float2 uv = (pixelCoord + 0.5) / float2(width, height);
+
+    Texture2D sceneColorTexture = GetSceneColorTextureSRV();
+    Texture2D postfilterTexture = GetDOFPostfilterTextureSRV();
+    Texture2D cocTexture = GetDOFCoCTextureSRV();
+    RWTexture2D<float4> dofOutputTexture = GetDOFOutputTextureUAV();
+
+    float4 sceneColorInFocus = sceneColorTexture.SampleLevel(GlobalSamplerPointClamp, uv, 0);
+    float4 blurredSceneColor = postfilterTexture.SampleLevel(GlobalSamplerLinearClamp, uv, 0);
+    float coc = cocTexture.SampleLevel(GlobalSamplerLinearClamp, uv, 0).r;
+    coc = abs(coc * 2 - 1);
+
+    float3 outputColor = sceneColorInFocus.rgb;
+    float blendFactor = saturate(5.82141639886 * coc - 0.333333333333);
+    outputColor.rgb = lerp(outputColor.rgb, blurredSceneColor.rgb, blendFactor);
+
+    dofOutputTexture[pixelCoord] = float4(outputColor.rgb, sceneColorInFocus.a);
+}
