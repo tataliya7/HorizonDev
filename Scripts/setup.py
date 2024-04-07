@@ -60,7 +60,7 @@ def download_url(url, dir, force = False):
             raise RuntimeError("Failed to download {0}: {1}".format(url, msg))
         return os.path.abspath(filename)
 
-def extract_zip_file(src_path, dst_dir, tmp_dir = None, force = False):
+def extract_zip_file(src_path, dst_dir, new_folder, force = False):
     name, _ = os.path.splitext(os.path.basename(src_path))
     archive = None
     try:
@@ -70,25 +70,28 @@ def extract_zip_file(src_path, dst_dir, tmp_dir = None, force = False):
             raise RuntimeError("Unrecognized archive file type")
 
         with archive:
-            dst_path = os.path.join(os.path.abspath(dst_dir), name)
+            if new_folder != "":
+                dst_path = os.path.join(os.path.abspath(dst_dir), new_folder)
+            else:
+                dst_path = os.path.join(os.path.abspath(dst_dir), name)
+
             if force and os.path.isdir(dst_path):
                 shutil.rmtree(dst_path)
 
             if os.path.isdir(dst_path):
                 print("Info: Directory {0} already exists, skipping extract".format(dst_path))
             else:
-                print("Info: Extracting archive to {0}".format(dst_dir))
+                print("Info: Extracting archive to {0}".format(dst_path))
 
-                if tmp_dir is None:
-                    tmp_dir = os.path.join(os.path.dirname(src_path), name)
+                if new_folder != "":
+                    tmp_path = os.path.join(os.path.dirname(src_path), new_folder)
+                else:
+                    tmp_path = os.path.join(os.path.dirname(src_path), name)
 
-                tmp_path = os.path.abspath(tmp_dir)
+                archive.extractall(os.path.dirname(tmp_path))
+                shutil.move(tmp_path, dst_path)
                 if os.path.isdir(tmp_path):
                     shutil.rmtree(tmp_path)
-
-                archive.extractall(tmp_path)
-
-                shutil.move(tmp_path, dst_path)
 
             return dst_path
     except Exception as e:
@@ -96,11 +99,12 @@ def extract_zip_file(src_path, dst_dir, tmp_dir = None, force = False):
         raise RuntimeError("Failed to extract archive {0}: {1}".format(src_path, e))
 
 class dependency(object):
-    def __init__(self, name, install, url, dst, args = None):
+    def __init__(self, name, install, url, dst_dir, folder, args = None):
         self.name = name
         self.install = install
         self.url = url
-        self.dst = dst
+        self.dst_dir = dst_dir
+        self.folder = folder
         self.args = args
 
 class dependency_manager:
@@ -120,83 +124,89 @@ class dependency_manager:
         return True
 
 def install_glfw(manager, dep, args = None):
-    dst_dir = os.path.join(manager.install_dir, dep.dst)
+    dst_dir = os.path.join(manager.install_dir, dep.dst_dir)
     downloaded_file = download_url(dep.url, manager.download_dir, False)
-    extract_dir = extract_zip_file(downloaded_file, dst_dir)
+    extract_dir = extract_zip_file(downloaded_file, dst_dir, dep.folder)
 
 dependency_glfw = dependency(
     name = "glfw",
     install = install_glfw,
     url = "https://github.com/glfw/glfw/releases/download/3.3.9/glfw-3.3.9.bin.WIN64.zip",
-    dst = "glfw")
+    dst_dir = "glfw",
+    folder = "")
 
 def install_imgui(manager, dep, args = None):
-    dst_dir = os.path.join(manager.install_dir, dep.dst)
+    dst_dir = os.path.join(manager.install_dir, dep.dst_dir)
     downloaded_file = download_url(dep.url, manager.download_dir, False)
-    extract_dir = extract_zip_file(downloaded_file, dst_dir)
-    shutil.copy(os.path.join(dst_dir, "imconfig.h"), os.path.join(extract_dir, "imconfig.h"))
+    extract_dir = extract_zip_file(downloaded_file, dst_dir, dep.folder)
+    shutil.copy(os.path.join(dst_dir, "imconfig.h"), os.path.join(dst_dir, "imgui-1.89.9-docking/imconfig.h"))
 
 dependency_imgui = dependency(
     name = "imgui",
     install = install_imgui,
     url = "https://github.com/ocornut/imgui/archive/refs/tags/v1.89.9-docking.zip",
-    dst = "imgui")
+    dst_dir = "imgui",
+    folder = "")
 
 def install_ImGuizmo(manager, dep, args = None):
+    dst_dir = os.path.join(manager.install_dir, dep.dst_dir)
     downloaded_file = download_url(dep.url, manager.download_dir, False)
-    extract_zip_file(downloaded_file, os.path.join(manager.install_dir, dep.dst))
-    #with current_working_dir():
-    #   return os.getcwd()
+    extract_dir = extract_zip_file(downloaded_file, dst_dir, dep.folder)
 
 dependency_ImGuizmo = dependency(
     name = "ImGuizmo",
     install = install_ImGuizmo,
     url = "https://github.com/CedricGuillemet/ImGuizmo/archive/refs/tags/1.83.zip",
-    dst = "ImGuizmo")
+    dst_dir = "ImGuizmo",
+    folder = "")
 
 def install_googletest(manager, dep, args = None):
-    dst_dir = os.path.join(manager.install_dir, dep.dst)
+    dst_dir = os.path.join(manager.install_dir, dep.dst_dir)
     downloaded_file = download_url(dep.url, manager.download_dir, False)
-    extract_dir = extract_zip_file(downloaded_file, dst_dir)
+    extract_dir = extract_zip_file(downloaded_file, dst_dir, dep.folder)
 
 dependency_googletest = dependency(
     name = "googletest",
     install = install_googletest,
     url = "https://github.com/google/googletest/archive/refs/tags/v1.14.0.zip",
-    dst = "googletest")
+    dst_dir = "googletest",
+    folder = "")
 
 def install_optick(manager, dep, args = None):
-    dst_dir = os.path.join(manager.install_dir, dep.dst)
+    dst_dir = os.path.join(manager.install_dir, dep.dst_dir)
     downloaded_file = download_url(dep.url, manager.download_dir, False)
-    extract_dir = extract_zip_file(downloaded_file, dst_dir)
+    extract_dir = extract_zip_file(downloaded_file, dst_dir, dep.folder)
 
 dependency_optick = dependency(
     name = "optick",
     install = install_optick,
     url = "https://github.com/bombomby/optick/releases/download/1.4.0.0/Optick_1.4.0.zip",
-    dst = "optick")
+    dst_dir = "optick",
+    folder = "Optick_1.4.0")
 
 def install_dxc(manager, dep, args = None):
-    dst_dir = os.path.join(manager.install_dir, dep.dst)
+    dst_dir = os.path.join(manager.install_dir, dep.dst_dir)
     downloaded_file = download_url(dep.url, manager.download_dir, False)
-    extract_dir = extract_zip_file(downloaded_file, dst_dir)
+    extract_dir = extract_zip_file(downloaded_file, dst_dir, dep.folder)
 
 dependency_dxc = dependency(
     name = "dxc",
     install = install_dxc,
     url = "https://github.com/microsoft/DirectXShaderCompiler/releases/download/v1.8.2403.1/dxc_2024_03_22.zip",
-    dst = "dxc")
+    dst_dir = "dxc",
+    folder = "dxc_2024_03_22")
 
 def install_meshoptimizer(manager, dep, args = None):
-    dst_dir = os.path.join(manager.install_dir, dep.dst)
+    dst_dir = os.path.join(manager.install_dir, dep.dst_dir)
     downloaded_file = download_url(dep.url, manager.download_dir, False)
-    extract_dir = extract_zip_file(downloaded_file, dst_dir)
+    extract_dir = extract_zip_file(downloaded_file, dst_dir, dep.folder)
 
 dependency_meshoptimizer = dependency(
     name = "meshoptimizer",
     install = install_meshoptimizer,
     url = "https://github.com/zeux/meshoptimizer/archive/refs/tags/v0.20.zip",
-    dst = "meshoptimizer")
+    dst_dir = "meshoptimizer",
+    folder = "")
 
 # parser = argparse.ArgumentParser()
 # parser.add_argument(
