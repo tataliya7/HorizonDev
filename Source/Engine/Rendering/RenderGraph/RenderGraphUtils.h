@@ -1,9 +1,9 @@
 #pragma once
 
-#define RENDER_GRAPH_BLACKBOARD_REGISTER_STRUCT(StructType)                           \
-template<>                                                                           \
+#define RENDER_GRAPH_BLACKBOARD_REGISTER_STRUCT(StructType)                        \
+template<>                                                                         \
 FORCEINLINE std::string RenderGraphBlackboard::GetStructName<StructType>()         \
-{                                                                                   \
+{                                                                                  \
     return GetStructName(#StructType, __FILE__, __LINE__);                         \
 }
 

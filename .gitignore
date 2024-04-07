@@ -79,6 +79,7 @@
 
 /Build/
 /Assets/*
+/Download
 
 # TODO: remove this
 !/Assets/Fonts
