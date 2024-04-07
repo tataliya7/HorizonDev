@@ -85,10 +85,11 @@ def extract_zip_file(src_path, dst_dir, new_folder, force = False):
 
                 if new_folder != "":
                     tmp_path = os.path.join(os.path.dirname(src_path), new_folder)
+                    archive.extractall(tmp_path)
                 else:
                     tmp_path = os.path.join(os.path.dirname(src_path), name)
+                    archive.extractall(os.path.dirname(tmp_path))
 
-                archive.extractall(os.path.dirname(tmp_path))
                 shutil.move(tmp_path, dst_path)
                 if os.path.isdir(tmp_path):
                     shutil.rmtree(tmp_path)
