@@ -37,4 +37,11 @@ namespace HE
     void JobSystemWaitForCounter(JobSystemCounterHandle counter);
     void JobSystemWaitForCounterAndFree(JobSystemCounterHandle counter);
     void JobSystemWaitForCounterAndFreeWithoutFiber(JobSystemCounterHandle counter);
+
+    struct JobSystemJobContext
+    {
+
+    };
+
+    JobSystemCounterHandle JobSystemDispatchJob(const std::function<void(JobSystemJobContext)>& jobFunction);
 }
