@@ -300,7 +300,7 @@ namespace HE
         // Worker thread are locked to cores
         // Avoid context swtitches and unwanted core switching
         // Kernel threads can otherwise cause ripple effects across the cores 
-        DWORD_PTR affinityMask = 1ull << thread->index;
+        DWORD_PTR affinityMask = (1ull << thread->index) + 1; // Main thread affinitized to CPU 0, worker threas affinitized to CPU 1 through N
         assert(SetThreadAffinityMask(handle, affinityMask) > 0);
 
         assert(SetThreadPriority(handle, THREAD_PRIORITY_HIGHEST) != FALSE);
@@ -316,6 +316,10 @@ namespace HE
         assert(!IsJobSystemInitialized());
         assert(workerThreadCount <= JOB_SYSTEM_MAX_WORKER_THREAD_COUNT);
         assert((fiberCount <= JOB_SYSTEM_MAX_FIBER_COUNT) && (fiberCount >= workerThreadCount) && ((fiberCount & (fiberCount - 1)) == 0));
+
+        // Main thread affinitized to CPU 0
+        DWORD_PTR affinityMask = 1ull;
+        assert(SetThreadAffinityMask(GetCurrentThread(), affinityMask) > 0);
 
         GJobSystemBootAtomicCounter.store(workerThreadCount);
         GJobSystemRequestQuit.store(false);
