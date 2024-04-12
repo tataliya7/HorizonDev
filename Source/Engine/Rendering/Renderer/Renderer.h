@@ -256,9 +256,6 @@ namespace HE
         RenderBackendBufferHandle indexBuffer;
         RenderBackendBufferHandle indexBufferUpload;
 
-        std::vector<ImDrawVert> vertices;
-        std::vector<ImDrawIdx> indices;
-
         bool shouldUpdateRayTracingScene = false;
 
         void UpdateRayTracingAccelerationStructures(SceneView* view, RenderBackendCommandList* commandList);

@@ -1090,25 +1090,23 @@ namespace HE
             uint32 vertexOffset = 0;
             uint32 indexOffset = 0;
 
-            // TODO: optimize this, copy data into upload buffer directly
+            void* vertexBufferDataPtr;
+            void* indexBufferDataPtr;
+            renderBackend->MapBuffer(vertexBufferUpload, &vertexBufferDataPtr);
+            renderBackend->MapBuffer(indexBufferUpload, &indexBufferDataPtr);
+
+            ImDrawVert* vtx_dst = (ImDrawVert*)vertexBufferDataPtr;
+            ImDrawIdx* idx_dst = (ImDrawIdx*)indexBufferDataPtr;
             for (int i = 0; i < drawData->CmdListsCount; i++)
             {
                 const ImDrawList* cmdList = drawData->CmdLists[i];
-                memcpy(vertices.data() + vertexOffset, cmdList->VtxBuffer.Data, cmdList->VtxBuffer.Size * sizeof(ImDrawVert));
-                memcpy(indices.data() + indexOffset, cmdList->IdxBuffer.Data, cmdList->IdxBuffer.Size * sizeof(ImDrawIdx));
+                memcpy(vtx_dst + vertexOffset, cmdList->VtxBuffer.Data, cmdList->VtxBuffer.Size * sizeof(ImDrawVert));
+                memcpy(idx_dst + indexOffset, cmdList->IdxBuffer.Data, cmdList->IdxBuffer.Size * sizeof(ImDrawIdx));
                 vertexOffset += cmdList->VtxBuffer.Size;
                 indexOffset += cmdList->IdxBuffer.Size;
             }
-        }
-
-        if (currentVertexBufferDataSize > 0)
-        {
-            renderBackend->UpdateBuffer(vertexBufferUpload, 0, vertices.data(), currentVertexBufferDataSize);
-        }
-
-        if (currentIndexBufferDataSize > 0)
-        {
-            renderBackend->UpdateBuffer(indexBufferUpload, 0, indices.data(), currentIndexBufferDataSize);
+            renderBackend->UnmapBuffer(vertexBufferUpload);
+            renderBackend->UnmapBuffer(indexBufferUpload);
         }
     }
 
