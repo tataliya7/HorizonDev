@@ -1835,7 +1835,7 @@ namespace HE
 
         VmaAllocationCreateInfo memoryInfo = {
             .flags = buffer.allocationFlags,
-            .usage = buffer.memeryUsage,
+            .usage = buffer.memeryUsage, 
         };
 
         VmaAllocationInfo allocationInfo = {};
