@@ -167,6 +167,13 @@ namespace HE
 
         if (true)
         {
+            args.push_back(TEXT("-fspv-debug=vulkan-with-source"));
+        }
+
+        args.push_back(DXC_ARG_WARNINGS_ARE_ERRORS); //-WX
+
+        if (true)
+        {
             args.push_back(DXC_ARG_DEBUG); //-Zi
             args.push_back(DXC_ARG_SKIP_OPTIMIZATIONS); //-0d
             // Cannot specify both /Zss and /Zsb
