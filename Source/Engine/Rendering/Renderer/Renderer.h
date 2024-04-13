@@ -246,15 +246,17 @@ namespace HE
         RenderBackendTextureHandle defaultFontTexture;
         RenderBackendShaderHandle imguiShader;
 
-        uint64 vertexBufferSize = 0;
-        uint64 currentVertexBufferDataSize = 0;
-        RenderBackendBufferHandle vertexBuffer;
-        RenderBackendBufferHandle vertexBufferUpload;
+        uint32 frameInFlightCounter = 0;
 
-        uint64 indexBufferSize = 0;
-        uint64 currentIndexBufferDataSize = 0;
-        RenderBackendBufferHandle indexBuffer;
-        RenderBackendBufferHandle indexBufferUpload;
+        uint64 vertexBufferSize[3];
+        uint64 currentVertexBufferDataSize[3];
+        RenderBackendBufferHandle vertexBuffer[3];
+        RenderBackendBufferHandle vertexBufferUpload[3];
+
+        uint64 indexBufferSize[3];
+        uint64 currentIndexBufferDataSize[3];
+        RenderBackendBufferHandle indexBuffer[3];
+        RenderBackendBufferHandle indexBufferUpload[3];
 
         bool shouldUpdateRayTracingScene = false;
 
