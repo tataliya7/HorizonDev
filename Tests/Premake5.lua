@@ -35,7 +35,7 @@ project "Tests"
         thirdpartypath("stb/include"),
         thirdpartypath("physx/include"),
         thirdpartypath("optick/Optick_1.4.0/include"),
-        thirdpartypath("vulkan/1.3.275.0/include"),
+        thirdpartypath("vulkan/1.3.280.0/include"),
         thirdpartypath("vma/include"),
         thirdpartypath("python/310/include"),
         thirdpartypath("miniaudio/include"),

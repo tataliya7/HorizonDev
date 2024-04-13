@@ -181,9 +181,16 @@ namespace HE
             auto flags = RenderBackendBufferCreateFlags::IndirectArguments | RenderBackendBufferCreateFlags::UnorderedAccess | RenderBackendBufferCreateFlags::ShaderResource;
             return RenderBackendBufferDesc(elementSize, elementCount, flags);
         }
+        static RenderBackendBufferDesc CreateIndex(uint32 indexStride, uint32 indexCount)
+        {
+            RenderBackendBufferCreateFlags flags = RenderBackendBufferCreateFlags::IndexBuffer | RenderBackendBufferCreateFlags::ShaderResource;
+            // TODO: Remove this
+            flags |= RenderBackendBufferCreateFlags::UnorderedAccess;
+            return RenderBackendBufferDesc(indexStride, indexCount, flags);
+        }
         static RenderBackendBufferDesc CreateByteAddress(uint64 bytes, bool dynamic = false)
         {
-            auto flags = RenderBackendBufferCreateFlags::UnorderedAccess | RenderBackendBufferCreateFlags::ShaderResource | RenderBackendBufferCreateFlags::IndexBuffer | RenderBackendBufferCreateFlags::AccelerationStruture;
+            auto flags = RenderBackendBufferCreateFlags::UnorderedAccess | RenderBackendBufferCreateFlags::ShaderResource;
             if (dynamic)
             {
                 flags |= RenderBackendBufferCreateFlags::CpuToGpu;
@@ -209,7 +216,7 @@ namespace HE
         RenderBackendBufferDesc(uint32 elementSize, uint32 elementCount, RenderBackendBufferCreateFlags flags)
             : elementSize(elementSize)
             , elementCount(elementCount)
-            , size(elementSize* elementCount)
+            , size(elementSize * elementCount)
             , flags(flags) {}
 
         FORCEINLINE bool operator==(const RenderBackendBufferDesc& rhs) const
@@ -747,12 +754,12 @@ namespace HE
         RenderBackendTextureUAVDesc() = default;
         RenderBackendTextureUAVDesc(RenderBackendTextureHandle texture, uint32 mipLevel)
             : texture(texture), mipLevel(mipLevel) {}
-        
+
         bool IsValid() const
         {
             return texture.IsValid();
         }
-        
+
         RenderBackendTextureHandle texture = RenderBackendTextureHandle::Null;
         uint32 mipLevel = 0;
     };
@@ -950,6 +957,13 @@ namespace HE
         Task = (1 << (int)RenderBackendShaderStage::Task),
         Mesh = (1 << (int)RenderBackendShaderStage::Mesh),
         All = 0x7FFFFFFF,
+    };
+
+    enum class RenderBackendIndexType
+    {
+        UINT32,
+        UINT16,
+        UINT8,
     };
 
     struct RenderBackendRasterizationState

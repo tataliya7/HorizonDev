@@ -9,7 +9,7 @@ project "HorizonEditor"
 
     files {
         "HorizonEditor.h",
-        "**.lua",
+        "Premake5.lua",
 
         "Framework/**.h",
         "Framework/**.c",

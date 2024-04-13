@@ -392,6 +392,7 @@ namespace HE
         VkBuffer handle;
         VmaAllocation allocation;
         uint64 size;
+        VkIndexType indexType;
         VkBufferUsageFlags usageFlags;
         VmaAllocationCreateFlags allocationFlags;
         VmaMemoryUsage memeryUsage;
@@ -1832,6 +1833,7 @@ namespace HE
         buffer.allocationFlags = GetVmaAllocationCreateFlags(desc->flags);
         buffer.memeryUsage = GetVmaMemoryUsage(desc->flags);
         buffer.createMapped = (buffer.allocationFlags & VMA_ALLOCATION_CREATE_MAPPED_BIT) ? true : false;
+        buffer.indexType = desc->elementSize == 4 ? VK_INDEX_TYPE_UINT32 : VK_INDEX_TYPE_UINT16;
 
         VmaAllocationCreateInfo memoryInfo = {
             .flags = buffer.allocationFlags,
@@ -5327,7 +5329,8 @@ namespace HE
         }
         if (indexBuffer)
         {
-            vkCmdBindIndexBuffer(commandBuffer, device->GetBuffer(indexBuffer)->handle, 0, VK_INDEX_TYPE_UINT32);
+            VulkanBuffer* buffer = device->GetBuffer(indexBuffer);
+            vkCmdBindIndexBuffer(commandBuffer, buffer->handle, 0, buffer->indexType);
         }
         ApplyTransitions();
         return true;

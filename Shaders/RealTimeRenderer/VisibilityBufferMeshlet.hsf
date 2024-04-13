@@ -32,7 +32,7 @@ struct PrimitiveAttributes
     nointerpolation uint4 packedData : TEXCOORD0;
 };
 
-#if TASK_SHADER
+#if __SHADER_TARGET_STAGE == __SHADER_STAGE_AMPLIFICATION
 groupshared MeshPayload SharedPayload;
 #endif
 
@@ -66,7 +66,7 @@ uint3 DecodeTriangleIndices(MeshletDesc meshletDesc, uint triangleIndex)
     return 0;
 }
 
-#if TASK_SHADER
+#if __SHADER_TARGET_STAGE == __SHADER_STAGE_AMPLIFICATION
 [numthreads(TASK_SHADER_WORKGROUP_SIZE, 1, 1)]
 void VisibilityBufferTS(uint DispatchThreadID : SV_DispatchThreadID)
 {
@@ -90,7 +90,7 @@ void VisibilityBufferTS(uint DispatchThreadID : SV_DispatchThreadID)
 }
 #endif
 
-#if MESH_SHADER
+#if __SHADER_TARGET_STAGE == __SHADER_STAGE_MESH
 [outputtopology("triangle")]
 [numthreads(128, 1, 1)]
 void VisibilityBufferMS(
@@ -149,7 +149,7 @@ void VisibilityBufferMS(
 }
 #endif
 
-#if PIXEL_SHADER
+#if __SHADER_TARGET_STAGE == __SHADER_STAGE_PIXEL
 void VisibilityBufferPS(
     VertexAttributes vertexAttributes,
     PrimitiveAttributes primitiveAttributes,

@@ -136,6 +136,17 @@ namespace HE
         return value;
     }
 
+    static inline VkIndexType ConverToVkIndexType(RenderBackendIndexType type)
+    {
+        switch (type)
+        {
+        case RenderBackendIndexType::UINT32: return VK_INDEX_TYPE_UINT32;
+        case RenderBackendIndexType::UINT16: return VK_INDEX_TYPE_UINT16;
+        case RenderBackendIndexType::UINT8: return VK_INDEX_TYPE_UINT8_KHR;
+        default: std::unreachable(); return VK_INDEX_TYPE_MAX_ENUM;
+        }
+    }
+
     static inline VkPolygonMode ConvertToVkPolygonMode(RenderBackendRasterizationFillMode mode)
     {
         switch (mode)

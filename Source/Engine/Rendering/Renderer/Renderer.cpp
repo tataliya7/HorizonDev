@@ -404,7 +404,6 @@ namespace HE
 
             // Upload Fonts
             {
-                
                 if (true)
                 {
                     io.FontDefault = io.Fonts->AddFontFromFileTTF("../../../Assets/Fonts/OpenSans/OpenSans-Regular.ttf", 26.0f);
@@ -431,11 +430,11 @@ namespace HE
             includeDirs.push_back(HE_TEXT("../../../Shaders"));
             LoadShaderSourceFromFile("../../../Shaders/ImGui.hsf", source);
 
-            ShaderIntermediateLanguage il = (GRenderBackend->GetType() == RenderBackendType::Vulkan) ? ShaderIntermediateLanguage::SPIRV : ShaderIntermediateLanguage::DXIL;
+            ShadingLanguage il = (GRenderBackend->GetType() == RenderBackendType::Vulkan) ? ShadingLanguage::SPIRV : ShadingLanguage::DXIL;
 
             RenderBackendShaderDesc imguiShaderDesc;
 
-            shaderCompiler->CompileShader(
+            shaderCompiler->CompileShader_Depreacated(
                 source,
                 HE_TEXT("ImGuiVS"),
                 RenderBackendShaderStage::Vertex,
@@ -444,7 +443,7 @@ namespace HE
                 defines,
                 &imguiShaderDesc.stages[(uint32)RenderBackendShaderStage::Vertex]);
             imguiShaderDesc.entryPoints[(uint32)RenderBackendShaderStage::Vertex] = "ImGuiVS";
-            shaderCompiler->CompileShader(
+            shaderCompiler->CompileShader_Depreacated(
                 source,
                 HE_TEXT("ImGuiPS"),
                 RenderBackendShaderStage::Pixel,
@@ -465,7 +464,7 @@ namespace HE
 
                 vertexBufferSize = 4;
 
-                RenderBackendBufferDesc indexBufferDesc = RenderBackendBufferDesc::CreateByteAddress(4);
+                RenderBackendBufferDesc indexBufferDesc = RenderBackendBufferDesc::CreateIndex(sizeof(uint32), 1);
                 indexBuffer = renderBackend->CreateBuffer(~0u, &indexBufferDesc, nullptr, "ImGuiIndexBuffer");
 
                 RenderBackendBufferDesc indexBufferUploadDesc = RenderBackendBufferDesc::CreateUpload(4);
@@ -1078,14 +1077,6 @@ namespace HE
                 renderBackend->ResizeBuffer(indexBuffer, currentIndexBufferDataSize);
                 renderBackend->ResizeBuffer(indexBufferUpload, currentIndexBufferDataSize);
                 indexBufferSize = currentIndexBufferDataSize;
-            }
-            if (vertices.size() < drawData->TotalVtxCount)
-            {
-                vertices.resize(drawData->TotalVtxCount);
-            }
-            if (indices.size() < drawData->TotalIdxCount)
-            {
-                indices.resize(drawData->TotalIdxCount);
             }
             uint32 vertexOffset = 0;
             uint32 indexOffset = 0;
