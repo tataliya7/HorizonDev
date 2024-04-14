@@ -52,6 +52,18 @@ namespace HE
 
     TEST(ColorTest, Run)
     {
+        const Matrix3x3 m1 = Matrix3x3(
+            0.31670331f, 0.70299344f, 0.08120592f,
+            0.10129085f, 0.72118661f, 0.12041039f,
+            0.01451538f, 0.05643031f, 0.53416779f);
+
+        const Matrix3x3 m2 = Matrix3x3(
+            4.57829597f, -4.48749114f, 0.31554848f,
+            -0.63342362f, 2.03236026f, -0.36183302f,
+            -0.05749394f, -0.09275939f, 1.90172089f);
+
+        auto ccc = m1 * m2;
+
         // "Glow" module constants
         const float RRT_GLOW_GAIN = 0.05f;
         const float RRT_GLOW_MID = 0.08f;
