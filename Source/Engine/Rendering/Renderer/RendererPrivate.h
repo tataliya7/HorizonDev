@@ -61,6 +61,7 @@ namespace HE
 
     enum class ShaderPipelineID
     {
+        PreIntegratedBRDF,
         EquirectangularToCubemap,
         DownsampleCubemap,
         DownsampleTexture2D,

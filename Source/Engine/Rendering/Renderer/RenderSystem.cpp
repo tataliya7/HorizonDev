@@ -16,14 +16,83 @@ namespace HE
 {
     Renderer* GRenderer = nullptr;
 
-    RenderGraphTextureHandle RenderSystemGlobalResources::GetWhiteDummyTexture2D(RenderGraph& renderGraph) const
+    RenderGraphTextureHandle RenderSystemGlobalResources::ImportWhiteDummyTexture2D(RenderGraph& renderGraph) const
     {
         return renderGraph.ImportExternalTexture(whiteDummyTexture2D, RenderGraphTextureFlags::ReadOnly, "WhiteDummyTexture2D");
     }
 
-    RenderGraphTextureHandle RenderSystemGlobalResources::GetBlackDummyTexture2D(RenderGraph& renderGraph) const
+    RenderGraphTextureHandle RenderSystemGlobalResources::ImportBlackDummyTexture2D(RenderGraph& renderGraph) const
     {
         return renderGraph.ImportExternalTexture(blackDummyTexture2D, RenderGraphTextureFlags::ReadOnly, "BlackDummyTexture2D");
+    }
+
+    RenderBackendTextureHandle RenderSystemGlobalResources::GetPreIntegratedBRDFLUT() const
+    {
+        return preIntegratedBRDFLUT;
+    }
+
+    void Renderer::InitializeGlobalResources()
+    {
+        uint32 deviceMask = ~0u;
+
+        uint8 blackColor = 0;
+        uint8 whiteColor = 255;
+        RenderGraphTextureDesc dummyTextureDesc = RenderGraphTextureDesc::Create2D(
+            1,
+            1,
+            RenderBackendTextureFormat::R8Unorm,
+            RenderBackendTextureCreateFlags::ShaderResource);
+        globalResources.blackDummyTexture2D.name = "BlackDummyTexture2D";
+        globalResources.blackDummyTexture2D.desc = dummyTextureDesc;
+        globalResources.blackDummyTexture2D.texture = renderBackend->CreateTexture(deviceMask, &dummyTextureDesc, &blackColor, "BlackDummyTexture2D");
+        globalResources.blackDummyTexture2D.initialState = RenderBackendResourceState::ShaderResource;
+
+        globalResources.whiteDummyTexture2D.name = "WhiteDummyTexture2D";
+        globalResources.whiteDummyTexture2D.desc = dummyTextureDesc;
+        globalResources.whiteDummyTexture2D.texture = renderBackend->CreateTexture(deviceMask, &dummyTextureDesc, &whiteColor, "WhiteDummyTexture2D");
+        globalResources.whiteDummyTexture2D.initialState = RenderBackendResourceState::ShaderResource;
+
+        const uint32 preIntegratedBRDFLUTSize = 256;
+        RenderBackendTextureDesc preIntegratedBRDFLUTDesc = RenderBackendTextureDesc::Create2D(
+            preIntegratedBRDFLUTSize,
+            preIntegratedBRDFLUTSize,
+            RenderBackendTextureFormat::RG16Float,
+            RenderBackendTextureCreateFlags::UnorderedAccess | RenderBackendTextureCreateFlags::ShaderResource);
+        globalResources.preIntegratedBRDFLUT = renderBackend->CreateTexture(deviceMask, &preIntegratedBRDFLUTDesc, nullptr, "PreIntegratedBRDFLUT");
+
+        // void RenderPreIntegratedBRDFLUT()
+        {
+            RenderBackendCommandList* commandList = new RenderBackendCommandList(GArena);
+            {
+                RenderBackendTextureHandle preIntegratedBRDFLUT = globalResources.preIntegratedBRDFLUT;
+                RenderBackendShaderHandle computeShader = shaderLibrary->GetShaderHandle((uint32)ShaderPipelineID::PreIntegratedBRDF);
+
+                RenderBackendBarrier transition(preIntegratedBRDFLUT, RenderBackendTextureSubresourceRange::All, RenderBackendResourceState::Undefined, RenderBackendResourceState::UnorderedAccess);
+                commandList->Transitions(&transition, 1);
+
+                uint32 dispatchX = Math::CeilDiv(preIntegratedBRDFLUTSize, 8);
+                uint32 dispatchY = Math::CeilDiv(preIntegratedBRDFLUTSize, 8);
+
+                RenderBackendShaderArguments shaderArguments = {};
+                shaderArguments.BindTextureUAV(1, RenderBackendTextureUAVDesc::Create(irradianceEnvironmentMap, 0));
+
+                commandList->Dispatch2D(
+                    computeShader,
+                    shaderArguments,
+                    dispatchX,
+                    dispatchY);
+
+                transition = RenderBackendBarrier(preIntegratedBRDFLUT, RenderBackendTextureSubresourceRange::All, RenderBackendResourceState::UnorderedAccess, RenderBackendResourceState::ShaderResource);
+                commandList->Transitions(&transition, 1);
+            }
+            renderBackend->SubmitCommandLists(&commandList, 1, RenderBackendSwapChainHandle::Null);
+            renderBackend->FlushRenderDevices();
+        }
+    }
+
+    void Renderer::ReleaseGlobalResources()
+    {
+
     }
 
     void Texture2DGenerateMips(ShaderLibrary_Deprecated* shaderLibrary, RenderBackendCommandList& commandList, RenderBackendTextureHandle textureHandle, uint32 width, uint32 height, uint32 numMipLevels)
@@ -286,6 +355,9 @@ namespace HE
         gpuProfiler = new RenderBackendGPUProfiler(renderBackend);
 
         ShaderDesc shaderDesc;
+        shaderDesc = ShaderDesc::CreateCompute("PreIntegratedBRDF.hsf", "PreIntegratedBRDFCS");
+        shaderLibrary->LoadShader((uint32)ShaderPipelineID::PreIntegratedBRDF, shaderDesc);
+
         shaderDesc = ShaderDesc::CreateCompute("EquirectangularToCubemap.hsf", "EquirectangularToCubemapCS");
         shaderLibrary->LoadShader((uint32)ShaderPipelineID::EquirectangularToCubemap, shaderDesc);
 
@@ -324,6 +396,8 @@ namespace HE
 
         shaderDesc = ShaderDesc::CreateGraphics("RealTimeRenderer/UIColorAndAlpha.hsf", "UIColorAndAlphaVS", "UIColorAndAlphaPS");
         shaderLibrary->LoadShader((uint32)ShaderPipelineID::UIColorAndAlpha, shaderDesc);
+
+        InitializeGlobalResources();
 
         renderPipeline = new RealTimeRenderer(renderBackend, shaderCompiler, this);
 
@@ -510,7 +584,7 @@ namespace HE
 
     void Renderer::Exit()
     {
-
+        ReleaseGlobalResources();
     }
 
     void Renderer::AddLight(const SceneView& view, LightComponent& lightComponent, const CameraComponent& camera)

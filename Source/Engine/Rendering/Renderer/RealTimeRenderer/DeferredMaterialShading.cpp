@@ -200,9 +200,6 @@ namespace HE
     void RealTimeRenderer::AddDirectLightingPass(
         RenderGraph& renderGraph,
         const SceneView& view,
-        RenderBackendTextureHandle brdfLut,
-        RenderBackendTextureHandle irradianceEnvironmentMap,
-        RenderBackendTextureHandle filteredEnvironmentMap,
         RenderGraphTextureHandle screenSpaceShadowMaskTexture,
         RenderGraphTextureHandle localLightShadowMapAtlas)
     {
@@ -366,7 +363,7 @@ namespace HE
                     shaderArguments.BindTextureSRV(7, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTexture(gbuffer2)));
                     shaderArguments.BindTextureSRV(3, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTexture(sceneDepthTexture)));
                     shaderArguments.BindTextureSRV(4, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTexture(ambientOcclusionTexture)));
-                    shaderArguments.BindTextureSRV(5, RenderBackendTextureSRVDesc::Create(brdfLut));
+                    shaderArguments.BindTextureSRV(5, RenderBackendTextureSRVDesc::Create(renderEngine->GetGlobalResources().GetPreIntegratedBRDFLUT()));
                     shaderArguments.BindTextureSRV(6, RenderBackendTextureSRVDesc::Create(renderEngine->filteredEnvironmentMap));
 
                     RenderBackendShaderHandle graphicsShader = shaderLibrary->GetShaderHandle((uint32)RealTimeRendererShaderPiplineID::IndirectLightingSpecular);

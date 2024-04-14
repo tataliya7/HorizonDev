@@ -181,28 +181,13 @@ namespace HE
         RenderBackendBufferDesc surfelGICellDataBufferDesc = RenderBackendBufferDesc::CreateByteAddress(SurfelGIMaxSurfelCount * sizeof(uint32));
         surfelGICellDataBuffer = renderBackend->CreateBuffer(deviceMask, &surfelGICellDataBufferDesc, nullptr, "SurfelGICellDataBuffer");
 
-        RenderBackendTextureDesc brdfLutDesc = RenderBackendTextureDesc::Create2D(
-            brdfLutSize,
-            brdfLutSize,
-            RenderBackendTextureFormat::RG16Float,
-            RenderBackendTextureCreateFlags::UnorderedAccess | RenderBackendTextureCreateFlags::ShaderResource);
-        brdfLut = renderBackend->CreateTexture(deviceMask, &brdfLutDesc, nullptr, "BRDFLut");
-
         RenderBackendBufferDesc sceneViewShaderParametersBufferDesc = RenderBackendBufferDesc::CreateByteAddress(sizeof(RealTimeRendererSceneViewShaderParameters));
         sceneViewShaderParametersBuffer = renderBackend->CreateBuffer(deviceMask, &sceneViewShaderParametersBufferDesc, nullptr, "SceneViewShaderParametersBuffer");
 
         RenderBackendBufferDesc sceneViewShaderParametersUploadBufferDesc = RenderBackendBufferDesc::CreateUpload(sizeof(RealTimeRendererSceneViewShaderParameters));
         sceneViewShaderParametersUploadBuffer = renderBackend->CreateBuffer(deviceMask, &sceneViewShaderParametersUploadBufferDesc, nullptr, "SceneViewShaderParametersUploadBuffer");
 
-        uint8 blackColor = 0;
-        uint8 whiteColor = 255;
-        dummyTextureDesc = RenderGraphTextureDesc::Create2D(
-            1,
-            1,
-            RenderBackendTextureFormat::R8Unorm,
-            RenderBackendTextureCreateFlags::ShaderResource);
-        blackDummyTexture = renderBackend->CreateTexture(deviceMask, &dummyTextureDesc, &blackColor, "BlackDummyTexture");
-        whiteDummyTexture = renderBackend->CreateTexture(deviceMask, &dummyTextureDesc, &whiteColor, "WhiteDummyTexture");
+        //testTexture = LoadTextureFromFile(renderBackend, "../../../Assets/PurkinjeShift.png", false);
 
         RenderBackendBufferDesc ssrRayAllocationBufferDesc = RenderBackendBufferDesc::CreateIndirectArguments(sizeof(uint32), 12);
         ssrRayAllocationBuffer = renderBackend->CreateBuffer(deviceMask, &ssrRayAllocationBufferDesc, nullptr, "SSRRayAllocationBuffer");
@@ -258,8 +243,6 @@ namespace HE
         uint32 deviceMask = ~0u;
 
         ShaderDesc shaderDesc;
-        shaderDesc = ShaderDesc::CreateCompute("BRDFLut.hsf", "BRDFLutCS");
-        result |= shaderLibrary->LoadShader((uint32)RealTimeRendererShaderPiplineID::BRDFLut, shaderDesc);
 
         shaderDesc = ShaderDesc::CreateGraphics("RealTimeRenderer/VisibilityBuffer.hsf", "VisibilityBufferVS", "VisibilityBufferPS");
         result |= shaderLibrary->LoadShader((uint32)RealTimeRendererShaderPiplineID::VBuffer, shaderDesc);
@@ -1101,36 +1084,6 @@ namespace HE
             }
         }
 
-        if (renderBRDFLut)
-        {
-            renderGraph.AddPass("BRDFLut", RenderGraphPassFlags::Compute | RenderGraphPassFlags::NeverGetCulled,
-                [&](RenderGraphBuilder& builder)
-                {
-                    return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
-                    {
-                        uint32 dispatchX = Math::CeilDiv(brdfLutSize, 8);
-                        uint32 dispatchY = Math::CeilDiv(brdfLutSize, 8);
-
-                        RenderBackendShaderArguments shaderArguments = {};
-                        shaderArguments.BindTextureUAV(0, RenderBackendTextureUAVDesc::Create(brdfLut, 0));
-
-                        RenderBackendBarrier transitionBefore = RenderBackendBarrier(brdfLut, RenderBackendTextureSubresourceRange(0, 1, 0, 1), RenderBackendResourceState::Undefined, RenderBackendResourceState::UnorderedAccess);
-                        commandList.Transitions(&transitionBefore, 1);
-
-                        RenderBackendShaderHandle computeShader = shaderLibrary->GetShaderHandle((uint32)RealTimeRendererShaderPiplineID::BRDFLut);
-                        commandList.Dispatch2D(
-                            computeShader,
-                            shaderArguments,
-                            dispatchX,
-                            dispatchY);
-                        RenderBackendBarrier transitionAfter = RenderBackendBarrier(brdfLut, RenderBackendTextureSubresourceRange(0, 1, 0, 1), RenderBackendResourceState::UnorderedAccess, RenderBackendResourceState::ShaderResource);
-
-                        commandList.Transitions(&transitionAfter, 1);
-                    };
-                });
-            renderBRDFLut = false;
-        }
-
         RenderGraphTextureDesc vbuffer0Desc = RenderGraphTextureDesc::Create2D(
             renderResolutionX,
             renderResolutionY,
@@ -1259,12 +1212,8 @@ namespace HE
             RenderBackendTextureCreateFlags::UnorderedAccess | RenderBackendTextureCreateFlags::ShaderResource,
             RenderBackendTextureClearValue::DepthZero,
             hzbMipLevels);
-        RenderGraphTextureHandle closestHZBTexture = renderGraph.CreateTexture(
-            hzbDesc,
-            "ClosestHZBTexture");
-        RenderGraphTextureHandle furthestHZBTexture = renderGraph.CreateTexture(
-            hzbDesc,
-            "FurthestHZBTexture");
+        RenderGraphTextureHandle closestHZBTexture = renderGraph.CreateTexture(hzbDesc, "ClosestHZBTexture");
+        RenderGraphTextureHandle furthestHZBTexture = renderGraph.CreateTexture(hzbDesc, "FurthestHZBTexture");
 
         RenderHZB(renderGraph, view, hzbWidth, hzbHeight, hzbMipLevels, closestHZBTexture, furthestHZBTexture);
 
@@ -1283,7 +1232,7 @@ namespace HE
         }
         else
         {
-            sceneTextures.ambientOcclusionTexture = renderGraph.ImportExternalTexture(whiteDummyTexture, dummyTextureDesc, RenderBackendResourceState::ShaderResource, "WhiteDummyTexture");
+            sceneTextures.ambientOcclusionTexture = renderEngine->GetGlobalResources().ImportWhiteDummyTexture2D(renderGraph);
         }
 
         AddIndirectLightingDiffusePass(renderGraph, view);
@@ -1447,9 +1396,6 @@ namespace HE
         AddDirectLightingPass(
             renderGraph,
             view,
-            brdfLut,
-            renderEngine->irradianceEnvironmentMap,
-            renderEngine->filteredEnvironmentMap,
             screenSpaceShadowMaskTexture,
             localLightShadowMapAtlas);
 

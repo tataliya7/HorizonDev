@@ -70,7 +70,6 @@ namespace HE
 
     enum class RealTimeRendererShaderPiplineID
     {
-        BRDFLut,
         VBuffer,
         VBufferMeshlet,
         GBuffer,
@@ -641,9 +640,6 @@ namespace HE
         void AddDirectLightingPass(
             RenderGraph& renderGraph,
             const SceneView& view,
-            RenderBackendTextureHandle brdfLut,
-            RenderBackendTextureHandle irradianceEnvironmentMap,
-            RenderBackendTextureHandle filteredEnvironmentMap,
             RenderGraphTextureHandle screenSpaceShadowMaskTexture,
             RenderGraphTextureHandle localLightShadowMapAtlas);
 
@@ -823,13 +819,7 @@ namespace HE
         RenderBackendColorBlendAttachmentState additiveRGBAColorBlendAttachmentState;
         RenderBackendColorBlendAttachmentState additiveRGBColorBlendAttachmentState;
 
-        bool renderBRDFLut = true;
-        uint32 brdfLutSize = 256;
-        RenderBackendTextureHandle brdfLut;
-
-        RenderBackendTextureDesc dummyTextureDesc;
-        RenderBackendTextureHandle blackDummyTexture;
-        RenderBackendTextureHandle whiteDummyTexture;
+        RenderBackendTextureHandle testTexture;
 
         RenderBackendTextureHandle lensDirtTexture;
         RenderBackendTextureHandle lensFlaresGlareLUTTexture;

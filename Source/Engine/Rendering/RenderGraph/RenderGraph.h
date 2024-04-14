@@ -72,10 +72,13 @@ namespace HE
         //RenderGraphTextureUAVHandle CreateTextureUAV(RenderGraphTextureHandle texture, uint32 mipLevel);
         RenderGraphTextureHandle FindExternalTexture(RenderBackendTextureHandle renderBackendTexture);
         RenderGraphTextureHandle ImportExternalTexture(RenderBackendTextureHandle renderBackendTexture, const RenderBackendTextureDesc& desc, RenderBackendResourceState initialState, char const* name);
-        RenderGraphTextureHandle ImportExternalTexture(const RenderGraphPersistentTexture& externalTexture, RenderGraphTextureFlags flags, char const* name);
         RenderGraphBufferHandle FindExternalBuffer(RenderBackendBufferHandle renderBackendBuffer);
         RenderGraphBufferHandle ImportExternalBuffer(RenderBackendBufferHandle renderBackendBuffer, const RenderBackendBufferDesc& desc, RenderBackendResourceState initialState, char const* name);
         RenderGraphBufferHandle ImportExternalBuffer(const RenderGraphPersistentBuffer* persistentBuffer);
+
+        RenderGraphTextureHandle ImportExternalTexture(const RenderGraphPersistentTexture& externalTexture, RenderGraphTextureFlags flags, char const* name);
+        RenderGraphBufferHandle ImportExternalBuffer(const RenderGraphPersistentBuffer* externalTexture, RenderGraphBufferFlags flags, char const* name);
+
         void ExportTextureDeferred(RenderGraphTextureHandle handle, RenderGraphPersistentTexture* persistentTexture);
         void ExportBufferDeferred(RenderGraphBufferHandle handle, RenderGraphPersistentBuffer* persistentBuffer);
 

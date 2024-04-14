@@ -50,12 +50,14 @@ namespace HE
     class RenderSystemGlobalResources
     {
     public:
-        RenderGraphTextureHandle GetWhiteDummyTexture2D(RenderGraph& renderGraph) const;
-        RenderGraphTextureHandle GetBlackDummyTexture2D(RenderGraph& renderGraph) const;
+        RenderGraphTextureHandle ImportBlackDummyTexture2D(RenderGraph& renderGraph) const;
+        RenderGraphTextureHandle ImportWhiteDummyTexture2D(RenderGraph& renderGraph) const;
+        RenderBackendTextureHandle GetPreIntegratedBRDFLUT() const;
     private:
-        RenderGraphPersistentTexture whiteDummyTexture2D;
+        friend class Renderer;
         RenderGraphPersistentTexture blackDummyTexture2D;
-        RenderGraphPersistentTexture preIntegratedBrdfLut;
+        RenderGraphPersistentTexture whiteDummyTexture2D;
+        RenderBackendTextureHandle preIntegratedBRDFLUT;
     };
 
     class Renderer : public RenderEngine
@@ -79,6 +81,16 @@ namespace HE
         RealTimeRendererSettings& GetRealTimeRendererSettings_Deprecated();
 
         RenderBackendGPUProfiler* gpuProfiler;
+
+        const RenderSystemGlobalResources& GetGlobalResources() const
+        {
+            return globalResources;
+        }
+
+        RenderSystemGlobalResources globalResources;
+
+        void InitializeGlobalResources();
+        void ReleaseGlobalResources();
 
         ShaderLibrary_Deprecated* GetShaderLibrary()
         {
