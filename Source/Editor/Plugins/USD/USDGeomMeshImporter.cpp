@@ -222,7 +222,7 @@ namespace HE::USDImporter
 
         if (mesh.numIndices > 0)
         {
-            RenderBackendBufferDesc indexBufferDesc = RenderBackendBufferDesc::CreateByteAddress(mesh.numIndices * sizeof(uint32));
+            RenderBackendBufferDesc indexBufferDesc = RenderBackendBufferDesc::CreateIndex(sizeof(uint32), mesh.numIndices);
             mesh.indexBuffer = renderBackend->CreateBuffer(deviceMask, &indexBufferDesc, mesh.indices.data(), "IndexBuffer");
         }
 

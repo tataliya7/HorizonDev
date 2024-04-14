@@ -127,11 +127,11 @@ namespace HE
         settings.postProcessingSettings.colorCorrectionOffset = Vector4(0.0f, 0.0f, 0.0f, 0.0f);
 
         shaderLibrary = new ShaderLibrary_Deprecated(renderBackend, shaderCompiler, (uint32)RealTimeRendererShaderPiplineID::Count, true);
-        shaderLibrary->AddIncludeDirectory(HE_TEXT("../../../Shaders"));
-        shaderLibrary->AddIncludeDirectory(HE_TEXT("../../../Shaders/RealTimeRenderer"));
-        shaderLibrary->AddIncludeDirectory(HE_TEXT("../../../Shaders/RealTimeRenderer/SubsurfaceScattering"));
-        shaderLibrary->AddIncludeDirectory(HE_TEXT("../../../Shaders/RealTimeRenderer/SurfelGI"));
-        shaderLibrary->AddIncludeDirectory(HE_TEXT("../../../Shaders/RealTimeRenderer/PostProcessing"));
+        shaderLibrary->AddIncludeDirectory("../../../Shaders");
+        shaderLibrary->AddIncludeDirectory("../../../Shaders/RealTimeRenderer");
+        shaderLibrary->AddIncludeDirectory("../../../Shaders/RealTimeRenderer/SubsurfaceScattering");
+        shaderLibrary->AddIncludeDirectory("../../../Shaders/RealTimeRenderer/SurfelGI");
+        shaderLibrary->AddIncludeDirectory("../../../Shaders/RealTimeRenderer/PostProcessing");
 
         uint32 deviceMask = ~0u;
 
@@ -268,16 +268,16 @@ namespace HE
         result |= shaderLibrary->LoadShader((uint32)RealTimeRendererShaderPiplineID::VBufferMeshlet, shaderDesc);
 
         shaderDesc = ShaderDesc::CreateCompute("RealTimeRenderer/BuildHZB.hsf", "BuildHZBCS");
-        shaderDesc.AddDefine(L"BUILD_CLOSEST_HZB=1");
-        shaderDesc.AddDefine(L"BUILD_FURTHEST_HZB=1");
+        shaderDesc.AddDefine("BUILD_CLOSEST_HZB", 1);
+        shaderDesc.AddDefine("BUILD_FURTHEST_HZB", 1);
         result |= shaderLibrary->LoadShader((uint32)RealTimeRendererShaderPiplineID::BuildHZB, shaderDesc);
 
         shaderDesc = ShaderDesc::CreateGraphics("RealTimeRenderer/ShadowMap.hsf", "ShadowMapVS", "ShadowMapPS");
-        shaderDesc.AddDefine(L"SHADOW_MAP_TYPE=0");
+        shaderDesc.AddDefine("SHADOW_MAP_TYPE", 0);
         result |= shaderLibrary->LoadShader((uint32)RealTimeRendererShaderPiplineID::CascadedShadowMap, shaderDesc);
 
         shaderDesc = ShaderDesc::CreateGraphics("RealTimeRenderer/ShadowMap.hsf", "ShadowMapVS", "ShadowMapPS");
-        shaderDesc.AddDefine(L"SHADOW_MAP_TYPE=1");
+        shaderDesc.AddDefine("SHADOW_MAP_TYPE", 1);
         result |= shaderLibrary->LoadShader((uint32)RealTimeRendererShaderPiplineID::CubeShadowMap, shaderDesc);
 
         shaderDesc = ShaderDesc::CreateGraphics("RealTimeRenderer/LocalLightShadows.hsf", "LocalLightShadowsVS", "LocalLightShadowsPS");
@@ -500,9 +500,10 @@ namespace HE
         SkyAtmosphereConfig skyAtmosphereConfig;
         skyAtmosphere = CreateSkyAtmosphere(renderBackend, shaderLibrary, &skyAtmosphereConfig);
 
+        #if 0
         if (renderEngine->IsHardwareRayTracingEnabled())
         {
-            ShaderIntermediateLanguage il = (GRenderBackend->GetType() == RenderBackendType::Vulkan) ? ShaderIntermediateLanguage::SPIRV : ShaderIntermediateLanguage::DXIL;
+            ShadingLanguage il = (GRenderBackend->GetType() == RenderBackendType::Vulkan) ? ShadingLanguage::SPIRV : ShadingLanguage::DXIL;
 
             std::vector<uint8> source;
             std::vector<std::wstring> includeDirs;
@@ -519,7 +520,7 @@ namespace HE
                 .stage = RenderBackendShaderStage::RayGen,
                 .entry = "RayTracingShadowsRayGen",
                 });
-            shaderLibrary->shaderCompiler->CompileShader(
+            shaderLibrary->shaderCompiler->CompileShader_Depreacated(
                 source,
                 HE_TEXT("RayTracingShadowsRayGen"),
                 RenderBackendShaderStage::RayGen,
@@ -532,7 +533,7 @@ namespace HE
                 .stage = RenderBackendShaderStage::Miss,
                 .entry = "RayTracingShadowsMiss",
                 });
-            shaderLibrary->shaderCompiler->CompileShader(
+            shaderLibrary->shaderCompiler->CompileShader_Depreacated(
                 source,
                 HE_TEXT("RayTracingShadowsMiss"),
                 RenderBackendShaderStage::Miss,
@@ -553,6 +554,7 @@ namespace HE
             };
             rayTracingShadowsSBT = renderBackend->CreateRayTracingShaderBindingTable(deviceMask, &rayTracingShadowsSBTDesc, "rayTracingShadowsSBT");
         }
+        #endif
 
         return result;
     }

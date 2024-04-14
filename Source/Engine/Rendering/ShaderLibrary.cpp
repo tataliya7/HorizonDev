@@ -11,7 +11,7 @@ namespace HE
         loadedShaders.resize(maxNumShaders);
     }
 
-    void ShaderLibrary_Deprecated::AddIncludeDirectory(const wchar_t* dir)
+    void ShaderLibrary_Deprecated::AddIncludeDirectory(const char* dir)
     {
         includeDirs.push_back(dir);
     }
@@ -67,9 +67,16 @@ namespace HE
             LoadShaderSourceFromFile(desc.filename.string().c_str(), source);
         }
 
-        ShaderIntermediateLanguage il = (GRenderBackend->GetType() == RenderBackendType::Vulkan) ? ShaderIntermediateLanguage::SPIRV : ShaderIntermediateLanguage::DXIL;
+        ShadingLanguage shadingLanguage = (GRenderBackend->GetType() == RenderBackendType::Vulkan) ? ShadingLanguage::SPIRV : ShadingLanguage::DXIL;
 
         std::filesystem::path path = std::filesystem::absolute(desc.filename);
+        std::string filename = path.string();
+
+        ShaderCompilerSettings shaderCompilerSettings;
+
+        ShaderCompilerOutput shaderCompilerOutput1;
+        ShaderCompilerOutput shaderCompilerOutput2;
+        ShaderCompilerOutput shaderCompilerOutput3;
 
         std::unordered_set<std::wstring> includedFiles;
 
@@ -79,78 +86,110 @@ namespace HE
         {
             if (!desc.entryPoints[(uint32)RenderBackendShaderStage::Vertex].empty())
             {
-                std::wstring vertexStageEntry = std::wstring(desc.entryPoints[(uint32)RenderBackendShaderStage::Vertex].begin(), desc.entryPoints[(uint32)RenderBackendShaderStage::Vertex].end());
-                success &= shaderCompiler->CompileShader(
-                    source,
-                    vertexStageEntry.c_str(),
-                    RenderBackendShaderStage::Vertex,
-                    il,
-                    includeDirs,
-                    desc.defines,
-                    &shaderDesc.stages[(uint32)RenderBackendShaderStage::Vertex],
-                    &includedFiles);
-                shaderDesc.entryPoints[(uint32)RenderBackendShaderStage::Vertex] = desc.entryPoints[(uint32)RenderBackendShaderStage::Vertex].c_str();
+                ShaderSource shaderSource;
+                shaderSource.filename = filename.c_str();
+                shaderSource.sourceData = source.data();
+                shaderSource.sourceSize = source.size();
+                shaderSource.entryPoint = desc.entryPoints[(uint32)RenderBackendShaderStage::Vertex].c_str();
+                shaderSource.stage = ShaderStage::Vertex;
+                shaderSource.defines = desc.defines.data();
+                shaderSource.numDefines = (uint32)desc.defines.size();
+                shaderSource.includeDirectories = includeDirs.data();
+                shaderSource.numIncludeDirectories = (uint32)includeDirs.size();
+
+                bool succeed = shaderCompiler->CompileShader(shaderCompilerSettings, shaderSource, shadingLanguage, &shaderCompilerOutput1);
+                if (!shaderCompilerOutput1.errorMessage.empty())
+                {
+                    LogError(GLogger, std::format("{}", shaderCompilerOutput1.errorMessage));
+                }
+
+                shaderDesc.stages[(uint32)RenderBackendShaderStage::Vertex].data = shaderCompilerOutput1.blob.GetData();
+                shaderDesc.stages[(uint32)RenderBackendShaderStage::Vertex].size = shaderCompilerOutput1.blob.GetSize();
+                shaderDesc.entryPoints[(uint32)RenderBackendShaderStage::Vertex] = shaderSource.entryPoint;
             }
             else
             {
                 if (!desc.entryPoints[(uint32)RenderBackendShaderStage::Task].empty())
                 {
-                    std::wstring entryPoint = std::wstring(desc.entryPoints[(uint32)RenderBackendShaderStage::Task].begin(), desc.entryPoints[(uint32)RenderBackendShaderStage::Task].end());
-                    success &= shaderCompiler->CompileShader(
-                        source,
-                        entryPoint.c_str(),
-                        RenderBackendShaderStage::Task,
-                        il,
-                        includeDirs,
-                        desc.defines,
-                        &shaderDesc.stages[(uint32)RenderBackendShaderStage::Task],
-                        &includedFiles);
-                    shaderDesc.entryPoints[(uint32)RenderBackendShaderStage::Task] = desc.entryPoints[(uint32)RenderBackendShaderStage::Task].c_str();
+                    ShaderSource shaderSource;
+                    shaderSource.filename = filename.c_str();
+                    shaderSource.sourceData = source.data();
+                    shaderSource.sourceSize = source.size();
+                    shaderSource.entryPoint = desc.entryPoints[(uint32)RenderBackendShaderStage::Task].c_str();
+                    shaderSource.stage = ShaderStage::Task;
+                    shaderSource.defines = desc.defines.data();
+                    shaderSource.numDefines = (uint32)desc.defines.size();
+                    shaderSource.includeDirectories = includeDirs.data();
+                    shaderSource.numIncludeDirectories = (uint32)includeDirs.size();
+
+                    bool succeed = shaderCompiler->CompileShader(shaderCompilerSettings, shaderSource, shadingLanguage, &shaderCompilerOutput1);
+
+                    shaderDesc.stages[(uint32)RenderBackendShaderStage::Task].data = shaderCompilerOutput1.blob.GetData();
+                    shaderDesc.stages[(uint32)RenderBackendShaderStage::Task].size = shaderCompilerOutput1.blob.GetSize();
+                    shaderDesc.entryPoints[(uint32)RenderBackendShaderStage::Task] = shaderSource.entryPoint;
                 }
-                std::wstring entryPoint = std::wstring(desc.entryPoints[(uint32)RenderBackendShaderStage::Mesh].begin(), desc.entryPoints[(uint32)RenderBackendShaderStage::Mesh].end());
-                success &= shaderCompiler->CompileShader(
-                    source,
-                    entryPoint.c_str(),
-                    RenderBackendShaderStage::Mesh,
-                    il,
-                    includeDirs,
-                    desc.defines,
-                    &shaderDesc.stages[(uint32)RenderBackendShaderStage::Mesh],
-                    &includedFiles);
-                shaderDesc.entryPoints[(uint32)RenderBackendShaderStage::Mesh] = desc.entryPoints[(uint32)RenderBackendShaderStage::Mesh].c_str();
+                {
+                    ShaderSource shaderSource;
+                    shaderSource.filename = filename.c_str();
+                    shaderSource.sourceData = source.data();
+                    shaderSource.sourceSize = source.size();
+                    shaderSource.entryPoint = desc.entryPoints[(uint32)RenderBackendShaderStage::Mesh].c_str();
+                    shaderSource.stage = ShaderStage::Mesh;
+                    shaderSource.defines = desc.defines.data();
+                    shaderSource.numDefines = (uint32)desc.defines.size();
+                    shaderSource.includeDirectories = includeDirs.data();
+                    shaderSource.numIncludeDirectories = (uint32)includeDirs.size();
+
+                    bool succeed = shaderCompiler->CompileShader(shaderCompilerSettings, shaderSource, shadingLanguage, &shaderCompilerOutput2);
+
+                    shaderDesc.stages[(uint32)RenderBackendShaderStage::Mesh].data = shaderCompilerOutput2.blob.GetData();
+                    shaderDesc.stages[(uint32)RenderBackendShaderStage::Mesh].size = shaderCompilerOutput2.blob.GetSize();
+                    shaderDesc.entryPoints[(uint32)RenderBackendShaderStage::Mesh] = shaderSource.entryPoint;
+                }
             }
 
-            std::wstring pixelStageEntry = std::wstring(desc.entryPoints[(uint32)RenderBackendShaderStage::Pixel].begin(), desc.entryPoints[(uint32)RenderBackendShaderStage::Pixel].end());
-            success &= shaderCompiler->CompileShader(
-                source,
-                pixelStageEntry.c_str(),
-                RenderBackendShaderStage::Pixel,
-                il,
-                includeDirs,
-                desc.defines,
-                &shaderDesc.stages[(uint32)RenderBackendShaderStage::Pixel],
-                &includedFiles);
-            shaderDesc.entryPoints[(uint32)RenderBackendShaderStage::Pixel] = desc.entryPoints[(uint32)RenderBackendShaderStage::Pixel].c_str();
+            ShaderSource shaderSource;
+            shaderSource.filename = filename.c_str();
+            shaderSource.sourceData = source.data();
+            shaderSource.sourceSize = source.size();
+            shaderSource.entryPoint = desc.entryPoints[(uint32)RenderBackendShaderStage::Pixel].c_str();
+            shaderSource.stage = ShaderStage::Pixel;
+            shaderSource.defines = desc.defines.data();
+            shaderSource.numDefines = (uint32)desc.defines.size();
+            shaderSource.includeDirectories = includeDirs.data();
+            shaderSource.numIncludeDirectories = (uint32)includeDirs.size();
+
+            bool succeed = shaderCompiler->CompileShader(shaderCompilerSettings, shaderSource, shadingLanguage, &shaderCompilerOutput3);
+
+            shaderDesc.stages[(uint32)RenderBackendShaderStage::Pixel].data = shaderCompilerOutput3.blob.GetData();
+            shaderDesc.stages[(uint32)RenderBackendShaderStage::Pixel].size = shaderCompilerOutput3.blob.GetSize();
+            shaderDesc.entryPoints[(uint32)RenderBackendShaderStage::Pixel] = shaderSource.entryPoint;
         }
         else if (desc.type == ShaderDesc::Type::Compute)
         {
-            std::wstring computeStageEntry = std::wstring(desc.entryPoints[(uint32)RenderBackendShaderStage::Compute].begin(), desc.entryPoints[(uint32)RenderBackendShaderStage::Compute].end());
-            success &= shaderCompiler->CompileShader(
-                source,
-                computeStageEntry.c_str(),
-                RenderBackendShaderStage::Compute,
-                il,
-                includeDirs,
-                desc.defines,
-                &shaderDesc.stages[(uint32)RenderBackendShaderStage::Compute],
-                &includedFiles);
-            shaderDesc.entryPoints[(uint32)RenderBackendShaderStage::Compute] = desc.entryPoints[(uint32)RenderBackendShaderStage::Compute].c_str();
+            ShaderSource shaderSource;
+            shaderSource.filename = filename.c_str();
+            shaderSource.sourceData = source.data();
+            shaderSource.sourceSize = source.size();
+            shaderSource.entryPoint = desc.entryPoints[(uint32)RenderBackendShaderStage::Compute].c_str();
+            shaderSource.stage = ShaderStage::Compute;
+            shaderSource.defines = desc.defines.data();
+            shaderSource.numDefines = (uint32)desc.defines.size();
+            shaderSource.includeDirectories = includeDirs.data();
+            shaderSource.numIncludeDirectories = (uint32)includeDirs.size();
+
+            bool succeed = shaderCompiler->CompileShader(shaderCompilerSettings, shaderSource, shadingLanguage, &shaderCompilerOutput1);
+
+            shaderDesc.stages[(uint32)RenderBackendShaderStage::Compute].data = shaderCompilerOutput1.blob.GetData();
+            shaderDesc.stages[(uint32)RenderBackendShaderStage::Compute].size = shaderCompilerOutput1.blob.GetSize();
+            shaderDesc.entryPoints[(uint32)RenderBackendShaderStage::Compute] = shaderSource.entryPoint;
         }
+#if 0
         else if (desc.type == ShaderDesc::Type::RayTracing)
         {
             {
                 std::wstring stageEntry = std::wstring(desc.entryPoints[(uint32)RenderBackendShaderStage::RayGen].begin(), desc.entryPoints[(uint32)RenderBackendShaderStage::RayGen].end());
-                success &= shaderCompiler->CompileShader(
+                success &= shaderCompiler->CompileShader_Depreacated(
                     source,
                     stageEntry.c_str(),
                     RenderBackendShaderStage::RayGen,
@@ -164,7 +203,7 @@ namespace HE
 
             {
                 std::wstring stageEntry = std::wstring(desc.entryPoints[(uint32)RenderBackendShaderStage::AnyHit].begin(), desc.entryPoints[(uint32)RenderBackendShaderStage::AnyHit].end());
-                success &= shaderCompiler->CompileShader(
+                success &= shaderCompiler->CompileShader_Depreacated(
                     source,
                     stageEntry.c_str(),
                     RenderBackendShaderStage::AnyHit,
@@ -178,7 +217,7 @@ namespace HE
 
             {
                 std::wstring stageEntry = std::wstring(desc.entryPoints[(uint32)RenderBackendShaderStage::ClosestHit].begin(), desc.entryPoints[(uint32)RenderBackendShaderStage::ClosestHit].end());
-                success &= shaderCompiler->CompileShader(
+                success &= shaderCompiler->CompileShader_Depreacated(
                     source,
                     stageEntry.c_str(),
                     RenderBackendShaderStage::ClosestHit,
@@ -192,7 +231,7 @@ namespace HE
 
             {
                 std::wstring stageEntry = std::wstring(desc.entryPoints[(uint32)RenderBackendShaderStage::Miss].begin(), desc.entryPoints[(uint32)RenderBackendShaderStage::Miss].end());
-                success &= shaderCompiler->CompileShader(
+                success &= shaderCompiler->CompileShader_Depreacated(
                     source,
                     stageEntry.c_str(),
                     RenderBackendShaderStage::Miss,
@@ -205,7 +244,7 @@ namespace HE
             }
             {
                 std::wstring stageEntry = std::wstring(desc.entryPoints[(uint32)RenderBackendShaderStage::Intersection].begin(), desc.entryPoints[(uint32)RenderBackendShaderStage::Intersection].end());
-                success &= shaderCompiler->CompileShader(
+                success &= shaderCompiler->CompileShader_Depreacated(
                     source,
                     stageEntry.c_str(),
                     RenderBackendShaderStage::Intersection,
@@ -217,6 +256,7 @@ namespace HE
                 shaderDesc.entryPoints[(uint32)RenderBackendShaderStage::Intersection] = desc.entryPoints[(uint32)RenderBackendShaderStage::Intersection].c_str();
             }
         }
+#endif
 
         std::unordered_set<std::string> releatedFiles;
         releatedFiles.insert(path.string());

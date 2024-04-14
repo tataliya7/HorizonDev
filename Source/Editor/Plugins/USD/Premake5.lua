@@ -8,15 +8,9 @@ project "USD"
 
     files {
         "**.h",
-        "**.c",
-        "**.hpp",
         "**.cpp",
         "**.cppm",
-        "**.inl",
-    }
-
-    links {
-        "HorizonEngine",
+        "**.lua",
     }
 
     includedirs {

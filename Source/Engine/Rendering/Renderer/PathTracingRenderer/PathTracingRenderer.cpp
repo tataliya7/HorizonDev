@@ -5,7 +5,7 @@ namespace HE
     bool PathTracingRenderer::LoadShaders()
     {
         uint32 deviceMask = ~0u;
-        ShaderIntermediateLanguage il = (GRenderBackend->GetType() == RenderBackendType::Vulkan) ? ShaderIntermediateLanguage::SPIRV : ShaderIntermediateLanguage::DXIL;
+        ShadingLanguage il = (GRenderBackend->GetType() == RenderBackendType::Vulkan) ? ShadingLanguage::SPIRV : ShadingLanguage::DXIL;
 
         std::vector<uint8> source;
         std::vector<std::wstring> includeDirs;
@@ -16,6 +16,7 @@ namespace HE
 
         LoadShaderSourceFromFile("../../../Shaders/PathTracingRenderer/PathTracing.hsf", source);
 
+#if 0
         RenderBackendRayTracingPipelineStateDesc pathTracingPipelineStateDesc = {
             .maxRayRecursionDepth = 1,
         };
@@ -23,7 +24,7 @@ namespace HE
             .stage = RenderBackendShaderStage::RayGen,
             .entry = "PathTracingRayGen",
             });
-        shaderLibrary->shaderCompiler->CompileShader(
+        shaderLibrary->shaderCompiler->CompileShader_Depreacated(
             source,
             HE_TEXT("PathTracingRayGen"),
             RenderBackendShaderStage::RayGen,
@@ -36,7 +37,7 @@ namespace HE
             .stage = RenderBackendShaderStage::Miss,
             .entry = "PathTracingDefaultMiss",
             });
-        shaderLibrary->shaderCompiler->CompileShader(
+        shaderLibrary->shaderCompiler->CompileShader_Depreacated(
             source,
             HE_TEXT("PathTracingDefaultMiss"),
             RenderBackendShaderStage::Miss,
@@ -49,7 +50,7 @@ namespace HE
           .stage = RenderBackendShaderStage::Miss,
           .entry = "PathTracingDefaultMiss",
             });
-        shaderLibrary->shaderCompiler->CompileShader(
+        shaderLibrary->shaderCompiler->CompileShader_Depreacated(
             source,
             HE_TEXT("PathTracingDefaultMiss"),
             RenderBackendShaderStage::Miss,
@@ -62,7 +63,7 @@ namespace HE
           .stage = RenderBackendShaderStage::Miss,
           .entry = "PathTracingDefaultMiss",
             });
-        shaderLibrary->shaderCompiler->CompileShader(
+        shaderLibrary->shaderCompiler->CompileShader_Depreacated(
             source,
             HE_TEXT("PathTracingDefaultMiss"),
             RenderBackendShaderStage::Miss,
@@ -83,7 +84,7 @@ namespace HE
             .numShaderRecords = 0,
         };
         pathTracingSBT = renderBackend->CreateRayTracingShaderBindingTable(deviceMask, &pathTracingSBTDesc, "PathTracingSBT");
-
+#endif
         return true;
     }
 

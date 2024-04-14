@@ -25,4 +25,9 @@ namespace HE
 
         std::unordered_map<AssetHandle, AssetMetaData> registry;
     };
+
+    class AssetDatabase
+    {
+
+    };
 }

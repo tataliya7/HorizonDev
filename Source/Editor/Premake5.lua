@@ -46,4 +46,6 @@ project "HorizonEditor"
 
 group "EditorPlugins"
     include "Plugins/USD"
+    include "Plugins/TimeOfDay"
+    include "Plugins/LookDevStudio"
 group ""

@@ -69,7 +69,7 @@ namespace HE
     struct RenderBackendShaderBlob
     {
         uint64 size;
-        uint8* data;
+        const uint8* data;
     };
 
     enum class RenderBackendResourceState

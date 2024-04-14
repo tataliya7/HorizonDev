@@ -24,6 +24,8 @@ namespace HE
 
     };
 
+    void LoadShaderSourceFromFile(const char* filename, std::vector<uint8>& outData);
+
     RenderBackendTextureHandle LoadTextureFromHDRFile(RenderBackend* renderBackend, const char* filename, RenderBackendTextureDesc* outDesc = nullptr);
     RenderBackendTextureHandle LoadTextureFromFile(RenderBackend* renderBackend, const char* filename, bool autoMipmaps = true, bool filpY = true, RenderBackendTextureFormat format = RenderBackendTextureFormat::BGRA8Unorm);
 }

@@ -3,6 +3,7 @@
 #include "Core/CoreModule.h"
 #include "RenderBackend/RenderBackendModule.h"
 #include "Rendering/ShaderCompiler.h"
+#include "Rendering/RenderAPI.h"
 
 namespace HE
 {
@@ -19,7 +20,7 @@ namespace HE
         std::string name;
         std::filesystem::path filename;
         std::string entryPoints[(uint32)RenderBackendShaderStage::Count];
-        std::vector<std::wstring> defines;
+        std::vector<ShaderMacroDefine> defines;
 
         static ShaderDesc CreateGraphics(const std::string& filename, const std::string& vsMain, const std::string& psMain)
         {
@@ -66,9 +67,11 @@ namespace HE
             // TODO
         }
 
-        void AddDefine(const wchar_t* define)
+        void AddDefine(const char* name, uint32 value)
         {
-            defines.push_back(define);
+            ShaderMacroDefine& define = defines.emplace_back();
+            define.name = name;
+            define.value = std::format("{}", value);
         }
     };
 
@@ -87,7 +90,7 @@ namespace HE
         ShaderLibrary_Deprecated(RenderBackend* backend, ShaderCompiler* compiler, uint32 maxNumShaders, bool hotReloadEnabled);
         virtual ~ShaderLibrary_Deprecated() {}
         bool HotReload();
-        void AddIncludeDirectory(const wchar_t* dir);
+        void AddIncludeDirectory(const char* dir);
         bool LoadShader(uint32 id, ShaderDesc& desc, bool reload = false);
         RenderBackendShaderHandle GetShaderHandle(uint32 id);
         ShaderCompiler* shaderCompiler;
@@ -95,7 +98,7 @@ namespace HE
         bool hotReloadEnabled;
         uint32 maxNumShaders;
         RenderBackend* renderBackend;
-        std::vector<std::wstring> includeDirs;
+        std::vector<const char*> includeDirs;
         std::vector<Shader> loadedShaders;
     };
 
@@ -106,9 +109,9 @@ namespace HE
 
     // https://therealmjp.github.io/posts/shader-permutations-part1/
     // https://therealmjp.github.io/posts/shader-permutations-part2/
-    
-    // 
-    //class 
+
+    //
+    //class
     //{
     //public:
     //    class;

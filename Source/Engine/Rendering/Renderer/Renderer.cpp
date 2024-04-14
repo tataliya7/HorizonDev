@@ -266,10 +266,10 @@ namespace HE
         assert(GRenderer == nullptr);
         GRenderer = this;
 
-        shaderCompiler = CreateDxcShaderCompiler();
+        shaderCompiler = CreateDXCShaderCompiler();
         shaderLibrary = new ShaderLibrary_Deprecated(renderBackend, shaderCompiler, (uint32)ShaderPipelineID::Count, true);
-        shaderLibrary->AddIncludeDirectory(HE_TEXT("../../../Shaders"));
-        shaderLibrary->AddIncludeDirectory(HE_TEXT("../../../Shaders/RealTimeRenderer"));
+        shaderLibrary->AddIncludeDirectory("../../../Shaders");
+        shaderLibrary->AddIncludeDirectory("../../../Shaders/RealTimeRenderer");
 
         RenderBackendTimingQueryHeapDesc timingQueryHeapDesc(RenderBackendMaxNumTimingQueryRegions);
         timingQueryHeap = renderBackend->CreateTimingQueryHeap(~0u, &timingQueryHeapDesc, "DefaultTimingQueryHeap");
@@ -425,34 +425,57 @@ namespace HE
             }
 
             std::vector<uint8> source;
-            std::vector<std::wstring> includeDirs;
+            std::vector<std::wstring> includeDirs_w;
             std::vector<std::wstring> defines;
-            includeDirs.push_back(HE_TEXT("../../../Shaders"));
+            includeDirs_w.push_back(HE_TEXT("../../../Shaders"));
+            std::string filename = "../../../Shaders/ImGui.hsf";
             LoadShaderSourceFromFile("../../../Shaders/ImGui.hsf", source);
 
-            ShadingLanguage il = (GRenderBackend->GetType() == RenderBackendType::Vulkan) ? ShadingLanguage::SPIRV : ShadingLanguage::DXIL;
+
+            std::vector<const char*> includeDirs;
+            includeDirs.push_back("../../../Shaders");
+
+            ShadingLanguage shadingLanguage = (GRenderBackend->GetType() == RenderBackendType::Vulkan) ? ShadingLanguage::SPIRV : ShadingLanguage::DXIL;
 
             RenderBackendShaderDesc imguiShaderDesc;
 
-            shaderCompiler->CompileShader_Depreacated(
-                source,
-                HE_TEXT("ImGuiVS"),
-                RenderBackendShaderStage::Vertex,
-                il,
-                includeDirs,
-                defines,
-                &imguiShaderDesc.stages[(uint32)RenderBackendShaderStage::Vertex]);
-            imguiShaderDesc.entryPoints[(uint32)RenderBackendShaderStage::Vertex] = "ImGuiVS";
-            shaderCompiler->CompileShader_Depreacated(
-                source,
-                HE_TEXT("ImGuiPS"),
-                RenderBackendShaderStage::Pixel,
-                il,
-                includeDirs,
-                defines,
-                &imguiShaderDesc.stages[(uint32)RenderBackendShaderStage::Pixel]);
+            ShaderSource shaderSource;
+            shaderSource.filename = filename.c_str();
+            shaderSource.sourceData = source.data();
+            shaderSource.sourceSize = source.size();
+            shaderSource.entryPoint = "ImGuiVS";
+            shaderSource.stage = ShaderStage::Vertex;
+            shaderSource.defines = nullptr;
+            shaderSource.numDefines = 0;
+            shaderSource.includeDirectories = includeDirs.data();
+            shaderSource.numIncludeDirectories = 1;
 
-            imguiShaderDesc.entryPoints[(uint32)RenderBackendShaderStage::Pixel] = "ImGuiPS";
+            ShaderCompilerSettings shaderCompilerSettings;
+            ShaderCompilerOutput shaderCompilerOutput;
+
+            shaderCompiler->CompileShader(shaderCompilerSettings, shaderSource, shadingLanguage, &shaderCompilerOutput);
+
+            imguiShaderDesc.stages[(uint32)RenderBackendShaderStage::Vertex].data = shaderCompilerOutput.blob.GetData();
+            imguiShaderDesc.stages[(uint32)RenderBackendShaderStage::Vertex].size = shaderCompilerOutput.blob.GetSize();
+            imguiShaderDesc.entryPoints[(uint32)RenderBackendShaderStage::Vertex] = shaderSource.entryPoint;
+
+            ShaderCompilerOutput shaderCompilerOutput2;
+            shaderSource.filename = filename.c_str();
+            shaderSource.sourceData = source.data();
+            shaderSource.sourceSize = source.size();
+            shaderSource.entryPoint = "ImGuiPS";
+            shaderSource.stage = ShaderStage::Pixel;
+            shaderSource.defines = nullptr;
+            shaderSource.numDefines = 0;
+            shaderSource.includeDirectories = includeDirs.data();
+            shaderSource.numIncludeDirectories = 1;
+
+            shaderCompiler->CompileShader(shaderCompilerSettings, shaderSource, shadingLanguage, &shaderCompilerOutput2);
+
+            imguiShaderDesc.stages[(uint32)RenderBackendShaderStage::Pixel].data = shaderCompilerOutput2.blob.GetData();
+            imguiShaderDesc.stages[(uint32)RenderBackendShaderStage::Pixel].size = shaderCompilerOutput2.blob.GetSize();
+            imguiShaderDesc.entryPoints[(uint32)RenderBackendShaderStage::Pixel] = shaderSource.entryPoint;
+
             imguiShader = renderBackend->CreateShader(~0u, &imguiShaderDesc, "ImGuiPS");
 
             for (uint32 t = 0; t < 3; t++)
