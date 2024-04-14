@@ -44,6 +44,10 @@ project "HorizonEditor"
         thirdpartypath("stb/include"),
     }
 
+    defines {
+        "WITH_HORIZON_EDITOR=1",
+    }
+
 group "EditorPlugins"
     include "Plugins/USD"
     include "Plugins/TimeOfDay"

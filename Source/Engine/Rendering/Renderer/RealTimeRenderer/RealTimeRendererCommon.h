@@ -1,7 +1,5 @@
 #pragma once
 
-#define WITH_HORIZON_EDITOR 1
-
 #include "Core/CoreModule.h"
 #include "Entity/EntityModule.h"
 #include "RenderBackend/RenderBackendModule.h"
