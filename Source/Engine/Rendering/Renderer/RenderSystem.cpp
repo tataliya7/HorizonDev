@@ -16,6 +16,16 @@ namespace HE
 {
     Renderer* GRenderer = nullptr;
 
+    RenderGraphTextureHandle RenderSystemGlobalResources::GetWhiteDummyTexture2D(RenderGraph& renderGraph) const
+    {
+        return renderGraph.ImportExternalTexture(whiteDummyTexture2D, RenderGraphTextureFlags::ReadOnly, "WhiteDummyTexture2D");
+    }
+
+    RenderGraphTextureHandle RenderSystemGlobalResources::GetBlackDummyTexture2D(RenderGraph& renderGraph) const
+    {
+        return renderGraph.ImportExternalTexture(blackDummyTexture2D, RenderGraphTextureFlags::ReadOnly, "BlackDummyTexture2D");
+    }
+
     void Texture2DGenerateMips(ShaderLibrary_Deprecated* shaderLibrary, RenderBackendCommandList& commandList, RenderBackendTextureHandle textureHandle, uint32 width, uint32 height, uint32 numMipLevels)
     {
         if (numMipLevels < 2)

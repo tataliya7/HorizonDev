@@ -47,6 +47,17 @@ namespace HE
 
     };
 
+    class RenderSystemGlobalResources
+    {
+    public:
+        RenderGraphTextureHandle GetWhiteDummyTexture2D(RenderGraph& renderGraph) const;
+        RenderGraphTextureHandle GetBlackDummyTexture2D(RenderGraph& renderGraph) const;
+    private:
+        RenderGraphPersistentTexture whiteDummyTexture2D;
+        RenderGraphPersistentTexture blackDummyTexture2D;
+        RenderGraphPersistentTexture preIntegratedBrdfLut;
+    };
+
     class Renderer : public RenderEngine
     {
     public:

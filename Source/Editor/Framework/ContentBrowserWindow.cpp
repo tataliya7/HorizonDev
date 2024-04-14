@@ -589,19 +589,19 @@
 //        ImGui::PopID();
 //        ImGui::NextColumn();
 //
-//        if (HAS_ANY_FLAGS(result, ContentBrowserActionFlags::ClearSelections))
+//        if (EnumClassHasFlags(result, ContentBrowserActionFlags::ClearSelections))
 //        {
 //            ClearSelections();
 //        }
-//        if (HAS_ANY_FLAGS(result, ContentBrowserActionFlags::Selected) && !selectedItems.Contains(item.GetUuid()))
+//        if (EnumClassHasFlags(result, ContentBrowserActionFlags::Selected) && !selectedItems.Contains(item.GetUuid()))
 //        {
 //            SelectItem(&item);
 //        }
-//        if (HAS_ANY_FLAGS(result, ContentBrowserActionFlags::Deselected) && selectedItems.Contains(item.GetUuid()))
+//        if (EnumClassHasFlags(result, ContentBrowserActionFlags::Deselected) && selectedItems.Contains(item.GetUuid()))
 //        {
 //            DeselectItem(&item);
 //        }
-//        if (HAS_ANY_FLAGS(result, ContentBrowserActionFlags::SelectToHere) && selectedItems.GetCount() == 2)
+//        if (EnumClassHasFlags(result, ContentBrowserActionFlags::SelectToHere) && selectedItems.GetCount() == 2)
 //        {
 //            uint32 firstIndex = currentItems.Find(selectedItems[0]);
 //            uint32 lastIndex = currentItems.Find(item.GetUuid());
@@ -616,7 +616,7 @@
 //                SelectItem(&currentItems[i]);
 //            }
 //        }
-//        if (HAS_ANY_FLAGS(result, ContentBrowserActionFlags::ShowInExplorer))
+//        if (EnumClassHasFlags(result, ContentBrowserActionFlags::ShowInExplorer))
 //        {
 //            if (item.GetType() == ContentBrowserItemType::Directory)
 //            {
@@ -627,31 +627,31 @@
 //                FileSystem::ShowFileInExplorer(item.GetPath());
 //            }
 //        }
-//        if (HAS_ANY_FLAGS(result, ContentBrowserActionFlags::OpenExternally))
+//        if (EnumClassHasFlags(result, ContentBrowserActionFlags::OpenExternally))
 //        {
 //            FileSystem::OpenExternally(item.GetPath());
 //        }
-//        if (HAS_ANY_FLAGS(result, ContentBrowserActionFlags::Hovered))
+//        if (EnumClassHasFlags(result, ContentBrowserActionFlags::Hovered))
 //        {
 //            isAnyItemHovered = true;
 //        }
 //
-//        if (HAS_ANY_FLAGS(result, ContentBrowserActionFlags::DeleteSelectedItems))
+//        if (EnumClassHasFlags(result, ContentBrowserActionFlags::DeleteSelectedItems))
 //        {
 //            DeleteSelectedItems();
 //            break;
 //        }
-//        if (HAS_ANY_FLAGS(result, ContentBrowserActionFlags::Renamed))
+//        if (EnumClassHasFlags(result, ContentBrowserActionFlags::Renamed))
 //        {
 //            SortItemList();
 //            break;
 //        }
-//        if (HAS_ANY_FLAGS(result, ContentBrowserActionFlags::ChangeDirectory))
+//        if (EnumClassHasFlags(result, ContentBrowserActionFlags::ChangeDirectory))
 //        {
 //            ChangeDirectory((ContentBrowserDirectory*)&item);
 //            break;
 //        }
-//        if (HAS_ANY_FLAGS(result, ContentBrowserActionFlags::Refresh))
+//        if (EnumClassHasFlags(result, ContentBrowserActionFlags::Refresh))
 //        {
 //            Refresh();
 //            break;

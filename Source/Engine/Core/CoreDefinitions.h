@@ -65,8 +65,14 @@
                                            inline constexpr EnumClass  operator& (EnumClass  lhs, EnumClass rhs)   { return (EnumClass)((__underlying_type(EnumClass))lhs & (__underlying_type(EnumClass))rhs); } \
                                            inline constexpr EnumClass  operator^ (EnumClass  lhs, EnumClass rhs)   { return (EnumClass)((__underlying_type(EnumClass))lhs ^ (__underlying_type(EnumClass))rhs); } \
                                            inline constexpr bool       operator! (EnumClass  e)                    { return !(__underlying_type(EnumClass))e; } \
-                                           inline constexpr EnumClass  operator~ (EnumClass  e)                    { return (EnumClass)~(__underlying_type(EnumClass))e; } \
-                                           inline constexpr bool       HAS_ANY_FLAGS(EnumClass e, EnumClass flags) { return (e & flags) != (EnumClass)0; }
+                                           inline constexpr EnumClass  operator~ (EnumClass  e)                    { return (EnumClass)~(__underlying_type(EnumClass))e; }
+
+template<typename EnumClass>
+constexpr bool EnumClassHasFlags(EnumClass a, EnumClass b)
+{
+    using UnderlyingType = __underlying_type(EnumClass);
+    return ((UnderlyingType)a & (UnderlyingType)b) == (UnderlyingType)b;
+}
 
 #define HE_BIND_FUNCTION(func) [this](auto&&... args) -> decltype(auto) { return this->func(std::forward<decltype(args) > (args)...); }
 

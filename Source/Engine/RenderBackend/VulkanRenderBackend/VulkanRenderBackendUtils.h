@@ -352,19 +352,19 @@ namespace HE
     static inline VkImageUsageFlags GetVkImageUsageFlags(RenderBackendTextureCreateFlags flags)
     {
         VkImageUsageFlags usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-        if (HAS_ANY_FLAGS(flags, RenderBackendTextureCreateFlags::UnorderedAccess))
+        if (EnumClassHasFlags(flags, RenderBackendTextureCreateFlags::UnorderedAccess))
         {
             usage |= VK_IMAGE_USAGE_STORAGE_BIT;
         }
-        if (HAS_ANY_FLAGS(flags, RenderBackendTextureCreateFlags::ShaderResource))
+        if (EnumClassHasFlags(flags, RenderBackendTextureCreateFlags::ShaderResource))
         {
             usage |= VK_IMAGE_USAGE_SAMPLED_BIT;
         }
-        if (HAS_ANY_FLAGS(flags, RenderBackendTextureCreateFlags::DepthStencil))
+        if (EnumClassHasFlags(flags, RenderBackendTextureCreateFlags::DepthStencil))
         {
             usage |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
         }
-        if (HAS_ANY_FLAGS(flags, RenderBackendTextureCreateFlags::RenderTarget))
+        if (EnumClassHasFlags(flags, RenderBackendTextureCreateFlags::RenderTarget))
         {
             usage |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
         }
@@ -374,39 +374,39 @@ namespace HE
     static inline VkBufferUsageFlags GetVkBufferUsageFlags(RenderBackendBufferCreateFlags flags)
     {
         VkBufferUsageFlags usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
-        if (HAS_ANY_FLAGS(flags, RenderBackendBufferCreateFlags::CopySrc))
+        if (EnumClassHasFlags(flags, RenderBackendBufferCreateFlags::CopySrc))
         {
             usage |= VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
         }
-        if (HAS_ANY_FLAGS(flags, RenderBackendBufferCreateFlags::CopyDst))
+        if (EnumClassHasFlags(flags, RenderBackendBufferCreateFlags::CopyDst))
         {
             usage |= VK_BUFFER_USAGE_TRANSFER_DST_BIT;
         }
-        if (HAS_ANY_FLAGS(flags, RenderBackendBufferCreateFlags::VertexBuffer))
+        if (EnumClassHasFlags(flags, RenderBackendBufferCreateFlags::VertexBuffer))
         {
             usage |= VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
         }
-        if (HAS_ANY_FLAGS(flags, RenderBackendBufferCreateFlags::IndexBuffer))
+        if (EnumClassHasFlags(flags, RenderBackendBufferCreateFlags::IndexBuffer))
         {
             usage |= VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
         }
-        if (HAS_ANY_FLAGS(flags, RenderBackendBufferCreateFlags::UniformBuffer))
+        if (EnumClassHasFlags(flags, RenderBackendBufferCreateFlags::UniformBuffer))
         {
             usage |= VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT;
         }
-        if (HAS_ANY_FLAGS(flags, RenderBackendBufferCreateFlags::IndirectArguments))
+        if (EnumClassHasFlags(flags, RenderBackendBufferCreateFlags::IndirectArguments))
         {
             usage |= VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
         }
-        if (HAS_ANY_FLAGS(flags, RenderBackendBufferCreateFlags::UnorderedAccess))
+        if (EnumClassHasFlags(flags, RenderBackendBufferCreateFlags::UnorderedAccess))
         {
             usage |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT;
         }
-        if (HAS_ANY_FLAGS(flags, RenderBackendBufferCreateFlags::AccelerationStruture))
+        if (EnumClassHasFlags(flags, RenderBackendBufferCreateFlags::AccelerationStruture))
         {
             usage |= VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR;
         }
-        if (HAS_ANY_FLAGS(flags, RenderBackendBufferCreateFlags::ShaderBindingTable))
+        if (EnumClassHasFlags(flags, RenderBackendBufferCreateFlags::ShaderBindingTable))
         {
             usage |= VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR;
         }
@@ -416,15 +416,15 @@ namespace HE
     static inline VmaAllocationCreateFlags GetVmaAllocationCreateFlags(RenderBackendBufferCreateFlags flags)
     {
         VmaAllocationCreateFlags result = 0;
-        if (HAS_ANY_FLAGS(flags, RenderBackendBufferCreateFlags::Readback))
+        if (EnumClassHasFlags(flags, RenderBackendBufferCreateFlags::Readback))
         {
             result |= VMA_ALLOCATION_CREATE_HOST_ACCESS_RANDOM_BIT;
         }
-        if (HAS_ANY_FLAGS(flags, RenderBackendBufferCreateFlags::Upload))
+        if (EnumClassHasFlags(flags, RenderBackendBufferCreateFlags::Upload))
         {
             result |= VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT;
         }
-        if (HAS_ANY_FLAGS(flags, RenderBackendBufferCreateFlags::CreateMapped))
+        if (EnumClassHasFlags(flags, RenderBackendBufferCreateFlags::CreateMapped))
         {
             result |= VMA_ALLOCATION_CREATE_MAPPED_BIT;
         }
@@ -433,19 +433,19 @@ namespace HE
 
     static inline VmaMemoryUsage GetVmaMemoryUsage(RenderBackendBufferCreateFlags flags)
     {
-        if (HAS_ANY_FLAGS(flags, RenderBackendBufferCreateFlags::CpuOnly))
+        if (EnumClassHasFlags(flags, RenderBackendBufferCreateFlags::CpuOnly))
         {
             return VMA_MEMORY_USAGE_CPU_ONLY;
         }
-        if (HAS_ANY_FLAGS(flags, RenderBackendBufferCreateFlags::GpuOnly))
+        if (EnumClassHasFlags(flags, RenderBackendBufferCreateFlags::GpuOnly))
         {
             return VMA_MEMORY_USAGE_GPU_ONLY;
         }
-        if (HAS_ANY_FLAGS(flags, RenderBackendBufferCreateFlags::CpuToGpu))
+        if (EnumClassHasFlags(flags, RenderBackendBufferCreateFlags::CpuToGpu))
         {
             return VMA_MEMORY_USAGE_CPU_TO_GPU;
         }
-        if (HAS_ANY_FLAGS(flags, RenderBackendBufferCreateFlags::GpuToCpu))
+        if (EnumClassHasFlags(flags, RenderBackendBufferCreateFlags::GpuToCpu))
         {
             return VMA_MEMORY_USAGE_GPU_TO_CPU;
         }

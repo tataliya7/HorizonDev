@@ -1837,7 +1837,7 @@ namespace HE
 
         VmaAllocationCreateInfo memoryInfo = {
             .flags = buffer.allocationFlags,
-            .usage = buffer.memeryUsage, 
+            .usage = buffer.memeryUsage,
         };
 
         VmaAllocationInfo allocationInfo = {};
@@ -1885,7 +1885,7 @@ namespace HE
             DestroyBuffer(bufferIndex);
         }
 
-        if (HAS_ANY_FLAGS(desc->flags, RenderBackendBufferCreateFlags::UnorderedAccess))
+        if (EnumClassHasFlags(desc->flags, RenderBackendBufferCreateFlags::UnorderedAccess))
         {
             uint32 index = bindlessDescriptorManager.AllocateStorageBufferIndex();
             VkDescriptorBufferInfo descriptorBufferInfo = {
@@ -2076,7 +2076,7 @@ namespace HE
             .clearValue = ConvertToVkClearValue(desc->clearValue),
         };
 
-        if (HAS_ANY_FLAGS(desc->flags, RenderBackendTextureCreateFlags::Readback))
+        if (EnumClassHasFlags(desc->flags, RenderBackendTextureCreateFlags::Readback))
         {
             texture.cpuReadbackBuffer = new VulkanCpuReadbackBuffer();
 
@@ -2137,7 +2137,7 @@ namespace HE
             .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
         };
 
-        if (HAS_ANY_FLAGS(desc->flags, RenderBackendTextureCreateFlags::Sparse))
+        if (EnumClassHasFlags(desc->flags, RenderBackendTextureCreateFlags::Sparse))
         {
             //flags |= VK_IMAGE_CREATE_SPARSE_BINDING_BIT;
             //flags |= VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT;
@@ -2193,7 +2193,7 @@ namespace HE
             SetDebugUtilsObjectName(VK_OBJECT_TYPE_IMAGE, (uint64)texture.handle, name);
         }
 
-        if (HAS_ANY_FLAGS(desc->flags, RenderBackendTextureCreateFlags::ShaderResource))
+        if (EnumClassHasFlags(desc->flags, RenderBackendTextureCreateFlags::ShaderResource))
         {
             VkImageViewCreateInfo imageViewInfo = {
                 .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
@@ -2253,7 +2253,7 @@ namespace HE
                 texture.srvs[mipLevel].srvIndex = index;
             }
         }
-        if (HAS_ANY_FLAGS(desc->flags, RenderBackendTextureCreateFlags::UnorderedAccess))
+        if (EnumClassHasFlags(desc->flags, RenderBackendTextureCreateFlags::UnorderedAccess))
         {
             texture.uavs.resize(texture.mipLevels);
             for (uint32 mipLevel = 0; mipLevel < texture.mipLevels; mipLevel++)
@@ -2286,7 +2286,7 @@ namespace HE
                 texture.uavs[mipLevel].uavIndex = index;
             }
         }
-        if (HAS_ANY_FLAGS(desc->flags, RenderBackendTextureCreateFlags::RenderTarget))
+        if (EnumClassHasFlags(desc->flags, RenderBackendTextureCreateFlags::RenderTarget))
         {
             texture.rtv.resize(texture.mipLevels);
             for (uint32 i = 0; i < texture.mipLevels; i++)
@@ -2302,7 +2302,7 @@ namespace HE
                 VK_CHECK(vkCreateImageView(handle, &imageViewInfo, VULKAN_ALLOCATION_CALLBACKS, &texture.rtv[i]));
             }
         }
-        if (HAS_ANY_FLAGS(desc->flags, RenderBackendTextureCreateFlags::DepthStencil))
+        if (EnumClassHasFlags(desc->flags, RenderBackendTextureCreateFlags::DepthStencil))
         {
             for (uint32 i = 0; i < texture.arrayLayers; i++)
             {
@@ -2811,10 +2811,10 @@ namespace HE
             attachmentStates[i].dstAlphaBlendFactor = ConvertToVkBlendFactor(state.targetBlends[i].dstAlphaBlendFactor);
             attachmentStates[i].alphaBlendOp = ConvertToVkBlendOp(state.targetBlends[i].alphaBlendOp);
             attachmentStates[i].colorWriteMask = 0;
-            attachmentStates[i].colorWriteMask |= HAS_ANY_FLAGS(state.targetBlends[i].colorWriteMask, RenderBackendColorComponentFlags::R) ? VK_COLOR_COMPONENT_R_BIT : 0;
-            attachmentStates[i].colorWriteMask |= HAS_ANY_FLAGS(state.targetBlends[i].colorWriteMask, RenderBackendColorComponentFlags::G) ? VK_COLOR_COMPONENT_G_BIT : 0;
-            attachmentStates[i].colorWriteMask |= HAS_ANY_FLAGS(state.targetBlends[i].colorWriteMask, RenderBackendColorComponentFlags::B) ? VK_COLOR_COMPONENT_B_BIT : 0;
-            attachmentStates[i].colorWriteMask |= HAS_ANY_FLAGS(state.targetBlends[i].colorWriteMask, RenderBackendColorComponentFlags::A) ? VK_COLOR_COMPONENT_A_BIT : 0;
+            attachmentStates[i].colorWriteMask |= EnumClassHasFlags(state.targetBlends[i].colorWriteMask, RenderBackendColorComponentFlags::R) ? VK_COLOR_COMPONENT_R_BIT : 0;
+            attachmentStates[i].colorWriteMask |= EnumClassHasFlags(state.targetBlends[i].colorWriteMask, RenderBackendColorComponentFlags::G) ? VK_COLOR_COMPONENT_G_BIT : 0;
+            attachmentStates[i].colorWriteMask |= EnumClassHasFlags(state.targetBlends[i].colorWriteMask, RenderBackendColorComponentFlags::B) ? VK_COLOR_COMPONENT_B_BIT : 0;
+            attachmentStates[i].colorWriteMask |= EnumClassHasFlags(state.targetBlends[i].colorWriteMask, RenderBackendColorComponentFlags::A) ? VK_COLOR_COMPONENT_A_BIT : 0;
         }
         outInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
         outInfo.logicOpEnable = VK_FALSE;
@@ -4720,8 +4720,8 @@ namespace HE
         const auto& srcTexture = device->GetTexture(command.srcTexture);
         const auto& dstTexture = device->GetTexture(command.dstTexture);
 
-        assert(!HAS_ANY_FLAGS(srcTexture->flags, RenderBackendTextureCreateFlags::Readback));
-        if (HAS_ANY_FLAGS(dstTexture->flags, RenderBackendTextureCreateFlags::Readback))
+        assert(!EnumClassHasFlags(srcTexture->flags, RenderBackendTextureCreateFlags::Readback));
+        if (EnumClassHasFlags(dstTexture->flags, RenderBackendTextureCreateFlags::Readback))
         {
             VkBufferImageCopy copy[RenderBackendMaxNumTextureMipLevels] = {};
             uint64 bufferOffset = 0;
@@ -5702,7 +5702,7 @@ namespace HE
         //    NGXTexture.Resource.ImageViewInfo.Format = Texture->format;
         //    NGXTexture.Resource.ImageViewInfo.Width = Texture->width;
         //    NGXTexture.Resource.ImageViewInfo.Height = Texture->height;
-        //    NGXTexture.ReadWrite = HAS_ANY_FLAGS(Texture->flags, RenderBackendTextureCreateFlags::UnorderedAccess);
+        //    NGXTexture.ReadWrite = EnumClassHasFlags(Texture->flags, RenderBackendTextureCreateFlags::UnorderedAccess);
         //    NGXTexture.Resource.ImageViewInfo.SubresourceRange = SubresourceRange;
 
         //    return NGXTexture;

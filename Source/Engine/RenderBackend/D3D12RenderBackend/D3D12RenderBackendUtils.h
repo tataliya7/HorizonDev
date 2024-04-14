@@ -176,15 +176,15 @@ namespace HE
     static inline D3D12_RESOURCE_FLAGS GetD3D12ResourceFlags(RenderBackendBufferCreateFlags flags)
     {
         D3D12_RESOURCE_FLAGS result = D3D12_RESOURCE_FLAG_NONE;
-        if (HAS_ANY_FLAGS(flags, RenderBackendBufferCreateFlags::UnorderedAccess))
+        if (EnumClassHasFlags(flags, RenderBackendBufferCreateFlags::UnorderedAccess))
         {
             result |= D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
         }
-        if (!HAS_ANY_FLAGS(flags, RenderBackendBufferCreateFlags::ShaderResource))
+        if (!EnumClassHasFlags(flags, RenderBackendBufferCreateFlags::ShaderResource))
         {
             result |= D3D12_RESOURCE_FLAG_DENY_SHADER_RESOURCE;
         }
-        if (HAS_ANY_FLAGS(flags, RenderBackendBufferCreateFlags::AccelerationStruture))
+        if (EnumClassHasFlags(flags, RenderBackendBufferCreateFlags::AccelerationStruture))
         {
             result |= D3D12_RESOURCE_FLAG_RAYTRACING_ACCELERATION_STRUCTURE;
         }
@@ -194,19 +194,19 @@ namespace HE
     static inline D3D12_RESOURCE_FLAGS GetD3D12ResourceFlags(RenderBackendTextureCreateFlags flags)
     {
         D3D12_RESOURCE_FLAGS result = D3D12_RESOURCE_FLAG_NONE;
-        if (HAS_ANY_FLAGS(flags, RenderBackendTextureCreateFlags::UnorderedAccess))
+        if (EnumClassHasFlags(flags, RenderBackendTextureCreateFlags::UnorderedAccess))
         {
             result |= D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
         }
-        if (!HAS_ANY_FLAGS(flags, RenderBackendTextureCreateFlags::ShaderResource))
+        if (!EnumClassHasFlags(flags, RenderBackendTextureCreateFlags::ShaderResource))
         {
             result |= D3D12_RESOURCE_FLAG_DENY_SHADER_RESOURCE;
         }
-        if (HAS_ANY_FLAGS(flags, RenderBackendTextureCreateFlags::RenderTarget))
+        if (EnumClassHasFlags(flags, RenderBackendTextureCreateFlags::RenderTarget))
         {
             result |= D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
         }
-        if (HAS_ANY_FLAGS(flags, RenderBackendTextureCreateFlags::DepthStencil))
+        if (EnumClassHasFlags(flags, RenderBackendTextureCreateFlags::DepthStencil))
         {
             result |= D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
         }
@@ -216,11 +216,11 @@ namespace HE
     static inline D3D12_HEAP_TYPE GetD3D12HeapType(RenderBackendBufferCreateFlags flags)
     {
         D3D12_HEAP_TYPE type = D3D12_HEAP_TYPE_DEFAULT;
-        if (HAS_ANY_FLAGS(flags, RenderBackendBufferCreateFlags::Upload))
+        if (EnumClassHasFlags(flags, RenderBackendBufferCreateFlags::Upload))
         {
             type = D3D12_HEAP_TYPE_UPLOAD;
         }
-        else if (HAS_ANY_FLAGS(flags, RenderBackendBufferCreateFlags::Readback))
+        else if (EnumClassHasFlags(flags, RenderBackendBufferCreateFlags::Readback))
         {
             type = D3D12_HEAP_TYPE_READBACK;
         }
@@ -441,19 +441,19 @@ namespace HE
         }
         else
         {
-            if (HAS_ANY_FLAGS(writeMask, RenderBackendColorComponentFlags::R))
+            if (EnumClassHasFlags(writeMask, RenderBackendColorComponentFlags::R))
             {
                 mask |= D3D12_COLOR_WRITE_ENABLE_RED;
             }
-            if (HAS_ANY_FLAGS(writeMask, RenderBackendColorComponentFlags::G))
+            if (EnumClassHasFlags(writeMask, RenderBackendColorComponentFlags::G))
             {
                 mask |= D3D12_COLOR_WRITE_ENABLE_GREEN;
             }
-            if (HAS_ANY_FLAGS(writeMask, RenderBackendColorComponentFlags::B))
+            if (EnumClassHasFlags(writeMask, RenderBackendColorComponentFlags::B))
             {
                 mask |= D3D12_COLOR_WRITE_ENABLE_BLUE;
             }
-            if (HAS_ANY_FLAGS(writeMask, RenderBackendColorComponentFlags::A))
+            if (EnumClassHasFlags(writeMask, RenderBackendColorComponentFlags::A))
             {
                 mask |= D3D12_COLOR_WRITE_ENABLE_ALPHA;
             }

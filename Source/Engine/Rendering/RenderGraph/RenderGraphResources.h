@@ -108,12 +108,19 @@ namespace HE
 
     using RenderGraphTextureDesc = RenderBackendTextureDesc;
 
+    enum class RenderGraphTextureFlags
+    {
+        None = 0,
+        ReadOnly = 1 << 1,
+    };
+
     class RenderGraphTexture final : public RenderGraphResource
     {
     public:
-        RenderGraphTexture(const char* name, const RenderGraphTextureDesc& desc)
+        RenderGraphTexture(const char* name, const RenderGraphTextureDesc& desc, RenderGraphTextureFlags flags)
             : RenderGraphResource(name, RenderGraphResourceType::Texture)
             , desc(desc)
+            , flags(flags)
             , subresourceLayout(desc.mipLevels, desc.arrayLayers) {}
         const RenderGraphTextureDesc& GetDesc() const
         {
@@ -145,6 +152,7 @@ namespace HE
             this->finalState = initialState;
         }
         const RenderGraphTextureDesc desc;
+        const RenderGraphTextureFlags flags;
         RenderBackendResourceState tempState = RenderBackendResourceState::Undefined;
         RenderGraphTextureSubresourceLayout subresourceLayout;
         RenderBackendTextureHandle texture = RenderBackendTextureHandle::Null;
@@ -263,16 +271,24 @@ namespace HE
 
     using RenderGraphBufferDesc = RenderBackendBufferDesc;
 
+    enum class RenderGraphBufferFlags
+    {
+        None = 0,
+    };
+
     class RenderGraphBuffer final : public RenderGraphResource
     {
     public:
-        RenderGraphBuffer(const char* name, const RenderGraphBufferDesc& desc)
+        RenderGraphBuffer(const char* name, const RenderGraphBufferDesc& desc, RenderGraphBufferFlags flags)
             : RenderGraphResource(name, RenderGraphResourceType::Buffer)
-            , desc(desc) {}
+            , desc(desc)
+            , flags(flags) {}
+        
         const RenderGraphBufferDesc& GetDesc() const
         {
             return desc;
         }
+
         RenderBackendBufferHandle GetRenderBackendBuffer() const
         {
             return buffer;
@@ -292,6 +308,7 @@ namespace HE
             this->finalState = initialState;
         }
         const RenderGraphBufferDesc desc;
+        const RenderGraphBufferFlags flags;
         RenderBackendBufferHandle buffer;
     };
 
@@ -331,6 +348,11 @@ namespace HE
         bool IsValid() const
         {
             return active && texture.IsValid();
+        }
+
+        RenderBackendTextureHandle GetRenderBackendTextureHandle() const
+        {
+            return texture;
         }
     };
 

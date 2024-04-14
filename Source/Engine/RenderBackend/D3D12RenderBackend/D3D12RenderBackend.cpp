@@ -640,12 +640,12 @@ namespace HE
             };
 
             D3D12_RESOURCE_STATES initialState = D3D12_RESOURCE_STATE_COMMON;
-            if (HAS_ANY_FLAGS(desc->flags, RenderBackendBufferCreateFlags::Readback))
+            if (EnumClassHasFlags(desc->flags, RenderBackendBufferCreateFlags::Readback))
             {
                 initialState = D3D12_RESOURCE_STATE_COPY_DEST;
                 resourceDesc.Flags |= D3D12_RESOURCE_FLAG_DENY_SHADER_RESOURCE;
             }
-            else if (HAS_ANY_FLAGS(desc->flags, RenderBackendBufferCreateFlags::Upload))
+            else if (EnumClassHasFlags(desc->flags, RenderBackendBufferCreateFlags::Upload))
             {
                 initialState = D3D12_RESOURCE_STATE_GENERIC_READ;
             }
@@ -668,11 +668,11 @@ namespace HE
             buffer->size = desc->size;
             buffer->bindlessIndex = -1;
 
-            if (HAS_ANY_FLAGS(desc->flags, RenderBackendBufferCreateFlags::Readback))
+            if (EnumClassHasFlags(desc->flags, RenderBackendBufferCreateFlags::Readback))
             {
                 D3D12_CHECK(buffer->resource->Map(0, nullptr, &buffer->mappedData));
             }
-            else if (HAS_ANY_FLAGS(desc->flags, RenderBackendBufferCreateFlags::Upload))
+            else if (EnumClassHasFlags(desc->flags, RenderBackendBufferCreateFlags::Upload))
             {
                 // It is valid to specify the CPU won't read any data by passing a range where End is less than or equal to Begin
                 D3D12_RANGE readRange = {
@@ -689,7 +689,7 @@ namespace HE
 
             if (data != nullptr)
             {
-                if (HAS_ANY_FLAGS(desc->flags, RenderBackendBufferCreateFlags::Upload)) // Copy directly in mapped data
+                if (EnumClassHasFlags(desc->flags, RenderBackendBufferCreateFlags::Upload)) // Copy directly in mapped data
                 {
                     assert(buffer->mappedData);
                     memcpy(buffer->mappedData, data, buffer->size);
@@ -711,7 +711,7 @@ namespace HE
                 }
             }
 
-            if (HAS_ANY_FLAGS(desc->flags, RenderBackendBufferCreateFlags::UnorderedAccess))
+            if (EnumClassHasFlags(desc->flags, RenderBackendBufferCreateFlags::UnorderedAccess))
             {
                 D3D12_BUFFER_UAV bufferUAV = {
                     .FirstElement = 0,
@@ -771,11 +771,11 @@ namespace HE
             buffer->size = size;
             buffer->bindlessIndex = -1;
 
-            if (HAS_ANY_FLAGS(buffer->flags, RenderBackendBufferCreateFlags::Readback))
+            if (EnumClassHasFlags(buffer->flags, RenderBackendBufferCreateFlags::Readback))
             {
                 D3D12_CHECK(buffer->resource->Map(0, nullptr, &buffer->mappedData));
             }
-            else if (HAS_ANY_FLAGS(buffer->flags, RenderBackendBufferCreateFlags::Upload))
+            else if (EnumClassHasFlags(buffer->flags, RenderBackendBufferCreateFlags::Upload))
             {
                 // It is valid to specify the CPU won't read any data by passing a range where End is less than or equal to Begin
                 D3D12_RANGE readRange = {
@@ -790,7 +790,7 @@ namespace HE
                 buffer->mappedData = nullptr;
             }
 
-            if (HAS_ANY_FLAGS(buffer->flags, RenderBackendBufferCreateFlags::UnorderedAccess))
+            if (EnumClassHasFlags(buffer->flags, RenderBackendBufferCreateFlags::UnorderedAccess))
             {
                 D3D12_BUFFER_UAV bufferUAV = {
                     .FirstElement = 0,
@@ -875,7 +875,7 @@ namespace HE
             optimizedClearValue.DepthStencil.Depth = desc->clearValue.depthStencilValue.depth;
             optimizedClearValue.DepthStencil.Stencil = desc->clearValue.depthStencilValue.stencil; // TODO
             optimizedClearValue.Format = resourceDesc.Format;
-            bool useClearValue = HAS_ANY_FLAGS(desc->flags, RenderBackendTextureCreateFlags::RenderTarget) || HAS_ANY_FLAGS(desc->flags, RenderBackendTextureCreateFlags::DepthStencil);
+            bool useClearValue = EnumClassHasFlags(desc->flags, RenderBackendTextureCreateFlags::RenderTarget) || EnumClassHasFlags(desc->flags, RenderBackendTextureCreateFlags::DepthStencil);
 
             D3D12_CHECK(allocator->CreateResource(
                 &allocationDesc,
@@ -992,7 +992,7 @@ namespace HE
 #endif
             }
 
-            if (HAS_ANY_FLAGS(desc->flags, RenderBackendTextureCreateFlags::ShaderResource))
+            if (EnumClassHasFlags(desc->flags, RenderBackendTextureCreateFlags::ShaderResource))
             {
                 D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
                 srvDesc.Format = texture->format;
@@ -1099,7 +1099,7 @@ namespace HE
                 }
             }
 
-            if (HAS_ANY_FLAGS(desc->flags, RenderBackendTextureCreateFlags::RenderTarget))
+            if (EnumClassHasFlags(desc->flags, RenderBackendTextureCreateFlags::RenderTarget))
             {
                 D3D12_RENDER_TARGET_VIEW_DESC rtvDesc = {};
                 rtvDesc.Format = texture->format;
@@ -1160,7 +1160,7 @@ namespace HE
                 }
             }
 
-            if (HAS_ANY_FLAGS(desc->flags, RenderBackendTextureCreateFlags::DepthStencil))
+            if (EnumClassHasFlags(desc->flags, RenderBackendTextureCreateFlags::DepthStencil))
             {
                 D3D12_DEPTH_STENCIL_VIEW_DESC dsvDesc = {};
                 dsvDesc.Format = texture->format;
@@ -1205,7 +1205,7 @@ namespace HE
                 device->CreateDepthStencilView(texture->GetID3D12Resource(), &dsvDesc, texture->depthStencilViews[0]->descriptor);
             }
 
-            if (HAS_ANY_FLAGS(desc->flags, RenderBackendTextureCreateFlags::UnorderedAccess))
+            if (EnumClassHasFlags(desc->flags, RenderBackendTextureCreateFlags::UnorderedAccess))
             {
                 D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
                 uavDesc.Format = texture->format;
@@ -2471,6 +2471,8 @@ namespace HE
 
     bool D3D12RenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandTraceRays& command)
     {
+        D3D12_DISPATCH_RAYS_DESC dispatchRaysDesc = {};
+        commandList->GetID3D12GraphicsCommandList7()->DispatchRays(&dispatchRaysDesc);
         return true;
     }
 

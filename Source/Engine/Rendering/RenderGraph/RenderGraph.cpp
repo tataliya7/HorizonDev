@@ -47,7 +47,7 @@ namespace HE
     {
         uint32 index = (uint32)textures.size();
         RenderGraphTextureHandle handle = RenderGraphTextureHandle(index, 0);
-        RenderGraphTexture* texture = AllocObject<RenderGraphTexture>(name, desc);
+        RenderGraphTexture* texture = AllocObject<RenderGraphTexture>(name, desc, RenderGraphTextureFlags::None);
         textures.push_back(texture);
         dag.RegisterNode(texture);
         return handle;
@@ -57,7 +57,7 @@ namespace HE
     {
         uint32 index = (uint32)buffers.size();
         RenderGraphBufferHandle handle = RenderGraphBufferHandle(index, 0);
-        RenderGraphBuffer* buffer = AllocObject<RenderGraphBuffer>(name, desc);
+        RenderGraphBuffer* buffer = AllocObject<RenderGraphBuffer>(name, desc, RenderGraphBufferFlags::None);
         buffers.push_back(buffer);
         dag.RegisterNode(buffer);
         return handle;
@@ -104,12 +104,33 @@ namespace HE
     {
         uint32 index = (uint32)textures.size();
         RenderGraphTextureHandle handle = RenderGraphTextureHandle(index, 0);
-        RenderGraphTexture* texture = AllocObject<RenderGraphTexture>(name, desc);
+        RenderGraphTexture* texture = AllocObject<RenderGraphTexture>(name, desc, RenderGraphTextureFlags::None);
         texture->imported = true;
         texture->SetRenderBackendTexture(renderBackendTexture, initialState);
         textures.push_back(texture);
         dag.RegisterNode(texture);
         importedTextures.emplace(renderBackendTexture, handle);
+
+        return handle;
+    }
+
+    RenderGraphTextureHandle RenderGraph::ImportExternalTexture(const RenderGraphPersistentTexture& externalTexture, RenderGraphTextureFlags flags, char const* name)
+    {
+        RenderBackendTextureHandle renderBackendTextureHandle = externalTexture.GetRenderBackendTextureHandle();
+        RenderGraphTextureHandle found = FindExternalTexture(renderBackendTextureHandle);
+        if (found)
+        {
+            return found;
+        }
+
+        uint32 index = (uint32)textures.size();
+        RenderGraphTextureHandle handle = RenderGraphTextureHandle(index, 0);
+        RenderGraphTexture* texture = AllocObject<RenderGraphTexture>(name, externalTexture.desc, flags);
+        texture->imported = true;
+        texture->SetRenderBackendTexture(renderBackendTextureHandle, externalTexture.initialState);
+        textures.push_back(texture);
+        dag.RegisterNode(texture);
+        importedTextures.emplace(renderBackendTextureHandle, handle);
 
         return handle;
     }
@@ -128,7 +149,7 @@ namespace HE
     {
         uint32 index = (uint32)buffers.size();
         RenderGraphBufferHandle handle = RenderGraphBufferHandle(index, 0);
-        RenderGraphBuffer* buffer = AllocObject<RenderGraphBuffer>(name, desc);
+        RenderGraphBuffer* buffer = AllocObject<RenderGraphBuffer>(name, desc, RenderGraphBufferFlags::None);
         buffer->imported = true;
         buffer->SetRenderBackendBuffer(renderBackendBuffer, initialState);
         buffers.push_back(buffer);
@@ -139,10 +160,6 @@ namespace HE
 
     RenderGraphBufferHandle RenderGraph::ImportExternalBuffer(const RenderGraphPersistentBuffer* persistentBuffer)
     {
-        if (!persistentBuffer->IsValid())
-        {
-            return RenderGraphBufferHandle::Null;
-        }
         return ImportExternalBuffer(persistentBuffer->buffer, persistentBuffer->desc, persistentBuffer->initialState, persistentBuffer->name.c_str());
     }
 
@@ -271,7 +288,7 @@ namespace HE
             for (auto& state : pass->textureStates)
             {
                 RenderGraphTexture* texture = state.texture;
-                if (state.state != texture->tempState && !HAS_ANY_FLAGS(texture->desc.flags, RenderBackendTextureCreateFlags::Readback))
+                if (state.state != texture->tempState && !EnumClassHasFlags(texture->desc.flags, RenderBackendTextureCreateFlags::Readback))
                 {
                     RenderBackendBarrier barrier = RenderBackendBarrier(
                         texture->GetRenderBackendTexture(),
@@ -306,7 +323,7 @@ namespace HE
                 commandList->Transitions(pass->barriers.data(), (uint32)pass->barriers.size());
             }
 
-            if (HAS_ANY_FLAGS(flags, RenderGraphPassFlags::Graphics) && !HAS_ANY_FLAGS(flags, RenderGraphPassFlags::SkipRenderPass))
+            if (EnumClassHasFlags(flags, RenderGraphPassFlags::Graphics) && !EnumClassHasFlags(flags, RenderGraphPassFlags::SkipRenderPass))
             {
                 RenderBackendRenderPassInfo renderPass = {};
                 for (uint32 i = 0; i < RenderBackendMaxNumSimultaneousColorRenderTargets; i++)
@@ -339,7 +356,7 @@ namespace HE
 
             pass->Execute(registry, *commandList);
 
-            if (HAS_ANY_FLAGS(flags, RenderGraphPassFlags::Graphics) && !HAS_ANY_FLAGS(flags, RenderGraphPassFlags::SkipRenderPass))
+            if (EnumClassHasFlags(flags, RenderGraphPassFlags::Graphics) && !EnumClassHasFlags(flags, RenderGraphPassFlags::SkipRenderPass))
             {
                 commandList->EndRenderPass();
             }

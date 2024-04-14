@@ -691,19 +691,19 @@ void FileBrowserWindow::RenderItems()
 
             //ImGui::EndGroup();
 
-            if (HAS_ANY_FLAGS(result, FileBrowserActionFlags::ClearSelections))
+            if (EnumClassHasFlags(result, FileBrowserActionFlags::ClearSelections))
             {
                 ClearSelections();
             }
-            if (HAS_ANY_FLAGS(result, FileBrowserActionFlags::Selected) && !selectedItems.Contains(item.GetPath()))
+            if (EnumClassHasFlags(result, FileBrowserActionFlags::Selected) && !selectedItems.Contains(item.GetPath()))
             {
                 SelectItem(&item);
             }
-            if (HAS_ANY_FLAGS(result, FileBrowserActionFlags::Deselected) && selectedItems.Contains(item.GetPath()))
+            if (EnumClassHasFlags(result, FileBrowserActionFlags::Deselected) && selectedItems.Contains(item.GetPath()))
             {
                 DeselectItem(&item);
             }
-            if (HAS_ANY_FLAGS(result, FileBrowserActionFlags::SelectToHere) && selectedItems.GetCount() == 2)
+            if (EnumClassHasFlags(result, FileBrowserActionFlags::SelectToHere) && selectedItems.GetCount() == 2)
             {
                 uint32 firstIndex = currentItems.Find(selectedItems[0]);
                 uint32 lastIndex = currentItems.Find(item.GetPath());
@@ -718,7 +718,7 @@ void FileBrowserWindow::RenderItems()
                     SelectItem(&currentItems[i]);
                 }
             }
-            if (HAS_ANY_FLAGS(result, FileBrowserActionFlags::ShowInExplorer))
+            if (EnumClassHasFlags(result, FileBrowserActionFlags::ShowInExplorer))
             {
                 if (item.GetType() == FileBrowserItemType::Directory)
                 {
@@ -729,27 +729,27 @@ void FileBrowserWindow::RenderItems()
                     FileSystem::ShowFileInExplorer(item.GetPath());
                 }
             }
-            if (HAS_ANY_FLAGS(result, FileBrowserActionFlags::Hovered))
+            if (EnumClassHasFlags(result, FileBrowserActionFlags::Hovered))
             {
                 isAnyItemHovered = true;
             }
 
-            if (HAS_ANY_FLAGS(result, FileBrowserActionFlags::DeleteSelectedItems))
+            if (EnumClassHasFlags(result, FileBrowserActionFlags::DeleteSelectedItems))
             {
                 DeleteSelectedItems();
                 break;
             }
-            if (HAS_ANY_FLAGS(result, FileBrowserActionFlags::Renamed))
+            if (EnumClassHasFlags(result, FileBrowserActionFlags::Renamed))
             {
                 SortItemList();
                 break;
             }
-            if (HAS_ANY_FLAGS(result, FileBrowserActionFlags::ChangeDirectory))
+            if (EnumClassHasFlags(result, FileBrowserActionFlags::ChangeDirectory))
             {
                 ChangeDirectory((FileBrowserDirectory*)&item);
                 break;
             }
-            if (HAS_ANY_FLAGS(result, FileBrowserActionFlags::Refresh))
+            if (EnumClassHasFlags(result, FileBrowserActionFlags::Refresh))
             {
                 Refresh();
                 break;

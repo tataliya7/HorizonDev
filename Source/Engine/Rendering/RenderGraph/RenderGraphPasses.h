@@ -31,7 +31,7 @@ namespace HE
         virtual ~RenderGraphPass() = default;
         bool IsAsyncCompute() const
         {
-            return HAS_ANY_FLAGS(flags, RenderGraphPassFlags::AsyncCompute);
+            return EnumClassHasFlags(flags, RenderGraphPassFlags::AsyncCompute);
         }
         RenderGraphPassFlags GetFlags() const
         {
