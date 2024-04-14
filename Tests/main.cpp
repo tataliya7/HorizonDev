@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 
-#include "Colors.h"
-//#include "JobSystemTest.h"
+//#include "Colors.h"
+#include "JobSystemTest.h"
 //#include "PythonTest.h"
 //#include "TaskGraphSystemTest.h"
 
