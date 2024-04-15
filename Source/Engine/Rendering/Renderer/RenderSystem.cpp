@@ -16,22 +16,22 @@ namespace HE
 {
     Renderer* GRenderer = nullptr;
 
-    RenderGraphTextureHandle RenderSystemGlobalResources::ImportWhiteDummyTexture2D(RenderGraph& renderGraph) const
+    RenderGraphTextureHandle RenderSystemDefaultResources::ImportWhiteDummyTexture2D(RenderGraph& renderGraph) const
     {
         return renderGraph.ImportExternalTexture(whiteDummyTexture2D, RenderGraphTextureFlags::ReadOnly, "WhiteDummyTexture2D");
     }
 
-    RenderGraphTextureHandle RenderSystemGlobalResources::ImportBlackDummyTexture2D(RenderGraph& renderGraph) const
+    RenderGraphTextureHandle RenderSystemDefaultResources::ImportBlackDummyTexture2D(RenderGraph& renderGraph) const
     {
         return renderGraph.ImportExternalTexture(blackDummyTexture2D, RenderGraphTextureFlags::ReadOnly, "BlackDummyTexture2D");
     }
 
-    RenderBackendTextureHandle RenderSystemGlobalResources::GetPreIntegratedBRDFLUT() const
+    RenderBackendTextureHandle RenderSystemDefaultResources::GetPreIntegratedBRDFLUT() const
     {
         return preIntegratedBRDFLUT;
     }
 
-    void Renderer::InitializeGlobalResources()
+    void Renderer::InitializeDefaultResources()
     {
         uint32 deviceMask = ~0u;
 
@@ -42,15 +42,15 @@ namespace HE
             1,
             RenderBackendTextureFormat::R8Unorm,
             RenderBackendTextureCreateFlags::ShaderResource);
-        globalResources.blackDummyTexture2D.name = "BlackDummyTexture2D";
-        globalResources.blackDummyTexture2D.desc = dummyTextureDesc;
-        globalResources.blackDummyTexture2D.texture = renderBackend->CreateTexture(deviceMask, &dummyTextureDesc, &blackColor, "BlackDummyTexture2D");
-        globalResources.blackDummyTexture2D.initialState = RenderBackendResourceState::ShaderResource;
+        defaultResources.blackDummyTexture2D.name = "BlackDummyTexture2D";
+        defaultResources.blackDummyTexture2D.desc = dummyTextureDesc;
+        defaultResources.blackDummyTexture2D.texture = renderBackend->CreateTexture(deviceMask, &dummyTextureDesc, &blackColor, "BlackDummyTexture2D");
+        defaultResources.blackDummyTexture2D.initialState = RenderBackendResourceState::ShaderResource;
 
-        globalResources.whiteDummyTexture2D.name = "WhiteDummyTexture2D";
-        globalResources.whiteDummyTexture2D.desc = dummyTextureDesc;
-        globalResources.whiteDummyTexture2D.texture = renderBackend->CreateTexture(deviceMask, &dummyTextureDesc, &whiteColor, "WhiteDummyTexture2D");
-        globalResources.whiteDummyTexture2D.initialState = RenderBackendResourceState::ShaderResource;
+        defaultResources.whiteDummyTexture2D.name = "WhiteDummyTexture2D";
+        defaultResources.whiteDummyTexture2D.desc = dummyTextureDesc;
+        defaultResources.whiteDummyTexture2D.texture = renderBackend->CreateTexture(deviceMask, &dummyTextureDesc, &whiteColor, "WhiteDummyTexture2D");
+        defaultResources.whiteDummyTexture2D.initialState = RenderBackendResourceState::ShaderResource;
 
         const uint32 preIntegratedBRDFLUTSize = 256;
         RenderBackendTextureDesc preIntegratedBRDFLUTDesc = RenderBackendTextureDesc::Create2D(
@@ -58,13 +58,13 @@ namespace HE
             preIntegratedBRDFLUTSize,
             RenderBackendTextureFormat::RG16Float,
             RenderBackendTextureCreateFlags::UnorderedAccess | RenderBackendTextureCreateFlags::ShaderResource);
-        globalResources.preIntegratedBRDFLUT = renderBackend->CreateTexture(deviceMask, &preIntegratedBRDFLUTDesc, nullptr, "PreIntegratedBRDFLUT");
+        defaultResources.preIntegratedBRDFLUT = renderBackend->CreateTexture(deviceMask, &preIntegratedBRDFLUTDesc, nullptr, "PreIntegratedBRDFLUT");
 
         // void RenderPreIntegratedBRDFLUT()
         {
             RenderBackendCommandList* commandList = new RenderBackendCommandList(GArena);
             {
-                RenderBackendTextureHandle preIntegratedBRDFLUT = globalResources.preIntegratedBRDFLUT;
+                RenderBackendTextureHandle preIntegratedBRDFLUT = defaultResources.preIntegratedBRDFLUT;
                 RenderBackendShaderHandle computeShader = shaderLibrary->GetShaderHandle((uint32)ShaderPipelineID::PreIntegratedBRDF);
 
                 RenderBackendBarrier transition(preIntegratedBRDFLUT, RenderBackendTextureSubresourceRange::All, RenderBackendResourceState::Undefined, RenderBackendResourceState::UnorderedAccess);
@@ -90,7 +90,7 @@ namespace HE
         }
     }
 
-    void Renderer::ReleaseGlobalResources()
+    void Renderer::ReleaseDefaultResources()
     {
 
     }
@@ -397,7 +397,7 @@ namespace HE
         shaderDesc = ShaderDesc::CreateGraphics("RealTimeRenderer/UIColorAndAlpha.hsf", "UIColorAndAlphaVS", "UIColorAndAlphaPS");
         shaderLibrary->LoadShader((uint32)ShaderPipelineID::UIColorAndAlpha, shaderDesc);
 
-        InitializeGlobalResources();
+        InitializeDefaultResources();
 
         renderPipeline = new RealTimeRenderer(renderBackend, shaderCompiler, this);
 
@@ -584,7 +584,7 @@ namespace HE
 
     void Renderer::Exit()
     {
-        ReleaseGlobalResources();
+        ReleaseDefaultResources();
     }
 
     void Renderer::AddLight(const SceneView& view, LightComponent& lightComponent, const CameraComponent& camera)

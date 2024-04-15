@@ -1232,7 +1232,7 @@ namespace HE
         }
         else
         {
-            sceneTextures.ambientOcclusionTexture = renderEngine->GetGlobalResources().ImportWhiteDummyTexture2D(renderGraph);
+            sceneTextures.ambientOcclusionTexture = renderEngine->GetDefaultResources().ImportWhiteDummyTexture2D(renderGraph);
         }
 
         AddIndirectLightingDiffusePass(renderGraph, view);

@@ -47,7 +47,7 @@ namespace HE
 
     };
 
-    class RenderSystemGlobalResources
+    class RenderSystemDefaultResources
     {
     public:
         RenderGraphTextureHandle ImportBlackDummyTexture2D(RenderGraph& renderGraph) const;
@@ -82,15 +82,15 @@ namespace HE
 
         RenderBackendGPUProfiler* gpuProfiler;
 
-        const RenderSystemGlobalResources& GetGlobalResources() const
+        const RenderSystemDefaultResources& GetDefaultResources() const
         {
-            return globalResources;
+            return defaultResources;
         }
 
-        RenderSystemGlobalResources globalResources;
+        RenderSystemDefaultResources defaultResources;
 
-        void InitializeGlobalResources();
-        void ReleaseGlobalResources();
+        void InitializeDefaultResources();
+        void ReleaseDefaultResources();
 
         ShaderLibrary_Deprecated* GetShaderLibrary()
         {
