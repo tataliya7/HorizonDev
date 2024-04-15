@@ -24,7 +24,7 @@ namespace HE
 
         if (!bloomTexture)
         {
-            bloomTexture = renderEngine->GetGlobalResources().ImportBlackDummyTexture2D(renderGraph);
+            bloomTexture = renderEngine->GetDefaultResources().ImportBlackDummyTexture2D(renderGraph);
         }
 
         uint32 flags = 0;

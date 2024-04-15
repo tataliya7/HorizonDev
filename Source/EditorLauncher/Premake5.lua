@@ -30,6 +30,7 @@ project "HorizonEditorLauncher"
         "imgui",
         "ImGuizmo",
         "USD",
+        "RenderDoc",
         thirdpartypath("glfw/glfw-3.3.9.bin.WIN64/lib-vc2022/glfw3.lib"),
         thirdpartypath("dxc/dxc_2024_03_22/lib/x64/dxcompiler.lib"),
         thirdpartypath("vulkan/1.3.280.0/lib/vulkan-1.lib"),

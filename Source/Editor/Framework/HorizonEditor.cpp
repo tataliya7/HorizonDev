@@ -6,6 +6,7 @@
 #include "Framework/SceneViewportWindow.h"
 
 #include "Plugins/USD/USD.h"
+#include "Plugins/RenderDoc/RenderDoc.h"
 
 #include <imgui.h>
 #include <imgui_internal.h>
@@ -86,6 +87,8 @@ namespace HE
 #if HE_ENBALE_STREAMLINE_SUPPORT
         streamlineContext = new Streamline::StreamlineContext();
 #endif
+
+        RenderDocPluginInit();
 
         bool enableHardwareRayTracing = false;
 
@@ -2812,6 +2815,17 @@ namespace HE
             ImGui::Separator();
             ImGui::Text("FPS: %.1f (%.2f ms/frame)", ImGui::GetIO().Framerate, (1000.0f / ImGui::GetIO().Framerate));
 
+            static RenderBackendTextureHandle renderDocLogoTexture = RenderBackendTextureHandle::Null;
+            if (renderDocLogoTexture == RenderBackendTextureHandle::Null)
+            {
+                renderDocLogoTexture = LoadTextureFromFile(GRenderBackend, "../../../Source/Editor/Plugins/RenderDoc/Resources/renderdoc_logo.png", false, false);
+            }
+            
+            if (UI::ImageButton("##RenderDocTriggerCapture", renderDocLogoTexture.ToUnit64(), ImVec2(25, 25)))
+            {
+                RenderDocPluginTriggerCapture();
+            }
+
             // TODO
             DrawViewSettings();
         }
@@ -3122,7 +3136,7 @@ namespace HE
 
         if (showOverlay)
         {
-            //DrawOverlay();
+            DrawOverlay();
         }
 
         EndDockSpace();
