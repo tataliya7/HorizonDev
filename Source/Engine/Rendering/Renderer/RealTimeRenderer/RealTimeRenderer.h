@@ -479,7 +479,7 @@ namespace HE
     {
     public:
 
-        RealTimeRenderer(RenderBackend* backend, ShaderCompiler* compiler, Renderer* renderEngine);
+        RealTimeRenderer(RenderBackend* backend, ShaderCompiler* compiler, RenderSystem* renderEngine);
         virtual ~RealTimeRenderer();
 
         void UpdatePerFrameData(const SceneView& view, RenderBackendCommandList* commandList);
@@ -805,7 +805,7 @@ namespace HE
         RenderBackend* renderBackend;
         ShaderCompiler* shaderCompiler;
         ShaderLibrary_Deprecated* shaderLibrary;
-        Renderer* renderEngine;
+        RenderSystem* renderEngine;
 
         RenderBackendSamplerHandle samplerLinearWarp;
         RenderBackendSamplerHandle samplerLinearClamp;

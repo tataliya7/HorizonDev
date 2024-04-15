@@ -1,4 +1,4 @@
-#include "Rendering/Renderer/Renderer.h"
+#include "Rendering/RenderSystem.h"
 #include "Rendering/ShaderLibrary.h"
 #include "Rendering/RenderAPI.h"
 
@@ -156,7 +156,7 @@ namespace HE
             dispatchZ);
     }
 
-    void Renderer::UpdateSkyLight(EnvironmentLightComponent& skyLight)
+    void RenderSystem::UpdateSkyLight(EnvironmentLightComponent& skyLight)
     {
         uint32 deviceMask = ~0u;
         uint32 cubemapSize = skyLight.GetCubemapResolution();

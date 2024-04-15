@@ -1,10 +1,10 @@
 #include "SceneView.h"
-#include "Rendering/Renderer/Renderer.h"
+#include "Rendering/RenderSystem.h"
 
 namespace HE
 {
     RenderBackendRayTracingAccelerationStructureHandle SceneView::GetRayTracingScene() const
     {
-        return ((Renderer*)renderEngine)->rayTracingScene;
+        return ((RenderSystem*)renderEngine)->rayTracingScene;
     }
 }

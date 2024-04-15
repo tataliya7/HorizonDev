@@ -207,7 +207,7 @@ namespace HE
         uint32 swapChainWidth = 0;
         uint32 swapChainHeight = 0;
 
-        RenderEngine* renderEngine = nullptr;
+        EngineSubsystem* renderEngine = nullptr;
 
         int gizmoOperationType;
 

@@ -6,11 +6,11 @@ namespace HE
 {
     class SceneView;
 
-    class RenderEngine
+    class EngineSubsystem
     {
     public:
-        RenderEngine(const std::string& name) : name(name) {}
-        virtual ~RenderEngine() = default;
+        EngineSubsystem(const std::string& name) : name(name) {}
+        virtual ~EngineSubsystem() = default;
         virtual bool IsCustom() const = 0;
         virtual void Init(void* data) = 0;
         virtual void Exit() = 0;

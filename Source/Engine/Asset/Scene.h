@@ -15,7 +15,7 @@ namespace HE
 
     class EntityManager;
     class PhysicsScene;
-    class RenderEngine;
+    class EngineSubsystem;
 
     struct SceneStats
     {
@@ -103,7 +103,7 @@ namespace HE
         std::string name;//AssetID* id;
         EntityManager* entityManager;
         PhysicsScene* physicsScene;
-        RenderEngine* renderEngine;
+        EngineSubsystem* renderEngine;
         bool shouldSimulate;
         bool shouldUpdateScripts;
     };

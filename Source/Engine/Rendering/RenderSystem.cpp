@@ -1,4 +1,4 @@
-﻿#include "Rendering/Renderer/Renderer.h"
+﻿#include "Rendering/RenderSystem.h"
 #include "Entity/EntityModule.h"
 #include "Rendering/RenderGraph/RenderGraph.h"
 #include "Rendering/ShaderLibrary.h"
@@ -14,7 +14,7 @@
 
 namespace HE
 {
-    Renderer* GRenderer = nullptr;
+    RenderSystem* GRenderer = nullptr;
 
     RenderGraphTextureHandle RenderSystemDefaultResources::ImportWhiteDummyTexture2D(RenderGraph& renderGraph) const
     {
@@ -31,7 +31,7 @@ namespace HE
         return preIntegratedBRDFLUT;
     }
 
-    void Renderer::InitializeDefaultResources()
+    void RenderSystem::InitializeDefaultResources()
     {
         uint32 deviceMask = ~0u;
 
@@ -90,7 +90,7 @@ namespace HE
         }
     }
 
-    void Renderer::ReleaseDefaultResources()
+    void RenderSystem::ReleaseDefaultResources()
     {
 
     }
@@ -169,7 +169,7 @@ namespace HE
         commandList.Transitions(&transition, 1);
     }
 
-    RealTimeRendererSettings& Renderer::GetRealTimeRendererSettings_Deprecated()
+    RealTimeRendererSettings& RenderSystem::GetRealTimeRendererSettings_Deprecated()
     {
         return ((RealTimeRenderer*)renderPipeline)->settings;
     }
@@ -326,18 +326,18 @@ namespace HE
         }
     }
 
-    Renderer::Renderer()
-        : RenderEngine("Horizon Renderer")
+    RenderSystem::RenderSystem()
+        : EngineSubsystem("Horizon RenderSystem")
     {
 
     }
 
-    Renderer::~Renderer()
+    RenderSystem::~RenderSystem()
     {
 
     }
 
-    void Renderer::Init(void* window)
+    void RenderSystem::Init(void* window)
     {
         arena = GArena;
         renderBackend = GRenderBackend;
@@ -582,12 +582,12 @@ namespace HE
         }
     }
 
-    void Renderer::Exit()
+    void RenderSystem::Exit()
     {
         ReleaseDefaultResources();
     }
 
-    void Renderer::AddLight(const SceneView& view, LightComponent& lightComponent, const CameraComponent& camera)
+    void RenderSystem::AddLight(const SceneView& view, LightComponent& lightComponent, const CameraComponent& camera)
     {
         // Early out if light has no power
         if (lightComponent.luminousIntensity <= SMALL_NUMBER)
@@ -656,7 +656,7 @@ namespace HE
         numLights++;
     }
 
-    void Renderer::UpdateRenderData(SceneView* view, RenderBackendCommandList* commandList)
+    void RenderSystem::UpdateRenderData(SceneView* view, RenderBackendCommandList* commandList)
     {
         OPTICK_EVENT();
 
@@ -1151,7 +1151,7 @@ namespace HE
         updateCounter++;
     }
 
-    void Renderer::BeginDrawUI()
+    void RenderSystem::BeginDrawUI()
     {
         OPTICK_EVENT();
 
@@ -1160,7 +1160,7 @@ namespace HE
         ImGui::NewFrame();
     }
 
-    void Renderer::EndDrawUI()
+    void RenderSystem::EndDrawUI()
     {
         OPTICK_EVENT();
 
@@ -1220,7 +1220,7 @@ namespace HE
         }
     }
 
-    void Renderer::DrawUI(RenderBackendCommandList& commandList, RenderBackendTextureHandle output)
+    void RenderSystem::DrawUI(RenderBackendCommandList& commandList, RenderBackendTextureHandle output)
     {
         ImDrawData* drawData = ImGui::GetDrawData();
         // Avoid rendering when minimized, scale coordinates for retina displays (screen coordinates != framebuffer coordinates)
@@ -1325,7 +1325,7 @@ namespace HE
         commandList.EndRenderPass();
     }
 
-    void Renderer::UpdateRayTracingAccelerationStructures(SceneView* view, RenderBackendCommandList* commandList)
+    void RenderSystem::UpdateRayTracingAccelerationStructures(SceneView* view, RenderBackendCommandList* commandList)
     {
         return;
        /* commandList->CopyBuffer(
@@ -1360,7 +1360,7 @@ namespace HE
         SetShouldUpdateRayTracingScene(false);
     }
 
-    void Renderer::RenderScene(SceneView* view)
+    void RenderSystem::RenderScene(SceneView* view)
     {
         shaderLibrary->HotReload();
 

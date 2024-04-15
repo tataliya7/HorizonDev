@@ -7,6 +7,6 @@
 #include "Rendering/ShaderCompiler.h"
 #include "Rendering/ShaderLibrary.h"
 #include "Rendering/SceneView.h"
-#include "Rendering/Renderer/Renderer.h"
+#include "Rendering/RenderSystem.h"
 
 #include "Rendering/Renderer/RayTracingScene.h"

@@ -1,7 +1,7 @@
 #include "Rendering/RenderAPI.h"
 #include "Rendering/SceneView.h"
 #include "Rendering/RenderEngine.h"
-#include "Rendering/Renderer/Renderer.h"
+#include "Rendering/RenderSystem.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb/stb_image.h>

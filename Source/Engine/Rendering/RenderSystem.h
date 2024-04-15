@@ -54,17 +54,17 @@ namespace HE
         RenderGraphTextureHandle ImportWhiteDummyTexture2D(RenderGraph& renderGraph) const;
         RenderBackendTextureHandle GetPreIntegratedBRDFLUT() const;
     private:
-        friend class Renderer;
+        friend class RenderSystem;
         RenderGraphPersistentTexture blackDummyTexture2D;
         RenderGraphPersistentTexture whiteDummyTexture2D;
         RenderBackendTextureHandle preIntegratedBRDFLUT;
     };
 
-    class Renderer : public RenderEngine
+    class RenderSystem : public EngineSubsystem
     {
     public:
-        Renderer();
-        virtual ~Renderer();
+        RenderSystem();
+        virtual ~RenderSystem();
 
         void Init(void* data) override;
         void Exit() override;
@@ -286,6 +286,6 @@ namespace HE
         void UpdateRayTracingAccelerationStructures(SceneView* view, RenderBackendCommandList* commandList);
     };
 
-    extern Renderer* GRenderer;
+    extern RenderSystem* GRenderer;
     extern void Texture2DGenerateMips(ShaderLibrary_Deprecated* shaderLibrary, RenderBackendCommandList& commandList, RenderBackendTextureHandle textureHandle, uint32 width, uint32 height, uint32 numMipLevels);
 }

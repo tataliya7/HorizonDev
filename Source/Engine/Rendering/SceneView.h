@@ -7,7 +7,7 @@
 namespace HE
 {
     class Scene;
-    class RenderEngine;
+    class EngineSubsystem;
 
     enum class DebugViewMode
     {
@@ -30,7 +30,7 @@ namespace HE
         SceneView() = default;
         virtual ~SceneView() = default;
         Scene* scene;
-        RenderEngine* renderEngine;
+        EngineSubsystem* renderEngine;
         CameraComponent camera;
         bool cameraCut;
         DebugViewMode debugViewMode;

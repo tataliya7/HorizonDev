@@ -131,7 +131,7 @@ namespace HE
             GRenderBackend->CreateRenderDevices(&physicalDeviceID, 1, &primaryDeviceMask);
         }
 
-        renderEngine = new Renderer();
+        renderEngine = new RenderSystem();
         renderEngine->hardwareRayTracingEnabled = enableHardwareRayTracing;
         renderEngine->Init(window->GetGLFWHandle());
 
@@ -506,7 +506,7 @@ namespace HE
         //USDImport("../../../Assets/Main.1_Sponza/NewSponza_Main_USD_Yup_002.usda", &settings, false);
         USDImport("../../../Assets/Test/Sponza/sponza.usdc", &settings, false);
 
-        auto& renderPipelineSettings = ((Renderer*)renderEngine)->GetRealTimeRendererSettings_Deprecated();
+        auto& renderPipelineSettings = ((RenderSystem*)renderEngine)->GetRealTimeRendererSettings_Deprecated();
         renderPipelineSettings.indirectLightingIntensity = 1000.0f;
         renderPipelineSettings.gtaoSettings.radius = 0.5f;
         renderPipelineSettings.gtaoSettings.factor = 3.0f;
@@ -1769,7 +1769,7 @@ namespace HE
 
     void HorizonEditor::DrawProfilerWindow(bool* open)
     {
-        RenderBackendGPUProfiler* gpuProfiler = ((Renderer*)renderEngine)->gpuProfiler;
+        RenderBackendGPUProfiler* gpuProfiler = ((RenderSystem*)renderEngine)->gpuProfiler;
         if (ImGui::Begin("Profiler", open))
         {
             ImGui::Text("FPS: %.1f (%.4f ms/frame)", ImGui::GetIO().Framerate, (1000.0f / ImGui::GetIO().Framerate));
@@ -1792,7 +1792,7 @@ namespace HE
 
     void HorizonEditor::DrawRenderSettingsWindow(bool* open)
     {
-        auto& renderSettings = ((Renderer*)renderEngine)->GetRealTimeRendererSettings_Deprecated();
+        auto& renderSettings = ((RenderSystem*)renderEngine)->GetRealTimeRendererSettings_Deprecated();
 
         if (ImGui::Begin("Render Settings", open))
         {

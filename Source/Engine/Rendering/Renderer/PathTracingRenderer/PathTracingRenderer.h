@@ -7,7 +7,7 @@
 #include "Rendering/ShaderCompiler.h"
 #include "Rendering/ShaderLibrary.h"
 #include "Rendering/SceneView.h"
-#include "Rendering/Renderer/Renderer.h"
+#include "Rendering/RenderSystem.h"
 
 namespace HE
 {
@@ -20,7 +20,7 @@ namespace HE
     {
     public:
 
-        PathTracingRenderer(RenderBackend* backend, ShaderCompiler* compiler, Renderer* renderEngine);
+        PathTracingRenderer(RenderBackend* backend, ShaderCompiler* compiler, RenderSystem* renderEngine);
         virtual ~PathTracingRenderer();
 
         bool LoadShaders();
@@ -31,7 +31,7 @@ namespace HE
         RenderBackend* renderBackend;
         ShaderCompiler* shaderCompiler;
         ShaderLibrary_Deprecated* shaderLibrary;
-        Renderer* renderEngine;
+        RenderSystem* renderEngine;
 
         PathTracingRendererSceneViewShaderParameters sceneViewShaderParameters;
 

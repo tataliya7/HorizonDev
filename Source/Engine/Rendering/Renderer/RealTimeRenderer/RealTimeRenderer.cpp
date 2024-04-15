@@ -65,7 +65,7 @@ namespace HE
 #endif
     }
 
-    RealTimeRenderer::RealTimeRenderer(RenderBackend* backend, ShaderCompiler* compiler, Renderer* renderEngine)
+    RealTimeRenderer::RealTimeRenderer(RenderBackend* backend, ShaderCompiler* compiler, RenderSystem* renderEngine)
         : renderBackend(backend)
         , shaderCompiler(compiler)
         , shaderLibrary(nullptr)
@@ -764,7 +764,7 @@ namespace HE
         }
 
         Scene* scene = view.scene;
-        Renderer* renderer = (Renderer*)view.renderEngine;
+        RenderSystem* renderer = (RenderSystem*)view.renderEngine;
 
         SkyAtmosphereComponent* skyAtmosphere = renderer->skyAtmosphereComponent;
         LightComponent* sunLight = renderer->skyAtmosphereLight;
