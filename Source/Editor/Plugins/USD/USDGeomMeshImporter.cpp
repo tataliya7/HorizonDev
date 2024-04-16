@@ -54,18 +54,31 @@ namespace HE::USDImporter
 
         pxr::UsdGeomPrimvarsAPI primvarsAPI(geomMesh);
 
-        pxr::VtIntArray faceVertexIndices;
-        pxr::VtIntArray faceVertexCounts;
         pxr::VtVec3fArray positions;
         pxr::VtVec3fArray normals;
         pxr::VtVec2fArray uvs;
         pxr::TfToken uvInterpolationType;
         pxr::TfToken normalInterpolationType;
 
-        geomMesh.GetFaceVertexIndicesAttr().Get(&faceVertexIndices, time);
-        geomMesh.GetFaceVertexCountsAttr().Get(&faceVertexCounts, time);
+        uint64 faceCount = 0;
 
-        // assert(faceVertexIndices.size() == 3 * faceVertexCounts.size());
+        pxr::UsdAttribute faceVertexCountsAttribute = geomMesh.GetFaceVertexCountsAttr();
+
+        pxr::VtIntArray faceVertexCounts;
+        if (faceVertexCountsAttribute)
+        {
+            faceVertexCountsAttribute.Get(&faceVertexCounts, time);
+            faceCount = faceVertexCounts.size();
+        }
+
+        pxr::UsdAttribute faceVertexIndicesAttribute = geomMesh.GetFaceVertexIndicesAttr();
+
+        pxr::VtIntArray faceVertexIndices;
+        if (faceVertexIndicesAttribute)
+        {
+            faceVertexIndicesAttribute.Get(&faceVertexIndices, time);
+        }
+
         if (faceVertexIndices.size() != 3 * faceVertexCounts.size())
         {
             printf("This mesh is not triangle list, skip!\n");
@@ -135,9 +148,8 @@ namespace HE::USDImporter
 
         const uint32 vertexCount = (uint32)positions.size(); // TODO
         const uint32 indexCount = (uint32)faceVertexIndices.size();
-        const uint32 faceCount = (uint32)faceVertexCounts.size();
 
-        printf("import mesh sdf path: %s, vertex count %d index count %d!\n", geomMesh.GetPath().GetString().c_str(), vertexCount, indexCount);
+        printf("import mesh sdf path: %s, vertex count %d index count %d.\n", geomMesh.GetPath().GetString().c_str(), vertexCount, indexCount);
 
         MeshComponent& mesh = entityManager->AddComponent<MeshComponent>(entity);
         mesh.numVertices = vertexCount;
@@ -166,9 +178,9 @@ namespace HE::USDImporter
             {
                 for (uint32 faceIndex = 0; faceIndex < faceCount; faceIndex++)
                 {
-                    mesh.normals.emplace_back(glm::cross(mesh.positions[faceVertexIndices[3 * faceIndex + 2]] - mesh.positions[faceVertexIndices[3 * faceIndex + 0]], mesh.positions[faceVertexIndices[3 * faceIndex + 1]] - mesh.positions[faceVertexIndices[3 * faceIndex + 0]]));
-                    mesh.normals.emplace_back(glm::cross(mesh.positions[faceVertexIndices[3 * faceIndex + 2]] - mesh.positions[faceVertexIndices[3 * faceIndex + 1]], mesh.positions[faceVertexIndices[3 * faceIndex + 0]] - mesh.positions[faceVertexIndices[3 * faceIndex + 1]]));
-                    mesh.normals.emplace_back(glm::cross(mesh.positions[faceVertexIndices[3 * faceIndex + 0]] - mesh.positions[faceVertexIndices[3 * faceIndex + 2]], mesh.positions[faceVertexIndices[3 * faceIndex + 1]] - mesh.positions[faceVertexIndices[3 * faceIndex + 2]]));
+                    mesh.normals.push_back(glm::cross(mesh.positions[faceVertexIndices[3 * faceIndex + 2]] - mesh.positions[faceVertexIndices[3 * faceIndex + 0]], mesh.positions[faceVertexIndices[3 * faceIndex + 1]] - mesh.positions[faceVertexIndices[3 * faceIndex + 0]]));
+                    mesh.normals.push_back(glm::cross(mesh.positions[faceVertexIndices[3 * faceIndex + 2]] - mesh.positions[faceVertexIndices[3 * faceIndex + 1]], mesh.positions[faceVertexIndices[3 * faceIndex + 0]] - mesh.positions[faceVertexIndices[3 * faceIndex + 1]]));
+                    mesh.normals.push_back(glm::cross(mesh.positions[faceVertexIndices[3 * faceIndex + 0]] - mesh.positions[faceVertexIndices[3 * faceIndex + 2]], mesh.positions[faceVertexIndices[3 * faceIndex + 1]] - mesh.positions[faceVertexIndices[3 * faceIndex + 2]]));
                 }
             }
         }
@@ -184,9 +196,9 @@ namespace HE::USDImporter
             for (size_t faceIndex = 0; faceIndex < faceVertexCounts.size(); faceIndex++)
             {
                 assert(faceVertexCounts[faceIndex] == 3);
-                mesh.indices.emplace_back(faceVertexIndices[3 * faceIndex + 0]);
-                mesh.indices.emplace_back(faceVertexIndices[3 * faceIndex + 1]);
-                mesh.indices.emplace_back(faceVertexIndices[3 * faceIndex + 2]);
+                mesh.indices.push_back(faceVertexIndices[3 * faceIndex + 0]);
+                mesh.indices.push_back(faceVertexIndices[3 * faceIndex + 1]);
+                mesh.indices.push_back(faceVertexIndices[3 * faceIndex + 2]);
             }
         }
 

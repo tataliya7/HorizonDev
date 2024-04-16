@@ -506,7 +506,7 @@ namespace HE
         USDImportSettings settings = {};
         settings.importMeshes = true;
         settings.importMaterials = true;
-        USDImport("../../../Assets/Main.1_Sponza/NewSponza_Main_USD_Zup_002.usda", &settings, false);
+        USDImport("../../../Assets/NewSsponza/NewSsponza.usdc", &settings, false);
         //USDImport("../../../Assets/Test/Sponza/sponza.usdc", &settings, false);
 
         auto& renderPipelineSettings = ((RenderSystem*)renderEngine)->GetRealTimeRendererSettings_Deprecated();

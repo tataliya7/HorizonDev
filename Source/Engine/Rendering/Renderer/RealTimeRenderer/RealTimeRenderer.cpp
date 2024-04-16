@@ -953,6 +953,7 @@ namespace HE
 
         if (!historyAutoExposureBufferPersistent.IsValid())
         {
+            historyAutoExposureBufferPersistent.active = true;
             historyAutoExposureBufferPersistent.name = "HistoryAutoExposureBuffer";
             historyAutoExposureBufferPersistent.desc = RenderGraphBufferDesc::CreateByteAddress(16);
             historyAutoExposureBufferPersistent.buffer = renderBackend->CreateBuffer(deviceMask, &historyAutoExposureBufferPersistent.desc, nullptr, historyAutoExposureBufferPersistent.name.c_str());
