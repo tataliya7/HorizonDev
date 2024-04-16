@@ -1,4 +1,4 @@
-#include "RenderDoc.h"
+#include "RenderDocPlugin.h"
 
 #include <renderdoc_app.h>
 

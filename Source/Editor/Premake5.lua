@@ -28,6 +28,7 @@ project "HorizonEditor"
 
     links {
         "HorizonEngine",
+        "RenderDoc",
     }
 
     includedirs {

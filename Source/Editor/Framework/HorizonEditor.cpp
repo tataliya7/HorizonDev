@@ -6,7 +6,7 @@
 #include "Framework/SceneViewportWindow.h"
 
 #include "Plugins/USD/USD.h"
-#include "Plugins/RenderDoc/RenderDoc.h"
+#include "Plugins/RenderDoc/RenderDocPlugin.h"
 
 #include <imgui.h>
 #include <imgui_internal.h>
@@ -26,7 +26,7 @@
 #define HE_JOB_SYSTEM_NUM_FIBIERS 128
 #define HE_JOB_SYSTEM_FIBER_STACK_SIZE (HE_JOB_SYSTEM_NUM_FIBIERS * 1024)
 
-#define BIND_FUNCTION(func) [this](auto&&... args) -> decltype(auto) { return this->func(std::forward<decltype(args) > (args)...); }
+#define BIND_FUNCTION(func) [this](auto&&... args) -> decltype(auto) { return this->func(std::forward<decltype(args)> (args)...); }
 
 namespace HE
 {
