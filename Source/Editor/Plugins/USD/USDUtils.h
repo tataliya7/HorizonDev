@@ -1,8 +1,11 @@
 #pragma once
 
+#include "USD.h"
+
 #include "USDIncludeBegin.h"
 #include <pxr/pxr.h>
 #include <pxr/base/tf/token.h>
+#include <pxr/base/gf/matrix4f.h>
 #include "USDIncludeEnd.h"
 
 namespace UsdTokens
@@ -17,4 +20,9 @@ namespace UsdTokens
     extern const pxr::TfToken roughness;
     extern const pxr::TfToken emissiveColor;
     extern const pxr::TfToken normal;
+}
+
+namespace UsdToHorizon
+{
+    HE::Matrix4x4 ConvertMatrix(const pxr::GfMatrix4f& pxrMat4f);
 }

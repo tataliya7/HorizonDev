@@ -1,4 +1,5 @@
 #include "USDGemoXformableImporter.h"
+#include "USDUtils.h"
 
 #include "USDIncludeBegin.h"
 #include <pxr/base/gf/math.h>
@@ -11,6 +12,7 @@ namespace HE::USDImporter
     USDGemoXformableImporter::USDGemoXformableImporter(const USDImportContext& context, const pxr::UsdPrim& prim)
         : USDPrimImporter(context, prim)
         , isRoot(false)
+        , geomXformable(prim)
     {
 
     }
@@ -22,25 +24,20 @@ namespace HE::USDImporter
 
     void USDGemoXformableImporter::GetLocalTransformation(Matrix4x4* transform, float time, float scale)
     {
-        pxr::UsdGeomXformable xformable = pxr::UsdGeomXformable(prim);
-        if (!xformable)
+        if (!geomXformable)
         {
             return;
         }
 
         pxr::GfMatrix4d pxrMat4d = {};
         bool resetsXformStack = false;
-        xformable.GetLocalTransformation(&pxrMat4d, &resetsXformStack, time);
+        geomXformable.GetLocalTransformation(&pxrMat4d, &resetsXformStack, time);
 
         // This explicit constructor converts a "double" matrix to a "float" matrix.
         pxr::GfMatrix4f pxrMat4f = pxr::GfMatrix4f(pxrMat4d);
 
         // pxr::GfMatrix4f: row-major, Matrix4x4:: column-major
-        *transform = Matrix4x4(
-            pxrMat4f[0][0], pxrMat4f[1][0], pxrMat4f[2][0], pxrMat4f[3][0],
-            pxrMat4f[0][1], pxrMat4f[1][1], pxrMat4f[2][1], pxrMat4f[3][1],
-            pxrMat4f[0][2], pxrMat4f[1][2], pxrMat4f[2][2], pxrMat4f[3][2],
-            pxrMat4f[0][3], pxrMat4f[1][3], pxrMat4f[2][3], pxrMat4f[3][3]);
+        *transform = UsdToHorizon::ConvertMatrix(pxrMat4f);
 
         // Apply scaling and rotation only to root xformables.
         if (IsRoot() && (scale != 1.0))
@@ -57,6 +54,25 @@ namespace HE::USDImporter
 
     void USDGemoXformableImporter::AddComponents(Scene* scene)
     {
+        if (parent != nullptr)
+        {
+            scene->SetParent(entity, parent->GetEntity());
+        }
 
+        Matrix4x4 transform;
+        float time = 0.0f;
+        float scale = 1.0f;
+        GetLocalTransformation(&transform, time, scale);
+
+        Vector3 transformPosition;
+        Vector3 transformRotation;
+        Vector3 transformScale;
+        Math::Decompose(transform, transformPosition, transformRotation, transformScale);
+
+        TransformComponent& transformComponent = scene->GetEntityManager()->GetComponent<TransformComponent>(entity);
+        transformComponent.position = transformPosition;
+        transformComponent.rotation = transformRotation;
+        transformComponent.scale = transformScale;
+        scene->GetEntityManager()->AddOrReplaceComponent<TransformDirtyComponent>(entity);
     }
 }

@@ -1,4 +1,5 @@
 #include "USDStageImporter.h"
+#include "USDGemoXformableImporter.h"
 #include "USDGeomMeshImporter.h"
 #include "USDGeomCameraImporter.h"
 #include "USDSkelSkeletonImporter.h"
@@ -110,6 +111,11 @@ namespace HE::USDImporter
         if (importSettings.importSkeletons && prim.IsA<pxr::UsdSkelSkeleton>())
         {
             return new USDSkelSkeletonImporter(importContext, prim); 
+        }
+
+        if (prim.IsA<pxr::UsdGeomXformable>())
+        {
+            return new USDGemoXformableImporter(importContext, prim);
         }
 
         if (prim.IsA<pxr::UsdShadeMaterial>())

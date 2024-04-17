@@ -50,6 +50,12 @@ namespace HE::USDImporter
         {
             return;
         }
+
+        if (parent != nullptr)
+        {
+            scene->SetParent(entity, parent->GetEntity());
+        }
+
         float time = 0.0f;
 
         pxr::UsdGeomPrimvarsAPI primvarsAPI(geomMesh);
@@ -244,11 +250,7 @@ namespace HE::USDImporter
         subset.numIndices = mesh.numIndices;
         subset.numVertices = mesh.numVertices;
 
-        // TODO
-        {
-            auto& transformComponent = scene->GetEntityManager()->GetComponent<TransformComponent>(entity);
-            transformComponent.scale = Vector3(0.01f, 0.01f, 0.01f);
-        }
+        TransformComponent& transformComponent = scene->GetEntityManager()->GetComponent<TransformComponent>(entity);
 
         uint32 numFaces = (uint32)mesh.indices.size() / 3;
         mesh.materialIndices.resize(numFaces);

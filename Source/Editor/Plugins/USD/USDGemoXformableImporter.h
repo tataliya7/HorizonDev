@@ -4,6 +4,10 @@
 #include "USDImportContext.h"
 #include "USDPrimImporter.h"
 
+#include "USDIncludeBegin.h"
+#include <pxr/usd/usdGeom/xformable.h>
+#include "USDIncludeEnd.h"
+
 namespace HE::USDImporter
 {
     class USDGemoXformableImporter : public USDPrimImporter
@@ -22,6 +26,8 @@ namespace HE::USDImporter
         bool IsRoot() const;
 
     private:
+
+        pxr::UsdGeomXformable geomXformable;
 
         bool isRoot;
     };

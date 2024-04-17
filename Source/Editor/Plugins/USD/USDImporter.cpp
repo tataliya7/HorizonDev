@@ -122,7 +122,7 @@ namespace HE::USDImporter
             stageImporter->ImportAllMaterials();
         }
 
-        // Create horizon entities.
+        // Create entities
         for (USDPrimImporter* impoter : stageImporter->GetPrimImporters())
         {
             if (!impoter)

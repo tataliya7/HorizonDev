@@ -29,6 +29,11 @@ namespace HE::USDImporter
             return parent;
         }
 
+        EntityHandle GetEntity() const
+        {
+            return entity;
+        }
+
         void SetParent(USDPrimImporter* parent)
         {
             this->parent = parent;

@@ -506,7 +506,7 @@ namespace HE
         USDImportSettings settings = {};
         settings.importMeshes = true;
         settings.importMaterials = true;
-        USDImport("../../../Assets/NewSsponza/NewSsponza.usdc", &settings, false);
+        USDImport("../../../Assets/NewSponza/NewSponza.usdc", &settings, false);
         //USDImport("../../../Assets/Test/Sponza/sponza.usdc", &settings, false);
 
         auto& renderPipelineSettings = ((RenderSystem*)renderEngine)->GetRealTimeRendererSettings_Deprecated();
@@ -1134,8 +1134,8 @@ namespace HE
     {
         EntityHandle selectedEntity = HorizonEditor::GetInstance()->GetSelectedEntity();
 
-        auto entityManager = SceneManager::GetActiveScene()->GetEntityManager();
-        const auto& hierarchy = entityManager->GetComponent<SceneHierarchyComponent>(entity);
+        EntityManager* entityManager = SceneManager::GetActiveScene()->GetEntityManager();
+        const SceneHierarchyComponent& hierarchy = entityManager->GetComponent<SceneHierarchyComponent>(entity);
         ImGuiTreeNodeFlags flags = ((selectedEntity != EntityHandle::Null && selectedEntity == entity) ? ImGuiTreeNodeFlags_Selected : 0) | ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth;
         if (hierarchy.numChildren == 0)
         {
@@ -1149,7 +1149,7 @@ namespace HE
 
         if (opened)
         {
-            auto currentEntity = hierarchy.firstChild;
+            EntityHandle currentEntity = hierarchy.firstChild;
             for (uint32 i = 0; i < hierarchy.numChildren; i++)
             {
                 DrawEntityNodeUI(currentEntity);
@@ -1187,13 +1187,13 @@ namespace HE
             {
                 EntityHandle selectedEntity = HorizonEditor::GetInstance()->GetSelectedEntity();
                 auto entityManager = SceneManager::GetActiveScene()->GetEntityManager();
-                entityManager->Get()->each([&](auto entity)
+                entityManager->Get()->each([&](EntityHandle entity)
+                {
+                    if (entityManager->GetComponent<SceneHierarchyComponent>(entity).parent == EntityHandle::Null)
                     {
-                        if (entityManager->GetComponent<SceneHierarchyComponent>(entity).parent == EntityHandle::Null)
-                        {
-                            DrawEntityNodeUI(entity);
-                        }
-                    });
+                        DrawEntityNodeUI(entity);
+                    }
+                });
                 ImGui::TreePop();
             }
 
