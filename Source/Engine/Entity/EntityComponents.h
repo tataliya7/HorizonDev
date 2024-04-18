@@ -27,12 +27,14 @@ namespace HE
             : position(0.0f, 0.0f, 0.0f)
             , rotation(0.0f, 0.0f, 0.0f)
             , scale(1.0f, 1.0f, 1.0f)
-            , matrix(Matrix4x4(1.0f)) {}
+            , matrix(Matrix4x4(1.0f))
+            , localToWorldMatrix(Matrix4x4(1.0f)) {}
 
         Vector3 position;
         Vector3 rotation;
         Vector3 scale;
         Matrix4x4 matrix;
+        Matrix4x4 localToWorldMatrix;
 
         void Update()
         {

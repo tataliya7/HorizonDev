@@ -36,7 +36,6 @@ namespace HE::USDImporter
         // This explicit constructor converts a "double" matrix to a "float" matrix.
         pxr::GfMatrix4f pxrMat4f = pxr::GfMatrix4f(pxrMat4d);
 
-        // pxr::GfMatrix4f: row-major, Matrix4x4:: column-major
         *transform = UsdToHorizon::ConvertMatrix(pxrMat4f);
 
         // Apply scaling and rotation only to root xformables.

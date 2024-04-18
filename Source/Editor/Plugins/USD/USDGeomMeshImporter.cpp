@@ -33,7 +33,6 @@ namespace HE::USDImporter
     USDGeomMeshImporter::USDGeomMeshImporter(const USDImportContext& context, const pxr::UsdPrim& prim)
         : USDPrimImporter(context, prim)
         , geomMesh(prim)
-        , parent(nullptr)
         , hasUVs(false)
     {
 

@@ -21,10 +21,19 @@ namespace UsdToHorizon
 {
     HE::Matrix4x4 ConvertMatrix(const pxr::GfMatrix4f& pxrMat4f)
     {
+#if 0
+        // pxr::GfMatrix4f: row-major, Matrix4x4:: column-major
         return HE::Matrix4x4(
             pxrMat4f[0][0], pxrMat4f[1][0], pxrMat4f[2][0], pxrMat4f[3][0],
             pxrMat4f[0][1], pxrMat4f[1][1], pxrMat4f[2][1], pxrMat4f[3][1],
             pxrMat4f[0][2], pxrMat4f[1][2], pxrMat4f[2][2], pxrMat4f[3][2],
             pxrMat4f[0][3], pxrMat4f[1][3], pxrMat4f[2][3], pxrMat4f[3][3]);
+#else
+        return HE::Matrix4x4(
+                pxrMat4f[0][0], pxrMat4f[0][1], pxrMat4f[0][2], pxrMat4f[0][3],
+                pxrMat4f[1][0], pxrMat4f[1][1], pxrMat4f[1][2], pxrMat4f[1][3],
+                pxrMat4f[2][0], pxrMat4f[2][1], pxrMat4f[2][2], pxrMat4f[2][3],
+                pxrMat4f[3][0], pxrMat4f[3][1], pxrMat4f[3][2], pxrMat4f[3][3]);
+#endif
     }
 }

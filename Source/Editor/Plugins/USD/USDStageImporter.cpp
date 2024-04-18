@@ -133,7 +133,7 @@ namespace HE::USDImporter
 
         std::vector<USDPrimImporter*> childPrimImporters;
         pxr::UsdPrimSiblingRange children = prim.GetFilteredChildren(predicate);
-        for (const auto& childPrim : children)
+        for (const pxr::UsdPrim& childPrim : children)
         {
             USDPrimImporter* childPrimImporter = CreatePrimImporters(childPrim);
             if (childPrimImporter)

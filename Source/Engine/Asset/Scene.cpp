@@ -64,10 +64,19 @@ namespace HE
 
     static void UpdateTransform_Deprecated(EntityManager* manager, EntityHandle entity)
     {
-        const auto& hierarchy = manager->GetComponent<SceneHierarchyComponent>(entity);
-        auto& transform = manager->GetComponent<TransformComponent>(entity);
+        const SceneHierarchyComponent& hierarchy = manager->GetComponent<SceneHierarchyComponent>(entity);
+        TransformComponent& transform = manager->GetComponent<TransformComponent>(entity);
         transform.Update();
-        auto currentEntity = hierarchy.firstChild;
+        if (hierarchy.parent != EntityHandle::Null)
+        {
+            TransformComponent& parentTransform = manager->GetComponent<TransformComponent>(hierarchy.parent);
+            transform.localToWorldMatrix = transform.matrix * parentTransform.localToWorldMatrix;
+        }
+        else
+        {
+            transform.localToWorldMatrix = transform.matrix;
+        }
+        EntityHandle currentEntity = hierarchy.firstChild;
         for (uint32 i = 0; i < hierarchy.numChildren; i++)
         {
             if (manager->HasComponent<TransformDirtyComponent>(currentEntity))
@@ -90,10 +99,10 @@ namespace HE
     {
         EntityManager* manager = ((UpdateTransformJobData*)data)->manager;
         EntityHandle entity = ((UpdateTransformJobData*)data)->entity;
-        const auto& hierarchy = manager->GetComponent<SceneHierarchyComponent>(entity);
-        auto& transform = manager->GetComponent<TransformComponent>(entity);
+        const SceneHierarchyComponent& hierarchy = manager->GetComponent<SceneHierarchyComponent>(entity);
+        TransformComponent& transform = manager->GetComponent<TransformComponent>(entity);
         transform.Update();
-        auto currentEntity = hierarchy.firstChild;
+        EntityHandle currentEntity = hierarchy.firstChild;
         for (uint32 i = 0; i < hierarchy.numChildren; i++)
         {
             if (manager->HasComponent<TransformDirtyComponent>(currentEntity))

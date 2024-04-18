@@ -853,8 +853,15 @@ namespace HE
                 const TransformComponent& transformComponent = entityManager->GetComponent<TransformComponent>(entity);
 
                 int transformIndex = (int)transforms.size();
-                transforms.push_back(transformComponent.matrix);
-                rowMajorTransforms.push_back(Math::Transpose(transformComponent.matrix));
+                transforms.push_back(transformComponent.localToWorldMatrix);
+
+                printf("Transform:");
+                printf("%f %f %f %f\n", transformComponent.localToWorldMatrix[0][0], transformComponent.localToWorldMatrix[0][1], transformComponent.localToWorldMatrix[0][2], transformComponent.localToWorldMatrix[0][3]);
+                printf("%f %f %f %f\n", transformComponent.localToWorldMatrix[1][0], transformComponent.localToWorldMatrix[1][1], transformComponent.localToWorldMatrix[1][2], transformComponent.localToWorldMatrix[1][3]);
+                printf("%f %f %f %f\n", transformComponent.localToWorldMatrix[2][0], transformComponent.localToWorldMatrix[2][1], transformComponent.localToWorldMatrix[2][2], transformComponent.localToWorldMatrix[2][3]);
+                printf("%f %f %f %f\n", transformComponent.localToWorldMatrix[3][0], transformComponent.localToWorldMatrix[3][1], transformComponent.localToWorldMatrix[3][2], transformComponent.localToWorldMatrix[3][3]);
+
+                rowMajorTransforms.push_back(Math::Transpose(transformComponent.localToWorldMatrix));
 
                 GeometryShaderParameters geometry;
                 geometry.vertexBuffer0 = renderBackend->GetBufferUAVDescriptorIndex(deviceMask, mesh.vertexBuffers[0]);

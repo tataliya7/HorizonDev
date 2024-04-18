@@ -15,22 +15,11 @@ namespace HE::USDImporter
     public:
         USDGeomMeshImporter(const USDImportContext& context, const pxr::UsdPrim& prim);
 
-        USDPrimImporter* GetParent() const
-        {
-            return parent;
-        }
-
-        void SetParent(USDPrimImporter* parent)
-        {
-            this->parent = parent;
-        }
-
         void CreateEntity(Scene* scene) override;
         void AddComponents(Scene* scene) override;
 
     private:
         pxr::UsdGeomMesh geomMesh;
-        USDPrimImporter* parent;
         bool hasUVs;
     };
 }
