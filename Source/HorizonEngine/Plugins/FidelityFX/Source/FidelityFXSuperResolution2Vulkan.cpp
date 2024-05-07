@@ -26,6 +26,8 @@ namespace FidelityFX
         static uint32_t previousTargetWidth  = 0;
         static uint32_t previousTargetHeight = 0;
 
+        bool enableAutoExposure = ;
+
         // TODO: Handle multiple viewports
         if (previousRenderWidth != description.renderWidth ||
             previousRenderHeight != description.renderHeight ||
@@ -50,12 +52,9 @@ namespace FidelityFX
             fsr2InitializationParameters.maxRenderSize.height = description.renderHeight;
             fsr2InitializationParameters.displaySize.width = description.targetWidth;
             fsr2InitializationParameters.displaySize.height = description.targetHeight;
-            //fsr2InitializationParameters.flags = FFX_FSR2_ENABLE_AUTO_EXPOSURE;
 
-            // if (m_bInvertedDepth)
-            {
-                fsr2InitializationParameters.flags |= FFX_FSR2_ENABLE_DEPTH_INVERTED;
-            }
+            fsr2InitializationParameters.flags = FFX_FSR2_ENABLE_HIGH_DYNAMIC_RANGE | FFX_FSR2_ENABLE_DEPTH_INVERTED | FFX_FSR2_ENABLE_DEPTH_INFINITE;
+            fsr2InitializationParameters.flags |= enableAutoExposure ? FFX_FSR2_ENABLE_AUTO_EXPOSURE : 0;
 
 #if !HORIZON_CONFIGURATION_RELEASE
             // if (device->fsr2EnableDebugCheck)
@@ -122,7 +121,7 @@ namespace FidelityFX
             L"FSR2_OutputUpscaledColor",
             FFX_RESOURCE_STATE_UNORDERED_ACCESS);
 
-        if (true)
+        if (enableAutoExposure)
         {
             fsr2DispatchDescription.exposure = ffxGetTextureResourceVK(
                 &fsr2Context,

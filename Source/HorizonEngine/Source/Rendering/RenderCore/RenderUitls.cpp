@@ -1,4 +1,4 @@
-#include "Rendering/RenderAPI.h"
+#include "RenderUtils.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb/stb_image.h>
@@ -22,7 +22,7 @@ namespace Horizon
         uint64 bufferSize = iw * ih * 4 * sizeof(float);
 
         RenderBackendTextureDesc desc = RenderBackendTextureDesc::CreateTexture2D(iw, ih, 1, RenderBackendTextureFormat::RGBA32Float);
-        RenderBackendTextureHandle texture = renderBackend->CreateTexture(~0u, &desc, data, filename);
+        RenderBackendTextureHandle texture = renderBackend->CreateTexture(&desc, data, filename);
 
         stbi_image_free(data);
 
@@ -177,7 +177,7 @@ namespace Horizon
                 ih,
                 mipLeveles,
                 format);
-            texture = renderBackend->CreateTexture(~0u, &desc, buffer, filename);
+            texture = renderBackend->CreateTexture(&desc, buffer, filename);
 
             _aligned_free(buffer);
 
@@ -186,7 +186,7 @@ namespace Horizon
                 uint32 deviceMask = ~0u;
 
                 RenderBackendCommandList* commandList = new RenderBackendCommandList(GArena);
-                Texture2DGenerateMips(GRenderer->GetShaderLibrary(), *commandList, texture, iw, ih, mipLeveles);
+                Texture2DGenerateMips(shaderLibrary, *commandList, texture, iw, ih, mipLeveles);
                 renderBackend->SubmitCommandLists(&commandList, 1, RenderBackendSwapChainHandle::Null);
                 renderBackend->FlushRenderDevices();
 
@@ -196,5 +196,79 @@ namespace Horizon
         }
 
         return texture;
+    }
+
+    void Texture2DGenerateMips(ShaderLibrary_DEPRECATED* shaderLibrary, RenderBackendCommandList& commandList, RenderBackendTextureHandle textureHandle, uint32 width, uint32 height, uint32 numMipLevels)
+    {
+        if (numMipLevels < 2)
+        {
+            return;
+        }
+
+        RenderBackendShaderHandle graphicsShader = shaderLibrary->GetShaderHandle((uint32)ShaderPipelineID::DownsampleTexture2D_PS);
+        for (uint32 mipLevel = 1; mipLevel < numMipLevels; mipLevel++)
+        {
+            width = width >> 1;
+            height = height >> 1;
+
+            RenderBackendViewport viewport(0.0f, 0.0f, (float)width, (float)height);
+            commandList.SetViewports(&viewport, 1);
+
+            RenderBackendScissor scissor(0, 0, width, height);
+            commandList.SetScissors(&scissor, 1);
+
+            if (mipLevel == 1)
+            {
+                RenderBackendBarrier transitions[] =
+                {
+                    RenderBackendBarrier(textureHandle, RenderBackendTextureSubresourceRange(mipLevel, 1, 0, RenderBackendTextureSubresourceRange::RemainingArrayLayers), RenderBackendResourceState::Undefined, RenderBackendResourceState::RenderTarget)
+                };
+                commandList.Transitions(transitions, 1);
+            }
+            else
+            {
+                RenderBackendBarrier transitions[] =
+                {
+                    RenderBackendBarrier(textureHandle, RenderBackendTextureSubresourceRange(mipLevel - 1, 1, 0, RenderBackendTextureSubresourceRange::RemainingArrayLayers), RenderBackendResourceState::RenderTarget, RenderBackendResourceState::ShaderResource),
+                    RenderBackendBarrier(textureHandle, RenderBackendTextureSubresourceRange(mipLevel, 1, 0, RenderBackendTextureSubresourceRange::RemainingArrayLayers), RenderBackendResourceState::Undefined, RenderBackendResourceState::RenderTarget)
+                };
+                commandList.Transitions(transitions, 2);
+            }
+
+            RenderBackendRenderPassInfo renderPass = {
+                .renderTargets = { {.texture = textureHandle, .mipLevel = mipLevel, .arrayLayer = 0, .loadOp = RenderBackendRenderPassBeginningAccessType::Discard, .storeOp = RenderBackendRenderPassEndingAccessType::Preserve } },
+            };
+            commandList.BeginRenderPass(renderPass);
+
+            RenderBackendShaderArguments shaderArguments = {};
+            shaderArguments.BindTextureSRV(0, RenderBackendTextureSRVDesc::Create(textureHandle));
+            shaderArguments.PushConstants(0, (float)(mipLevel - 1));
+            shaderArguments.PushConstants(1, (float)(width));
+            shaderArguments.PushConstants(2, (float)(height));
+
+            RenderBackendGraphicsPipelineState graphicsPipelineState = {};
+
+            commandList.Draw(
+                graphicsShader,
+                graphicsPipelineState,
+                shaderArguments,
+                3, 1, 0, 0,
+                RenderBackendPrimitiveTopology::TriangleList);
+
+            commandList.EndRenderPass();
+
+            //uint32 groupCountX = ComputeWorkGroupCount(width, 8);
+            //uint32 groupCountY = ComputeWorkGroupCount(height, 8);
+            //uint32 groupCountZ = 1;
+
+            //commandList.Dispatch(
+            //    downsampleTexture2DCS,
+            //    shaderArguments,
+            //    groupCountX,
+            //    groupCountY,
+            //    groupCountZ);
+        }
+        RenderBackendBarrier transition = RenderBackendBarrier(textureHandle, RenderBackendTextureSubresourceRange(numMipLevels - 1, RenderBackendTextureSubresourceRange::RemainingMipLevels, 0, RenderBackendTextureSubresourceRange::RemainingArrayLayers), RenderBackendResourceState::RenderTarget, RenderBackendResourceState::ShaderResource);
+        commandList.Transitions(&transition, 1);
     }
 }

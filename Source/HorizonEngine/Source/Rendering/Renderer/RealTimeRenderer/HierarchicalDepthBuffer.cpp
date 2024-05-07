@@ -29,7 +29,7 @@ namespace Horizon
                     {
                         uint32 srcMip = 0;
                         uint32 dstMip = 0;
-                        Vector2u srcSize = Vector2u(renderResolutionX, renderResolutionY);
+                        Vector2u srcSize = Vector2u(renderResolution.width, renderResolution.height);
                         Vector2u dstSize = Vector2u(hzbWidth, hzbHeight);
                         Vector2 invSrcSize = Vector2(1.0f / srcSize.x, 1.0f / srcSize.y);
                         Vector2 invDstSize = Vector2(1.0f / dstSize.x, 1.0f / dstSize.y);

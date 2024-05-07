@@ -2,7 +2,7 @@
 
 namespace FidelityFX
 {
-    RenderGraphTextureHandle FidelityFXSuperResolution2::AddPass(
+    RenderGraphTextureHandle FidelityFXSuperResolution2::Dispatch(
         RenderGraph& renderGraph,
         const SceneView& view,
         RenderGraphTextureHandle sceneColorTexture,
@@ -31,28 +31,28 @@ namespace FidelityFX
                 fsr2OutputTexture = builder.WriteTexture(fsr2OutputTexture, RenderBackendResourceState::UnorderedAccess);
 
                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
-                {
-                    commandList.FSR2Dispatch(
-                        registry.GetRenderBackendTexture(fsr2OutputTexture),
-                        registry.GetRenderBackendTexture(sceneColorTexture),
-                        registry.GetRenderBackendTexture(sceneDepthTexture),
-                        registry.GetRenderBackendTexture(motionVectorTexture),
-                        sceneViewShaderParameters.renderResolutionX,
-                        sceneViewShaderParameters.renderResolutionY,
-                        sceneViewShaderParameters.targetResolutionX,
-                        sceneViewShaderParameters.targetResolutionY,
-                        sceneViewShaderParameters.cameraJitterOffset.x,
-                        sceneViewShaderParameters.cameraJitterOffset.y,
-                        (float)sceneViewShaderParameters.renderResolutionX,
-                        (float)sceneViewShaderParameters.renderResolutionY,
-                        reset,
-                        sceneViewShaderParameters.deltaTime,
-                        settings.fsr2Settings.useRCAS,
-                        settings.fsr2Settings.sharpeness,
-                        sceneViewShaderParameters.cameraFarPlane,
-                        sceneViewShaderParameters.cameraNearPlane,
-                        2.0f * sceneViewShaderParameters.cameraHalfFovRad);
-                };
+                    {
+                        commandList.FSR2Dispatch(
+                            registry.GetRenderBackendTexture(fsr2OutputTexture),
+                            registry.GetRenderBackendTexture(sceneColorTexture),
+                            registry.GetRenderBackendTexture(sceneDepthTexture),
+                            registry.GetRenderBackendTexture(motionVectorTexture),
+                            sceneViewShaderParameters.renderResolutionX,
+                            sceneViewShaderParameters.renderResolutionY,
+                            sceneViewShaderParameters.targetResolutionX,
+                            sceneViewShaderParameters.targetResolutionY,
+                            sceneViewShaderParameters.cameraJitterOffset.x,
+                            sceneViewShaderParameters.cameraJitterOffset.y,
+                            (float)sceneViewShaderParameters.renderResolutionX,
+                            (float)sceneViewShaderParameters.renderResolutionY,
+                            reset,
+                            sceneViewShaderParameters.deltaTime,
+                            settings.fsr2Settings.useRCAS,
+                            settings.fsr2Settings.sharpeness,
+                            sceneViewShaderParameters.cameraFarPlane,
+                            sceneViewShaderParameters.cameraNearPlane,
+                            2.0f * sceneViewShaderParameters.cameraHalfFovRad);
+                    };
             });
 
         return fsr2OutputTexture;

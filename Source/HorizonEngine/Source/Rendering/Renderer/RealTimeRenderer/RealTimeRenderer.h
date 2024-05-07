@@ -295,7 +295,7 @@ namespace Horizon
             RenderGraph& renderGraph,
             const SceneView& view);
 
-        void AddPostProcessingPasses(
+        void RenderPostProcessingEffects(
             RenderGraph& renderGraph,
             const SceneView& view);
 
@@ -386,8 +386,7 @@ namespace Horizon
         RenderGraphTextureHandle AddConvolutionBloomPass(
             RenderGraph& renderGraph,
             const SceneView& view,
-            RenderGraphTextureHandle sceneColor,
-            RenderGraphTextureHandle autoExposureTexture);
+            RenderGraphTextureHandle sceneColorTexture);
 
         RenderGraphTextureHandle AddDownsamplePass(
             RenderGraph& renderGraph,

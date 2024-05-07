@@ -57,7 +57,7 @@ namespace Horizon
                             for (const auto& drawCallInfo : renderEngine->drawList)
                             {
                                 RenderBackendShaderArguments shaderArguments = {};
-                                shaderArguments.BindBuffer(0, sceneViewShaderParametersBuffer, 0);
+                                shaderArguments.BindBuffer(0, GetCurrentPerFrameDataBuffer());
                                 shaderArguments.BindBuffer(1, renderEngine->geometryBuffer, drawCallInfo.geometryIndex * sizeof(GeometryShaderParameters));
                                 shaderArguments.BindBuffer(2, renderEngine->materialBuffer, 0);
                                 shaderArguments.BindBuffer(3, renderEngine->cascadedShadowMapBuffer, 0);
@@ -92,17 +92,17 @@ namespace Horizon
 
                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
                 {
-                    RenderBackendViewport viewport(0.0f, 0.0f, (float)renderResolutionX, (float)renderResolutionY);
+                    RenderBackendViewport viewport(0.0f, 0.0f, (float)renderResolution.width, (float)renderResolution.height);
                     commandList.SetViewports(&viewport, 1);
 
-                    RenderBackendScissor scissor(0, 0, renderResolutionX, renderResolutionY);
+                    RenderBackendScissor scissor(0, 0, renderResolution.width, renderResolution.height);
                     commandList.SetScissors(&scissor, 1);
 
-                    uint32 groupCountX = ComputeWorkGroupCount(renderResolutionX, 8);
-                    uint32 groupCountY = ComputeWorkGroupCount(renderResolutionY, 8);
+                    uint32 groupCountX = ComputeWorkGroupCount(renderResolution.width, 8);
+                    uint32 groupCountY = ComputeWorkGroupCount(renderResolution.height, 8);
 
                     RenderBackendShaderArguments shaderArguments = {};
-                    shaderArguments.BindBuffer(0, sceneViewShaderParametersBuffer, 0);
+                    shaderArguments.BindBuffer(0, GetCurrentPerFrameDataBuffer());
                     shaderArguments.BindBuffer(4, renderEngine->cascadedShadowMapBuffer, 0);
                     shaderArguments.BindTextureSRV(2, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(sceneDepthTexture)));
                     shaderArguments.BindTextureSRV(3, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(shadowMap)));

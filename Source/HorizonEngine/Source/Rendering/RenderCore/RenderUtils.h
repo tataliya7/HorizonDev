@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Foundation/FoundationModule.h"
+#include "RenderCoreCommon.h"
 
 namespace Horizon
 {
@@ -23,6 +23,7 @@ namespace Horizon
         return Extent2D(w, h);
     }
 
-    RenderBackendTextureHandle LoadTextureFromHDRFile(RenderBackend* renderBackend, const char* filename, RenderBackendTextureDesc* outDesc = nullptr);
-    RenderBackendTextureHandle LoadTextureFromFile(RenderBackend* renderBackend, const char* filename, bool autoMipmaps = true, bool filpY = true, RenderBackendTextureFormat format = RenderBackendTextureFormat::BGRA8Unorm);
+    extern RenderBackendTextureHandle LoadTextureFromHDRFile(RenderBackend* renderBackend, const char* filename, RenderBackendTextureDesc* outDesc = nullptr);
+    extern RenderBackendTextureHandle LoadTextureFromFile(RenderBackend* renderBackend, const char* filename, bool autoMipmaps = true, bool filpY = true, RenderBackendTextureFormat format = RenderBackendTextureFormat::BGRA8Unorm);
+    extern void Texture2DGenerateMips(ShaderLibrary_DEPRECATED* shaderLibrary, RenderBackendCommandList& commandList, RenderBackendTextureHandle textureHandle, uint32 width, uint32 height, uint32 numMipLevels);
 }

@@ -19,8 +19,8 @@ namespace Horizon
 
         uint32 downsampleFactor = 2;
 
-        uint32 width = std::max(1u, ComputeWorkGroupCount(targetResolutionX, downsampleFactor));
-        uint32 height = std::max(1u, ComputeWorkGroupCount(targetResolutionY, downsampleFactor));
+        uint32 width = std::max(1u, ComputeWorkGroupCount(targetResolution.width, downsampleFactor));
+        uint32 height = std::max(1u, ComputeWorkGroupCount(targetResolution.height, downsampleFactor));
         uint32 mipLevels = Math::MaxNumMipLevels(width, height);
 
         coarsestMipLevel = std::clamp(coarsestMipLevel, 0, (int)mipLevels - 1);
@@ -55,7 +55,7 @@ namespace Horizon
                         uint32 groupCountY = ComputeWorkGroupCount(height, PostProcessingThreadGroupCountY);
 
                         RenderBackendShaderArguments shaderArguments = {};
-                        shaderArguments.BindBuffer(0, sceneViewShaderParametersBuffer, 0);
+                        shaderArguments.BindBuffer(0, GetCurrentPerFrameDataBuffer());
                         shaderArguments.BindTextureSRV(1, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(sceneColorTexture)));
                         if (isAutoExposureTextureValid) shaderArguments.BindTextureSRV(2, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(autoExposureTexture)));
                         shaderArguments.BindTextureUAV(3, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(localExposureLuminances), 0));
@@ -84,7 +84,7 @@ namespace Horizon
                         uint32 groupCountY = ComputeWorkGroupCount(height, PostProcessingThreadGroupCountY);
 
                         RenderBackendShaderArguments shaderArguments = {};
-                        shaderArguments.BindBuffer(0, sceneViewShaderParametersBuffer, 0);
+                        shaderArguments.BindBuffer(0, GetCurrentPerFrameDataBuffer());
                         shaderArguments.BindTextureSRV(1, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(localExposureLuminances)));
                         shaderArguments.BindTextureUAV(2, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(localExposureWeights), 0));
                         shaderArguments.PushConstants(0, sigma);
@@ -225,7 +225,7 @@ namespace Horizon
                         uint32 groupCountY = ComputeWorkGroupCount(coarsestMipLevelHeight, PostProcessingThreadGroupCountY);
 
                         RenderBackendShaderArguments shaderArguments = {};
-                        shaderArguments.BindBuffer(0, sceneViewShaderParametersBuffer, 0);
+                        shaderArguments.BindBuffer(0, GetCurrentPerFrameDataBuffer());
                         shaderArguments.BindTextureSRV(1, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(localExposureLuminances)));
                         shaderArguments.BindTextureSRV(2, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(localExposureWeights)));
                         shaderArguments.BindTextureUAV(3, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(localExposureAssemble), coarsestMipLevel));
@@ -268,7 +268,7 @@ namespace Horizon
                             uint32 groupCountY = ComputeWorkGroupCount(h, PostProcessingThreadGroupCountY);
 
                             RenderBackendShaderArguments shaderArguments = {};
-                            shaderArguments.BindBuffer(0, sceneViewShaderParametersBuffer, 0);
+                            shaderArguments.BindBuffer(0, GetCurrentPerFrameDataBuffer());
                             shaderArguments.BindTextureSRV(1, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(localExposureLuminances)));
                             shaderArguments.BindTextureSRV(2, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(localExposureWeights)));
                             shaderArguments.BindTextureSRV(3, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(localExposureAssemble)));
@@ -297,7 +297,7 @@ namespace Horizon
         uint32 displayMipLevelWidth = width >> displayMipLevel;
         uint32 displayMipLevelHeight = height >> displayMipLevel;
 
-        renderGraph.AddPass(std::format("LocalExposureGuidedUpsampling (Compute, {}x{} -> {}x{})", displayMipLevelWidth, displayMipLevelHeight, targetResolutionX, targetResolutionY), RenderGraphPassFlags::Compute,
+        renderGraph.AddPass(std::format("LocalExposureGuidedUpsampling (Compute, {}x{} -> {}x{})", displayMipLevelWidth, displayMipLevelHeight, targetResolution.width, targetResolution.height), RenderGraphPassFlags::Compute,
             [&](RenderGraphBuilder& builder)
             {
                 builder.ReadTexture(sceneColorTexture, RenderBackendResourceState::ShaderResource);
@@ -308,11 +308,11 @@ namespace Horizon
 
                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
                     {
-                        uint32 groupCountX = ComputeWorkGroupCount(targetResolutionX, PostProcessingThreadGroupCountX);
-                        uint32 groupCountY = ComputeWorkGroupCount(targetResolutionY, PostProcessingThreadGroupCountY);
+                        uint32 groupCountX = ComputeWorkGroupCount(targetResolution.width, PostProcessingThreadGroupCountX);
+                        uint32 groupCountY = ComputeWorkGroupCount(targetResolution.height, PostProcessingThreadGroupCountY);
 
                         RenderBackendShaderArguments shaderArguments = {};
-                        shaderArguments.BindBuffer(0, sceneViewShaderParametersBuffer, 0);
+                        shaderArguments.BindBuffer(0, GetCurrentPerFrameDataBuffer());
                         shaderArguments.BindTextureSRV(1, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(sceneColorTexture)));
                         if (isAutoExposureTextureValid) shaderArguments.BindTextureSRV(5, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(autoExposureTexture)));
                         shaderArguments.BindTextureSRV(2, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(localExposureLuminances)));

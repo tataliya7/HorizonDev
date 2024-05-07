@@ -9,8 +9,8 @@ namespace Horizon
         const SceneView& view,
         RenderGraphTextureHandle halfResolutionSceneColorTexture)
     {
-        uint32 mip0Width = targetResolutionX / 2;
-        uint32 mip0Height = targetResolutionY / 2;
+        uint32 mip0Width = targetResolution.width / 2;
+        uint32 mip0Height = targetResolution.height / 2;
 
         uint32 numPasses = std::min(6u, Math::MaxNumMipLevels(mip0Width, mip0Height));
         if (numPasses < 1)
@@ -128,8 +128,7 @@ namespace Horizon
     RenderGraphTextureHandle RealTimeRenderer::AddConvolutionBloomPass(
         RenderGraph& renderGraph,
         const SceneView& view,
-        RenderGraphTextureHandle sceneColor,
-        RenderGraphTextureHandle autoExposureTexture)
+        RenderGraphTextureHandle sceneColorTexture)
     {
         const uint32 downsampleFactor = 2;
         const uint32 sceneColorWidth = view.targetWidth;

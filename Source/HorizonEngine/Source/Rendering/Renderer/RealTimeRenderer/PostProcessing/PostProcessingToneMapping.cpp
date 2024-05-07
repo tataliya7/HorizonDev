@@ -3,13 +3,6 @@
 
 namespace Horizon
 {
-    class ToneMappingCS
-    {
-    public:
-
-
-    };
-
     RenderGraphTextureHandle RealTimeRenderer::AddToneMappingPass(
         RenderGraph& renderGraph,
         const SceneView& view,
@@ -59,14 +52,14 @@ namespace Horizon
         }
 
         //RenderGraphTextureDesc outputTextureDesc = RenderGraphTextureDesc::Create2D(
-        //      targetResolutionX,
-        //      targetResolutionY,
+        //      targetResolution.width,
+        //      targetResolution.height,
         //      RenderBackendTextureFormat::RGBA8Unorm,
         //      RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::UnorderedAccess);
         auto& finalTextureData = renderGraph.blackboard.Get<RenderGraphFinalTexture>();
         RenderGraphTextureHandle outputTexture = renderGraph.CreateTexture(finalTextureData.finalTextureDesc, "ToneMappingTexture");
 
-        renderGraph.AddPass(std::format("ToneMapping (Compute, {}x{})", targetResolutionX, targetResolutionY), RenderGraphPassFlags::Compute,
+        renderGraph.AddPass(std::format("ToneMapping (Compute, {}x{})", targetResolution.width, targetResolution.height), RenderGraphPassFlags::Compute,
             [&](RenderGraphBuilder& builder)
             {
                 builder.ReadTexture(sceneColorTexture, RenderBackendResourceState::ShaderResource);
@@ -80,11 +73,12 @@ namespace Horizon
 
                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
                 {
-                    uint32 groupCountX = ComputeWorkGroupCount(targetResolutionX, PostProcessingThreadGroupCountX);
-                    uint32 groupCountY = ComputeWorkGroupCount(targetResolutionY, PostProcessingThreadGroupCountY);
+                    uint32 groupCountX = ComputeWorkGroupCount(targetResolution.width, PostProcessingThreadGroupCountX);
+                    uint32 groupCountY = ComputeWorkGroupCount(targetResolution.height, PostProcessingThreadGroupCountY);
+                    uint32 groupCountZ = 1;
 
                     RenderBackendShaderArguments shaderArguments = {};
-                    shaderArguments.BindBuffer(0, sceneViewShaderParametersBuffer, 0);
+                    shaderArguments.BindBuffer(0, GetCurrentPerFrameDataBuffer());
                     shaderArguments.BindTextureSRV(1, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(sceneColorTexture)));
                     shaderArguments.BindTextureSRV(2, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(bloomTexture)));
                     shaderArguments.BindBuffer(3, registry.GetRenderBackendBufferHandle(autoExposureBuffer), 0);
@@ -100,11 +94,12 @@ namespace Horizon
                     shaderArguments.PushConstants(2, chromaticAberrationScale.y);
 
                     RenderBackendShaderHandle computeShader = shaderLibrary->GetShaderHandle(ShaderID::ToneMapping);
-                    commandList.Dispatch2D(
+                    commandList.Dispatch(
                         computeShader,
                         shaderArguments,
                         groupCountX,
-                        groupCountY);
+                        groupCountY,
+                        groupCountZ);
                 };
             });
 

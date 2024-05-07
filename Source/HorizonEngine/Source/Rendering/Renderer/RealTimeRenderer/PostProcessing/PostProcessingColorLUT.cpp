@@ -34,7 +34,7 @@ namespace Horizon
                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
                     {
                         RenderBackendShaderArguments shaderArguments = {};
-                        shaderArguments.BindBuffer(0, sceneViewShaderParametersBuffer, 0);
+                        shaderArguments.BindBuffer(0, GetCurrentPerFrameDataBuffer());
                         shaderArguments.BindTextureUAV(1, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(colorLUTTexture), 0));
                         shaderArguments.PushConstants(0, (float)toneMappingOperator);
 

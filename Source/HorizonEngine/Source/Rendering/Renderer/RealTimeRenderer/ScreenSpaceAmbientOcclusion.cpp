@@ -9,15 +9,15 @@ namespace Horizon
         const auto& settings = this->settings.gtaoSettings;
 
         uint32 downsampleFactor = 1;
-        uint32 gtaoTextureWidth = ComputeWorkGroupCount(renderResolutionX, downsampleFactor);
-        uint32 gtaoTextureHeight = ComputeWorkGroupCount(renderResolutionY, downsampleFactor);
+        uint32 gtaoTextureWidth = ComputeWorkGroupCount(renderResolution.width, downsampleFactor);
+        uint32 gtaoTextureHeight = ComputeWorkGroupCount(renderResolution.height, downsampleFactor);
 
         //RenderBackendTextureFormat ambientOcclusionTextureFormat = RenderBackendTextureFormat::R8Unorm;
         RenderBackendTextureFormat ambientOcclusionTextureFormat = RenderBackendTextureFormat::R16Float;
 
         RenderGraphTextureDesc ambientOcclusionTextureDesc = RenderGraphTextureDesc::Create2D(
-            renderResolutionX,
-            renderResolutionY,
+            renderResolution.width,
+            renderResolution.height,
             ambientOcclusionTextureFormat,
             RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::UnorderedAccess);
         RenderGraphTextureHandle ambientOcclusionTexture = renderGraph.CreateTexture(ambientOcclusionTextureDesc, "AmbientOcclusionTexture");
@@ -50,7 +50,7 @@ namespace Horizon
                     uint32 groupCountY = ComputeWorkGroupCount(gtaoTextureHeight, 8);
 
                     RenderBackendShaderArguments shaderArguments = {};
-                    shaderArguments.BindBuffer(0, sceneViewShaderParametersBuffer, 0);
+                    shaderArguments.BindBuffer(0, GetCurrentPerFrameDataBuffer());
                     shaderArguments.BindTextureSRV(1, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(sceneDepthTexture)));
                     shaderArguments.BindTextureSRV(2, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(gbuffer0)));
                     shaderArguments.BindTextureUAV(3, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(gtaoHorizonSearchAndIntegralTexture), 0));
@@ -86,7 +86,7 @@ namespace Horizon
                     uint32 groupCountY = ComputeWorkGroupCount(gtaoTextureHeight, 8);
 
                     RenderBackendShaderArguments shaderArguments = {};
-                    shaderArguments.BindBuffer(0, sceneViewShaderParametersBuffer, 0);
+                    shaderArguments.BindBuffer(0, GetCurrentPerFrameDataBuffer());
                     shaderArguments.BindTextureSRV(1, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(sceneDepthTexture)));
                     shaderArguments.BindTextureSRV(2, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(gtaoHorizonSearchAndIntegralTexture)));
                     shaderArguments.BindTextureUAV(3, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(gtaoSpatialFilteringTexture), 0));
@@ -132,7 +132,7 @@ namespace Horizon
                     uint32 groupCountY = ComputeWorkGroupCount(ambientOcclusionTextureHeight, 8);
 
                     RenderBackendShaderArguments shaderArguments = {};
-                    shaderArguments.BindBuffer(0, sceneViewShaderParametersBuffer, 0);
+                    shaderArguments.BindBuffer(0, GetCurrentPerFrameDataBuffer());
                     shaderArguments.BindTextureSRV(1, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(sceneDepthTexture)));
                     shaderArguments.BindTextureSRV(7, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(motionVectorTexture)));
                     shaderArguments.BindTextureSRV(8, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(historySceneDepthTexture)));

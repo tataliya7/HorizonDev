@@ -18,14 +18,14 @@ namespace Horizon
         RenderGraphTextureHandle sceneColorTexture)
     {
         RenderGraphTextureDesc maskTextureDesc = RenderGraphTextureDesc::Create2D(
-            targetResolutionX,
-            targetResolutionY,
+            targetResolution.width,
+            targetResolution.height,
             RenderBackendTextureFormat::R8Unorm,
             RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::RenderTarget,
             RenderBackendTextureClearValue::Black);
         RenderGraphTextureHandle maskTexture = renderGraph.CreateTexture(maskTextureDesc, "EditorSelectionOutlineMaskTexture");
 
-        renderGraph.AddPass(std::format("EditorSelectionOutlineMaskGen (Graphics, {}x{})", targetResolutionX, targetResolutionY), RenderGraphPassFlags::Graphics,
+        renderGraph.AddPass(std::format("EditorSelectionOutlineMaskGen (Graphics, {}x{})", targetResolution.width, targetResolution.height), RenderGraphPassFlags::Graphics,
             [&](RenderGraphBuilder& builder)
             {
                 maskTexture = builder.WriteTexture(maskTexture, RenderBackendResourceState::RenderTarget);
@@ -34,10 +34,10 @@ namespace Horizon
 
                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
                 {
-                    RenderBackendViewport viewport(0.0f, 0.0f, (float)targetResolutionX, (float)targetResolutionY);
+                    RenderBackendViewport viewport(0.0f, 0.0f, (float)targetResolution.width, (float)targetResolution.height);
                     commandList.SetViewports(&viewport, 1);
 
-                    RenderBackendScissor scissor(0, 0, targetResolutionX, targetResolutionY);
+                    RenderBackendScissor scissor(0, 0, targetResolution.width, targetResolution.height);
                     commandList.SetScissors(&scissor, 1);
 
                     RenderBackendGraphicsPipelineState graphicsPipelineState = {};
@@ -48,7 +48,7 @@ namespace Horizon
                     for (const auto& drawCallInfo : renderEngine->drawList)
                     {
                         RenderBackendShaderArguments shaderArguments = {};
-                        shaderArguments.BindBuffer(0, sceneViewShaderParametersBuffer, 0);
+                        shaderArguments.BindBuffer(0, GetCurrentPerFrameDataBuffer());
                         shaderArguments.BindBuffer(1, renderEngine->geometryBuffer, drawCallInfo.geometryIndex * sizeof(GeometryShaderParameters));
                         shaderArguments.BindBuffer(2, drawCallInfo.vertexBuffers[0], 0);
 
@@ -69,14 +69,14 @@ namespace Horizon
             });
 
         RenderGraphTextureDesc jumpFloodTextureDesc = RenderGraphTextureDesc::Create2D(
-            targetResolutionX,
-            targetResolutionY,
+            targetResolution.width,
+            targetResolution.height,
             RenderBackendTextureFormat::RGBA16Float,
             RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::UnorderedAccess);
         RenderGraphTextureHandle jumpFloodTexture0 = renderGraph.CreateTexture(jumpFloodTextureDesc, "EditorSelectionOutlineJumpFloodTexture0");
         RenderGraphTextureHandle jumpFloodTexture1 = renderGraph.CreateTexture(jumpFloodTextureDesc, "EditorSelectionOutlineJumpFloodTexture1");
 
-        renderGraph.AddPass(std::format("EditorSelectionOutlineSetup (Compute, {}x{})", targetResolutionX, targetResolutionY), RenderGraphPassFlags::Compute,
+        renderGraph.AddPass(std::format("EditorSelectionOutlineSetup (Compute, {}x{})", targetResolution.width, targetResolution.height), RenderGraphPassFlags::Compute,
             [&](RenderGraphBuilder& builder)
             {
                 builder.ReadTexture(maskTexture, RenderBackendResourceState::ShaderResource);
@@ -85,11 +85,11 @@ namespace Horizon
 
                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
                 {
-                    uint32 groupCountX = ComputeWorkGroupCount(targetResolutionX, PostProcessingThreadGroupCountX);
-                    uint32 groupCountY = ComputeWorkGroupCount(targetResolutionY, PostProcessingThreadGroupCountY);
+                    uint32 groupCountX = ComputeWorkGroupCount(targetResolution.width, PostProcessingThreadGroupCountX);
+                    uint32 groupCountY = ComputeWorkGroupCount(targetResolution.height, PostProcessingThreadGroupCountY);
 
                     RenderBackendShaderArguments shaderArguments = {};
-                    shaderArguments.BindBuffer(0, sceneViewShaderParametersBuffer, 0);
+                    shaderArguments.BindBuffer(0, GetCurrentPerFrameDataBuffer());
                     shaderArguments.BindTextureSRV(1, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(maskTexture)));
                     shaderArguments.BindTextureUAV(2, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(jumpFloodTexture0), 0));
 
@@ -115,7 +115,7 @@ namespace Horizon
         {
             float stepWidth = std::pow(2.0f, (float)step);
 
-            renderGraph.AddPass(std::format("EditorSelectionOutlineJumpFlood-Step{} (Compute, {}x{}, StepWidth={})", step, targetResolutionX, targetResolutionY, stepWidth), RenderGraphPassFlags::Compute,
+            renderGraph.AddPass(std::format("EditorSelectionOutlineJumpFlood-Step{} (Compute, {}x{}, StepWidth={})", step, targetResolution.width, targetResolution.height, stepWidth), RenderGraphPassFlags::Compute,
                 [&](RenderGraphBuilder& builder)
                 {
                     builder.ReadTexture(jumpFloodPassInputTexture, RenderBackendResourceState::ShaderResource);
@@ -124,11 +124,11 @@ namespace Horizon
 
                     return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
                     {
-                        uint32 groupCountX = ComputeWorkGroupCount(targetResolutionX, PostProcessingThreadGroupCountX);
-                        uint32 groupCountY = ComputeWorkGroupCount(targetResolutionY, PostProcessingThreadGroupCountY);
+                        uint32 groupCountX = ComputeWorkGroupCount(targetResolution.width, PostProcessingThreadGroupCountX);
+                        uint32 groupCountY = ComputeWorkGroupCount(targetResolution.height, PostProcessingThreadGroupCountY);
 
                         RenderBackendShaderArguments shaderArguments = {};
-                        shaderArguments.BindBuffer(0, sceneViewShaderParametersBuffer, 0);
+                        shaderArguments.BindBuffer(0, GetCurrentPerFrameDataBuffer());
                         shaderArguments.BindTextureSRV(1, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(jumpFloodPassInputTexture)));
                         shaderArguments.BindTextureUAV(2, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(jumpFloodPassOutputTexture), 0));
                         shaderArguments.PushConstants(0, (float)stepWidth);
@@ -148,7 +148,7 @@ namespace Horizon
 
         RenderGraphTextureHandle outputTexture = sceneColorTexture;
 
-        renderGraph.AddPass(std::format("EditorSelectionOutlineComposite (Compute, {}x{})", targetResolutionX, targetResolutionY), RenderGraphPassFlags::Compute,
+        renderGraph.AddPass(std::format("EditorSelectionOutlineComposite (Compute, {}x{})", targetResolution.width, targetResolution.height), RenderGraphPassFlags::Compute,
             [&](RenderGraphBuilder& builder)
             {
                 builder.ReadTexture(jumpFloodTexture, RenderBackendResourceState::ShaderResource);
@@ -157,11 +157,11 @@ namespace Horizon
 
                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
                 {
-                    uint32 groupCountX = ComputeWorkGroupCount(targetResolutionX, PostProcessingThreadGroupCountX);
-                    uint32 groupCountY = ComputeWorkGroupCount(targetResolutionY, PostProcessingThreadGroupCountY);
+                    uint32 groupCountX = ComputeWorkGroupCount(targetResolution.width, PostProcessingThreadGroupCountX);
+                    uint32 groupCountY = ComputeWorkGroupCount(targetResolution.height, PostProcessingThreadGroupCountY);
 
                     RenderBackendShaderArguments shaderArguments = {};
-                    shaderArguments.BindBuffer(0, sceneViewShaderParametersBuffer, 0);
+                    shaderArguments.BindBuffer(0, GetCurrentPerFrameDataBuffer());
                     shaderArguments.BindTextureSRV(1, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(jumpFloodTexture)));
                     shaderArguments.BindTextureUAV(2, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(outputTexture), 0));
 

@@ -47,8 +47,8 @@ namespace Horizon
         PostProcessingSceneColorMipChain* outMipChain)
     {
         RenderGraphTextureHandle inputTexture = sceneColorTexture;
-        uint32 inputTextureWidth = targetResolutionX;
-        uint32 inputTextureHeight = targetResolutionY;
+        uint32 inputTextureWidth = targetResolution.width;
+        uint32 inputTextureHeight = targetResolution.height;
         for (uint32 i = 0; i < 6; i++)
         {
             RenderGraphTextureDesc outputTextureDesc = RenderGraphTextureDesc::Create2D(

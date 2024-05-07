@@ -27,8 +27,8 @@ namespace Horizon
         uint32 lightShaftsDownsampleFactor = 2;
 
         Vector2u lightShaftsTextureSize;
-        lightShaftsTextureSize.x = ComputeWorkGroupCount(renderResolutionX, lightShaftsDownsampleFactor);
-        lightShaftsTextureSize.y = ComputeWorkGroupCount(renderResolutionY, lightShaftsDownsampleFactor);
+        lightShaftsTextureSize.x = ComputeWorkGroupCount(renderResolution.width, lightShaftsDownsampleFactor);
+        lightShaftsTextureSize.y = ComputeWorkGroupCount(renderResolution.height, lightShaftsDownsampleFactor);
 
         Vector2 aspectRatioAndInvAspectRatio = Vector2((float)lightShaftsTextureSize.x / (float)lightShaftsTextureSize.y, (float)lightShaftsTextureSize.y / (float)lightShaftsTextureSize.x);
 
@@ -55,7 +55,7 @@ namespace Horizon
                     uint32 groupCountY = ComputeWorkGroupCount(lightShaftsTextureSize.y, 8);
 
                     RenderBackendShaderArguments shaderArguments = {};
-                    shaderArguments.BindBuffer(0, sceneViewShaderParametersBuffer, 0);
+                    shaderArguments.BindBuffer(0, GetCurrentPerFrameDataBuffer());
                     shaderArguments.BindTextureSRV(1, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(sceneColorTexture)));
                     shaderArguments.BindTextureSRV(2, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(sceneDepthTexture)));
                     shaderArguments.BindTextureUAV(3, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(lightShaftsDownsampleOutputTexture), 0));
@@ -100,7 +100,7 @@ namespace Horizon
                         uint32 groupCountY = ComputeWorkGroupCount(lightShaftsTextureSize.y, 8);
 
                         RenderBackendShaderArguments shaderArguments = {};
-                        shaderArguments.BindBuffer(0, sceneViewShaderParametersBuffer, 0);
+                        shaderArguments.BindBuffer(0, GetCurrentPerFrameDataBuffer());
                         shaderArguments.BindTextureSRV(1, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(radialBlurTexture)));
                         shaderArguments.BindTextureUAV(2, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(outputTexture), 0));
                         shaderArguments.PushConstants(2, lightShaftsCenter.x);
@@ -121,7 +121,7 @@ namespace Horizon
         RenderGraphTextureHandle lightShaftsApplyTexture = renderGraph.CreateTexture(historySceneColorTextureCache.desc, "LightShaftsApplyTexture");
 
         // TODO: Read write UAV ?
-        renderGraph.AddPass(std::format("LightShaftsApply (Compute, {}x{})", renderResolutionX, renderResolutionY), RenderGraphPassFlags::Compute,
+        renderGraph.AddPass(std::format("LightShaftsApply (Compute, {}x{})", renderResolution.width, renderResolution.height), RenderGraphPassFlags::Compute,
             [&](RenderGraphBuilder& builder)
             {
                 auto& sceneTextures = renderGraph.blackboard.Get<RealTimeRendererSceneTextures>();
@@ -133,11 +133,11 @@ namespace Horizon
 
                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
                 {
-                    uint32 groupCountX = ComputeWorkGroupCount(renderResolutionX, 8);
-                    uint32 groupCountY = ComputeWorkGroupCount(renderResolutionY, 8);
+                    uint32 groupCountX = ComputeWorkGroupCount(renderResolution.width, 8);
+                    uint32 groupCountY = ComputeWorkGroupCount(renderResolution.height, 8);
 
                     RenderBackendShaderArguments shaderArguments = {};
-                    shaderArguments.BindBuffer(0, sceneViewShaderParametersBuffer, 0);
+                    shaderArguments.BindBuffer(0, GetCurrentPerFrameDataBuffer());
                     shaderArguments.BindTextureSRV(1, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(sceneColorTexture)));
                     shaderArguments.BindTextureSRV(2, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(radialBlurTexture)));
                     shaderArguments.BindTextureUAV(3, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(lightShaftsApplyTexture), 0));

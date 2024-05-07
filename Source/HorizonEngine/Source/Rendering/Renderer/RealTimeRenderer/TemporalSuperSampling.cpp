@@ -12,8 +12,8 @@ namespace Horizon
         uint32 deviceMask = ~0u;
 
         RenderGraphTextureDesc outputTextureDesc = RenderGraphTextureDesc::Create2D(
-            targetResolutionX,
-            targetResolutionY,
+            targetResolution.width,
+            targetResolution.height,
             RenderBackendTextureFormat::RGBA16Float,
             RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::UnorderedAccess);
         RenderGraphTextureHandle outputTexture = renderGraph.CreateTexture(outputTextureDesc, "TemporalSuperSamplingTexture");
@@ -52,11 +52,11 @@ namespace Horizon
 
                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
                 {
-                    uint32 groupCountX = ComputeWorkGroupCount(targetResolutionX, 8);
-                    uint32 groupCountY = ComputeWorkGroupCount(targetResolutionY, 8);
+                    uint32 groupCountX = ComputeWorkGroupCount(targetResolution.width, 8);
+                    uint32 groupCountY = ComputeWorkGroupCount(targetResolution.height, 8);
 
                     RenderBackendShaderArguments shaderArguments = {};
-                    shaderArguments.BindBuffer(0, sceneViewShaderParametersBuffer, 0);
+                    shaderArguments.BindBuffer(0, GetCurrentPerFrameDataBuffer());
                     shaderArguments.BindTextureSRV(1, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(sceneColorTexture)));
                     shaderArguments.BindTextureSRV(2, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(sceneDepthTexture)));
                     shaderArguments.BindTextureSRV(3, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(motionVectorTexture)));

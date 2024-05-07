@@ -1,5 +1,4 @@
-#include "RealTimeRenderer.h"
-#include "PostProcessing.h"
+#include "DebugVisualization.h"
 
 namespace Horizon
 {
@@ -12,7 +11,7 @@ namespace Horizon
 
         RenderGraphTextureHandle outputTexture = renderGraph.CreateTexture(finalTextureData.finalTextureDesc, "VisualizePrimitiveIDTexture");
 
-        renderGraph.AddPass(std::format("VisualizePrimitiveID (Compute, {}x{}->{}x{})", renderResolutionX, renderResolutionY, targetResolutionX, targetResolutionY), RenderGraphPassFlags::Compute,
+        renderGraph.AddPass(std::format("VisualizePrimitiveID (Compute, {}x{}->{}x{})", renderResolution.width, renderResolution.height, targetResolution.width, targetResolution.height), RenderGraphPassFlags::Compute,
             [&](RenderGraphBuilder& builder)
             {
                 auto vbuffer0 = builder.ReadTexture(sceneTextures.vbuffer0, RenderBackendResourceState::ShaderResource);
@@ -21,20 +20,22 @@ namespace Horizon
 
                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
                 {
-                    uint32 groupCountX = ComputeWorkGroupCount(targetResolutionX, PostProcessingThreadGroupCountX);
-                    uint32 groupCountY = ComputeWorkGroupCount(targetResolutionY, PostProcessingThreadGroupCountY);
+                    uint32 groupCountX = ComputeWorkGroupCount(targetResolution.width, PostProcessingThreadGroupCountX);
+                    uint32 groupCountY = ComputeWorkGroupCount(targetResolution.height, PostProcessingThreadGroupCountY);
+                    uint32 groupCountZ = 1;
 
                     RenderBackendShaderArguments shaderArguments = {};
-                    shaderArguments.BindBuffer(0, sceneViewShaderParametersBuffer, 0);
+                    shaderArguments.BindBuffer(0, GetCurrentPerFrameDataBuffer());
                     shaderArguments.BindTextureSRV(1, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(vbuffer0)));
                     shaderArguments.BindTextureUAV(2, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(outputTexture), 0));
 
                     RenderBackendShaderHandle computeShader = shaderLibrary->GetShaderHandle(ShaderID::VisualizePrimitiveID);
-                    commandList.Dispatch2D(
+                    commandList.Dispatch(
                         computeShader,
                         shaderArguments,
                         groupCountX,
-                        groupCountY);
+                        groupCountY,
+                        groupCountZ);
                 };
             });
 
@@ -50,7 +51,7 @@ namespace Horizon
 
         RenderGraphTextureHandle outputTexture = renderGraph.CreateTexture(finalTextureData.finalTextureDesc, "VisualizeMaterialIDTexture");
 
-        renderGraph.AddPass(std::format("VisualizeMaterialID (Compute, {}x{}->{}x{})", renderResolutionX, renderResolutionY, targetResolutionX, targetResolutionY), RenderGraphPassFlags::Compute,
+        renderGraph.AddPass(std::format("VisualizeMaterialID (Compute, {}x{}->{}x{})", renderResolution.width, renderResolution.height, targetResolution.width, targetResolution.height), RenderGraphPassFlags::Compute,
             [&](RenderGraphBuilder& builder)
             {
                 auto vbuffer0 = builder.ReadTexture(sceneTextures.vbuffer0, RenderBackendResourceState::ShaderResource);
@@ -59,21 +60,23 @@ namespace Horizon
 
                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
                 {
-                    uint32 groupCountX = ComputeWorkGroupCount(targetResolutionX, PostProcessingThreadGroupCountX);
-                    uint32 groupCountY = ComputeWorkGroupCount(targetResolutionY, PostProcessingThreadGroupCountY);
+                    uint32 groupCountX = ComputeWorkGroupCount(targetResolution.width, PostProcessingThreadGroupCountX);
+                    uint32 groupCountY = ComputeWorkGroupCount(targetResolution.height, PostProcessingThreadGroupCountY);
+                    uint32 groupCountZ = 1;
 
                     RenderBackendShaderArguments shaderArguments = {};
-                    shaderArguments.BindBuffer(0, sceneViewShaderParametersBuffer, 0);
-                    shaderArguments.BindBuffer(1, renderEngine->geometryBuffer, 0);
+                    shaderArguments.BindBuffer(0, GetCurrentPerFrameDataBuffer());
+                    shaderArguments.BindBuffer(1, renderEngine->geometryBuffer);
                     shaderArguments.BindTextureSRV(2, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(vbuffer0)));
                     shaderArguments.BindTextureUAV(3, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(outputTexture), 0));
 
                     RenderBackendShaderHandle computeShader = shaderLibrary->GetShaderHandle(ShaderID::VisualizeMaterialID);
-                    commandList.Dispatch2D(
+                    commandList.Dispatch(
                         computeShader,
                         shaderArguments,
                         groupCountX,
-                        groupCountY);
+                        groupCountY,
+                        groupCountZ);
                 };
             });
 
@@ -89,7 +92,7 @@ namespace Horizon
 
         RenderGraphTextureHandle outputTexture = renderGraph.CreateTexture(finalTextureData.finalTextureDesc, "VisualizeMotionVectorsTexture");
 
-        renderGraph.AddPass(std::format("VisualizeMotionVectors (Compute, {}x{}->{}x{})", renderResolutionX, renderResolutionY, targetResolutionX, targetResolutionY), RenderGraphPassFlags::Compute,
+        renderGraph.AddPass(std::format("VisualizeMotionVectors (Compute, {}x{}->{}x{})", renderResolution.width, renderResolution.height, targetResolution.width, targetResolution.height), RenderGraphPassFlags::Compute,
             [&](RenderGraphBuilder& builder)
             {
                 auto motionVectorTexture = builder.ReadTexture(sceneTextures.motionVectorTexture, RenderBackendResourceState::ShaderResource);
@@ -98,20 +101,22 @@ namespace Horizon
 
                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
                 {
-                    uint32 groupCountX = ComputeWorkGroupCount(targetResolutionX, PostProcessingThreadGroupCountX);
-                    uint32 groupCountY = ComputeWorkGroupCount(targetResolutionY, PostProcessingThreadGroupCountY);
+                    uint32 groupCountX = ComputeWorkGroupCount(targetResolution.width, PostProcessingThreadGroupCountX);
+                    uint32 groupCountY = ComputeWorkGroupCount(targetResolution.height, PostProcessingThreadGroupCountY);
+                    uint32 groupCountZ = 1;
 
                     RenderBackendShaderArguments shaderArguments = {};
-                    shaderArguments.BindBuffer(0, sceneViewShaderParametersBuffer, 0);
+                    shaderArguments.BindBuffer(0, GetCurrentPerFrameDataBuffer());
                     shaderArguments.BindTextureSRV(1, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(motionVectorTexture)));
                     shaderArguments.BindTextureUAV(2, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(outputTexture), 0));
 
                     RenderBackendShaderHandle computeShader = shaderLibrary->GetShaderHandle(ShaderID::VisualizeMotionVectors);
-                    commandList.Dispatch2D(
+                    commandList.Dispatch(
                         computeShader,
                         shaderArguments,
                         groupCountX,
-                        groupCountY);
+                        groupCountY,
+                        groupCountZ);
                 };
             });
 
@@ -127,7 +132,7 @@ namespace Horizon
 
         RenderGraphTextureHandle outputTexture = renderGraph.CreateTexture(finalTextureData.finalTextureDesc, "VisualizeAmbientOcclusionTexture");
 
-        renderGraph.AddPass(std::format("VisualizeAmbientOcclusion (Compute, {}x{}->{}x{})", renderResolutionX, renderResolutionY, targetResolutionX, targetResolutionY), RenderGraphPassFlags::Compute,
+        renderGraph.AddPass(std::format("VisualizeAmbientOcclusion (Compute, {}x{}->{}x{})", renderResolution.width, renderResolution.height, targetResolution.width, targetResolution.height), RenderGraphPassFlags::Compute,
             [&](RenderGraphBuilder& builder)
             {
                 auto ambientOcclusionTexture = builder.ReadTexture(sceneTextures.ambientOcclusionTexture, RenderBackendResourceState::ShaderResource);
@@ -136,20 +141,22 @@ namespace Horizon
 
                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
                 {
-                    uint32 groupCountX = ComputeWorkGroupCount(targetResolutionX, PostProcessingThreadGroupCountX);
-                    uint32 groupCountY = ComputeWorkGroupCount(targetResolutionY, PostProcessingThreadGroupCountY);
+                    uint32 groupCountX = ComputeWorkGroupCount(targetResolution.width, PostProcessingThreadGroupCountX);
+                    uint32 groupCountY = ComputeWorkGroupCount(targetResolution.height, PostProcessingThreadGroupCountY);
+                    uint32 groupCountZ = 1;
 
                     RenderBackendShaderArguments shaderArguments = {};
-                    shaderArguments.BindBuffer(0, sceneViewShaderParametersBuffer, 0);
+                    shaderArguments.BindBuffer(0, GetCurrentPerFrameDataBuffer());
                     shaderArguments.BindTextureSRV(1, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(ambientOcclusionTexture)));
                     shaderArguments.BindTextureUAV(2, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(outputTexture), 0));
 
                     RenderBackendShaderHandle computeShader = shaderLibrary->GetShaderHandle(ShaderID::VisualizeAmbientOcclusion);
-                    commandList.Dispatch2D(
+                    commandList.Dispatch(
                         computeShader,
                         shaderArguments,
                         groupCountX,
-                        groupCountY);
+                        groupCountY,
+                        groupCountZ);
                 };
             });
 
@@ -174,7 +181,7 @@ namespace Horizon
         uint32 width = debugViewModeTextures.screenSpaceShadowMaskTextureDesc.width;
         uint32 height = debugViewModeTextures.screenSpaceShadowMaskTextureDesc.height;
 
-        renderGraph.AddPass(std::format("VisualizeScreenSpaceShadowMask (Compute, {}x{})", width, height, targetResolutionX, targetResolutionY), RenderGraphPassFlags::Compute,
+        renderGraph.AddPass(std::format("VisualizeScreenSpaceShadowMask (Compute, {}x{})", width, height, targetResolution.width, targetResolution.height), RenderGraphPassFlags::Compute,
             [&](RenderGraphBuilder& builder)
             {
                 auto screenSpaceShadowMaskTexture = builder.ReadTexture(debugViewModeTextures.screenSpaceShadowMaskTexture, RenderBackendResourceState::ShaderResource);
@@ -183,20 +190,22 @@ namespace Horizon
 
                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
                 {
-                    uint32 groupCountX = ComputeWorkGroupCount(targetResolutionX, PostProcessingThreadGroupCountX);
-                    uint32 groupCountY = ComputeWorkGroupCount(targetResolutionY, PostProcessingThreadGroupCountY);
+                    uint32 groupCountX = ComputeWorkGroupCount(targetResolution.width, PostProcessingThreadGroupCountX);
+                    uint32 groupCountY = ComputeWorkGroupCount(targetResolution.height, PostProcessingThreadGroupCountY);
+                    uint32 groupCountZ = 1;
 
                     RenderBackendShaderArguments shaderArguments = {};
-                    shaderArguments.BindBuffer(0, sceneViewShaderParametersBuffer, 0);
+                    shaderArguments.BindBuffer(0, GetCurrentPerFrameDataBuffer());
                     shaderArguments.BindTextureSRV(1, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(screenSpaceShadowMaskTexture)));
                     shaderArguments.BindTextureUAV(2, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(outputTexture), 0));
 
                     RenderBackendShaderHandle computeShader = shaderLibrary->GetShaderHandle(ShaderID::VisualizeScreenSpaceShadowMask);
-                    commandList.Dispatch2D(
+                    commandList.Dispatch(
                         computeShader,
                         shaderArguments,
                         groupCountX,
-                        groupCountY);
+                        groupCountY,
+                        groupCountZ);
                 };
             });
 

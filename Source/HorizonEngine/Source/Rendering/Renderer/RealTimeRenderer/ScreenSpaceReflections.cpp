@@ -22,8 +22,8 @@ namespace Horizon
         const auto& perFrameData = blackboard.Get<RealTimeRendererSceneViewInfo>();
 
         const uint32 tileSize = 32;
-        const uint32 numTilesX = ComputeWorkGroupCount(perFrameData.paramaters.renderResolutionX, tileSize);
-        const uint32 numTilesY = ComputeWorkGroupCount(perFrameData.paramaters.renderResolutionY, tileSize);
+        const uint32 numTilesX = ComputeWorkGroupCount(perFrameData.paramaters.renderResolution.width, tileSize);
+        const uint32 numTilesY = ComputeWorkGroupCount(perFrameData.paramaters.renderResolution.height, tileSize);
 
         const auto& settings = this->settings.ssrSettings;
 
@@ -193,8 +193,8 @@ namespace Horizon
         RenderGraphTextureHandle rayLengthTexture = renderGraph.CreateTexture(rayLengthTextureDesc, "SSRRayLengthTexture");
 
         const Vector2 hzbUVFactor = Vector2(
-            float(perFrameData.paramaters.renderResolutionX) / float(hzbWidth),
-            float(perFrameData.paramaters.renderResolutionY) / float(hzbHeight));
+            float(perFrameData.paramaters.renderResolution.width) / float(hzbWidth),
+            float(perFrameData.paramaters.renderResolution.height) / float(hzbHeight));
         Vector4 hzbUVFactorAndInvFactor = Vector4(hzbUVFactor.x, hzbUVFactor.y, 1.0f / hzbUVFactor.x, 1.0 / hzbUVFactor.y);
 
         renderGraph.AddPass("SSRRayCastingPass", RenderGraphPassFlags::Compute,

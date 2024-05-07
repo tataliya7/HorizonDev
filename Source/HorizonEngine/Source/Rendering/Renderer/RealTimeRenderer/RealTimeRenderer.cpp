@@ -589,7 +589,7 @@ namespace Horizon
         auto& sceneTextures = renderGraph.blackboard.Get<RealTimeRendererSceneTextures>();
         auto uiColorAndAlphaTexture = sceneTextures.uiColorAndAlphaTexture;
 
-        renderGraph.AddPass(std::format("UIColorAndAlpha (Graphics, {}x{})", targetResolutionX, targetResolutionY), RenderGraphPassFlags::Graphics | RenderGraphPassFlags::SkipRenderPass,
+        renderGraph.AddPass(std::format("UIColorAndAlpha (Graphics, {}x{})", targetResolution.width, targetResolution.height), RenderGraphPassFlags::Graphics | RenderGraphPassFlags::SkipRenderPass,
             [&](RenderGraphBuilder& builder)
             {
                 uiColorAndAlphaTexture = sceneTextures.uiColorAndAlphaTexture = builder.WriteTexture(sceneTextures.uiColorAndAlphaTexture, RenderBackendResourceState::RenderTarget);
@@ -635,8 +635,8 @@ namespace Horizon
 
             sl::DLSSOptions dlssOptions = {};
             dlssOptions.mode = sl::DLSSMode::eMaxQuality;
-            dlssOptions.outputWidth = targetResolutionX;
-            dlssOptions.outputHeight = targetResolutionY;
+            dlssOptions.outputWidth = targetResolution.width;
+            dlssOptions.outputHeight = targetResolution.height;
             dlssOptions.sharpness = 0.0f;
             dlssOptions.preExposure = 1.0f;
             dlssOptions.exposureScale = 1.0f;
@@ -666,7 +666,7 @@ namespace Horizon
             constants.clipToPrevClip = *((sl::float4x4*)&reprojectionMatrix);
             constants.prevClipToClip = *((sl::float4x4*)&inverseReprojectionMatrix);
             constants.jitterOffset = sl::float2(perFrameShaderParameters.cameraJitterOffset.x, perFrameShaderParameters.cameraJitterOffset.y);
-            constants.mvecScale = { 1.0f, 1.0f };//sl::float2(perFrameData.data.renderResolutionX, perFrameData.data.renderResolutionY);
+            constants.mvecScale = { 1.0f, 1.0f };//sl::float2(perFrameData.data.renderResolution.width, perFrameData.data.renderResolution.height);
             constants.cameraPinholeOffset = { 0.0f, 0.0f };
             constants.cameraPos = sl::float3(perFrameShaderParameters.cameraPosition.x, perFrameShaderParameters.cameraPosition.y, perFrameShaderParameters.cameraPosition.z);
             constants.cameraUp = sl::float3(perFrameShaderParameters.cameraUp.x, perFrameShaderParameters.cameraUp.y, perFrameShaderParameters.cameraUp.z);
@@ -699,48 +699,48 @@ namespace Horizon
         }
 
         RenderGraphTextureDesc vbuffer0Desc = RenderGraphTextureDesc::Create2D(
-            renderResolutionX,
-            renderResolutionY,
+            renderResolution.width,
+            renderResolution.height,
             RenderBackendTextureFormat::RG32Uint,
             RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::RenderTarget,
             clearVisibilityBufferColor);
         sceneTextures.vbuffer0 = renderGraph.CreateTexture(vbuffer0Desc, "VBuffer0");
 
         RenderGraphTextureDesc vbuffer1Desc = RenderGraphTextureDesc::Create2D(
-            renderResolutionX,
-            renderResolutionY,
+            renderResolution.width,
+            renderResolution.height,
             RenderBackendTextureFormat::RGBA32Float,
             RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::RenderTarget,
             clearVisibilityBufferColor);
         sceneTextures.vbuffer1 = renderGraph.CreateTexture(vbuffer1Desc, "VBuffer1");
 
         RenderGraphTextureDesc gbuffer0Desc = RenderGraphTextureDesc::Create2D(
-            renderResolutionX,
-            renderResolutionY,
+            renderResolution.width,
+            renderResolution.height,
             RenderBackendTextureFormat::RGB10A2Unorm,
             RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::UnorderedAccess,
             clearColor);
         sceneTextures.gbuffer0 = renderGraph.CreateTexture(gbuffer0Desc, "GBuffer0");
 
         RenderGraphTextureDesc gbuffer1Desc = RenderGraphTextureDesc::Create2D(
-            renderResolutionX,
-            renderResolutionY,
+            renderResolution.width,
+            renderResolution.height,
             RenderBackendTextureFormat::RGBA8Unorm,
             RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::UnorderedAccess,
             clearColor);
         sceneTextures.gbuffer1 = renderGraph.CreateTexture(gbuffer1Desc, "GBuffer1");
 
         RenderGraphTextureDesc gbuffer2Desc = RenderGraphTextureDesc::Create2D(
-            renderResolutionX,
-            renderResolutionY,
+            renderResolution.width,
+            renderResolution.height,
             RenderBackendTextureFormat::RGBA8Unorm,
             RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::UnorderedAccess,
             clearColor);
         sceneTextures.gbuffer2 = renderGraph.CreateTexture(gbuffer2Desc, "GBuffer2");
 
         RenderGraphTextureDesc sceneColorTextureDesc = RenderGraphTextureDesc::Create2D(
-            renderResolutionX,
-            renderResolutionY,
+            renderResolution.width,
+            renderResolution.height,
             RenderBackendTextureFormat::RGBA16Float,
             RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::UnorderedAccess | RenderBackendTextureCreateFlags::RenderTarget,
             RenderBackendTextureClearValue::None,
@@ -751,8 +751,8 @@ namespace Horizon
         sceneTextures.sceneColorTexture = renderGraph.CreateTexture(sceneColorTextureDesc, "SceneColorTexture");
 
         RenderGraphTextureDesc sceneDepthTextureDesc = RenderGraphTextureDesc::Create2D(
-            renderResolutionX,
-            renderResolutionY,
+            renderResolution.width,
+            renderResolution.height,
             RenderBackendTextureFormat::D32Float,
             RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::DepthStencil,
             clearDepth,
@@ -762,22 +762,22 @@ namespace Horizon
         sceneTextures.sceneDepthTexture = renderGraph.CreateTexture(sceneDepthTextureDesc, "SceneDepthTexture");
 
         RenderGraphTextureDesc motionVectorTextureDesc = RenderGraphTextureDesc::Create2D(
-            renderResolutionX,
-            renderResolutionY,
+            renderResolution.width,
+            renderResolution.height,
             RenderBackendTextureFormat::RG16Float,
             RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::UnorderedAccess);
         sceneTextures.motionVectorTexture = renderGraph.CreateTexture(motionVectorTextureDesc, "MotionVectorTexture");
 
         RenderGraphTextureDesc uiColorAndAlphaTextureDesc = RenderGraphTextureDesc::Create2D(
-            targetResolutionX,
-            targetResolutionY,
+            targetResolution.width,
+            targetResolution.height,
             RenderBackendTextureFormat::RGB10A2Unorm,
             RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::RenderTarget);
         sceneTextures.uiColorAndAlphaTexture = renderGraph.CreateTexture(uiColorAndAlphaTextureDesc, "UIColorAndAlphaTexture");
 
         RenderGraphTextureDesc finalTextureDesc = RenderGraphTextureDesc::Create2D(
-            targetResolutionX,
-            targetResolutionY,
+            targetResolution.width,
+            targetResolution.height,
             RenderBackendTextureFormat::RGB10A2Unorm,
             RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::RenderTarget | RenderBackendTextureCreateFlags::UnorderedAccess,
             RenderBackendTextureClearValue::None,
@@ -815,8 +815,8 @@ namespace Horizon
         RenderMotionVectors(renderGraph, view);
 
         // Hierarchical z-buffer must be aligned quad tree
-        uint32 hzbWidth = Math::Max(Math::RoundUpToPowerOfTwo(renderResolutionX) >> 1, 1u);
-        uint32 hzbHeight = Math::Max(Math::RoundUpToPowerOfTwo(renderResolutionY) >> 1, 1u);
+        uint32 hzbWidth = Math::Max(Math::RoundUpToPowerOfTwo(renderResolution.width) >> 1, 1u);
+        uint32 hzbHeight = Math::Max(Math::RoundUpToPowerOfTwo(renderResolution.height) >> 1, 1u);
         uint32 hzbMipLevels = Math::MaxNumMipLevels(hzbWidth, hzbHeight);
 
         RenderGraphTextureDesc hzbDesc = RenderGraphTextureDesc::Create2D(
@@ -852,15 +852,15 @@ namespace Horizon
         AddIndirectLightingDiffusePass(renderGraph, view);
 
         RenderGraphTextureDesc reflectionsTextureDesc = RenderGraphTextureDesc::Create2D(
-            renderResolutionX,
-            renderResolutionY,
+            renderResolution.width,
+            renderResolution.height,
             RenderBackendTextureFormat::RGBA16Float,
             RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::UnorderedAccess);
         RenderGraphTextureHandle reflectionsTexture = renderGraph.CreateTexture(reflectionsTextureDesc, "ReflectionsTexture");
 
         RenderGraphTextureHandle ssrDebugOutputTexture = renderGraph.CreateTexture(RenderGraphTextureDesc::Create2D(
-            renderResolutionX,
-            renderResolutionY,
+            renderResolution.width,
+            renderResolution.height,
             RenderBackendTextureFormat::RGBA16Float,
             RenderBackendTextureCreateFlags::UnorderedAccess | RenderBackendTextureCreateFlags::ShaderResource),
             "SSRDebugOutputTexture");
@@ -904,8 +904,8 @@ namespace Horizon
         // AddSurfleGIPasses(renderGraph, view);
 
         RenderGraphTextureDesc screenSpaceShadowMaskTextureDesc = RenderGraphTextureDesc::Create2D(
-            renderResolutionX,
-            renderResolutionY,
+            renderResolution.width,
+            renderResolution.height,
             RenderBackendTextureFormat::RGBA16Float,
             RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::UnorderedAccess);
         RenderGraphTextureHandle screenSpaceShadowMaskTexture = renderGraph.CreateTexture(screenSpaceShadowMaskTextureDesc, "ScreenSpaceShadowMaskTexture");
@@ -917,8 +917,8 @@ namespace Horizon
         }
 
         RenderGraphTextureDesc rayDistanceDesc = RenderGraphTextureDesc::Create2D(
-            renderResolutionX,
-            renderResolutionY,
+            renderResolution.width,
+            renderResolution.height,
             RenderBackendTextureFormat::R16Float,
             RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::UnorderedAccess);
         RenderGraphTextureHandle rayDistance = renderGraph.CreateTexture(screenSpaceShadowMaskTextureDesc, "RayTracingShadowsRayDistance");
@@ -983,8 +983,8 @@ namespace Horizon
 
         //        return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
         //        {
-        //            uint32 groupCountX = ComputeWorkGroupCount(renderResolutionX, 8);
-        //            uint32 groupCountY = ComputeWorkGroupCount(renderResolutionY, 8);
+        //            uint32 groupCountX = ComputeWorkGroupCount(renderResolution.width, 8);
+        //            uint32 groupCountY = ComputeWorkGroupCount(renderResolution.height, 8);
 
         //            RenderBackendGraphicsPipelineState graphicsPipelineState = {};
         //            graphicsPipelineState.rasterizationState.cullMode = RenderBackendRasterizationCullMode::None;
@@ -993,7 +993,7 @@ namespace Horizon
         //            graphicsPipelineState.depthStencilState.depthCompareFunction = RenderBackendCompareOp::Equal;
 
         //            RenderBackendShaderArguments shaderArguments = {};
-        //            shaderArguments.BindBuffer(0, sceneViewShaderParametersBuffer, 0);
+        //            shaderArguments.BindBuffer(0, GetCurrentPerFrameDataBuffer());
         //            shaderArguments.BindTextureSRV(1, RenderBackendTextureSRVDesc::Create(renderEngine->environmentMap));
         //            shaderArguments.PushConstants(0, 0.0f);
 
@@ -1023,7 +1023,7 @@ namespace Horizon
 
         if (shouldRenderSkyAtmosphere)
         {
-            RenderSkyAtmosphere(renderGraph, *skyAtmosphere, *(renderEngine->skyAtmosphereComponent), renderResolutionX, renderResolutionY, sceneViewShaderParametersBuffer);
+            RenderSkyAtmosphere(renderGraph, *skyAtmosphere, *(renderEngine->skyAtmosphereComponent), renderResolution.width, renderResolution.height, sceneViewShaderParametersBuffer);
         }
 
         const bool isVisualizeSufelEnabled = (view.visualizationMode == SceneViewVisualizationMode::SurfelGISurfel);
@@ -1043,7 +1043,7 @@ namespace Horizon
 
         RenderUIColorAndAlpha(renderGraph, view);
 
-        renderGraph.AddPass(std::format("FinalComposite (Graphics, {}x{})", targetResolutionX, targetResolutionY), RenderGraphPassFlags::Graphics,
+        renderGraph.AddPass(std::format("FinalComposite (Graphics, {}x{})", targetResolution.width, targetResolution.height), RenderGraphPassFlags::Graphics,
             [&](RenderGraphBuilder& builder)
             {
                 auto& sceneTextures = renderGraph.blackboard.Get<RealTimeRendererSceneTextures>();
@@ -1056,10 +1056,10 @@ namespace Horizon
 
                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
                 {
-                    RenderBackendViewport viewport(0.0f, 0.0f, (float)targetResolutionX, (float)targetResolutionY);
+                    RenderBackendViewport viewport(0.0f, 0.0f, (float)targetResolution.width, (float)targetResolution.height);
                     commandList.SetViewports(&viewport, 1);
 
-                    RenderBackendScissor scissor(0, 0, targetResolutionX, targetResolutionY);
+                    RenderBackendScissor scissor(0, 0, targetResolution.width, targetResolution.height);
                     commandList.SetScissors(&scissor, 1);
 
                     RenderBackendGraphicsPipelineState graphicsPipelineState = {};
@@ -1100,7 +1100,7 @@ namespace Horizon
                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
                 {
                     Offset2D offset = { 0, 0 };
-                    Extent2D extent = { targetResolutionX, targetResolutionY };
+                    Extent2D extent = { targetResolution.width, targetResolution.height };
 
                     commandList.CopyTexture2D(
                         registry.GetRenderBackendTextureHandle(finalTexture),

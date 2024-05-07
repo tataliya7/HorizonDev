@@ -9,12 +9,12 @@ namespace Horizon
         RenderGraphTextureHandle halfResolutionSceneColorTexture,
         RenderGraphTextureHandle bloomTexture)
     {
-        uint32 lensFlaresTextureWidth = targetResolutionX / 4;
-        uint32 lensFlaresTextureHeight = targetResolutionY / 4;
+        uint32 lensFlaresTextureWidth = targetResolution.width / 4;
+        uint32 lensFlaresTextureHeight = targetResolution.height / 4;
 
         RenderGraphTextureHandle lensFlaresTexture = bloomTexture;
-        uint32 bloomTextureWidth = targetResolutionX / 2;
-        uint32 bloomTextureHeight = targetResolutionY / 2;
+        uint32 bloomTextureWidth = targetResolution.width / 2;
+        uint32 bloomTextureHeight = targetResolution.height / 2;
 
         RenderGraphTextureDesc lensFlaresGhostTextureDesc = RenderGraphTextureDesc::Create2D(
             lensFlaresTextureWidth,
@@ -41,7 +41,7 @@ namespace Horizon
                     commandList.SetScissors(&scissor, 1);
 
                     RenderBackendShaderArguments shaderArguments = {};
-                    shaderArguments.BindBuffer(0, sceneViewShaderParametersBuffer, 0);
+                    shaderArguments.BindBuffer(0, GetCurrentPerFrameDataBuffer());
                     shaderArguments.BindTextureSRV(1, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(halfResolutionSceneColorTexture)));
                     shaderArguments.PushConstants(0, (float)lensFlaresTextureWidth);
                     shaderArguments.PushConstants(1, (float)lensFlaresTextureHeight);
@@ -156,7 +156,7 @@ namespace Horizon
                     commandList.SetScissors(&scissor, 1);
 
                     RenderBackendShaderArguments shaderArguments = {};
-                    shaderArguments.BindBuffer(0, sceneViewShaderParametersBuffer, 0);
+                    shaderArguments.BindBuffer(0, GetCurrentPerFrameDataBuffer());
                     shaderArguments.BindTextureSRV(1, RenderBackendTextureSRVDesc::Create(lensFlaresGradiantLUTTexture));
                     shaderArguments.BindTextureSRV(2, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(lensFlaresGhostTexture)));
                     shaderArguments.BindTextureSRV(3, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(lensFlaresGlareTexture)));

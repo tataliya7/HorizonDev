@@ -20,13 +20,13 @@ namespace Horizon
 
                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
                 {
-                    uint32 width = renderResolutionX;
-                    uint32 height = renderResolutionY;
+                    uint32 width = renderResolution.width;
+                    uint32 height = renderResolution.height;
 
                     RenderBackendRayTracingAccelerationStructureHandle rayTracingScene = view.GetRayTracingScene();
 
                     RenderBackendShaderArguments shaderArguments = {};
-                    shaderArguments.BindBuffer(0, sceneViewShaderParametersBuffer, 0);
+                    shaderArguments.BindBuffer(0, GetCurrentPerFrameDataBuffer());
                     shaderArguments.BindAS(1, rayTracingScene);
                     shaderArguments.BindTextureSRV(2, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(sceneDepthTexture)));
                     shaderArguments.BindTextureUAV(3, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(screenSpaceShadowMaskTexture), 0));

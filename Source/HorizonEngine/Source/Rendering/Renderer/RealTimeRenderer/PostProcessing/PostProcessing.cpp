@@ -3,7 +3,7 @@
 
 namespace Horizon
 {
-    void RealTimeRenderer::AddPostProcessingPasses(
+    void RealTimeRenderer::RenderPostProcessingEffects(
         RenderGraph& renderGraph,
         const SceneView& view)
     {
@@ -99,7 +99,7 @@ namespace Horizon
         {
             if (isConvolutionBloomEnabled)
             {
-                bloomTexture = AddConvolutionBloomPass(renderGraph, view, sceneColorTexture, autoExposureTexture);
+                bloomTexture = AddConvolutionBloomPass(renderGraph, view, sceneColorTexture);
             }
             else
             {
@@ -188,7 +188,7 @@ namespace Horizon
                         graphicsPipelineState.depthStencilState.depthCompareFunction = RenderBackendCompareOp::GreaterOrEqual;
 
                         RenderBackendShaderArguments shaderArguments = {};
-                        shaderArguments.BindBuffer(0, sceneViewShaderParametersBuffer, 0);
+                        shaderArguments.BindBuffer(0, GetCurrentPerFrameDataBuffer());
                         shaderArguments.BindBuffer(1, renderEngine->debugDrawLinesVertexBuffer, 0);
 
                         RenderBackendShaderHandle graphicsShader = shaderLibrary->GetShaderHandle(ShaderID::DebugDraw);

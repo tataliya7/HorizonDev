@@ -6,8 +6,8 @@ namespace Horizon
         RenderGraph& renderGraph,
         const SceneView& view)
     {
-        uint32 surfelGIRenderWidth = renderResolutionX;
-        uint32 surfelGIRenderHeight = renderResolutionY;
+        uint32 surfelGIRenderWidth = renderResolution.width;
+        uint32 surfelGIRenderHeight = renderResolution.height;
 
         auto& sceneTextures = renderGraph.blackboard.Get<RealTimeRendererSceneTextures>();
 
@@ -47,7 +47,7 @@ namespace Horizon
                     uint32 groupCountY = ComputeWorkGroupCount(surfelGIRenderHeight, SurfelGIScreenTileSize);
 
                     RenderBackendShaderArguments shaderArguments = {};
-                    shaderArguments.BindBuffer(0, sceneViewShaderParametersBuffer, 0);
+                    shaderArguments.BindBuffer(0, GetCurrentPerFrameDataBuffer());
                     shaderArguments.BindTextureSRV(1, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(sceneDepthTexture)));
                     shaderArguments.BindTextureSRV(2, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(gbuffer0)));
                     shaderArguments.BindBuffer(3, surfelGIInfoBuffer, 0);
@@ -93,7 +93,7 @@ namespace Horizon
                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
                 {
                     RenderBackendShaderArguments shaderArguments = {};
-                    shaderArguments.BindBuffer(0, sceneViewShaderParametersBuffer, 0);
+                    shaderArguments.BindBuffer(0, GetCurrentPerFrameDataBuffer());
                     shaderArguments.BindBuffer(1, surfelGIInfoBuffer, 0);
                     shaderArguments.BindBuffer(2, surfelGIAliveSurfelIndirectionBuffer, 0);
                     shaderArguments.BindBuffer(3, surfelGISurfelHotDataBuffer, 0);
@@ -156,7 +156,7 @@ namespace Horizon
 
         RenderGraphTextureHandle outputTexture = renderGraph.CreateTexture(sceneTextures.sceneColorTextureDesc, "SurfelGIVisualizationTexture");
 
-        renderGraph.AddPass(std::format("SurfelGIVisualization (Compute, {}x{})", renderResolutionX, renderResolutionY), RenderGraphPassFlags::Compute,
+        renderGraph.AddPass(std::format("SurfelGIVisualization (Compute, {}x{})", renderResolution.width, renderResolution.height), RenderGraphPassFlags::Compute,
             [&](RenderGraphBuilder& builder)
             {
                 auto sceneColorTexture = builder.ReadTexture(sceneTextures.sceneColorTexture, RenderBackendResourceState::ShaderResource);
@@ -166,11 +166,11 @@ namespace Horizon
 
                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
                 {
-                    uint32 groupCountX = ComputeWorkGroupCount(targetResolutionX, PostProcessingThreadGroupCountX);
-                    uint32 groupCountY = ComputeWorkGroupCount(targetResolutionY, PostProcessingThreadGroupCountY);
+                    uint32 groupCountX = ComputeWorkGroupCount(targetResolution.width, PostProcessingThreadGroupCountX);
+                    uint32 groupCountY = ComputeWorkGroupCount(targetResolution.height, PostProcessingThreadGroupCountY);
 
                     RenderBackendShaderArguments shaderArguments = {};
-                    shaderArguments.BindBuffer(0, sceneViewShaderParametersBuffer, 0);
+                    shaderArguments.BindBuffer(0, GetCurrentPerFrameDataBuffer());
                     shaderArguments.BindTextureSRV(1, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(sceneColorTexture)));
                     shaderArguments.BindTextureSRV(2, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(sceneDepthTexture)));
                     shaderArguments.BindBuffer(3, surfelGIInfoBuffer, 0);
