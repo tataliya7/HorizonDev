@@ -1,3 +1,3 @@
 @echo off
 
-cmd /k python Scripts/setup.py install_dir="ThirdParty" download_dir="Download"
+cmd /k python Tools/setup.py install_dir="ThirdParty" download_dir="Download"

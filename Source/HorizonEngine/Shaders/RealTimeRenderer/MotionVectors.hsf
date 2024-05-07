@@ -1,0 +1,141 @@
+#include "../ShaderCommon.hsh"
+#include "RealTimeRendererCommon.hsh"
+
+BIND_BUFFER_ELEMENT(0, PerFrameData, PerFrameData);
+BIND_BYTE_ADDRESS_BUFFER_SRV(1, GeometryBuffer);
+BIND_TEXTURE_2D_TYPED_SRV(2, uint2, VisibilityBuffer);
+BIND_TEXTURE_2D_UAV(3, float2, MotionVectors);
+
+inline float3 BarycentricInterpolation(in float3 a0, in float3 a1, in float3 a2, in float3 bary)
+{
+    return mad(a0, bary.z, mad(a1, bary.x, a2 * bary.y));
+}
+
+float3 RayTriangleIntersectionBarycentrics3D(float3 rayOrigin, float3 rayDirection, float3 v0, float3 v1, float3 v2, out float t)
+{
+    float3 v0v1 = v1 - v0;
+    float3 v0v2 = v2 - v0;
+    float3 pvec = cross(rayDirection, v0v2);
+    float det = dot(v0v1, pvec);
+    det = det > 0.0 ? max(0.0000001, det) : min(-0.0000001, det);
+    float det_rcp = 1.0 / det;//rcp(det);
+    float3 tvec = rayOrigin - v0;
+    float3 qvec = cross(tvec, v0v1);
+    float u = dot(tvec, pvec) * det_rcp;
+    float v = dot(rayDirection, qvec) * det_rcp;
+    t = dot(v0v2, qvec) * det_rcp;
+    return float3(u, v, 1.0 - u - v);
+}
+
+[numthreads(8, 8, 1)]
+void MotionVectorsCS(uint3 DispatchThreadID : SV_DispatchThreadID)
+{
+    PerFrameData perFrameData = GetPerFrameData();
+    uint width = perFrameData.renderResolutionX;
+    uint height = perFrameData.renderResolutionY;
+    if (DispatchThreadID.x >= width || DispatchThreadID.y >= height)
+    {
+        return;
+    }
+
+    float2 invSize = perFrameData.renderResolution.zw;
+    uint2 coord = DispatchThreadID.xy;
+    float2 uv = (coord.xy + 0.5) * invSize;
+    float2 jitteredUV = (coord + 0.5 + perFrameData.cameraJitterOffset) * invSize;
+
+    float2 motionVectorJitterCancellation = perFrameData.previousCameraJitterOffset - perFrameData.cameraJitterOffset;
+    // Transform to screen UV space
+    motionVectorJitterCancellation = motionVectorJitterCancellation * invSize;
+
+    Texture2D<uint2> visibilityBuffer = GetVisibilityBufferSRV();
+
+    uint2 visibilityID = visibilityBuffer[coord];
+    uint geometryID = visibilityID.r;
+    uint primitiveID = visibilityID.g;
+
+    float4 unprojected = mul(perFrameData.invViewProjectionMatrix, float4(uv_to_clipspace(uv), 0.0, 1.0));
+    unprojected.xyz /= unprojected.w;
+    float3 cameraRayOrigin = perFrameData.cameraPosition;
+    float3 cameraRayDirection = normalize(unprojected.xyz - cameraRayOrigin);
+
+    float3 hitPointPrevWorldPosition;
+    [branch]
+    if (visibilityID.x != INVALID_VISIBILIY_ID)
+    {
+        ByteAddressBuffer geometryBuffer = GetGeometryBufferSRV();
+        Geometry geometry = geometryBuffer.Load<Geometry>(geometryID * sizeof(Geometry));
+
+        uint index0 = GetRWByteAddressBuffer(geometry.indexBuffer).Load<uint>((geometry.baseIndex + primitiveID * 3 + 0) * sizeof(uint));
+        uint index1 = GetRWByteAddressBuffer(geometry.indexBuffer).Load<uint>((geometry.baseIndex + primitiveID * 3 + 1) * sizeof(uint));
+        uint index2 = GetRWByteAddressBuffer(geometry.indexBuffer).Load<uint>((geometry.baseIndex + primitiveID * 3 + 2) * sizeof(uint));
+
+        float3 vertex0 = GetRWByteAddressBuffer(geometry.vertexBuffer0).Load<float3>(index0 * sizeof(float3));
+        float3 vertex1 = GetRWByteAddressBuffer(geometry.vertexBuffer0).Load<float3>(index1 * sizeof(float3));
+        float3 vertex2 = GetRWByteAddressBuffer(geometry.vertexBuffer0).Load<float3>(index2 * sizeof(float3));
+
+        float4x4 worldTransform = GetRWByteAddressBuffer(geometry.transformBuffer).Load<float4x4>(geometry.transformIndex * sizeof(float4x4));
+        float4x4 prevWorldTransform = (geometry.previousTransformIndex >= 0) ? GetRWByteAddressBuffer(geometry.previousTransformBuffer).Load<float4x4>(geometry.previousTransformIndex * sizeof(float4x4)) : worldTransform;
+
+        float3 worldPosition0 = mul(worldTransform, float4(vertex0, 1.0)).xyz;
+        float3 worldPosition1 = mul(worldTransform, float4(vertex1, 1.0)).xyz;
+        float3 worldPosition2 = mul(worldTransform, float4(vertex2, 1.0)).xyz;
+
+        float t = 0.0;
+        float3 bary = RayTriangleIntersectionBarycentrics3D(cameraRayOrigin, cameraRayDirection, worldPosition0, worldPosition1, worldPosition2, t);
+
+        float3 prevVertex0 = vertex0;
+        float3 prevVertex1 = vertex1;
+        float3 prevVertex2 = vertex2;
+
+        if (geometry.prevVertexBuffer0 >= 0) // Skinned mesh
+        {
+            prevVertex0 = GetRWByteAddressBuffer(geometry.prevVertexBuffer0).Load<float3>((geometry.baseVertex + index0) * sizeof(float3));
+            prevVertex1 = GetRWByteAddressBuffer(geometry.prevVertexBuffer0).Load<float3>((geometry.baseVertex + index1) * sizeof(float3));
+            prevVertex2 = GetRWByteAddressBuffer(geometry.prevVertexBuffer0).Load<float3>((geometry.baseVertex + index2) * sizeof(float3));
+        }
+
+        float3 prevWorldPosition0 = mul(prevWorldTransform, float4(prevVertex0, 1.0)).xyz;
+        float3 prevWorldPosition1 = mul(prevWorldTransform, float4(prevVertex1, 1.0)).xyz;
+        float3 prevWorldPosition2 = mul(prevWorldTransform, float4(prevVertex2, 1.0)).xyz;
+
+        hitPointPrevWorldPosition = BarycentricInterpolation(prevWorldPosition0, prevWorldPosition1, prevWorldPosition2, bary);
+
+        // RWTexture2D<float4> motionVectors = GetMotionVectorsUAV();
+        // float3 curw = cameraRayOrigin + t * cameraRayDirection;
+        // motionVectors[coord] = float4(curw, t);
+        // return;
+
+        RWTexture2D<float2> motionVectors = GetMotionVectorsUAV();
+        float2 currPosition = uv;
+        float4 prevClipPosition = mul(perFrameData.prevViewProjectionMatrix, float4(hitPointPrevWorldPosition, 1.0));
+        float2 prevPosition = clipspace_to_uv(prevClipPosition.xy / prevClipPosition.w);
+        float2 motionVector = prevPosition - currPosition;
+        motionVector -= motionVectorJitterCancellation;
+        if (isnan(motionVector.x) || isnan(motionVector.y))
+        {
+            // motionVector = float2(1.0, 1.0);
+            motionVector = 0;
+        }
+        motionVectors[coord] = motionVector;
+    }
+    else
+    {
+        // -0.01 to prevent division by zero in perspective division
+        hitPointPrevWorldPosition = cameraRayOrigin + cameraRayDirection * (perFrameData.farClippingPlane - 0.0001);
+        hitPointPrevWorldPosition = hitPointPrevWorldPosition - perFrameData.cameraPosition + perFrameData.previousCameraPosition;
+        RWTexture2D<float2> motionVectors = GetMotionVectorsUAV();
+        float2 currPosition = uv;
+        float4 prevClipPosition = mul(perFrameData.prevViewProjectionMatrix, float4(hitPointPrevWorldPosition, 1.0));
+        float2 prevPosition = clipspace_to_uv(prevClipPosition.xy / prevClipPosition.w);
+        float2 motionVector = prevPosition - currPosition;
+        motionVector -= motionVectorJitterCancellation;
+        if (isnan(motionVector.x) || isnan(motionVector.y))
+        {
+            motionVector = 0;
+        }
+        motionVectors[coord] = motionVector;
+
+        // RWTexture2D<float2> motionVectors = GetMotionVectorsUAV();
+        // motionVectors[coord] = float2(0.0, 0.0);
+    }
+}

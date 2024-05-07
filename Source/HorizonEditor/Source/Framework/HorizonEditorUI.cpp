@@ -1,0 +1,926 @@
+#include "HorizonEditor.h"
+
+#include <imgui.h>
+#include <imgui_internal.h>
+
+#include <ImGuizmo.h>
+
+#include "imnodes.h"
+#include "imnodes_internal.h"
+
+namespace Horizon
+{
+    struct ConsoleLog
+    {
+        std::string message;
+    };
+
+    struct Console
+    {
+        char                  inputBuffer[256];
+        ImVector<char*>       Items;
+        ImVector<const char*> Commands;
+        ImVector<char*>       History;
+        int                   HistoryPos;    // -1: new line, 0..History.Size-1 browsing history.
+        ImGuiTextFilter       Filter;
+        bool                  AutoScroll;
+        bool                  ScrollToBottom;
+
+        // Portable helpers
+        static int   Stricmp(const char* s1, const char* s2) { int d; while ((d = toupper(*s2) - toupper(*s1)) == 0 && *s1) { s1++; s2++; } return d; }
+        static int   Strnicmp(const char* s1, const char* s2, int n) { int d = 0; while (n > 0 && (d = toupper(*s2) - toupper(*s1)) == 0 && *s1) { s1++; s2++; n--; } return d; }
+        static char* Strdup(const char* s) { IM_ASSERT(s); size_t len = strlen(s) + 1; void* buf = malloc(len); IM_ASSERT(buf); return (char*)memcpy(buf, (const void*)s, len); }
+        static void  Strtrim(char* s) { char* str_end = s + strlen(s); while (str_end > s && str_end[-1] == ' ') str_end--; *str_end = 0; }
+
+        void    ClearLog()
+        {
+            for (int i = 0; i < Items.Size; i++)
+                free(Items[i]);
+            Items.clear();
+        }
+
+        void AddLog(const char* fmt, ...) IM_FMTARGS(2)
+        {
+            // FIXME-OPT
+            char buf[1024];
+            va_list args;
+            va_start(args, fmt);
+            vsnprintf(buf, IM_ARRAYSIZE(buf), fmt, args);
+            buf[IM_ARRAYSIZE(buf) - 1] = 0;
+            va_end(args);
+            Items.push_back(Strdup(buf));
+        }
+
+        int TextEditCallback(ImGuiInputTextCallbackData* data)
+        {
+            //AddLog("cursor: %d, selection: %d-%d", data->CursorPos, data->SelectionStart, data->SelectionEnd);
+            switch (data->EventFlag)
+            {
+            case ImGuiInputTextFlags_CallbackCompletion:
+            {
+                // Example of TEXT COMPLETION
+
+                // Locate beginning of current word
+                const char* word_end = data->Buf + data->CursorPos;
+                const char* word_start = word_end;
+                while (word_start > data->Buf)
+                {
+                    const char c = word_start[-1];
+                    if (c == ' ' || c == '\t' || c == ',' || c == ';')
+                        break;
+                    word_start--;
+                }
+
+                // Build a list of candidates
+                ImVector<const char*> candidates;
+                for (int i = 0; i < Commands.Size; i++)
+                    if (Strnicmp(Commands[i], word_start, (int)(word_end - word_start)) == 0)
+                        candidates.push_back(Commands[i]);
+
+                if (candidates.Size == 0)
+                {
+                    // No match
+                    AddLog("No match for \"%.*s\"!\n", (int)(word_end - word_start), word_start);
+                }
+                else if (candidates.Size == 1)
+                {
+                    // Single match. Delete the beginning of the word and replace it entirely so we've got nice casing.
+                    data->DeleteChars((int)(word_start - data->Buf), (int)(word_end - word_start));
+                    data->InsertChars(data->CursorPos, candidates[0]);
+                    data->InsertChars(data->CursorPos, " ");
+                }
+                else
+                {
+                    // Multiple matches. Complete as much as we can..
+                    // So inputing "C"+Tab will complete to "CL" then display "CLEAR" and "CLASSIFY" as matches.
+                    int match_len = (int)(word_end - word_start);
+                    for (;;)
+                    {
+                        int c = 0;
+                        bool all_candidates_matches = true;
+                        for (int i = 0; i < candidates.Size && all_candidates_matches; i++)
+                            if (i == 0)
+                                c = toupper(candidates[i][match_len]);
+                            else if (c == 0 || c != toupper(candidates[i][match_len]))
+                                all_candidates_matches = false;
+                        if (!all_candidates_matches)
+                            break;
+                        match_len++;
+                    }
+
+                    if (match_len > 0)
+                    {
+                        data->DeleteChars((int)(word_start - data->Buf), (int)(word_end - word_start));
+                        data->InsertChars(data->CursorPos, candidates[0], candidates[0] + match_len);
+                    }
+
+                    // List matches
+                    AddLog("Possible matches:\n");
+                    for (int i = 0; i < candidates.Size; i++)
+                        AddLog("- %s\n", candidates[i]);
+                }
+
+                break;
+            }
+            case ImGuiInputTextFlags_CallbackHistory:
+            {
+                // Example of HISTORY
+                const int prev_history_pos = HistoryPos;
+                if (data->EventKey == ImGuiKey_UpArrow)
+                {
+                    if (HistoryPos == -1)
+                        HistoryPos = History.Size - 1;
+                    else if (HistoryPos > 0)
+                        HistoryPos--;
+                }
+                else if (data->EventKey == ImGuiKey_DownArrow)
+                {
+                    if (HistoryPos != -1)
+                        if (++HistoryPos >= History.Size)
+                            HistoryPos = -1;
+                }
+
+                // A better implementation would preserve the data on the current input line along with cursor position.
+                if (prev_history_pos != HistoryPos)
+                {
+                    const char* history_str = (HistoryPos >= 0) ? History[HistoryPos] : "";
+                    data->DeleteChars(0, data->BufTextLen);
+                    data->InsertChars(0, history_str);
+                }
+            }
+            }
+            return 0;
+        }
+
+        void ExecCommand(const char* command_line)
+        {
+            AddLog("# %s\n", command_line);
+
+            // Insert into history. First find match and delete it so it can be pushed to the back.
+            // This isn't trying to be smart or optimal.
+            HistoryPos = -1;
+            for (int i = History.Size - 1; i >= 0; i--)
+                if (Stricmp(History[i], command_line) == 0)
+                {
+                    free(History[i]);
+                    History.erase(History.begin() + i);
+                    break;
+                }
+            History.push_back(Strdup(command_line));
+
+            // Process command
+            if (Stricmp(command_line, "CLEAR") == 0)
+            {
+                ClearLog();
+            }
+            else if (Stricmp(command_line, "HELP") == 0)
+            {
+                AddLog("Commands:");
+                for (int i = 0; i < Commands.Size; i++)
+                    AddLog("- %s", Commands[i]);
+            }
+            else if (Stricmp(command_line, "HISTORY") == 0)
+            {
+                int first = History.Size - 10;
+                for (int i = first > 0 ? first : 0; i < History.Size; i++)
+                    AddLog("%3d: %s\n", i, History[i]);
+            }
+            else
+            {
+                AddLog("Unknown command: '%s'\n", command_line);
+            }
+
+            // On command input, we scroll to bottom even if AutoScroll==false
+            ScrollToBottom = true;
+        }
+
+        std::shared_ptr<spdlog::logger> spdLogger = nullptr;
+    };
+
+    Console console;
+
+    class ConsoleSink : public spdlog::sinks::base_sink<std::mutex>
+    {
+    public:
+        ConsoleSink(Console& console) : console(console) {};
+        virtual ~ConsoleSink() {};
+
+        ConsoleSink(ConsoleSink&) = delete;
+        ConsoleSink(const ConsoleSink&) = delete;
+        ConsoleSink& operator=(ConsoleSink&) = delete;
+        ConsoleSink& operator=(const ConsoleSink&) = delete;
+
+    protected:
+
+        void sink_it_(const spdlog::details::log_msg& msg) override
+        {
+            ConsoleLog log = {};
+            log.message = msg.payload;
+
+            console.AddLog(log.message.c_str());
+
+            //flush_();
+        }
+
+        void flush_() override
+        {
+            //console.AddLog(message);
+        }
+
+    private:
+
+        Console& console;
+    };
+
+    bool CreateConsoleLogger()
+    {
+        std::string logsDirectory = "Logs";
+        if (!std::filesystem::exists(logsDirectory))
+        {
+            std::filesystem::create_directories(logsDirectory);
+        }
+
+        std::vector<spdlog::sink_ptr> sinks =
+        {
+            std::make_shared<spdlog::sinks::stdout_color_sink_mt>(),
+            std::make_shared<ConsoleSink>(console),
+        };
+
+        sinks[0]->set_pattern("%^[%Y-%m-%d %T][%n][%l]%v%$");
+        sinks[1]->set_pattern("..");
+
+        auto colorSink = static_cast<spdlog::sinks::stdout_color_sink_mt*>(sinks[0].get());
+        colorSink->set_color(spdlog::level::trace, FOREGROUND_BLUE);
+        colorSink->set_color(spdlog::level::info, std::numeric_limits<uint16_t>::max());
+        colorSink->set_color(spdlog::level::warn, FOREGROUND_RED | FOREGROUND_GREEN);
+        colorSink->set_color(spdlog::level::err, FOREGROUND_RED);
+
+        console.spdLogger = std::make_shared<spdlog::logger>("Console", sinks.begin(), sinks.end());
+        console.spdLogger->set_level(spdlog::level::trace);
+        spdlog::register_logger(console.spdLogger);
+
+        GLogger = (Logger*)console.spdLogger.get();
+
+        return true;
+    }
+
+    static int TextEditCallbackStub(ImGuiInputTextCallbackData* data)
+    {
+        Console* console = (Console*)data->UserData;
+        return console->TextEditCallback(data);
+    }
+
+    void HorizonEditor::DrawConsoleWindow(bool* open)
+    {
+        if (!ImGui::Begin("Console", open))
+        {
+            ImGui::End();
+            return;
+        }
+
+        if (ImGui::SmallButton("Clear"))
+        {
+            console.ClearLog();
+        }
+        ImGui::SameLine();
+
+        ImGui::Separator();
+
+        // Reserve enough left-over height for 1 separator + 1 input text
+        const float footer_height_to_reserve = ImGui::GetStyle().ItemSpacing.y + ImGui::GetFrameHeightWithSpacing();
+        ImGui::BeginChild("ScrollingRegion", ImVec2(0, -footer_height_to_reserve), false, ImGuiWindowFlags_HorizontalScrollbar);
+        if (ImGui::BeginPopupContextWindow())
+        {
+            if (ImGui::Selectable("Clear")) console.ClearLog();
+            ImGui::EndPopup();
+        }
+
+        ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(4, 1)); // Tighten spacing
+
+        for (int i = 0; i < console.Items.Size; i++)
+        {
+            const char* item = console.Items[i];
+            if (!console.Filter.PassFilter(item))
+                continue;
+
+            // Normally you would store more information in your item than just a string.
+            // (e.g. make Items[] an array of structure, store color/type etc.)
+            ImVec4 color;
+            bool has_color = false;
+            if (strstr(item, "[error]")) { color = ImVec4(1.0f, 0.4f, 0.4f, 1.0f); has_color = true; }
+            else if (strncmp(item, "# ", 2) == 0) { color = ImVec4(1.0f, 0.8f, 0.6f, 1.0f); has_color = true; }
+            if (has_color)
+                ImGui::PushStyleColor(ImGuiCol_Text, color);
+            ImGui::TextUnformatted(item);
+            if (has_color)
+                ImGui::PopStyleColor();
+        }
+
+        if (console.ScrollToBottom || (console.AutoScroll && ImGui::GetScrollY() >= ImGui::GetScrollMaxY()))
+            ImGui::SetScrollHereY(1.0f);
+        console.ScrollToBottom = false;
+
+        ImGui::PopStyleVar();
+        ImGui::EndChild();
+        ImGui::Separator();
+
+        // Command-line
+        bool reclaim_focus = false;
+        ImGuiInputTextFlags input_text_flags = ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CallbackCompletion | ImGuiInputTextFlags_CallbackHistory;
+        if (ImGui::InputText("Input", console.inputBuffer, IM_ARRAYSIZE(console.inputBuffer), input_text_flags, &TextEditCallbackStub, (void*)&console))
+        {
+            char* s = console.inputBuffer;
+            console.Strtrim(s);
+            if (s[0])
+            {
+                console.ExecCommand(s);
+            }
+            strcpy(s, "");
+            reclaim_focus = true;
+        }
+        // Auto-focus on window apparition
+        ImGui::SetItemDefaultFocus();
+
+        if (reclaim_focus)
+        {
+            ImGui::SetKeyboardFocusHere(-1); // Auto focus previous widget
+        }
+        ImGui::End();
+    }
+
+    std::unordered_map<std::string, std::function<void(const char*, const char* name, void*)>> uiCreator;
+    std::vector<std::pair<std::string, bool>> g_editor_node_state_array;
+    int                                       g_node_depth = -1;
+    bool inited = false;
+
+    void UIInit()
+    {
+        using namespace Horizon;
+
+        uiCreator["bool"] = [](const char* lable, const char* name, void* value)
+            {
+                ImGui::AlignTextToFramePadding();
+                ImGui::TextUnformatted(name);
+                ImGui::NextColumn();
+                ImGui::PushItemWidth(-1);
+                ImGui::Checkbox(lable, static_cast<bool*>(value));
+                ImGui::PopItemWidth();
+                ImGui::NextColumn();
+            };
+
+        uiCreator["int"] = [](const char* lable, const char* name, void* value)
+            {
+                ImGui::AlignTextToFramePadding();
+                ImGui::TextUnformatted(name);
+                ImGui::NextColumn();
+                ImGui::PushItemWidth(-1);
+                ImGui::DragInt(lable, static_cast<int*>(value));
+                ImGui::PopItemWidth();
+                ImGui::NextColumn();
+            };
+
+        uiCreator["unsigned int"] = [](const char* lable, const char* name, void* value)
+            {
+                ImGui::AlignTextToFramePadding();
+                ImGui::TextUnformatted(name);
+                ImGui::NextColumn();
+                ImGui::PushItemWidth(-1);
+                ImGui::DragInt(lable, static_cast<int*>(value));
+                ImGui::PopItemWidth();
+                ImGui::NextColumn();
+            };
+
+        uiCreator["float"] = [](const char* lable, const char* name, void* value)
+            {
+                ImGui::AlignTextToFramePadding();
+                ImGui::TextUnformatted(name);
+                ImGui::NextColumn();
+                ImGui::PushItemWidth(-1);
+                ImGui::DragFloat(lable, static_cast<float*>(value));
+                ImGui::PopItemWidth();
+                ImGui::NextColumn();
+            };
+
+        uiCreator["struct glm::vec<3,float,0>"] = [](const char* lable, const char* name, void* value)
+            {
+                ImGui::AlignTextToFramePadding();
+                ImGui::TextUnformatted(name);
+                ImGui::NextColumn();
+                ImGui::PushItemWidth(-1);
+                ImGui::DragFloat3(lable, static_cast<float*>(value));
+                ImGui::PopItemWidth();
+                ImGui::NextColumn();
+            };
+
+        uiCreator["class std::basic_string<char,struct std::char_traits<char>,class std::allocator<char> >"] = [](const char* lable, const char* name, void* value)
+            {
+                ImGui::AlignTextToFramePadding();
+                ImGui::TextUnformatted(name);
+                ImGui::NextColumn();
+                ImGui::PushItemWidth(-1);
+                ImGui::Text(lable, static_cast<std::string*>(value)->c_str());
+                /*if (ImGui::InputText(lable, static_cast<std::string*>(value)->c_str(), 256))
+                {
+
+                }*/
+                ImGui::PopItemWidth();
+                ImGui::NextColumn();
+            };
+    }
+
+    void BeginDockSpace()
+    {
+        static bool dockSpaceOpen = true;
+
+        // Imgui dock node flags.
+        static ImGuiDockNodeFlags dockNodeflags = ImGuiDockNodeFlags_PassthruCentralNode;
+
+        // Imgui window flags.
+        ImGuiWindowFlags windowFlags = ImGuiWindowFlags_NoDocking;
+
+        static bool isFullscreenPersistant = true;
+        bool isFullscreen = isFullscreenPersistant;
+        if (isFullscreen)
+        {
+            ImGuiViewport* viewport = ImGui::GetMainViewport();
+            ImGui::SetNextWindowPos(viewport->Pos);
+            ImGui::SetNextWindowSize(viewport->Size);
+            ImGui::SetNextWindowViewport(viewport->ID);
+            ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+            ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+            windowFlags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove;
+            windowFlags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
+        }
+
+        windowFlags |= ImGuiWindowFlags_NoBackground;
+
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+        // When using ImGuiDockNodeFlags_PassthruDockspace, DockSpace() will render our background and handle the pass-thru hole, so we ask Begin() to not render a background.
+        ImGui::Begin("Dockspace", &dockSpaceOpen, windowFlags);
+
+        ImGui::PopStyleVar();
+
+        if (isFullscreen)
+        {
+            ImGui::PopStyleVar(2);
+        }
+
+        // Set min width
+        ImGuiIO& io = ImGui::GetIO();
+        ImGuiStyle& style = ImGui::GetStyle();
+        float minWinSizeX = style.WindowMinSize.x;
+        style.WindowMinSize.x = 300.0f;
+        if (io.ConfigFlags & ImGuiConfigFlags_DockingEnable)
+        {
+            ImGuiID dockSpaceID = ImGui::GetID("MyDockSpace");
+            ImGui::DockSpace(dockSpaceID, ImVec2(0.0f, 0.0f), dockNodeflags);
+        }
+        style.WindowMinSize.x = minWinSizeX;
+    }
+
+    void EndDockSpace()
+    {
+        ImGui::End();
+    }
+
+    void DrawMenuBar()
+    {
+        if (ImGui::BeginMainMenuBar())
+        {
+            if (ImGui::BeginMenu("File"))
+            {
+                //ShowExampleMenuFile();
+                ImGui::EndMenu();
+            }
+            if (ImGui::BeginMenu("Edit"))
+            {
+                if (ImGui::MenuItem("Undo", "CTRL+Z")) {}
+                if (ImGui::MenuItem("Redo", "CTRL+Y", false, false)) {}  // Disabled item
+                ImGui::Separator();
+                if (ImGui::MenuItem("Cut", "CTRL+X")) {}
+                if (ImGui::MenuItem("Copy", "CTRL+C")) {}
+                if (ImGui::MenuItem("Paste", "CTRL+V")) {}
+                ImGui::EndMenu();
+            }
+            ImGui::EndMainMenuBar();
+        }
+    }
+
+    float HorizonEditor::GetSnapValue()
+    {
+        switch (gizmoOperationType)
+        {
+        case ImGuizmo::OPERATION::TRANSLATE: return 5.0f; break;
+        case ImGuizmo::OPERATION::ROTATE: return 10.0f; break;
+        case ImGuizmo::OPERATION::SCALE: return 0.1f; break;
+        }
+        return 0.0f;
+    }
+
+    void HorizonEditor::DrawOverlay()
+    {
+        static int corner = 0;
+        ImGuiIO& io = ImGui::GetIO();
+        ImGuiWindowFlags windowFags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav;
+        if (corner != -1)
+        {
+            const float padding = 10.0f;
+            const ImGuiViewport* viewport = ImGui::GetMainViewport();
+            ImVec2 workPos = viewport->WorkPos; // Use work area to avoid menu-bar/task-bar, if any!
+            ImVec2 workSize = viewport->WorkSize;
+            ImVec2 windowPos, windowPosPivot;
+            windowPos.x = (corner & 1) ? (workPos.x + workSize.x - padding) : (workPos.x + padding);
+            windowPos.y = (corner & 2) ? (workPos.y + workSize.y - padding) : (workPos.y + padding);
+            windowPosPivot.x = (corner & 1) ? 1.0f : 0.0f;
+            windowPosPivot.y = (corner & 2) ? 1.0f : 0.0f;
+            ImGui::SetNextWindowPos(windowPos, ImGuiCond_Always, windowPosPivot);
+            ImGui::SetNextWindowViewport(viewport->ID);
+            windowFags |= ImGuiWindowFlags_NoMove;
+        }
+        ImGui::SetNextWindowBgAlpha(0.35f); // Transparent background
+        static bool open = true;
+        if (ImGui::Begin("Overlay", &open, windowFags))
+        {
+            ImGui::Text(HORIZON_ENGINE_NAME);
+            ImGui::Separator();
+            ImGui::Text("FPS: %.1f (%.2f ms/frame)", ImGui::GetIO().Framerate, (1000.0f / ImGui::GetIO().Framerate));
+
+            static RenderBackendTextureHandle renderDocLogoTexture = RenderBackendTextureHandle::Null;
+            if (renderDocLogoTexture == RenderBackendTextureHandle::Null)
+            {
+                renderDocLogoTexture = LoadTextureFromFile(GRenderBackend, "../../../Source/Editor/Plugins/RenderDoc/Resources/renderdoc_logo.png", false, false);
+            }
+
+            if (UI::ImageButton("##RenderDocTriggerCapture", renderDocLogoTexture.ToUnit64(), ImVec2(25, 25)))
+            {
+                RenderDocPluginTriggerCapture();
+            }
+
+            // TODO
+            DrawViewSettings();
+        }
+        ImGui::End();
+    }
+
+    void HorizonEditor::DrawViewSettings()
+    {
+        static const char* viewModes[] = { "Lit", "Wireframe", "Illuminance", "World Space Normal", "Primitive ID", "Material ID", "Motion Vectors", "Ambient Occlusion", "Screen Space Shadow Mask", "Surfel GI Surfel", "Surfel GI Heatmap" };
+        static int currentViewModeIndex = 0;
+        ImGui::Combo("##ViewMode", &currentViewModeIndex, viewModes, IM_ARRAYSIZE(viewModes));
+        viewMode = (DebugViewMode)currentViewModeIndex;
+    }
+
+    void HorizonEditor::DrawProfilerWindow(bool* open)
+    {
+        RenderBackendGPUProfiler* gpuProfiler = ((RenderSystem*)renderEngine)->gpuProfiler;
+        if (ImGui::Begin("Profiler", open))
+        {
+            ImGui::Text("FPS: %.1f (%.4f ms/frame)", ImGui::GetIO().Framerate, (1000.0f / ImGui::GetIO().Framerate));
+
+            if (ImGui::CollapsingHeader("CPU Profiler", ImGuiTreeNodeFlags_DefaultOpen))
+            {
+                ImGui::Text("CPU Frametime: %.4f ms", 1000.0f * deltaTime);
+            }
+
+            if (ImGui::CollapsingHeader("GPU Profiler", ImGuiTreeNodeFlags_DefaultOpen))
+            {
+                for (uint32 regionIndex = 0; regionIndex < gpuProfiler->GetRegionCount(); regionIndex++)
+                {
+                    ImGui::Text("%s: %.4f ms", gpuProfiler->GetRegionName(regionIndex), gpuProfiler->GetRegionTime(regionIndex));
+                }
+            }
+        }
+        ImGui::End();
+    }
+
+    void HorizonEditor::DrawSceneHierarchyWindow(bool* open)
+    {
+        if (ImGui::Begin("Scene Hierarchy", open))
+        {
+            ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_DefaultOpen;
+            if (ImGui::TreeNodeEx((void*)(uint64)564788, flags, SceneManager::GetActiveScene()->GetName().c_str()))
+            {
+                EntityHandle selectedEntity = HorizonEditor::GetInstance()->GetSelectedEntity();
+                auto entityManager = SceneManager::GetActiveScene()->GetEntityManager();
+                entityManager->Get()->each([&](EntityHandle entity)
+                    {
+                        if (entityManager->GetComponent<SceneHierarchyComponent>(entity).parent == EntityHandle::Null)
+                        {
+                            DrawEntityNodeUI(entity);
+                        }
+                    });
+                ImGui::TreePop();
+            }
+
+            if (ImGui::IsMouseDown(0) && ImGui::IsWindowHovered())
+            {
+                HorizonEditor::GetInstance()->SetSelectedEntity(EntityHandle::Null);
+            }
+
+            // Right-click on blank space
+            if (ImGui::BeginPopupContextWindow())
+            {
+                if (ImGui::MenuItem("Create Empty Entity"))
+                {
+                    auto newEntity = SceneManager::GetActiveScene()->CreateEntity("Empty Entity");
+                    SceneManager::GetActiveScene()->GetEntityManager()->AddComponent<TransformComponent>(newEntity);
+                    SceneManager::GetActiveScene()->GetEntityManager()->AddComponent<SceneHierarchyComponent>(newEntity);
+                }
+                ImGui::EndPopup();
+            }
+        }
+        ImGui::End();
+    }
+
+    void HorizonEditor::OnDrawUIEx()
+    {
+        // Draw gizmos
+        {
+            auto windowPos = ImGui::GetWindowPos();
+            //auto viewportSize = ImGui::GetContentRegionAvail();
+            Vector2 viewportSize = { swapChainWidth, swapChainHeight };
+
+            if (selectedEntity && gizmoOperationType != -1)
+            {
+                ImGuizmo::SetOrthographic(false);
+                ImGuizmo::SetDrawlist();
+                ImGuizmo::SetRect(windowPos.x, windowPos.y, viewportSize.x, viewportSize.y);
+
+                bool snap = Input::GetKeyDown(KeyCode::LeftControl);
+                float snapValue = GetSnapValue();
+                float snapValues[3] = { snapValue, snapValue, snapValue };
+
+                // Editor camera
+                CameraComponent editorCamera = SceneManager::GetActiveScene()->GetEntityManager()->GetComponent<CameraComponent>(mainCamera);
+                Matrix4x4 cameraProjection = editorCamera.projectionMatrix;
+                Matrix4x4 cameraView = editorCamera.viewMatrix;
+
+                // Entity transform
+                static Matrix4x4 transformMatrix = Matrix4x4(1.0f);
+                auto& transformComponent = SceneManager::GetActiveScene()->GetEntityManager()->GetComponent<TransformComponent>(selectedEntity);
+                transformMatrix = transformComponent.relativeTransform;
+
+                //float deltaMatrix[16];
+                ImGuizmo::Manipulate(glm::value_ptr(cameraView),
+                    glm::value_ptr(cameraProjection),
+                    (ImGuizmo::OPERATION)gizmoOperationType,
+                    ImGuizmo::LOCAL,
+                    glm::value_ptr(transformMatrix),
+                    nullptr,
+                    snap ? snapValues : nullptr);
+
+                /*static Quaternion zUpQuat = glm::rotate(glm::quat(), Math::DegreesToRadians(90.0), Vector3(1.0, 0.0, 0.0));
+                static Matrix4x4 preTransform = Math::Compose(Vector3(0.0f, 0.0f, 0.0f), zUpQuat, Vector3(1.0f, 1.0f, 1.0f));
+                ImGuizmo::DrawGrid(glm::value_ptr(cameraView),
+                    glm::value_ptr(cameraProjection),
+                    glm::value_ptr(preTransform),
+                    10.0f);*/
+
+                    /*if (ImGuizmo::IsUsing())
+                    {
+                        auto parent = selectedEntity->GetCreator()->GetEntityByHandle(selectedEntity->GetComponent<SceneHierarchyComponent>().parent);
+                        if (parent)
+                        {
+                            transformMatrix = glm::inverse(parent->GetComponent<TransformComponent>().localToWorldMatrix) * transformMatrix;
+                        }
+                        SceneManager::GetActiveScene()->GetEntityManager()->ReplaceComponent<TransformComponent>(selectedEntity, transformComponent);
+                    }*/
+            }
+        }
+    }
+
+    void HorizonEditor::OnDrawUI()
+    {
+        OPTICK_EVENT();
+
+        BeginDockSpace();
+
+        if (!inited)
+        {
+            UIInit();
+            inited = true;
+        }
+
+        ImVec2 cursorPos = ImGui::GetCursorPos();
+        cursorPos = { 0, 0 };
+        ImVec2 windowPos = ImGui::GetWindowPos();
+        ImVec2 windowSize = ImGui::GetWindowSize();
+        viewportPos = Vector4(cursorPos.x + windowPos.x, cursorPos.y + windowPos.y, cursorPos.x + windowPos.x + windowSize.x, cursorPos.y + windowPos.y + windowSize.y);
+
+        if (showSceneHierarchyWindow)
+        {
+            DrawSceneHierarchyWindow(&showSceneHierarchyWindow);
+        }
+
+        if (showInspectorWindow)
+        {
+            DrawInspectorWindow(&showInspectorWindow);
+        }
+
+        if (showProfilerWindow)
+        {
+            DrawProfilerWindow(&showProfilerWindow);
+        }
+
+        if (showConsoleWindow)
+        {
+            DrawConsoleWindow(&showConsoleWindow);
+        }
+
+        if (showRenderSettingsWindow)
+        {
+            DrawRenderSettingsWindow(&showRenderSettingsWindow);
+        }
+
+        bool showSceneViewportWindow = true;
+        if (true)
+        {
+            if (!sceneViewportWindow)
+            {
+                sceneViewportWindow = new SceneViewportWindow("DefaultScene", this);
+            }
+            sceneViewportWindow->OnImGuiRender(showSceneViewportWindow);
+        }
+
+        if (true)
+        {
+            if (!fileBrowserWindow)
+            {
+                fileBrowserWindow = new FileBrowserWindow(this, nullptr);
+            }
+            fileBrowserWindow->OnImGuiRender();
+        }
+
+        if (true)
+        {
+            ImGui::Begin("node editor");
+            const int hardcoded_node_id = 1;
+
+            ImNodes::BeginNodeEditor();
+
+            const bool openPopup = ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows) &&
+                ImNodes::IsEditorHovered() &&
+                ImGui::IsMouseReleased(ImGuiMouseButton_Right);
+
+            ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(8.f, 8.f));
+            if (!ImGui::IsAnyItemHovered() && openPopup)
+            {
+                ImGui::OpenPopup("Add Node");
+            }
+
+            if (ImGui::BeginPopup("Add Node"))
+            {
+                const ImVec2 click_pos = ImGui::GetMousePosOnOpeningCurrentPopup();
+
+                if (ImGui::MenuItem("Multiply"))
+                {
+                    const int node_id = ++current_id;
+                    ImNodes::SetNodeScreenSpacePos(node_id, ImGui::GetMousePos());
+                    ImNodes::SnapNodeToGrid(node_id);
+                    ShadeGraphNode* newNode = new ShadeGraphNode();
+                    newNode->id = node_id;
+                    newNode->type = ShadeGraphFindNodeType("Multiply");
+                    newNode->title = newNode->type->uniqueName;
+                    newNode->Init();
+                    nodes.push_back(newNode);
+
+                    ImNodes::SetNodeScreenSpacePos(node_id, click_pos);
+                }
+
+                if (ImGui::MenuItem("Sample Texture 2D"))
+                {
+                    const int node_id = ++current_id;
+                    ImNodes::SetNodeScreenSpacePos(node_id, ImGui::GetMousePos());
+                    ImNodes::SnapNodeToGrid(node_id);
+                    ShadeGraphNode* newNode = new ShadeGraphNode();
+                    newNode->id = node_id;
+                    newNode->type = ShadeGraphFindNodeType("Sample Texture 2D");
+                    newNode->title = newNode->type->uniqueName;
+                    newNode->Init();
+                    nodes.push_back(newNode);
+
+                    ImNodes::SetNodeScreenSpacePos(node_id, click_pos);
+                }
+
+                if (ImGui::MenuItem("Principled BSDF"))
+                {
+                    const int node_id = ++current_id;
+                    ImNodes::SetNodeScreenSpacePos(node_id, ImGui::GetMousePos());
+                    ImNodes::SnapNodeToGrid(node_id);
+                    ShadeGraphNode* newNode = new ShadeGraphNode();
+                    newNode->id = node_id;
+                    newNode->type = ShadeGraphFindNodeType("Principled BSDF");
+                    newNode->title = newNode->type->uniqueName;
+                    newNode->Init();
+                    nodes.push_back(newNode);
+
+                    ImNodes::SetNodeScreenSpacePos(node_id, click_pos);
+                }
+
+                ImGui::EndPopup();
+            }
+            ImGui::PopStyleVar();
+
+            ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 1.0f, 1.0f));
+            for (ShadeGraphNode* node : nodes)
+            {
+                ImNodes::BeginNode(node->id, IM_COL32(43, 101, 43, 255));
+
+                ImNodes::BeginNodeTitleBar();
+                ImGui::TextUnformatted(node->title.c_str());
+                ImNodes::EndNodeTitleBar();
+
+                for (ShadeGraphPinInstance* input : node->inputs)
+                {
+                    //if ()
+                    {
+                        ImNodes::BeginInputAttribute((node->id << 8) | (input->GetIndexInNode()));
+                        ImGui::TextUnformatted(input->type->name.c_str());
+                        ImNodes::EndInputAttribute();
+                    }
+                    //else // TODO
+                    //{
+                    //    ImNodes::BeginStaticAttribute(node.id << 16);
+                    //    ImGui::PushItemWidth(120.0f);
+                    //    ImGui::DragFloat("value", &node.value, 0.01f);
+                    //    ImGui::PopItemWidth();
+                    //    ImNodes::EndStaticAttribute();
+                    //}
+                }
+
+                for (ShadeGraphPinInstance* output : node->outputs)
+                {
+                    ImNodes::BeginOutputAttribute((node->id << 24) | (output->GetIndexInNode()));
+                    const float text_width = ImGui::CalcTextSize("output").x;
+                    ImGui::Indent(120.f + ImGui::CalcTextSize("value").x - text_width);
+                    ImGui::TextUnformatted(output->type->name.c_str());
+                    ImNodes::EndOutputAttribute();
+                }
+
+                ImNodes::EndNode();
+            }
+            ImGui::PopStyleColor();
+
+            /*    constexpr auto kAddNodePopupId = IM_UNIQUE_ID;
+                if (ImNodes::IsEditorHovered() && ImGui::IsMouseReleased(ImGuiMouseButton_Right))
+                {
+                    ImGui::OpenPopup(kAddNodePopupId);
+                }*/
+
+                /*    _nodePopup(kAddNodePopupId, g);
+                    auto changed = _inspectNodes(g, connectedVertices);
+                    _renderLinks(g);
+                    if (m_miniMap.enabled)
+                    {
+                        ImNodes::MiniMap(m_miniMap.size, m_miniMap.location);
+                    }*/
+
+            for (const Link& link : links)
+            {
+                ImNodes::Link(link.id, link.start_attr, link.end_attr);
+            }
+
+            ImNodes::EndNodeEditor();
+
+            {
+                Link link;
+                if (ImNodes::IsLinkCreated(&link.start_attr, &link.end_attr))
+                {
+                    link.id = ++current_id;
+                    links.push_back(link);
+                }
+            }
+
+            {
+                int link_id;
+                if (ImNodes::IsLinkDestroyed(&link_id))
+                {
+                    auto iter = std::find_if(
+                        links.begin(), links.end(), [link_id](const Link& link) -> bool {
+                            return link.id == link_id;
+                        });
+                    assert(iter != links.end());
+                    links.erase(iter);
+                }
+            }
+
+            /*if (ImGui::IsWindowFocused(ImGuiHoveredFlags_ChildWindows))
+            {
+                changed |= _handleNewLinks(g, connectedVertices);
+                changed |= _handleDeletedLinks(g, connectedVertices);
+                changed |= _handleDeletedNodes(g, connectedVertices);
+            }*/
+
+            ImGui::End();
+        }
+
+        OnDrawUIEx();
+
+        if (showOverlay)
+        {
+            DrawOverlay();
+        }
+
+        EndDockSpace();
+    }
+}

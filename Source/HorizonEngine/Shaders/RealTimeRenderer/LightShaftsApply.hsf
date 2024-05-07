@@ -1,0 +1,16 @@
+#include "../ShaderCommon.hsh"
+#include "RealTimeRendererCommon.hsh"
+
+BIND_BUFFER_ELEMENT(0, PerFrameData, PerFrameData);
+BIND_TEXTURE_2D_SRV(1, LightShaftsTexture);
+
+void LightShaftsApplyPS(float4 position : SV_Position, out float4 outColor : SV_Target0)
+{
+    PerFrameData perFrameData = GetPerFrameData();
+    Texture2D lightShaftsTexture = GetLightShaftsTextureSRV();
+
+    float2 uv = position.xy * perFrameData.renderResolution.zw;
+    float3 lightShaftsColor = lightShaftsTexture.SampleLevel(GlobalSamplerLinearClamp, uv, 0).rgb;
+
+    outColor = float4(lightShaftsColor, 1.0f);
+}

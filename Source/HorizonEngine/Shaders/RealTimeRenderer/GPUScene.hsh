@@ -1,0 +1,44 @@
+#pragma once
+
+struct GPUSceneGeometryData
+{
+    int vertexBuffer0;
+    int vertexBuffer1;
+    int vertexBuffer2;
+    int vertexBuffer3;
+    int previousVertexBuffer0;
+    int indexBuffer;
+    uint vertexCount;
+    uint indexCount;
+    int materialBuffer;
+    int materialIndexBuffer;
+};
+
+GPUSceneGeometryData GetGPUSceneGeometryData(ByteAddressBuffer geometryDataBuffer, uint geometryID)
+{
+	GPUSceneGeometryData geometryData = (GPUSceneGeometryData)0;
+
+    uint offset = geometryID * sizeof(GPUSceneGeometryData);
+    geometryData = geometryDataBuffer.Load<GPUSceneGeometryData>(offset);
+
+    return geometryData;
+}
+
+struct GPUSceneGeometryInstanceData
+{
+    float4x4 localToWorldMatrix;
+    float4x4 worldToLocalMatrix;
+    float4x4 previousLocalToWorldMatrix;
+    float4x4 previousWorldToLocalMatrix;
+    uint geometryID;
+};
+
+GPUSceneGeometryInstanceData GetGPUSceneGeometryInstanceData(ByteAddressBuffer geometryInstanceDataBuffer, uint instanceID)
+{
+	GPUSceneGeometryInstanceData instanceData = (GPUSceneGeometryInstanceData)0;
+
+    uint offset = instanceID * sizeof(GPUSceneGeometryInstanceData);
+    instanceData = geometryInstanceDataBuffer.Load<GPUSceneGeometryInstanceData>(offset);
+
+    return instanceData;
+}

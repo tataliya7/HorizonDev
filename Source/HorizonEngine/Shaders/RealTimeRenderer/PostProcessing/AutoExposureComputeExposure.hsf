@@ -1,0 +1,104 @@
+#include "../ShaderCommon.hsh"
+#include "RealTimeRendererCommon.hsh"
+#include "AutoExposureCommon.hsh"
+
+BIND_BUFFER_ELEMENT(0, PerFrameData, PerFrameData);
+BIND_TEXTURE_2D_TYPED_SRV(1, uint, AutoExposureHistogramTexture);
+BIND_BYTE_ADDRESS_BUFFER_SRV(2, PreviousAutoExposureBuffer);
+BIND_BYTE_ADDRESS_BUFFER_UAV(3, CurrentAutoExposureBuffer);
+
+float ComputeAverageSceneLuminance(Texture2D<uint> histogramTexture, float lowPercent, float highPercent, float histogramMinEV100, float histogramMaxEV100)
+{
+    uint i;
+
+    float totalPixels = 0.0f;
+
+    [unroll]
+    for (i = 0; i < AUTO_EXPOSURE_HISTOGRAM_BIN_COUNT; i++)
+    {
+        totalPixels += AutoExposureHistogramUnpackFloat(histogramTexture[uint2(i, 0)].r);
+    }
+
+    float numPixelsBelowLowerBound = totalPixels * lowPercent;
+    float numPexelsBelowUpperBound = totalPixels * highPercent;
+
+    float logLuminanceSum = 0.0f;
+    float weightSum = 0.0f;
+
+    float minLogLuminance = histogramMinEV100;
+    float logLuminanceRange = histogramMaxEV100 - histogramMinEV100;
+
+    [unroll]
+    for (i = 0; i < AUTO_EXPOSURE_HISTOGRAM_BIN_COUNT; i++)
+    {
+        float numPixels = AutoExposureHistogramUnpackFloat(histogramTexture[uint2(i, 0)].r);
+
+        float numPixelsDiscard = min(numPixels, numPixelsBelowLowerBound);
+        numPixels -= numPixelsDiscard;
+        numPixelsBelowLowerBound -= numPixelsDiscard;
+        numPexelsBelowUpperBound -= numPixelsDiscard;
+
+        numPixels = min(numPixels, numPexelsBelowUpperBound);
+        numPexelsBelowUpperBound -= numPixels;
+
+        // log2(RelativeLuminance) at this bin
+        float logLuminance = (float(i) / float(AUTO_EXPOSURE_HISTOGRAM_BIN_COUNT - 1)) * logLuminanceRange + minLogLuminance;
+
+        logLuminanceSum += logLuminance * numPixels;
+        weightSum += numPixels;
+    }
+
+    float averageLogLuminance = logLuminanceSum / max(0.0001f, weightSum);
+
+    return exp2(averageLogLuminance);
+}
+
+float InterpolateExposure(float srcExposure, float dstExposure, float deltaTimeInSeconds, float speedDarkToBright, float speedBrightToDark)
+{
+    float delta = dstExposure - srcExposure;
+    float speed = (delta > 0.0) ? speedBrightToDark : speedDarkToBright;
+    float exposure = srcExposure + delta * (1.0 - exp2(-deltaTimeInSeconds * speed)); // Exponential decay
+    return exposure;
+}
+
+[numthreads(1, 1, 1)]
+void AutoExposureComputeExposureCS(uint3 DispatchThreadID : SV_DispatchThreadID)
+{
+    PerFrameData perFrameData = GetPerFrameData();
+
+    float deltaTime = perFrameData.deltaTime;
+    float exposureCompensation = perFrameData.autoExposureExposureCompensation;
+    float minExposureValue = perFrameData.autoExposureMinExposureValue;
+    float maxExposureValue = perFrameData.autoExposureMaxExposureValue;
+    float histogramLowPercent = perFrameData.autoExposureHistogramLowerPercentage;
+    float histogramHighPercent = perFrameData.autoExposureHistogramHigherPercentage;
+    float speedDarkToBright = perFrameData.autoExposureSpeedDarkToBright;
+    float speedBrightToDark = perFrameData.autoExposureSpeedBrightToDark;
+    float histogramMinEV100 = perFrameData.autoExposureHistogramMinEV100;
+    float histogramMaxEV100 = perFrameData.autoExposureHistogramMaxEV100;
+    bool useTargetExposure = perFrameData.autoExposureUseTargetExposure > 0;
+
+    float minExposure = (EV100ToLuminance(minExposureValue) / MiddleGray);
+    float maxExposure = (EV100ToLuminance(maxExposureValue) / MiddleGray);
+    exposureCompensation = pow(2, exposureCompensation);
+
+    Texture2D<uint> histogramTexture = GetAutoExposureHistogramTextureSRV();
+    ByteAddressBuffer previousAutoExposureBuffer = GetPreviousAutoExposureBufferSRV();
+    RWByteAddressBuffer currentAutoExposureBuffer = GetCurrentAutoExposureBufferUAV();
+
+    float averageSceneLuminance = ComputeAverageSceneLuminance(histogramTexture, histogramLowPercent, histogramHighPercent, histogramMinEV100, histogramMaxEV100);
+
+    float targetExposure = averageSceneLuminance / MiddleGray;
+    targetExposure = clamp(targetExposure, minExposure, maxExposure);
+
+    float adaptedExposure = targetExposure;
+    if (!useTargetExposure)
+    {
+        float sourceExposure = previousAutoExposureBuffer.Load<float>(0);
+        sourceExposure = exposureCompensation / (sourceExposure != 0 ? sourceExposure : 1.0f);
+        adaptedExposure = InterpolateExposure(sourceExposure, targetExposure, deltaTime, speedDarkToBright, speedBrightToDark);
+        adaptedExposure = clamp(adaptedExposure, minExposure, maxExposure);
+    }
+
+    currentAutoExposureBuffer.Store<float4>(0, float4(exposureCompensation / max(0.0001f, adaptedExposure), exposureCompensation *  max(0.0001f, targetExposure), exposureCompensation, averageSceneLuminance));
+}

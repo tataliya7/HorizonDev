@@ -1,0 +1,82 @@
+#include "../ShaderCommon.hsh"
+#include "RealTimeRendererCommon.hsh"
+
+BIND_BUFFER_ELEMENT(0, PerFrameData, PerFrameData);
+BIND_TEXTURE_2D_SRV(1, SceneColorTexture);
+BIND_TEXTURE_2D_SRV(2, SceneDepthTexture);
+BIND_TEXTURE_2D_UAV(3, float3, OutputTexture);
+
+struct LightShaftsDownsapmpleShaderArguments
+{
+   float2 AspectRatioAndInvAspectRatio;
+   float2 TextureSpaceBlurOrigin;
+   float4 BloomTintAndThreshold;
+   float2 LightShaftParameters;
+};
+
+[numthreads(8, 8, 1)]
+void LightShaftsDownsampleCS(uint3 DispatchThreadID : SV_DispatchThreadID)
+{
+    PerFrameData perFrameData = GetPerFrameData();
+    Texture2D sceneColorTexture = GetSceneColorTextureSRV();
+    Texture2D sceneDepthTexture = GetSceneDepthTextureSRV();
+    RWTexture2D<float3> outputTexture = GetOutputTextureUAV();
+
+    LightShaftsDownsapmpleShaderArguments parameters = (LightShaftsDownsapmpleShaderArguments)0;
+    parameters.aspectRatio = SHADER_ARGUMENTS_DATA(2);
+    parameters.TextureSpaceBlurOrigin;
+    parameters.BloomTintAndThreshold;
+    parameters.LightShaftParameters;
+
+    uint outputTextureWidth, outputTextureHeight;
+    outputTexture.GetDimensions(outputTextureWidth, outputTextureHeight);
+    if (DispatchThreadID.x >= outputTextureWidth || DispatchThreadID.y >= outputTextureHeight)
+    {
+        return;
+    }
+
+    uint2 pixelCoord = DispatchThreadID.xy;
+    float2 uv = (pixelCoord.xy + 0.5f) * float2(1.0f / outputTextureWidth, 1.0f / outputTextureHeight);
+
+    float3 sceneColor = sceneColorTexture.SampleLevel(GlobalSamplerLinearClamp, uv, 0).rgb;
+    float sceneDepth = sceneDepthTexture.SampleLevel(GlobalSamplerPointClamp, uv, 0).r;
+
+    sceneDepth = LinearDepthNearFar(sceneDepth, perFrameData.nearClippingPlane, perFrameData.farClippingPlane);
+
+    float2 TextureSpaceBlurOrigin;
+    TextureSpaceBlurOrigin.x = SHADER_ARGUMENTS_DATA(2);
+    TextureSpaceBlurOrigin.y = SHADER_ARGUMENTS_DATA(3);
+
+    float2 aspectRatioAndInvAspectRatio;
+    aspectRatioAndInvAspectRatio.x = SHADER_ARGUMENTS_DATA(4);
+    aspectRatioAndInvAspectRatio.y = SHADER_ARGUMENTS_DATA(5);
+
+    float BloomMaxBrightness = 4;
+    float4 BloomTintAndThreshold = float4(1.0, 0.7991, 0, 0);
+    float4 LightShaftParameters = float4(80, 1, 1, 0.05);
+
+    float2 NormalizedCoordinates = uv;
+    // Setup a mask that is 1 at the edges of the screen and 0 at the center
+    float EdgeMask = 1.0f - NormalizedCoordinates.x * (1.0f - NormalizedCoordinates.x) * NormalizedCoordinates.y * (1.0f - NormalizedCoordinates.y) * 8.0f;
+    EdgeMask = EdgeMask * EdgeMask * EdgeMask * EdgeMask;
+
+    // Only bloom colors according if post exposure brightness is over BloomThreshold,
+    // and if brightness is greater than BloomMaxBrightness, scale it down to BloomMaxBrightness to avoid saturated artefacts.
+    float luminance = max(RelativeLuminance(sceneColor * perFrameData.oneOverPreExposure), 6.10352e-5);
+    float adjustedLuminance = clamp(luminance - BloomTintAndThreshold.a, 0.0f, BloomMaxBrightness);
+    float3 BloomColor = LightShaftParameters.y * sceneColor / luminance * adjustedLuminance * 2.0f;
+
+    float InvOcclusionDepthRange = 1.0 / LightShaftParameters.x;
+
+    // Only allow bloom from pixels whose depth are in the far half of OcclusionDepthRange
+    float BloomDistanceMask = saturate(sceneDepth * InvOcclusionDepthRange - 0.5);
+
+    // Setup a mask that is 0 at TextureSpaceBlurOrigin and increases to 1 over distance
+    //float BlurOriginDistanceMask = 1.0f - saturate(length(TextureSpaceBlurOrigin.xy - uv * float2(1.0, aspectRatioAndInvAspectRatio.x)) * 2.0f);
+    float BlurOriginDistanceMask = 1.0f - saturate(length(TextureSpaceBlurOrigin.xy - uv) * 2.0f);
+
+    // Calculate bloom color with masks applied
+    float3 result = BloomColor * BloomTintAndThreshold.rgb * BloomDistanceMask * BlurOriginDistanceMask * BlurOriginDistanceMask;
+
+    outputTexture[pixelCoord] = result;
+}

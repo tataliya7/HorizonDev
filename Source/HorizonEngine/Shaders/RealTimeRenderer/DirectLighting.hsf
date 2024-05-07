@@ -1,0 +1,420 @@
+#include "../ShaderCommon.hsh"
+#include "../BRDFCommon.hsh"
+#include "../../PrincipledBSDF.hsh"
+#include "RealTimeRendererCommon.hsh"
+#include "LightingCommon.hsh"
+#include "ShadowMapCommon.hsh"
+#include "SkyAtmosphereCommon.hsh"
+
+BIND_BUFFER_ELEMENT(0, PerFrameData, PerFrameData);
+BIND_BYTE_ADDRESS_BUFFER_SRV(11, GeometryBuffer);
+BIND_BYTE_ADDRESS_BUFFER_SRV(12, MaterialBuffer);
+BIND_BYTE_ADDRESS_BUFFER_SRV(13, LightBuffer);
+BIND_BYTE_ADDRESS_BUFFER_SRV(14, CubeShadowMapBuffer);
+BIND_TEXTURE_2D_SRV(1, SceneDepthTexture);
+BIND_TEXTURE_2D_TYPED_SRV(2, uint2, VBuffer0);
+BIND_TEXTURE_2D_SRV(3, VBuffer1);
+BIND_TEXTURE_2D_SRV(4, GBuffer0);
+BIND_TEXTURE_2D_SRV(5, GBuffer1);
+BIND_TEXTURE_2D_SRV(10, GBuffer2);
+BIND_TEXTURE_2D_SRV(8, ScreenSpaceShadowMaskTexture);
+BIND_TEXTURE_2D_ARRAY_TYPED_SRV(9, float, LocalLightShadowMapAtlas);
+BIND_TEXTURE_2D_SRV(15, SkyAtmosphereTransmittanceLUT);
+
+// SHADER_ARGUMENTS(ShaderArguments)
+// {
+//    uint32 numLights;
+// };
+
+// float3 Diffuse_Burley( float3 DiffuseColor, float Roughness, float NoV, float NoL, float VoH )
+// {
+//     float FD90 = 0.5 + 2 * VoH * VoH * Roughness;
+//     float FdV = 1 + (FD90 - 1) * Pow5( 1 - NoV );
+//     float FdL = 1 + (FD90 - 1) * Pow5( 1 - NoL );
+//     return DiffuseColor * ( (1 / PI) * FdV * FdL );
+// }
+
+// half3 DualSpecularGGX(half AverageRoughness, half Lobe0Roughness, half Lobe1Roughness, half LobeMix, half3 SpecularColor, BxDFContext Context, half NoL, FAreaLight AreaLight)
+// {
+//     float AverageAlpha2 = Pow4(AverageRoughness);
+//     float Lobe0Alpha2 = Pow4(Lobe0Roughness);
+//     float Lobe1Alpha2 = Pow4(Lobe1Roughness);
+
+//     float Lobe0Energy = EnergyNormalization(Lobe0Alpha2, Context.VoH, AreaLight);
+//     float Lobe1Energy = EnergyNormalization(Lobe1Alpha2, Context.VoH, AreaLight);
+
+//     // Generalized microfacet specular
+//     float D = lerp(D_GGX(Lobe0Alpha2, Context.NoH) * Lobe0Energy, D_GGX(Lobe1Alpha2, Context.NoH) * Lobe1Energy, LobeMix);
+//     float Vis = Vis_SmithJointApprox(AverageAlpha2, Context.NoV, NoL); // Average visibility well approximates using two separate ones (one per lobe).
+//     float3 F = F_Schlick(SpecularColor, Context.VoH);
+
+//     return (D * Vis) * F;
+// }
+
+// {
+//    const uint ProfileId = ExtractSubsurfaceProfileInt(GBuffer);
+//     FTransmissionProfileParams TransmissionParams = GetTransmissionProfileParams(ProfileId);
+
+//     float Thickness = Shadow.TransmissionThickness;
+//     Thickness = DecodeThickness(Thickness);
+//     Thickness *= SSSS_MAX_TRANSMISSION_PROFILE_DISTANCE;
+//     float3 Profile = GetTransmissionProfile(ProfileId, Thickness).rgb;
+
+//     float3 RefracV = refract(V, -N, TransmissionParams.OneOverIOR);
+//     float PhaseFunction = ApproximateHG( dot(-L, RefracV), TransmissionParams.ScatteringDistribution );
+//     Lighting.Transmission = Profile * (Falloff * PhaseFunction); // TODO: This probably should also include cosine term (NoL)
+// }
+
+// Per pixel atmosphere transmittance
+// See explanation in "Physically Based Sky, Atmosphere and Cloud Rendering in Frostbite" page 26
+float3 ComputeAtmosphereTransmittance(float3 worldPosition, float3 lightDirection, float skyAtmosphereBottomRadiusInKilometers, float skyAtmosphereTopRadiusInKilometers)
+{
+    Texture2D skyAtmosphereTransmittanceLUTTexture = GetSkyAtmosphereTransmittanceLUTSRV();
+    float3 planetCenterToPixel = (worldPosition * M_TO_KM) + float3(0.0f, 0.0f, skyAtmosphereBottomRadiusInKilometers);
+    float3 atmosphereTransmittance = GetAtmosphereTransmittance(
+        skyAtmosphereTransmittanceLUTTexture,
+        GlobalSamplerLinearClamp,
+        planetCenterToPixel,
+        lightDirection,
+        skyAtmosphereBottomRadiusInKilometers,
+        skyAtmosphereTopRadiusInKilometers);
+    return atmosphereTransmittance;
+}
+
+float3 WorldSpaceDirectionToCubemapUvAndFaceIndex(float3 d)
+{
+    float faceIndex = 0;
+    float3 absd = abs(d);
+    float3 uvw = 0;
+    if (absd.x > absd.y && absd.x > absd.z) // x major
+    {
+        float posx = step(d.x, 0.0);
+        uvw = float3(d.yz, absd.x) * float3(lerp(-1.0, 1.0, posx), -1, 1);
+        faceIndex = 0.0 + posx;
+    }
+    else if (absd.y > absd.z) // y major
+    {
+        float posy = step(d.y, 0.0);
+        uvw = float3(d.xz, absd.y) * float3(lerp(1.0, -1.0, posy), -1, 1);
+        faceIndex = 2.0 + posy;
+    }
+    else // z major
+    {
+        float posz = step(d.z, 0.0);
+        uvw = float3(d.xy, absd.z) * float3(1, lerp(1.0, -1.0, posz), 1);
+        faceIndex = 4.0 + posz;
+    }
+    float2 uv = (uvw.xy / uvw.z + 1) * 0.5;
+    return float3(uv, faceIndex);
+}
+
+float3 ComputeDirectLightingContribution(PerFrameData perFrameData, Surface surface)
+{
+    uint lightCount = (uint)SHADER_ARGUMENTS_DATA(0);
+    ByteAddressBuffer lightBuffer = GetLightBufferSRV();
+
+    float3 result = 0.0;
+    for (uint i = 0; i < lightCount; i++)
+    {
+        LightData light = lightBuffer.Load<LightData>(i * sizeof(LightData));
+
+        float3 lightColor = light.color;
+        float visibility = 1.0;
+        if (light.type == LIGHT_TYPE_DIRECTIONAL)
+        {
+            Texture2D shadowMaskTexture = GetScreenSpaceShadowMaskTextureSRV();
+            visibility = shadowMaskTexture.SampleLevel(GlobalSamplerLinearClamp, surface.uv, 0).r;
+
+            float3 L = normalize(-light.forwardVec);
+            float3 N = normalize(surface.N);
+            float3 V = normalize(surface.V);
+            float3 H = normalize(L + V);
+
+            float metallic = surface.metallic;
+            float roughness = surface.roughness;
+            float4 baseColor = surface.baseColor;
+            float alpha = roughness * roughness;
+            float alpha2 = alpha * alpha;
+
+            float dielectricSpecular = 0.16 * surface.specular * surface.specular;
+            float3 F0 = lerp(dielectricSpecular, baseColor.rgb, metallic);
+
+            // TODO: Setup atmosphereTransmittanceFactor
+            float atmosphereTransmittanceFactor = 1.0f;
+            float3 atmosphereTransmittance = atmosphereTransmittanceFactor * ComputeAtmosphereTransmittance(
+                surface.P,
+                L,
+                perFrameData.skyAtmosphereBottomRadiusInKilometers,
+                perFrameData.skyAtmosphereTopRadiusInKilometers);
+
+            float NdotV = max(0.0, dot(N, V));
+            float NdotL = max(0.0, dot(N, L));
+            float NdotH = max(0.0, dot(N, H));
+            float VdotH = max(0.0, dot(V, H));
+
+            //if (NdotL > 0.0)
+            {
+                // float3 F = FresnelSchlick(F0, VdotH);
+                // float D = D_GGX(NdotH, roughness);
+                // //float G = Vis_SmithJointApprox(alpha2, NdotV, NdotL);
+                // float G = SchlickGGX(NdotL, NdotV, roughness);
+
+                // float3 Kd = (1.0 - F) * (1.0 - metallic);
+                // float3 diffuse = Kd * baseColor.rgb / PI;
+                // //float3 diffuse = Kd * baseColor.rgb / PI;
+                // float3 specular = (F * D * G) / (4.0 * max(0.001, NdotL * NdotV));
+                // lightColor = lightColor * lightIntensity;
+
+                result += visibility * lightColor * atmosphereTransmittance * NdotL * PrincipledBSDF(
+                    L, V, N,
+                    baseColor,
+                    metallic,
+                    roughness,
+                    /*subsurface =*/0,
+                    /*specular =*/0.5,
+                    /*specular =*/0,
+                    /*specularTint =*/0,
+                    0,
+                    0.5,
+                    0,
+                    1);
+            }
+
+            // result += lightColor * NdotV * PrincipledBSDF(
+            //         V, V, N,
+            //         baseColor,
+            //         metallic,
+            //         roughness,
+            //         /*subsurface =*/0,
+            //         /*specular =*/0.5,
+            //         /*specular =*/0,
+            //         /*specularTint =*/0,
+            //         0,
+            //         0.5,
+            //         0,
+            //         1);
+        }
+        else if (light.type == LIGHT_TYPE_POINT)
+        {
+            float3 L = normalize(light.position - surface.P);
+
+            if (light.shadowMapIndex >= 0)
+            {
+                int cubeShadowMapIndex = light.shadowMapIndex;
+
+                ByteAddressBuffer cubeShadowMapBuffer = GetCubeShadowMapBufferSRV();
+                CubeShadowMapShaderParameters cubeShadowMapParameters = cubeShadowMapBuffer.Load<CubeShadowMapShaderParameters>(cubeShadowMapIndex * sizeof(CubeShadowMapShaderParameters));
+
+                Texture2DArray<float> localLightShadowMapAtlas = GetLocalLightShadowMapAtlasSRV();
+                float3 uvw = WorldSpaceDirectionToCubemapUvAndFaceIndex(-L);
+                int faceIndex = (int)uvw.z;
+                float4 shadowMapCoord = mul(cubeShadowMapParameters.viewProjectionMatrix[faceIndex], float4(surface.P, 1.0));
+                shadowMapCoord /= shadowMapCoord.w;
+                shadowMapCoord.x = (1.0 + shadowMapCoord.x) * 0.5;
+                shadowMapCoord.y = (1.0 - shadowMapCoord.y) * 0.5;
+
+                float shadowMapDepthBias = 0.005;
+                if (shadowMapCoord.x > 0.0 && shadowMapCoord.x < 1.0 &&
+                    shadowMapCoord.y > 0.0 && shadowMapCoord.y < 1.0 &&
+                    shadowMapCoord.z > 0.0 && shadowMapCoord.z < 1.0)
+                {
+                    float biasedDepth = shadowMapCoord.z + shadowMapDepthBias;
+                    float2 uv = uvw.xy;
+                    float cubeShadowMapSize = 256.0;
+                    // Pull uv to the center to avoid sampling on the border
+                    {
+                        const float borderSize = 1.5;
+                        uv *= cubeShadowMapSize - borderSize * 2;
+                        uv += borderSize;
+                    }
+                    uv.x += faceIndex * cubeShadowMapSize;
+                    uv.y += cubeShadowMapIndex * cubeShadowMapSize;
+                    uv.x /= 4096.0f;
+                    uv.y /= 4096.0f;
+
+                    float3 texCoord = float3(uv, 0);
+
+                    float shadowMapDepth = 0;
+                    shadowMapDepth += localLightShadowMapAtlas.SampleCmpLevelZero(GlobalSamplerComparisonLessLinearClamp, texCoord, biasedDepth, int2( 0,  0)).r;
+                    shadowMapDepth += localLightShadowMapAtlas.SampleCmpLevelZero(GlobalSamplerComparisonLessLinearClamp, texCoord, biasedDepth, int2(-1, -1)).r;
+                    shadowMapDepth += localLightShadowMapAtlas.SampleCmpLevelZero(GlobalSamplerComparisonLessLinearClamp, texCoord, biasedDepth, int2(-1,  0)).r;
+                    shadowMapDepth += localLightShadowMapAtlas.SampleCmpLevelZero(GlobalSamplerComparisonLessLinearClamp, texCoord, biasedDepth, int2(-1,  1)).r;
+                    shadowMapDepth += localLightShadowMapAtlas.SampleCmpLevelZero(GlobalSamplerComparisonLessLinearClamp, texCoord, biasedDepth, int2( 0, -1)).r;
+                    shadowMapDepth += localLightShadowMapAtlas.SampleCmpLevelZero(GlobalSamplerComparisonLessLinearClamp, texCoord, biasedDepth, int2( 0,  1)).r;
+                    shadowMapDepth += localLightShadowMapAtlas.SampleCmpLevelZero(GlobalSamplerComparisonLessLinearClamp, texCoord, biasedDepth, int2( 1, -1)).r;
+                    shadowMapDepth += localLightShadowMapAtlas.SampleCmpLevelZero(GlobalSamplerComparisonLessLinearClamp, texCoord, biasedDepth, int2( 1,  0)).r;
+                    shadowMapDepth += localLightShadowMapAtlas.SampleCmpLevelZero(GlobalSamplerComparisonLessLinearClamp, texCoord, biasedDepth, int2( 1,  1)).r;
+                    shadowMapDepth = shadowMapDepth / 9;
+
+                    if (shadowMapDepth > biasedDepth)
+                    {
+                        visibility = 0.0;
+                    }
+                }
+            }
+
+            float distanceSqaure = dot(light.position - surface.P, light.position - surface.P);
+
+            // Inverse squared falloff (1 is added here to avoid infinite intensity)
+            float attenuation =  1.0 / (distanceSqaure + 1.0);
+
+            // Ensure that the light intensity is 0 at a distance of the light's radius and the transition is smooth
+            float smoothFactor = Square(saturate(1.0 - Square(distanceSqaure / max(0.0001, (light.radius * light.radius)))));
+            attenuation *= smoothFactor;
+
+            if (attenuation > 0)
+            {
+                float3 N = normalize(surface.N);
+                float3 V = normalize(surface.V);
+                float3 H = normalize(L + V);
+
+                float NdotV = saturate(dot(N, V));
+                float NdotL = saturate(dot(N, L));
+                float NdotH = saturate(dot(N, H));
+                float VdotH = saturate(dot(V, H));
+
+                if (NdotL > 0.0)
+                {
+                    float metallic = surface.metallic;
+                    float roughness = surface.roughness;
+                    float4 baseColor = surface.baseColor;
+                    float alpha = roughness * roughness;
+                    float alpha2 = alpha * alpha;
+
+                    float dielectricSpecular = 0.16 * surface.specular * surface.specular;
+                    float3 F0 = lerp(dielectricSpecular, baseColor.rgb, metallic);
+
+                    float3 F = FresnelSchlick(F0, VdotH);
+                    float D = D_GGX(NdotH, roughness);
+                    //float G = Vis_SmithJointApprox(alpha2, NdotV, NdotL);
+                    float G = SchlickGGX(NdotL, NdotV, roughness);
+
+                    float3 Kd = (1.0 - F) * (1.0 - metallic);
+                    float3 diffuse = Kd * baseColor.rgb / PI * surface.ambientOcclusion;
+                    float3 specular = (F * D * G) / (4.0 * max(0.001, NdotL * NdotV));
+                    lightColor = lightColor * attenuation;
+
+                    //result += (diffuse + specular) * lightColor * NdotL * visibility;
+
+                    result += visibility * lightColor * NdotL * PrincipledBSDF(
+                        L, V, N,
+                        baseColor,
+                        metallic,
+                        roughness,
+                        /*subsurface =*/0,
+                        /*specular =*/0.5,
+                        /*specularTint =*/0,
+                        /*anisotropic =*/0,
+                        0,
+                        0.5,
+                        0,
+                        1);
+                }
+            }
+        }
+        else if (light.type == LIGHT_TYPE_SPOT)
+        {
+
+        }
+    }
+    return result;
+}
+
+float3 F_Schlick(float3 f0, float f90, float VoH)
+{
+    // Schlick 1994, "An Inexpensive BRDF Model for Physically-Based Rendering"
+    return f0 + (f90 - f0) * pow5(1.0 - VoH);
+}
+
+void DirectLightingVS(uint vertexID : SV_VertexID, out float4 outPosition : SV_Position)
+{
+    outPosition = float4(float2((vertexID << 1) & 2, vertexID & 2) * 2.0f - 1.0f, 0.0f, 1.0f);
+}
+
+void DirectLightingPS(float4 svPosition : SV_Position, out float4 outSceneColor : SV_Target0)
+{
+    PerFrameData perFrameData = GetPerFrameData();
+    Texture2D<uint2> vbuffer0 = GetVBuffer0SRV();
+    Texture2D vbuffer1 = GetVBuffer1SRV();
+    Texture2D gbuffer0 = GetGBuffer0SRV();
+    Texture2D gbuffer1 = GetGBuffer1SRV();
+    Texture2D gbuffer2 = GetGBuffer2SRV();
+    Texture2D sceneDepthTexture = GetSceneDepthTextureSRV();
+
+    const uint2 pixelCoord = uint2(svPosition.xy);
+    const float2 uv = (float2(pixelCoord) + 0.5f) / float2(perFrameData.renderResolutionX, perFrameData.renderResolutionY);
+
+    float4 gbuffer0Data = gbuffer0[pixelCoord];
+    float4 gbuffer1Data =  gbuffer1[pixelCoord];
+    float4 gbuffer2Data =  gbuffer2[pixelCoord];
+    uint2 visibilityID = vbuffer0[pixelCoord].rg;
+    float3 barycentrics = vbuffer1[pixelCoord].rgb;
+    float sceneDepth = sceneDepthTexture[pixelCoord].r;
+
+    uint geometryID = visibilityID.r;
+    uint primitiveID = visibilityID.g;
+
+    if (visibilityID.x == INVALID_VISIBILIY_ID)
+    {
+        return;
+    }
+
+    ByteAddressBuffer geometryBuffer = GetGeometryBufferSRV();
+    Geometry geometry = geometryBuffer.Load<Geometry>(geometryID * sizeof(Geometry));
+
+    ByteAddressBuffer materialIndexBuffer = GetByteAddressBuffer(geometry.materialIndexBuffer);
+    uint materialIndex = materialIndexBuffer.Load<uint>(primitiveID * sizeof(uint));
+
+    ByteAddressBuffer materialBuffer = GetMaterialBufferSRV();
+    Material material = materialBuffer.Load<Material>(geometry.materialBufferOffset + (materialIndex * sizeof(Material)));
+
+    float3 position = ReconstructWorldSpacePositionFromDepth(uv, sceneDepth, perFrameData.invViewProjectionMatrix);
+    float3 normal = DecodeNormalFromGBuffer(gbuffer0Data.xyz);
+    float metallic = gbuffer1Data.x;
+    float specular = gbuffer1Data.y;
+    float roughness = gbuffer1Data.z;
+    float4 baseColor = gbuffer2Data;
+    float3 emission = 0;
+    float ambientOcclusion = 1.0;
+
+    Surface surface;
+    surface.uv = uv;
+    surface.P = position;
+    surface.N = normal;
+    surface.V = normalize(perFrameData.cameraPosition - position);
+    surface.R = normalize(reflect(-surface.V, surface.N));
+    surface.baseColor = baseColor;
+    surface.subsurface = 0.0;
+    surface.metallic = saturate(metallic);
+    surface.specular = saturate(specular);
+    surface.specularTint = 0.0;
+    surface.roughness = saturate(roughness);
+    surface.anisotropic = 0.0;
+    surface.sheen = 0.0;
+    surface.sheenTint = 0.5;
+    surface.clearcoat = 0.0;
+    surface.clearcoatGloss = 1.0;
+    surface.emission = 0;
+    surface.emissionStrength = 1.0;
+    surface.ambientOcclusion = ambientOcclusion;
+    surface.specularOcclusion = 1.0;
+
+    // surface.metallic = 1.0;
+    // surface.roughness = 0.045;
+    // surface.baseColor = 1;
+
+    float NdotV = dot(surface.N, surface.V);
+
+    float dielectricSpecular = 0.08 * specular;
+    float3 F0 = lerp(dielectricSpecular, baseColor.rgb, metallic);
+    float F90 = saturate(50.0 * dot(F0, 0.33));
+    float3 F = F_Schlick(F0, F90, NdotV);
+
+    float3 finalColor = 0.0;
+
+    finalColor += surface.emission * surface.emissionStrength;
+
+    finalColor += ComputeDirectLightingContribution(perFrameData, surface) * perFrameData.preExposure;
+
+    outSceneColor = float4(finalColor, 1.0);
+}

@@ -1,0 +1,20 @@
+#define AUTO_EXPOSURE_HISTOGRAM_BIN_COUNT 256
+
+#ifndef AUTO_EXPOSURE_HISTOGRAM_BIN_COUNT
+    #error "AUTO_EXPOSURE_HISTOGRAM_BIN_COUNT is undefined"
+#endif
+
+#define AUTO_EXPOSURE_BUILD_HISTOGRAM_CS_NUM_THREADS_X 16
+#define AUTO_EXPOSURE_BUILD_HISTOGRAM_CS_NUM_THREADS_Y 16
+
+// Since InterlockedAdd only supports int/uint, we need to convert float to uint.
+
+uint AutoExposureHistogramPackFloat(float v)
+{
+    return uint(v * float(1 << 8));
+}
+
+float AutoExposureHistogramUnpackFloat(uint v)
+{
+    return float(v) * (1.0f / float(1 << 8));
+}

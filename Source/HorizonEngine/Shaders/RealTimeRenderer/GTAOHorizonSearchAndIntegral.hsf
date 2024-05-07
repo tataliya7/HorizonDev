@@ -1,0 +1,347 @@
+#include "../ShaderCommon.hsh"
+#include "../Random.hsh"
+#include "RealTimeRendererCommon.hsh"
+
+BIND_BUFFER_ELEMENT(0, PerFrameData, PerFrameData);
+BIND_TEXTURE_2D_SRV(1, SceneDepthTexture);
+BIND_TEXTURE_2D_SRV(2, GBuffer0);
+BIND_TEXTURE_2D_UAV(3, float4, GTAOHorizonSearchAndIntegralTexture);
+BIND_TEXTURE_2D_UAV(4, float4, GATODebugTexture);
+
+/*
+ * Based on Practical Real-time Strategies for Accurate Indirect Occlusion
+ * http://blog.selfshadow.com/publications/s2016-shading-course/activision/s2016_pbs_activision_occlusion.pdf
+ * http://blog.selfshadow.com/publications/s2016-shading-course/activision/s2016_pbs_activision_occlusion.pptx
+ */
+
+#define GTAO_PI         3.14159265358979323846
+#define GTAO_HALF_PI    1.57079632679489661923
+
+static const uint GTAONumSlices = 2;
+static const uint GTAOHorizonSearchNumSteps = 8;
+// static const uint GTAOHorizonSearchNumSteps = 12;
+// static const uint GTAOHorizonSearchNumSteps = 16;
+// static const uint GTAOHorizonSearchNumSteps = 20;
+
+float GTAOFastSqrt(float x)
+{
+    // [Drobot2014a] Low Level Optimization for GCN
+    return asfloat(0x1FBD1DF5 + (asint(x) >> 1));
+}
+
+float GTAOFastAcos(float x)
+{
+    // [Eberly2014] GPGPU Programming for Games and Science
+    float result = -0.156583 * abs(x) + (GTAO_PI * 0.5);
+    result *= sqrt(1.0 - abs(x));
+    return (x >= 0) ? result : GTAO_PI - result;
+}
+
+float GTAOMultiBounce(float visibility, float3 albedo)
+{
+    /* Median luminance. Because colored multibounce looks bad. */
+    float luminance = dot(albedo, 0.3333);
+
+    float a =  2.0404 * luminance - 0.3324;
+    float b = -4.7951 * luminance + 0.6417;
+    float c =  2.7552 * luminance + 0.6903;
+
+    float x = visibility;
+    return max(visibility, ((visibility * a + b) * visibility + c) * visibility);
+}
+
+float2 GTAONoise(uint spatialIndex, uint temporalIndex)
+{
+    uint randSeed = RandInit(spatialIndex, temporalIndex);
+    return float2(Rand(randSeed), Rand(randSeed));
+}
+
+float2 GTAORandomVector(float jitter)
+{
+    /* Only a quarter of a turn because we integrate using 2 slices. */
+    jitter *= GTAO_HALF_PI;
+    return float2(cos(jitter), sin(jitter));
+}
+
+float2 GTAOSearchForHorizons(
+    PerFrameData perFrameData,
+    Texture2D sceneDepthTexutre,
+    uint numSteps,
+    float2 baseUV,
+    float2 searchDirection,
+    float searchRadius,
+    float stepNoise,
+    float initialOffset,
+    float3 viewSpacePosition,
+    float3 nomalizedViewVector,
+    float thickness,
+    float radius,
+    uint2 pixelCoord)
+{
+    float3 depthVector;
+    float depthVectorLengthSquare;
+    float depthVectorLengthInv;
+    float2 offset;
+    float4 sampleUV;
+    float depth;
+    float cosAngle;
+    float fallOff;
+    float2 horizons = float2(-1.0, -1.0);
+    float attenuation = 1.0 / (radius * radius);
+
+#if 1
+    RWTexture2D<float4> debugOutputTexture = GetGATODebugTextureUAV();
+    uint2 coord1 = pixelCoord;
+    uint2 coord2 = pixelCoord;
+#endif
+
+    [unroll]
+    for (uint step = 0; step < numSteps; step++)
+    {
+        offset = searchDirection * (initialOffset + ((step + stepNoise) / numSteps) * searchRadius);
+
+        sampleUV = float4(baseUV + offset, baseUV - offset);
+
+#if 1
+        if (pixelCoord.x == 800 && pixelCoord.y == 500)
+        {
+            uint2 coord = uint2(sampleUV.x * perFrameData.renderResolutionX, sampleUV.y * perFrameData.renderResolutionY);
+            debugOutputTexture[coord + uint2(0, -1)] = float4(1, 0, 0, 1);
+            debugOutputTexture[coord + uint2(0, 0)] = float4(1, 0, 0, 1);
+            debugOutputTexture[coord + uint2(0, 1)] = float4(1, 0, 0, 1);
+            debugOutputTexture[coord + uint2(1, -1)] = float4(1, 0, 0, 1);
+            debugOutputTexture[coord + uint2(1, 0)] = float4(1, 0, 0, 1);
+            debugOutputTexture[coord + uint2(1, 1)] = float4(1, 0, 0, 1);
+            debugOutputTexture[coord + uint2(-1, -1)] = float4(1, 0, 0, 1);
+            debugOutputTexture[coord + uint2(-1, 0)] = float4(1, 0, 0, 1);
+            debugOutputTexture[coord + uint2(-1, 1)] = float4(1, 0, 0, 1);
+            coord = uint2(sampleUV.z * perFrameData.renderResolutionX, sampleUV.w * perFrameData.renderResolutionY);
+            debugOutputTexture[coord + uint2(0, -1)] = float4(1, 0, 0, 1);
+            debugOutputTexture[coord + uint2(0, 0)] = float4(1, 0, 0, 1);
+            debugOutputTexture[coord + uint2(0, 1)] = float4(1, 0, 0, 1);
+            debugOutputTexture[coord + uint2(1, -1)] = float4(1, 0, 0, 1);
+            debugOutputTexture[coord + uint2(1, 0)] = float4(1, 0, 0, 1);
+            debugOutputTexture[coord + uint2(1, 1)] = float4(1, 0, 0, 1);
+            debugOutputTexture[coord + uint2(-1, -1)] = float4(1, 0, 0, 1);
+            debugOutputTexture[coord + uint2(-1, 0)] = float4(1, 0, 0, 1);
+            debugOutputTexture[coord + uint2(-1, 1)] = float4(1, 0, 0, 1);
+        }
+#endif
+
+        // Positive Direction
+        depth = sceneDepthTexutre.SampleLevel(GlobalSamplerPointClamp, sampleUV.xy, 0).r;
+        depthVector = ReconstructViewSpacePositionFromDepth(sampleUV.xy, depth, perFrameData.invProjectionMatrix) - viewSpacePosition;
+        depthVectorLengthSquare = dot(depthVector, depthVector);
+        depthVectorLengthInv = rsqrt(depthVectorLengthSquare + 0.0001);
+        fallOff = saturate(depthVectorLengthSquare * attenuation);
+
+        //if (fallOff < 1.0)
+        {
+            cosAngle = dot(depthVector, nomalizedViewVector) * depthVectorLengthInv;
+            cosAngle = lerp(cosAngle, horizons.x, fallOff);
+            if (cosAngle > horizons.x)
+            {
+                coord1 = uint2(sampleUV.x * perFrameData.renderResolutionX, sampleUV.y * perFrameData.renderResolutionY);
+            }
+            horizons.x = (cosAngle > horizons.x) ? cosAngle : lerp(cosAngle, horizons.x, thickness); // Thickness Heuristic
+        }
+
+        // Negative Direction
+        depth = sceneDepthTexutre.SampleLevel(GlobalSamplerPointClamp, sampleUV.zw, 0).r;
+        depthVector = ReconstructViewSpacePositionFromDepth(sampleUV.zw, depth, perFrameData.invProjectionMatrix) - viewSpacePosition;
+        depthVectorLengthSquare = dot(depthVector, depthVector);
+        depthVectorLengthInv = rsqrt(depthVectorLengthSquare + 0.0001);
+        fallOff = saturate(depthVectorLengthSquare * attenuation);
+
+        //if (fallOff < 1.0)
+        {
+            cosAngle = dot(depthVector, nomalizedViewVector) * depthVectorLengthInv;
+            cosAngle = lerp(cosAngle, horizons.y, fallOff);
+            if (cosAngle > horizons.y)
+            {
+                coord2 = uint2(sampleUV.z * perFrameData.renderResolutionX, sampleUV.w * perFrameData.renderResolutionY);
+            }
+            horizons.y = (cosAngle > horizons.y) ? cosAngle : lerp(cosAngle, horizons.y, thickness); // Thickness Heuristic
+        }
+    }
+
+#if 1
+        if (pixelCoord.x == 800 && pixelCoord.y == 500)
+        {
+            float4 color = float4(0, 0, 1, 1);
+            uint2 coord = coord1;
+            debugOutputTexture[coord + uint2(0, -1)] = color;
+            debugOutputTexture[coord + uint2(0, 0)] = color;
+            debugOutputTexture[coord + uint2(0, 1)] = color;
+            debugOutputTexture[coord + uint2(1, -1)] = color;
+            debugOutputTexture[coord + uint2(1, 0)] = color;
+            debugOutputTexture[coord + uint2(1, 1)] = color;
+            debugOutputTexture[coord + uint2(-1, -1)] = color;
+            debugOutputTexture[coord + uint2(-1, 0)] = color;
+            debugOutputTexture[coord + uint2(-1, 1)] = color;
+            coord = coord2;
+            debugOutputTexture[coord + uint2(0, -1)] = color;
+            debugOutputTexture[coord + uint2(0, 0)] = color;
+            debugOutputTexture[coord + uint2(0, 1)] = color;
+            debugOutputTexture[coord + uint2(1, -1)] = color;
+            debugOutputTexture[coord + uint2(1, 0)] = color;
+            debugOutputTexture[coord + uint2(1, 1)] = color;
+            debugOutputTexture[coord + uint2(-1, -1)] = color;
+            debugOutputTexture[coord + uint2(-1, 0)] = color;
+            debugOutputTexture[coord + uint2(-1, 1)] = color;
+        }
+#endif
+
+    horizons.x = -GTAOFastAcos(clamp(horizons.x, -1.0, 1.0));
+    horizons.y =  GTAOFastAcos(clamp(horizons.y, -1.0, 1.0));
+
+    return horizons;
+}
+
+#define TEST_GTAOComputeInnerIntegral 1
+float GTAOComputeInnerIntegral(float2 horizons, float2 searchDirection, float3 viewVector, float3 viewSpaceNormal)
+{
+#if TEST_GTAOComputeInnerIntegral == 1
+    // Given the angles found in the slice plane, we need to project View Space Normal onto the defined by
+    // the search axis and the View Space View Vector
+    float3 slicePlaneNormal = normalize(cross(float3(searchDirection.xy, 0.0f), viewVector));
+    float3 tangent = cross(viewVector, slicePlaneNormal);
+    float3 projectedNormal = viewSpaceNormal - slicePlaneNormal * dot(viewSpaceNormal, slicePlaneNormal);
+    float projectedNormalLength = length(projectedNormal) + 0.000001f;
+
+    float cosN = clamp(dot(projectedNormal, viewVector) / projectedNormalLength, -1.0f, 1.0f);
+    float angleN = -sign(dot(projectedNormal, tangent)) * GTAOFastAcos(cosN);
+    float sinN = sin(angleN);
+
+    // Clamp horizons to normal hemisphere
+    horizons.x = angleN + max(horizons.x - angleN, -(GTAO_HALF_PI));
+    horizons.y = angleN + min(horizons.y - angleN,  (GTAO_HALF_PI));
+
+    // IntegrateArc(h1, h2, N)
+    float Vd = 0.25 * ((-cos((2.0 * horizons.x) - angleN) + cosN + 2.0 * horizons.x * sinN) + (-cos((2.0 * horizons.y) - angleN) + cosN + 2.0 * horizons.y * sinN));
+    Vd *= projectedNormalLength;
+
+    return Vd;
+#else
+    // Given the angles found in the slice plane, we need to project View Space Normal onto the defined by
+    // the search axis and the View Space View Vector
+    float3 slicePlaneNormal = normalize(cross(float3(searchDirection.xy, 0.0f), viewVector));
+    float3 projectedNormal = viewSpaceNormal - slicePlaneNormal * dot(viewSpaceNormal, slicePlaneNormal);
+    float projectedNormalLength = length(projectedNormal) + 0.000001f;
+
+    float3 perp = cross(viewVector, slicePlaneNormal);
+    float cosAngle = dot(projectedNormal, perp) / projectedNormalLength;
+
+    float angleN = GTAOFastAcos(cosAngle) - GTAO_HALF_PI;
+    float cosN = dot(projectedNormal, viewVector) / projectedNormalLength;
+    float sinN = sin(angleN);
+    //float sinN = cosAngle * -2.0f;
+
+    // Clamp horizons to normal hemisphere
+    horizons.x = angleN + max(horizons.x - angleN, -GTAO_HALF_PI);
+    horizons.y = angleN + min(horizons.y - angleN,  GTAO_HALF_PI);
+
+    // IntegrateArc(h1, h2, N)
+    float Vd = 0.25 * ((-cos((2.0 * horizons.x) - angleN) + cosN + 2.0 * horizons.x * sinN) +
+                        (-cos((2.0 * horizons.y) - angleN) + cosN + 2.0 * horizons.y * sinN));
+    Vd *= projectedNormalLength;
+
+    return Vd;
+#endif
+}
+
+[numthreads(8, 8, 1)]
+void GTAOHorizonSearchAndIntegralCS(uint3 DispatchThreadID : SV_DispatchThreadID, uint2 GroupThreadID : SV_GroupThreadID, uint2 GroupID : SV_GroupID)
+{
+    PerFrameData perFrameData = GetPerFrameData();
+    Texture2D sceneDepthTexture = GetSceneDepthTextureSRV();
+    Texture2D gbuffer0 = GetGBuffer0SRV();
+    RWTexture2D<float4> outputTexture = GetGTAOHorizonSearchAndIntegralTextureUAV();
+
+    uint width; uint height;
+    outputTexture.GetDimensions(width, height);
+
+    float invWidth = SHADER_ARGUMENTS_DATA(0);
+    float invHeight = SHADER_ARGUMENTS_DATA(1);
+    float seachRadius = SHADER_ARGUMENTS_DATA(2);
+    float thickness = SHADER_ARGUMENTS_DATA(3);
+    float maxDepth = SHADER_ARGUMENTS_DATA(4);
+    //float aoFactor = SHADER_ARGUMENTS_DATA(3);
+
+    uint2 pixelCoord = DispatchThreadID.xy;
+    float2 uv = (pixelCoord + 0.5f) * float2(invWidth, invHeight);
+
+    float sceneDepth = sceneDepthTexture.SampleLevel(GlobalSamplerPointClamp, uv, 0).r;
+    float linearDepth = LinearDepth01(sceneDepth, perFrameData.nearClippingPlane, perFrameData.farClippingPlane);
+    if (linearDepth > maxDepth)
+    {
+        outputTexture[pixelCoord] = 1.0f;
+        return;
+    }
+
+    float4 gbuffer0Data = gbuffer0[pixelCoord];
+    float3 worldSpaceNormal = DecodeNormalFromGBuffer(gbuffer0Data.xyz);
+
+    float3 viewSpacePosition = ReconstructViewSpacePositionFromDepth(uv, sceneDepth, perFrameData.invProjectionMatrix);
+    float3 viewSpaceNormal = normalize(mul((float3x3)perFrameData.viewMatrix, worldSpaceNormal));
+    float3 viewVector = normalize(-viewSpacePosition);
+
+    float2 depthBufferTexelSize = perFrameData.renderResolution.zw;
+
+    float2 noise = GTAONoise(pixelCoord.x + pixelCoord.y * width, perFrameData.frameIndex);
+    float2 searchDirection = GTAORandomVector(noise.x);
+
+    float stepNoise = noise.y;
+    // This is the min distance to start sampling from to avoid sampling from the center pixel (no useful data obtained from sampling center pixel)
+    float initialOffset = 1.3;
+
+    float ambientOcclusion = 0.0;
+
+    [unroll]
+    for (uint sliceIndex = 0; sliceIndex < GTAONumSlices; sliceIndex++)
+    {
+        float3 rayStartView = viewSpacePosition;
+        float3 rayEndView = viewSpacePosition + seachRadius * float3(searchDirection.xy, 0.0);
+        float3 rayStartClip = ViewSpaceToClipSpacePosition(rayStartView, perFrameData.projectionMatrix);
+        float3 rayEndClip = ViewSpaceToClipSpacePosition(rayEndView, perFrameData.projectionMatrix);
+        rayEndClip.z = rayStartClip.z;
+
+        float2 rayStartScreen = ClipSpaceToUV(rayStartClip.xy);
+        float2 rayEndScreen = ClipSpaceToUV(rayEndClip.xy);
+        float2 rayStepScreen = rayEndScreen - rayStartScreen;
+        bool is_more_vertical = abs(rayStepScreen.x) < abs(rayStepScreen.y);
+        rayStepScreen /= is_more_vertical ? abs(rayStepScreen.y) : abs(rayStepScreen.x);
+        rayStepScreen *= is_more_vertical ? depthBufferTexelSize.y : depthBufferTexelSize.x;
+        float rayLengthSquare = dot(rayEndScreen - rayStartScreen, rayEndScreen - rayStartScreen);
+        float rayStepLengthSquare = dot(rayStepScreen, rayStepScreen);
+        float stepRadius = GTAOFastSqrt(rayLengthSquare / rayStepLengthSquare);
+
+        float2 horizons = GTAOSearchForHorizons(
+            perFrameData,
+            sceneDepthTexture,
+            GTAOHorizonSearchNumSteps,
+            uv,
+            rayStepScreen,
+            stepRadius,
+            stepNoise,
+            initialOffset,
+            viewSpacePosition,
+            viewVector,
+            thickness,
+            seachRadius,
+            pixelCoord);
+
+        ambientOcclusion += GTAOComputeInnerIntegral(horizons, searchDirection, viewVector, viewSpaceNormal);
+
+        // Rotate 90 degrees
+        searchDirection = float2(-searchDirection.y, searchDirection.x);
+        stepNoise       = frac(stepNoise + 0.617f);
+    }
+
+    ambientOcclusion /= ((float)GTAONumSlices);
+
+    //AO *= 2.0/PI;
+    //ambientOcclusion = pow(saturate(ambientOcclusion), aoFactor);
+
+    outputTexture[pixelCoord] = ambientOcclusion;
+}

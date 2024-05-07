@@ -24,7 +24,7 @@ project "Tests"
 
     includedirs {
         "",
-        enginepath(""),
+        enginepath("Source"),
         thirdpartypath("entt/include"),
         thirdpartypath("dxc/dxc_2024_03_22/inc"),
         thirdpartypath("glfw/glfw-3.3.9.bin.WIN64/include"),

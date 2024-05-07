@@ -46,32 +46,6 @@ namespace HE
         }
     };
 
-    struct Job1Data
-    {
-        uint32 numJobs;
-        Data* data;
-    }; 
-
-    void Job1(void* data)
-    {
-        Job1Data* jobData = (Job1Data*)data;
-        for (uint32 i = 0; i < jobData->numJobs; i++)
-        {
-            (jobData->data)[i].Compute();
-        }
-    }
-
-    struct Job2Data
-    {
-        float ms;
-    };
-
-    void Job2(void* data)
-    {
-        float* jobData = (float*)data;
-        Spin(*jobData);
-    }
-
     TEST(JobSystemTest, Run)
     {
         OPTICK_FRAME("MainThread");
@@ -94,29 +68,45 @@ namespace HE
 
         Data* jobDataMT = new Data[numJobs];
         {
-            uint32 numGroups = 4;
-            Job1Data* job1Data = new Job1Data[numGroups];
-            JobSystemJobDecl* job1Decls = new JobSystemJobDecl[numGroups];
             {
-                Timer timer("Job System");
+                JobSystemCounterHandle counter1 = JobSystemDispatchJob("JobA", JobSystemPriority::High, [jobDataMT](const JobSystemJobContext& context) {
+                    Timer timer("JobA");
+                    for (uint32 i = 0; i < numJobs / 4; i++)
+                    {
+                        jobDataMT[i].Compute();
+                    }
+                });
+                JobSystemCounterHandle counter2 = JobSystemDispatchJob("JobB", JobSystemPriority::High, [jobDataMT](const JobSystemJobContext& context) {
+                    Timer timer("JobB");
+                    for (uint32 i = numJobs / 4; i < numJobs / 2; i++)
+                    {
+                        jobDataMT[i].Compute();
+                    }
+                });
+                JobSystemCounterHandle counter3 = JobSystemDispatchJob("JobC", JobSystemPriority::High, [jobDataMT](const JobSystemJobContext& context) {
+                    Timer timer("JobC");
+                    for (uint32 i = numJobs / 2; i < 3 * numJobs / 4; i++)
+                    {
+                        jobDataMT[i].Compute();
+                    }
+                });
+                JobSystemCounterHandle counter4 = JobSystemDispatchJob("JobD", JobSystemPriority::High, [jobDataMT](const JobSystemJobContext& context) {
+                    Timer timer("JobD");
+                    for (uint32 i = 3 * numJobs / 4; i < numJobs; i++)
+                    {
+                        jobDataMT[i].Compute();
+                    }
+                });
 
-                for (uint32 i = 0; i < numGroups; i++)
-                {
-                    job1Data[i].numJobs = numJobs / numGroups;
-                    job1Data[i].data = &jobDataMT[i * (numJobs / numGroups)];
-                    job1Decls[i] = JobSystemJobDecl(&job1Data[i], Job1);
-                }
-             
-                JobSystemCounterHandle counter = JobSystemRunJobs(job1Decls, numGroups);
-                JobSystemWaitForCounterAndFreeWithoutFiber(counter);
+                JobSystemWaitForCounterAndFreeWithoutFiber(counter1);
+                JobSystemWaitForCounterAndFreeWithoutFiber(counter2);
+                JobSystemWaitForCounterAndFreeWithoutFiber(counter3);
+                JobSystemWaitForCounterAndFreeWithoutFiber(counter4);
             }
-
-            delete[] job1Data;
-            delete[] job1Decls;
         }
 
         for (uint32 i = 0; i < numJobs; i++)
-        {
+        { 
             for (uint32 j = 0; j < 16; j++)
             {
                 assert(jobDataST[i].m[j] == jobDataMT[i].m[j]);
@@ -125,32 +115,6 @@ namespace HE
 
         delete[] jobDataST;
         delete[] jobDataMT;
-
-        uint32 numJobs2 = jobSystemWorkerThreadCount;
-        Job2Data* job2Data = new Job2Data[numJobs2];
-        JobSystemJobDecl* job2Decls = new JobSystemJobDecl[numJobs2];
-        for (uint32 i = 0; i < numJobs2; i++)
-        {
-            job2Data[i].ms = 100.0f;
-            job2Decls[i] = JobSystemJobDecl(&job2Data[i], Job2);
-        }
-
-        {
-            Timer timer("Single Thread Loop");
-            for (uint32 i = 0; i < numJobs2; i++)
-            {
-                Job2(&job2Data[i]);
-            }
-        }
-
-        {
-            Timer timer("Job System");
-            JobSystemCounterHandle counter = JobSystemRunJobs(job2Decls, numJobs2);
-            JobSystemWaitForCounterAndFreeWithoutFiber(counter);
-        }
-
-        delete[] job2Data;
-        delete[] job2Decls;
 
         JobSystemExit();
     }

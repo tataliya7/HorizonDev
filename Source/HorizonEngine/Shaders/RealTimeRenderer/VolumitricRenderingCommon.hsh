@@ -1,0 +1,11 @@
+#pragma once
+
+// Follows PBRT convention http://www.pbr-book.org/3ed-2018/Volume_Scattering/Phase_Functions.html#PhaseHG
+float HenyeyGreensteinPhaseFunction(float g, float cosTheta)
+{
+    // Reference implementation (i.e. not schlick approximation).
+    // See http://www.pbr-book.org/3ed-2018/Volume_Scattering/Phase_Functions.html
+    float numer = 1.0f - g * g;
+    float denom = 1.0f + g * g + 2.0f * g * cosTheta;
+    return numer / (4.0f * PI * denom * sqrt(denom));
+}
