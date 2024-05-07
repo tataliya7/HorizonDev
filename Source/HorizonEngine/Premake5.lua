@@ -24,12 +24,12 @@ project "HorizonEngine"
         "Source/Foundation/**.inl",
         "Source/Foundation/**.lua",
 
-        -- "Source/Rendering/**.h",
-        -- "Source/Rendering/**.c",
-        -- "Source/Rendering/**.hpp",
-        -- "Source/Rendering/**.cpp",
-        -- "Source/Rendering/**.cppm",
-        -- "Source/Rendering/**.inl",
+        "Source/Rendering/**.h",
+        "Source/Rendering/**.c",
+        "Source/Rendering/**.hpp",
+        "Source/Rendering/**.cpp",
+        "Source/Rendering/**.cppm",
+        "Source/Rendering/**.inl",
 
         "Source/Engine/**.h",
         "Source/Engine/**.c",

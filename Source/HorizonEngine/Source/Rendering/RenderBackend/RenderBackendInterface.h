@@ -8,14 +8,6 @@ namespace Horizon
 {
     struct RenderBackendSuperSamplingTextureResource
     {
-        /** Constructor for Vulkan */
-        RenderBackendSuperSamplingTextureResource(void* _texture, void* _memory, void* _view, uint32_t _state = UINT_MAX)
-            : texture(_texture), memory(_memory), view(_view), state(_state) {}
-
-        /** Constructor for D3D12 */
-        RenderBackendSuperSamplingTextureResource(void* _texture, uint32_t _state = UINT_MAX)
-            : texture(_texture), state(_state) {}
-
         /** VkImage or ID3D12Resource */
         void* texture;
 
@@ -242,16 +234,6 @@ namespace Horizon
          */
         virtual void DestroyTimingQueryHeap(RenderBackendTimingQueryHeapHandle timingQueryHeap) = 0;
         //virtual bool GetTimingQueryHeapResults(RenderBackendTimingQueryHeapHandle timingQueryHeap, uint32 regionStart, uint32 regionCount, void* results) = 0;
-
-        /**
-         * TBD.
-         */
-        virtual RenderBackendOcclusionQueryHeapHandle CreateOcclusionQueryHeap(const RenderBackendOcclusionQueryHeapDesc* desc, const char* name) = 0;
-
-        /**
-         * TBD.
-         */
-        virtual void DestroyOcclusionQueryHeap(RenderBackendOcclusionQueryHeapHandle occlusionQueryHeap) = 0;
 
         /**
          * TBD.
