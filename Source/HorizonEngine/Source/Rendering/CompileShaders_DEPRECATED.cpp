@@ -1,5 +1,4 @@
 #include "ShaderID_DEPRECATED.h"
-#include "RenderSystem.h"
 
 namespace Horizon
 {
@@ -22,7 +21,8 @@ namespace Horizon
         shaderDesc.AddDefine("SKY_ATMOSPHERE_AERIAL_PERSPECTIVE_VOLUME_PASS", 1);
         shaderLibrary->LoadShader(ShaderID::SkyAtmosphereAerialPerspectiveVolume, shaderDesc);
 
-        shaderDesc = ShaderDesc::CreateGraphics("FullScreenQuadVertexShader.hsf", "FullScreenQuadVS", "RealTimeRenderer/SkyAtmosphereRayMarching.hsf", "SkyAtmosphereRayMarchingPS");
+        shaderDesc = ShaderDesc::CreateGraphics("RealTimeRenderer/SkyAtmosphereRayMarching.hsf", "FullScreenQuadVS", "SkyAtmosphereRayMarchingPS");
+        //shaderDesc = ShaderDesc::CreateGraphics("FullScreenQuadVertexShader.hsf", "FullScreenQuadVS", "RealTimeRenderer/SkyAtmosphereRayMarching.hsf", "SkyAtmosphereRayMarchingPS");
         shaderDesc.AddDefine("SKY_ATMOSPHERE_RAY_MARCHING_PASS", 1);
         shaderLibrary->LoadShader(ShaderID::SkyAtmosphereRayMarching, shaderDesc);
     }
@@ -86,7 +86,7 @@ namespace Horizon
 #endif
     }
 
-    void RenderSystem::CompileShaders_DEPRECATED()
+    void CompileShaders_DEPRECATED(ShaderLibrary_DEPRECATED* shaderLibrary)
     {
         CompileSkyAtmosphereShaders_DEPRECATED(shaderLibrary);
         CompileRayTracingShaders_DEPRECATED(shaderLibrary);
@@ -94,46 +94,46 @@ namespace Horizon
         ShaderDesc shaderDesc;
 
         shaderDesc = ShaderDesc::CreateCompute("PreIntegratedBRDF.hsf", "PreIntegratedBRDFCS");
-        shaderLibrary->LoadShader((uint32)ShaderPipelineID::PreIntegratedBRDF, shaderDesc);
+        shaderLibrary->LoadShader(ShaderID::PreIntegratedBRDF, shaderDesc);
 
         shaderDesc = ShaderDesc::CreateCompute("EquirectangularToCubemap.hsf", "EquirectangularToCubemapCS");
-        shaderLibrary->LoadShader((uint32)ShaderPipelineID::EquirectangularToCubemap, shaderDesc);
+        shaderLibrary->LoadShader(ShaderID::EquirectangularToCubemap, shaderDesc);
 
         shaderDesc = ShaderDesc::CreateCompute("DownsampleCubemap.hsf", "DownsampleCubemapCS");
-        shaderLibrary->LoadShader((uint32)ShaderPipelineID::DownsampleCubemap, shaderDesc);
+        shaderLibrary->LoadShader(ShaderID::DownsampleCubemap, shaderDesc);
 
         shaderDesc = ShaderDesc::CreateCompute("DownsampleTexture2D.hsf", "DownsampleTexture2DCS");
-        shaderLibrary->LoadShader((uint32)ShaderPipelineID::DownsampleTexture2D, shaderDesc);
+        shaderLibrary->LoadShader(ShaderID::DownsampleTexture2D, shaderDesc);
 
         shaderDesc = ShaderDesc::CreateGraphics("DownsampleTexture2D_PS.hsf", "DownsampleTexture2D_VS", "DownsampleTexture2D_PS");
-        shaderLibrary->LoadShader((uint32)ShaderPipelineID::DownsampleTexture2D_PS, shaderDesc);
+        shaderLibrary->LoadShader(ShaderID::DownsampleTexture2D_PS, shaderDesc);
 
         shaderDesc = ShaderDesc::CreateCompute("ComputeEnvironmentIrradiance.hsf", "ComputeEnvironmentIrradianceCS");
-        shaderLibrary->LoadShader((uint32)ShaderPipelineID::ComputeEnvironmentIrradiance, shaderDesc);
+        shaderLibrary->LoadShader(ShaderID::ComputeEnvironmentIrradiance, shaderDesc);
 
         shaderDesc = ShaderDesc::CreateCompute("ComputeEnvironmentIrradianceSH.hsf", "ComputeEnvironmentIrradianceSHCS");
-        shaderLibrary->LoadShader((uint32)ShaderPipelineID::ComputeEnvironmentIrradianceSH, shaderDesc);
+        shaderLibrary->LoadShader(ShaderID::ComputeEnvironmentIrradianceSH, shaderDesc);
 
         shaderDesc = ShaderDesc::CreateCompute("FilterEnvironmentMap.hsf", "FilterEnvironmentMapCS");
-        shaderLibrary->LoadShader((uint32)ShaderPipelineID::FilterEnvironmentMap, shaderDesc);
+        shaderLibrary->LoadShader(ShaderID::FilterEnvironmentMap, shaderDesc);
 
         shaderDesc = ShaderDesc::CreateCompute("GPUFFT.hsf", "SharedMemoryComplexFFTCS");
-        shaderLibrary->LoadShader((uint32)ShaderPipelineID::SharedMemoryComplexFFT, shaderDesc);
+        shaderLibrary->LoadShader(ShaderID::SharedMemoryComplexFFT, shaderDesc);
 
         shaderDesc = ShaderDesc::CreateCompute("GPUFFT.hsf", "SharedMemoryComplexIFFTCS");
-        shaderLibrary->LoadShader((uint32)ShaderPipelineID::SharedMemoryComplexIFFT, shaderDesc);
+        shaderLibrary->LoadShader(ShaderID::SharedMemoryComplexIFFT, shaderDesc);
 
         shaderDesc = ShaderDesc::CreateCompute("GPUFFT.hsf", "SharedMemoryTwoForOneRealFFTCS");
-        shaderLibrary->LoadShader((uint32)ShaderPipelineID::SharedMemoryTwoForOneRealFFT, shaderDesc);
+        shaderLibrary->LoadShader(ShaderID::SharedMemoryTwoForOneRealFFT, shaderDesc);
 
         shaderDesc = ShaderDesc::CreateCompute("GPUFFT.hsf", "SharedMemoryTwoForOneRealIFFTCS");
-        shaderLibrary->LoadShader((uint32)ShaderPipelineID::SharedMemoryTwoForOneRealIFFT, shaderDesc);
+        shaderLibrary->LoadShader(ShaderID::SharedMemoryTwoForOneRealIFFT, shaderDesc);
 
         shaderDesc = ShaderDesc::CreateCompute("GPUFFT.hsf", "SharedMemoryComplexFFTConvolutionCS");
-        shaderLibrary->LoadShader((uint32)ShaderPipelineID::SharedMemoryComplexFFTConvolution, shaderDesc);
+        shaderLibrary->LoadShader(ShaderID::SharedMemoryComplexFFTConvolution, shaderDesc);
 
         shaderDesc = ShaderDesc::CreateGraphics("RealTimeRenderer/UIColorAndAlpha.hsf", "UIColorAndAlphaVS", "UIColorAndAlphaPS");
-        shaderLibrary->LoadShader((uint32)ShaderPipelineID::UIColorAndAlpha, shaderDesc);
+        shaderLibrary->LoadShader(ShaderID::UIColorAndAlpha, shaderDesc);
 
         shaderDesc = ShaderDesc::CreateGraphics("RealTimeRenderer/VisibilityBuffer.hsf", "VisibilityBufferVS", "VisibilityBufferPS");
         shaderLibrary->LoadShader(ShaderID::VBuffer, shaderDesc);
@@ -266,7 +266,8 @@ namespace Horizon
         shaderDesc = ShaderDesc::CreateCompute("RealTimeRenderer/LightShaftsRadialBlur.hsf", "LightShaftsRadialBlurCS");
         shaderLibrary->LoadShader(ShaderID::LightShaftsRadialBlur, shaderDesc);
 
-        shaderDesc = ShaderDesc::CreateGraphics("FullScreenQuadVertexShader.hsf", "FullScreenQuadVS", "RealTimeRenderer/LightShaftsApply.hsf", "LightShaftsApplyPS");
+        shaderDesc = ShaderDesc::CreateGraphics("RealTimeRenderer/LightShaftsApply.hsf", "FullScreenQuadVS", "LightShaftsApplyPS");
+        //shaderDesc = ShaderDesc::CreateGraphics("FullScreenQuadVertexShader.hsf", "FullScreenQuadVS", "RealTimeRenderer/LightShaftsApply.hsf", "LightShaftsApplyPS");
         shaderLibrary->LoadShader(ShaderID::LightShaftsApply, shaderDesc);
 
         shaderDesc = ShaderDesc::CreateCompute("RealTimeRenderer/TemporalSuperSampling.hsf", "TemporalSuperSamplingCS");

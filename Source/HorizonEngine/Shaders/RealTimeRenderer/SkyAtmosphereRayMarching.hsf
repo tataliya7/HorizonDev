@@ -29,6 +29,7 @@
  *-------------------------------------------------------------------------------------*/
 
 #include "../ShaderCommon.hsh"
+#include "../FullScreenQuadVertexShader.hsh"
 #include "RealTimeRendererCommon.hsh"
 #include "SkyAtmosphereCommon.hsh"
 
@@ -112,6 +113,8 @@ float3 GetLightDiskLuminance(
     }
     return 0.0f;
 }
+
+FULL_SCREEN_QUAD_VS();
 
 void SkyAtmosphereRayMarchingPS(float4 position : SV_Position, out float4 outLuminance : SV_Target0)
 {

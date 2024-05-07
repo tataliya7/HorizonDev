@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Foundation/FoundationModule.h"
-
+#include "Rendering/RenderCore/RenderCoreModule.h"
 namespace Horizon
 {
     enum class ShaderID : uint32
@@ -106,4 +106,6 @@ namespace Horizon
         // End: Real Time Renderer
         Count,
     };
+
+    extern void CompileShaders_DEPRECATED(ShaderLibrary_DEPRECATED* shaderLibrary);
 }

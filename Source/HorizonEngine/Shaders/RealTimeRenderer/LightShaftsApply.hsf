@@ -1,8 +1,11 @@
 #include "../ShaderCommon.hsh"
+#include "../FullScreenQuadVertexShader.hsh"
 #include "RealTimeRendererCommon.hsh"
 
 BIND_BUFFER_ELEMENT(0, PerFrameData, PerFrameData);
 BIND_TEXTURE_2D_SRV(1, LightShaftsTexture);
+
+FULL_SCREEN_QUAD_VS();
 
 void LightShaftsApplyPS(float4 position : SV_Position, out float4 outColor : SV_Target0)
 {

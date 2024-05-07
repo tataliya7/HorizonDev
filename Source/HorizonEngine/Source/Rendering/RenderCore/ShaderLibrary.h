@@ -19,11 +19,11 @@ namespace Horizon
 
         Type type;
         std::string name;
-        std::filesystem::path filename;
+        std::string filenames[(uint32)RenderBackendShaderStage::Count];
         std::string entryPoints[(uint32)RenderBackendShaderStage::Count];
         std::vector<ShaderMacroDefine> defines;
 
-        static ShaderDesc CreateGraphics(const std::string& filename, const std::string& vsMain, const std::string& psMain)
+        static ShaderDesc CreateGraphics(const std::string& vsFile, const std::string& vsMain, const std::string& psFile, const std::string& psMain)
         {
             ShaderDesc desc;
             desc.type = ShaderDesc::Type::Graphics;
