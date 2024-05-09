@@ -18,7 +18,7 @@ static const float GaussianBloomUpsampleWeights[9] = {
     0.0625f, 0.125f, 0.0625f
 };
 
-[numthreads(POST_PROCESS_THREAD_GROUP_SIZE, POST_PROCESS_THREAD_GROUP_SIZE, 1)]
+[numthreads(POST_PROCESSING_THREAD_GROUP_COUNT_X, POST_PROCESSING_THREAD_GROUP_COUNT_Y, 1)]
 void GaussianBloomUpsampleCS(uint3 DispatchThreadID : SV_DispatchThreadID)
 {
     Texture2D downsampledInputTexture = GetDownsampledInputTextureSRV();

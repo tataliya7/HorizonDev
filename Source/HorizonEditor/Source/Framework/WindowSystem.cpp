@@ -6,9 +6,7 @@
 
 #include <stb/stb_image.h>
 
-#include <windows.h>
-
-#include <optick.h>
+#include <Windows.h>
 
 namespace Horizon
 {
@@ -34,15 +32,21 @@ namespace Horizon
     }
 
     Window::Window(WindowCreateInfo* info)
+        : handle(nullptr)
+        , width(0)
+        , height(0)
+        , title(nullptr)
+        , focused(false)
+        , state(WindowState::Unknown)
     {
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
-        if (info->flags & HORIZON_EXAMPLE_WINDOW_CREATE_FLAG_BIT_MAXIMIZED)
+        if (info->flags & HORIZON_WINDOW_CREATE_FLAG_BIT_MAXIMIZED)
         {
             glfwWindowHint(GLFW_MAXIMIZED, GLFW_TRUE);
         }
 
-        if (info->flags & HORIZON_EXAMPLE_WINDOW_CREATE_FLAG_BIT_RESIZABLE)
+        if (info->flags & HORIZON_WINDOW_CREATE_FLAG_BIT_RESIZABLE)
         {
             glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
         }
@@ -51,7 +55,7 @@ namespace Horizon
             glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
         }
 
-        if (info->flags & HORIZON_EXAMPLE_WINDOW_CREATE_FLAG_BIT_BORDERLESS)
+        if (info->flags & HORIZON_WINDOW_CREATE_FLAG_BIT_BORDERLESS)
         {
             glfwWindowHint(GLFW_DECORATED, GLFW_FALSE);
         }
@@ -61,12 +65,12 @@ namespace Horizon
         }
 
         GLFWmonitor* primaryMonitor = nullptr;
-        if (info->flags & HORIZON_EXAMPLE_WINDOW_CREATE_FLAG_BIT_FULLSCREEN)
+        if (info->flags & HORIZON_WINDOW_CREATE_FLAG_BIT_FULLSCREEN)
         {
             primaryMonitor = glfwGetPrimaryMonitor();
         }
 
-        handle = glfwCreateWindow(info->width, info->height, info->title, primaryMonitor, nullptr);
+        handle = glfwCreateWindow(std::max(1u, info->width), std::max(1u, info->height), info->title, primaryMonitor, nullptr);
         if (!handle)
         {
             LogFatal(GLogger, std::format("Failed to create main window"));
@@ -202,7 +206,6 @@ namespace Horizon
 
     void Window::ProcessEvents()
     {
-        OPTICK_EVENT();
         glfwPollEvents();
     }
 
@@ -223,6 +226,16 @@ namespace Horizon
         {
             glfwSetWindowMonitor(handle, nullptr, 0, 0, width, height, GLFW_DONT_CARE);
         }
+    }
+
+    void Window::SetWindowSize(uint32 width, uint32 height)
+    {
+        glfwSetWindowSize(handle, width, height);
+
+        int32 w, h;
+        glfwGetWindowSize(handle, &w, &h);
+        this->width = w;
+        this->height = h;
     }
 
     void Window::MaximizeWindow()

@@ -7,24 +7,29 @@ namespace Horizon
         RenderGraph& renderGraph,
         const SceneView& view,
         RenderGraphTextureHandle sceneColorTexture,
-        RenderGraphTextureHandle bloomTexture,
-        RenderGraphBufferHandle autoExposureBuffer,
         RenderGraphTextureHandle colorLUTTexture,
+        RenderGraphTextureHandle bloomTexture,
         RenderGraphTextureHandle localExposureTexture,
+        RenderGraphBufferHandle autoExposureBuffer,
         bool outputInHDR)
     {
+        assert(sceneColorTexture);
+        assert(colorLUTTexture);
+        assert(is);
+
+        const bool isLocalExposureTextureValid = !localExposureTexture.IsNullHandle();
         const bool isAutoExposureTextureValid = !autoExposureBuffer.IsNullHandle();
+        const bool isBloomTextureValid = !bloomTexture.IsNullHandle();
+
         if (!isAutoExposureTextureValid)
         {
-            const float defaultExposure = 1.4f; // TODO: Get fixed exposure
+            const float defaultExposure = 1.0f; // TODO: Get fixed exposure
             // autoExposureTexture = renderGraph.CreateTexture(RenderGraphTextureDesc::Create2D(1, 1, RenderBackendTextureFormat::R32Float, RenderBackendTextureCreateFlags::ShaderResource), "AutoExposureTexture");
         }
 
-        const bool isLocalExposureTextureValid = !localExposureTexture.IsNullHandle();
-
-        if (!bloomTexture)
+        if (!isBloomTextureValid)
         {
-            bloomTexture = renderEngine->GetDefaultResources().ImportBlackDummyTexture2D(renderGraph);
+            bloomTexture = defaultResources->ImportBlackDummyTexture2D(renderGraph);
         }
 
         uint32 flags = 0;
@@ -51,13 +56,14 @@ namespace Horizon
             }
         }
 
-        //RenderGraphTextureDesc outputTextureDesc = RenderGraphTextureDesc::Create2D(
-        //      targetResolution.width,
-        //      targetResolution.height,
-        //      RenderBackendTextureFormat::RGBA8Unorm,
-        //      RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::UnorderedAccess);
-        auto& finalTextureData = renderGraph.blackboard.Get<RenderGraphFinalTexture>();
-        RenderGraphTextureHandle outputTexture = renderGraph.CreateTexture(finalTextureData.finalTextureDesc, "ToneMappingTexture");
+        RenderBackendTextureFormat outputFormat = RenderBackendTextureFormat::RGB10A2Unorm;
+
+        RenderGraphTextureDesc outputTextureDesc = RenderGraphTextureDesc::Create2D(
+            targetResolution.width,
+            targetResolution.height,
+            outputFormat,
+            RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::UnorderedAccess | RenderBackendTextureCreateFlags::RenderTarget);
+        RenderGraphTextureHandle outputTexture = renderGraph.CreateTexture(outputTextureDesc, "ToneMappingTexture");
 
         renderGraph.AddPass(std::format("ToneMapping (Compute, {}x{})", targetResolution.width, targetResolution.height), RenderGraphPassFlags::Compute,
             [&](RenderGraphBuilder& builder)
@@ -72,35 +78,36 @@ namespace Horizon
                 outputTexture = builder.WriteTexture(outputTexture, RenderBackendResourceState::UnorderedAccess);
 
                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
-                {
-                    uint32 groupCountX = ComputeWorkGroupCount(targetResolution.width, PostProcessingThreadGroupCountX);
-                    uint32 groupCountY = ComputeWorkGroupCount(targetResolution.height, PostProcessingThreadGroupCountY);
-                    uint32 groupCountZ = 1;
+                    {
+                        uint32 groupCountX = ComputeWorkGroupCount(targetResolution.width, PostProcessingThreadGroupCountX);
+                        uint32 groupCountY = ComputeWorkGroupCount(targetResolution.height, PostProcessingThreadGroupCountY);
+                        uint32 groupCountZ = 1;
 
-                    RenderBackendShaderArguments shaderArguments = {};
-                    shaderArguments.BindBuffer(0, GetCurrentPerFrameDataBuffer());
-                    shaderArguments.BindTextureSRV(1, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(sceneColorTexture)));
-                    shaderArguments.BindTextureSRV(2, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(bloomTexture)));
-                    shaderArguments.BindBuffer(3, registry.GetRenderBackendBufferHandle(autoExposureBuffer), 0);
-                    shaderArguments.BindTextureSRV(4, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(colorLUTTexture)));
-                    shaderArguments.BindTextureSRV(5, RenderBackendTextureSRVDesc::Create(lensDirtTexture));
-                    if (isLocalExposureTextureValid) shaderArguments.BindTextureSRV(6, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(localExposureTexture)));
-                    //else shaderArguments.BindTextureSRV(6, RenderBackendTextureSRVDesc::Create(RenderBackendTextureHandle::Null));
-                    shaderArguments.BindTextureUAV(7, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(outputTexture), 0));
-                    shaderArguments.BindTextureSRV(10, RenderBackendTextureSRVDesc::Create(testTexture));
+                        RenderBackendShaderArguments shaderArguments = {};
+                        shaderArguments.BindBuffer(0, GetCurrentPerFrameDataBuffer());
+                        shaderArguments.BindTextureSRV(1, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(sceneColorTexture)));
+                        shaderArguments.BindTextureSRV(2, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(bloomTexture)));
+                        shaderArguments.BindBuffer(3, registry.GetRenderBackendBufferHandle(autoExposureBuffer));
+                        shaderArguments.BindTextureSRV(4, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(colorLUTTexture)));
+                        shaderArguments.BindTextureSRV(5, RenderBackendTextureSRVDesc::Create(lensDirtTexture));
+                        if (isLocalExposureTextureValid) shaderArguments.BindTextureSRV(6, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(localExposureTexture)));
+                        //else shaderArguments.BindTextureSRV(6, RenderBackendTextureSRVDesc::Create(RenderBackendTextureHandle::Null));
+                        shaderArguments.BindTextureSRV(10, RenderBackendTextureSRVDesc::Create(testTexture));
+                        shaderArguments.BindTextureUAV(7, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(outputTexture), 0));
 
-                    shaderArguments.PushConstants(0, (float)flags);
-                    shaderArguments.PushConstants(1, chromaticAberrationScale.x);
-                    shaderArguments.PushConstants(2, chromaticAberrationScale.y);
+                        shaderArguments.PushConstants(0, (float)flags);
+                        shaderArguments.PushConstants(1, chromaticAberrationScale.x);
+                        shaderArguments.PushConstants(2, chromaticAberrationScale.y);
 
-                    RenderBackendShaderHandle computeShader = shaderLibrary->GetShaderHandle(ShaderID::ToneMapping);
-                    commandList.Dispatch(
-                        computeShader,
-                        shaderArguments,
-                        groupCountX,
-                        groupCountY,
-                        groupCountZ);
-                };
+                        RenderBackendShaderHandle computeShader = shaderLibrary->GetShaderHandle(ShaderID::ToneMapping);
+
+                        commandList.Dispatch(
+                            computeShader,
+                            shaderArguments,
+                            groupCountX,
+                            groupCountY,
+                            groupCountZ);
+                    };
             });
 
         return outputTexture;

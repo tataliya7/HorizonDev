@@ -55,7 +55,7 @@ float4 MedianFilter3x3(
     return Median3(t0, t1, t2);
 }
 
-[numthreads(POST_PROCESS_THREAD_GROUP_SIZE, POST_PROCESS_THREAD_GROUP_SIZE, 1)]
+[numthreads(POST_PROCESSING_THREAD_GROUP_COUNT_X, POST_PROCESSING_THREAD_GROUP_COUNT_Y, 1)]
 void DepthOfFieldPostfilterCS(uint3 DispatchThreadID : SV_DispatchThreadID)
 {
     PerFrameData perFrameData = GetPerFrameData();

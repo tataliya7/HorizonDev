@@ -10,7 +10,7 @@ BIND_TEXTURE_2D_SRV(3, AssembleTexture);
 BIND_TEXTURE_2D_UAV(4, float4, OutputTexture);
 BIND_TEXTURE_2D_TYPED_SRV(5, float, AutoExposureTexture);
 
-[numthreads(POST_PROCESS_THREAD_GROUP_SIZE, POST_PROCESS_THREAD_GROUP_SIZE, 1)]
+[numthreads(POST_PROCESSING_THREAD_GROUP_COUNT_X, POST_PROCESSING_THREAD_GROUP_COUNT_Y, 1)]
 void LocalExposureGuidedUpsamplingCS(uint3 DispatchThreadID : SV_DispatchThreadID)
 {
     RWTexture2D<float4> outputTexture = GetOutputTextureUAV();

@@ -4,6 +4,29 @@
 
 namespace Horizon
 {
+    class RendererDefaultResources
+    {
+    public:
+        RenderGraphTextureHandle ImportBlackDummyTexture2D(RenderGraph& renderGraph) const;
+        RenderGraphTextureHandle ImportWhiteDummyTexture2D(RenderGraph& renderGraph) const;
+        RenderBackendTextureHandle GetPreIntegratedBrdfLut() const;
+    private:
+        RenderGraphPersistentTexture* blackDummyTexture2D;
+        RenderGraphPersistentTexture* whiteDummyTexture2D;
+
+        static const uint32 PreIntegratedBrdfLutSize = 256;
+        RenderBackendTextureHandle preIntegratedBrdfLut;
+
+        RenderBackendSamplerHandle globalSamplerLinearWarp;
+        RenderBackendSamplerHandle globalSamplerLinearClamp;
+        RenderBackendSamplerHandle globalSamplerLinearBorder;
+        RenderBackendSamplerHandle globalSamplerPointWarp;
+        RenderBackendSamplerHandle globalSamplerPointClamp;
+        RenderBackendSamplerHandle globalSamplerPointBorder;
+        RenderBackendSamplerHandle globalSamplerComparisonGreaterLinearClamp;
+        RenderBackendSamplerHandle globalSamplerComparisonLessLinearClamp;
+    };
+
     static inline uint32 ComputeWorkGroupCount(uint32 x, uint32 y)
     {
         return ((x + y - 1) / y);

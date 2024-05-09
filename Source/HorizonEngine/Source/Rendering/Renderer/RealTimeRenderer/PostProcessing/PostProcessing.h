@@ -6,9 +6,12 @@ namespace Horizon
 {
     struct PostProcessingSceneColorMipChain
     {
-        static const uint32 MipCount = 6;
+        static const uint32 MaxMipCount = 4;
 
-        // 1/2, 1/4, 1/8, 1/16, 1/32, 1/64
-        RenderGraphTextureHandle textures[MipCount];
+        /** Number of generated mip level count. */
+        uint32 mipCount = 0;
+
+        /** 1/1, 1/2, 1/4, 1/8 */
+        RenderGraphTextureHandle textures[MaxMipCount] = {};
     };
 }

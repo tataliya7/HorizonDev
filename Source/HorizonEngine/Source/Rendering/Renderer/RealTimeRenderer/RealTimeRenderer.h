@@ -443,6 +443,7 @@ namespace Horizon
         ShaderLibrary_DEPRECATED* shaderLibrary;
         RenderSystem* renderSystem;
         RenderGraphResourcePool* resourcePool;
+        RendererDefaultResources* defaultResources;
         RenderScene* scene;
 
         bool isDLAAEnabled = false;
@@ -455,6 +456,14 @@ namespace Horizon
         bool isRayTracingReflectionsEnabled = false;
         bool isRayTracingAmbientOcclusionEnabled = false;
         bool isScreenSpaceLightShaftsEnabled = false;
+
+        bool isMotionBlurEnabled = false;
+        bool isAutoExposureEnabled = (settings.exposureMethod == ExposureMethod::AutoExposure) || (settings.exposureMethod == ExposureMethod::FixedExposure);
+        bool isBloomEnabled = settings.postProcessingSettings.bloomIntensity > 0.0f;
+        bool isLensFlaresEnabled = isBloomEnabled && settings.postProcessingSettings.lensFlaresIntensity > 0.0f;
+        bool isConvolutionBloomEnabled = false;
+        bool isToneMappingEnabled = true;
+        bool isLocalExposureEnabled = isToneMappingEnabled && settings.postProcessingSettings.localExposureEnabled;
 
         float upscaleRatio = 1.0f;
         Extent2D renderResolution;

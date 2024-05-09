@@ -1,5 +1,7 @@
 #include "HorizonEditor.h"
 
+#define BIND_FUNCTION(func) [this](auto&&... args) -> decltype(auto) { return this->func(std::forward<decltype(args)> (args)...); }
+
 namespace Horizon
 {
     HorizonEditor* HorizonEditor::Instance = nullptr;
@@ -18,7 +20,7 @@ namespace Horizon
         Instance = nullptr;
     }
 
-    bool HorizonEditor::Init(int argc, char** argv)
+    bool HorizonEditor::Init()
     {
 //        // Initialize path to executable
 //        executablePath = argv[0];
@@ -30,24 +32,39 @@ namespace Horizon
 //
 //        JobSystemInit(HE::GetNumberOfProcessors(), HE_JOB_SYSTEM_NUM_FIBIERS, HE_JOB_SYSTEM_FIBER_STACK_SIZE);
 //
-//        GLFWInit();
-//
-//        //WindowCreateFlags windowFlags = WindowCreateFlags(HORIZON_EXAMPLE_WINDOW_CREATE_FLAG_BIT_RESIZABLE);
-//        WindowCreateFlags windowFlags = WindowCreateFlags(HORIZON_EXAMPLE_WINDOW_CREATE_FLAG_BIT_RESIZABLE | HORIZON_EXAMPLE_WINDOW_CREATE_FLAG_BIT_MAXIMIZED);
-//
-//        // Create main window
-//        WindowCreateInfo windowInfo = {
-//            .width = initialWidth,
-//            .height = initialHeight,
-//            .title = applicationName.c_str(),
-//            .icon = "../../../Assets/Icons/horizon.png",
-//            .flags = windowFlags
-//        };
-//        window = new Window(&windowInfo);
-//        window->keyPressEventCallback = BIND_FUNCTION(HorizonEditor::OnKeyPressedEvent);
-//        window->keyReleaseEventCallback = BIND_FUNCTION(HorizonEditor::OnKeyReleasedEvent);
-//        window->mouseButtonPressEventCallback = BIND_FUNCTION(HorizonEditor::OnMouseButtonPressedEvent);
-//        window->mouseButtonReleaseEventCallback = BIND_FUNCTION(HorizonEditor::OnMouseButtonReleasedEvent);
+        GLFWInit();
+
+        WindowCreateFlags windowFlags = HORIZON_WINDOW_CREATE_FLAG_BIT_RESIZABLE | HORIZON_WINDOW_CREATE_FLAG_BIT_MAXIMIZED;
+        // Create main window
+        WindowCreateInfo tttt = {
+            .title = applicationName.c_str(),
+            .icon = "../../../Assets/Icons/horizon.png",
+            .flags = windowFlags
+        };
+        window = new Window(&tttt);
+        uint32 initialWidth = window->GetWidth();
+        uint32 initialHeight = window->GetHeight();
+        delete window;
+
+        if (true)
+        {
+            windowFlags |= HORIZON_WINDOW_CREATE_FLAG_BIT_MAXIMIZED;
+        }
+
+        // Create main window
+        WindowCreateInfo windowInfo = {
+            .width = initialWidth,
+            .height = initialHeight,
+            .title = applicationName.c_str(),
+            .icon = "../../../Assets/Icons/horizon.png",
+            .flags = windowFlags
+        };
+        window = new Window(&windowInfo);
+
+        //window->keyPressEventCallback = BIND_FUNCTION(HorizonEditor::OnKeyPressedEvent);
+        //window->keyReleaseEventCallback = BIND_FUNCTION(HorizonEditor::OnKeyReleasedEvent);
+        //window->mouseButtonPressEventCallback = BIND_FUNCTION(HorizonEditor::OnMouseButtonPressedEvent);
+        //window->mouseButtonReleaseEventCallback = BIND_FUNCTION(HorizonEditor::OnMouseButtonReleasedEvent);
 //
 //        Input::SetCurrentContext(window->GetGLFWHandle());
 //
@@ -131,7 +148,9 @@ namespace Horizon
 
     void HorizonEditor::Exit()
     {
-        
+        if (window) delete window;
+
+        GLFWExit();
     }
 
     void HorizonEditor::Tick()
@@ -171,8 +190,8 @@ namespace Horizon
 
     int HorizonEditor::Run()
     {
-//        while (!IsExitRequested())
-//        {
+        while (!IsExitRequested())
+        {
 //            OPTICK_FRAME("MainThread");
 //
 //#if HE_ENBALE_STREAMLINE_SUPPORT
@@ -180,12 +199,12 @@ namespace Horizon
 //            streamlineContext->ReflexSleep();
 //            streamlineContext->ReflexSetMarkerInputSample();
 //#endif
-//            window->ProcessEvents();
+            window->ProcessEvents();
 //
-//            if (window->ShouldClose())
-//            {
-//                SetExitRequest(true);
-//            }
+            if (window->ShouldClose())
+            {
+                SetExitRequest(true);
+            }
 //
 //            WindowState state = window->GetState();
 //
@@ -239,7 +258,7 @@ namespace Horizon
 //            GArena->Reset();
 //
 //            frameCounter++;
-//        }
+        }
 
         return 0;
     }
@@ -252,11 +271,11 @@ namespace Horizon
     //}
 }
 
-int HorizonEditorMain(int argc, char** argv)
+int HorizonEditorMain()
 {
     int exitCode = EXIT_SUCCESS;
     Horizon::HorizonEditor* editor = new Horizon::HorizonEditor();
-    bool result = editor->Init(argc, argv);
+    bool result = editor->Init();
     if (result)
     {
         exitCode = editor->Run();

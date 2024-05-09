@@ -1,6 +1,4 @@
-#include "Rendering/Renderer/RealTimeRenderer/RealTimeRenderer.h"
-#include "Rendering/Renderer/GPUFFT.h"
-#include "PostProcessing.h"
+#include "PostProcessingCommon.h"
 
 namespace Horizon
 {

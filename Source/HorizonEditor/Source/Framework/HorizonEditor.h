@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Engine/HorizonEngineModule.h"
+#include "WindowSystem.h"
 
 #define HORIZON_EDITOR_APPLICATION_NAME "Horizon Editor"
 
@@ -83,7 +84,7 @@ namespace Horizon
         HorizonEditor& operator=(HorizonEditor&&) = delete;
         HorizonEditor& operator=(const HorizonEditor&) = delete;
 
-        bool Init(int argc, char** argv);
+        bool Init();
         void Exit();
         int Run();
         void Tick();
@@ -114,15 +115,15 @@ namespace Horizon
         //    selectedEntity = entity;
         //}
 
-        //bool IsExitRequested() const
-        //{
-        //    return isExitRequested;
-        //}
+        bool IsExitRequested() const
+        {
+            return isExitRequested;
+        }
 
-        //void SetExitRequest(bool value)
-        //{
-        //    isExitRequested = value;
-        //}
+        void SetExitRequest(bool value)
+        {
+            isExitRequested = value;
+        }
 
         //const std::string& GetApplicationName() const
         //{
@@ -220,12 +221,12 @@ namespace Horizon
 
         //uint32 frameCounter = 0;
         //float deltaTime = 0.0f;
-        //bool isExitRequested = false;
+        bool isExitRequested = false;
         //bool toggleFullScreen = false;
 
         //DebugViewMode viewMode = DebugViewMode::Lit;
 
-        //Window* window = nullptr;
+        Window* window = nullptr;
 
         //Scene* scene;
         //EditorCamera editorCamera;
@@ -243,4 +244,4 @@ namespace Horizon::UI
     extern void PopID();
 }
 
-extern int HorizonEditorMain(int argc, char** argv);
+extern int HorizonEditorMain();

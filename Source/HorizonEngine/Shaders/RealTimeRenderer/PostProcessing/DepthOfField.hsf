@@ -21,7 +21,7 @@ float GetBlurSize(float depth, float focusPoint, float focusScale)
     return abs(coc) * MAX_BLUR_SIZE;
 }
 
-[numthreads(POST_PROCESS_THREAD_GROUP_SIZE, POST_PROCESS_THREAD_GROUP_SIZE, 1)]
+[numthreads(POST_PROCESSING_THREAD_GROUP_COUNT_X, POST_PROCESSING_THREAD_GROUP_COUNT_Y, 1)]
 void DepthOfFieldCS(uint3 DispatchThreadID : SV_DispatchThreadID)
 {
     PerFrameData perFrameData = GetPerFrameData();

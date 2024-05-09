@@ -16,13 +16,6 @@ namespace Horizon
         RenderGraphBufferHandle previousAutoExposureBuffer = renderGraph.ImportExternalBuffer(autoExposureBufferHistory.get());
         RenderGraphBufferHandle autoExposureBuffer = previousAutoExposureBuffer;
 
-        const bool isMotionBlurEnabled = false;
-        const bool isAutoExposureEnabled = (settings.exposureMethod == ExposureMethod::AutoExposure) || (settings.exposureMethod == ExposureMethod::FixedExposure);
-        const bool isBloomEnabled = settings.postProcessingSettings.bloomIntensity > 0.0f;
-        const bool isLensFlaresEnabled = isBloomEnabled && settings.postProcessingSettings.lensFlaresIntensity > 0.0f;
-        const bool isConvolutionBloomEnabled = false;
-        const bool isToneMappingEnabled = true;
-        const bool isLocalExposureEnabled = isToneMappingEnabled && settings.postProcessingSettings.localExposureEnabled;
         const bool generateSceneColorMipChain = isBloomEnabled;
 
 #if WITH_HORIZON_EDITOR
@@ -36,11 +29,6 @@ namespace Horizon
         const bool isVisualizeMotionVectorsEnabled = (view.debugViewMode == DebugViewMode::MotionVectors);
         const bool isVisualizeAmbientOcclusionEnabled = (view.debugViewMode == DebugViewMode::AmbientOcclusion);
         const bool isVisualizeShadowMaskEnabled = (view.debugViewMode == DebugViewMode::ShadowMask);
-
-        if (isMotionBlurEnabled)
-        {
-
-        }
 
         bool depthOfFieldEnabled = settings.postProcessingSettings.dofScale > 0;
         if (depthOfFieldEnabled)
@@ -72,7 +60,17 @@ namespace Horizon
             }
         }
 
+        if (false)
+        {
+            sceneColorTexture = AddMotionBlurPass(renderGraph, view);
+        }
+
         //sceneColorTexture = renderGraph.ImportExternalTexture(localExposureTestTexture, localExposureTestTextureDesc, RenderBackendResourceState::ShaderResource, "Test");
+        PostProcessingSceneColorMipChain sceneColorMipChain;
+        if (generateSceneColorMipChain)
+        {
+            AddGenerateSceneColorMipChainPass(renderGraph, view, sceneColorTexture, &sceneColorMipChain);
+        }
 
         if (isAutoExposureEnabled)
         {
@@ -80,13 +78,6 @@ namespace Horizon
 
             autoExposureBuffer = AddAutoExposureComputeExposurePass(renderGraph, view, autoExposureHistogramTexture, previousAutoExposureBuffer);
         }
-
-        PostProcessingSceneColorMipChain sceneColorMipChain;
-        if (generateSceneColorMipChain)
-        {
-            AddGenerateSceneColorMipChainPass(renderGraph, view, sceneColorTexture, &sceneColorMipChain);
-        }
-        RenderGraphTextureHandle halfResolutionSceneColorTexture = sceneColorMipChain.textures[0];
 
         RenderGraphTextureHandle localExposureTexture = RenderGraphTextureHandle::Null;
         if (isLocalExposureEnabled)
@@ -99,11 +90,11 @@ namespace Horizon
         {
             if (isConvolutionBloomEnabled)
             {
-                bloomTexture = AddConvolutionBloomPass(renderGraph, view, sceneColorTexture);
+                bloomTexture = AddConvolutionBloomPass(renderGraph, view, sceneColorMipChain);
             }
             else
             {
-                bloomTexture = AddGaussianBloomPass(renderGraph, view, halfResolutionSceneColorTexture);
+                bloomTexture = AddGaussianBloomPass(renderGraph, view, sceneColorMipChain);
             }
 
             if (isLensFlaresEnabled)

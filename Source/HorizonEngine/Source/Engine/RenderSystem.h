@@ -27,50 +27,6 @@ namespace Horizon
 
     };
 
-
-    enum class ShaderPipelineID
-    {
-        PreIntegratedBRDF,
-        EquirectangularToCubemap,
-        DownsampleCubemap,
-        DownsampleTexture2D,
-        DownsampleTexture2D_PS,
-        ComputeEnvironmentIrradiance,
-        ComputeEnvironmentIrradianceSH,
-        FilterEnvironmentMap,
-        SharedMemoryComplexFFT,
-        SharedMemoryComplexIFFT,
-        SharedMemoryTwoForOneRealFFT,
-        SharedMemoryTwoForOneRealIFFT,
-        SharedMemoryComplexFFTConvolution,
-        UIColorAndAlpha,
-        Count,
-    };
-
-    class RenderSystemDefaultResources
-    {
-    public:
-        RenderGraphTextureHandle ImportBlackDummyTexture2D(RenderGraph& renderGraph) const;
-        RenderGraphTextureHandle ImportWhiteDummyTexture2D(RenderGraph& renderGraph) const;
-        RenderBackendTextureHandle GetPreIntegratedBrdfLut() const;
-    private:
-        friend class RenderSystem;
-        RenderGraphPersistentTexture* blackDummyTexture2D;
-        RenderGraphPersistentTexture* whiteDummyTexture2D;
-
-        static const uint32 PreIntegratedBrdfLutSize = 256;
-        RenderBackendTextureHandle preIntegratedBrdfLut;
-
-        RenderBackendSamplerHandle globalSamplerLinearWarp;
-        RenderBackendSamplerHandle globalSamplerLinearClamp;
-        RenderBackendSamplerHandle globalSamplerLinearBorder;
-        RenderBackendSamplerHandle globalSamplerPointWarp;
-        RenderBackendSamplerHandle globalSamplerPointClamp;
-        RenderBackendSamplerHandle globalSamplerPointBorder;
-        RenderBackendSamplerHandle globalSamplerComparisonGreaterLinearClamp;
-        RenderBackendSamplerHandle globalSamplerComparisonLessLinearClamp;
-    };
-
     class RenderSystem : public EngineSubsystem
     {
     public:

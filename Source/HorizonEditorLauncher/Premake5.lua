@@ -1,7 +1,7 @@
 project "HorizonEditorLauncher"
-    -- kind "WindowedApp"
-    kind "ConsoleApp"
-    entrypoint "mainCRTStartup"
+    kind "WindowedApp"
+    --kind "ConsoleApp"
+    --entrypoint "mainCRTStartup"
     language "C++"
     cppdialect "C++latest"
     staticruntime "Off"
@@ -35,8 +35,9 @@ project "HorizonEditorLauncher"
         thirdpartypath("dxc/dxc_2024_03_22/lib/x64/dxcompiler.lib"),
         thirdpartypath("vulkan/1.3.280.0/lib/vulkan-1.lib"),
         thirdpartypath("optick/Optick_1.4.0/lib/x64/release/OptickCore.lib"),
-        thirdpartypath("streamline/lib/x64/sl.interposer.lib"),
         thirdpartypath("python/310/libs/python310.lib"),
+        
+        thirdpartypath("streamline/lib/x64/sl.interposer.lib"),
     }
 
     postbuildcommands {
@@ -76,7 +77,7 @@ project "HorizonEditorLauncher"
     }
 
     postbuildcommands {
-        "{COPYFILE} %{wks.location}/Source/Engine/Rendering/Renderer/RealTimeRenderer/PerFrameShaderParameters.h %{wks.location}/Shaders/RealTimeRenderer",
+        "{COPYFILE} %{wks.location}/Source/HorizonEngine/Source/Rendering/Renderer/RealTimeRenderer/PerFrameShaderParameters.h %{wks.location}/Source/HorizonEngine/Shaders/RealTimeRenderer",
     }
 
     filter "configurations:Debug"

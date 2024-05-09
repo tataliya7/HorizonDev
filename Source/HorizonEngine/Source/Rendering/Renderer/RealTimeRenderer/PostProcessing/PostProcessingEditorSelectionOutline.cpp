@@ -1,9 +1,10 @@
-#include "Rendering/Renderer/RealTimeRenderer/RealTimeRenderer.h"
-#include "PostProcessing.h"
+#include "PostProcessingCommon.h"
 
-// Jump flood algorithm based outline
-// See: https://bgolus.medium.com/the-quest-for-very-wide-outlines-ba82ed442cd9
-// Github: https://gist.github.com/bgolus/a18c1a3fc9af2d73cc19169a809eb195
+/**
+ * Jump flood algorithm based outline
+ * See: https://bgolus.medium.com/the-quest-for-very-wide-outlines-ba82ed442cd9
+ * Source code: https://gist.github.com/bgolus/a18c1a3fc9af2d73cc19169a809eb195
+ */
 
 // TODO:
 // 1. Use separable axis method
@@ -33,38 +34,36 @@ namespace Horizon
                 builder.BindColorTarget(0, maskTexture, RenderBackendRenderPassBeginningAccessType::Clear, RenderBackendRenderPassEndingAccessType::Preserve);
 
                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
-                {
-                    RenderBackendViewport viewport(0.0f, 0.0f, (float)targetResolution.width, (float)targetResolution.height);
-                    commandList.SetViewports(&viewport, 1);
-
-                    RenderBackendScissor scissor(0, 0, targetResolution.width, targetResolution.height);
-                    commandList.SetScissors(&scissor, 1);
-
-                    RenderBackendGraphicsPipelineState graphicsPipelineState = {};
-                    graphicsPipelineState.rasterizationState.cullMode = RenderBackendRasterizationCullMode::Back;
-                    graphicsPipelineState.depthStencilState.depthTestEnable = false;
-                    graphicsPipelineState.depthStencilState.depthWriteEnable = false;
-
-                    for (const auto& drawCallInfo : renderEngine->drawList)
                     {
-                        RenderBackendShaderArguments shaderArguments = {};
-                        shaderArguments.BindBuffer(0, GetCurrentPerFrameDataBuffer());
-                        shaderArguments.BindBuffer(1, renderEngine->geometryBuffer, drawCallInfo.geometryIndex * sizeof(GeometryShaderParameters));
-                        shaderArguments.BindBuffer(2, drawCallInfo.vertexBuffers[0], 0);
+                        RenderBackendViewport viewport(0.0f, 0.0f, (float)targetResolution.width, (float)targetResolution.height);
+                        commandList.SetViewports(&viewport, 1);
 
-                        RenderBackendShaderHandle graphicsShader = shaderLibrary->GetShaderHandle(ShaderID::EditorSelectionOutlineMaskGen);
-                        commandList.DrawIndexed(
-                            graphicsShader,
-                            graphicsPipelineState,
-                            shaderArguments,
-                            drawCallInfo.indexBuffer,
-                            drawCallInfo.numIndices,
-                            1,
-                            drawCallInfo.firstIndex,
-                            0,
-                            0,
-                            RenderBackendPrimitiveTopology::TriangleList);
-                    }
+                        RenderBackendScissor scissor(0, 0, targetResolution.width, targetResolution.height);
+                        commandList.SetScissors(&scissor, 1);
+
+                        RenderBackendGraphicsPipelineState graphicsPipelineState = {};
+                        graphicsPipelineState.rasterizationState.cullMode = RenderBackendRasterizationCullMode::Back;
+
+                        for (const auto& drawCallInfo : renderEngine->drawList)
+                        {
+                            RenderBackendShaderArguments shaderArguments = {};
+                            shaderArguments.BindBuffer(0, GetCurrentPerFrameDataBuffer());
+                            shaderArguments.BindBuffer(1, renderEngine->geometryBuffer, drawCallInfo.geometryIndex * sizeof(GeometryShaderParameters));
+                            shaderArguments.BindBuffer(2, drawCallInfo.vertexBuffers[0], 0);
+
+                            RenderBackendShaderHandle graphicsShader = shaderLibrary->GetShaderHandle(ShaderID::EditorSelectionOutlineMaskGen);
+                            commandList.DrawIndexed(
+                                graphicsShader,
+                                graphicsPipelineState,
+                                shaderArguments,
+                                drawCallInfo.indexBuffer,
+                                drawCallInfo.numIndices,
+                                1,
+                                drawCallInfo.firstIndex,
+                                0,
+                                0,
+                                RenderBackendPrimitiveTopology::TriangleList);
+                        }
                 };
             });
 
@@ -79,27 +78,27 @@ namespace Horizon
         renderGraph.AddPass(std::format("EditorSelectionOutlineSetup (Compute, {}x{})", targetResolution.width, targetResolution.height), RenderGraphPassFlags::Compute,
             [&](RenderGraphBuilder& builder)
             {
-                builder.ReadTexture(maskTexture, RenderBackendResourceState::ShaderResource);
+                maskTexture = builder.ReadTexture(maskTexture, RenderBackendResourceState::ShaderResource);
 
                 jumpFloodTexture0 = builder.WriteTexture(jumpFloodTexture0, RenderBackendResourceState::UnorderedAccess);
 
                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
-                {
-                    uint32 groupCountX = ComputeWorkGroupCount(targetResolution.width, PostProcessingThreadGroupCountX);
-                    uint32 groupCountY = ComputeWorkGroupCount(targetResolution.height, PostProcessingThreadGroupCountY);
+                    {
+                        uint32 groupCountX = ComputeWorkGroupCount(targetResolution.width, PostProcessingThreadGroupCountX);
+                        uint32 groupCountY = ComputeWorkGroupCount(targetResolution.height, PostProcessingThreadGroupCountY);
 
-                    RenderBackendShaderArguments shaderArguments = {};
-                    shaderArguments.BindBuffer(0, GetCurrentPerFrameDataBuffer());
-                    shaderArguments.BindTextureSRV(1, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(maskTexture)));
-                    shaderArguments.BindTextureUAV(2, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(jumpFloodTexture0), 0));
+                        RenderBackendShaderArguments shaderArguments = {};
+                        shaderArguments.BindBuffer(0, GetCurrentPerFrameDataBuffer());
+                        shaderArguments.BindTextureSRV(1, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(maskTexture)));
+                        shaderArguments.BindTextureUAV(2, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(jumpFloodTexture0), 0));
 
-                    RenderBackendShaderHandle computeShader = shaderLibrary->GetShaderHandle(ShaderID::EditorSelectionOutlineSetup);
-                    commandList.Dispatch2D(
-                        computeShader,
-                        shaderArguments,
-                        groupCountX,
-                        groupCountY);
-                };
+                        RenderBackendShaderHandle computeShader = shaderLibrary->GetShaderHandle(ShaderID::EditorSelectionOutlineSetup);
+                        commandList.Dispatch2D(
+                            computeShader,
+                            shaderArguments,
+                            groupCountX,
+                            groupCountY);
+                    };
             });
 
         RenderGraphTextureHandle jumpFloodTexture = jumpFloodTexture0;
@@ -123,23 +122,23 @@ namespace Horizon
                     jumpFloodPassOutputTexture = builder.WriteTexture(jumpFloodPassOutputTexture, RenderBackendResourceState::UnorderedAccess);
 
                     return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
-                    {
-                        uint32 groupCountX = ComputeWorkGroupCount(targetResolution.width, PostProcessingThreadGroupCountX);
-                        uint32 groupCountY = ComputeWorkGroupCount(targetResolution.height, PostProcessingThreadGroupCountY);
+                        {
+                            uint32 groupCountX = ComputeWorkGroupCount(targetResolution.width, PostProcessingThreadGroupCountX);
+                            uint32 groupCountY = ComputeWorkGroupCount(targetResolution.height, PostProcessingThreadGroupCountY);
 
-                        RenderBackendShaderArguments shaderArguments = {};
-                        shaderArguments.BindBuffer(0, GetCurrentPerFrameDataBuffer());
-                        shaderArguments.BindTextureSRV(1, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(jumpFloodPassInputTexture)));
-                        shaderArguments.BindTextureUAV(2, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(jumpFloodPassOutputTexture), 0));
-                        shaderArguments.PushConstants(0, (float)stepWidth);
+                            RenderBackendShaderArguments shaderArguments = {};
+                            shaderArguments.BindBuffer(0, GetCurrentPerFrameDataBuffer());
+                            shaderArguments.BindTextureSRV(1, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(jumpFloodPassInputTexture)));
+                            shaderArguments.BindTextureUAV(2, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(jumpFloodPassOutputTexture), 0));
+                            shaderArguments.PushConstants(0, (float)stepWidth);
 
-                        RenderBackendShaderHandle computeShader = shaderLibrary->GetShaderHandle(ShaderID::EditorSelectionOutlineJumpFlood);
-                        commandList.Dispatch2D(
-                            computeShader,
-                            shaderArguments,
-                            groupCountX,
-                            groupCountY);
-                    };
+                            RenderBackendShaderHandle computeShader = shaderLibrary->GetShaderHandle(ShaderID::EditorSelectionOutlineJumpFlood);
+                            commandList.Dispatch2D(
+                                computeShader,
+                                shaderArguments,
+                                groupCountX,
+                                groupCountY);
+                        };
                 });
 
             jumpFloodTexture = jumpFloodPassOutputTexture;
@@ -156,22 +155,22 @@ namespace Horizon
                 outputTexture = builder.WriteTexture(outputTexture, RenderBackendResourceState::UnorderedAccess);
 
                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
-                {
-                    uint32 groupCountX = ComputeWorkGroupCount(targetResolution.width, PostProcessingThreadGroupCountX);
-                    uint32 groupCountY = ComputeWorkGroupCount(targetResolution.height, PostProcessingThreadGroupCountY);
+                    {
+                        uint32 groupCountX = ComputeWorkGroupCount(targetResolution.width, PostProcessingThreadGroupCountX);
+                        uint32 groupCountY = ComputeWorkGroupCount(targetResolution.height, PostProcessingThreadGroupCountY);
 
-                    RenderBackendShaderArguments shaderArguments = {};
-                    shaderArguments.BindBuffer(0, GetCurrentPerFrameDataBuffer());
-                    shaderArguments.BindTextureSRV(1, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(jumpFloodTexture)));
-                    shaderArguments.BindTextureUAV(2, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(outputTexture), 0));
+                        RenderBackendShaderArguments shaderArguments = {};
+                        shaderArguments.BindBuffer(0, GetCurrentPerFrameDataBuffer());
+                        shaderArguments.BindTextureSRV(1, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(jumpFloodTexture)));
+                        shaderArguments.BindTextureUAV(2, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(outputTexture), 0));
 
-                    RenderBackendShaderHandle computeShader = shaderLibrary->GetShaderHandle(ShaderID::EditorSelectionOutlineComposite);
-                    commandList.Dispatch2D(
-                        computeShader,
-                        shaderArguments,
-                        groupCountX,
-                        groupCountY);
-                };
+                        RenderBackendShaderHandle computeShader = shaderLibrary->GetShaderHandle(ShaderID::EditorSelectionOutlineComposite);
+                        commandList.Dispatch2D(
+                            computeShader,
+                            shaderArguments,
+                            groupCountX,
+                            groupCountY);
+                    };
             });
 
         return outputTexture;

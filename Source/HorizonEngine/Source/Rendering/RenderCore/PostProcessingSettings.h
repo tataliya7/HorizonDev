@@ -61,13 +61,15 @@ namespace Horizon
         float bloomRadius;
 
         /** The strength of the Chromatic Aberration effect. */
-        float chromaticAberrationStrength;
+        float chromaticAberrationIntensity;
 
         /** TBD. */
         float chromaticAberrationOffset;
 
         /** The color temperature at which white objects on film actually look white. This property is expressed in Kelvin (K). */
         float whiteBalance;
+
+        float vignetteIntensity;
 
         ToneMappingOperatorType toneMappingOperator;
     };

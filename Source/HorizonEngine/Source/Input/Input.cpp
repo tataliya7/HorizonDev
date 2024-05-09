@@ -1,4 +1,4 @@
-#include "Input/Input.h"
+#include "Input.h"
 
 #define GLFW_EXPOSE_NATIVE_WIN32
 #include <GLFW/glfw3.h>

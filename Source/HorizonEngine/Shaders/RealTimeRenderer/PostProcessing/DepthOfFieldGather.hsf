@@ -103,7 +103,7 @@ static const float2 DOFOctawebKernel49[DOFOctawebKernel49SampleCount] = {
     float2( 0.965926, -0.258819)
 };
 
-[numthreads(POST_PROCESS_THREAD_GROUP_SIZE, POST_PROCESS_THREAD_GROUP_SIZE, 1)]
+[numthreads(POST_PROCESSING_THREAD_GROUP_COUNT_X, POST_PROCESSING_THREAD_GROUP_COUNT_Y, 1)]
 void DepthOfFieldGatherCS(uint3 DispatchThreadID : SV_DispatchThreadID)
 {
     PerFrameData perFrameData = GetPerFrameData();

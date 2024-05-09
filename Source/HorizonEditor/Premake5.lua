@@ -8,8 +8,12 @@ project "HorizonEditor"
     scanformoduledependencies "true"
 
     files {
+        --"Source/Framework/EditorSubsystem.h",
+        "Source/Framework/WindowSystem.h",
+        "Source/Framework/WindowSystem.cpp",
         "Source/Framework/HorizonEditor.h",
         "Source/Framework/HorizonEditor.cpp",
+        "Source/Framework/StbImage.cpp",
 
         "Source/Editor/**.h",
         "Source/Editor/**.c",

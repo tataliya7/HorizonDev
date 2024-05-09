@@ -72,7 +72,7 @@ float KarisAverage(float3 color)
     return 1.0f / (1.0f + luma);
 }
 
-[numthreads(POST_PROCESS_THREAD_GROUP_SIZE, POST_PROCESS_THREAD_GROUP_SIZE, 1)]
+[numthreads(POST_PROCESSING_THREAD_GROUP_COUNT_X, POST_PROCESSING_THREAD_GROUP_COUNT_Y, 1)]
 void GaussianBloomDownsampleCS(uint3 DispatchThreadID : SV_DispatchThreadID)
 {
     Texture2D inputTexture = GetInputTextureSRV();

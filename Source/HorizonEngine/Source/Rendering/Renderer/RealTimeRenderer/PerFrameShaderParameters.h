@@ -14,7 +14,7 @@ namespace Horizon {
 struct PerFrameShaderParameters
 {
     uint frameIndex;
-ddd
+
     float deltaTime;
 
     uint renderWidth;

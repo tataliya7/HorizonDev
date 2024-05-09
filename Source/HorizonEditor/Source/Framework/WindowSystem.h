@@ -6,14 +6,15 @@ struct GLFWwindow;
 
 namespace Horizon
 {
-    enum WindowCreateFlags
+    enum WindowCreateFlagBits : uint32
     {
-        HORIZON_EXAMPLE_WINDOW_CREATE_FLAG_BIT_NONE = 0,
-        HORIZON_EXAMPLE_WINDOW_CREATE_FLAG_BIT_RESIZABLE = 1 << 0,
-        HORIZON_EXAMPLE_WINDOW_CREATE_FLAG_BIT_BORDERLESS = 1 << 1,
-        HORIZON_EXAMPLE_WINDOW_CREATE_FLAG_BIT_MAXIMIZED = 1 << 2,
-        HORIZON_EXAMPLE_WINDOW_CREATE_FLAG_BIT_FULLSCREEN = 1 << 3,
+        HORIZON_WINDOW_CREATE_FLAG_BIT_NONE = 0,
+        HORIZON_WINDOW_CREATE_FLAG_BIT_RESIZABLE = 1 << 0,
+        HORIZON_WINDOW_CREATE_FLAG_BIT_BORDERLESS = 1 << 1,
+        HORIZON_WINDOW_CREATE_FLAG_BIT_MAXIMIZED = 1 << 2,
+        HORIZON_WINDOW_CREATE_FLAG_BIT_FULLSCREEN = 1 << 3,
     };
+    using WindowCreateFlags = uint32;
 
     struct WindowCreateInfo
     {
@@ -26,6 +27,7 @@ namespace Horizon
 
     enum class WindowState
     {
+        Unknown,
         Normal,
         Minimized,
         Maximized,
@@ -73,6 +75,8 @@ namespace Horizon
         void MaximizeWindow();
 
         void SetFullscreen(bool fullscreen);
+
+        void SetWindowSize(uint32 width, uint32 height);
 
         using KeyPressEventCallback = std::function<void(KeyCode, bool)>;
         using KeyReleaseEventCallback = std::function<void(KeyCode)>;

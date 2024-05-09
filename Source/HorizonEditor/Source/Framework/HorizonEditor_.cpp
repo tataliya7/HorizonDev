@@ -18,8 +18,6 @@
 #define HE_JOB_SYSTEM_NUM_FIBIERS 128
 #define HE_JOB_SYSTEM_FIBER_STACK_SIZE (HE_JOB_SYSTEM_NUM_FIBIERS * 1024)
 
-#define BIND_FUNCTION(func) [this](auto&&... args) -> decltype(auto) { return this->func(std::forward<decltype(args)> (args)...); }
-
 namespace Horizon
 {
     HorizonEditor* HorizonEditor::Instance = nullptr;

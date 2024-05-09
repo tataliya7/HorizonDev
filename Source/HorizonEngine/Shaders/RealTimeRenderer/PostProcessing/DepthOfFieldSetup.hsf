@@ -40,7 +40,7 @@ float ComputeCoC(float linearDepth, float focalDistance, float focalRegion, floa
 //     return saturate(coc + 0.5);
 // }
 
-[numthreads(POST_PROCESS_THREAD_GROUP_SIZE, POST_PROCESS_THREAD_GROUP_SIZE, 1)]
+[numthreads(POST_PROCESSING_THREAD_GROUP_COUNT_X, POST_PROCESSING_THREAD_GROUP_COUNT_Y, 1)]
 void DepthOfFieldSetupCS(uint3 DispatchThreadID : SV_DispatchThreadID)
 {
     PerFrameData perFrameData = GetPerFrameData();

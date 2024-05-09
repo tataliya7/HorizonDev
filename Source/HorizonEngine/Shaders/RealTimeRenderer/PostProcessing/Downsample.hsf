@@ -5,17 +5,23 @@
 BIND_TEXTURE_2D_SRV(0, InputTexture);
 BIND_TEXTURE_2D_UAV(1, float4, OutputTexture);
 
-[numthreads(POST_PROCESS_THREAD_GROUP_SIZE, POST_PROCESS_THREAD_GROUP_SIZE, 1)]
+[numthreads(POST_PROCESSING_THREAD_GROUP_COUNT_X, POST_PROCESSING_THREAD_GROUP_COUNT_Y, 1)]
 void DownsampleCS(uint3 DispatchThreadID : SV_DispatchThreadID)
 {
+    uint2 pixelCoord = DispatchThreadID.xy;
+
     Texture2D inputTexture = GetInputTextureSRV();
     RWTexture2D<float4> outputTexture = GetOutputTextureUAV();
 
     uint width, height;
     outputTexture.GetDimensions(width, height);
 
-    uint2 pixelCoord = DispatchThreadID.xy;
-    float2 uv = (pixelCoord + 0.5) / float2(width, height);
+    if (pixelCoord.x >= width || pixelCoord.y >= height)
+    {
+        return;
+    }
+
+    float2 uv = (pixelCoord + 0.5f) / float2(width, height);
 
     float4 result = inputTexture.SampleLevel(GlobalSamplerLinearClamp, uv, 0);
 
