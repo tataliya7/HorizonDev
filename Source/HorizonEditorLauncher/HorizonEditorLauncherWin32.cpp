@@ -15,3 +15,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
     int exit = HorizonEditorMain();
     return exit;
 }
+
+int main()
+{
+    int exit = HorizonEditorMain();
+    return exit;
+}

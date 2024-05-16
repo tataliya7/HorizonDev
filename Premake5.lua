@@ -108,7 +108,6 @@ filter "platforms:Win64"
         "_SILENCE_CXX20_CISO646_REMOVED_WARNING",
         "_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING", --TODO: delete this
         "HE_ENBALE_STREAMLINE_SUPPORT=0",
-        "USE_OPTICK=1",
     }
     staticruntime "Off"
     architecture "x64"

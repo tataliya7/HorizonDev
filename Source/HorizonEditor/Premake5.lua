@@ -13,6 +13,8 @@ project "HorizonEditor"
         "Source/Framework/WindowSystem.cpp",
         "Source/Framework/HorizonEditor.h",
         "Source/Framework/HorizonEditor.cpp",
+        "Source/Framework/HorizonEditorUI.h",
+        "Source/Framework/HorizonEditorUI.cpp",
         "Source/Framework/StbImage.cpp",
 
         "Source/Editor/**.h",
@@ -53,6 +55,15 @@ project "HorizonEditor"
     defines {
         "HORIZON_EDITOR=1",
     }
+
+    filter "configurations:Debug"
+        defines { "USE_OPTICK=1" }
+
+    filter "configurations:Development"
+        defines { "USE_OPTICK=1" }
+
+    filter "configurations:Release"
+        defines { "USE_OPTICK=0" }
 
 -- group "EditorPlugins"
 --     include "Plugins/RenderDoc"

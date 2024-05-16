@@ -166,8 +166,8 @@ namespace Horizon
 
     struct D3D12CommandQueue
     {
-        Microsoft::WRL::ComPtr<ID3D12CommandQueue> queue;
         D3D12CommandQueueType queueType;
+        Microsoft::WRL::ComPtr<ID3D12CommandQueue> queue;
         Microsoft::WRL::ComPtr<ID3D12Fence> fence;
         uint64 lastSignaledValue;
 
@@ -393,7 +393,10 @@ namespace Horizon
 
     struct D3D12SwapChain
     {
-        Microsoft::WRL::ComPtr<IDXGISwapChain3> dxgiSwapChain;
+        Microsoft::WRL::ComPtr<IDXGISwapChain1> dxgiSwapChain1;
+        Microsoft::WRL::ComPtr<IDXGISwapChain2> dxgiSwapChain2;
+        Microsoft::WRL::ComPtr<IDXGISwapChain3> dxgiSwapChain3;
+        Microsoft::WRL::ComPtr<IDXGISwapChain4> dxgiSwapChain4;
 
         uint32 width;
         uint32 height;
@@ -408,9 +411,19 @@ namespace Horizon
         RenderBackendTextureHandle buffers[RenderBackendMaxSwapChainBufferCount];
         Microsoft::WRL::ComPtr<ID3D12Fence> frameFences[RenderBackendMaxSwapChainBufferCount];
 
-        IDXGISwapChain3* GetIDXGISwapChain()
+        IDXGISwapChain2* GetIDXGISwapChain2()
         {
-            return dxgiSwapChain.Get();
+            return dxgiSwapChain2.Get();
+        }
+
+        IDXGISwapChain3* GetIDXGISwapChain3()
+        {
+            return dxgiSwapChain3.Get();
+        }
+
+        IDXGISwapChain4* GetIDXGISwapChain4()
+        {
+            return dxgiSwapChain4.Get();
         }
 
         ID3D12Fence* GetFrameFence(uint32 bufferIndex)
@@ -425,7 +438,7 @@ namespace Horizon
 
         uint32 GetCurrentBackBufferIndex() const
         {
-            return dxgiSwapChain->GetCurrentBackBufferIndex();
+            return dxgiSwapChain3->GetCurrentBackBufferIndex();
         }
     };
 
@@ -1938,8 +1951,6 @@ namespace Horizon
         void DestroyShader(RenderBackendShaderHandle shader) override;
         RenderBackendTimingQueryHeapHandle CreateTimingQueryHeap(const RenderBackendTimingQueryHeapDesc* desc, const char* name) override;
         void DestroyTimingQueryHeap(RenderBackendTimingQueryHeapHandle timingQueryHeap) override;
-        RenderBackendOcclusionQueryHeapHandle CreateOcclusionQueryHeap(const RenderBackendOcclusionQueryHeapDesc* desc, const char* name) override;
-        void DestroyOcclusionQueryHeap(RenderBackendOcclusionQueryHeapHandle occlusionQueryHeap) override;
         void SubmitCommandLists(RenderBackendCommandList** commandLists, uint32 numCommandLists, RenderBackendSwapChainHandle swapChain) override;
         RenderBackendRayTracingAccelerationStructureHandle CreateRayTracingBottomLevelAccelerationStructure(const RenderBackendRayTracingBottomLevelAccelerationDesc* desc, const char* name) override;
         RenderBackendRayTracingAccelerationStructureHandle CreateRayTracingTopLevelAccelerationStructure(const RenderBackendRayTracingTopLevelAccelerationDesc* desc, const char* name) override;
@@ -1962,6 +1973,7 @@ namespace Horizon
         std::vector<D3D12Adapter*> adapters;
         uint32 numDevices;
         D3D12Device* devices[RenderBackendMaxDeviceCount];
+        Microsoft::WRL::ComPtr<ID3D12Device> d3d12Devices[RenderBackendMaxDeviceCount];
         bool tearingSupported;
     };
 
@@ -2869,6 +2881,7 @@ namespace Horizon
             D3D12Adapter* adapter = adapters[0];
             devices[0] = new D3D12Device(this);
             D3D12Device* device = devices[0];
+            d3d12Devices[0] = device->device;
             if (device->Init(this, adapter))
             {
 
@@ -2880,10 +2893,20 @@ namespace Horizon
     void D3D12RenderBackend::DestroyRenderDevices()
     {
         D3D12Device* device = devices[0];
-
         device->Exit();
-
         delete device;
+
+        Microsoft::WRL::ComPtr<ID3D12Device> d3d12Device = d3d12Devices[0];
+
+        if (d3d12Device && useDebugLayers)
+        {
+            Microsoft::WRL::ComPtr<ID3D12DebugDevice> debugDevice;
+            if (SUCCEEDED(device->device->QueryInterface(IID_PPV_ARGS(&debugDevice))))
+            {
+                D3D12_RLDO_FLAGS rldoFlags = D3D12_RLDO_DETAIL;
+                D3D12_CHECK(debugDevice->ReportLiveDeviceObjects(rldoFlags));
+            }
+        }
     }
 
     void D3D12RenderBackend::FlushRenderDevices()
@@ -2896,6 +2919,9 @@ namespace Horizon
     uint32 D3D12Device::CreateD3D12SwapChain(const RenderBackendSwapChainDesc* desc)
     {
         D3D12SwapChain* swapChain = new D3D12SwapChain();
+
+        ID3D12CommandQueue* commandQueue = GetCommandQueue(D3D12CommandQueueType::Direct)->GetID3D12CommandQueue();
+        HWND windowHandle = (HWND)desc->windowHandle;
 
         UINT swapChainFlags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
         if (backend->IsTearingSupported())
@@ -2910,7 +2936,7 @@ namespace Horizon
         swapChainDesc.Stereo = false;
         swapChainDesc.SampleDesc.Count = 1;
         swapChainDesc.SampleDesc.Quality = 0;
-        swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+        swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT | DXGI_USAGE_SHADER_INPUT;
         swapChainDesc.BufferCount = desc->numBuffers;
         swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
         swapChainDesc.AlphaMode = DXGI_ALPHA_MODE_IGNORE;
@@ -2920,14 +2946,13 @@ namespace Horizon
         DXGI_SWAP_CHAIN_FULLSCREEN_DESC fullscreenDesc = {};
         fullscreenDesc.Windowed = true;
 
-        Microsoft::WRL::ComPtr<IDXGISwapChain1> dxgiSwapChain1;
         D3D12_CHECK(backend->GetIDXGIFactory()->CreateSwapChainForHwnd(
-            GetCommandQueue(D3D12CommandQueueType::Direct)->GetID3D12CommandQueue(),
-            (HWND)desc->windowHandle,
+            commandQueue,
+            windowHandle,
             &swapChainDesc,
             &fullscreenDesc,
             nullptr,
-            &dxgiSwapChain1));
+            &swapChain->dxgiSwapChain1));
 
         swapChain->width = swapChainDesc.Width;
         swapChain->height = swapChainDesc.Height;
@@ -2935,16 +2960,22 @@ namespace Horizon
         swapChain->numBuffers = swapChainDesc.BufferCount;
         swapChain->vsyncEnabled = desc->vsync;
         swapChain->windowed = fullscreenDesc.Windowed;
-        D3D12_CHECK(dxgiSwapChain1->QueryInterface(IID_PPV_ARGS(&swapChain->dxgiSwapChain)));
+
+        if (swapChain->dxgiSwapChain1)
+        {
+            D3D12_CHECK(swapChain->dxgiSwapChain1->QueryInterface(IID_PPV_ARGS(&swapChain->dxgiSwapChain2)));
+            D3D12_CHECK(swapChain->dxgiSwapChain1->QueryInterface(IID_PPV_ARGS(&swapChain->dxgiSwapChain3)));
+            D3D12_CHECK(swapChain->dxgiSwapChain1->QueryInterface(IID_PPV_ARGS(&swapChain->dxgiSwapChain4)));
+        }
 
         DXGI_COLOR_SPACE_TYPE colorSpace = DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P709;
 
         UINT colorSpaceSupport = 0;
-        if (SUCCEEDED(swapChain->dxgiSwapChain->CheckColorSpaceSupport(colorSpace, &colorSpaceSupport)))
+        if (SUCCEEDED(swapChain->dxgiSwapChain4->CheckColorSpaceSupport(colorSpace, &colorSpaceSupport)))
         {
             if (colorSpaceSupport & DXGI_SWAP_CHAIN_COLOR_SPACE_SUPPORT_FLAG_PRESENT)
             {
-                if (SUCCEEDED(swapChain->dxgiSwapChain->SetColorSpace1(colorSpace)))
+                if (SUCCEEDED(swapChain->dxgiSwapChain4->SetColorSpace1(colorSpace)))
                 {
                     switch (colorSpace)
                     {
@@ -2970,7 +3001,7 @@ namespace Horizon
             texture->mipLevels = 1;
             texture->allocation = nullptr;
             texture->isSwapChainBuffer = true;
-            D3D12_CHECK(swapChain->dxgiSwapChain->GetBuffer(i, IID_PPV_ARGS(&texture->resource)));
+            D3D12_CHECK(swapChain->dxgiSwapChain4->GetBuffer(i, IID_PPV_ARGS(&texture->resource)));
             D3D12_CHECK(texture->resource->SetName(L"SwapChainBuffer"));
 
             texture->debugName = "SwapChainBuffer"; // Temp
@@ -3027,7 +3058,7 @@ namespace Horizon
             texture->resource = nullptr;
         }
 
-        D3D12_CHECK(swapChain->GetIDXGISwapChain()->ResizeBuffers(
+        D3D12_CHECK(swapChain->GetIDXGISwapChain4()->ResizeBuffers(
             swapChain->numBuffers,
             swapChain->width,
             swapChain->height,
@@ -3039,7 +3070,7 @@ namespace Horizon
             D3D12Texture* texture = device->GetTexture(swapChain->buffers[i]);
             texture->width = swapChain->width;
             texture->height = swapChain->height;
-            D3D12_CHECK(swapChain->dxgiSwapChain->GetBuffer(i, IID_PPV_ARGS(&texture->resource)));
+            D3D12_CHECK(swapChain->dxgiSwapChain4->GetBuffer(i, IID_PPV_ARGS(&texture->resource)));
             D3D12_CHECK(texture->resource->SetName(L"SwapChainBuffer"));
         }
     }
@@ -3061,7 +3092,7 @@ namespace Horizon
 
         uint32 bufferIndex = swapChain->GetCurrentBackBufferIndex();
 
-        HRESULT hr = swapChain->GetIDXGISwapChain()->Present(presentSyncInterval, presentFlags);
+        HRESULT hr = swapChain->GetIDXGISwapChain4()->Present(presentSyncInterval, presentFlags);
         if (hr == DXGI_ERROR_DEVICE_REMOVED || hr == DXGI_ERROR_DEVICE_RESET)
         {
             return false;
@@ -3073,7 +3104,7 @@ namespace Horizon
         if (fence->GetCompletedValue() < 1)
         {
             // If hEvent is a null handle, then this API will not return until the specified fence value(s) have been reached.
-            // @see: https://learn.microsoft.com/en-us/windows/win32/api/d3d12/nf-d3d12-id3d12fence-seteventoncompletion#remarks
+            // See: https://learn.microsoft.com/en-us/windows/win32/api/d3d12/nf-d3d12-id3d12fence-seteventoncompletion#remarks
             hr = fence->SetEventOnCompletion(1, NULL);
             assert(SUCCEEDED(hr));
         }
@@ -3243,16 +3274,6 @@ namespace Horizon
 
     }
 
-    RenderBackendOcclusionQueryHeapHandle D3D12RenderBackend::CreateOcclusionQueryHeap(const RenderBackendOcclusionQueryHeapDesc* desc, const char* name)
-    {
-        return RenderBackendOcclusionQueryHeapHandle::Null;
-    }
-
-    void D3D12RenderBackend::DestroyOcclusionQueryHeap(RenderBackendOcclusionQueryHeapHandle occlusionQueryHeap)
-    {
-
-    }
-
     void D3D12RenderBackend::SubmitCommandLists(RenderBackendCommandList** commandLists, uint32 numCommandLists, RenderBackendSwapChainHandle swapChainHandle)
     {
         OPTICK_EVENT();
@@ -3362,40 +3383,6 @@ namespace Horizon
 
     bool D3D12Device::Init(D3D12RenderBackend* backend, D3D12Adapter* adapter)
     {
-#if HE_ENBALE_STREAMLINE_SUPPORT
-        sl::Feature streamlineFeatures[] = { sl::kFeatureReflex, sl::kFeatureDLSS, sl::kFeatureDLSS_G };
-
-        sl::Preferences pref = {};
-        pref.showConsole = true;
-        pref.logLevel = sl::LogLevel::eDefault;
-        pref.pathsToPlugins = nullptr;
-        pref.numPathsToPlugins = 0;
-        pref.pathToLogsAndData = nullptr;
-        pref.allocateCallback = nullptr;
-        pref.releaseCallback = nullptr;
-        pref.logMessageCallback = StreamlineLogMessageCallback;
-        pref.flags = sl::PreferenceFlags::eDisableCLStateTracking;// | sl::PreferenceFlags::eAllowOTA;
-        pref.featuresToLoad = streamlineFeatures;
-        pref.numFeaturesToLoad = _countof(streamlineFeatures);
-        pref.applicationId = sl::INVALID_UINT;
-        pref.engine = sl::EngineType::eCustom;
-        pref.engineVersion = "Horizon Engine";
-        pref.projectId = "a0f57b54-1daf-4934-90ae-c4035c19df04";
-        pref.renderAPI = sl::RenderAPI::eD3D12;
-
-        sl::Result result;
-        if (SL_FAILED(result, slInit(pref, sl::kSDKVersion)))
-        {
-            LogInfo(GLogger, std::format("slInit, error code: {}.", (int32)result));
-        }
-
-        sl::ReflexState state = {};
-        if (SL_FAILED(result, slReflexGetState(state)))
-        {
-            LogInfo(GLogger, std::format("slReflexGetState, error code: {}", (int32)result));
-        }
-#endif
-
         D3D_FEATURE_LEVEL minimumFeatureLevel = D3D_FEATURE_LEVEL_12_2;
 
         HRESULT hr = D3D12CreateDevice(adapter->GetIDXGIAdapter(), minimumFeatureLevel, IID_PPV_ARGS(&device));
@@ -3404,6 +3391,11 @@ namespace Horizon
             LogError(GLogger, std::format("Error: Failed to create D3D12 device."));
             return false;
         }
+
+        //mask = RenderBackendDeviceMask(0);
+        mask = {
+            .mask = 0U
+        };
 
         CD3DX12FeatureSupport features;
         D3D12_CHECK(features.Init(device.Get()));
@@ -3522,7 +3514,7 @@ namespace Horizon
         D3D12_FEATURE_DATA_D3D12_OPTIONS options = {};
         device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS, &options, sizeof(options));
 
-        // @see: https://microsoft.github.io/DirectX-Specs/d3d/HLSL_SM_6_6_DynamicResources.html
+        // See: https://microsoft.github.io/DirectX-Specs/d3d/HLSL_SM_6_6_DynamicResources.html
         // ResourceDescriptorHeap/SamplerDescriptorHeap must be supported on devices that support both D3D12_RESOURCE_BINDING_TIER_3 and D3D_SHADER_MODEL_6_6
         if (featureShaderModel.HighestShaderModel >= D3D_SHADER_MODEL_6_6 && options.ResourceBindingTier >= D3D12_RESOURCE_BINDING_TIER_3)
         {
@@ -3551,9 +3543,8 @@ namespace Horizon
 
         {
             D3D12CommandQueueType queueType = D3D12CommandQueueType::Direct;
-            auto& commandQueue = commandQueues[(uint32)queueType];
 
-            commandQueue = new D3D12CommandQueue();
+            D3D12CommandQueue* commandQueue = new D3D12CommandQueue();
             commandQueue->queueType = queueType;
 
             D3D12_COMMAND_QUEUE_DESC commandQueueDesc = {
@@ -3567,12 +3558,13 @@ namespace Horizon
 
             D3D12_CHECK(device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&commandQueue->fence)));
             commandQueue->lastSignaledValue = 0;
+
+            commandQueues[(uint32)queueType] = commandQueue;
         }
         {
             D3D12CommandQueueType queueType = D3D12CommandQueueType::Compute;
-            auto& commandQueue = commandQueues[(uint32)queueType];
 
-            commandQueue = new D3D12CommandQueue();
+            D3D12CommandQueue* commandQueue = new D3D12CommandQueue();
             commandQueue->queueType = queueType;
 
             D3D12_COMMAND_QUEUE_DESC commandQueueDesc = {
@@ -3586,12 +3578,13 @@ namespace Horizon
 
             D3D12_CHECK(device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&commandQueue->fence)));
             commandQueue->lastSignaledValue = 0;
+
+            commandQueues[(uint32)queueType] = commandQueue;
         }
         {
             D3D12CommandQueueType queueType = D3D12CommandQueueType::Copy;
-            auto& commandQueue = commandQueues[(uint32)queueType];
 
-            commandQueue = new D3D12CommandQueue();
+            D3D12CommandQueue* commandQueue = new D3D12CommandQueue();
             commandQueue->queueType = queueType;
 
             D3D12_COMMAND_QUEUE_DESC commandQueueDesc = {
@@ -3605,6 +3598,8 @@ namespace Horizon
 
             D3D12_CHECK(device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&commandQueue->fence)));
             commandQueue->lastSignaledValue = 0;
+
+            commandQueues[(uint32)queueType] = commandQueue;
         }
 
         {
@@ -3816,30 +3811,6 @@ namespace Horizon
 
         D3D12_CHECK(D3D12MA::CreateAllocator(&allocatorDesc, &allocator));
 
-        //mask = RenderBackendDeviceMask(0);
-        mask = {
-            .mask = ~0U
-        };
-
-#if HE_ENBALE_STREAMLINE_SUPPORT
-        {
-            sl::Result slResult = slSetD3DDevice(device.Get());
-            if (slResult == sl::Result::eOk)
-            {
-                // Set reflex consts to a default config. This can be changed at runtime in the UI.
-                sl::ReflexOptions reflexOptions = {};
-                reflexOptions.mode = sl::ReflexMode::eLowLatency;
-                reflexOptions.frameLimitUs = 0;
-                reflexOptions.useMarkersToOptimize = true;
-                //reflexOptions.virtualKey = VK_F13;
-                if (SL_FAILED(result, slReflexSetOptions(reflexOptions)))
-                {
-                    LogError(GLogger, std::format("slReflexSetOptions, error code: {}", (int32)result));
-                }
-            }
-        }
-#endif
-
         return true;
     }
 
@@ -3847,19 +3818,15 @@ namespace Horizon
     {
         WaitIdle();
 
-        if (backend->useDebugLayers)
+        delete resourceDescriptorHeap;
+        delete samplerDescriptorHeap;
+
+        for (uint32 index = 0; index < (uint32)D3D12CommandQueueType::Count; index++)
         {
-            ID3D12DebugDevice* debugDevice = nullptr;
-            if (SUCCEEDED(device->QueryInterface(&debugDevice)))
+            if (commandQueues[(uint32)index])
             {
-                device->Release();
-                D3D12_CHECK(debugDevice->ReportLiveDeviceObjects(D3D12_RLDO_DETAIL));
-                debugDevice->Release();
+                delete commandQueues[(uint32)index];
             }
-        }
-        else
-        {
-            device->Release();
         }
     }
 

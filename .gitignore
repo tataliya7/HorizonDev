@@ -72,6 +72,8 @@
 !*.glslfx
 !*.usd*
 
+.git
+.idea
 .vs
 .vscode
 

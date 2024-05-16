@@ -1,5 +1,7 @@
 #include "HorizonEditor.h"
 
+#include <optick.h>
+
 #define BIND_FUNCTION(func) [this](auto&&... args) -> decltype(auto) { return this->func(std::forward<decltype(args)> (args)...); }
 
 namespace Horizon
@@ -26,30 +28,19 @@ namespace Horizon
 //        executablePath = argv[0];
 //        executableDirectory = executablePath.parent_path();
 //
-//        // Initialize logging
-//        CreateConsoleLogger_Deprecated();
-//        //CreateConsoleLogger();
+        // Initialize logging system
+        CreateConsoleLogger_Deprecated();
 //
 //        JobSystemInit(HE::GetNumberOfProcessors(), HE_JOB_SYSTEM_NUM_FIBIERS, HE_JOB_SYSTEM_FIBER_STACK_SIZE);
 //
         GLFWInit();
 
-        WindowCreateFlags windowFlags = HORIZON_WINDOW_CREATE_FLAG_BIT_RESIZABLE | HORIZON_WINDOW_CREATE_FLAG_BIT_MAXIMIZED;
-        // Create main window
-        WindowCreateInfo tttt = {
-            .title = applicationName.c_str(),
-            .icon = "../../../Assets/Icons/horizon.png",
-            .flags = windowFlags
-        };
-        window = new Window(&tttt);
-        uint32 initialWidth = window->GetWidth();
-        uint32 initialHeight = window->GetHeight();
-        delete window;
+        // Hard coded initial window size.
+        // TODO: Figure out best practice for first-time boot up of editor.
+        uint32 initialWidth = 1920;
+        uint32 initialHeight = 1080;
 
-        if (true)
-        {
-            windowFlags |= HORIZON_WINDOW_CREATE_FLAG_BIT_MAXIMIZED;
-        }
+        WindowCreateFlags windowFlags = HORIZON_WINDOW_CREATE_FLAG_BIT_RESIZABLE | HORIZON_WINDOW_CREATE_FLAG_BIT_MAXIMIZED;
 
         // Create main window
         WindowCreateInfo windowInfo = {
@@ -77,66 +68,59 @@ namespace Horizon
 //
 //        RenderDocPluginInit();
 //
-//        bool enableHardwareRayTracing = false;
-//
-//        // Initialize render backend
-//        {
-//            RenderBackendType renderBackendType = RenderBackendType::Vulkan;
-//            if (renderBackendType == RenderBackendType::Vulkan)
-//            {
-//#if HE_ENBALE_STREAMLINE_SUPPORT
-//                int flags = VULKAN_RENDER_BACKEND_CREATE_FLAGS_SURFACE; // Disable validation layers when using NSight and Reflex.
-//#else
-//                int flags = VULKAN_RENDER_BACKEND_CREATE_FLAGS_VALIDATION_LAYERS | VULKAN_RENDER_BACKEND_CREATE_FLAGS_SURFACE;
-//
-//                if (enableHardwareRayTracing)
-//                {
-//                    flags |= VULKAN_RENDER_BACKEND_CREATE_FLAGS_RAY_TRACING;
-//                }
-//#endif
-//                GRenderBackend = RenderBackendCreateVulkan(flags);
-//            }
-//            else if (renderBackendType == RenderBackendType::D3D12)
-//            {
-//#if 1
-//                D3D12RenderBackendDesc d3d12RenderBackendDesc = {
-//                    .useDebugLayers = false,
-//                    .useGPUBasedValidation = false,
-//                };
-//#else
-//                D3D12RenderBackendDesc d3d12RenderBackendDesc = {
-//                    .useDebugLayers = true,
-//                    .useGPUBasedValidation = true,
-//                };
-//#endif
-//                GRenderBackend = RenderBackendCreateD3D12(&d3d12RenderBackendDesc);
-//            }
-//            else
-//            {
-//                LogError(GLogger, std::format("Unknown RenderBackendType!"));
-//            }
-//
-//            uint32 primaryDeviceMask = 0;
-//            uint32 physicalDeviceID = 0;
-//            GRenderBackend->CreateRenderDevices(&physicalDeviceID, 1, &primaryDeviceMask);
-//        }
+
+        // Initialize render backend
+        {
+            bool enableDebugLayers = true;
+            bool enableHardwareRayTracing = false;
+
+            if (renderBackendType == RenderBackendType::Vulkan)
+            {
+                int flags = VULKAN_RENDER_BACKEND_CREATE_FLAGS_SURFACE;
+                if (enableDebugLayers)
+                {
+                    flags |= VULKAN_RENDER_BACKEND_CREATE_FLAGS_VALIDATION_LAYERS;
+                }
+                if (enableHardwareRayTracing)
+                {
+                    flags |= VULKAN_RENDER_BACKEND_CREATE_FLAGS_RAY_TRACING;
+                }
+                renderBackend = RenderBackendCreateVulkan(flags);
+            }
+            else if (renderBackendType == RenderBackendType::D3D12)
+            {
+                D3D12RenderBackendDesc d3d12RenderBackendDesc = {
+                    .useDebugLayers = enableDebugLayers,
+                    .useGPUBasedValidation = enableDebugLayers,
+                };
+                renderBackend = RenderBackendCreateD3D12(&d3d12RenderBackendDesc);
+            }
+            else
+            {
+                LogError(GLogger, std::format("Unknown RenderBackendType!"));
+            }
+
+            uint32 primaryDeviceMask = 0;
+            uint32 physicalDeviceID = 0;
+            renderBackend->CreateRenderDevices(&physicalDeviceID, 1, &primaryDeviceMask);
+        }
 //
 //        renderEngine = new RenderSystem();
 //        renderEngine->hardwareRayTracingEnabled = enableHardwareRayTracing;
 //        renderEngine->Init(window->GetGLFWHandle());
 //
-//        RenderBackendSwapChainDesc swapChainDesc = {
-//            .width = window->GetWidth(),
-//            .height = window->GetHeight(),
-//            .windowHandle = (uint64)window->GetNativeHandle(),
-//            .numBuffers = 3,
-//            .vsync = false,
-//            .format = RenderBackendTextureFormat::RGB10A2Unorm, //RenderBackendTextureFormat::BGRA8Unorm,
-//            .presentMode = RenderBackendSwapChainPresentMode::Immediate,
-//        };
-//        swapChain = GRenderBackend->CreateSwapChain(~0u, &swapChainDesc);
-//        swapChainWidth = window->GetWidth();
-//        swapChainHeight = window->GetHeight();
+        RenderBackendSwapChainDesc swapChainDesc = {
+            .width = window->GetWidth(),
+            .height = window->GetHeight(),
+            .windowHandle = (uint64)window->GetNativeHandle(),
+            .numBuffers = 3,
+            .vsync = false,
+            .format = RenderBackendTextureFormat::RGB10A2Unorm,
+            .presentMode = RenderBackendSwapChainPresentMode::Immediate,
+        };
+        swapChain = renderBackend->CreateSwapChain(&swapChainDesc);
+        swapChainWidth = window->GetWidth();
+        swapChainHeight = window->GetHeight();
 //
 //        ShaderGraphSystemInit();
 //
@@ -148,6 +132,15 @@ namespace Horizon
 
     void HorizonEditor::Exit()
     {
+        if (renderBackendType == RenderBackendType::Vulkan)
+        {
+            RenderBackendDestroyVulkan(renderBackend);
+        }
+        else if (renderBackendType == RenderBackendType::D3D12)
+        {
+            RenderBackendDestroyD3D12(renderBackend);
+        }
+
         if (window) delete window;
 
         GLFWExit();
@@ -155,7 +148,7 @@ namespace Horizon
 
     void HorizonEditor::Tick()
     {
-//        OPTICK_EVENT();
+        OPTICK_EVENT();
 //
 //        deltaTime = CalculateDeltaTime();
 //
@@ -173,7 +166,23 @@ namespace Horizon
 //
 //        renderEngine->BeginDrawUI();
 //
-//        OnDrawUI();
+        OnDrawUI();
+
+        // RenderBackendCommandList* commandList = renderBackend->AllocateCommandList();
+        //
+        // commandList->BeginDebugLabel();
+        // commandList->BeginTimingQuery();
+        //
+        // RenderBackendRenderPassInfo renderPass = {
+        //     .renderTargets = { {.texture = output, .mipLevel = 0, .arrayLayer = 0, .loadOp = RenderBackendRenderPassBeginningAccessType::Clear, .storeOp = RenderBackendRenderPassEndingAccessType::Preserve } },
+        // };
+        // commandList->BeginRenderPass(renderPass);
+        //
+        // commandList->EndRenderPass();
+        //
+        // commandList->EndTimingQuery();
+        // commandList->EndDebugLabel();
+        
 //
 //        renderEngine->EndDrawUI();
 //
@@ -192,7 +201,7 @@ namespace Horizon
     {
         while (!IsExitRequested())
         {
-//            OPTICK_FRAME("MainThread");
+            OPTICK_FRAME("MainThread");
 //
 //#if HE_ENBALE_STREAMLINE_SUPPORT
 //            streamlineContext->GetNewFrameToken();
@@ -205,13 +214,14 @@ namespace Horizon
             {
                 SetExitRequest(true);
             }
-//
-//            WindowState state = window->GetState();
-//
-//            if (state == WindowState::Minimized)
-//            {
-//                continue;
-//            }
+
+            WindowState state = window->GetState();
+
+            if (state == WindowState::Minimized)
+            {
+                continue;
+            }
+
 //
 //            //if (!window->IsFocused())
 //            //{
@@ -230,26 +240,27 @@ namespace Horizon
 //            //}
 //            //previousTimePoint1 = timePoint;
 //
-//            uint32 width = window->GetWidth();
-//            uint32 height = window->GetHeight();
-//            if (width != swapChainWidth || height != swapChainHeight)
-//            {
-//                // Vulkan does not support swap chains with width and height set to zero
-//                if (width != 0 && height != 0)
-//                {
-//                    GRenderBackend->ResizeSwapChain(swapChain, &width, &height);
-//                    swapChainWidth = width;
-//                    swapChainHeight = height;
-//                }
-//            }
-//
-//            Tick();
+
+            uint32 width = window->GetWidth();
+            uint32 height = window->GetHeight();
+            if (width != swapChainWidth || height != swapChainHeight)
+            {
+                // Vulkan does not support swap chains with width and height set to zero
+                if (width != 0 && height != 0)
+                {
+                    renderBackend->ResizeSwapChain(swapChain, &width, &height);
+                    swapChainWidth = width;
+                    swapChainHeight = height;
+                }
+            }
+
+            Tick();
 //
 //#if HE_ENBALE_STREAMLINE_SUPPORT
 //            streamlineContext->ReflexSetMarkerPresentStart();
 //#endif
 //
-//            GRenderBackend->PresentSwapChain(swapChain);
+            //renderBackend->PresentSwapChain(swapChain);
 //
 //#if HE_ENBALE_STREAMLINE_SUPPORT
 //            streamlineContext->ReflexSetMarkerPresentEnd();

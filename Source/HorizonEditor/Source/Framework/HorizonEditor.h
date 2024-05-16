@@ -94,7 +94,7 @@ namespace Horizon
 
         //void OnUpdate(float deltaTime);
         //void OnRender(float deltaTime);
-        //void OnDrawUI();
+        void OnDrawUI();
         //void OnDrawUIEx();
 
         //void OnKeyPressed(KeyCode key, bool repeat) {}
@@ -186,10 +186,6 @@ namespace Horizon
 
         //EntityHandle selectedEntity = EntityHandle::Null;
 
-        //RenderBackendSwapChainHandle swapChain = RenderBackendSwapChainHandle::Null;
-        //uint32 swapChainWidth = 0;
-        //uint32 swapChainHeight = 0;
-
         //EngineSubsystem* renderEngine = nullptr;
         //SelectionManager* selectionManager;
 
@@ -226,8 +222,14 @@ namespace Horizon
 
         //DebugViewMode viewMode = DebugViewMode::Lit;
 
-        Window* window = nullptr;
+        RenderBackendType renderBackendType = RenderBackendType::D3D12;
+        RenderBackend* renderBackend = nullptr;
 
+        Window* window = nullptr;
+        RenderBackendSwapChainHandle swapChain = RenderBackendSwapChainHandle::Null;
+        uint32 swapChainWidth = 0;
+        uint32 swapChainHeight = 0;
+        
         //Scene* scene;
         //EditorCamera editorCamera;
     };

@@ -16,5 +16,5 @@ namespace Horizon
     typedef void(__stdcall* PFN_VulkanRenderBackendDestroyBackend)(RenderBackend* backend);
 
     RenderBackend* RenderBackendCreateVulkan(int flags);
-    void VulkanRenderBackendDestroyBackend(RenderBackend* backend);
+    void RenderBackendDestroyVulkan(RenderBackend* backend);
 }

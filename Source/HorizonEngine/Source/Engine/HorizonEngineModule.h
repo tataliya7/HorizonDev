@@ -1,11 +1,11 @@
 #pragma once
 
 #include "Foundation/FoundationModule.h"
-#include "Input/InputModule.h"
+#include "Rendering/RenderingModule.h"
 // #include "Physics/PhysicsModule.h"
 // #include "Audio/AudioModule.h"
-// #include "Rendering/RenderingModule.h"
 // #include "Asset/AssetModule.h"
+#include "Input/InputModule.h"
 // #include "Core/CoreModule.h"
 
 #include "Engine/HorizonEngineVersion.h"

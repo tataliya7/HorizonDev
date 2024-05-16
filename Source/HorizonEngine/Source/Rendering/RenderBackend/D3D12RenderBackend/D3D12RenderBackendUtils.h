@@ -339,7 +339,7 @@ namespace Horizon
         case RenderBackendTextureFormat::D32Float:          return DXGI_FORMAT_D32_FLOAT;
         case RenderBackendTextureFormat::D16Unorm:          return DXGI_FORMAT_D16_UNORM;
         case RenderBackendTextureFormat::D24UnormS8Uint:    return DXGI_FORMAT_D24_UNORM_S8_UINT;
-        case RenderBackendTextureFormat::RGB10A2Unorm:      return DXGI_FORMAT_R10G10B10_XR_BIAS_A2_UNORM;
+        case RenderBackendTextureFormat::RGB10A2Unorm:      return DXGI_FORMAT_R10G10B10A2_UNORM;
         case RenderBackendTextureFormat::BC1Unorm:          return DXGI_FORMAT_BC1_UNORM;
         case RenderBackendTextureFormat::BC1UnormSrgb:      return DXGI_FORMAT_BC1_UNORM_SRGB;
         case RenderBackendTextureFormat::BC2Unorm:          return DXGI_FORMAT_BC2_UNORM;

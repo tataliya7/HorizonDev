@@ -1,7 +1,7 @@
 project "HorizonEditorLauncher"
-    kind "WindowedApp"
-    --kind "ConsoleApp"
-    --entrypoint "mainCRTStartup"
+    --kind "WindowedApp"
+    kind "ConsoleApp"
+    entrypoint "mainCRTStartup"
     language "C++"
     cppdialect "C++latest"
     staticruntime "Off"
@@ -36,7 +36,7 @@ project "HorizonEditorLauncher"
         thirdpartypath("vulkan/1.3.280.0/lib/vulkan-1.lib"),
         thirdpartypath("optick/Optick_1.4.0/lib/x64/release/OptickCore.lib"),
         thirdpartypath("python/310/libs/python310.lib"),
-        
+
         thirdpartypath("streamline/lib/x64/sl.interposer.lib"),
     }
 

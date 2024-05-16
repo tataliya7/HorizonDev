@@ -34,6 +34,55 @@ namespace Streamline
 {
 
     {
+        sl::Feature streamlineFeatures[] = { sl::kFeatureReflex, sl::kFeatureDLSS, sl::kFeatureDLSS_G };
+
+        sl::Preferences pref = {};
+        pref.showConsole = true;
+        pref.logLevel = sl::LogLevel::eDefault;
+        pref.pathsToPlugins = nullptr;
+        pref.numPathsToPlugins = 0;
+        pref.pathToLogsAndData = nullptr;
+        pref.allocateCallback = nullptr;
+        pref.releaseCallback = nullptr;
+        pref.logMessageCallback = StreamlineLogMessageCallback;
+        pref.flags = sl::PreferenceFlags::eDisableCLStateTracking;// | sl::PreferenceFlags::eAllowOTA;
+        pref.featuresToLoad = streamlineFeatures;
+        pref.numFeaturesToLoad = _countof(streamlineFeatures);
+        pref.applicationId = sl::INVALID_UINT;
+        pref.engine = sl::EngineType::eCustom;
+        pref.engineVersion = "Horizon Engine";
+        pref.projectId = "a0f57b54-1daf-4934-90ae-c4035c19df04";
+        pref.renderAPI = sl::RenderAPI::eD3D12;
+
+        sl::Result result;
+        if (SL_FAILED(result, slInit(pref, sl::kSDKVersion)))
+        {
+            LogInfo(GLogger, std::format("slInit, error code: {}.", (int32)result));
+        }
+
+        sl::ReflexState state = {};
+        if (SL_FAILED(result, slReflexGetState(state)))
+        {
+            LogInfo(GLogger, std::format("slReflexGetState, error code: {}", (int32)result));
+        }
+    }
+        {
+            sl::Result slResult = slSetD3DDevice(device.Get());
+            if (slResult == sl::Result::eOk)
+            {
+                // Set reflex consts to a default config. This can be changed at runtime in the UI.
+                sl::ReflexOptions reflexOptions = {};
+                reflexOptions.mode = sl::ReflexMode::eLowLatency;
+                reflexOptions.frameLimitUs = 0;
+                reflexOptions.useMarkersToOptimize = true;
+                //reflexOptions.virtualKey = VK_F13;
+                if (SL_FAILED(result, slReflexSetOptions(reflexOptions)))
+                {
+                    LogError(GLogger, std::format("slReflexSetOptions, error code: {}", (int32)result));
+                }
+            }
+        }
+    {
         #if HE_ENBALE_STREAMLINE_SUPPORT
         uint32 targetWidth = command.targetWidth;
         uint32 targetHeight = command.targetHeight;

@@ -35,6 +35,22 @@ project "HorizonEngine"
         "Source/Input/**.inl",
         "Source/Input/**.lua",
 
+        "Source/Rendering/RenderBackend/**.h",
+        "Source/Rendering/RenderBackend/**.c",
+        "Source/Rendering/RenderBackend/**.hpp",
+        "Source/Rendering/RenderBackend/**.cpp",
+        "Source/Rendering/RenderBackend/**.cppm",
+        "Source/Rendering/RenderBackend/**.inl",
+        "Source/Rendering/RenderBackend/**.lua",
+
+        "Source/Rendering/RenderGraph/**.h",
+        "Source/Rendering/RenderGraph/**.c",
+        "Source/Rendering/RenderGraph/**.hpp",
+        "Source/Rendering/RenderGraph/**.cpp",
+        "Source/Rendering/RenderGraph/**.cppm",
+        "Source/Rendering/RenderGraph/**.inl",
+        "Source/Rendering/RenderGraph/**.lua",
+
         -- "Source/Rendering/**.h",
         -- "Source/Rendering/**.c",
         -- "Source/Rendering/**.hpp",

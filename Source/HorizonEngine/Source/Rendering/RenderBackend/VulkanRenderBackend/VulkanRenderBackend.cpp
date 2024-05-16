@@ -77,8 +77,8 @@ namespace Horizon
     {
         BindlessBindingSamplers               = 0,
         BindlessBindingSampledImages          = 1,
-        BindlessBindingStroageImages          = 2,
-        BindlessBindingStroageBuffers         = 3,
+        BindlessBindingStorageImages          = 2,
+        BindlessBindingStorageBuffers         = 3,
         BindlessBindingAccelerationStructures = 4,
     };
 
@@ -101,8 +101,8 @@ namespace Horizon
 
         uint32 pushConstantSize;
 
-        VkPipelineLayout compatibleGraphicsPipelineLayout;
         VkPipelineLayout compatibleComputePipelineLayout;
+        VkPipelineLayout compatibleGraphicsPipelineLayout;
         VkPipelineLayout compatibleRayTracingPipelineLayout;
 
         std::vector<uint32> freeSampledImages;
@@ -203,11 +203,11 @@ namespace Horizon
         VkSwapchainCreateInfoKHR   info;
         uint32                     numBuffers;
         uint32                     activeBackBufferIndex;
-        uint32                     semaphoreIndex;
         RenderBackendTextureHandle buffers[RenderBackendMaxSwapChainBufferCount];
         uint32                     numSemaphores;
-        VkFence                    imageAcquiredFences[RenderBackendMaxSwapChainBufferCount + 1];
-        VkSemaphore                imageAcquiredSemaphores[RenderBackendMaxSwapChainBufferCount + 1];
+        uint32                     semaphoreIndex;
+        VkFence                    imageAcquiredFences[RenderBackendMaxSwapChainBufferCount];
+        VkSemaphore                imageAcquiredSemaphores[RenderBackendMaxSwapChainBufferCount];
     };
 
     struct VulkanCpuReadbackBuffer
@@ -612,14 +612,16 @@ namespace Horizon
         {
             return handleRepresentations.erase(handle);
         }
-        std::vector<VkSemaphore> presentSemaphores;
+
         VulkanCommandBufferManager* commandBufferManager;
+
+        std::vector<VkSemaphore> presentSemaphores;
         std::vector<VulkanSwapchain> swapchains;
+
         void CreateVmaAllocator();
         void DestroyVmaAllocator();
         bool CreateBindlessDescriptorManager(const VulkanBindlessConfig& bindlessConfig);
         void DestroyBindlessDescriptorManager();
-        void CreateDefaultResources();
         uint32 CreateAccelerationStructure(VulkanRayTracingAccelerationStructure* accelerationStructure, VkAccelerationStructureTypeKHR type, uint32* primitiveCounts, const char* name);
 
         void BindBindlessDescriptorSets(VkCommandBuffer commandBuffer);
@@ -637,9 +639,6 @@ namespace Horizon
 
         uint32 numCommandQueues[RenderBackendQueueFamilyCount] = { 1, 1, 1, 1 };
         std::vector<VulkanQueue> commandQueues[RenderBackendQueueFamilyCount];
-
-        RenderBackendSamplerHandle defaultSampler;
-        RenderBackendBufferHandle defaultStorageBuffer;
 
         VulkanBindlessDescriptorManager bindlessDescriptorManager;
         VulkanPipelineManager pipelineManager;
@@ -1462,6 +1461,8 @@ namespace Horizon
     {
         FlushRenderDevices();
 
+        DestroyRenderDevices();
+
 #if HE_ENBALE_STREAMLINE_SUPPORT
         if (slShutdown() != sl::Result::eOk)
         {
@@ -1819,7 +1820,7 @@ namespace Horizon
             VkWriteDescriptorSet write = {
                 .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
                 .dstSet = bindlessDescriptorManager.set,
-                .dstBinding = BindlessBindingStroageBuffers,
+                .dstBinding = BindlessBindingStorageBuffers,
                 .dstArrayElement = index,
                 .descriptorCount = 1,
                 .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
@@ -1920,7 +1921,7 @@ namespace Horizon
                     VkWriteDescriptorSet write = {
                         .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
                         .dstSet = bindlessDescriptorManager.set,
-                        .dstBinding = BindlessBindingStroageBuffers,
+                        .dstBinding = BindlessBindingStorageBuffers,
                         .dstArrayElement = (uint32)buffer.bindlessDescriptorIndexUAV,
                         .descriptorCount = 1,
                         .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
@@ -2203,7 +2204,7 @@ namespace Horizon
                 VkWriteDescriptorSet write = {
                     .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
                     .dstSet = bindlessDescriptorManager.set,
-                    .dstBinding = BindlessBindingStroageImages,
+                    .dstBinding = BindlessBindingStorageImages,
                     .dstArrayElement = index,
                     .descriptorCount = 1,
                     .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
@@ -3663,7 +3664,7 @@ namespace Horizon
         std::vector<VkSurfaceFormatKHR> availableSurfaceFormats(numSurfaceFormats);
         VK_CHECK(vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice->handle, surface, &numSurfaceFormats, availableSurfaceFormats.data()));
 
-        VkSurfaceFormatKHR surfaceFormat;
+        VkSurfaceFormatKHR surfaceFormat/*TODO:initialize*/;
         for (const auto& format : availableSurfaceFormats)
         {
             if (format.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
@@ -3681,9 +3682,12 @@ namespace Horizon
             }
         }
 
+        VkImageUsageFlags imageUsage = VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+
         VkSurfaceCapabilitiesKHR surfaceCapabilities;
         VK_CHECK(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice->handle, surface, &surfaceCapabilities));
-        assert(surfaceCapabilities.supportedUsageFlags & (VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT));
+        assert(surfaceCapabilities.supportedUsageFlags & imageUsage);
+
         VkSurfaceTransformFlagBitsKHR preTransform;
         if (surfaceCapabilities.supportedTransforms & VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR)
         {
@@ -3693,6 +3697,7 @@ namespace Horizon
         {
             preTransform = surfaceCapabilities.currentTransform;
         }
+
         VkCompositeAlphaFlagBitsKHR compositeAlpha = VK_COMPOSITE_ALPHA_INHERIT_BIT_KHR;
         if (surfaceCapabilities.supportedCompositeAlpha & VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR)
         {
@@ -3709,7 +3714,7 @@ namespace Horizon
             .imageColorSpace = surfaceFormat.colorSpace,
             .imageExtent = surfaceCapabilities.currentExtent,
             .imageArrayLayers = 1,
-            .imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
+            .imageUsage = imageUsage,
             .imageSharingMode = VK_SHARING_MODE_EXCLUSIVE,
             .queueFamilyIndexCount = 1,
             .pQueueFamilyIndices = &presentQueueFamilyIndex,
@@ -3791,12 +3796,22 @@ namespace Horizon
     {
         VulkanSwapchain& swapchain = swapchains[index];
         vkDeviceWaitIdle(handle);
+
+        for (uint32 i = 0; i < swapchain.numSemaphores; i++)
+        {
+            vkWaitForFences(handle, 1, &swapchain.imageAcquiredFences[i], VK_TRUE, UINT64_MAX);
+        }
+
         vkDestroySwapchainKHR(handle, swapchain.handle, VULKAN_ALLOCATION_CALLBACKS);
         vkDestroySurfaceKHR(instance, swapchain.surface, VULKAN_ALLOCATION_CALLBACKS);
         for (uint32 i = 0; i < swapchain.numSemaphores; i++)
         {
             vkDestroyFence(handle, swapchain.imageAcquiredFences[i], VULKAN_ALLOCATION_CALLBACKS);
             vkDestroySemaphore(handle, swapchain.imageAcquiredSemaphores[i], VULKAN_ALLOCATION_CALLBACKS);
+        }
+        for (uint32 i = 0; i < swapchain.numBuffers; i++)
+        {
+            DestroyTexture(swapchain.buffers[i].GetIndex());
         }
         swapchains.erase(swapchains.begin() + index);
     }
@@ -4207,8 +4222,6 @@ namespace Horizon
 
         CreateBindlessDescriptorManager(bindlessConfig);
 
-        CreateDefaultResources();
-
         return true;
     }
 
@@ -4216,6 +4229,7 @@ namespace Horizon
     void VulkanDevice::Shutdown()
     {
         WaitIdle();
+        delete commandBufferManager;
         DestroyBindlessDescriptorManager();
         for (uint32 i = 0; i < (uint32)swapchains.size(); i++)
         {
@@ -4288,8 +4302,8 @@ namespace Horizon
             bindlessDescriptorSetLayoutBindings = {
                 { .binding = BindlessBindingSamplers,               .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER,                    .descriptorCount = numSamplers,               .stageFlags = VK_SHADER_STAGE_ALL },
                 { .binding = BindlessBindingSampledImages,          .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,              .descriptorCount = numSampledImages,          .stageFlags = VK_SHADER_STAGE_ALL },
-                { .binding = BindlessBindingStroageImages,          .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,              .descriptorCount = numStorageImages,          .stageFlags = VK_SHADER_STAGE_ALL },
-                { .binding = BindlessBindingStroageBuffers,         .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,             .descriptorCount = numStorageBuffers,         .stageFlags = VK_SHADER_STAGE_ALL },
+                { .binding = BindlessBindingStorageImages,          .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,              .descriptorCount = numStorageImages,          .stageFlags = VK_SHADER_STAGE_ALL },
+                { .binding = BindlessBindingStorageBuffers,         .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,             .descriptorCount = numStorageBuffers,         .stageFlags = VK_SHADER_STAGE_ALL },
                 { .binding = BindlessBindingAccelerationStructures, .descriptorType = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, .descriptorCount = numAccelerationStructures, .stageFlags = VK_SHADER_STAGE_ALL },
             };
             bindlessDescriptorBindingFlags = {
@@ -4311,8 +4325,8 @@ namespace Horizon
             bindlessDescriptorSetLayoutBindings = {
                 { .binding = BindlessBindingSamplers,               .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER,                    .descriptorCount = numSamplers,               .stageFlags = VK_SHADER_STAGE_ALL },
                 { .binding = BindlessBindingSampledImages,          .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,              .descriptorCount = numSampledImages,          .stageFlags = VK_SHADER_STAGE_ALL },
-                { .binding = BindlessBindingStroageImages,          .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,              .descriptorCount = numStorageImages,          .stageFlags = VK_SHADER_STAGE_ALL },
-                { .binding = BindlessBindingStroageBuffers,         .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,             .descriptorCount = numStorageBuffers,         .stageFlags = VK_SHADER_STAGE_ALL },
+                { .binding = BindlessBindingStorageImages,          .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,              .descriptorCount = numStorageImages,          .stageFlags = VK_SHADER_STAGE_ALL },
+                { .binding = BindlessBindingStorageBuffers,         .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,             .descriptorCount = numStorageBuffers,         .stageFlags = VK_SHADER_STAGE_ALL },
             };
             bindlessDescriptorBindingFlags = {
                 VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT | VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT | VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT,
@@ -4426,83 +4440,20 @@ namespace Horizon
             vkDestroyDescriptorSetLayout(handle, bindlessDescriptorManager.layout, VULKAN_ALLOCATION_CALLBACKS);
             bindlessDescriptorManager.layout = VK_NULL_HANDLE;
         }
-    }
-
-    void VulkanDevice::CreateDefaultResources()
-    {
-        // Sampled images
-        //for (uint32 i = 0; i != (uint32)TextureType::Count; i++)
-        //{
-        //    defaultSampledImages[i] = CreateImage();
-        //    VkImageView defaultSampledImage = images[defaultSampledImage[i].GetIndex()].views[0];
-        //}
-
-        //// Sampler
-        //{
-        //    VkSamplerCreateInfo defaultSamplerInfo = {
-        //        .sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
-        //        .magFilter = VK_FILTER_LINEAR,
-        //        .minFilter = VK_FILTER_LINEAR,
-        //        .mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR,
-        //        .addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT,
-        //        .addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT,
-        //        .addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT,
-        //        .mipLodBias = 0.f,
-        //        .anisotropyEnable = VK_TRUE,
-        //        .maxAnisotropy = 16.f,
-        //        .compareEnable = VK_FALSE,
-        //        .compareOp = VK_COMPARE_OP_NEVER,
-        //        .minLod = 0.f,
-        //        .maxLod = 16.f,
-        //        .borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE,
-        //        .unnormalizedCoordinates = VK_FALSE
-        //    };
-        //    defaultSampler = CreateSampler(&defaultSamplerInfo, "Default Sampler");
-        //    VkSampler sampler = samplers[defaultSampler.GetIndex()].handle;
-        //    VkDescriptorImageInfo sampleInfo = {
-        //        .sampler = sampler,
-        //        .imageView = VK_NULL_HANDLE,
-        //        .imageLayout = VK_IMAGE_LAYOUT_UNDEFINED
-        //    };
-        //    VkWriteDescriptorSet writeDescriptorSet = {
-        //        .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-        //        .dstSet = bindlessManager->set,
-        //        .dstBinding = VULKAN_BINDLESS_DESCRIPTOR_SLOT_SAMPLERS,
-        //        .dstArrayElement = 0,
-        //        .descriptorCount = 1,
-        //        .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER,
-        //        .pImageInfo = &sampleInfo,
-        //    };
-        //    vkUpdateDescriptorSets(handle, 1, &writeDescriptorSet, 0, 0);
-        //}
-
-        // Storage Images
-        /*for (uint32 i = 0; i != (uint32)TextureType::Count; i++)
+        if (bindlessDescriptorManager.compatibleComputePipelineLayout != VK_NULL_HANDLE)
         {
-            VkImageView defaultStorageImage = images[device->resource_manager.handle_indirection[decode_index(device->null_uav_images[i])]].views[0];
-            VkDescriptorImageInfo imageInfo = {
-                .sampler = VK_NULL_HANDLE,
-                .imageView = defaultStorageImage,
-                .imageLayout = VK_IMAGE_LAYOUT_GENERAL
-            };
-            VkWriteDescriptorSet write = {
-                .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-                .dstSet = bindlessManager->set,
-                .dstBinding = VULKAN_BINDLESS_DESCRIPTOR_SLOT_STORAGE_IMAGES,
-                .dstArrayElement = i,
-                .descriptorCount = 1,
-                .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
-                .pImageInfo = &imageInfo,
-            };
-            vkUpdateDescriptorSets(handle, 1, &write, 0, 0);
-        }*/
-
-        // Storage buffers
+            vkDestroyPipelineLayout(handle, bindlessDescriptorManager.compatibleComputePipelineLayout, VULKAN_ALLOCATION_CALLBACKS);
+            bindlessDescriptorManager.compatibleComputePipelineLayout = VK_NULL_HANDLE;
+        }
+        if (bindlessDescriptorManager.compatibleGraphicsPipelineLayout != VK_NULL_HANDLE)
         {
-            char data[512];
-            memset(data, 0xff, 512);
-            RenderBackendBufferDesc desc = RenderBackendBufferDesc::CreateByteAddress(512);
-            uint32 bufferIndex = CreateBuffer(&desc, data, "Default Storage Buffer");
+            vkDestroyPipelineLayout(handle, bindlessDescriptorManager.compatibleGraphicsPipelineLayout, VULKAN_ALLOCATION_CALLBACKS);
+            bindlessDescriptorManager.compatibleGraphicsPipelineLayout = VK_NULL_HANDLE;
+        }
+        if (bindlessDescriptorManager.compatibleRayTracingPipelineLayout != VK_NULL_HANDLE)
+        {
+            vkDestroyPipelineLayout(handle, bindlessDescriptorManager.compatibleRayTracingPipelineLayout, VULKAN_ALLOCATION_CALLBACKS);
+            bindlessDescriptorManager.compatibleRayTracingPipelineLayout = VK_NULL_HANDLE;
         }
     }
 
@@ -5687,8 +5638,8 @@ namespace Horizon
                     uint32 blockWidth = 4;
                     uint32 blockHeight = 4;
 
-                    uint32 rowLength = ComputeWorkGroupCount(subresourceData.width, blockWidth);
-                    uint32 imageHeight = ComputeWorkGroupCount(subresourceData.height, blockHeight);
+                    //uint32 rowLength = ComputeWorkGroupCount(subresourceData.width, blockWidth);
+                    //uint32 imageHeight = ComputeWorkGroupCount(subresourceData.height, blockHeight);
 
                     VkBufferImageCopy copyRegion = {};
                     copyRegion.bufferOffset = copyOffset;
@@ -6265,10 +6216,9 @@ namespace Horizon
         return vulkanBackend;
     }
 
-    void VulkanRenderBackendDestroyBackend(RenderBackend* backend)
+    void RenderBackendDestroyVulkan(RenderBackend* backend)
     {
         VulkanRenderBackend* vulkanBackend = (VulkanRenderBackend*)backend;
-        vulkanBackend->DestroyRenderDevices();
         vulkanBackend->Exit();
         delete vulkanBackend;
     }
