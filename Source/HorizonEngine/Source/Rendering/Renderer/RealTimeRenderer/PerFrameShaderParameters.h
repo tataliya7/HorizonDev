@@ -15,7 +15,7 @@ struct PerFrameShaderParameters
 {
     uint frameIndex;
 
-    float deltaTime;
+    float deltaTimeInSeconds;
 
     uint renderWidth;
     uint renderHeight;
@@ -23,24 +23,23 @@ struct PerFrameShaderParameters
     uint targetHeight;
     uint displayWidth;
     uint displayHeight;
+
     float4 renderResolution;
     float4 targetResolution;
     float4 displayResolution;
 
     float3 cameraPosition;
-    float3 cameraUp;
-    float3 cameraRight;
-    float3 cameraForward;
+    float3 previousCameraPosition;
     float2 cameraJitterOffset;
-    float4 frustumPlanes[6];
+    float2 previousCameraJitterOffset;
+    float3 cameraUpVector;
+    float3 cameraRightVector;
+    float3 cameraForwardVector;
+    float halfFovInRadians;
+    float aspectRatio;
     float nearClippingPlane;
     float farClippingPlane;
-    float halfFovRad;
-    float cameraAspectRatio;
-    uint cameraCut;
-
-    float3 previousCameraPosition;
-    float2 previousCameraJitterOffset;
+    float4 frustumPlanes[6];
 
     float4x4 worldToViewMatrix;
     float4x4 viewToWorldMatrix;

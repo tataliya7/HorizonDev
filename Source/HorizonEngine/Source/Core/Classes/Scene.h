@@ -133,5 +133,7 @@ namespace Horizon
         RenderSceneInterface* renderScene;
         bool shouldSimulate;
         bool shouldUpdateScripts;
+
+        bool paused;
     };
 }

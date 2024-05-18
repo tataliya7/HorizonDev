@@ -19,6 +19,7 @@ namespace Horizon
         Vector4 multipleScatteringLutSize;
         Vector4 skyViewLutSize;
         Vector2 aerialPerspectiveVolumeSize;
+
         float transmittanceLutSampleCount;
         float multipleScatteringLutSampleCount;
         float rayMarchingMinSampleCount;
@@ -47,5 +48,10 @@ namespace Horizon
 
     void SetupSkyAtmosphereShaderParameters(SkyAtmosphereShaderParameters& outParameters, const SkyAtmosphereRenderProxy& renderProxy);
 
-    void ComputeViewRelatedSkyAtmosphereParameters(const SkyAtmosphereRenderProxy& renderProxy, const Vector3& worldSpaceCameraPosition, const Vector3& cameraForwardVector, Matrix3x3& outSkyAtmosphereSkyViewLutReferential);
+    struct SkyAtmosphereViewRelatedParameters
+    {
+        Matrix3x3 skyViewLutReferential;
+    };
+
+    void SetupSkyAtmosphereViewRelatedParameters(SkyAtmosphereViewRelatedParameters& outParameters, const SkyAtmosphereRenderProxy& renderProxy, const Vector3& worldSpaceCameraPosition, const Vector3& cameraForwardVector);
 }

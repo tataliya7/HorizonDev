@@ -1,13 +1,6 @@
 #include "RealTimeRenderer.h"
-#include "PerFrameShaderParameters.h"
 #include "RealTimeRendererPrivate.h"
-#include "Rendering/RenderAPI.h"
-
-#include <ffx_fsr2.h>
-
-#include <sl.h>
-#include <sl_consts.h>
-#include <sl_dlss.h>
+#include "PerFrameShaderParameters.h"
 
 #include <optick.h>
 
@@ -115,7 +108,7 @@ namespace Horizon
 
     }
 
-    RenderBackendBufferHandle RealTimeRenderer::GetCurrentPerFrameDataBuffer()
+    RenderBackendBufferHandle RealTimeRenderer::GetCurrentPerFrameDataBuffer() const
     {
         return perFrameDataBuffers[currentPerFrameDataBufferIndex];
     }
@@ -138,21 +131,8 @@ namespace Horizon
         }
     }
 
-    void RealTimeRenderer::UpdatePerFrameData()
+    void RealTimeRenderer::()
     {
-        const SceneView& view = *sceneView;
-
-        isSurfelGIEnabled = false;
-        isRayTracingShadowsEnabled = settings.shadowsTechnique == ShadowsTechnique::RayTracingShadows;
-        isRayTracingReflectionsEnabled = settings.reflectionsTechnique == ReflectionsTechnique::RayTracingReflections;
-        isRayTracingAmbientOcclusionEnabled = settings.ambientOcclusionTechnique == AmbientOcclusionTechnique::RayTracingAmbientOcclusion;
-
-        renderResolution = view.swapChainBufferExtent;
-        targetResolution = view.swapChainBufferExtent;
-        displayResolution = view.swapChainBufferExtent;
-
-        upscaleRatio = 1.0f;
-
         // Super Resolution
         isDLSSEnabled = false;
         isFSR2Enabled = false;
@@ -160,15 +140,15 @@ namespace Horizon
         switch (view.renderSettings.superResolutionTechnique)
         {
         case SuperResolutionTechnique::FSR2:
-        {
-            isFSR2Enabled = true;
-            isSuperResolutionEnabled = true;
-        } break;
+            {
+                isFSR2Enabled = true;
+                isSuperResolutionEnabled = true;
+            } break;
         case SuperResolutionTechnique::DLSSSuperResolution:
-        {
-            isDLSSEnabled = true;
-            isSuperResolutionEnabled = true;
-        } break;
+            {
+                isDLSSEnabled = true;
+                isSuperResolutionEnabled = true;
+            } break;
         default: break;
         }
 
@@ -180,135 +160,34 @@ namespace Horizon
             switch (view.renderSettings.antialiasingTechnique)
             {
             case AntialiasingTechnique::TemporalAA:
-            {
-                isTemporalAAEnabled = true;
-            } break;
+                {
+                    isTemporalAAEnabled = true;
+                } break;
             case AntialiasingTechnique::DLAA:
-            {
-                isDLAAEnabled = true;
-            } break;
+                {
+                    isDLAAEnabled = true;
+                } break;
             default: break;
             }
         }
 
-        if (IsDLSSEnabled())
+        upscaleRatio = 1.0f;
+
+        renderResolution = view.swapChainBufferExtent;
+        targetResolution = view.swapChainBufferExtent;
+        displayResolution = view.swapChainBufferExtent;
+
+        materialTextureMipLodBias = 0.0f;
+
+        if (IsAutoMaterialTextureMipLodBiasEnabled())
         {
-            sl::Result slResult = sl::Result::eOk;
-            sl::ViewportHandle slViewport = 0;
-
-            sl::DLSSMode dlssMode = sl::DLSSMode::eOff;
-            switch (view.renderSettings.dlssSettings.qualityMode)
-            {
-            case DLSSQualityMode::Off:
-            {
-                dlssMode = sl::DLSSMode::eOff;
-            } break;
-            case DLSSQualityMode::Auto:
-            {
-                // TODO
-                //dlssMode = sl::DLSSMode::eUltraQuality;
-                dlssMode = sl::DLSSMode::eMaxQuality;
-            } break;
-            case DLSSQualityMode::Quality:
-            {
-                dlssMode = sl::DLSSMode::eMaxQuality;
-            } break;
-            case DLSSQualityMode::Balanced:
-            {
-                dlssMode = sl::DLSSMode::eBalanced;
-            } break;
-            case DLSSQualityMode::Performance:
-            {
-                dlssMode = sl::DLSSMode::eMaxPerformance;
-            } break;
-            case DLSSQualityMode::UltraPerformance:
-            {
-                dlssMode = sl::DLSSMode::eUltraPerformance;
-            } break;
-            default:
-            {
-                dlssMode = sl::DLSSMode::eOff;
-            } break;
-            }
-
-            sl::DLSSOptions dlssOptions = {};
-            dlssOptions.mode = dlssMode;
-            dlssOptions.outputWidth = targetResolution.width;
-            dlssOptions.outputHeight = targetResolution.height;
-            dlssOptions.sharpness = 0.0f;
-            dlssOptions.preExposure = 1.0f;
-            dlssOptions.exposureScale = 1.0f;
-            dlssOptions.colorBuffersHDR = sl::Boolean::eTrue;
-            dlssOptions.indicatorInvertAxisX = sl::Boolean::eFalse;
-            dlssOptions.indicatorInvertAxisY = sl::Boolean::eFalse;
-            dlssOptions.dlaaPreset = sl::DLSSPreset::ePresetA;
-            dlssOptions.qualityPreset = sl::DLSSPreset::ePresetB;
-            dlssOptions.balancedPreset = sl::DLSSPreset::ePresetC;
-            dlssOptions.performancePreset = sl::DLSSPreset::ePresetD;
-            dlssOptions.ultraPerformancePreset = sl::DLSSPreset::ePresetE;
-            if (SL_FAILED(result, slDLSSSetOptions(slViewport, dlssOptions)))
-            {
-                LogError(GLogger, std::format("slDLSSSetOptions, error code: {}", (int32)result));
-            }
-
-            sl::DLSSOptimalSettings dlssOptimalSettins = {};
-            if (SL_FAILED(result, slDLSSGetOptimalSettings(dlssOptions, dlssOptimalSettins)))
-            {
-                LogError(GLogger, std::format("slDLSSGetOptimalSettings, error code: {}", (int32)result));
-            }
-
-            renderResolution.width = dlssOptimalSettins.optimalRenderWidth;
-            renderResolution.height = dlssOptimalSettins.optimalRenderHeight;
-
-            upscaleRatio = (float)targetResolution.width / (float)renderResolution.width;
-
-            // Dynamic Rendering
-            // settings.minRenderSize.x = dlssOptimalSettins.renderWidthMin;
-            // settings.minRenderSize.y = dlssOptimalSettins.renderHeightMin;
-            // settings.maxRenderSize.x = dlssOptimalSettins.renderWidthMax;
-            // settings.maxRenderSize.y = dlssOptimalSettins.renderHeightMax;
-
-            LogInfo(GLogger, std::format("DLSS Mode: {}", (uint32)view.renderSettings.dlssSettings.qualityMode));
-            LogInfo(GLogger, std::format("TargetWidth {} TargetHeight {}", targetResolution.width, targetResolution.height));
-            LogInfo(GLogger, std::format("RenderWidth {} RenderHeight {}", renderResolution.width, renderResolution.height));
-            LogInfo(GLogger, std::format("DynamicMinimumRenderSizeWidth {} DynamicMinimumRenderSizeHeight {}", dlssOptimalSettins.renderWidthMin, dlssOptimalSettins.renderHeightMin));
-            LogInfo(GLogger, std::format("DynamicMaximumRenderSizeWidth {} DynamicMaximumRenderSizeHeight {}", dlssOptimalSettins.renderWidthMax, dlssOptimalSettins.renderHeightMax));
+            materialTextureMipLodBias = std::log2f(float(renderResolution.width) / float(targetResolution.width));
         }
-        else if (IsFSR2Enabled())
-        {
-            if (view.renderSettings.fsr2Settings.qualityMode == FSR2QualityMode::Custom)
-            {
-                upscaleRatio = view.renderSettings.fsr2Settings.customUpscaleRatio;
-
-                renderResolution.width = (uint32)((float)targetResolution.width / upscaleRatio);
-                renderResolution.height = (uint32)((float)targetResolution.height / upscaleRatio);
-            }
-            else
-            {
-                FfxFsr2QualityMode fsr2QualityMode = (FfxFsr2QualityMode)(int)view.renderSettings.fsr2Settings.qualityMode;
-                FfxErrorCode errorCode = ffxFsr2GetRenderResolutionFromQualityMode(
-                    &renderResolution.width,
-                    &renderResolution.height,
-                    targetResolution.width,
-                    targetResolution.height,
-                    fsr2QualityMode);
-                FFX_ASSERT(errorCode == FFX_OK);
-
-                upscaleRatio = ffxFsr2GetUpscaleRatioFromQualityMode(fsr2QualityMode);
-            }
-        }
-
-        float upscaleRatio = 1.0f;
-
-        auto nonJitteredPrevProjectionMatrix = perFrameShaderParameters.nonJitteredProjectionMatrix;
-        auto nonJitteredPrevViewProjectionMatrix = perFrameShaderParameters.nonJitteredViewProjectionMatrix;
-        auto nonJitteredPrevInvViewProjectionMatrix = perFrameShaderParameters.nonJitteredInvViewProjectionMatrix;
-
-        auto jitteredPrevProjectionMatrix = perFrameShaderParameters.projectionMatrix;
-        auto jitteredPrevViewProjectionMatrix = perFrameShaderParameters.viewProjectionMatrix;
-        auto jitteredPrevInvViewProjectionMatrix = perFrameShaderParameters.invViewProjectionMatrix;
-
-        auto jitteredProjectionMatrix = view.camera.projectionMatrix;
+        // TODO: Override overrideMaterialTextureMipLodBias
+        //if (overrideMaterialTextureMipLodBias)
+        //{
+        //
+        //}
 
         Vector2 cameraJitterOffset = { 0.0f, 0.0f };
         if (ShouldApplyCameraJittering())
@@ -344,216 +223,208 @@ namespace Horizon
 
         Vector3 previousCameraPosition = perFrameShaderParameters.cameraPosition;
 
+        enableFixedExposure = settings.exposureMethod == ExposureMethod::FixedExposure;
+
         float prevpreExposure = perFrameShaderParameters.preExposure;
         if (view.frameIndex == 0)
         {
             prevpreExposure = 1.0f;
         }
 
-        RenderScene* scene = view.scene;
-        RenderSystem* renderer = (RenderSystem*)view.renderEngine;
-
-        Vector3 cameraForward = view.camera.forwardVec;
-        Vector3 cameraPosition = view.camera.position;
-
-        isSkyAtmosphereRenderingEnabled = IsSkyAtmosphereRenderingEnabled();
-
         float preExposure = 1.0f;
-        if (view.frameIndex != 0)
+        if (view. != 0)
         {
             preExposure = preExposure;
         }
-        if (view.renderSettings.fixedPreExposureEnabled)
+        if ()
         {
             preExposure = view.renderSettings.fixedPreExposure;
         }
 
-        perFrameShaderParameters.frameIndex = view.frameIndex;
+        isSurfelGIEnabled = false;
+        isRayTracingShadowsEnabled = settings.shadowsTechnique == ShadowsTechnique::RayTracingShadows;
+        isRayTracingReflectionsEnabled = settings.reflectionsTechnique == ReflectionsTechnique::RayTracingReflections;
+        isRayTracingAmbientOcclusionEnabled = settings.ambientOcclusionTechnique == AmbientOcclusionTechnique::RayTracingAmbientOcclusion;
+        isSkyAtmosphereRenderingEnabled = IsSkyAtmosphereRenderingEnabled();
 
-        perFrameShaderParameters.deltaTime = view.deltaTime;
+        bool isAutoExposureEnabled = (settings.exposureMethod == ExposureMethod::AutoExposure) || (settings.exposureMethod == ExposureMethod::FixedExposure);
+        bool isBloomEnabled = settings.postProcessingSettings.bloomIntensity > 0.0f;
+        bool isLensFlaresEnabled = isBloomEnabled && settings.postProcessingSettings.lensFlaresIntensity > 0.0f;
+        bool isConvolutionBloomEnabled = false;
+        bool isToneMappingEnabled = true;
+        bool isLocalExposureEnabled = isToneMappingEnabled && settings.postProcessingSettings.localExposureEnabled;
 
-        perFrameShaderParameters.renderWidth = renderResolution.width;
-        perFrameShaderParameters.renderHeight = renderResolution.height;
-        perFrameShaderParameters.targetWidth = targetResolution.width;
-        perFrameShaderParameters.targetHeight = targetResolution.height;
-        perFrameShaderParameters.displayWidth = displayResolution.width;
-        perFrameShaderParameters.displayHeight = displayResolution.height;
-        perFrameShaderParameters.renderResolution = Vector4(1.0f * renderResolution.width, 1.0f * renderResolution.height, 1.0f / renderResolution.width, 1.0f / renderResolution.height);
-        perFrameShaderParameters.targetResolution = Vector4(1.0f * targetResolution.width, 1.0f * targetResolution.height, 1.0f / targetResolution.width, 1.0f / targetResolution.height);
-        perFrameShaderParameters.displayResolution = Vector4(1.0f * displayResolution.width, 1.0f * displayResolution.height, 1.0f / displayResolution.width, 1.0f / displayResolution.height);
-
-        perFrameShaderParameters.cameraPosition = view.camera.position;
-        perFrameShaderParameters.previousCameraPosition = previousCameraPosition;
-        perFrameShaderParameters.cameraJitterOffset = cameraJitterOffset;
-        perFrameShaderParameters.previousCameraJitterOffset = previousCameraJitterOffset;
-        perFrameShaderParameters.cameraUp = view.camera.upVec;
-        perFrameShaderParameters.cameraRight = view.camera.rightVec;
-        perFrameShaderParameters.cameraForward = view.camera.forwardVec;
-        perFrameShaderParameters.cameraNearPlane = view.camera.nearClippingPlane;
-        perFrameShaderParameters.cameraFarPlane = view.camera.farClippingPlane;
-        perFrameShaderParameters.cameraHalfFovRad = Math::DegreesToRadians(view.camera.fieldOfView) * 0.5f;
-        perFrameShaderParameters.cameraAspectRatio = view.camera.aspectRatio;
-        perFrameShaderParameters.cameraCut = view.cameraCut;
-
-        perFrameShaderParameters.viewMatrix = view.camera.viewMatrix;
-        perFrameShaderParameters.invViewMatrix = view.camera.invViewMatrix;
-        perFrameShaderParameters.projectionMatrix = jitteredProjectionMatrix;
-        perFrameShaderParameters.inverseProjectionMatrix = jitteredInvProjectionMatrix;
-        perFrameShaderParameters.viewProjectionMatrix = jitteredProjectionMatrix * view.camera.viewMatrix;
-        perFrameShaderParameters.invViewProjectionMatrix = view.camera.invViewMatrix * jitteredInvProjectionMatrix;
-        perFrameShaderParameters.prevProjectionMatrix = jitteredPrevProjectionMatrix;
-        perFrameShaderParameters.prevViewProjectionMatrix = jitteredPrevViewProjectionMatrix;
-        perFrameShaderParameters.prevInvViewProjectionMatrix = jitteredPrevInvViewProjectionMatrix;
-        perFrameShaderParameters.nonJitteredProjectionMatrix = view.camera.projectionMatrix;
-        perFrameShaderParameters.nonJitteredInvProjectionMatrix = view.camera.invProjectionMatrix;
-        perFrameShaderParameters.nonJitteredViewProjectionMatrix = view.camera.projectionMatrix * view.camera.viewMatrix;
-        perFrameShaderParameters.nonJitteredInvViewProjectionMatrix = view.camera.invViewMatrix * view.camera.invProjectionMatrix;
-        perFrameShaderParameters.nonJitteredPrevProjectionMatrix = nonJitteredPrevProjectionMatrix;
-        perFrameShaderParameters.nonJitteredPrevViewProjectionMatrix = nonJitteredPrevViewProjectionMatrix;
-        perFrameShaderParameters.nonJitteredPrevInvViewProjectionMatrix = nonJitteredPrevInvViewProjectionMatrix;
-
-        perFrameShaderParameters.worldToViewMatrix = ;
-        perFrameShaderParameters.viewToWorldMatrix = ;
-        perFrameShaderParameters.viewToClipMatrix = ;
-        perFrameShaderParameters.clipToViewMatrix = ;
-        perFrameShaderParameters.worldToClipMatrix = ;
-        perFrameShaderParameters.clipToWorldMatrix = ;
-        perFrameShaderParameters.nonJitteredWorldToClipMatrix = ;
-        perFrameShaderParameters.previousWorldToViewMatrix = ;
-        perFrameShaderParameters.previousViewToWorldMatrix = ;
-        perFrameShaderParameters.previousViewToClipMatrix = ;
-        perFrameShaderParameters.previousClipToViewMatrix = ;
-        perFrameShaderParameters.previousWorldToClipMatrix = ;
-        perFrameShaderParameters.previousClipToWorldMatrix = ;
-        perFrameShaderParameters.previousNonJitteredWorldToClipMatrix = ;
-
-        //perFrameShaderParameters.blueNoisePhase = (view.frameIndex & 0xFF) * 1.6180339887f;
-
-        float materialTextureMipLodBias = 0.0f;
-        if (renderResolution.width != targetResolution.width || renderResolution.height != targetResolution.height) // TODO: investigate this
+        if (IsFixedExposureEnabled())
         {
-            perFrameShaderParameters.materialTextureMipLodBias = std::log2f(float(renderResolution.width) / float(targetResolution.width));
+            finalPostProcessingSettings.autoExposureMinExposureValue = finalPostProcessingSettings.fixedExposureValue;
+            finalPostProcessingSettings.autoExposureMinExposureValue = finalPostProcessingSettings.fixedExposureValue;
         }
-        perFrameShaderParameters.materialTextureMipLodBias = materialTextureMipLodBias;
+    }
 
-        perFrameShaderParameters.preExposure = preExposure;
-        perFrameShaderParameters.oneOverPreExposure = 1.0f / preExposure;
-        perFrameShaderParameters.preExposureCorrection = preExposure / previousPreExposure;
+    void RealTimeRenderer::UpdatePerFrameDataBuffer() const
+    {
+        const SceneView& view = *sceneView;
+        const RenderSettings& renderSettings = view.GetRenderSettings();
 
-        perFrameShaderParameters.indirectLightingMultiplier = settings.indirectLightingColor * settings.indirectLightingIntensity;
-
-        if (scene)
+        // Setup PerFrameShaderParameters
+        PerFrameShaderParameters perFrameShaderParameters = {};
         {
-            LightComponent* atmosphericLight = scene->GetAtmosphericLight();
+            perFrameShaderParameters.frameIndex = view.GetFrameIndex();
 
-            if (atmosphericLight)
+            perFrameShaderParameters.deltaTimeInSeconds = view.GetDeltaTimeInSeconds();
+
+            perFrameShaderParameters.renderWidth = renderResolution.width;
+            perFrameShaderParameters.renderHeight = renderResolution.height;
+            perFrameShaderParameters.targetWidth = targetResolution.width;
+            perFrameShaderParameters.targetHeight = targetResolution.height;
+            perFrameShaderParameters.displayWidth = displayResolution.width;
+            perFrameShaderParameters.displayHeight = displayResolution.height;
+
+            perFrameShaderParameters.renderResolution = Vector4(1.0f * renderResolution.width, 1.0f * renderResolution.height, 1.0f / renderResolution.width, 1.0f / renderResolution.height);
+            perFrameShaderParameters.targetResolution = Vector4(1.0f * targetResolution.width, 1.0f * targetResolution.height, 1.0f / targetResolution.width, 1.0f / targetResolution.height);
+            perFrameShaderParameters.displayResolution = Vector4(1.0f * displayResolution.width, 1.0f * displayResolution.height, 1.0f / displayResolution.width, 1.0f / displayResolution.height);
+
+            perFrameShaderParameters.cameraPosition = view.GetCameraPosition();
+            perFrameShaderParameters.previousCameraPosition = view.GetPreviousCameraPosition();
+            perFrameShaderParameters.cameraJitterOffset = view.GetCameraJitterOffset();
+            perFrameShaderParameters.previousCameraJitterOffset = view.GetPreviousCameraJitterOffset();
+            perFrameShaderParameters.cameraUpVector = view.GetCameraUpVector();
+            perFrameShaderParameters.cameraRightVector = view.GetCameraRightVector();
+            perFrameShaderParameters.cameraForwardVector = view.GetCameraForwardVector();
+            perFrameShaderParameters.halfFovInRadians = Math::DegreesToRadians(view.GetFieldOfView()) * 0.5f;
+            perFrameShaderParameters.aspectRatio = view.GetAspectRatio();
+            perFrameShaderParameters.nearClippingPlane = view.GetNearClippingPlane();
+            perFrameShaderParameters.farClippingPlane = view.GetFarClippingPlane();
+
+            perFrameShaderParameters.worldToViewMatrix = view.GetTransformations().GetWorldToViewMatrix();
+            perFrameShaderParameters.viewToWorldMatrix = view.GetTransformations().GetViewToWorldMatrix();
+            perFrameShaderParameters.viewToClipMatrix = view.GetTransformations().GetViewToClipMatrix();
+            perFrameShaderParameters.clipToViewMatrix = view.GetTransformations().GetClipToViewMatrix();
+            perFrameShaderParameters.worldToClipMatrix = view.GetTransformations().GetWorldToClipMatrix();
+            perFrameShaderParameters.clipToWorldMatrix = view.GetTransformations().GetClipToWorldMatrix();
+            perFrameShaderParameters.nonJitteredWorldToClipMatrix = view.GetTransformations().GetNonJitteredViewToClipMatrix();
+
+            perFrameShaderParameters.previousWorldToViewMatrix = view.GetPreviousTransformations().GetWorldToViewMatrix();
+            perFrameShaderParameters.previousViewToWorldMatrix = view.GetPreviousTransformations().GetViewToWorldMatrix();
+            perFrameShaderParameters.previousViewToClipMatrix = view.GetPreviousTransformations().GetViewToClipMatrix();
+            perFrameShaderParameters.previousClipToViewMatrix = view.GetPreviousTransformations().GetClipToViewMatrix();
+            perFrameShaderParameters.previousWorldToClipMatrix = view.GetPreviousTransformations().GetWorldToClipMatrix();
+            perFrameShaderParameters.previousClipToWorldMatrix = view.GetPreviousTransformations().GetClipToWorldMatrix();
+            perFrameShaderParameters.previousNonJitteredWorldToClipMatrix = view.GetPreviousTransformations().GetNonJitteredViewToClipMatrix();
+
+            perFrameShaderParameters.materialTextureMipLodBias = materialTextureMipLodBias;
+
+            perFrameShaderParameters.preExposure = preExposure;
+            perFrameShaderParameters.oneOverPreExposure = 1.0f / preExposure;
+            perFrameShaderParameters.preExposureCorrection = preExposure / previousPreExposure;
+
+            perFrameShaderParameters.indirectLightingMultiplier = renderSettings.globalIlluminationSettings.indirectLightingIntensity * renderSettings.globalIlluminationSettings.indirectLightingColor;
+
+            if (view.HasValidScene())
             {
-                const float halfApexAngle = atmosphericLight->GetHalfApexAngleInRadians();
-                const float cosHalfApexAngle = std::cos(halfApexAngle);
-                const float solidAngle = 2.0f * M_PI * (1.0f - cosHalfApexAngle); // Solid angle from aperture https://en.wikipedia.org/wiki/Solid_angle
+                const RenderScene* scene = view.GetScene();
+                if (scene->HasAtmosphericLight())
+                {
+                    const DistantLightRenderProxy* atmosphericLight = scene->GetAtmosphericLight();
+                    const float halfApexAngle = atmosphericLight->GetHalfApexAngleInRadians();
+                    const float cosHalfApexAngle = std::cos(halfApexAngle);
+                    const float solidAngle = 2.0f * M_PI * (1.0f - cosHalfApexAngle); // https://en.wikipedia.org/wiki/Solid_angle
 
-                const Vector3 atmosphericLightIlluminance = atmosphericLight->GetPhysicalLightColor();
-                const Vector3 atmosphericLightDiskLuminance = atmosphericLight->GetAtmosphericLightDiskColorFactor() * atmosphericLightIlluminance / solidAngle; // approximation
+                    const Vector3 atmosphericLightIlluminance = atmosphericLight->GetPhysicalLightColor();
+                    const Vector3 atmosphericLightDiskLuminance = atmosphericLight->GetAtmosphericLightDiskColorFactor() * atmosphericLightIlluminance / solidAngle; // approximation
 
-                perFrameShaderParameters.atmosphericLightDirection = atmosphericLight->GetDirection();
-                perFrameShaderParameters.atmosphericLightDiskLuminance = atmosphericLightDiskLuminance;
-                perFrameShaderParameters.atmosphericLightDiskCosHalfApexAngle = cosHalfApexAngle;
-                perFrameShaderParameters.atmosphericLightOuterSpaceIlluminance = atmosphericLightIlluminance;
-            }
-            else
-            {
-                perFrameShaderParameters.atmosphericLightDirection = DefaultLightDirection;
-                perFrameShaderParameters.atmosphericLightDiskLuminance = Vector3(0.0f, 0.0f, 0.0f);
-                perFrameShaderParameters.atmosphericLightDiskCosHalfApexAngle = 1.0f;
-                perFrameShaderParameters.atmosphericLightOuterSpaceIlluminance = Vector3(0.0f, 0.0f, 0.0f);
-            }
+                    perFrameShaderParameters.atmosphericLightDirection = atmosphericLight->GetDirection();
+                    perFrameShaderParameters.atmosphericLightDiskLuminance = atmosphericLightDiskLuminance;
+                    perFrameShaderParameters.atmosphericLightDiskCosHalfApexAngle = cosHalfApexAngle;
+                    perFrameShaderParameters.atmosphericLightOuterSpaceIlluminance = atmosphericLightIlluminance;
+                }
+                else
+                {
+                    perFrameShaderParameters.atmosphericLightDirection = DefaultLightDirection;
+                    perFrameShaderParameters.atmosphericLightDiskLuminance = Vector3(0.0f, 0.0f, 0.0f);
+                    perFrameShaderParameters.atmosphericLightDiskCosHalfApexAngle = 1.0f;
+                    perFrameShaderParameters.atmosphericLightOuterSpaceIlluminance = Vector3(0.0f, 0.0f, 0.0f);
+                }
 
-            if (isSkyAtmosphereRenderingEnabled)
-            {
-                const SkyAtmosphereRenderProxy& skyAtmosphere = *scene->GetActiveSkyAtmosphere();
+                if (IsSkyAtmosphereRenderingEnabled())
+                {
+                    const SkyAtmosphereRenderProxy& skyAtmosphere = *scene->GetActiveSkyAtmosphere();
 
-                SkyAtmosphereShaderParameters skyAtmosphereShaderParameters = {};
-                SetupSkyAtmosphereShaderParameters(skyAtmosphereShaderParameters, skyAtmosphere);
+                    SkyAtmosphereShaderParameters skyAtmosphereShaderParameters = {};
+                    SetupSkyAtmosphereShaderParameters(skyAtmosphereShaderParameters, skyAtmosphere);
 
-                Matrix3x3 skyAtmosphereSkyViewLutReferential = IdentityMatrix3x3;
-                ComputeViewRelatedSkyAtmosphereParameters(skyAtmosphere, cameraPosition, cameraForwardVector, skyAtmosphereSkyViewLutReferential);
+                    SkyAtmosphereViewRelatedParameters skyAtmosphereViewRelatedParameters =
+                    {
+                        .skyViewLutReferential = IdentityMatrix3x3,
+                    };
+                    SetupSkyAtmosphereViewRelatedParameters(skyAtmosphereViewRelatedParameters, skyAtmosphere, view.GetCameraPosition(), view.GetCameraForwardVector());
 
-                perFrameShaderParameters.skyAtmosphereTransmittanceLutSize = skyAtmosphereShaderParameters.transmittanceLutSize;
-                perFrameShaderParameters.skyAtmosphereMultipleScatteringLutSize = skyAtmosphereShaderParameters.multipleScatteringLutSize;
-                perFrameShaderParameters.skyAtmosphereSkyViewLutSize = skyAtmosphereShaderParameters.skyViewLutSize;
-                perFrameShaderParameters.skyAtmosphereAerialPerspectiveVolumeSize = skyAtmosphereShaderParameters.aerialPerspectiveVolumeSize;
-                perFrameShaderParameters.skyAtmosphereTransmittanceLutSampleCount = skyAtmosphereShaderParameters.transmittanceLutSampleCount;
-                perFrameShaderParameters.skyAtmosphereMultipleScatteringLutSampleCount = skyAtmosphereShaderParameters.multipleScatteringLutSampleCount;
-                perFrameShaderParameters.skyAtmosphereRayMarchingMinSampleCount = skyAtmosphereShaderParameters.rayMarchingMinSampleCount;
-                perFrameShaderParameters.skyAtmosphereRayMarchingMaxSampleCount = skyAtmosphereShaderParameters.rayMarchingMaxSampleCount;
-                perFrameShaderParameters.skyAtmosphereBottomRadiusInKilometers = skyAtmosphereShaderParameters.bottomRadius;
-                perFrameShaderParameters.skyAtmosphereTopRadiusInKilometers = skyAtmosphereShaderParameters.topRadius;
-                perFrameShaderParameters.skyAtmosphereGroundAlbedo = skyAtmosphereShaderParameters.groundAlbedo;
-                perFrameShaderParameters.skyAtmosphereRayleighScattering = skyAtmosphereShaderParameters.rayleighScattering;
-                perFrameShaderParameters.skyAtmosphereRayleighDensityExpScale = skyAtmosphereShaderParameters.rayleighDensityExpScale;
-                perFrameShaderParameters.skyAtmosphereMieScattering = skyAtmosphereShaderParameters.mieScattering;
-                perFrameShaderParameters.skyAtmosphereMieAbsorption = skyAtmosphereShaderParameters.mieAbsorption;
-                perFrameShaderParameters.skyAtmosphereMieExtinction = skyAtmosphereShaderParameters.mieExtinction;
-                perFrameShaderParameters.skyAtmosphereMiePhaseG = skyAtmosphereShaderParameters.miePhaseG;
-                perFrameShaderParameters.skyAtmosphereMieDensityExpScale = skyAtmosphereShaderParameters.mieDensityExpScale;
-                perFrameShaderParameters.skyAtmosphereAbsorptionDensity0LayerWidth = skyAtmosphereShaderParameters.absorptionDensity0LayerWidth;
-                perFrameShaderParameters.skyAtmosphereAbsorptionDensity0ConstantTerm = skyAtmosphereShaderParameters.absorptionDensity0ConstantTerm;
-                perFrameShaderParameters.skyAtmosphereAbsorptionDensity0LinearTerm = skyAtmosphereShaderParameters.absorptionDensity0LinearTerm;
-                perFrameShaderParameters.skyAtmosphereAbsorptionDensity1ConstantTerm = skyAtmosphereShaderParameters.absorptionDensity1ConstantTerm;
-                perFrameShaderParameters.skyAtmosphereAbsorptionDensity1LinearTerm = skyAtmosphereShaderParameters.absorptionDensity1LinearTerm;
-                perFrameShaderParameters.skyAtmosphereAbsorptionExtinction = skyAtmosphereShaderParameters.absorptionExtinction;
-                perFrameShaderParameters.skyAtmosphereSkyLuminanceFactor = skyAtmosphere.GetSkyLuminanceFactor();
-                perFrameShaderParameters.skyAtmosphereSkyViewLutReferential = skyAtmosphereSkyViewLutReferential;
-            }
-        }
-
-        // TODO: Move post processing settings form PerFrameShaderParameters to another buffer
-        const PostProcessingSettings& finalPostProcessingSettings = settings.postProcessingSettings;
-        {
-            float autoExposureMinExposureValue = finalPostProcessingSettings.autoExposureMinExposureValue;
-            float autoExposureMaxExposureValue = finalPostProcessingSettings.autoExposureMaxExposureValue;
-
-            if (settings.exposureMethod == ExposureMethod::FixedExposure)
-            {
-                autoExposureMinExposureValue = autoExposureMaxExposureValue = finalPostProcessingSettings.fixedExposureValue;
+                    perFrameShaderParameters.skyAtmosphereTransmittanceLutSize = skyAtmosphereShaderParameters.transmittanceLutSize;
+                    perFrameShaderParameters.skyAtmosphereMultipleScatteringLutSize = skyAtmosphereShaderParameters.multipleScatteringLutSize;
+                    perFrameShaderParameters.skyAtmosphereSkyViewLutSize = skyAtmosphereShaderParameters.skyViewLutSize;
+                    perFrameShaderParameters.skyAtmosphereAerialPerspectiveVolumeSize = skyAtmosphereShaderParameters.aerialPerspectiveVolumeSize;
+                    perFrameShaderParameters.skyAtmosphereTransmittanceLutSampleCount = skyAtmosphereShaderParameters.transmittanceLutSampleCount;
+                    perFrameShaderParameters.skyAtmosphereMultipleScatteringLutSampleCount = skyAtmosphereShaderParameters.multipleScatteringLutSampleCount;
+                    perFrameShaderParameters.skyAtmosphereRayMarchingMinSampleCount = skyAtmosphereShaderParameters.rayMarchingMinSampleCount;
+                    perFrameShaderParameters.skyAtmosphereRayMarchingMaxSampleCount = skyAtmosphereShaderParameters.rayMarchingMaxSampleCount;
+                    perFrameShaderParameters.skyAtmosphereBottomRadiusInKilometers = skyAtmosphereShaderParameters.bottomRadius;
+                    perFrameShaderParameters.skyAtmosphereTopRadiusInKilometers = skyAtmosphereShaderParameters.topRadius;
+                    perFrameShaderParameters.skyAtmosphereGroundAlbedo = skyAtmosphereShaderParameters.groundAlbedo;
+                    perFrameShaderParameters.skyAtmosphereRayleighScattering = skyAtmosphereShaderParameters.rayleighScattering;
+                    perFrameShaderParameters.skyAtmosphereRayleighDensityExpScale = skyAtmosphereShaderParameters.rayleighDensityExpScale;
+                    perFrameShaderParameters.skyAtmosphereMieScattering = skyAtmosphereShaderParameters.mieScattering;
+                    perFrameShaderParameters.skyAtmosphereMieAbsorption = skyAtmosphereShaderParameters.mieAbsorption;
+                    perFrameShaderParameters.skyAtmosphereMieExtinction = skyAtmosphereShaderParameters.mieExtinction;
+                    perFrameShaderParameters.skyAtmosphereMiePhaseG = skyAtmosphereShaderParameters.miePhaseG;
+                    perFrameShaderParameters.skyAtmosphereMieDensityExpScale = skyAtmosphereShaderParameters.mieDensityExpScale;
+                    perFrameShaderParameters.skyAtmosphereAbsorptionDensity0LayerWidth = skyAtmosphereShaderParameters.absorptionDensity0LayerWidth;
+                    perFrameShaderParameters.skyAtmosphereAbsorptionDensity0ConstantTerm = skyAtmosphereShaderParameters.absorptionDensity0ConstantTerm;
+                    perFrameShaderParameters.skyAtmosphereAbsorptionDensity0LinearTerm = skyAtmosphereShaderParameters.absorptionDensity0LinearTerm;
+                    perFrameShaderParameters.skyAtmosphereAbsorptionDensity1ConstantTerm = skyAtmosphereShaderParameters.absorptionDensity1ConstantTerm;
+                    perFrameShaderParameters.skyAtmosphereAbsorptionDensity1LinearTerm = skyAtmosphereShaderParameters.absorptionDensity1LinearTerm;
+                    perFrameShaderParameters.skyAtmosphereAbsorptionExtinction = skyAtmosphereShaderParameters.absorptionExtinction;
+                    perFrameShaderParameters.skyAtmosphereSkyLuminanceFactor = skyAtmosphere.GetSkyLuminanceFactor();
+                    perFrameShaderParameters.skyAtmosphereSkyViewLutReferential = skyAtmosphereViewRelatedParameters.skyViewLutReferential;
+                }
             }
 
-            perFrameShaderParameters.autoExposureExposureCompensation = finalPostProcessingSettings.autoExposureExposureCompensation;
-            perFrameShaderParameters.autoExposureMinExposureValue = autoExposureMinExposureValue;
-            perFrameShaderParameters.autoExposureMaxExposureValue = autoExposureMaxExposureValue;
-            perFrameShaderParameters.autoExposureSpeedDarkToBright = finalPostProcessingSettings.autoExposureSpeedDarkToBright;
-            perFrameShaderParameters.autoExposureSpeedBrightToDark = finalPostProcessingSettings.autoExposureSpeedBrightToDark;
-            perFrameShaderParameters.autoExposureHistogramLowerPercentage = finalPostProcessingSettings.autoExposureHistogramLowerPercentage;
-            perFrameShaderParameters.autoExposureHistogramHigherPercentage = finalPostProcessingSettings.autoExposureHistogramHigherPercentage;
-            perFrameShaderParameters.autoExposureHistogramMinEV100 = finalPostProcessingSettings.autoExposureHistogramMinEV100;
-            perFrameShaderParameters.autoExposureHistogramMaxEV100 = finalPostProcessingSettings.autoExposureHistogramMaxEV100;
-            perFrameShaderParameters.autoExposureUseTargetExposure = view.cameraCut;// || forceUseTargetExposure;
+            // TODO: Move post processing settings form PerFrameShaderParameters to other place
+            {
+                perFrameShaderParameters.autoExposureExposureCompensation = finalPostProcessingSettings.autoExposureExposureCompensation;
+                perFrameShaderParameters.autoExposureMinExposureValue = finalPostProcessingSettings.autoExposureMinExposureValue;
+                perFrameShaderParameters.autoExposureMaxExposureValue = finalPostProcessingSettings.autoExposureMaxExposureValue;
+                perFrameShaderParameters.autoExposureSpeedDarkToBright = finalPostProcessingSettings.autoExposureSpeedDarkToBright;
+                perFrameShaderParameters.autoExposureSpeedBrightToDark = finalPostProcessingSettings.autoExposureSpeedBrightToDark;
+                perFrameShaderParameters.autoExposureHistogramLowerPercentage = finalPostProcessingSettings.autoExposureHistogramLowerPercentage;
+                perFrameShaderParameters.autoExposureHistogramHigherPercentage = finalPostProcessingSettings.autoExposureHistogramHigherPercentage;
+                perFrameShaderParameters.autoExposureHistogramMinEV100 = finalPostProcessingSettings.autoExposureHistogramMinEV100;
+                perFrameShaderParameters.autoExposureHistogramMaxEV100 = finalPostProcessingSettings.autoExposureHistogramMaxEV100;
+                perFrameShaderParameters.autoExposureUseTargetExposure = (view.NeedToBeReset() || !IsAutoExposureEnabled()) ? 1 : 0; // TODO: forceUseTargetExposure;
 
-            perFrameShaderParameters.bloomIntensity = finalPostProcessingSettings.bloomIntensity;
-            perFrameShaderParameters.bloomRadius = finalPostProcessingSettings.bloomRadius;
+                perFrameShaderParameters.bloomIntensity = finalPostProcessingSettings.bloomIntensity;
+                perFrameShaderParameters.bloomRadius = finalPostProcessingSettings.bloomRadius;
 
-            perFrameShaderParameters.chromaticAberrationStrength = finalPostProcessingSettings.chromaticAberrationStrength;
-            perFrameShaderParameters.chromaticAberrationOffset = finalPostProcessingSettings.chromaticAberrationOffset;
+                perFrameShaderParameters.chromaticAberrationIntensity = finalPostProcessingSettings.chromaticAberrationIntensity;
+                perFrameShaderParameters.chromaticAberrationOffset = finalPostProcessingSettings.chromaticAberrationOffset;
 
-            perFrameShaderParameters.whiteBalance = finalPostProcessingSettings.whiteBalance;
+                perFrameShaderParameters.whiteBalance = finalPostProcessingSettings.whiteBalance;
 
-            //perFrameShaderParameters.toneMappingOperator = finalPostProcessingSettings.toneMappingOperator;
+                //perFrameShaderParameters.toneMappingOperator = finalPostProcessingSettings.toneMappingOperator;
 
-            //perFrameShaderParameters.colorCorrectionSaturation = finalPostProcessingSettings.colorCorrectionSaturation;
-            //perFrameShaderParameters.colorCorrectionContrast = finalPostProcessingSettings.colorCorrectionContrast;
-            //perFrameShaderParameters.colorCorrectionGamma = finalPostProcessingSettings.colorCorrectionGamma;
-            //perFrameShaderParameters.colorCorrectionGain = finalPostProcessingSettings.colorCorrectionGain;
-            //perFrameShaderParameters.colorCorrectionOffset = finalPostProcessingSettings.colorCorrectionOffset;
+                //perFrameShaderParameters.colorCorrectionSaturation = finalPostProcessingSettings.colorCorrectionSaturation;
+                //perFrameShaderParameters.colorCorrectionContrast = finalPostProcessingSettings.colorCorrectionContrast;
+                //perFrameShaderParameters.colorCorrectionGamma = finalPostProcessingSettings.colorCorrectionGamma;
+                //perFrameShaderParameters.colorCorrectionGain = finalPostProcessingSettings.colorCorrectionGain;
+                //perFrameShaderParameters.colorCorrectionOffset = finalPostProcessingSettings.colorCorrectionOffset;
+            }
         }
 
-        {
-            RenderBackendBufferHandle perFrameDataBuffer = GetCurrentPerFrameDataBuffer();
+        RenderBackendBufferHandle perFrameDataBuffer = GetCurrentPerFrameDataBuffer();
 
-            void* data = nullptr;
-            renderBackend->MapBuffer(perFrameDataBuffer, &data);
-            memcpy(data, &perFrameShaderParameters, sizeof(PerFrameShaderParameters));
-            renderBackend->UnmapBuffer(perFrameDataBuffer);
-        }
+        void* data = nullptr;
+        renderBackend->MapBuffer(perFrameDataBuffer, &data);
+        memcpy(data, &perFrameShaderParameters, sizeof(PerFrameShaderParameters));
+        renderBackend->UnmapBuffer(perFrameDataBuffer);
     }
 
 #if 0
@@ -574,38 +445,30 @@ namespace Horizon
     }
 #endif
 
-    bool GatherRayTracingInstances(
-        RenderGraph& renderGraph,
-        SceneView& view,
-        RayTracingScene& rayTracingScene)
-    {
-        return false;
-    }
-
-    RenderGraphTextureHandle RealTimeRenderer::RenderUIColorAndAlpha(
+    RenderGraphTextureHandle RealTimeRenderer::RenderUI(
         RenderGraph& renderGraph,
         const SceneView& view)
     {
-        auto& sceneTextures = renderGraph.blackboard.Get<RealTimeRendererSceneTextures>();
-        auto uiColorAndAlphaTexture = sceneTextures.uiColorAndAlphaTexture;
+        RealTimeRendererSceneTextures& sceneTextures = renderGraph.blackboard.Get<RealTimeRendererSceneTextures>();
+        RenderGraphTextureHandle uiColorAndAlphaTexture = sceneTextures.uiColorAndAlphaTexture;
 
         renderGraph.AddPass(std::format("UIColorAndAlpha (Graphics, {}x{})", targetResolution.width, targetResolution.height), RenderGraphPassFlags::Graphics | RenderGraphPassFlags::SkipRenderPass,
-            [&](RenderGraphBuilder& builder)
+        [&](RenderGraphBuilder& builder)
+        {
+            uiColorAndAlphaTexture = sceneTextures.uiColorAndAlphaTexture = builder.WriteTexture(sceneTextures.uiColorAndAlphaTexture, RenderBackendResourceState::RenderTarget);
+
+            builder.BindColorTarget(0, uiColorAndAlphaTexture, RenderBackendRenderPassBeginningAccessType::Clear, RenderBackendRenderPassEndingAccessType::Preserve);
+
+            return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
             {
-                uiColorAndAlphaTexture = sceneTextures.uiColorAndAlphaTexture = builder.WriteTexture(sceneTextures.uiColorAndAlphaTexture, RenderBackendResourceState::RenderTarget);
-
-                builder.BindColorTarget(0, uiColorAndAlphaTexture, RenderBackendRenderPassBeginningAccessType::Clear, RenderBackendRenderPassEndingAccessType::Preserve);
-
-                return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
-                {
-                    renderEngine->DrawUI(commandList, registry.GetRenderBackendTextureHandle(uiColorAndAlphaTexture));
-                };
-            });
+                renderEngine->DrawUI(commandList, registry.GetRenderBackendTextureHandle(uiColorAndAlphaTexture));
+            };
+        });
 
         return uiColorAndAlphaTexture;
     }
 
-    void RealTimeRenderer::Render(RenderGraph& renderGraph, const SceneView& view)
+    void RealTimeRenderer::Render(RenderGraph& renderGraph)
     {
         OPTICK_EVENT();
 
@@ -627,76 +490,6 @@ namespace Horizon
 
         const bool shouldRenderSkyAtmosphere = ShouldRenderSkyAtmosphere();
         const bool shouldRenderAmbientOcclusion = settings.ambientOcclusionTechnique != AmbientOcclusionTechnique::None;
-
-        if (IsDLAAEnabled())
-        {
-            sl::Result slResult = sl::Result::eOk;
-            sl::ViewportHandle slViewport = 0;
-
-            sl::DLSSOptions dlssOptions = {};
-            dlssOptions.mode = sl::DLSSMode::eMaxQuality;
-            dlssOptions.outputWidth = targetResolution.width;
-            dlssOptions.outputHeight = targetResolution.height;
-            dlssOptions.sharpness = 0.0f;
-            dlssOptions.preExposure = 1.0f;
-            dlssOptions.exposureScale = 1.0f;
-            dlssOptions.colorBuffersHDR = sl::Boolean::eTrue;
-            dlssOptions.indicatorInvertAxisX = sl::Boolean::eFalse;
-            dlssOptions.indicatorInvertAxisY = sl::Boolean::eFalse;
-            dlssOptions.dlaaPreset = sl::DLSSPreset::ePresetA;
-            dlssOptions.qualityPreset = sl::DLSSPreset::ePresetB;
-            dlssOptions.balancedPreset = sl::DLSSPreset::ePresetC;
-            dlssOptions.performancePreset = sl::DLSSPreset::ePresetD;
-            dlssOptions.ultraPerformancePreset = sl::DLSSPreset::ePresetE;
-            if (SL_FAILED(result, slDLSSSetOptions(slViewport, dlssOptions)))
-            {
-                LogError(GLogger, std::format("slDLSSSetOptions, error code: {}", (int32)result));
-            }
-        }
-
-        if (IsDLSSEnabled() || IsDLAAEnabled())
-        {
-            Matrix4x4 reprojectionMatrix = perFrameShaderParameters.nonJitteredInvViewProjectionMatrix * perFrameShaderParameters.nonJitteredPrevViewProjectionMatrix;
-            Matrix4x4 inverseReprojectionMatrix = glm::inverse(reprojectionMatrix);
-
-            sl::Constants constants = {};
-            constants.cameraViewToClip = *((sl::float4x4*)&perFrameShaderParameters.nonJitteredProjectionMatrix);
-            constants.clipToCameraView = *((sl::float4x4*)&perFrameShaderParameters.nonJitteredInvProjectionMatrix);
-            //constants.clipToLensClip = {};
-            constants.clipToPrevClip = *((sl::float4x4*)&reprojectionMatrix);
-            constants.prevClipToClip = *((sl::float4x4*)&inverseReprojectionMatrix);
-            constants.jitterOffset = sl::float2(perFrameShaderParameters.cameraJitterOffset.x, perFrameShaderParameters.cameraJitterOffset.y);
-            constants.mvecScale = { 1.0f, 1.0f };//sl::float2(perFrameData.data.renderResolution.width, perFrameData.data.renderResolution.height);
-            constants.cameraPinholeOffset = { 0.0f, 0.0f };
-            constants.cameraPos = sl::float3(perFrameShaderParameters.cameraPosition.x, perFrameShaderParameters.cameraPosition.y, perFrameShaderParameters.cameraPosition.z);
-            constants.cameraUp = sl::float3(perFrameShaderParameters.cameraUp.x, perFrameShaderParameters.cameraUp.y, perFrameShaderParameters.cameraUp.z);
-            constants.cameraRight = sl::float3(perFrameShaderParameters.cameraRight.x, perFrameShaderParameters.cameraRight.y, perFrameShaderParameters.cameraRight.z);
-            constants.cameraFwd = sl::float3(perFrameShaderParameters.cameraForward.x, perFrameShaderParameters.cameraForward.y, perFrameShaderParameters.cameraForward.z);
-            constants.cameraNear = perFrameShaderParameters.cameraNearPlane;
-            constants.cameraFar = perFrameShaderParameters.cameraFarPlane;
-            constants.cameraFOV = perFrameShaderParameters.cameraHalfFovRad * 2.0f;
-            constants.cameraAspectRatio = perFrameShaderParameters.cameraAspectRatio;
-            constants.motionVectorsInvalidValue = sl::INVALID_FLOAT;
-            constants.depthInverted = sl::Boolean::eTrue;
-            constants.cameraMotionIncluded = sl::Boolean::eTrue;
-            constants.motionVectors3D = sl::Boolean::eFalse;
-            constants.reset = perFrameShaderParameters.frameIndex == 0 ? sl::Boolean::eTrue : sl::Boolean::eFalse;
-            constants.orthographicProjection = sl::Boolean::eFalse;
-            constants.motionVectorsDilated = sl::Boolean::eFalse;
-            constants.motionVectorsJittered = sl::Boolean::eFalse;
-
-            sl::Result result = sl::Result::eOk;
-            sl::ViewportHandle viewport = 0;
-            sl::FrameToken* frameToken = nullptr;
-            if (SL_FAILED(result, slGetNewFrameToken(frameToken, &perFrameShaderParameters.frameIndex)))
-            {
-                LogError(GLogger, std::format("slGetNewFrameToken, error code: {}", (int32)result));
-            }
-            if (SL_FAILED(result, slSetConstants(constants, *frameToken, viewport)))
-            {
-                LogError(GLogger, std::format("slSetConstants, error code: {}", (int32)result));
-            }
-        }
 
         RenderGraphTextureDesc vbuffer0Desc = RenderGraphTextureDesc::Create2D(
             renderResolution.width,
@@ -1118,5 +911,10 @@ namespace Horizon
                     commandList.Transitions(transitions, 1);
                 };
             });
+    }
+
+    bool RealTimeRenderer::IsSuperResolutionEnabled() const
+    {
+        return features.enableSuperResolution;
     }
 }

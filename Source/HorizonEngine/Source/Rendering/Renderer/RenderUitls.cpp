@@ -1,4 +1,6 @@
 #include "RenderUtils.h"
+#include "ShaderLibrary.h"
+#include "ShaderID_DEPRECATED.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb/stb_image.h>
@@ -19,7 +21,10 @@ namespace Horizon
         {
             return RenderBackendTextureHandle::Null;
         }
-        uint64 bufferSize = iw * ih * 4 * sizeof(float);
+
+        assert(iw >= 0 && ih >= 0 && c >= 0);
+
+        uint64 bufferSize = uint64(iw) * uint64(ih) * 4 * sizeof(float);
 
         RenderBackendTextureDesc desc = RenderBackendTextureDesc::CreateTexture2D(iw, ih, 1, RenderBackendTextureFormat::RGBA32Float);
         RenderBackendTextureHandle texture = renderBackend->CreateTexture(&desc, data, filename);
@@ -45,11 +50,11 @@ namespace Horizon
         size_t fileSize = (size_t)file.tellg();
         outData.resize(fileSize);
         file.seekg(0);
-        file.read((char*)outData.data(), fileSize);
+        file.read(reinterpret_cast<char*>(outData.data()), fileSize);
         file.close();
     }
 
-    RenderBackendTextureHandle LoadTextureFromFile(RenderBackend* renderBackend, const char* filename, bool autoMipmaps, bool filpY, RenderBackendTextureFormat format)
+    RenderBackendTextureHandle LoadTextureFromFile(RenderBackend* renderBackend, ShaderLibrary_DEPRECATED* shaderLibrary, const char* filename, bool autoMipmaps, bool filpY, RenderBackendTextureFormat format)
     {
         RenderBackendTextureHandle texture = RenderBackendTextureHandle::Null;
 
@@ -124,11 +129,11 @@ namespace Horizon
                 return RenderBackendTextureHandle::Null;
             }
             uint64 bufferSize = iw * ih * 4;
-            unsigned char* buffer = (unsigned char*)_aligned_malloc(bufferSize, 32);
+            unsigned char* buffer = static_cast<unsigned char*>(_aligned_malloc(bufferSize, 32));
 
-            for (uint32 y = 0; y < (uint32)ih; y++)
+            for (uint32 y = 0; y < uint32(ih); y++)
             {
-                for (uint32 x = 0; x < (uint32)iw; x++)
+                for (uint32 x = 0; x < uint32(iw); x++)
                 {
                     uint32 idx = x + y * iw;
                     switch (c)
@@ -205,13 +210,13 @@ namespace Horizon
             return;
         }
 
-        RenderBackendShaderHandle graphicsShader = shaderLibrary->GetShaderHandle((uint32)ShaderPipelineID::DownsampleTexture2D_PS);
+        RenderBackendShaderHandle graphicsShader = shaderLibrary->GetShaderHandle(ShaderID::DownsampleTexture2D_PS);
         for (uint32 mipLevel = 1; mipLevel < numMipLevels; mipLevel++)
         {
             width = width >> 1;
             height = height >> 1;
 
-            RenderBackendViewport viewport(0.0f, 0.0f, (float)width, (float)height);
+            RenderBackendViewport viewport(0.0f, 0.0f, float(width), float(height));
             commandList.SetViewports(&viewport, 1);
 
             RenderBackendScissor scissor(0, 0, width, height);
@@ -242,9 +247,9 @@ namespace Horizon
 
             RenderBackendShaderArguments shaderArguments = {};
             shaderArguments.BindTextureSRV(0, RenderBackendTextureSRVDesc::Create(textureHandle));
-            shaderArguments.PushConstants(0, (float)(mipLevel - 1));
-            shaderArguments.PushConstants(1, (float)(width));
-            shaderArguments.PushConstants(2, (float)(height));
+            shaderArguments.PushConstants(0, float(mipLevel - 1));
+            shaderArguments.PushConstants(1, float(width));
+            shaderArguments.PushConstants(2, float(height));
 
             RenderBackendGraphicsPipelineState graphicsPipelineState = {};
 

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Foundation/FoundationModule.h"
+#include "ShaderCompilerCommon.h"
 
 namespace Horizon
 {
@@ -133,11 +133,11 @@ namespace Horizon
         void Allocate(const void* srcData, uint64 srcSize)
         {
             assert(!IsValid() && srcData != nullptr && srcSize > 0);
-            void* tmp = malloc(srcSize);
-            if (tmp != nullptr)
+            void* memory = malloc(srcSize);
+            if (memory != nullptr)
             {
-                memcpy(tmp, srcData, srcSize);
-                data = tmp;
+                memcpy(memory, srcData, srcSize);
+                data = memory;
                 size = srcSize;
             }
         }
@@ -146,7 +146,7 @@ namespace Horizon
         {
             if (IsValid())
             {
-                delete data;
+                free(data);
                 data = nullptr;
                 size = 0;
             }
@@ -167,6 +167,7 @@ namespace Horizon
     class ShaderCompiler
     {
     public:
+        virtual ~ShaderCompiler() = default;
         virtual bool CompileShader(const ShaderCompilerSettings& settings, const ShaderSource& source, ShadingLanguage language, ShaderCompilerOutput* output) = 0;
     };
 }

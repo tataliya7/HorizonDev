@@ -49,6 +49,7 @@ namespace Horizon
 
     /**
      * Building an orthonormal basis from a 3D unit vector without branch.
+     *
      * @see Tom Duff, James Burgess, Per Christensen, Christophe Hery, Andrew Kensler, Max Liani, and Ryusuke Villemin, Building an Orthonormal Basis, Revisited, Journal of Computer Graphics Techniques (JCGT), vol. 6, no. 1, 1-8, 2017
      */
     static void BuildOrthonormalBasisBranchless(const Vector3f& n, Vector3f& b1, Vector3f& b2)
@@ -61,7 +62,7 @@ namespace Horizon
         b2 = Vector3f(b, sign + n.y * n.y* a, -n.y);
     }
 
-    void ComputeViewRelatedSkyAtmosphereParameters(const SkyAtmosphereRenderProxy& renderProxy, const Vector3& worldSpaceCameraPosition, const Vector3& cameraForwardVector, Matrix3x3& outSkyAtmosphereSkyViewLutReferential)
+    void SetupSkyAtmosphereViewRelatedParameters(SkyAtmosphereViewRelatedParameters& outParameters, const SkyAtmosphereRenderProxy& renderProxy, const Vector3& worldSpaceCameraPosition, const Vector3& cameraForwardVector)
     {
         const AtmosphereParameters& atmosphereParameters = renderProxy.GetAtmosphereParameters();
         float bottomRadiusKm = atmosphereParameters.bottomRadius;
@@ -84,7 +85,7 @@ namespace Horizon
             forwardVector = Math::Normalize(Math::CrossProduct(upVector, leftVector));
         }
 
-        outSkyAtmosphereSkyViewLutReferential = Matrix3x3(forwardVector, leftVector, upVector);
+        outParameters.skyViewLutReferential = Matrix3x3(forwardVector, leftVector, upVector);
     }
 
     bool RealTimeRenderer::IsSkyAtmosphereRenderingEnabled() const
@@ -221,33 +222,33 @@ namespace Horizon
 
         renderGraph.AddPass(std::format("SkyAtmosphereAerialPerspectiveVolume (Compute, {}x{}x{})", aerialPerspectiveVolumeSize, aerialPerspectiveVolumeSize, aerialPerspectiveVolumeSize), RenderGraphPassFlags::AsyncCompute,
             [&](RenderGraphBuilder& builder)
-                {
-                    transmittanceLut = builder.ReadTexture(transmittanceLut, RenderBackendResourceState::ShaderResource);
-                    multipleScatteringLut = builder.ReadTexture(multipleScatteringLut, RenderBackendResourceState::ShaderResource);
-                    aerialPerspectiveVolume = builder.WriteTexture(aerialPerspectiveVolume, RenderBackendResourceState::UnorderedAccess);
+            {
+                transmittanceLut = builder.ReadTexture(transmittanceLut, RenderBackendResourceState::ShaderResource);
+                multipleScatteringLut = builder.ReadTexture(multipleScatteringLut, RenderBackendResourceState::ShaderResource);
+                aerialPerspectiveVolume = builder.WriteTexture(aerialPerspectiveVolume, RenderBackendResourceState::UnorderedAccess);
 
-                    return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
-                        {
-                            uint32 groupCountX = aerialPerspectiveVolumeSize / 4;
-                            uint32 groupCountY = aerialPerspectiveVolumeSize / 4;
-                            uint32 groupCountZ = aerialPerspectiveVolumeSize / 4;
+                return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
+                    {
+                        uint32 groupCountX = aerialPerspectiveVolumeSize / 4;
+                        uint32 groupCountY = aerialPerspectiveVolumeSize / 4;
+                        uint32 groupCountZ = aerialPerspectiveVolumeSize / 4;
 
-                            RenderBackendShaderArguments shaderArguments = {};
-                            shaderArguments.BindBufferSRV(0, GetCurrentPerFrameDataBuffer());
-                            shaderArguments.BindTextureSRV(1, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(transmittanceLut)));
-                            shaderArguments.BindTextureSRV(2, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(multipleScatteringLut)));
-                            shaderArguments.BindTextureUAV(3, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(aerialPerspectiveVolume)));
+                        RenderBackendShaderArguments shaderArguments = {};
+                        shaderArguments.BindBufferSRV(0, GetCurrentPerFrameDataBuffer());
+                        shaderArguments.BindTextureSRV(1, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(transmittanceLut)));
+                        shaderArguments.BindTextureSRV(2, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(multipleScatteringLut)));
+                        shaderArguments.BindTextureUAV(3, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(aerialPerspectiveVolume)));
 
-                            RenderBackendShaderHandle computeShader = shaderLibrary->GetShaderHandle(ShaderID::SkyAtmosphereAerialPerspectiveVolume);
+                        RenderBackendShaderHandle computeShader = shaderLibrary->GetShaderHandle(ShaderID::SkyAtmosphereAerialPerspectiveVolume);
 
-                            commandList.Dispatch(
-                                computeShader,
-                                shaderArguments,
-                                groupCountX,
-                                groupCountY,
-                                groupCountZ);
-                        };
-                });
+                        commandList.Dispatch(
+                            computeShader,
+                            shaderArguments,
+                            groupCountX,
+                            groupCountY,
+                            groupCountZ);
+                    };
+            });
 
         RealTimeRendererSkyAtmosphereLUTs& skyAtmosphereLUTs = renderGraph.blackboard.Create<RealTimeRendererSkyAtmosphereLUTs>();
         skyAtmosphereLUTs.transmittanceLut = transmittanceLut;

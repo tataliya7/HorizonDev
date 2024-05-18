@@ -1,4 +1,5 @@
-#include "GPUFFT.h"
+#include "GPUAcceleratedFastFourierTransform.h"
+#include "ShaderID_DEPRECATED.h"
 
 namespace Horizon::GPUFFT
 {

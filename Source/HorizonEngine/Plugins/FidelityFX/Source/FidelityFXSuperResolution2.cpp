@@ -1,7 +1,31 @@
 #include "FidelityFXSuperResolution2.h"
-
+#include <ffx_fsr2.h>
 namespace FidelityFX
 {
+    if (IsFSR2Enabled())
+        {
+            if (view.renderSettings.fsr2Settings.qualityMode == FSR2QualityMode::Custom)
+            {
+                upscaleRatio = view.renderSettings.fsr2Settings.customUpscaleRatio;
+
+                renderResolution.width = (uint32)((float)targetResolution.width / upscaleRatio);
+                renderResolution.height = (uint32)((float)targetResolution.height / upscaleRatio);
+            }
+            else
+            {
+                FfxFsr2QualityMode fsr2QualityMode = (FfxFsr2QualityMode)(int)view.renderSettings.fsr2Settings.qualityMode;
+                FfxErrorCode errorCode = ffxFsr2GetRenderResolutionFromQualityMode(
+                    &renderResolution.width,
+                    &renderResolution.height,
+                    targetResolution.width,
+                    targetResolution.height,
+                    fsr2QualityMode);
+                FFX_ASSERT(errorCode == FFX_OK);
+
+                upscaleRatio = ffxFsr2GetUpscaleRatioFromQualityMode(fsr2QualityMode);
+            }
+        }
+
     RenderGraphTextureHandle FidelityFXSuperResolution2::Dispatch(
         RenderGraph& renderGraph,
         const SceneView& view,

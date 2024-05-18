@@ -117,6 +117,7 @@ namespace Horizon
 
     void Scene::Update(float deltaTime)
     {
+
         if (ShouldUpdateScripts())
         {
             // Update scripts

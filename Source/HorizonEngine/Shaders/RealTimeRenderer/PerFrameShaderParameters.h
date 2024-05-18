@@ -15,7 +15,7 @@ struct PerFrameShaderParameters
 {
     uint frameIndex;
 
-    float deltaTime;
+    float deltaTimeInSeconds;
 
     uint renderWidth;
     uint renderHeight;

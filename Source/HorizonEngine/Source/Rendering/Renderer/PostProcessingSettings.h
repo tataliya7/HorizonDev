@@ -1,4 +1,6 @@
-#include "RenderCoreCommon.h"
+#pragma once
+
+#include "RendererCommon.h"
 
 namespace Horizon
 {
@@ -72,11 +74,5 @@ namespace Horizon
         float vignetteIntensity;
 
         ToneMappingOperatorType toneMappingOperator;
-    };
-
-    enum class RendererType
-    {
-        RealTime,
-        PathTracing,
     };
 }

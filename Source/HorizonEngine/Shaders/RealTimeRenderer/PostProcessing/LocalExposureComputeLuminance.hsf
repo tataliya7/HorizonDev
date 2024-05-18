@@ -9,7 +9,7 @@ BIND_TEXTURE_2D_TYPED_SRV(2, float, AutoExposureTexture);
 BIND_TEXTURE_2D_UAV(3, float4, OutputTexture);
 
 [numthreads(POST_PROCESSING_THREAD_GROUP_COUNT_X, POST_PROCESSING_THREAD_GROUP_COUNT_Y, 1)]
-void LocalExposureComputeLuminancesCS(uint3 DispatchThreadID : SV_DispatchThreadID)
+void LocalExposureComputeLuminanceCS(uint3 DispatchThreadID : SV_DispatchThreadID)
 {
     RWTexture2D<float4> outputTexture = GetOutputTextureUAV();
     uint width, height;
@@ -34,7 +34,7 @@ void LocalExposureComputeLuminancesCS(uint3 DispatchThreadID : SV_DispatchThread
     float highlightLuminance = sqrt(dot(clamp(FastToneMapping(inputColor * highlights), 0.0, 1.0), float3(0.1, 0.7, 0.2)));
     float midtoneLuminance = sqrt(dot(clamp(FastToneMapping(inputColor), 0.0, 1.0), float3(0.1, 0.7, 0.2)));
     float shadowLuminance = sqrt(dot(clamp(FastToneMapping(inputColor * shadows), 0.0, 1.0), float3(0.1, 0.7, 0.2)));
-    float3 luminances = float3(highlightLuminance, midtoneLuminance, shadowLuminance);
+    float3 luminance = float3(highlightLuminance, midtoneLuminance, shadowLuminance);
 
     outputTexture[pixelCoord] = float4(luminances, 1.0);
 }

@@ -185,6 +185,4 @@ namespace Horizon
 
         void UpdateRayTracingAccelerationStructures(SceneView* view, RenderBackendCommandList* commandList);
     };
-
-    extern void Texture2DGenerateMips(ShaderLibrary_DEPRECATED* shaderLibrary, RenderBackendCommandList& commandList, RenderBackendTextureHandle textureHandle, uint32 width, uint32 height, uint32 numMipLevels);
 }

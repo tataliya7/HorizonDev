@@ -8,7 +8,7 @@ namespace Horizon
     class TriangleMeshRenderData
     {
     public:
-        
+
         VertexBuffer vertexBuffer0;
         VertexBuffer vertexBuffer1;
         VertexBuffer vertexBuffer2;

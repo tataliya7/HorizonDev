@@ -108,63 +108,45 @@ namespace Horizon
     };
     static const RenderGraphBlackboardRegistry<RenderGraphOutputTexture> RealTimeRendererSceneTexturesRegistry;
 
-    class RealTimeRenderer : public SceneRenderer
+    class RealTimeRenderer final : public SceneRenderer
     {
     public:
 
         RealTimeRenderer(SceneView* view);
-        virtual ~RealTimeRenderer();
+
+        ~RealTimeRenderer();
 
         void Render(RenderGraph& renderGraph) override;
 
+        bool IsSuperResolutionEnabled() const;
+
+        bool IsAutoExposureEnabled() const;
+
+        bool IsLocalExposureEnabled() const;
+
+        bool IsSkyAtmosphereRenderingEnabled() const;
+
+        bool IsSkyAtmosphereDebugVisualizationEnabled() const;
+
+        bool IsSurfelGIEnabled() const;
+
+        bool IsRayTracingShadowsEnabled() const;
+
+        bool IsRayTracingReflectionsEnabled() const;
+
+        bool IsRayTracingAmbientOcclusionEnabled() const;
+
+        bool IsMotionBlurEnabled() const;
+
+        bool IsDepthOfFieldEnbled() const;
+
+        bool IsGaussianBloomEnabled() const;
+
+        bool IsConvolutionBloomEnabled() const;
+
     private:
 
-        void UpdatePerFrameData();
-
-        bool IsSurfelGIEnabled() const
-        {
-            return isSurfelGIEnabled;
-        }
-
-        bool IsRayTracingShadowsEnabled() const
-        {
-            return isRayTracingShadowsEnabled;
-        }
-
-        bool IsRayTracingReflectionsEnabled() const
-        {
-            return isRayTracingReflectionsEnabled;
-        }
-
-        bool IsRayTracingAmbientOcclusionEnabled() const
-        {
-            return isRayTracingAmbientOcclusionEnabled;
-        }
-
-        bool IsDLAAEnabled() const
-        {
-            return isDLAAEnabled;
-        }
-
-        bool IsDLSSEnabled() const
-        {
-            return isDLSSEnabled;
-        }
-
-        bool IsTemporalAAEnabled() const
-        {
-            return isTemporalAAEnabled;
-        }
-
-        bool IsFSR2Enabled() const
-        {
-            return isFSR2Enabled;
-        }
-
-        bool IsSuperResolutionEnabled() const
-        {
-            return isSuperResolutionEnabled;
-        }
+        void UpdatePerFrameDataBuffer() const;
 
         bool ShouldApplyCameraJittering() const
         {
@@ -181,20 +163,6 @@ namespace Horizon
             }
             return false;
         }
-
-        bool IsSkyAtmosphereRenderingEnabled() const;
-
-        void RenderSkyAtmosphereLUTs(RenderGraph& renderGraph);
-
-        void RenderSkyAtmosphere(RenderGraph& renderGraph);
-
-        bool IsSkyAtmosphereDebugVisualizationEnabled() const;
-
-        void AddSkyAtmosphereDebugVisualizationPass();
-
-        bool isSkyAtmosphereRenderingEnabled = false;
-
-        bool isSkyAtmosphereDebugVisualizationEnabled = false;
 
         bool LoadShaders();
 
@@ -287,6 +255,12 @@ namespace Horizon
             RenderGraph& renderGraph,
             const SceneView& view);
 
+        void RenderSkyAtmosphereLUTs(RenderGraph& renderGraph);
+
+        void RenderSkyAtmosphere(RenderGraph& renderGraph);
+
+        void AddSkyAtmosphereDebugVisualizationPass();
+
         void RenderSubsurfaceScattering(
             RenderGraph& renderGraph,
             const SceneView& view);
@@ -299,7 +273,6 @@ namespace Horizon
             RenderGraph& renderGraph,
             const SceneView& view);
 
-        [[deprecated]]
         RenderGraphTextureHandle AddDepthOfFieldPass(
             RenderGraph& renderGraph,
             const SceneView& view,
@@ -434,50 +407,51 @@ namespace Horizon
             const SceneView& view,
             RenderGraphTextureHandle sceneColorTexture);
 
-        RenderGraphTextureHandle RenderUIColorAndAlpha(
+        RenderGraphTextureHandle RenderUI(
             RenderGraph& renderGraph,
             const SceneView& view);
 
         RenderBackend* renderBackend;
         ShaderCompiler* shaderCompiler;
         ShaderLibrary_DEPRECATED* shaderLibrary;
-        RenderSystem* renderSystem;
         RenderGraphResourcePool* resourcePool;
         RendererDefaultResources* defaultResources;
-        RenderScene* scene;
+        SceneView* sceneView;
+        PostProcessingSettings& finalPostProcessingSettings;
 
-        bool isDLAAEnabled = false;
-        bool isDLSSEnabled = false;
-        bool isFSR2Enabled = false;
-        bool isTemporalAAEnabled = false;
-        bool isSuperResolutionEnabled = false;
-        bool isSurfelGIEnabled = false;
-        bool isRayTracingShadowsEnabled = false;;
-        bool isRayTracingReflectionsEnabled = false;
-        bool isRayTracingAmbientOcclusionEnabled = false;
-        bool isScreenSpaceLightShaftsEnabled = false;
-
-        bool isMotionBlurEnabled = false;
-        bool isAutoExposureEnabled = (settings.exposureMethod == ExposureMethod::AutoExposure) || (settings.exposureMethod == ExposureMethod::FixedExposure);
-        bool isBloomEnabled = settings.postProcessingSettings.bloomIntensity > 0.0f;
-        bool isLensFlaresEnabled = isBloomEnabled && settings.postProcessingSettings.lensFlaresIntensity > 0.0f;
-        bool isConvolutionBloomEnabled = false;
-        bool isToneMappingEnabled = true;
-        bool isLocalExposureEnabled = isToneMappingEnabled && settings.postProcessingSettings.localExposureEnabled;
+        struct
+        {
+            uint32 enableFrameRateUpConversion : 1;
+            uint32 enableSuperSamplingAntiAliasing : 1;
+            uint32 enableSuperResolution : 1;
+            uint32 enableSkyAtmosphere : 1;
+            uint32 enableRayTracingShadows : 1;
+            uint32 enableRayTracingReflections : 1;
+            uint32 enableRayTracingAmbientOcclusion : 1;
+            uint32 enableSurfelGI : 1;
+            uint32 enableScreenSpaceLightShafts : 1;
+            uint32 enableMotionBlur : 1;
+            uint32 enableAutoExposure : 1;
+            uint32 enableLocalExposure : 1;
+            uint32 enableDepthOfField : 1;
+            uint32 enableLensFlares : 1;
+            uint32 enableGaussianBloom : 1;
+            uint32 enableConvolutionBloom : 1;
+        } features;
 
         float upscaleRatio = 1.0f;
+
         Extent2D renderResolution;
         Extent2D targetResolution;
         Extent2D displayResolution;
-
-        const float NearClippingPlaneDepthValue = 1.0f;
-        const float FarClippingPlaneDepthValue = 0.0f;
 
         static const uint32 MaxNumFramesInFlight = 3;
         int32 currentPerFrameDataBufferIndex = 0;
         RenderBackendBufferHandle perFrameDataBuffers[MaxNumFramesInFlight];
 
-        RenderBackendBufferHandle GetCurrentPerFrameDataBuffer();
+        RenderBackendBufferHandle GetCurrentPerFrameDataBuffer() const;
+
+        float materialTextureMipLodBias;
 
         float preExposure = 1.0f;
         float previousPreExposure = 1.0f;

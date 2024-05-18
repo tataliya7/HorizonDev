@@ -12,12 +12,36 @@ namespace Horizon
     private:
     };
 
-    class DirectionalLightRenderProxy : public LightRenderProxy
+    class DistantLightRenderProxy : public LightRenderProxy
     {
     public:
-        DirectionalLightRenderProxy();
-        virtual ~DirectionalLightRenderProxy();
+        DistantLightRenderProxy();
+        virtual ~DistantLightRenderProxy();
+
+        Vector3 GetPhysicalLightColor() const
+        {
+
+        }
+
+        Vector3 GetDirection() const
+        {
+            return direction;
+        }
+
+        float GetHalfApexAngleInRadians() const
+        {
+            return halfApexAngleInRadians;
+        }
+
+        Vector3 GetAtmosphericLightDiskColorFactor() const
+        {
+            return atmosphericLightDiskColorFactor;
+        }
+
     private:
+        Vector3 direction;
+        float halfApexAngleInRadians;
+        Vector3 atmosphericLightDiskColorFactor;
     };
 
     class SpotLightRenderProxy : public LightRenderProxy
@@ -37,6 +61,10 @@ namespace Horizon
     };
 
     class EnvironmentLight
+    {
+
+    };
+
     struct AtmosphereParameters
     {
         float bottomRadius;
@@ -93,6 +121,7 @@ namespace Horizon
     class RenderSceneInterface
     {
     public:
+        virtual ~RenderSceneInterface() = default;
 
         /**
          * Release this scene.

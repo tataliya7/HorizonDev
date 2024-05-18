@@ -1,6 +1,6 @@
 #pragma once
 
-#include "RenderCoreCommon.h"
+#include "RendererCommon.h"
 
 namespace Horizon
 {
@@ -11,10 +11,8 @@ namespace Horizon
         RenderGraphTextureHandle ImportWhiteDummyTexture2D(RenderGraph& renderGraph) const;
         RenderBackendTextureHandle GetPreIntegratedBrdfLut() const;
     private:
-        RenderGraphPersistentTexture* blackDummyTexture2D;
-        RenderGraphPersistentTexture* whiteDummyTexture2D;
+        static constexpr uint32 PreIntegratedBrdfLutSize = 256;
 
-        static const uint32 PreIntegratedBrdfLutSize = 256;
         RenderBackendTextureHandle preIntegratedBrdfLut;
 
         RenderBackendSamplerHandle globalSamplerLinearWarp;
@@ -25,6 +23,9 @@ namespace Horizon
         RenderBackendSamplerHandle globalSamplerPointBorder;
         RenderBackendSamplerHandle globalSamplerComparisonGreaterLinearClamp;
         RenderBackendSamplerHandle globalSamplerComparisonLessLinearClamp;
+
+        RenderGraphPersistentTexture* blackDummyTexture2D = nullptr;
+        RenderGraphPersistentTexture* whiteDummyTexture2D = nullptr;
     };
 
     static inline uint32 ComputeWorkGroupCount(uint32 x, uint32 y)
@@ -46,7 +47,11 @@ namespace Horizon
         return Extent2D(w, h);
     }
 
+    class ShaderLibrary_DEPRECATED;
+
     extern RenderBackendTextureHandle LoadTextureFromHDRFile(RenderBackend* renderBackend, const char* filename, RenderBackendTextureDesc* outDesc = nullptr);
-    extern RenderBackendTextureHandle LoadTextureFromFile(RenderBackend* renderBackend, const char* filename, bool autoMipmaps = true, bool filpY = true, RenderBackendTextureFormat format = RenderBackendTextureFormat::BGRA8Unorm);
+
+    extern RenderBackendTextureHandle LoadTextureFromFile(RenderBackend* renderBackend, ShaderLibrary_DEPRECATED* shaderLibrary, const char* filename, bool autoMipmaps = true, bool flipY = true, RenderBackendTextureFormat format = RenderBackendTextureFormat::BGRA8Unorm);
+
     extern void Texture2DGenerateMips(ShaderLibrary_DEPRECATED* shaderLibrary, RenderBackendCommandList& commandList, RenderBackendTextureHandle textureHandle, uint32 width, uint32 height, uint32 numMipLevels);
 }

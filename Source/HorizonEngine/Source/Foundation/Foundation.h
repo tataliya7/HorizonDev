@@ -22,16 +22,6 @@ namespace Horizon
 
     const Vector3 DefaultLightDirection = Vector3(0.0f, 0.0f, -1.0f);
 
-    class Plane
-    {
-
-    };
-
-    struct Frustum
-    {
-        Vector4 planes[6];
-    };
-
     struct Point2D
     {
         int x;
@@ -53,7 +43,7 @@ namespace Horizon
         int bottom;
 
         Rect() : left(0), top(0), right(0), bottom(0) {}
-        Rect(int x0, int y0, int x1, int y1) : left(x0), top(y0), right(x1), bottom(y1) {}
+        explicit Rect(int x0, int y0, int x1, int y1) : left(x0), top(y0), right(x1), bottom(y1) {}
 
         uint32 GetWidth() const { return right - left; }
         uint32 GetHeight() const { return bottom - top; }
@@ -64,8 +54,8 @@ namespace Horizon
         uint32 width;
         uint32 height;
 
-        Extent2D() {}
-        Extent2D(uint32 w, uint32 h) : width(w), height(h) {}
+        Extent2D() : width(0), height(0) {}
+        explicit Extent2D(uint32 w, uint32 h) : width(w), height(h) {}
     };
 
     struct Extent3D
@@ -110,5 +100,16 @@ namespace Horizon
 
         Vector3 minimum;
         Vector3 maximum;
+    };
+
+    class Plane
+    {
+
+    };
+
+    class Frustum
+    {
+    private:
+        Plane planes[6];
     };
 }

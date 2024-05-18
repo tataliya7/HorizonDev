@@ -1,6 +1,7 @@
 #pragma once
 
 #include "RendererCommon.h"
+#include "ShaderLibrary.h"
 
 namespace Horizon::GPUFFT
 {

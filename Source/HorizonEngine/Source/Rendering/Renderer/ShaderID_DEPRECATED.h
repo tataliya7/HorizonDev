@@ -1,13 +1,13 @@
 #pragma once
 
-#include "Foundation/FoundationModule.h"
-#include "Rendering/RenderCore/RenderCoreModule.h"
+#include "RendererCommon.h"
+
 namespace Horizon
 {
     enum class ShaderID : uint32
     {
         PreIntegratedBRDF,
-        EquirectangularToCubemap,
+        LatLongToCubemap,
         DownsampleCubemap,
         DownsampleTexture2D,
         DownsampleTexture2D_PS,
@@ -106,6 +106,8 @@ namespace Horizon
         // End: Real Time Renderer
         Count,
     };
+
+    class ShaderLibrary_DEPRECATED;
 
     extern void CompileShaders_DEPRECATED(ShaderLibrary_DEPRECATED* shaderLibrary);
 }

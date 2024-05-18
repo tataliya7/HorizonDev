@@ -1,10 +1,7 @@
 #pragma once
 
-#include "Core/CoreModule.h"
-#include "RenderBackend/RenderBackendModule.h"
-#include "Rendering/ShaderCompiler.h"
-#include "Rendering/RenderAPI.h"
-#include "Rendering/ShaderID_DEPRECATED.h"
+#include "RendererCommon.h"
+#include "ShaderID_DEPRECATED.h"
 
 namespace Horizon
 {
@@ -12,18 +9,28 @@ namespace Horizon
     {
         enum class Type
         {
-            Graphics,
             Compute,
+            Graphics,
+            Mesh,
             RayTracing,
         };
 
         Type type;
         std::string name;
-        std::string filenames[(uint32)RenderBackendShaderStage::Count];
+        std::string filename;
         std::string entryPoints[(uint32)RenderBackendShaderStage::Count];
         std::vector<ShaderMacroDefine> defines;
 
-        static ShaderDesc CreateGraphics(const std::string& vsFile, const std::string& vsMain, const std::string& psFile, const std::string& psMain)
+        static ShaderDesc CreateCompute(const std::string& filename, const std::string& csMain)
+        {
+            ShaderDesc desc;
+            desc.type = ShaderDesc::Type::Compute;
+            desc.filename = filename;
+            desc.entryPoints[(uint32)RenderBackendShaderStage::Compute] = csMain;
+            return desc;
+        }
+
+        static ShaderDesc CreateGraphics(const std::string& filename, const std::string& vsMain, const std::string& psMain)
         {
             ShaderDesc desc;
             desc.type = ShaderDesc::Type::Graphics;
@@ -36,7 +43,7 @@ namespace Horizon
         static ShaderDesc CreateMesh(const std::string& filename, const std::string& tsMain, const std::string& msMain, const std::string& psMain)
         {
             ShaderDesc desc;
-            desc.type = ShaderDesc::Type::Graphics;
+            desc.type = ShaderDesc::Type::Mesh;
             desc.filename = filename;
             desc.entryPoints[(uint32)RenderBackendShaderStage::Task] = tsMain;
             desc.entryPoints[(uint32)RenderBackendShaderStage::Mesh] = msMain;
@@ -47,19 +54,10 @@ namespace Horizon
         static ShaderDesc CreateMesh(const std::string& filename, const std::string& msMain, const std::string& psMain)
         {
             ShaderDesc desc;
-            desc.type = ShaderDesc::Type::Graphics;
+            desc.type = ShaderDesc::Type::Mesh;
             desc.filename = filename;
             desc.entryPoints[(uint32)RenderBackendShaderStage::Mesh] = msMain;
             desc.entryPoints[(uint32)RenderBackendShaderStage::Pixel] = psMain;
-            return desc;
-        }
-
-        static ShaderDesc CreateCompute(const std::string& filename, const std::string& csMain)
-        {
-            ShaderDesc desc;
-            desc.type = ShaderDesc::Type::Compute;
-            desc.filename = filename;
-            desc.entryPoints[(uint32)RenderBackendShaderStage::Compute] = csMain;
             return desc;
         }
 
@@ -78,6 +76,7 @@ namespace Horizon
 
     struct Shader
     {
+        ShaderID id;
         ShaderDesc desc;
         RenderBackendShaderHandle handle;
         std::vector<std::filesystem::path> relatedFiles;
@@ -92,13 +91,15 @@ namespace Horizon
         virtual ~ShaderLibrary_DEPRECATED() {}
         bool HotReload();
         void AddIncludeDirectory(const char* dir);
-        bool LoadShader(ShaderID id, ShaderDesc& desc, bool reload = false);
+        bool LoadShader(ShaderID id, ShaderDesc& desc);
         RenderBackendShaderHandle GetShaderHandle(ShaderID id);
         ShaderCompiler* shaderCompiler;
     private:
         bool hotReloadEnabled;
         uint32 maxNumShaders;
         RenderBackend* renderBackend;
+        ShadingLanguage shadingLanguage;
+        ShaderCompilerSettings shaderCompilerSettings;
         std::vector<const char*> includeDirs;
         std::vector<Shader> loadedShaders;
     };

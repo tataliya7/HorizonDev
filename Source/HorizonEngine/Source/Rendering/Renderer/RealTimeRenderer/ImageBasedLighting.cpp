@@ -135,23 +135,23 @@ namespace Horizon
         FilterEnvironmentMap(shaderLibrary, commandList, environmentMap, numMipLevels, filteredEnvironmentMap);
     }
 
-    void EquirectangularToCubemap(ShaderLibrary_DEPRECATED* shaderLibrary, RenderBackendCommandList& commandList, RenderBackendTextureHandle equirectangular, RenderBackendTextureHandle cubemap, uint32 cubemapSize)
+    void ConvertLatLongToCubemap(ShaderLibrary_DEPRECATED* shaderLibrary, RenderBackendCommandList& commandList, RenderBackendTextureHandle latLongTexture, RenderBackendTextureHandle cubemapTexture, uint32 cubemapTextureSize)
     {
-        RenderBackendShaderHandle equirectangularToCubemapCS = shaderLibrary->GetShaderHandle(ShaderID::EquirectangularToCubemap);
-
-        RenderBackendBarrier transition(cubemap, RenderBackendTextureSubresourceRange(0, 1, 0, 6), RenderBackendResourceState::Undefined, RenderBackendResourceState::UnorderedAccess);
+        RenderBackendBarrier transition(cubemapTexture, RenderBackendTextureSubresourceRange(0, 1, 0, 6), RenderBackendResourceState::Undefined, RenderBackendResourceState::UnorderedAccess);
         commandList.Transitions(&transition, 1);
 
-        uint32 groupCountX = ComputeWorkGroupCount(cubemapSize, 8);
-        uint32 groupCountY = ComputeWorkGroupCount(cubemapSize, 8);
+        uint32 groupCountX = ComputeWorkGroupCount(cubemapTextureSize, 8);
+        uint32 groupCountY = ComputeWorkGroupCount(cubemapTextureSize, 8);
         uint32 groupCountZ = 1;
 
         RenderBackendShaderArguments shaderArguments = {};
-        shaderArguments.BindTextureSRV(0, RenderBackendTextureSRVDesc::Create(equirectangular));
-        shaderArguments.BindTextureUAV(1, RenderBackendTextureUAVDesc::Create(cubemap, 0));
+        shaderArguments.BindTextureSRV(0, RenderBackendTextureSRVDesc::Create(latLongTexture));
+        shaderArguments.BindTextureUAV(1, RenderBackendTextureUAVDesc::Create(cubemapTexture, 0));
+
+        RenderBackendShaderHandle computeShader = shaderLibrary->GetShaderHandle(ShaderID::LatLongToCubemap);
 
         commandList.Dispatch(
-            equirectangularToCubemapCS,
+            computeShader,
             shaderArguments,
             groupCountX,
             groupCountY,
@@ -183,7 +183,7 @@ namespace Horizon
 
         RenderBackendCommandList* commandList = new RenderBackendCommandList(GArena);
 
-        EquirectangularToCubemap(shaderLibrary, *commandList, equirectangular, skyLight.environmentMap, cubemapSize);
+        ConvertLatLongToCubemap(shaderLibrary, *commandList, equirectangular, skyLight.environmentMap, cubemapSize);
 
         ComputeEnvironmentCubemaps(shaderLibrary, *commandList, skyLight.environmentMap, cubemapSize, skyLight.irradianceEnvironmentMap, skyLight.irradianceEnvironmentMapSH, skyLight.filteredEnvironmentMap);
 

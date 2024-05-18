@@ -1,6 +1,7 @@
 #pragma once
 
-#include "Core/CoreModule.h"
+#include "RendererCommon.h"
+#include "RenderSceneInterface.h"
 
 namespace Horizon
 {
@@ -12,10 +13,17 @@ namespace Horizon
     class RenderScene : public RenderSceneInterface
     {
     public:
-        LightComponent* GetAtmosphericLight()
+
+        bool HasAtmosphericLight() const
+        {
+            return atmosphericLight != nullptr;
+        }
+        
+        DistantLightRenderProxy* GetAtmosphericLight() const
         {
             return atmosphericLight;
         }
+
         SkyAtmosphereRenderProxy* GetActiveSkyAtmosphere() const
         {
             return skyAtmosphere;
@@ -25,8 +33,10 @@ namespace Horizon
 
         }
     private:
-        LightComponent* atmosphericLight = nullptr;
+
+        DistantLightRenderProxy* atmosphericLight = nullptr;
         SkyAtmosphereRenderProxy* skyAtmosphere = nullptr;
+
         RenderBackendRayTracingAccelerationStructureHandle rayTracingScene;
         RenderBackendRayTracingAccelerationStructureHandle bottomLevelAS;
 

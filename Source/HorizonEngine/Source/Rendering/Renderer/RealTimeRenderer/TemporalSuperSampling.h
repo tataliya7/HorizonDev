@@ -7,6 +7,6 @@ namespace Horizon
     class TemporalSuperSamplingInterface
     {
     public:
-        virtual RenderGraphTextureHandle Dispatch(RenderGraph& renderGraph, onst FSceneView& View, const FInputs& Inputs) const = 0;
+        virtual RenderGraphTextureHandle Dispatch(RenderGraph& renderGraph, const FSceneView& View, const FInputs& Inputs) const = 0;
     };
 }
