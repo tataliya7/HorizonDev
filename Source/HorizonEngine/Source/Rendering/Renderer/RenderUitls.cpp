@@ -7,6 +7,70 @@
 
 namespace Horizon
 {
+    RenderGraphTextureHandle RendererDefaultResources::ImportWhiteDummyTexture2D(RenderGraph& renderGraph) const
+    {
+        return renderGraph.ImportExternalTexture(whiteDummyTexture2D, "WhiteDummyTexture2D");
+    }
+
+    RenderGraphTextureHandle RendererDefaultResources::ImportBlackDummyTexture2D(RenderGraph& renderGraph) const
+    {
+        return renderGraph.ImportExternalTexture(blackDummyTexture2D, "BlackDummyTexture2D");
+    }
+
+    RenderBackendTextureHandle RendererDefaultResources::GetPreIntegratedBrdfLut() const
+    {
+        return preIntegratedBrdfLut;
+    }
+
+    void RenderSystem::ReleaseDefaultResources()
+    {
+
+    }
+
+    void RenderSystem::InitializeDefaultResources(RenderBackendCommandList* commandList)
+    {
+        RenderGraphTextureDesc dummyTextureDesc = RenderGraphTextureDesc::Create2D(
+            1,
+            1,
+            RenderBackendTextureFormat::BGRA8Unorm,
+            RenderBackendTextureCreateFlags::ShaderResource);
+
+        const uint8 blackColor[4] = { 0, 0, 0, 0 };
+        RenderBackendTextureHandle blackDummyTexture2DHandle = renderBackend->CreateTexture(&dummyTextureDesc, &blackColor, "BlackDummyTexture2D");
+        defaultResources.blackDummyTexture2D = renderGraphResourcePool->CacheTexture(blackDummyTexture2DHandle, dummyTextureDesc, "BlackDummyTexture2D");
+
+        const uint8 whiteColor[4] = { 255, 255, 255, 255 };
+        RenderBackendTextureHandle whiteDummyTexture2DHandle = renderBackend->CreateTexture(&dummyTextureDesc, &whiteColor, "WhiteDummyTexture2D");
+        defaultResources.whiteDummyTexture2D = renderGraphResourcePool->CacheTexture(whiteDummyTexture2DHandle, dummyTextureDesc, "WhiteDummyTexture2D");
+
+        RenderBackendTextureDesc preIntegratedBrdfLutDesc = RenderBackendTextureDesc::Create2D(
+            RenderSystemDefaultResources::PreIntegratedBrdfLutSize,
+            RenderSystemDefaultResources::PreIntegratedBrdfLutSize,
+            RenderBackendTextureFormat::RG16Float,
+            RenderBackendTextureCreateFlags::UnorderedAccess | RenderBackendTextureCreateFlags::ShaderResource);
+        defaultResources.preIntegratedBrdfLut = renderBackend->CreateTexture(&preIntegratedBrdfLutDesc, nullptr, "PreIntegratedBrdfLut");
+
+        RenderPreIntegratedBrdfLut(commandList);
+
+        RenderBackendSamplerDesc globalSamplerLinearWarpDesc = RenderBackendSamplerDesc::CreateLinearWarp(0.0f, -FLOAT_MAX, FLOAT_MAX, 1);
+        defaultResources.globalSamplerLinearWarp = renderBackend->CreateSampler(&globalSamplerLinearWarpDesc, "GlobalSamplerLinearWarp");
+        RenderBackendSamplerDesc globalSamplerLinearClampDesc = RenderBackendSamplerDesc::CreateLinearClamp(0.0f, -FLOAT_MAX, FLOAT_MAX, 1);
+        defaultResources.globalSamplerLinearClamp = renderBackend->CreateSampler(&globalSamplerLinearClampDesc, "GlobalSamplerLinearClamp");
+        RenderBackendSamplerDesc globalSamplerLinearBorderDesc = RenderBackendSamplerDesc::CreateLinearBorder(0.0f, -FLOAT_MAX, FLOAT_MAX, 1);
+        defaultResources.globalSamplerLinearBorder = renderBackend->CreateSampler(&globalSamplerLinearBorderDesc, "GlobalSamplerLinearBorder");
+        RenderBackendSamplerDesc globalSamplerPointWarpDesc = RenderBackendSamplerDesc::CreatePointWarp(0.0f, -FLOAT_MAX, FLOAT_MAX, 1);
+        defaultResources.globalSamplerPointWarp = renderBackend->CreateSampler(&globalSamplerPointWarpDesc, "GlobalSamplerPointWarp");
+        RenderBackendSamplerDesc globalSamplerPointClampDesc = RenderBackendSamplerDesc::CreatePointClamp(0.0f, -FLOAT_MAX, FLOAT_MAX, 1);
+        defaultResources.globalSamplerPointClamp = renderBackend->CreateSampler(&globalSamplerPointClampDesc, "GlobalSamplerPointClamp");
+        RenderBackendSamplerDesc globalSamplerPointBorderDesc = RenderBackendSamplerDesc::CreatePointBorder(0.0f, -FLOAT_MAX, FLOAT_MAX, 1);
+        defaultResources.globalSamplerPointBorder = renderBackend->CreateSampler(&globalSamplerPointBorderDesc, "GlobalSamplerPointBorder");
+        RenderBackendSamplerDesc globalSamplerComparisonGreaterLinearClampDesc = RenderBackendSamplerDesc::CreateComparisonLinearClamp(0.0f, -FLOAT_MAX, FLOAT_MAX, 1, RenderBackendCompareOp::Greater);
+        defaultResources.globalSamplerComparisonGreaterLinearClamp = renderBackend->CreateSampler(&globalSamplerComparisonGreaterLinearClampDesc, "GlobalSamplerComparisonGreaterLinearClamp");
+        RenderBackendSamplerDesc globalSamplerComparisonLessLinearClampDesc = RenderBackendSamplerDesc::CreateComparisonLinearClamp(0.0f, -FLOAT_MAX, FLOAT_MAX, 1, RenderBackendCompareOp::Less);
+        defaultResources.globalSamplerComparisonLessLinearClamp = renderBackend->CreateSampler(&globalSamplerComparisonLessLinearClampDesc, "GlobalSamplerComparisonLessLinearClamp");
+    }
+
+
     RenderBackendTextureHandle LoadTextureFromHDRFile(RenderBackend* renderBackend, const char* filename, RenderBackendTextureDesc* outDesc)
     {
         if (!stbi_is_hdr(filename))

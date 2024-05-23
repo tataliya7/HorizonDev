@@ -136,19 +136,31 @@ namespace Horizon
     {
     public:
 
+        explicit SceneView(RenderScene* scene);
+
+        RenderBackend* GetRenderBackend() const
+        {
+
+        }
+
         bool HasValidScene() const
         {
             return scene != nullptr;
         }
 
-        RenderScene* GetScene() const
+        RenderScene* GetRenderScene() const
         {
             return scene;
         }
-        
+
         const RenderSettings& GetRenderSettings() const
         {
             return renderSettings;
+        }
+
+        void SetRenderSettings(const RenderSettings& settings)
+        {
+            renderSettings = settings;
         }
 
         bool NeedToBeReset() const
@@ -253,16 +265,15 @@ namespace Horizon
 
     private:
 
-        SceneView()
-            : cameraJitterOffset(ZeroVector2)
-        {
-
-        }
-
         /**
          * The scene to be rendered.
          */
         RenderScene* scene;
+
+        /**
+         * The renderer used to render the scene.
+         */
+        SceneRenderer* sceneRenderer;
 
         /**
          * Render settings used to render the scene.
@@ -291,6 +302,7 @@ namespace Horizon
 
         /**
          * Whether setting the far clipping plane to infinity.
+         *
          * @see https://chaosinmotion.com/2010/09/06/goodbye-far-clipping-plane/
          */
         bool enableInfiniteFarClippingPlane;
@@ -359,6 +371,8 @@ namespace Horizon
         uint32 displayHeight;
 
         RenderBackendSwapChainHandle swapChain;
+
+        RenderBackendTextureHandle targetTexture;
 
         /**
          * A point that represents the cursor's position in screen coordinates.

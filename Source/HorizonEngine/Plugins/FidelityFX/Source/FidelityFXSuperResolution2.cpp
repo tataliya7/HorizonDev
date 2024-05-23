@@ -1,5 +1,7 @@
 #include "FidelityFXSuperResolution2.h"
+
 #include <ffx_fsr2.h>
+
 namespace FidelityFX
 {
     if (IsFSR2Enabled())

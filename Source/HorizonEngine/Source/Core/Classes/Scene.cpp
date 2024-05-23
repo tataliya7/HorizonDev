@@ -1,5 +1,4 @@
-#include "Asset/Scene.h"
-#include "Physics/PhysicsModule.h"
+#include "Scene.h"
 
 namespace Horizon
 {
@@ -51,6 +50,26 @@ namespace Horizon
     {
 
     }*/
+
+    SceneSettings* Scene::GetSceneSettings() const
+    {
+        return &settings;
+    }
+
+    PhysicsScene* Scene::GetPhysicsScene() const
+    {
+        return physicsScene;
+    }
+
+    RenderScene* Scene::GetRenderScene() const
+    {
+        return renderScene;
+    }
+
+    uint32 Scene::GetEntityCount() const
+    {
+
+    }
 
     void Scene::OnRigidBodyComponentConstruct(entt::registry& registry, entt::entity entity)
     {
@@ -117,7 +136,6 @@ namespace Horizon
 
     void Scene::Update(float deltaTime)
     {
-
         if (ShouldUpdateScripts())
         {
             // Update scripts

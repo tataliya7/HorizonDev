@@ -168,6 +168,10 @@ namespace Horizon
 //
         OnDrawUI();
 
+        editorCamera.Update(deltaTimeInSeconds);
+
+        sceneView->SetRenderSettings(renderSettings);
+
         // RenderBackendCommandList* commandList = renderBackend->AllocateCommandList();
         //
         // commandList->BeginDebugLabel();
@@ -182,7 +186,7 @@ namespace Horizon
         //
         // commandList->EndTimingQuery();
         // commandList->EndDebugLabel();
-        
+
 //
 //        renderEngine->EndDrawUI();
 //

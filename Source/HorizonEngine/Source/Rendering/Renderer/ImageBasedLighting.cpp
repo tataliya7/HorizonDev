@@ -1,10 +1,37 @@
-#include "Rendering/RenderSystem.h"
-#include "Rendering/ShaderLibrary.h"
-#include "Rendering/RenderAPI.h"
+#include "ImageBasedLighting.h"
+#include "RenderUtils.h"
+#include "ShaderLibrary.h"
+#include "ShaderID_DEPRECATED.h"
 
 namespace Horizon
 {
+    uint32 GPreIntegratedBrdfLutSize = 256;
     uint32 GIrradianceEnvironmentMapSize = 32;
+
+    void RenderPreIntegratedBrdfLut(ShaderLibrary_DEPRECATED* shaderLibrary, RenderBackendCommandList& commandList, RenderBackendTextureHandle preIntegratedBrdfLut)
+    {
+        RenderBackendShaderHandle computeShader = shaderLibrary->GetShaderHandle(ShaderID::PreIntegratedBRDF);
+
+        RenderBackendBarrier transition(preIntegratedBrdfLut, RenderBackendTextureSubresourceRange::All, RenderBackendResourceState::Undefined, RenderBackendResourceState::UnorderedAccess);
+        commandList.Transitions(&transition, 1);
+
+        uint32 groupCountX = ComputeWorkGroupCount(GPreIntegratedBrdfLutSize, 8);
+        uint32 groupCountY = ComputeWorkGroupCount(GPreIntegratedBrdfLutSize, 8);
+        uint32 groupCountZ = 1;
+
+        RenderBackendShaderArguments shaderArguments = {};
+        shaderArguments.BindTextureUAV(0, RenderBackendTextureUAVDesc::Create(preIntegratedBrdfLut, 0));
+
+        commandList.Dispatch(
+            computeShader,
+            shaderArguments,
+            groupCountX,
+            groupCountY,
+            groupCountZ);
+
+        transition = RenderBackendBarrier(preIntegratedBrdfLut, RenderBackendTextureSubresourceRange::All, RenderBackendResourceState::UnorderedAccess, RenderBackendResourceState::ShaderResource);
+        commandList.Transitions(&transition, 1);
+    }
 
     void GenerateCubemapMips(ShaderLibrary_DEPRECATED* shaderLibrary, RenderBackendCommandList& commandList, RenderBackendTextureHandle cubemap, uint32 numMipLevels)
     {

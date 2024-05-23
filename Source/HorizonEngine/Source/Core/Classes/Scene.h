@@ -1,41 +1,15 @@
 #pragma once
 
-#include "Core/CoreModule.h"
-#include "RenderSceneInterface.h"
-#include "PhysicsSceneInterface.h"
+#include "Core/CoreCommon.h"
+#include "Core/Serialization/SerializationModule.h"
 
 namespace Horizon
 {
-    struct UnitSettings
-    {
-        char lengthUnit;
-        char massUnit;
-        char timeUnit;
-        char temperatureUnit;
-    };
-
     class EntityManager;
-    class PhysicsScene;
-    class EngineSubsystem;
 
-    struct SceneStats
+    struct SceneSettings
     {
-        uint64 meshCount = 0;
-        uint64 meshInstanceCount = 0;
-        uint64 transformCount = 0;
-        uint64 triangleCount = 0;
-        uint64 vertexCount = 0;
-        uint64 instancedTriangleCount = 0;
-        uint64 instancedVertexCount = 0;
-        uint64 indexMemoryInBytes = 0;
-        uint64 vertexMemoryInBytes = 0;
-        uint64 geometryMemoryInBytes = 0;
-        uint64 animationMemoryInBytes = 0;
-
-        // Lights
-        uint64 totalLightCount = 0;
-        uint64 lightsMemoryInBytes = 0;
-        uint64 environmentMapMemoryInBytes = 0;
+        float gravity;
     };
 
     class Scene
@@ -43,6 +17,7 @@ namespace Horizon
     public:
 
         Scene(const std::string& name);
+
         ~Scene();
 
         const std::string& GetName() const
@@ -111,27 +86,42 @@ namespace Horizon
             shouldUpdateScripts = value;
         }
 
-        void Update(float deltaTime);
+        SceneSettings* GetSceneSettings() const;
 
-        void Clear();
+        /**
+         * Returns a pointer to the physics scene for this scene.
+         */
+        PhysicsScene* GetPhysicsScene() const;
 
-        UnitSettings unit;
+        /**
+         * Returns a pointer to the render scene for this scene.
+         */
+        RenderScene* GetRenderScene() const;
 
-        //PhysicsSceneInterface* GetPhysicsScene();
+        /**
+         * Returns the entity count.
+         */
+        uint32 GetEntityCount() const;
 
-        //RenderSceneInterface* GetRenderScene();
+        void Serialize(Archive& archive);
 
     private:
-        friend class SceneSerializer;
 
         void OnRigidBodyComponentConstruct(entt::registry& registry, entt::entity entity);
         void OnRigidBodyComponentDestroy(entt::registry& registry, entt::entity entity);
 
         std::string name;//AssetID* id;
+
+        SceneSettings settings;
+
         EntityManager* entityManager;
-        PhysicsSceneInterface* physicsScene;
-        RenderSceneInterface* renderScene;
-        bool shouldSimulate;
+
+        PhysicsScene* physicsScene;
+
+        RenderScene* renderScene;
+
+        bool enablePhysicsSimulation;
+
         bool shouldUpdateScripts;
 
         bool paused;

@@ -1,5 +1,6 @@
 #pragma once
 
-#include "Core/CoreDefinitions.h"
-#include "Core/CoreTypes.h"
-#include "Core/StdHeaders.h"
+#include "Foundation/FoundationModule.h"
+#include "Rendering/RenderingModule.h"
+#include "Physics/PhysicsModule.h"
+#include "Audio/AudioModule.h"

@@ -322,7 +322,7 @@ namespace Horizon
 
             if (view.HasValidScene())
             {
-                const RenderScene* scene = view.GetScene();
+                const RenderScene* scene = view.GetRenderScene();
                 if (scene->HasAtmosphericLight())
                 {
                     const DistantLightRenderProxy* atmosphericLight = scene->GetAtmosphericLight();
@@ -477,7 +477,7 @@ namespace Horizon
         // TODO: move to other place
         shaderLibrary->HotReload();
 
-        auto& sceneTextures = renderGraph.blackboard.Create<RealTimeRendererSceneTextures>();
+        RealTimeRendererSceneTextures& sceneTextures = renderGraph.blackboard.Create<RealTimeRendererSceneTextures>();
         auto& historyInfo = renderGraph.blackboard.Create<RealTimeRendererHistoryInfo>();
         auto& finalTextureData = renderGraph.blackboard.Create<RenderGraphFinalTexture>();
         auto& ouptutTextureData = renderGraph.blackboard.Create<RenderGraphOutputTexture>();

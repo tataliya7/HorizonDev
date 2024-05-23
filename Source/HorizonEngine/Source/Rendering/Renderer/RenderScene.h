@@ -1,16 +1,130 @@
 #pragma once
 
 #include "RendererCommon.h"
-#include "RenderSceneInterface.h"
+#include "RenderStatistics.h"
 
 namespace Horizon
 {
+    class LightRenderProxy
+    {
+    public:
+        LightRenderProxy();
+        virtual ~LightRenderProxy();
+    private:
+    };
+
+    class DistantLightRenderProxy : public LightRenderProxy
+    {
+    public:
+        DistantLightRenderProxy();
+        virtual ~DistantLightRenderProxy();
+
+        Vector3 GetPhysicalLightColor() const
+        {
+
+        }
+
+        Vector3 GetDirection() const
+        {
+            return direction;
+        }
+
+        float GetHalfApexAngleInRadians() const
+        {
+            return halfApexAngleInRadians;
+        }
+
+        Vector3 GetAtmosphericLightDiskColorFactor() const
+        {
+            return atmosphericLightDiskColorFactor;
+        }
+
+    private:
+        Vector3 direction;
+        float halfApexAngleInRadians;
+        Vector3 atmosphericLightDiskColorFactor;
+    };
+
+    class SpotLightRenderProxy : public LightRenderProxy
+    {
+    public:
+        SpotLightRenderProxy();
+        virtual ~SpotLightRenderProxy();
+    private:
+    };
+
+    class PointLightRenderProxy : public LightRenderProxy
+    {
+    public:
+        PointLightRenderProxy();
+        virtual ~PointLightRenderProxy();
+    private:
+    };
+
+    class EnvironmentLight
+    {
+
+    };
+
+    struct AtmosphereParameters
+    {
+        float bottomRadius;
+        float topRadius;
+        Vector3 groundAlbedo;
+
+        Vector3 rayleighScattering;
+        float rayleighDensityExpScale;
+
+        Vector3 mieScattering;
+        Vector3 mieExtinction;
+        Vector3 mieAbsorption;
+        float miePhaseG;
+        float mieDensityExpScale;
+
+        float absorptionDensity0LayerWidth;
+        float absorptionDensity0ConstantTerm;
+        float absorptionDensity0LinearTerm;
+        float absorptionDensity1ConstantTerm;
+        float absorptionDensity1LinearTerm;
+        Vector3 absorptionExtinction;
+    };
+
+    class SkyAtmosphereRenderProxy
+    {
+    public:
+        SkyAtmosphereRenderProxy();
+
+        const AtmosphereParameters& GetAtmosphereParameters() const
+        {
+
+        }
+
+        void SetAtmosphereParameters(const AtmosphereParameters& newValue)
+        {
+            atmosphereParameters = newValue;
+        }
+
+        Vector3 GetSkyLuminanceFactor() const
+        {
+            return skyLuminanceFactor;
+        }
+
+        void SetSkyLuminanceFactor(const Vector3& newValue)
+        {
+            skyLuminanceFactor = newValue;
+        }
+
+    private:
+        AtmosphereParameters atmosphereParameters;
+        Vector3 skyLuminanceFactor;
+    };
+
     class GPUScene
     {
 
     };
 
-    class RenderScene : public RenderSceneInterface
+    class RenderScene
     {
     public:
 
@@ -18,7 +132,7 @@ namespace Horizon
         {
             return atmosphericLight != nullptr;
         }
-        
+
         DistantLightRenderProxy* GetAtmosphericLight() const
         {
             return atmosphericLight;
@@ -28,10 +142,57 @@ namespace Horizon
         {
             return skyAtmosphere;
         }
+
         bool HasSkyAtmosphere() const
         {
 
         }
+
+        /**
+         * Release this scene.
+         */
+        virtual void Release() = 0;
+
+        /**
+         * Adds a mesh component to the scene.
+         *
+         * @param[in] component - mesh component to add to the scene.
+         */
+        virtual void AddMesh(MeshComponent* component) = 0;
+
+        /**
+         * Removes a mesh component from the scene.
+         *
+         * @param[in] component - mesh component to remove from the scene.
+         */
+        virtual void RemoveMesh(MeshComponent* component) = 0;
+
+        /**
+         * Adds a new light to the scene.
+         *
+         * @param [in] light - light to add to the scene.
+         */
+        virtual void AddLight(LightRenderProxy* light) = 0;
+
+        /**
+         * Removes a light component from the scene.
+         *
+         * @param [in] component light component to remove from the scene.
+         */
+        virtual void RemoveLight(LightComponent* component) = 0;
+
+        virtual void HasSkyLight() = 0;
+
+        virtual void SetSkyLight(FSkyLightSceneProxy* component) = 0;
+
+        virtual void HasSkyAtmosphere() = 0;
+
+        virtual void SetSkyAtmosphere(SkyAtmosphereRenderProxy* skyAtmosphere) = 0;
+
+        void Render();
+
+        void GetRenderStatistics(RenderStatistics& statistics) const;
+
     private:
 
         DistantLightRenderProxy* atmosphericLight = nullptr;
@@ -43,6 +204,7 @@ namespace Horizon
         int64 updateCounter = 0;
 
         GPUScene gpuScene;
+        RenderStatistics renderStatistics;
 
         void UpdateGeometry();
 
@@ -60,8 +222,8 @@ namespace Horizon
         {
             Opaque,
             Translucency,
-            EditorPickingProxy,
             EditorSelection,
+            EditorPickingProxy,
         };
 
         std::vector<DrawCallInfo> drawList;

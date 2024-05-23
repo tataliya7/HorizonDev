@@ -58,7 +58,7 @@ namespace Horizon
 
         uint64 GetNativeHandle();
 
-        GLFWwindow* GetGLFWHandle()
+        GLFWwindow* GetGLFWwindow() const
         {
             return handle;
         }

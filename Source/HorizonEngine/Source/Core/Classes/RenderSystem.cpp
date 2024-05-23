@@ -12,95 +12,6 @@
 
 namespace Horizon
 {
-    RenderGraphTextureHandle RenderSystemDefaultResources::ImportWhiteDummyTexture2D(RenderGraph& renderGraph) const
-    {
-        return renderGraph.ImportExternalTexture(whiteDummyTexture2D, "WhiteDummyTexture2D");
-    }
-
-    RenderGraphTextureHandle RenderSystemDefaultResources::ImportBlackDummyTexture2D(RenderGraph& renderGraph) const
-    {
-        return renderGraph.ImportExternalTexture(blackDummyTexture2D, "BlackDummyTexture2D");
-    }
-
-    RenderBackendTextureHandle RenderSystemDefaultResources::GetPreIntegratedBrdfLut() const
-    {
-        return preIntegratedBrdfLut;
-    }
-
-    void RenderSystem::RenderPreIntegratedBrdfLut(RenderBackendCommandList* commandList)
-    {
-        RenderBackendTextureHandle preIntegratedBrdfLut = defaultResources.preIntegratedBrdfLut;
-        RenderBackendShaderHandle computeShader = shaderLibrary->GetShaderHandle(ShaderID::PreIntegratedBRDF);
-
-        RenderBackendBarrier transition(preIntegratedBrdfLut, RenderBackendTextureSubresourceRange::All, RenderBackendResourceState::Undefined, RenderBackendResourceState::UnorderedAccess);
-        commandList->Transitions(&transition, 1);
-
-        uint32 groupCountX = ComputeWorkGroupCount(RenderSystemDefaultResources::PreIntegratedBrdfLutSize, 8);
-        uint32 groupCountY = ComputeWorkGroupCount(RenderSystemDefaultResources::PreIntegratedBrdfLutSize, 8);
-        uint32 groupCountZ = 1;
-
-        RenderBackendShaderArguments shaderArguments = {};
-        shaderArguments.BindTextureUAV(0, RenderBackendTextureUAVDesc::Create(preIntegratedBrdfLut, 0));
-
-        commandList->Dispatch(
-            computeShader,
-            shaderArguments,
-            groupCountX,
-            groupCountY,
-            groupCountZ);
-
-        transition = RenderBackendBarrier(preIntegratedBrdfLut, RenderBackendTextureSubresourceRange::All, RenderBackendResourceState::UnorderedAccess, RenderBackendResourceState::ShaderResource);
-        commandList->Transitions(&transition, 1);
-    }
-
-    void RenderSystem::InitializeDefaultResources(RenderBackendCommandList* commandList)
-    {
-        RenderGraphTextureDesc dummyTextureDesc = RenderGraphTextureDesc::Create2D(
-            1,
-            1,
-            RenderBackendTextureFormat::BGRA8Unorm,
-            RenderBackendTextureCreateFlags::ShaderResource);
-
-        const uint8 blackColor[4] = { 0, 0, 0, 0 };
-        RenderBackendTextureHandle blackDummyTexture2DHandle = renderBackend->CreateTexture(&dummyTextureDesc, &blackColor, "BlackDummyTexture2D");
-        defaultResources.blackDummyTexture2D = renderGraphResourcePool->CacheTexture(blackDummyTexture2DHandle, dummyTextureDesc, "BlackDummyTexture2D");
-
-        const uint8 whiteColor[4] = { 255, 255, 255, 255 };
-        RenderBackendTextureHandle whiteDummyTexture2DHandle = renderBackend->CreateTexture(&dummyTextureDesc, &whiteColor, "WhiteDummyTexture2D");
-        defaultResources.whiteDummyTexture2D = renderGraphResourcePool->CacheTexture(whiteDummyTexture2DHandle, dummyTextureDesc, "WhiteDummyTexture2D");
-
-        RenderBackendTextureDesc preIntegratedBrdfLutDesc = RenderBackendTextureDesc::Create2D(
-            RenderSystemDefaultResources::PreIntegratedBrdfLutSize,
-            RenderSystemDefaultResources::PreIntegratedBrdfLutSize,
-            RenderBackendTextureFormat::RG16Float,
-            RenderBackendTextureCreateFlags::UnorderedAccess | RenderBackendTextureCreateFlags::ShaderResource);
-        defaultResources.preIntegratedBrdfLut = renderBackend->CreateTexture(&preIntegratedBrdfLutDesc, nullptr, "PreIntegratedBRDFLUT");
-)
-        RenderPreIntegratedBrdfLut(commandList);
-
-        RenderBackendSamplerDesc globalSamplerLinearWarpDesc = RenderBackendSamplerDesc::CreateLinearWarp(0.0f, -FLOAT_MAX, FLOAT_MAX, 1);
-        defaultResources.globalSamplerLinearWarp = renderBackend->CreateSampler(&globalSamplerLinearWarpDesc, "GlobalSamplerLinearWarp");
-        RenderBackendSamplerDesc globalSamplerLinearClampDesc = RenderBackendSamplerDesc::CreateLinearClamp(0.0f, -FLOAT_MAX, FLOAT_MAX, 1);
-        defaultResources.globalSamplerLinearClamp = renderBackend->CreateSampler(&globalSamplerLinearClampDesc, "GlobalSamplerLinearClamp");
-        RenderBackendSamplerDesc globalSamplerLinearBorderDesc = RenderBackendSamplerDesc::CreateLinearBorder(0.0f, -FLOAT_MAX, FLOAT_MAX, 1);
-        defaultResources.globalSamplerLinearBorder = renderBackend->CreateSampler(&globalSamplerLinearBorderDesc, "GlobalSamplerLinearBorder");
-        RenderBackendSamplerDesc globalSamplerPointWarpDesc = RenderBackendSamplerDesc::CreatePointWarp(0.0f, -FLOAT_MAX, FLOAT_MAX, 1);
-        defaultResources.globalSamplerPointWarp = renderBackend->CreateSampler(&globalSamplerPointWarpDesc, "GlobalSamplerPointWarp");
-        RenderBackendSamplerDesc globalSamplerPointClampDesc = RenderBackendSamplerDesc::CreatePointClamp(0.0f, -FLOAT_MAX, FLOAT_MAX, 1);
-        defaultResources.globalSamplerPointClamp = renderBackend->CreateSampler(&globalSamplerPointClampDesc, "GlobalSamplerPointClamp");
-        RenderBackendSamplerDesc globalSamplerPointBorderDesc = RenderBackendSamplerDesc::CreatePointBorder(0.0f, -FLOAT_MAX, FLOAT_MAX, 1);
-        defaultResources.globalSamplerPointBorder = renderBackend->CreateSampler(&globalSamplerPointBorderDesc, "GlobalSamplerPointBorder");
-        RenderBackendSamplerDesc globalSamplerComparisonGreaterLinearClampDesc = RenderBackendSamplerDesc::CreateComparisonLinearClamp(0.0f, -FLOAT_MAX, FLOAT_MAX, 1, RenderBackendCompareOp::Greater);
-        defaultResources.globalSamplerComparisonGreaterLinearClamp = renderBackend->CreateSampler(&globalSamplerComparisonGreaterLinearClampDesc, "GlobalSamplerComparisonGreaterLinearClamp");
-        RenderBackendSamplerDesc globalSamplerComparisonLessLinearClampDesc = RenderBackendSamplerDesc::CreateComparisonLinearClamp(0.0f, -FLOAT_MAX, FLOAT_MAX, 1, RenderBackendCompareOp::Less);
-        defaultResources.globalSamplerComparisonLessLinearClamp = renderBackend->CreateSampler(&globalSamplerComparisonLessLinearClampDesc, "GlobalSamplerComparisonLessLinearClamp");
-    }
-
-    void RenderSystem::ReleaseDefaultResources()
-    {
-
-    }
-
     void Texture2DGenerateMips(ShaderLibrary_DEPRECATED* shaderLibrary, RenderBackendCommandList& commandList, RenderBackendTextureHandle textureHandle, uint32 width, uint32 height, uint32 numMipLevels)
     {
         if (numMipLevels < 2)
@@ -480,7 +391,6 @@ namespace Horizon
             includeDirs_w.push_back(HE_TEXT("../../../Shaders"));
             std::string filename = "../../../Shaders/ImGui.hsf";
             LoadShaderSourceFromFile("../../../Shaders/ImGui.hsf", source);
-
 
             std::vector<const char*> includeDirs;
             includeDirs.push_back("../../../Shaders");

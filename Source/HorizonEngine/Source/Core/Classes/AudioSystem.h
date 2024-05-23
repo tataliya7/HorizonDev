@@ -4,6 +4,8 @@
 
 namespace Horizon
 {
+    AudioDeviceHandle;
+
     class AudioSystem final : public EngineSubsystem
     {
     public:

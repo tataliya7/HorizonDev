@@ -11,7 +11,6 @@ namespace Horizon
         RenderGraphTextureHandle ImportWhiteDummyTexture2D(RenderGraph& renderGraph) const;
         RenderBackendTextureHandle GetPreIntegratedBrdfLut() const;
     private:
-        static constexpr uint32 PreIntegratedBrdfLutSize = 256;
 
         RenderBackendTextureHandle preIntegratedBrdfLut;
 

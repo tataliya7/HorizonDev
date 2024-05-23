@@ -2,7 +2,7 @@
 
 #include "RendererCommon.h"
 #include "PostProcessingSettings.h"
-#include "RendererInterface.h"
+#include "SceneRenderer.h"
 
 namespace Horizon
 {

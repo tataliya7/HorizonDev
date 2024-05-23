@@ -49,6 +49,24 @@ namespace Horizon
         uint32 GetHeight() const { return bottom - top; }
     };
 
+    class Box
+    {
+    public:
+        explicit constexpr Box()
+            : minimumPoint(0)
+            , maximumPoint(0)
+        {
+
+        }
+        Vector3 GetExtent() const
+        {
+            return (maximumPoint - minimumPoint);
+        }
+    private:
+        Vector3 minimumPoint;
+        Vector3 maximumPoint;
+    };
+
     struct Extent2D
     {
         uint32 width;

@@ -27,8 +27,8 @@ project "HorizonEngine"
         "Source/Foundation/**.cppm",
         "Source/Foundation/**.inl",
 
-        "Source/Engine/HorizonEngineModule.h",
-        "Source/Engine/HorizonEngineVersion.h",
+--         "Source/Engine/HorizonEngineModule.h",
+--         "Source/Engine/HorizonEngineVersion.h",
 
         "Source/Input/**.h",
         "Source/Input/**.c",
@@ -61,13 +61,21 @@ project "HorizonEngine"
         "Source/Rendering/**.cppm",
         "Source/Rendering/**.inl",
 
-        -- "Source/Engine/**.h",
-        -- "Source/Engine/**.c",
-        -- "Source/Engine/**.hpp",
-        -- "Source/Engine/**.cpp",
-        -- "Source/Engine/**.cppm",
-        -- "Source/Engine/**.inl",
-        -- "Source/Engine/**.lua",
+        "Source/Core/**.h",
+        "Source/Core/**.c",
+        "Source/Core/**.hpp",
+        "Source/Core/**.cpp",
+        "Source/Core/**.cppm",
+        "Source/Core/**.inl",
+        "Source/Core/**.lua",
+
+        "Source/Engine/**.h",
+        "Source/Engine/**.c",
+        "Source/Engine/**.hpp",
+        "Source/Engine/**.cpp",
+        "Source/Engine/**.cppm",
+        "Source/Engine/**.inl",
+        "Source/Engine/**.lua",
     }
 
     includedirs {

@@ -16,6 +16,8 @@ project "HorizonEditor"
         "Source/Framework/HorizonEditorUI.h",
         "Source/Framework/HorizonEditorUI.cpp",
         "Source/Framework/StbImage.cpp",
+        "Source/Framework/EditorCamera.h",
+        "Source/Framework/EditorCamera.cpp",
 
         "Source/Editor/**.h",
         "Source/Editor/**.c",

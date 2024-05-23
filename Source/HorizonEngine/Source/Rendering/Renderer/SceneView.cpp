@@ -3,8 +3,10 @@
 
 namespace Horizon
 {
-    RenderBackendRayTracingAccelerationStructureHandle SceneView::GetRayTracingScene() const
+    SceneView::SceneView(RenderScene* scene)
+        : scene(scene)
+        , cameraJitterOffset(ZeroVector2)
     {
-        return ((RenderSystem*)renderEngine)->rayTracingScene;
+
     }
 }

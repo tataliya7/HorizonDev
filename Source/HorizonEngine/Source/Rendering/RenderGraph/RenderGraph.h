@@ -66,7 +66,7 @@ namespace Horizon
         template<typename SetupLambdaType>
         void AddPass(const std::string& name, RenderGraphPassFlags flags, SetupLambdaType setup);
 
-        void Execute(RenderGraphExecuteContext* context);
+        void Execute(RenderBackendCommandList& commandList);
 
         void Clear();
 

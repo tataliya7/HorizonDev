@@ -11,7 +11,10 @@ namespace Horizon
     {
         RealTime,
         PathTracing,
+        Count,
     };
+
+    class SceneView;
 
     /**
      * The renderer implements the process of generating visual images.
@@ -19,7 +22,17 @@ namespace Horizon
     class SceneRenderer
     {
     public:
-        virtual ~SceneRenderer() = default;
+        SceneRenderer(SceneView* sceneView);
+        virtual ~SceneRenderer();
+
         virtual void Render(RenderGraph& renderGraph) = 0;
+
+        RenderBackend* GetRenderBackend() const;
+
+    private:
+        SceneView* sceneView;
     };
+
+    SceneRenderer* CreateSceneRenderer(SceneView* sceneView);
+    void DestroySceneRenderer(SceneRenderer* sceneRenderer);
 }

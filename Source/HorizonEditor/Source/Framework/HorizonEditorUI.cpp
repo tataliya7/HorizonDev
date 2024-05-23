@@ -1,7 +1,9 @@
 #include "HorizonEditor.h"
+#include "HorizonEditorUI.h"
 
 #include <imgui.h>
 #include <imgui_internal.h>
+#include <backends/imgui_impl_glfw.h>
 
 #include <ImGuizmo.h>
 
@@ -12,6 +14,155 @@
 
 namespace Horizon
 {
+    static void SetColorTheme_Dark(ImGuiStyle& style)
+    {
+
+    }
+
+    static void SetColorTheme_Light(ImGuiStyle& style)
+    {
+        // light style from Pacôme Danhiez (user itamago) https://github.com/ocornut/imgui/pull/511#issuecomment-175719267
+        style.WindowRounding = 2.0f;
+        style.ScrollbarRounding = 3.0f;
+        style.GrabRounding = 2.0f;
+        style.AntiAliasedLines = true;
+        style.AntiAliasedFill = true;
+        style.WindowRounding = 2;
+        style.ChildRounding = 2;
+        style.ScrollbarSize = 16;
+        style.ScrollbarRounding = 3;
+        style.GrabRounding = 2;
+        style.ItemSpacing.x = 10;
+        style.ItemSpacing.y = 4;
+        style.IndentSpacing = 22;
+        style.FramePadding.x = 6;
+        style.FramePadding.y = 4;
+        style.Alpha = 1.0f;
+        style.FrameRounding = 3.0f;
+        style.TabBorderSize = 0.0f;
+
+        style.Colors[ImGuiCol_Text] = ImVec4(0.00f, 0.00f, 0.00f, 1.00f);
+        style.Colors[ImGuiCol_TextDisabled] = ImVec4(0.60f, 0.60f, 0.60f, 1.00f);
+        style.Colors[ImGuiCol_WindowBg] = ImVec4(0.94f, 0.94f, 0.94f, 0.94f);
+        style.Colors[ImGuiCol_ChildBg] = ImVec4(0.00f, 0.00f, 0.00f, 0.00f);
+        style.Colors[ImGuiCol_PopupBg] = ImVec4(1.00f, 1.00f, 1.00f, 0.94f);
+        style.Colors[ImGuiCol_Border] = ImVec4(0.00f, 0.00f, 0.00f, 0.39f);
+        style.Colors[ImGuiCol_BorderShadow] = ImVec4(1.00f, 1.00f, 1.00f, 0.10f);
+        style.Colors[ImGuiCol_FrameBg] = ImVec4(1.00f, 1.00f, 1.00f, 0.94f);
+        style.Colors[ImGuiCol_FrameBgHovered] = ImVec4(0.26f, 0.59f, 0.98f, 0.40f);
+        style.Colors[ImGuiCol_FrameBgActive] = ImVec4(0.26f, 0.59f, 0.98f, 0.67f);
+        style.Colors[ImGuiCol_TitleBg] = ImVec4(0.96f, 0.96f, 0.96f, 1.00f);
+        style.Colors[ImGuiCol_TitleBgCollapsed] = ImVec4(1.00f, 1.00f, 1.00f, 0.51f);
+        style.Colors[ImGuiCol_TitleBgActive] = ImVec4(0.82f, 0.82f, 0.82f, 1.00f);
+        style.Colors[ImGuiCol_MenuBarBg] = ImVec4(0.86f, 0.86f, 0.86f, 1.00f);
+        style.Colors[ImGuiCol_ScrollbarBg] = ImVec4(0.98f, 0.98f, 0.98f, 0.53f);
+        style.Colors[ImGuiCol_ScrollbarGrab] = ImVec4(0.69f, 0.69f, 0.69f, 1.00f);
+        style.Colors[ImGuiCol_ScrollbarGrabHovered] = ImVec4(0.59f, 0.59f, 0.59f, 1.00f);
+        style.Colors[ImGuiCol_ScrollbarGrabActive] = ImVec4(0.49f, 0.49f, 0.49f, 1.00f);
+        //style.Colors[ImGuiCol_ComboBg] = ImVec4(0.86f, 0.86f, 0.86f, 0.99f);
+        style.Colors[ImGuiCol_CheckMark] = ImVec4(0.26f, 0.59f, 0.98f, 1.00f);
+        style.Colors[ImGuiCol_SliderGrab] = ImVec4(0.24f, 0.52f, 0.88f, 1.00f);
+        style.Colors[ImGuiCol_SliderGrabActive] = ImVec4(0.26f, 0.59f, 0.98f, 1.00f);
+        style.Colors[ImGuiCol_Button] = ImVec4(0.26f, 0.59f, 0.98f, 0.40f);
+        style.Colors[ImGuiCol_ButtonHovered] = ImVec4(0.26f, 0.59f, 0.98f, 1.00f);
+        style.Colors[ImGuiCol_ButtonActive] = ImVec4(0.06f, 0.53f, 0.98f, 1.00f);
+        style.Colors[ImGuiCol_Header] = ImVec4(0.26f, 0.59f, 0.98f, 0.31f);
+        style.Colors[ImGuiCol_HeaderHovered] = ImVec4(0.26f, 0.59f, 0.98f, 0.80f);
+        style.Colors[ImGuiCol_HeaderActive] = ImVec4(0.26f, 0.59f, 0.98f, 1.00f);
+        style.Colors[ImGuiCol_Separator] = ImVec4(0.39f, 0.39f, 0.39f, 1.00f);
+        style.Colors[ImGuiCol_SeparatorHovered] = ImVec4(0.26f, 0.59f, 0.98f, 0.78f);
+        style.Colors[ImGuiCol_SeparatorActive] = ImVec4(0.26f, 0.59f, 0.98f, 1.00f);
+        style.Colors[ImGuiCol_ResizeGrip] = ImVec4(1.00f, 1.00f, 1.00f, 0.50f);
+        style.Colors[ImGuiCol_ResizeGripHovered] = ImVec4(0.26f, 0.59f, 0.98f, 0.67f);
+        style.Colors[ImGuiCol_ResizeGripActive] = ImVec4(0.26f, 0.59f, 0.98f, 0.95f);
+        style.Colors[ImGuiCol_Tab] = ImVec4(0.59f, 0.59f, 0.59f, 1.0f);
+        style.Colors[ImGuiCol_TabHovered] = ImVec4(0.26f, 0.59f, 0.98f, 0.80f);
+        style.Colors[ImGuiCol_TabActive] = ImVec4(0.26f, 0.59f, 0.98f, 0.80f);
+        style.Colors[ImGuiCol_TabUnfocused] = ImVec4(0.59f, 0.59f, 0.59f, 1.0f);
+        style.Colors[ImGuiCol_TabUnfocusedActive] = ImVec4(0.26f, 0.59f, 0.98f, 0.80f);
+        style.Colors[ImGuiCol_PlotLines] = ImVec4(0.39f, 0.39f, 0.39f, 1.00f);
+        style.Colors[ImGuiCol_PlotLinesHovered] = ImVec4(1.00f, 0.43f, 0.35f, 1.00f);
+        style.Colors[ImGuiCol_PlotHistogram] = ImVec4(0.90f, 0.70f, 0.00f, 1.00f);
+        style.Colors[ImGuiCol_PlotHistogramHovered] = ImVec4(1.00f, 0.60f, 0.00f, 1.00f);
+        style.Colors[ImGuiCol_TextSelectedBg] = ImVec4(0.26f, 0.59f, 0.98f, 0.35f);
+        style.Colors[ImGuiCol_ModalWindowDimBg] = ImVec4(0.20f, 0.20f, 0.20f, 0.35f);
+    }
+
+    void HorizonEditor::SetColorTheme(HorizonEditorColorTheme theme) const
+    {
+        ImGui::SetCurrentContext(imguiContext);
+        ImGuiStyle& style = ImGui::GetStyle();
+
+        switch (theme)
+        {
+        case HorizonEditorColorTheme::Dark:
+            SetColorTheme_Dark(style);
+            break;
+        case HorizonEditorColorTheme::Light:
+            SetColorTheme_Light(style);
+            break;
+        default:
+            std::unreachable();
+            break;
+        }
+    }
+
+    void HorizonEditor::InitializeImGuiContext()
+    {
+        IMGUI_CHECKVERSION();
+
+        // Create ImGuiContext
+        imguiContext = ImGui::CreateContext();
+        ImGui::SetCurrentContext(imguiContext);
+
+        ImGuiIO& io = ImGui::GetIO();
+        IM_ASSERT(io.BackendRendererUserData == NULL && "Already initialized a renderer backend!");
+        io.BackendRendererName = "Horizon Engine";
+        io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;       // Enable Keyboard Controls
+        io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;           // Enable Docking
+
+        // TODO: rewrite this
+        io.IniFilename = "../../../Assets/Test/imgui.ini";
+        io.IniSavingRate = 600;
+        io.FontDefault = io.Fonts->AddFontFromFileTTF("../../../Assets/Fonts/OpenSans/OpenSans-Regular.ttf", 26.0f);
+
+        // Upload fonts
+        {
+            if (true)
+            {
+                io.FontDefault = io.Fonts->AddFontFromFileTTF("../../../Assets/Fonts/OpenSans/OpenSans-Regular.ttf", 26.0f);
+            }
+            else
+            {
+
+            }
+
+            unsigned char* fontTextureData = nullptr;
+            int fontTextureWidth = 0;
+            int fontTextureHeight = 0;
+            RenderBackendTextureFormat fontTextureFormat = RenderBackendTextureFormat::RGBA8Unorm;
+
+            io.Fonts->GetTexDataAsRGBA32(&fontTextureData, &fontTextureWidth, &fontTextureHeight);
+
+            RenderBackendTextureDesc fontTextureDesc = RenderBackendTextureDesc::Create2D(
+                fontTextureWidth,
+                fontTextureHeight,
+                fontTextureFormat,
+                RenderBackendTextureCreateFlags::ShaderResource);
+
+            fontTexture = renderBackend->CreateTexture(&fontTextureDesc, fontTextureData, "FontTexture");
+
+            io.Fonts->SetTexID(fontTexture.ToUnit64());
+        }
+
+        // Set color theme
+        ImGuiStyle& style = ImGui::GetStyle();
+        SetColorTheme(colorTheme);
+        
+        assert(window);
+        ImGui_ImplGlfw_InitForOther(window->GetGLFWwindow(), true);
+    }
+
     //struct ConsoleLog
     //{
     //    std::string message;

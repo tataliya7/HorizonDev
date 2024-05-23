@@ -1,10 +1,7 @@
 #pragma once
 
-#include "Rendering/ShaderID_DEPRECATED.h"
-#include "Rendering/Renderer/RendererInterface.h"
 #include "Rendering/Renderer/RealTimeRenderer/RealTimeRendererCommon.h"
 #include "Rendering/Renderer/RealTimeRenderer/PostProcessing/PostProcessing.h"
-#include "Rendering/Renderer/RealTimeRenderer/SkyAtmosphereRendering.h"
 
 namespace Horizon
 {
@@ -411,13 +408,11 @@ namespace Horizon
             RenderGraph& renderGraph,
             const SceneView& view);
 
-        RenderBackend* renderBackend;
         ShaderCompiler* shaderCompiler;
         ShaderLibrary_DEPRECATED* shaderLibrary;
         RenderGraphResourcePool* resourcePool;
         RendererDefaultResources* defaultResources;
-        SceneView* sceneView;
-        PostProcessingSettings& finalPostProcessingSettings;
+        PostProcessingSettings finalPostProcessingSettings;
 
         struct
         {

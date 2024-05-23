@@ -104,22 +104,22 @@ namespace Horizon
          * TBD.
          */
         virtual void CreateRenderDevices(PhysicalDeviceID* physicalDeviceIDs, uint32 numDevices, uint32* outDeviceMasks) = 0;
-        
+
         /**
          * TBD.
          */
         virtual void DestroyRenderDevices() = 0;
-        
+
         /**
          * TBD.
          */
         virtual void FlushRenderDevices() = 0;
-        
+
         /**
          * TBD.
          */
         virtual RenderBackendSwapChainHandle CreateSwapChain(const RenderBackendSwapChainDesc* desc) = 0;
-        
+
         /**
          * TBD.
          */
@@ -164,12 +164,12 @@ namespace Horizon
          * TBD.
          */
         virtual void UnmapBuffer(RenderBackendBufferHandle buffer) = 0;
-        
+
         /**
          * TBD.
          */
         virtual RenderBackendTextureHandle CreateTexture(const RenderBackendTextureDesc* desc, const void* data, const char* name) = 0;
-        
+
         /**
          * TBD.
          */
@@ -193,12 +193,12 @@ namespace Horizon
          * TBD.
          */
         virtual int32 GetTextureSRVBindlessDescriptorIndex(RenderBackendTextureHandle handle) = 0;
-        
+
         /**
          * TBD.
          */
         virtual int32 GetTextureUAVBindlessDescriptorIndex(RenderBackendTextureHandle handle, uint32 mipLevel) = 0;
-        
+
         /**
          * TBD.
          */
@@ -208,12 +208,12 @@ namespace Horizon
          * TBD.
          */
         virtual RenderBackendSamplerHandle CreateSampler(const RenderBackendSamplerDesc* desc, const char* name) = 0;
-        
+
         /**
          * TBD.
          */
         virtual void DestroySampler(RenderBackendSamplerHandle sampler) = 0;
-        
+
         /**
          * TBD.
          */
@@ -249,7 +249,7 @@ namespace Horizon
          * TBD.
          */
         virtual RenderBackendRayTracingAccelerationStructureHandle CreateRayTracingTopLevelAccelerationStructure(const RenderBackendRayTracingTopLevelAccelerationDesc* desc, const char* name) = 0;
-        
+
         /**
          * TBD.
          */

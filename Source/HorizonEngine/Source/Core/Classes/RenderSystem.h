@@ -1,37 +1,17 @@
 #pragma once
 
-#include "Core/CoreModule.h"
 #include "Rendering/RenderGraph/RenderGraph.h"
 #include "Rendering/SceneView.h"
 #include "Rendering/ShaderLibrary.h"
-
-#include <imgui.h>
+#include "Subsystem.h"
 
 namespace Horizon
 {
-    class Scene;
-    class RenderBackend;
-    class ShaderCompiler;
-    class ShaderLibrary_DEPRECATED;
-
-    struct SkyAtmosphereComponent;
-
-    struct Box
-    {
-        Vector3 Min;
-        Vector3 Max;
-    };
-
-    class FrameAllocator : public MemoryArena
-    {
-
-    };
-
-    class RenderSystem : public EngineSubsystem
+    class RenderSystem final : public Subsystem
     {
     public:
         RenderSystem();
-        virtual ~RenderSystem();
+        ~RenderSystem();
 
         /** Subsystem Interface: TBD. */
         void Init() override;
@@ -39,14 +19,11 @@ namespace Horizon
         /** Subsystem Interface: TBD. */
         void Exit() override;
 
+        void Tick();
+
         RenderScene* CreateRenderScene();
 
         void RenderScene(SceneView* view) override;
-
-        void BeginDrawUI();
-        void EndDrawUI();
-
-        void Tick();
 
         void DrawUI(RenderBackendCommandList& commandList, RenderBackendTextureHandle output);
 
@@ -92,16 +69,14 @@ namespace Horizon
             return Vector3(p.x, p.y, p.z);
         }
 
-        void DrawWireBox(
-            const Matrix4x4& Transform,
-            const Box& Box,
-            const Vector4& Color,
-            uint8 DepthPriority,
-            float Thickness = 0.0f,
-            float DepthBias = 0.0f,
-            bool bScreenSpace = false)
+        void DrawWireframeFrustum(const Matrix4x4& transform, const Box& box, const Vector4& color, bool foreground = false)
         {
-            Vector3    B[2], P, Q;
+
+        }
+
+        void DrawWireframeBox(const Matrix4x4& transform, const Box& box, const Vector4& color, bool foreground = false)
+        {
+            Vector3 B[2], P, Q;
             int32 i, j;
 
             B[0] = Box.Min;
@@ -132,14 +107,7 @@ namespace Horizon
             }
         }
 
-        void DrawLine(
-            const Vector3& Start,
-            const Vector3& End,
-            const Vector4& Color,
-            uint8 DepthPriorityGroup,
-            float Thickness = 0.0f,
-            float DepthBias = 0.0f,
-            bool bScreenSpace = false)
+        void DrawLine(const Vector3& Start, const Vector3& End, const Vector4& Color, bool bScreenSpace = false)
         {
             debugDrawLinesVertices.push_back(Start);
             debugDrawLinesVertices.push_back(End);
@@ -155,7 +123,6 @@ namespace Horizon
         void UpdateSkyLight(EnvironmentLightComponent& skyLight);
 
         FrameAllocator* frameAllocator;
-        MemoryArena* arena;
         RenderBackend* renderBackend;
         ShaderCompiler* shaderCompiler;
         ShaderLibrary_DEPRECATED* shaderLibrary;
@@ -167,7 +134,6 @@ namespace Horizon
         // UI
         ImGuiContext* context;
         RenderBackendTextureHandle defaultFontTexture;
-        RenderBackendShaderHandle imguiShader;
 
         uint64 vertexBufferSize[3];
         uint64 currentVertexBufferDataSize[3];

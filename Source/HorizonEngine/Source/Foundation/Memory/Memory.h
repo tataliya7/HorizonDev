@@ -121,6 +121,11 @@ namespace Horizon
         uint64 used = 0;
     };
 
+    class FrameAllocator : public MemoryArena
+    {
+
+    };
+
     extern LinearArena* GArena;
 
     void* ArenaRealloc(MemoryArena* arena, void* ptr, uint64 oldSize, uint64 newSize, uint64 alignment, const char* file, uint32 line);

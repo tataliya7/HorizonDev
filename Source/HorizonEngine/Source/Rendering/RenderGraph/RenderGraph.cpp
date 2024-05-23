@@ -257,7 +257,7 @@ namespace Horizon
         importedBuffers.clear();
     }
 
-    void RenderGraph::Execute(RenderGraphExecuteContext* context)
+    void RenderGraph::Execute(RenderBackendCommandList& commandList)
     {
         OPTICK_EVENT();
 
@@ -265,8 +265,6 @@ namespace Horizon
         {
             return;
         }
-
-        RenderBackendCommandList* commandList = AllocObject<RenderBackendCommandList>(arena);
 
         for (RenderGraphTexture* texture : textures)
         {
@@ -296,9 +294,9 @@ namespace Horizon
             RenderGraphPassFlags passFlags = pass->GetFlags();
             RenderGraphRegistry registry(this, pass);
 
-            uint32 currentPassTimingQueryRegion = gpuProfiler->BeginRegion(commandList, pass->GetName());
+            uint32 currentPassTimingQueryRegion = gpuProfiler->BeginRegion(&commandList, pass->GetName());
 
-            commandList->BeginDebugLabel(pass->GetName(), Vector4(1.0f, 1.0f, 1.0f, 1.0f));
+            commandList.BeginDebugLabel(pass->GetName(), Vector4(1.0f, 1.0f, 1.0f, 1.0f));
 
             for (auto& state : pass->textureStates)
             {
@@ -317,7 +315,7 @@ namespace Horizon
 
             if (!pass->barriers.empty())
             {
-                commandList->Transitions(pass->barriers.data(), (uint32)pass->barriers.size());
+                commandList.Transitions(pass->barriers.data(), (uint32)pass->barriers.size());
             }
 
             if (EnumClassHasFlags(passFlags, RenderGraphPassFlags::Graphics) && !EnumClassHasFlags(passFlags, RenderGraphPassFlags::SkipRenderPass))
@@ -348,19 +346,19 @@ namespace Horizon
                         .stencilStoreOp = pass->depthStentcil.stencilStoreOp,
                     };
                 }
-                commandList->BeginRenderPass(renderPass);
+                commandList.BeginRenderPass(renderPass);
             }
 
-            pass->Execute(registry, *commandList);
+            pass->Execute(registry, commandList);
 
             if (EnumClassHasFlags(passFlags, RenderGraphPassFlags::Graphics) && !EnumClassHasFlags(passFlags, RenderGraphPassFlags::SkipRenderPass))
             {
-                commandList->EndRenderPass();
+                commandList.EndRenderPass();
             }
 
             gpuProfiler->EndRegion(currentPassTimingQueryRegion);
 
-            commandList->EndDebugLabel();
+            commandList.EndDebugLabel();
         }
 
         for (auto& texture : textures)
@@ -370,11 +368,9 @@ namespace Horizon
                 std::array<RenderBackendBarrier, 1> barriers = {
                     RenderBackendBarrier(texture->GetRenderBackendTextureHandle(), RenderBackendTextureSubresourceRange::All, texture->intermediateState, texture->finalState)
                 };
-                commandList->Transitions(barriers.data(), (uint32)barriers.size());
+                commandList.Transitions(barriers.data(), (uint32)barriers.size());
             }
         }
-
-        context->commandLists.push_back(commandList);
 
         for (RenderGraphExportedTexture& textureToExport : exportedTextures)
         {

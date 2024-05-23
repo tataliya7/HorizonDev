@@ -2,8 +2,12 @@
 
 #include "Engine/HorizonEngineModule.h"
 #include "WindowSystem.h"
+#include "HorizonEditorUI.h"
+#include "EditorCamera.h"
 
 #define HORIZON_EDITOR_APPLICATION_NAME "Horizon Editor"
+
+class ImGuiContext;
 
 namespace Horizon
 {
@@ -92,6 +96,8 @@ namespace Horizon
         //void Setup();
         //void Clear();
 
+        void SetColorTheme(HorizonEditorColorTheme theme) const;
+
         //void OnUpdate(float deltaTime);
         //void OnRender(float deltaTime);
         void OnDrawUI();
@@ -177,6 +183,8 @@ namespace Horizon
         //Vector4 viewportPos;
     private:
 
+        void InitializeImGuiContext();
+
         std::string applicationName;
         //std::filesystem::path executableDirectory;
         std::filesystem::path executablePath;
@@ -216,22 +224,26 @@ namespace Horizon
         //void OnMouseButtonReleasedEvent(MouseButtonID id);
 
         //uint32 frameCounter = 0;
-        //float deltaTime = 0.0f;
-        bool isExitRequested = false;
-        //bool toggleFullScreen = false;
+        float deltaTimeInSeconds = 0.0f;
 
-        //DebugViewMode viewMode = DebugViewMode::Lit;
+        bool isExitRequested = false;
+
+        HorizonEditorColorTheme colorTheme = HorizonEditorColorTheme::Light;
+        RenderBackendTextureHandle fontTexture;
 
         RenderBackendType renderBackendType = RenderBackendType::D3D12;
         RenderBackend* renderBackend = nullptr;
+        RenderSettings renderSettings;
+        ImGuiContext* imguiContext = nullptr;
 
         Window* window = nullptr;
         RenderBackendSwapChainHandle swapChain = RenderBackendSwapChainHandle::Null;
         uint32 swapChainWidth = 0;
         uint32 swapChainHeight = 0;
-        
+
         //Scene* scene;
-        //EditorCamera editorCamera;
+        EditorCamera editorCamera;
+        SceneView* sceneView;
     };
 }
 

@@ -4,6 +4,11 @@
 
 namespace Horizon
 {
+    void RenderScene::GetRenderStatistics(RenderStatistics& statistics) const
+    {
+
+    }
+
     void RenderScene::UpdateGeometry()
     {
         OPTICK_EVENT();
