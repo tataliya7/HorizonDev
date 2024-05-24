@@ -1,0 +1,391 @@
+#include "../ShaderCommon.hsh"
+#include "RealTimeRendererCommon.hsh"
+
+BIND_BUFFER_ELEMENT(0, PerFrameData, PerFrameData);
+BIND_TEXTURE_2D_SRV(1, SceneColor);
+BIND_TEXTURE_2D_SRV(2, SceneDepth);
+BIND_TEXTURE_2D_SRV(3, VelocityBuffer);
+BIND_TEXTURE_2D_SRV(4, HistoryDepthBuffer);
+BIND_TEXTURE_2D_SRV(5, HistoryTemporalAATexture);
+BIND_TEXTURE_2D_UAV(6, float4, OutputTexture);
+
+#ifndef TEMPORAL_AA_CLAMP_HISTORY
+    #define TEMPORAL_AA_CLAMP_HISTORY 1
+#endif
+
+#define TEMPORAL_AA_SAMPLE_HISTORY_BICUBIC 1
+#define TEMPORAL_AA_NEIGHBORHOOD_CLAMPING 0
+#define TEMPORAL_AA_VARIANCE_CLIPPING 1
+
+static const float TemporalAAVarianceClipGamma = 1.0f;
+static const uint TemporalAASampleCount = 9;
+static const int2 TemporalAASampleOffsets3x3[9] =
+{
+    int2(-1, -1),
+    int2( 0, -1),
+    int2( 1, -1),
+    int2(-1,  0),
+    int2( 0,  0),
+    int2( 1,  0),
+    int2(-1,  1),
+    int2( 0,  1),
+    int2( 1,  1),
+};
+
+float4 SampleTextureCatmullRom(in Texture2D tex, in SamplerState linearSampler, in float2 uv)
+{
+    float2 texSize;
+    tex.GetDimensions(texSize.x, texSize.y);
+
+    // We're going to sample a a 4x4 grid of texels surrounding the target UV coordinate. We'll do this by rounding
+    // down the sample location to get the exact center of our "starting" texel. The starting texel will be at
+    // location [1, 1] in the grid, where [0, 0] is the top left corner.
+    float2 samplePos = uv * texSize;
+    float2 texPos1 = floor(samplePos - 0.5) + 0.5;
+
+    // Compute the fractional offset from our starting texel to our original sample location, which we'll
+    // feed into the Catmull-Rom spline function to get our filter weights.
+    float2 f = samplePos - texPos1;
+
+    // Compute the Catmull-Rom weights using the fractional offset that we calculated earlier.
+    // These equations are pre-expanded based on our knowledge of where the texels will be located,
+    // which lets us avoid having to evaluate a piece-wise function.
+    float2 w0 = f * (-0.5 + f * (1.0 - 0.5 * f));
+    float2 w1 = 1.0 + f * f * (-2.5 + 1.5 * f);
+    float2 w2 = f * (0.5 + f * (2.0 - 1.5 * f));
+    float2 w3 = f * f * (-0.5 + 0.5 * f);
+
+    // Work out weighting factors and sampling offsets that will let us use bilinear filtering to
+    // simultaneously evaluate the middle 2 samples from the 4x4 grid.
+    float2 w12 = w1 + w2;
+    float2 offset12 = w2 / (w1 + w2);
+
+    // Compute the final UV coordinates we'll use for sampling the texture
+    float2 texPos0 = texPos1 - 1;
+    float2 texPos3 = texPos1 + 2;
+    float2 texPos12 = texPos1 + offset12;
+
+    texPos0 /= texSize;
+    texPos3 /= texSize;
+    texPos12 /= texSize;
+
+    float4 result = 0.0;
+    result += tex.SampleLevel(linearSampler, float2(texPos0.x, texPos0.y), 0) * w0.x * w0.y;
+    result += tex.SampleLevel(linearSampler, float2(texPos12.x, texPos0.y), 0) * w12.x * w0.y;
+    result += tex.SampleLevel(linearSampler, float2(texPos3.x, texPos0.y), 0) * w3.x * w0.y;
+
+    result += tex.SampleLevel(linearSampler, float2(texPos0.x, texPos12.y), 0) * w0.x * w12.y;
+    result += tex.SampleLevel(linearSampler, float2(texPos12.x, texPos12.y), 0) * w12.x * w12.y;
+    result += tex.SampleLevel(linearSampler, float2(texPos3.x, texPos12.y), 0) * w3.x * w12.y;
+
+    result += tex.SampleLevel(linearSampler, float2(texPos0.x, texPos3.y), 0) * w0.x * w3.y;
+    result += tex.SampleLevel(linearSampler, float2(texPos12.x, texPos3.y), 0) * w12.x * w3.y;
+    result += tex.SampleLevel(linearSampler, float2(texPos3.x, texPos3.y), 0) * w3.x * w3.y;
+
+    return result;
+}
+
+float3 RGBToYCoCg(float3 RGB)
+{
+    float Y  = dot(RGB, float3(  1, 2,  1 ));
+    float Co = dot(RGB, float3(  2, 0, -2 ));
+    float Cg = dot(RGB, float3( -1, 2, -1 ));
+
+    float3 YCoCg = float3( Y, Co, Cg );
+    return YCoCg;
+}
+
+float3 YCoCgToRGB(float3 YCoCg)
+{
+    float Y  = YCoCg.x * 0.25;
+    float Co = YCoCg.y * 0.25;
+    float Cg = YCoCg.z * 0.25;
+
+    float R = Y + Co - Cg;
+    float G = Y + Cg;
+    float B = Y - Co - Cg;
+
+    float3 RGB = float3(R, G, B);
+    return RGB;
+}
+
+float HdrWeightYCoCg(float color, float exposureScale)
+{
+    return rcp(color * exposureScale + 4.0);
+}
+
+float4 FilterCurrentFrameInputSamples(Texture2D sceneColor, uint2 pixelCoord, uint2 size, float exposureScale)
+{
+    float4 filteredColor = 0;
+    float totalWeight = 0;
+    [unroll]
+    for (uint i = 0; i < TemporalAASampleCount; i++)
+    {
+        int2 pixelsOffset = TemporalAASampleOffsets3x3[i];
+        int2 samplePixel = pixelCoord + pixelsOffset;
+        samplePixel = clamp(samplePixel, int2(0, 0), int2(size.x - 1, size.y - 1));
+        //float4 sceneColorSample = sceneColor.SampleLevel(GlobalSamplerLinearClamp, sceneColorSampleUV, 0);
+        float4 sceneColorSample = sceneColor[samplePixel];
+        sceneColorSample.rgb = RGBToYCoCg(sceneColorSample.rgb);
+        float sampleHdrWeight = HdrWeightYCoCg(sceneColorSample.r, exposureScale);
+        float sampleFinalWeight = sampleHdrWeight;
+        filteredColor += sampleFinalWeight * sceneColorSample;
+        totalWeight += sampleFinalWeight;
+    }
+    filteredColor /= totalWeight;
+    return filteredColor;
+}
+
+void ComputeNeighborhoodBoundingbox(
+    Texture2D sceneColor,
+    uint2 pixelCoord,
+    uint2 size,
+    float2 temporalJitter,
+    out float4 outNeighborhoodMin,
+    out float4 outNeighborhoodMax)
+{
+    float4 neighborhoods[TemporalAASampleCount];
+
+    uint i;
+    [unroll]
+    for (i = 0; i < TemporalAASampleCount; i++)
+    {
+        int2 pixelsOffset = TemporalAASampleOffsets3x3[i];
+        int2 samplePixel = pixelCoord + pixelsOffset;
+        samplePixel = clamp(samplePixel, int2(0, 0), int2(size.x - 1, size.y - 1));
+        neighborhoods[i] = sceneColor[samplePixel];
+        neighborhoods[i].rgb = RGBToYCoCg(neighborhoods[i].rgb);
+
+        // int2 pixelsOffset = TemporalAASampleOffsets3x3[i];
+        // int2 samplePixel = int2(pixelCoord.x, pixelCoord.y) + pixelsOffset;
+        // float2 sampleUV = samplePixel / float2(size.x, size.y);
+        // neighborhoods[i] = sceneColor.SampleLevel(GlobalSamplerLinearClamp, sampleUV, 0);
+        // neighborhoods[i].rgb = RGBToYCoCg(neighborhoods[i].rgb);
+    }
+
+#if TEMPORAL_AA_VARIANCE_CLIPPING
+
+    float4 neighborhoodMin = 0.0;
+    float4 neighborhoodMax = 0.0;
+
+    [unroll]
+    for(i = 0; i < TemporalAASampleCount; i++)
+    {
+        neighborhoodMin += neighborhoods[i];
+        neighborhoodMax += neighborhoods[i] * neighborhoods[i];
+    }
+
+    uint N = TemporalAASampleCount;
+    float4 m1 = neighborhoodMin;
+    float4 m2 = neighborhoodMax;
+
+    float4 mu = m1 / N;
+    float4 sigma = sqrt(abs(m2 / N - mu * mu));
+    float4 minc = mu - TemporalAAVarianceClipGamma * sigma;
+    float4 maxc = mu + TemporalAAVarianceClipGamma * sigma;
+
+    outNeighborhoodMin = minc;
+    outNeighborhoodMax = maxc;
+
+#else
+
+    float2 PPCo = float2(pixelCoord) + float2(0.5, 0.5) + temporalJitter;
+    float2 PPCk = floor(PPCo) + 0.5;
+    float2 dKO = PPCo - PPCk;
+
+    // Sample 4 is is always going to be considered anyway.
+    float4 neighborhoodMin = neighborhoods[4];
+    float4 neighborhoodMax = neighborhoods[4];
+
+    float DistThreshold = 1.51;
+
+    [unroll]
+    for(i = 0; i < TemporalAASampleCount; i++)
+    {
+        if (i != 4)
+        {
+            // float2 dPP = float2(TemporalAASampleOffsets3x3[i]) - dKO;
+
+            // [flatten]
+            // if (dot(dPP, dPP) < (DistThreshold * DistThreshold))
+            {
+                neighborhoodMin = min(neighborhoodMin, neighborhoods[i]);
+                neighborhoodMax = max(neighborhoodMax, neighborhoods[i]);
+            }
+        }
+    }
+
+    outNeighborhoodMin = neighborhoodMin;
+    outNeighborhoodMax = neighborhoodMax;
+
+#endif
+}
+
+float4 SampleHistory(Texture2D historyTexture, float2 historySampleUV, float preExposureCorrection)
+{
+    float4 historyColor;
+#if TEMPORAL_AA_SAMPLE_HISTORY_BICUBIC
+    historyColor = SampleTextureCatmullRom(historyTexture, GlobalSamplerLinearClamp, historySampleUV);
+#else
+    historyColor = historyTexture.SampleLevel(GlobalSamplerLinearClamp, historySampleUV, 0);
+#endif
+    historyColor.rgb *= preExposureCorrection;
+    historyColor.rgb = RGBToYCoCg(historyColor.rgb);
+    return historyColor;
+}
+
+float4 ClampHistory(in float4 historyColor, float4 filteredColor, float4 neighborhoodMin, float4 neighborhoodMax)
+{
+#if !TEMPORAL_AA_CLAMP_HISTORY
+    return historyColor;
+#elif TEMPORAL_AA_NEIGHBORHOOD_CLAMPING
+    historyColor = clamp(historyColor, neighborhoodMin, neighborhoodMax);
+    return historyColor;
+#else // !TEMPORAL_AA_NEIGHBORHOOD_CLAMPING
+
+    // Clip history, this uses color AABB intersection for tighter fit.
+    float4 targetColor = 0.5 * (neighborhoodMin + neighborhoodMax);
+    //float4 targetColor = filteredColor;
+
+    float3 rayOrigin = historyColor.rgb;
+    float3 rayDirection = targetColor.rgb - historyColor.rgb;
+    rayDirection = select(abs(rayDirection) < (1.0 / 65536.0), (1.0 / 65536.0), rayDirection);
+    float3 invRayDirection = rcp(rayDirection);
+
+    float3 minIntersect = (neighborhoodMin.rgb - rayOrigin) * invRayDirection;
+    float3 maxIntersect = (neighborhoodMax.rgb - rayOrigin) * invRayDirection;
+    float3 enterIntersect = min(minIntersect, maxIntersect);
+
+    float blendFactor = max(enterIntersect.x, max(enterIntersect.y, enterIntersect.z));
+    blendFactor = saturate(blendFactor);
+
+    historyColor = lerp(historyColor, targetColor, blendFactor);
+    // historyColor.a = clamp(historyColor.a, neighborhoodMin.a, neighborhoodMax.a);
+    return historyColor;
+#endif
+}
+
+float3 Tonemap(float3 color)
+{
+    return color.rgb / (max(max(0.0, color.r), max(color.g, color.b)) + 1.0).xxx;
+}
+
+float3 InverseTonemap(float3 color)
+{
+    return color.rgb / max(0.0001, 1.0 - max(color.r, max(color.g, color.b))).xxx;
+}
+
+[shader("compute")]
+[numthreads(8, 8, 1)]
+void TemporalSuperSamplingCS(uint3 DispatchThreadID : SV_DispatchThreadID)
+{
+    PerFrameData perFrameData = GetPerFrameData();
+    Texture2D sceneDepth = GetSceneDepthSRV();
+    Texture2D sceneColor = GetSceneColorSRV();
+    Texture2D velocityBuffer = GetVelocityBufferSRV();
+    Texture2D historyDepthBuffer = GetHistoryDepthBufferSRV();
+    Texture2D historyTemporalAATexture = GetHistoryTemporalAATextureSRV();
+    RWTexture2D<float4> outputTexture = GetOutputTextureUAV();
+
+    uint width = perFrameData.renderResolutionX;
+    uint height = perFrameData.renderResolutionY;
+    if (DispatchThreadID.x >= width || DispatchThreadID.y >= height)
+    {
+        return;
+    }
+
+    float2 resolution = float2(width, height);
+    int2 centerPixel = DispatchThreadID.xy;
+    int2 inputMinPixelCoord = int2(0, 0);
+    int2 inputMaxPixelCoord = int2(width - 1, height - 1);
+    const float2 uv = (centerPixel + 0.5f) * float2(1.0 / resolution.x, 1.0 / resolution.y);
+    float2 jitterOffset = perFrameData.cameraJitterOffset * float2(1.0 / resolution.x, 1.0 / resolution.y);
+    float2 jitteredUV = uv + jitterOffset;
+
+#if 0
+    float exposureScale = AutoExposure * perFrameData.oneOverExposure;
+#else
+    float exposureScale = 1.0f;
+#endif
+
+    // Filter current frame input samples
+    //float4 filteredColor = FilterCurrentFrameInputSamples(sceneColor, centerPixel, float2(width, height), exposureScale);
+    float4 filteredColor = sceneColor.SampleLevel(GlobalSamplerLinearClamp, jitteredUV, 0);
+    //float4 filteredColor = SampleTextureCatmullRom(sceneColor, GlobalSamplerLinearClamp, jitteredUV);
+
+    // Debug
+    // outputTexture[centerPixel] = filteredColor;
+    // return;
+
+    float reset = SHADER_ARGUMENTS_DATA(0);
+    //if ((reset > 0) || // reset
+    //    (sceneDepth[centerPixel].r == 0.0)) // sky box
+    if ((reset > 0))
+    {
+        outputTexture[centerPixel] = filteredColor;
+        return;
+    }
+    filteredColor.rgb = RGBToYCoCg(filteredColor.rgb);
+
+    // Find nearest pixel (pixel position of minimum depth)
+    float nearestDepth = 1.0;
+    int2 nearestPixel = int2(0, 0);
+    for (int x = -1; x <= 1; x++)
+    {
+        for (int y = -1; y <= 1; y++)
+        {
+            int2 curPixel = centerPixel + int2(x, y);
+            curPixel = clamp(curPixel, inputMinPixelCoord, inputMaxPixelCoord);
+            float depth = LinearDepth01(sceneDepth[curPixel].r, perFrameData.nearClippingPlane, perFrameData.farClippingPlane);
+            if (depth < nearestDepth)
+            {
+                nearestDepth = depth;
+                nearestPixel = curPixel;
+            }
+        }
+    }
+
+    float2 motionVector = velocityBuffer[nearestPixel].xy;
+    float motionVectorLength = length(motionVector * resolution);
+
+    // Sample history
+    float2 historySampleUV = uv + motionVector;
+    float4 historyColor = SampleHistory(historyTemporalAATexture, historySampleUV, perFrameData.preExposureCorrection);
+
+    // Disocclusion fallback
+    float currentDepth = LinearDepthNearFar(sceneDepth[centerPixel].r, perFrameData.nearClippingPlane, perFrameData.farClippingPlane);
+    float historyDepth = LinearDepthNearFar(historyDepthBuffer.SampleLevel(GlobalSamplerPointClamp, historySampleUV, 0).r, perFrameData.nearClippingPlane, perFrameData.farClippingPlane);
+    if (motionVectorLength > 2.0 && abs(currentDepth - historyDepth) > 0.5) // disocclusion
+    {
+        filteredColor.rgb = YCoCgToRGB(filteredColor.rgb);
+        outputTexture[centerPixel] = filteredColor;
+        return;
+    }
+
+    float4 neighborhoodMin;
+    float4 neighborhoodMax;
+    ComputeNeighborhoodBoundingbox(sceneColor, centerPixel, uint2(width, height), jitterOffset, neighborhoodMin, neighborhoodMax);
+
+    // Clamp history
+    historyColor = ClampHistory(historyColor, filteredColor, neighborhoodMin, neighborhoodMax);
+
+    // the linear filtering can cause blurry image, try to account for that:
+    float subpixelCorrection =  0.1 * motionVectorLength;
+
+    // compute a nice blend factor:
+    float blendFactor = lerp(0.05, 0.2, saturate(subpixelCorrection));
+
+    // If history sample is out of screen
+    blendFactor = all(historySampleUV == saturate(historySampleUV)) ? blendFactor : 1.0f;
+
+    // YCoCg -> RGB -> Tonemap -> YCoCg (Use RGB tonemapper to avoid color desaturation)
+    filteredColor.rgb = RGBToYCoCg(Tonemap(YCoCgToRGB(filteredColor.rgb)));
+    historyColor.rgb = RGBToYCoCg(Tonemap(YCoCgToRGB(historyColor.rgb)));
+
+    float4 result = lerp(historyColor, filteredColor, blendFactor);
+
+    result.rgb = InverseTonemap(YCoCgToRGB(result.rgb));
+    result.a = 1.0;
+
+    outputTexture[DispatchThreadID.xy] = result;
+}

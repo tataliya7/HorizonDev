@@ -1,0 +1,37 @@
+#include "../ShaderCommon.hsh"
+#include "RealTimeRendererCommon.hsh"
+#include "PostProcessingCommon.hsh"
+
+BIND_BUFFER_ELEMENT(0, PerFrameData, PerFrameData);
+BIND_TEXTURE_2D_SRV(1, ExposureTexture);
+BIND_TEXTURE_2D_SRV(2, WeightTexture);
+BIND_TEXTURE_2D_UAV(3, float4, OutputTexture);
+
+[shader("compute")]
+[numthreads(POST_PROCESSING_THREAD_GROUP_COUNT_X, POST_PROCESSING_THREAD_GROUP_COUNT_Y, 1)]
+void LocalExposureBlendExposuresCS(uint3 DispatchThreadID : SV_DispatchThreadID)
+{
+    RWTexture2D<float4> outputTexture = GetOutputTextureUAV();
+    uint width, height;
+    outputTexture.GetDimensions(width, height);
+    if (DispatchThreadID.x >= width || DispatchThreadID.y >= height)
+    {
+        return;
+    }
+
+    uint2 pixelCoord = DispatchThreadID.xy;
+    float2 uv = (pixelCoord + 0.5) / float2(width, height);
+
+    Texture2D exposureTexture = GetExposureTextureSRV();
+    Texture2D weightTexture = GetWeightTextureSRV();
+
+    float coarsestMipLevel = SHADER_ARGUMENTS_DATA(0);
+
+    // Blend the exposures based on the blend weights.
+    float3 exposures = exposureTexture.SampleLevel(GlobalSamplerLinearClamp, uv, coarsestMipLevel).rgb;
+    float3 weights = weightTexture.SampleLevel(GlobalSamplerLinearClamp, uv, coarsestMipLevel).rgb;
+    weights /= dot(weights, 1.0) + 0.0001;
+
+    float3 result = dot(exposures * weights, 1.0);
+    outputTexture[pixelCoord] = float4(result, 1.0);
+}

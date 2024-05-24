@@ -1,0 +1,66 @@
+#include "../../ShaderCommon.hsh"
+#include "../../Random.hsh"
+#include "../RealTimeRendererCommon.hsh"
+#include "SubsurfaceScatteringCommon.hsh"
+
+BIND_BUFFER_ELEMENT(0, PerFrameData, PerFrameData);
+BIND_TEXTURE_2D_SRV(1, SceneColorTexture);
+BIND_TEXTURE_2D_SRV(2, SceneDepthTexture);
+BIND_TEXTURE_2D_SRV(3, GBuffer0);
+BIND_BYTE_ADDRESS_BUFFER_UAV(3, SubsurfaceScatteringTileCountBuffer);
+BIND_BYTE_ADDRESS_BUFFER_SRV(1, SubsurfaceScatteringTileDataBuffer);
+BIND_TEXTURE_2D_UAV(5, float4, OutputTexture);
+
+[shader("compute")]
+[numthreads(SUBSURFACE_SCATTERING_TILE_SIZE * SUBSURFACE_SCATTERING_TILE_SIZE, 1, 1)]
+void SubsurfaceScatteringSampleDiffusionProfileCS(uint3 GroupID : SV_GroupID, uint GroupIndex : SV_GroupIndex)
+{
+    // PerFrameData perFrameData = GetPerFrameData();
+    // Texture2D gbuffer0 = GetGBuffer0SRV();
+    // ByteAddressBuffer tileDataBuffer = GetSubsurfaceScatteringTileDataBufferSRV();
+    // RWTexture2D<float4> outputTexture = GetOutputTextureUAV();
+
+    // uint width, height;
+    // outputTexture.GetDimensions(width, height);
+
+    // uint2 tileIndex = tileDataBuffer.Load<uint2>(GroupID * sizeof(uint2));
+    // uint2 pixelCoord = tileIndex * uint2(SUBSURFACE_SCATTERING_TILE_SIZE, SUBSURFACE_SCATTERING_TILE_SIZE) + uint2(GroupIndex / 8, GroupIndex % 8);
+    // float2 uv = (pixelCoord + 0.5) * float2(1.0 / width, 1.0 / height);
+
+    // if (pixelCoord.x >= width || pixelCoord.y >= height)
+    // {
+    //     return;
+    // }
+
+    // float3 worldSpaceNormal = DecodeNormalFromONV(gbuffer0.SampleLevel(GlobalSamplerPointClamp, uv, 0).xy);
+
+    // uint numSamples = 32; // TODO
+    // float invNumSamples = 1.0f / numSamples;
+
+    // float3 radiance = 0;
+    // float weightSum = 0;
+
+    // [loop]
+    // for (uint sampleIndex = 0; sampleIndex < numSamples; sampleIndex++)
+    // {
+    //     float2 sampleUV = uv + uvOffset;
+
+    //     float mipLevel = 0;
+
+    //     burleySample = 0;
+
+    //     float3 sampleWorldSpaceNormal = DecodeNormalFromONV(gbuffer0.SampleLevel(GlobalSamplerPointClamp, sampleUV, 0).xy);
+    //     float normalWeight = sqrt(saturate(dot(sampleWorldSpaceNormal, worldSpaceNormal) * 0.5 + 0.5));
+
+    //     float3 diffusionProfile = GetDiffuseReflectProfileWithDiffuseMeanFreePath(BurleyParameter.DiffuseMeanFreePath.xyz, S3D.xyz, RadiusSampledInMM);
+    //     float sampleWeight = (diffusionProfile / pdf) * normalWeight;
+
+    //     radiance += sampleWeight * sampleDiffuseLighting;
+    //     //weightSum += sampleWeight;
+    // }
+
+    // //radiance = select(weightSum == 0, 0, radiance / weightSum);
+    // radiance *= invNumSamples;
+
+    // outputTexture[pixelCoord] = float4(radiance, float(numSamples));
+}

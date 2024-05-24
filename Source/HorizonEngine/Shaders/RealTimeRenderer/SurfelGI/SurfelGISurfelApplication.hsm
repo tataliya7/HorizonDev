@@ -1,0 +1,168 @@
+#include "../../ShaderCommon.hsh"
+#include "../RealTimeRendererCommon.hsh"
+#include "SurfelGICommon.hsh"
+
+BIND_BUFFER_ELEMENT(0, PerFrameData, PerFrameData);
+BIND_TEXTURE_2D_SRV(1, VisibilityBuffer0);
+BIND_TEXTURE_2D_SRV(2, VisibilityBuffer1);
+BIND_TEXTURE_2D_SRV(3, SceneDepth);
+BIND_TEXTURE_2D_SRV(4, GBuffer0);
+
+BIND_BYTE_ADDRESS_BUFFER_UAV(5, SurfelGISurfelColdDataBuffer);
+BIND_BYTE_ADDRESS_BUFFER_UAV(6, SurfelGICellHeaderBuffer);
+BIND_BYTE_ADDRESS_BUFFER_UAV(7, SurfelGICellDataBuffer);
+BIND_BYTE_ADDRESS_BUFFER_UAV(8, SurfelGISurfelBuffer);
+
+BIND_BYTE_ADDRESS_BUFFER_UAV(9, SurfelGIConstantsBuffer);
+BIND_BYTE_ADDRESS_BUFFER_UAV(10, SurfelGIAliveSurfelBuffer);
+BIND_BYTE_ADDRESS_BUFFER_UAV(11, SurfelGIDeadSurfelBuffer);
+BIND_BYTE_ADDRESS_BUFFER_UAV(12, SurfelGISurfelColdDataBuffer);
+
+groupshared uint GroupSharedLowestCoverage;
+groupshared int GroupSharedSurfelSpawnCountPerTile;
+
+[shader("compute")]
+[numthreads(SurfelGIScreenTileSize, SurfelGIScreenTileSize, 1)]
+void SurfelGISurfelApplicationCS(
+    uint3 DispatchThreadID : SV_DispatchThreadID,
+    uint3 GroupID : SV_GroupID,
+    uint3 GroupThreadID : SV_GroupThreadID,
+    uint GroupIndex : SV_GroupIndex)
+{
+    if (GroupIndex == 0)
+    {
+        GroupSharedLowestCoverage = 0xFFFFFFFF;
+        GroupSharedSurfelSpawnCountPerTile = 1;
+    }
+
+    GroupMemoryBarrierWithGroupSync();
+
+    PerFrameData perFrameData = GetPerFrameData();
+
+    Texture2D visibilityBuffer0 = GetVisibilityBuffer0RV();
+    Texture2D visibilityBuffer1 = GetVisibilityBuffer1RV();
+    Texture2D sceneDepth = GetSceneDepthSRV();
+    Texture2D gbuffer0 = GetGBuffer0SRV();
+
+    float4 gbuffer0Data = gbuffer0[pixelCoord];
+    float3 normal = DecodeNormalFromONV(gbuffer0Data.xy);
+
+    RWByteAddressBuffer cellHeaderBuffer = GetSurfelGICellHeaderBufferUAV();
+    RWByteAddressBuffer cellDataBuffer = GetSurfelGICellDataBufferUAV();
+    RWByteAddressBuffer surfelBuffer = GetSurfelGISurfelBufferUAV();
+
+    RWByteAddressBuffer constantsBuffer = GetSurfelGIConstantsBufferUAV();
+    RWByteAddressBuffer aliveSurfelBuffer = GetSurfelGIAliveSurfelBufferUAV();
+    RWByteAddressBuffer deadSurfelBuffer = GetSurfelGIDeadSurfelBufferUAV();
+    RWByteAddressBuffer surfelColdDataBuffer = GetSurfelGISurfelColdDataBufferUAV();
+
+    uint2 pixelCoord = DispatchThreadID.xy;
+    float depth = sceneDepth[pixelCoord];
+    if (depth == FarClipPlaneDepthValue)
+    {
+        return;
+    }
+
+    float4 renderSizeAndInvSize = float4(perFrameData.renderResolutionX, perFrameData.renderResolutionY, 1.0 / perFrameData.renderResolutionX, 1.0 / perFrameData.renderResolutionY);
+    float2 uv = (pixelCoord + 0.5) * renderSizeAndInvSize.zw;
+
+    // Once a certain amount of coverage is achieved, no more surfels are spawned in that tile.
+    float coverage = 0;
+    float3 worldSpacePosition = ReconstructWorldSpacePositionFromDepth(uv, depth, perFrameData.invViewProjectionMatrix);
+
+    // Find surfel grid cell.
+    int3 cellID = CalculateUniformGridCellID(worldSpacePosition);
+    if (!IsUniformGridCellIDValid(cellID))
+    {
+        return;
+    }
+
+    uint cellIndex = CalculateUniformGridCellIndex(cellID);
+
+    // Fetch N surfels from cell.
+    CellHeader cell = cellHeaderBuffer[cellIndex];
+    for (uint i = 0; i < cell.surfelCount; i++)
+    {
+        uint surfelIndex = cellDataBuffer[cell.offset + i];
+        SurfelHotData surfel = surfelBuffer[surfelIndex];
+
+        float3 d = worldSpacePosition - surfel.position;
+        float distanceSquare = dot(d, d);
+
+        if (distanceSquare < (surfel.radius * surfel.radius))
+        {
+            float dotNN = dot(normal, surfel.normal);
+            if (dotNN > 0)
+            {
+                float distance = sqrt(distanceSquare);
+
+                // Weight by distance & normal.
+                float weight = 1.0;
+                weight *= saturate(dotN);
+                weight *= saturate(1.0 - dist / surfel.GetRadius());
+                weight = smoothstep(0.0, 1.0, weight);
+
+                coverage += weight;
+
+                // Accumulate surfel irradiance.
+                color += float4(surfel.color, 1) * weight;
+
+                // If irrandiance weight < 1, add weighted average cell irradiance.
+                if ()
+                {
+
+                }
+
+#if SURFEL_GI_DEBUG_ENABLED
+                // TODO
+#endif
+            }
+        }
+    }
+
+    // @see https://www.jeremyong.com/graphics/2023/09/05/f32-interlocked-min-max-hlsl/
+    // Here we can ensure that the coverage must be positive, so we can convert float to uint directly.
+    InterlockedMin(GroupSharedLowestCoverage, asuint(packedCoverage));
+
+    GroupMemoryBarrierWithGroupSync();
+
+    // Spawn new surfels.
+    if ((cell.surfelCount < SurfelGIMaxSurfelCountPerCell) &&
+        (coverage < SurfelGICoverageThreshold) &&
+        (asunit(coverage) < GroupSharedLowestCoverage))
+    {
+        // Guarantee that only one thread can spawn a surfel.
+        int numSurfelsCanSpawn;
+        InterlockedAdd(GroupSharedSurfleSpawnCountPerTile, -1, numSurfelsCanSpawn);
+        if (numSurfelsCanSpawn > 0)
+        {
+            // GIBS's stratagy: make the spawn chance proportional to the pixel’s projected area in world space.
+            float linearDepth = LinearDepthNearFar(depth, perFrameData.nearClippingPlane, perFrameData.farClippingPlane);
+            float spawnChance = 1 - pow(1 - linearDepth, 4);
+
+            // Spawn surfels probabilistically
+            if ( < spawnChance)
+            {
+                int deadSurfelCount;
+                constantsBuffer.InterlockedAdd(SurfelGIConstantsBufferOffsetDeadSurfelCount, -1, deadSurfelCount);
+                if (deadSurfelCount > 0)
+                {
+                    int newSurfelIndex = deadSurfelBuffer[deadSurfelCount - 1];
+
+                    int aliveSurfelCount;
+                    constantsBuffer.InterlockedAdd(SurfelGIConstantsBufferOffsetAliveSurfelCount, 1, aliveSurfelCount);
+                    if (aliveSurfelCount < SurfelGIMaxSurfelCount)
+                    {
+                        aliveSurfelBuffer[aliveSurfelCount] = newSurfelIndex;
+
+                        // SurfelColdData surfel = (SurfelColdData)0;
+                        // surfel.primitiveID = prim.pack2();
+                        // surfel.bary = pack_half2(surface.bary.xy);
+                        // surfel.uid = surface.inst.uid;
+                        // surfelColdDataBuffer[newSurfelIndex] = surfel;
+                    }
+                }
+            }
+        }
+    }
+}

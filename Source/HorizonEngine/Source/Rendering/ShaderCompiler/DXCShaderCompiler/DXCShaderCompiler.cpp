@@ -81,10 +81,10 @@ namespace Horizon
     class DXCShaderCompiler : public ShaderCompiler
     {
     public:
-        bool CompileShader(const ShaderCompilerOptions& options, const ShaderSourceDescription& source, ShadingLanguage language, ShaderCompilerOutput* output) override;
+        bool CompileShader(const ShaderCompilerOptions& options, const ShaderModuleDescription& module, ShadingLanguage language, ShaderCompilerOutput* output) override;
     };
 
-    bool DXCShaderCompiler::CompileShader(const ShaderCompilerOptions& options, const ShaderSourceDescription& source, ShadingLanguage language, ShaderCompilerOutput* output)
+    bool DXCShaderCompiler::CompileShader(const ShaderCompilerOptions& options, const ShaderModuleDescription& module, ShadingLanguage language, ShaderCompilerOutput* output)
     {
         assert(output != nullptr);
         assert(output->blob.IsValid() == false);
@@ -133,39 +133,15 @@ namespace Horizon
             return false;
         }
 
-        HLSLShaderModelVersion shaderModelVersion = GetHLSLShaderModelVersion(source.shaderModel);
+        HLSLShaderModelVersion shaderModelVersion = GetHLSLShaderModelVersion(module.shaderModel);
 
-        std::wstring targetProfile = {};
-        switch (source.stage)
-        {
-        case ShaderStage::Compute:
-            targetProfile = std::format(L"cs_{}_{}", shaderModelVersion.major, shaderModelVersion.minor);
-            break;
-        case ShaderStage::Vertex:
-            targetProfile = std::format(L"vs_{}_{}", shaderModelVersion.major, shaderModelVersion.minor);
-            break;
-        case ShaderStage::Pixel:
-            targetProfile = std::format(L"ps_{}_{}", shaderModelVersion.major, shaderModelVersion.minor);
-            break;
-        case ShaderStage::Task:
-            targetProfile = std::format(L"as_{}_{}", shaderModelVersion.major, shaderModelVersion.minor);
-            break;
-        case ShaderStage::Mesh:
-            targetProfile = std::format(L"ms_{}_{}", shaderModelVersion.major, shaderModelVersion.minor);
-            break;
-        default:
-            std::unreachable();
-            break;
-        }
+        std::wstring targetProfile = std::format(L"lib_{}_{}", shaderModelVersion.major, shaderModelVersion.minor);
 
-        std::wstring filename = DXCUtils::Widen(source.filename);
-
-        std::wstring entryPoint = DXCUtils::Widen(source.entryPoint);
+        std::wstring filename = DXCUtils::Widen(module.filename);
 
         std::vector<LPCWSTR> arguments =
         {
             filename.c_str(),
-            L"-E", entryPoint.c_str(),
             L"-T", targetProfile.c_str(),
         };
 
@@ -238,22 +214,22 @@ namespace Horizon
             arguments.push_back(L"-enable-16bit-types");
         }
 
-        std::vector<std::wstring> includeDirectories(source.numIncludeDirectories);
-        for (uint32 index = 0; index < source.numIncludeDirectories; index++)
+        std::vector<std::wstring> includeDirectories(module.numIncludeDirectories);
+        for (uint32 index = 0; index < module.numIncludeDirectories; index++)
         {
-            includeDirectories[index] = DXCUtils::Widen(source.includeDirectories[index]);
+            includeDirectories[index] = DXCUtils::Widen(module.includeDirectories[index]);
 
             arguments.push_back(L"-I");
             arguments.push_back(includeDirectories[index].c_str());
         }
 
-        std::vector<DxcDefine> dxcDefines(source.numDefines);
-        std::vector<std::wstring> defineNames(source.numDefines);
-        std::vector<std::wstring> defineValues(source.numDefines);
-        for (uint32 index = 0; index < source.numDefines; index++)
+        std::vector<DxcDefine> dxcDefines(module.numDefines);
+        std::vector<std::wstring> defineNames(module.numDefines);
+        std::vector<std::wstring> defineValues(module.numDefines);
+        for (uint32 index = 0; index < module.numDefines; index++)
         {
-            defineNames[index] = DXCUtils::Widen(source.defines[index].name);
-            defineValues[index] = DXCUtils::Widen(source.defines[index].value);
+            defineNames[index] = DXCUtils::Widen(module.defines[index].name);
+            defineValues[index] = DXCUtils::Widen(module.defines[index].value);
 
             dxcDefines[index].Name = defineNames[index].c_str();
             dxcDefines[index].Value = defineValues[index].c_str();
@@ -264,8 +240,8 @@ namespace Horizon
 
         const DxcBuffer dxcBuffer =
         {
-            .Ptr = static_cast<LPCVOID>(source.code),
-            .Size = static_cast<SIZE_T>(source.codeSize),
+            .Ptr = static_cast<LPCVOID>(module.code),
+            .Size = static_cast<SIZE_T>(module.codeSize),
             .Encoding = DXC_CP_UTF8
         };
 
@@ -297,7 +273,7 @@ namespace Horizon
         hr = dxcResult->GetOutput(DXC_OUT_OBJECT, IID_PPV_ARGS(&dxcBlob), nullptr);
         if (FAILED(hr))
         {
-            output->errorMessage += std::format("Failed to get ouput, HRESULT: {:#010x}.", uint32(hr));
+            output->errorMessage += std::format("Failed to get output, HRESULT: {:#010x}.", uint32(hr));
             return false;
         }
 

@@ -1,0 +1,182 @@
+/*
+ * A Scalable and Production Ready Sky and Atmosphere Rendering Technique
+ * Paper: https://sebh.github.io/publications/egsr2020.pdf
+ * Source Code: https://github.com/sebh/UnrealEngineSkyAtmosphere
+ */
+
+/*-------------------------------------------------------------------------------------
+ * MIT License
+ *
+ * Copyright (c) 2020 Epic Games, Inc.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ *-------------------------------------------------------------------------------------*/
+
+#include "../ShaderCommon.hsh"
+#include "RealTimeRendererCommon.hsh"
+#include "SkyAtmosphereCommon.hsh"
+
+BIND_BUFFER_ELEMENT(0, PerFrameData, PerFrameData);
+BIND_TEXTURE_2D_SRV(1, TransmittanceLutTexture);
+BIND_TEXTURE_2D_UAV(2, float3, MultipleScatteringLutTexture);
+
+groupshared float3 MultiScatAs1SharedMem[64];
+groupshared float3 LSharedMem[64];
+
+[shader("compute")]
+[numthreads(1, 1, 64)]
+void SkyAtmosphereMultipleScatteringLutCS(uint3 DispatchThreadID : SV_DispatchThreadID)
+{
+    PerFrameData perFrameData = GetPerFrameData();
+    SkyAtmosphereShaderParameters skyAtmosphereParameters = GetSkyAtmosphereShaderParameters(perFrameData);
+    Texture2D transmittanceLutTexture = GetTransmittanceLutTextureSRV();
+    RWTexture2D<float3> multipleScatteringLutTexture = GetMultipleScatteringLutTextureUAV();
+
+    float4 multipleScatteringLutSize = skyAtmosphereParameters.multipleScatteringLutSize;
+
+    uint2 pixelCoord = DispatchThreadID.xy;
+    float2 uv = (float2(pixelCoord) + 0.5f) * multipleScatteringLutSize.zw;
+
+    float cosSunZenithAngle = uv.x * 2.0f - 1.0f;
+    float3 lightDirection = float3(0.0f, -sqrt(saturate(1.0f - cosSunZenithAngle * cosSunZenithAngle)), -cosSunZenithAngle);
+
+    float viewHeight = skyAtmosphereParameters.bottomRadius + uv.y * (skyAtmosphereParameters.topRadius - skyAtmosphereParameters.bottomRadius);
+
+    float3 worldPos = float3(0.0f, 0.0f, viewHeight);
+    float3 worldDir = float3(0.0f, 0.0f, 1.0f);
+
+    const bool ground = true;
+    const bool variableSampleCount = false;
+    const float multipleScatteringLutSampleCount = skyAtmosphereParameters.multipleScatteringLutSampleCount;
+    const float minSampleCount = 0.0f;
+    const float maxSampleCount = 0.0f;
+    const bool mieRayPhase = false;
+    const float depthBufferValue = FarClipPlaneDepthValue;
+    // When building the scattering factor, we assume light illuminance is 1 to compute a transfert function relative to identity illuminance of 1.
+    // This make the scattering factor independent of the light. It is now only linked to the atmosphere properties.
+    const float3 oneIlluminance = float3(1.0f, 1.0f, 1.0f);
+
+    const float sphereSolidAngle = 4.0f * PI;
+    const float isotropicPhase = 1.0f / sphereSolidAngle;
+
+    // Reference. Since there are many samples, it requires MULTI_SCATTERING_POWER_SERIE to be true for accuracy and to avoid divergences (see declaration for explanations).
+    const uint sqrtSampleCount = 8;
+    const float sqrtSample = float(sqrtSampleCount);
+    float i = 0.5f + float(DispatchThreadID.z / sqrtSampleCount);
+    float j = 0.5f + float(DispatchThreadID.z - float((DispatchThreadID.z / sqrtSampleCount) * sqrtSampleCount));
+    {
+        float randA = i / sqrtSample;
+        float randB = j / sqrtSample;
+        float theta = 2.0f * PI * randA;
+        float phi = acos(1.0f - 2.0f * randB); // uniform distribution: https://mathworld.wolfram.com/SpherePointPicking.html
+        //phi = PI * randB;                    // bad non uniform
+        float cosPhi = cos(phi);
+        float sinPhi = sin(phi);
+        float cosTheta = cos(theta);
+        float sinTheta = sin(theta);
+
+        worldDir.x = cosTheta * sinPhi;
+        worldDir.y = sinTheta * sinPhi;
+        worldDir.z = cosPhi;
+
+        SingleScatteringResult result = IntegrateSingleScatteredLuminance(
+            perFrameData,
+            skyAtmosphereParameters,
+            transmittanceLutTexture,
+            uv,
+            worldPos,
+            worldDir,
+            ground,
+            variableSampleCount,
+            multipleScatteringLutSampleCount,
+            minSampleCount,
+            maxSampleCount,
+            depthBufferValue,
+            mieRayPhase,
+            lightDirection,
+            oneIlluminance);
+
+        MultiScatAs1SharedMem[DispatchThreadID.z] = result.multiScatAs1 * sphereSolidAngle / (sqrtSample * sqrtSample);
+        LSharedMem[DispatchThreadID.z] = result.L * sphereSolidAngle / (sqrtSample * sqrtSample);
+    }
+
+    GroupMemoryBarrierWithGroupSync();
+    // 64 to 32
+    if (DispatchThreadID.z < 32)
+    {
+        MultiScatAs1SharedMem[DispatchThreadID.z] += MultiScatAs1SharedMem[DispatchThreadID.z + 32];
+        LSharedMem[DispatchThreadID.z] += LSharedMem[DispatchThreadID.z + 32];
+    }
+    GroupMemoryBarrierWithGroupSync();
+    // 32 to 16
+    if (DispatchThreadID.z < 16)
+    {
+        MultiScatAs1SharedMem[DispatchThreadID.z] += MultiScatAs1SharedMem[DispatchThreadID.z + 16];
+        LSharedMem[DispatchThreadID.z] += LSharedMem[DispatchThreadID.z + 16];
+    }
+    GroupMemoryBarrierWithGroupSync();
+    // 16 to 8 (16 is thread group min hardware size with intel, no sync required from there)
+    if (DispatchThreadID.z < 8)
+    {
+        MultiScatAs1SharedMem[DispatchThreadID.z] += MultiScatAs1SharedMem[DispatchThreadID.z + 8];
+        LSharedMem[DispatchThreadID.z] += LSharedMem[DispatchThreadID.z + 8];
+    }
+    //GroupMemoryBarrierWithGroupSync();
+    if (DispatchThreadID.z < 4)
+    {
+        MultiScatAs1SharedMem[DispatchThreadID.z] += MultiScatAs1SharedMem[DispatchThreadID.z + 4];
+        LSharedMem[DispatchThreadID.z] += LSharedMem[DispatchThreadID.z + 4];
+    }
+    //GroupMemoryBarrierWithGroupSync();
+    if (DispatchThreadID.z < 2)
+    {
+        MultiScatAs1SharedMem[DispatchThreadID.z] += MultiScatAs1SharedMem[DispatchThreadID.z + 2];
+        LSharedMem[DispatchThreadID.z] += LSharedMem[DispatchThreadID.z + 2];
+    }
+    //GroupMemoryBarrierWithGroupSync();
+    if (DispatchThreadID.z < 1)
+    {
+        MultiScatAs1SharedMem[DispatchThreadID.z] += MultiScatAs1SharedMem[DispatchThreadID.z + 1];
+        LSharedMem[DispatchThreadID.z] += LSharedMem[DispatchThreadID.z + 1];
+    }
+    //GroupMemoryBarrierWithGroupSync();
+    if (DispatchThreadID.z > 0)
+    {
+        return;
+    }
+
+    float3 multiScatAs1            = MultiScatAs1SharedMem[0] * isotropicPhase;    // Equation 7 f_ms
+    float3 inScatteredLuminance    = LSharedMem[0] * isotropicPhase;               // Equation 5 L_2ndOrder
+
+    // MultiScatAs1 represents the amount of luminance scattered as if the integral of scattered luminance over the sphere would be 1.
+    //  - 1st order of scattering: one can ray-march a straight path as usual over the sphere. That is InScatteredLuminance.
+    //  - 2nd order of scattering: the inscattered luminance is InScatteredLuminance at each of samples of fist order integration. Assuming a uniform phase function that is represented by MultiScatAs1,
+    //  - 3nd order of scattering: the inscattered luminance is (InScatteredLuminance * MultiScatAs1 * MultiScatAs1)
+    //  - etc.
+#if MULTI_SCATTERING_POWER_SERIE==0
+    float3 multiScatAs1SQR = multiScatAs1 * multiScatAs1;
+    float3 L = inScatteredLuminance * (1.0f + multiScatAs1 + multiScatAs1SQR + multiScatAs1 * multiScatAs1SQR + multiScatAs1SQR * multiScatAs1SQR);
+#else
+    // For a serie, sum_{n=0}^{n=+inf} = 1 + r + r^2 + r^3 + ... + r^n = 1 / (1.0 - r), see https://en.wikipedia.org/wiki/Geometric_series
+    float3 sumOfAllMultiScatteringEventsContribution = 1.0f / (1.0f - multiScatAs1);
+    float3 L = inScatteredLuminance * sumOfAllMultiScatteringEventsContribution;   // Equation 10 Psi_ms
+#endif
+
+    multipleScatteringLutTexture[pixelCoord] = L;
+}

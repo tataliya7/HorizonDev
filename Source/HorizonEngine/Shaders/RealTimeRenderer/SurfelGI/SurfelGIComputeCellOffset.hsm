@@ -1,0 +1,10 @@
+#include "../../ShaderCommon.hsh"
+#include "../RealTimeRendererCommon.hsh"
+#include "SurfelGICommon.hsh"
+
+[shader("compute")]
+[numthreads(SurfelGIIndirectDispatchGroupThreadCount, 1, 1)]
+void SurfelGIComputeCellOffsetCS(uint3 DispatchThreadID : SV_DispatchThreadID)
+{
+
+}

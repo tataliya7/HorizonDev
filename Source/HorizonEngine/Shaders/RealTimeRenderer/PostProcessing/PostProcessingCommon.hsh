@@ -1,3 +1,5 @@
+#pragma once
+
 #ifndef POST_PROCESSING_THREAD_GROUP_COUNT_X
     #error "POST_PROCESSING_THREAD_GROUP_COUNT_X must be defined"
 #endif

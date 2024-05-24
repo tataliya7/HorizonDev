@@ -17,6 +17,7 @@ struct SSRTTileInfo
     uint2 coord;
 };
 
+[shader("compute")]
 [numthreads(SSR_THREAD_GROUP_SIZE, SSR_THREAD_GROUP_SIZE, 1)]
 void SSRTileClassificationHorizontalCS(uint3 DispatchThreadID : SV_DispatchThreadID)
 {
@@ -56,6 +57,7 @@ void SSRTileClassificationHorizontalCS(uint3 DispatchThreadID : SV_DispatchThrea
     tileClassificationHorizontalBuffer[DispatchThreadID.xy] = float2(minRoughness, maxRoughness);
 }
 
+[shader("compute")]
 [numthreads(SSR_THREAD_GROUP_SIZE, SSR_THREAD_GROUP_SIZE, 1)]
 void SSRTileClassificationVerticalCS(uint3 DispatchThreadID : SV_DispatchThreadID)
 {

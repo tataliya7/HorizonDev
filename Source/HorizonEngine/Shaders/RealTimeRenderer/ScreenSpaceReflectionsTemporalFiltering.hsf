@@ -131,6 +131,7 @@ float4 SamplePreviousColor(PerFrameData perFrameData, Texture2D historyOutputTex
     return previousColor;
 }
 
+[shader("compute")]
 [numthreads(SSR_THREAD_GROUP_SIZE, SSR_THREAD_GROUP_SIZE, 1)]
 void SSRTemporalFilteringCS(uint3 DispatchThreadID : SV_DispatchThreadID)
 {

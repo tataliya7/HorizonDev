@@ -1,0 +1,28 @@
+#include "../ShaderCommon.hsh"
+#include "RealTimeRendererCommon.hsh"
+#include "PostProcessingCommon.hsh"
+
+BIND_TEXTURE_2D_SRV(0, InputTexture);
+BIND_TEXTURE_2D_UAV(1, float4, OutputTexture);
+
+[shader("compute")]
+[numthreads(POST_PROCESSING_THREAD_GROUP_COUNT_X, POST_PROCESSING_THREAD_GROUP_COUNT_Y, 1)]
+void ConvolutionBloomResizeKernelCS(uint3 DispatchThreadID : SV_DispatchThreadID)
+{
+    Texture2D inputTexture = GetInputTextureSRV();
+    RWTexture2D<float4> outputTexture = GetOutputTextureUAV();
+
+    uint N = 1024;
+    uint halfN = N / 2;
+    uint2 uvSrc = DispatchThreadID.xy;
+    uint2 uvDst = (DispatchThreadID.xy + uint2(halfN, halfN));
+
+    uvDst.x %= N;
+    uvDst.y %= N;
+
+    float4 src = inputTexture[uvSrc];
+    float4 dst = inputTexture[uvDst];
+
+    outputTexture[uvSrc] = dst;
+    outputTexture[uvDst] = src;
+}

@@ -28,6 +28,8 @@
  * SOFTWARE.
  *-------------------------------------------------------------------------------------*/
 
+#pragma once
+
 #ifndef SKY_ATMOSPHERE_TRANSMITTANCE_LUT_PASS
     #define SKY_ATMOSPHERE_TRANSMITTANCE_LUT_PASS 0
 #endif

@@ -1,3 +1,5 @@
+#pragma once
+
 float sqr(float x) { return x*x; }
 
 float SchlickFresnel(float u)

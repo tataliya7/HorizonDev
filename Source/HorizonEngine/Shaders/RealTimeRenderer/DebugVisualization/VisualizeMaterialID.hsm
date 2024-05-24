@@ -1,0 +1,50 @@
+#include "../ShaderCommon.hsh"
+#include "RealTimeRendererCommon.hsh"
+
+BIND_BUFFER_ELEMENT(0, PerFrameData, PerFrameData);
+BIND_BYTE_ADDRESS_BUFFER_SRV(1, GeometryBuffer);
+BIND_TEXTURE_2D_TYPED_SRV(2, uint2, VBuffer0);
+BIND_TEXTURE_2D_UAV(3, float4, OutputTexture);
+
+[shader("compute")]
+[numthreads(8, 8, 1)]
+void VisualizeMaterialIDCS(uint3 DispatchThreadID : SV_DispatchThreadID)
+{
+    PerFrameData perFrameData = GetPerFrameData();
+    Texture2D<uint2> vbuffer0 = GetVBuffer0SRV();
+    RWTexture2D<float4> outputTexture = GetOutputTextureUAV();
+
+    uint2 pixelCoord = DispatchThreadID.xy;
+
+    uint width, height;
+    outputTexture.GetDimensions(width, height);
+    if (pixelCoord.x >= width || pixelCoord.y >= height)
+    {
+        return;
+    }
+
+    float2 uv = (pixelCoord + 0.5) * float2(1.0 / width, 1.0 / height);
+
+    //uint2 vbufferData = vbuffer0.SampleLevel(GlobalSamplerPointClamp, uv, 0).xy;
+    uint2 vbufferData = vbuffer0[pixelCoord].xy;
+
+    uint geometryID = vbufferData.r;
+    uint primitiveID = vbufferData.g;
+
+    if (geometryID == INVALID_VISIBILIY_ID)
+    {
+        outputTexture[pixelCoord] = float4(0, 0, 0, 1);
+        return;
+    }
+
+    ByteAddressBuffer geometryBuffer = GetGeometryBufferSRV();
+    Geometry geometry = geometryBuffer.Load<Geometry>(geometryID * sizeof(Geometry));
+
+    ByteAddressBuffer materialIndexBuffer = GetByteAddressBuffer(geometry.materialIndexBuffer);
+    uint materialIndex = materialIndexBuffer.Load<uint>(primitiveID * sizeof(uint));
+
+    // +1 to avoid zero
+    float3 color = UintToColor(materialIndex + 1);
+
+    outputTexture[pixelCoord] = float4(color, 1.0);
+}

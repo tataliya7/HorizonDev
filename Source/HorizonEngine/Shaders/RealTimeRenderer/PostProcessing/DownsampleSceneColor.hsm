@@ -1,0 +1,30 @@
+#include "../ShaderCommon.hsh"
+#include "RealTimeRendererCommon.hsh"
+#include "PostProcessingCommon.hsh"
+
+BIND_TEXTURE_2D_SRV(0, InputTexture);
+BIND_TEXTURE_2D_UAV(1, float4, OutputTexture);
+
+[shader("compute")]
+[numthreads(POST_PROCESSING_THREAD_GROUP_COUNT_X, POST_PROCESSING_THREAD_GROUP_COUNT_Y, 1)]
+void DownsampleSceneColorCS(uint3 DispatchThreadID : SV_DispatchThreadID)
+{
+    uint2 pixelCoord = DispatchThreadID.xy;
+
+    Texture2D inputTexture = GetInputTextureSRV();
+    RWTexture2D<float4> outputTexture = GetOutputTextureUAV();
+
+    uint width, height;
+    outputTexture.GetDimensions(width, height);
+
+    if (pixelCoord.x >= width || pixelCoord.y >= height)
+    {
+        return;
+    }
+
+    float2 uv = (pixelCoord + 0.5f) / float2(width, height);
+
+    float4 result = inputTexture.SampleLevel(GlobalSamplerLinearClamp, uv, 0);
+
+    outputTexture[pixelCoord] = result;
+}

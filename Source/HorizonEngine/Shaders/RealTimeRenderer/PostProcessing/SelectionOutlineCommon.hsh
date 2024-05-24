@@ -1,0 +1,3 @@
+#pragma once
+
+#define SELECTION_OUTLINE_JUMP_FLOOD_INVALID_VALUE -1.0

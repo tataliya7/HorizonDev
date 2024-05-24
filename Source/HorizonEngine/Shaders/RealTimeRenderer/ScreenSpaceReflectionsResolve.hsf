@@ -59,6 +59,7 @@ float2 Hammersley2D_Random(uint index, uint samples, uint2 random)
     return float2(frac(float(index) / float(samples) + float(random.x & 0xffff) / (1 << 16)), radicalInverse_VdC);
 }
 
+[shader("compute")]
 [numthreads(SSR_THREAD_GROUP_SIZE, SSR_THREAD_GROUP_SIZE, 1)]
 void ScreenSpaceReflectionsResolveCS(uint3 DispatchThreadID : SV_DispatchThreadID)
 {

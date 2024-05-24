@@ -27,6 +27,7 @@ float3 RayTriangleIntersectionBarycentrics3D(float3 rayOrigin, float3 rayDirecti
     return float3(u, v, 1.0 - u - v);
 }
 
+[shader("compute")]
 [numthreads(8, 8, 1)]
 void MotionVectorsCS(uint3 DispatchThreadID : SV_DispatchThreadID)
 {

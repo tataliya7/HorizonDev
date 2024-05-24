@@ -79,6 +79,7 @@ uint2 GetReflectionIndirectDispatchCoord(uint3 GroupID, uint3 GroupThreadID, Tex
     return subtile_upperleft + unflatten2D(GroupThreadID.x, SSR_THREAD_GROUP_SIZE);
 }
 
+[shader("compute")]
 [numthreads(SSR_THREAD_GROUP_SIZE * SSR_THREAD_GROUP_SIZE, 1, 1)]
 void ScreenSpaceReflectionsCS(uint3 GroupID : SV_GroupID, uint3 GroupThreadID : SV_GroupThreadID)
 {

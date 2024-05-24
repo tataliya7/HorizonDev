@@ -1,3 +1,5 @@
+#pragma once
+
 // High quality integer hash - this mixes bits almost perfectly
 uint HighQualityIntegerHash(uint x)
 {

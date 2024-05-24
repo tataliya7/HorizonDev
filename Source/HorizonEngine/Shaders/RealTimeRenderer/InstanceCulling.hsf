@@ -21,6 +21,7 @@ bool PointInsidePlane(float3 position, float4 plane)
     return (dot(plane, float4(position.x, position.y, position.z, 1.0)) < 0);
 }
 
+[shader("compute")]
 [numthreads(64, 1, 1)]
 void InstanceCullingCS(uint3 DispatchThreadID : SV_DispatchThreadID)
 {

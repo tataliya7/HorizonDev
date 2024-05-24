@@ -1,3 +1,5 @@
+#pragma once
+
 #define SUBSURFACE_SCATTERING_TILE_SIZE 16
 
 struct BurleyNormalizedDiffusionParameters

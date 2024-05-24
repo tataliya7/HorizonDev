@@ -54,6 +54,8 @@
  * UNDISCLOSED.
  */
 
+#pragma once
+
 // TODO: Figure out how sRGB is converted to CIE-XYZ
 // This matrix is different from http://brucelindbloom.com/index.html?Eqn_RGB_XYZ_Matrix.html
 // Why?

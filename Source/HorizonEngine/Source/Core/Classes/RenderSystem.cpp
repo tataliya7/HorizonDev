@@ -389,8 +389,8 @@ namespace Horizon
             std::vector<std::wstring> includeDirs_w;
             std::vector<std::wstring> defines;
             includeDirs_w.push_back(HE_TEXT("../../../Shaders"));
-            std::string filename = "../../../Shaders/ImGui.hsf";
-            LoadShaderSourceFromFile("../../../Shaders/ImGui.hsf", source);
+            std::string filename = "../../../Shaders/ImGui.hsm";
+            LoadShaderSourceFromFile("../../../Shaders/ImGui.hsm", source);
 
             std::vector<const char*> includeDirs;
             includeDirs.push_back("../../../Shaders");

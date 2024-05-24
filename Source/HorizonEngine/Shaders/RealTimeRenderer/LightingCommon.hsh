@@ -1,3 +1,5 @@
+#pragma once
+
 struct Lighting
 {
     float3 total;

@@ -1,0 +1,64 @@
+#include "ShaderCommon.hsh"
+#include "BRDFCommon.hsh"
+#include "SphericalHarmonics.hsh"
+
+BIND_TEXTURE_CUBE_SRV(0, EnvironmentMap);
+BIND_BYTE_ADDRESS_BUFFER_UAV(1, IrradianceEnvironmentMapSHBuffer);
+
+static const uint THREAD_GROUP_SIZE = 8;
+static const uint SampleCount = THREAD_GROUP_SIZE * THREAD_GROUP_SIZE;
+
+groupshared ThreeBandSHCoefficientsRGB SharedSHCoefficients[THREAD_GROUP_SIZE * THREAD_GROUP_SIZE];
+
+[shader("compute")]
+[numthreads(THREAD_GROUP_SIZE, THREAD_GROUP_SIZE, 1)]
+void ComputeEnvironmentIrradianceSHCS(uint3 DispatchThreadID : SV_DispatchThreadID)
+{
+    TextureCube environmentMap = GetEnvironmentMapSRV();
+    RWByteAddressBuffer irradianceEnvironmentMapSH = GetIrradianceEnvironmentMapSHBufferUAV();
+
+    uint environmentMapMipLevel = (uint)SHADER_ARGUMENTS_DATA(0);
+
+    float3 sampleDirection = UniformSampleSphere((float2(DispatchThreadID.xy) + 0.5) / float2(THREAD_GROUP_SIZE, THREAD_GROUP_SIZE));
+    float3 sampleColor = environmentMap.SampleLevel(GlobalSamplerLinearClamp, sampleDirection, environmentMapMipLevel).rgb;
+
+    float weight = 4.0 * PI / SampleCount;
+
+    const uint threadIndex = THREAD_GROUP_SIZE * DispatchThreadID.y + DispatchThreadID.x;
+
+    SharedSHCoefficients[threadIndex] = SampleSHCoefficientsRGB(sampleColor, sampleDirection, weight);
+
+    GroupMemoryBarrierWithGroupSync();
+
+    if (threadIndex < 32)
+    {
+        SharedSHCoefficients[threadIndex] = SHCoefficientsAdd(SharedSHCoefficients[threadIndex], SharedSHCoefficients[threadIndex + 32]);
+    }
+
+    GroupMemoryBarrierWithGroupSync();
+
+    // The wave size in NVIDIA GPUs is 32 threads.
+
+    if (threadIndex < 16)
+    {
+        SharedSHCoefficients[threadIndex] = SHCoefficientsAdd(SharedSHCoefficients[threadIndex], SharedSHCoefficients[threadIndex + 16]);
+    }
+    if (threadIndex < 8)
+    {
+        SharedSHCoefficients[threadIndex] = SHCoefficientsAdd(SharedSHCoefficients[threadIndex], SharedSHCoefficients[threadIndex + 8]);
+    }
+    if (threadIndex < 4)
+    {
+        SharedSHCoefficients[threadIndex] = SHCoefficientsAdd(SharedSHCoefficients[threadIndex], SharedSHCoefficients[threadIndex + 4]);
+    }
+    if (threadIndex < 2)
+    {
+        SharedSHCoefficients[threadIndex] = SHCoefficientsAdd(SharedSHCoefficients[threadIndex], SharedSHCoefficients[threadIndex + 2]);
+    }
+    if (threadIndex < 1)
+    {
+        SharedSHCoefficients[threadIndex] = SHCoefficientsAdd(SharedSHCoefficients[threadIndex], SharedSHCoefficients[threadIndex + 1]);
+
+        irradianceEnvironmentMapSH.Store<ThreeBandSHCoefficientsRGB>(0, SharedSHCoefficients[threadIndex]);
+    }
+}

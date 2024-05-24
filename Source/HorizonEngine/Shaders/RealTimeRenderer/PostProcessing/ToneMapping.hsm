@@ -1,0 +1,127 @@
+#include "../ShaderCommon.hsh"
+#include "../ACES.hsh"
+#include "RealTimeRendererCommon.hsh"
+#include "PostProcessingCommon.hsh"
+#include "ToneMappingCommon.hsh"
+#include "ColorLUTCommon.hsh"
+
+BIND_BUFFER_ELEMENT(0, PerFrameData, PerFrameData);
+BIND_TEXTURE_2D_SRV(1, SceneColorTexture);
+BIND_TEXTURE_2D_SRV(2, BloomTexture);
+BIND_BYTE_ADDRESS_BUFFER_SRV(3, AutoExposureBuffer);
+BIND_TEXTURE_3D_SRV(4, ColorLUTTexture);
+BIND_TEXTURE_2D_SRV(5, LensDirtTexture);
+BIND_TEXTURE_2D_SRV(6, LocalExposureTexture);
+BIND_TEXTURE_2D_UAV(7, float4, OutputTexture);
+
+BIND_TEXTURE_2D_SRV(10, TestTexture);
+
+float3 Lookup3DColorLUT(Texture3D colorLUT, float3 linearColor)
+{
+    float size = ColorLUTSize;
+    float3 encodedColor = LinearToLog(linearColor + LogToLinear(0));
+    float3 uvw = encodedColor * (size - 1.0) / size + 0.5 / size;
+    float3 color = colorLUT.SampleLevel(GlobalSamplerLinearClamp, uvw, 0).rgb;
+    return color * 1.05;
+}
+
+[shader("compute")]
+[numthreads(POST_PROCESSING_THREAD_GROUP_COUNT_X, POST_PROCESSING_THREAD_GROUP_COUNT_Y, 1)]
+void ToneMappingCS(uint3 DispatchThreadID : SV_DispatchThreadID)
+{
+    PerFrameData perFrameData = GetPerFrameData();
+    uint width = perFrameData.targetResolutionX;
+    uint height = perFrameData.targetResolutionY;
+    if (DispatchThreadID.x >= width || DispatchThreadID.y >= height)
+    {
+        return;
+    }
+
+    uint2 pixelCoord = DispatchThreadID.xy;
+    float2 uv = (pixelCoord + 0.5) / float2(width, height);
+
+    Texture2D sceneColorTexture = GetSceneColorTextureSRV();
+    RWTexture2D<float4> outputTexture = GetOutputTextureUAV();
+
+    float gamma = perFrameData.gamma;
+    float exposure = perFrameData.exposure;
+
+    if (SHADER_ARGUMENTS_INDEX(3) >= 0)
+    {
+        ByteAddressBuffer autoExposureBuffer = GetAutoExposureBufferSRV();
+        exposure = autoExposureBuffer.Load<float>(0);
+    }
+
+    float4 sceneColor = 0;
+
+    float2 chromaticAberrationScale = float2(SHADER_ARGUMENTS_DATA(1), SHADER_ARGUMENTS_DATA(2));
+    if (any(chromaticAberrationScale) > 0)
+    {
+        float chromaticAberrationOffset = perFrameData.chromaticAberrationOffset;
+
+        float2 lensUV = UVToClipSpace(uv);
+
+        float4 chromaticAberrationUV;
+        chromaticAberrationUV = lensUV.xyxy - sign(lensUV).xyxy * saturate(abs(lensUV) - chromaticAberrationOffset).xyxy * chromaticAberrationScale.xxyy;
+        chromaticAberrationUV.xy = ClipSpaceToUV(chromaticAberrationUV.xy);
+        chromaticAberrationUV.zw = ClipSpaceToUV(chromaticAberrationUV.zw);
+
+        sceneColor.r = sceneColorTexture.SampleLevel(GlobalSamplerLinearClamp, chromaticAberrationUV.xy, 0).r;
+        sceneColor.g = sceneColorTexture.SampleLevel(GlobalSamplerLinearClamp, chromaticAberrationUV.zw, 0).g;
+        sceneColor.b = sceneColorTexture.SampleLevel(GlobalSamplerLinearClamp, uv, 0).b;
+    }
+    else
+    {
+        sceneColor = sceneColorTexture[pixelCoord];
+    }
+
+    float oneOverPreExposure = perFrameData.oneOverPreExposure;
+    float4 hdrColor = sceneColor;
+    //hdrColor.rgb *= oneOverPreExposure;
+
+    // Apply local toneMapping
+    // if (SHADER_ARGUMENTS_INDEX(6) >= 0)
+    // {
+    //     Texture2D localExposureTexture = GetLocalExposureTextureSRV();
+    //     float localExposureMultiplier = localExposureTexture.SampleLevel(GlobalSamplerLinearClamp, uv, 0).r;
+    //     hdrColor.rgb *= localExposureMultiplier;
+    // }
+
+    Texture2D bloomTexture = GetBloomTextureSRV();
+    float3 bloomColor = bloomTexture.SampleLevel(GlobalSamplerLinearClamp, uv, 0).rgb;
+    //bloomColor /= 7;
+    if (perFrameData.lensDirtIntensity > 0 && perFrameData.bloomIntensity)
+    {
+        Texture2D lensDirtTexture = GetLensDirtTextureSRV();
+        //float4 lensDirtTint = perFrameData.lensDirtTint * perFrameData.lensDirtIntensity / perFrameData.bloomIntensity;
+        float4 lensDirtTint = perFrameData.lensDirtTint * perFrameData.lensDirtIntensity;
+        float3 lensDirtColor = lensDirtTexture.SampleLevel(GlobalSamplerLinearClamp, uv, 0).rgb * lensDirtTint.rgb;
+        bloomColor.rgb = bloomColor.rgb * (1.0f + lensDirtColor);
+    }
+    float bloomMask = perFrameData.bloomIntensity * 0.1f;
+    hdrColor.rgb = lerp(hdrColor.rgb, bloomColor.rgb, bloomMask);
+    hdrColor.rgb = hdrColor.rgb * (oneOverPreExposure * exposure);
+
+// #if 1
+//     Texture2D testTexture = GetTestTextureSRV();
+//     hdrColor.rgb = testTexture.SampleLevel(GlobalSamplerLinearClamp, float2(uv.x, 1 - uv.y), 0).rgb;
+//     hdrColor.rgb = sRGBToLinear(hdrColor.bgr);
+
+//     float4 lmsr = rgb_to_lmsr(hdrColor.rgb);
+//     float3 lms_gain = rsqrt(1.0f + lmsr.xyz);
+//     float3 rgb_gain = lms_to_rgb(lms_gain) * lmsr.w;
+//     hdrColor.rgb = hdrColor.rgb + rgb_gain;
+//     hdrColor.rgb = GammaCorrection(hdrColor.rgb);
+// #endif
+
+#if 0
+    float3 aces = mul(sRGB_2_AP0_MAT, hdrColor.rgb);
+    float3 oces = RRT(aces);
+    float3 outColor = ODT_sRGB_100nits_dim(oces);
+#else
+    Texture3D colorLUTTexture = GetColorLUTTextureSRV();
+    float3 outColor = Lookup3DColorLUT(colorLUTTexture, hdrColor.rgb);
+#endif
+
+    outputTexture[pixelCoord] = float4(outColor, RelativeLuminance(outColor));
+}

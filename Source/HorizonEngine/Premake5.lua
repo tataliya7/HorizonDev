@@ -18,7 +18,7 @@ project "HorizonEngine"
 
         "Shaders/**.h",
         "Shaders/**.hsh",
-        "Shaders/**.hsf",
+        "Shaders/**.hsm",
 
         "Source/Foundation/**.h",
         "Source/Foundation/**.c",

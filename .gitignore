@@ -34,7 +34,7 @@
 !*.json
 
 # Shader files
-!*.hsf
+!*.hsm
 !*.hsh
 !*.hlsl
 !*.glsl

@@ -1,3 +1,5 @@
+#pragma once
+
 static const uint  RayCastingMaxNumIterations = 128; // primary ray march step count (higher will find more in distance, but slower)
 static const float RayCastingRayStep = 0.5f; // primary ray march step increase (higher will travel more distance, but can miss details)
 static const uint  RayCastingMaxNumBinarySearchIterations = 2; // binary step count (higher is nicer but slower)

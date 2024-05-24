@@ -85,13 +85,11 @@ namespace Horizon
         std::string value;
     };
 
-    struct ShaderSourceDescription
+    struct ShaderModuleDescription
     {
         const char* filename;
         const uint8* code;
         uint64 codeSize;
-        const char* entryPoint;
-        ShaderStage stage;
         const ShaderMacroDefine* defines;
         uint32 numDefines;
         const char** includeDirectories;
@@ -152,6 +150,6 @@ namespace Horizon
     class ShaderCompiler
     {
     public:
-        virtual bool CompileShader(const ShaderCompilerOptions& options, const ShaderSourceDescription& source, ShadingLanguage language, ShaderCompilerOutput* output) = 0;
+        virtual bool CompileShader(const ShaderCompilerOptions& options, const ShaderModuleDescription& module, ShadingLanguage language, ShaderCompilerOutput* output) = 0;
     };
 }

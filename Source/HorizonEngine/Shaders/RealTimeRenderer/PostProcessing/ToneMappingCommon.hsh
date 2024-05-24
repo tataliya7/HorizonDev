@@ -1,3 +1,5 @@
+#pragma once
+
 #if 0
 // https://github.com/TheRealMJP/BakingLab/blob/master/BakingLab/ACES.hlsl
 float3 RRTAndODTFit(float3 v)

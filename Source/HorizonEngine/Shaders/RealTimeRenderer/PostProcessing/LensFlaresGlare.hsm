@@ -1,0 +1,138 @@
+#include "../ShaderCommon.hsh"
+#include "RealTimeRendererCommon.hsh"
+#include "PostProcessingCommon.hsh"
+
+BIND_TEXTURE_2D_SRV(0, LensFlaresGlareLUTTexture);
+BIND_TEXTURE_2D_TYPED_SRV(1, float3, LensFlaresTileCullingTexture);
+
+// https://www.froyok.fr/blog/2021-09-ue4-custom-lens-flare/
+
+// This function goal is to figure out the actual position
+// (in range 0-1) of a given vertex based on the original
+// point position. This function also take into account
+// the angle and scale of the quad to compute the target
+// position of the final vertex.
+float4 LensFlaresGlareComputeVertexPosition(float2 TilePos, float Angle, float2 Scale, float2 UV, float2 BufferSize)
+{
+    float2 BufferRatio = float2(BufferSize.y / BufferSize.x, 1.0f);
+    // Compute the position of the quad based on the ID
+    // Some multiply/divide by two magic to get the proper coordinates
+    float2 BufferPosition = (TilePos - float2(0.25f, 0.25f)) / BufferSize;
+    BufferPosition = 4.0f * BufferPosition - 1.0f;
+
+    // Center the quad in the middle of the screen
+    float2 NewPosition = 2.0f * (UV - 0.5f);
+    NewPosition *= Scale;
+
+    // Rotate th equad
+    float Sinus = sin(Angle);
+    float Cosinus = cos(Angle);
+    float2 RotatedPosition = float2((NewPosition.x * Cosinus) - (NewPosition.y * Sinus), (NewPosition.x * Sinus)   + (NewPosition.y * Cosinus));
+    // Scale quad to compensate the buffer ratio
+    RotatedPosition *= BufferRatio;
+    // Position quad where pixel is in the buffer
+    RotatedPosition += BufferPosition * float2(1.0f, -1.0f);
+
+    // Build final vertex position
+    float4 OutPosition = float4(RotatedPosition.x, RotatedPosition.y, 0, 1);
+    return OutPosition;
+}
+
+// Quad UV coordinates of each vertex
+// Used as well to know which vertex of the quad is being computed (by its position).
+// The order is important to ensure the triangles will be front facing and therefore visible.
+static const float2 LensFlaresGlareQuadUVs[4] = {
+    float2(0.0f, 0.0f),
+    float2(1.0f, 0.0f),
+    float2(0.0f, 1.0f),
+    float2(1.0f, 1.0f),
+};
+
+struct LensFlaresGlareVSOutput
+{
+    float4 position : SV_Position;
+    float3 color : COLOR0;
+    float2 uv : TEXCOORD0;
+};
+
+[shader("vertex")]
+void LensFlaresGlareVS(uint instanceID : SV_InstanceID, uint vertexID : SV_VertexID, out LensFlaresGlareVSOutput output)
+{
+    Texture2D<float3> tileCullingTexture = GetLensFlaresTileCullingTextureSRV();
+    float lensFlaresTextureWidth = SHADER_ARGUMENTS_DATA(0);
+    float lensFlaresTextureHeight = SHADER_ARGUMENTS_DATA(1);
+    float2 lensFlaresTextureInvSize = float2(1.0f / lensFlaresTextureWidth, 1.0f / lensFlaresTextureHeight);
+
+    uint tileCullingTextureWidth, tileCullingTextureHeight;
+    tileCullingTexture.GetDimensions(tileCullingTextureWidth, tileCullingTextureHeight);
+    float2 tileCullingTextureInvSize = 1.0f / float2(tileCullingTextureWidth, tileCullingTextureHeight);
+
+    // Three quads per tile
+    uint tileIndex = (instanceID / 3);
+    uint quadIndex = (instanceID % 3);
+    uint2 tileID = uint2(tileIndex % tileCullingTextureWidth, tileIndex / tileCullingTextureWidth);
+    float3 color = tileCullingTexture[tileID].rgb;
+    float luminance = dot(color, 1.0f);
+    //float luminance = tileCullingTexture[tileID].r * oneOverPreExposure;
+
+    output.position = float4(0.0f, 0.0f, 0.0f, 1.0f);
+
+    // TODO
+    float luminanceThreshold = 1.0f;
+    float GlareDivider = 60.0f;
+    float glareIntensity = 0.02f;
+    float3 glareTint = 1.0f;
+
+    [branch]
+    if (luminance > luminanceThreshold)
+    {
+        uint2 tileCenterPixelCoord = tileID * 2 + 1;
+        float2 tileCenterUV = float2(tileCenterPixelCoord) * lensFlaresTextureInvSize;
+
+        float2 quadPosition = tileID;
+
+        // Setup rotation angle
+        const float Angle30 = 0.523599f;
+        const float Angle60 = 1.047197f;
+        const float Angle90 = 1.570796f;
+        const float Angle150 = 2.617994f;
+
+        // Additional rotation based on screen position to add
+        // more variety and make the glare rotate with the camera.
+        float angleOffset = (tileCenterUV.x * 2.0f - 1.0f) * Angle30;
+        float angleBase[3] = {
+            angleOffset + Angle90,
+            angleOffset + Angle30, // 90 - 60
+            angleOffset + Angle150 // 90 + 60
+        };
+        float quadAngle = angleBase[quadIndex];
+
+        float Mask = distance(tileCenterUV - 0.5f, float2(0.0f, 0.0f));
+        Mask = 1.0f - saturate(Mask * 2.0f);
+        Mask = Mask * 0.6f + 0.4f;
+
+        // Compute the scale of the glare quad.
+        // The divider is used to specify the referential point of
+        // which light is bright or not and normalize the result.
+        float luminanceScale = 0.2f * saturate(luminance / GlareDivider);
+        float2 quadScale = float2(luminanceScale * Mask, (1.0f / min(lensFlaresTextureWidth, lensFlaresTextureHeight)) * 4.0f);
+
+        float3 quadColor = 1* color * glareIntensity * glareTint;
+
+        float2 vertexUV = LensFlaresGlareQuadUVs[vertexID];
+
+        //float2 uuv = (tileID + LensFlaresGlareQuadUVs[vertexID]) * 2.0f * lensFlaresTextureInvSize;
+        //output.position = float4(UVToClipSpace(uuv), 0.0f, 1.0f);
+        output.position = LensFlaresGlareComputeVertexPosition(quadPosition, quadAngle, quadScale, vertexUV, float2(lensFlaresTextureWidth, lensFlaresTextureHeight));
+        output.color = quadColor;
+        output.uv = vertexUV;
+    }
+}
+
+[shader("pixel")]
+void LensFlaresGlarePS(LensFlaresGlareVSOutput vsOutput, out float3 outColor : SV_Target)
+{
+    Texture2D glareLUTTexture = GetLensFlaresGlareLUTTextureSRV();
+    float3 glareLUTColor = glareLUTTexture.SampleLevel(GlobalSamplerLinearClamp, vsOutput.uv, 0).rgb;
+    outColor = vsOutput.color * glareLUTColor;
+}

@@ -1,3 +1,5 @@
+#pragma once
+
 #include "BindlessResources.hsh"
 
 const static float PI = 3.1415926535897932f;

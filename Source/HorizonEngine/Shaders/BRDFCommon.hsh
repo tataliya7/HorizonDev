@@ -1,3 +1,5 @@
+#pragma once
+
 // Constant normal incidence Fresnel factor for all dielectrics.
 static const float3 Fdielectric = 0.04;
 
