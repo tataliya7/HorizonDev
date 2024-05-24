@@ -16,6 +16,7 @@ float ComputeSceneColorLuminance(float3 sceneColor)
     return dot(sceneColor, float3(1.0f, 1.0f, 1.0f) / 3.0f);
 }
 
+[shader("compute")]
 [numthreads(AUTO_EXPOSURE_BUILD_HISTOGRAM_CS_NUM_THREADS_X, AUTO_EXPOSURE_BUILD_HISTOGRAM_CS_NUM_THREADS_Y, 1)]
 void AutoExposureBuildHistogramCS(uint3 DispatchThreadID : SV_DispatchThreadID, uint GroupIndex : SV_GroupIndex)
 {

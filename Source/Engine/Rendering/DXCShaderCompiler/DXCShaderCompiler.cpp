@@ -137,7 +137,8 @@ namespace HE
         HLSLShaderModelVersion shaderTargetVersion = GetHLSLShaderModelVersion(settings.shaderModel);
 
         std::wstring targetProfile = {};
-        switch (source.stage)
+        targetProfile = std::format(L"lib_{}_{}", shaderTargetVersion.major, shaderTargetVersion.minor);
+        /*switch (source.stage)
         {
         case ShaderStage::Compute:
             targetProfile = std::format(L"cs_{}_{}", shaderTargetVersion.major, shaderTargetVersion.minor);
@@ -157,14 +158,14 @@ namespace HE
         default:
             std::unreachable();
             break;
-        }
+        }*/
 
         std::wstring filename = DXCUtils::Widen(source.filename);
         std::wstring entryPoint = DXCUtils::Widen(source.entryPoint);
         std::vector<LPCWSTR> arguments =
         {
             filename.c_str(),
-            L"-E", entryPoint.c_str(),
+            //L"-E", entryPoint.c_str(),
             L"-T", targetProfile.c_str(),
         };
 

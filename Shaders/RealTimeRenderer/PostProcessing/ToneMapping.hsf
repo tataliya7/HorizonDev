@@ -23,6 +23,7 @@ float3 Lookup3DColorLUT(Texture3D colorLUT, float3 linearColor)
     return color * 1.05;
 }
 
+[shader("compute")]
 [numthreads(POST_PROCESS_THREAD_GROUP_SIZE, POST_PROCESS_THREAD_GROUP_SIZE, 1)]
 void ToneMappingCS(uint3 DispatchThreadID : SV_DispatchThreadID)
 {

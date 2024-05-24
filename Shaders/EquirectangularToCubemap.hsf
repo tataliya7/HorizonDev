@@ -4,6 +4,7 @@
 BIND_TEXTURE_2D_SRV(0, EquirectangularMap);
 BIND_TEXTURE_2D_ARRAY_UAV(1, float4, Cubemap);
 
+[shader("compute")]
 [numthreads(8, 8, 6)]
 void EquirectangularToCubemapCS(uint3 DispatchThreadID : SV_DispatchThreadID)
 {

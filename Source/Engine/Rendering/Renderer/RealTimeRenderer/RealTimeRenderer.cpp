@@ -259,9 +259,9 @@ namespace HE
         shaderDesc.AddDefine("SHADOW_MAP_TYPE", 0);
         result |= shaderLibrary->LoadShader((uint32)RealTimeRendererShaderPiplineID::CascadedShadowMap, shaderDesc);
 
-        shaderDesc = ShaderDesc::CreateGraphics("RealTimeRenderer/ShadowMap.hsf", "ShadowMapVS", "ShadowMapPS");
-        shaderDesc.AddDefine("SHADOW_MAP_TYPE", 1);
-        result |= shaderLibrary->LoadShader((uint32)RealTimeRendererShaderPiplineID::CubeShadowMap, shaderDesc);
+        // shaderDesc = ShaderDesc::CreateGraphics("RealTimeRenderer/ShadowMap.hsf", "ShadowMapVS", "ShadowMapPS");
+        // shaderDesc.AddDefine("SHADOW_MAP_TYPE", 1);
+        // result |= shaderLibrary->LoadShader((uint32)RealTimeRendererShaderPiplineID::CubeShadowMap, shaderDesc);
 
         shaderDesc = ShaderDesc::CreateGraphics("RealTimeRenderer/LocalLightShadows.hsf", "LocalLightShadowsVS", "LocalLightShadowsPS");
         result |= shaderLibrary->LoadShader((uint32)RealTimeRendererShaderPiplineID::LocalLightShadows, shaderDesc);

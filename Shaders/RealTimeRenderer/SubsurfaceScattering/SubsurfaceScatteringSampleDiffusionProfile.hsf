@@ -11,6 +11,7 @@ BIND_BYTE_ADDRESS_BUFFER_UAV(3, SubsurfaceScatteringTileCountBuffer);
 BIND_BYTE_ADDRESS_BUFFER_SRV(1, SubsurfaceScatteringTileDataBuffer);
 BIND_TEXTURE_2D_UAV(5, float4, OutputTexture);
 
+[shader("compute")]
 [numthreads(SUBSURFACE_SCATTERING_TILE_SIZE * SUBSURFACE_SCATTERING_TILE_SIZE, 1, 1)]
 void SubsurfaceScatteringSampleDiffusionProfileCS(uint3 GroupID : SV_GroupID, uint GroupIndex : SV_GroupIndex)
 {

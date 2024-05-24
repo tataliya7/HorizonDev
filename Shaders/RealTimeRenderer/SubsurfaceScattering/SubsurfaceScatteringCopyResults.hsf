@@ -12,6 +12,7 @@ struct SubsurfaceScatteringCopyResultsVSOutput
     float2 uv : TEXCOORD0;
 };
 
+[shader("vertex")]
 void SubsurfaceScatteringCopyResultsVS(uint VertexID : SV_VertexID, uint InstanceID : SV_InstanceID, out SubsurfaceScatteringCopyResultsVSOutput output)
 {
     PerFrameData perFrameData = GetPerFrameData();
@@ -24,6 +25,7 @@ void SubsurfaceScatteringCopyResultsVS(uint VertexID : SV_VertexID, uint Instanc
     output.uv = float2(vertexPosition) * perFrameData.renderResolutionAndInvRenderResolution.zw;
 }
 
+[shader("pixel")]
 void SubsurfaceScatteringCopyResultsPS(SubsurfaceScatteringCopyResultsVSOutput vsOutput, out float4 outColor : SV_Target0)
 {
     float2 uv = vsOutput.uv;

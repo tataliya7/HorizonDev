@@ -250,6 +250,7 @@ float GTAOComputeInnerIntegral(float2 horizons, float2 searchDirection, float3 v
 #endif
 }
 
+[shader("compute")]
 [numthreads(8, 8, 1)]
 void GTAOHorizonSearchAndIntegralCS(uint3 DispatchThreadID : SV_DispatchThreadID, uint2 GroupThreadID : SV_GroupThreadID, uint2 GroupID : SV_GroupID)
 {

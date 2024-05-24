@@ -176,6 +176,8 @@ void RemoveNANs(inout Complex x[2])
     }
 }
 
+[shader("compute")]
+[shader("compute")]
 [numthreads(SIGNAL_LENGTH, 1, 1)]
 void SharedMemoryComplexFFTCS(uint3 GroupID : SV_GroupID, uint3 GroupThreadID : SV_GroupThreadID)
 {
@@ -237,6 +239,8 @@ void SharedMemoryComplexFFTCS(uint3 GroupID : SV_GroupID, uint3 GroupThreadID : 
 #endif
 }
 
+[shader("compute")]
+[shader("compute")]
 [numthreads(SIGNAL_LENGTH, 1, 1)]
 void SharedMemoryComplexIFFTCS(uint3 GroupID : SV_GroupID, uint3 GroupThreadID : SV_GroupThreadID)
 {
@@ -298,6 +302,8 @@ void SharedMemoryComplexIFFTCS(uint3 GroupID : SV_GroupID, uint3 GroupThreadID :
 #endif
 }
 
+[shader("compute")]
+[shader("compute")]
 [numthreads(SIGNAL_LENGTH, 1, 1)]
 void SharedMemoryTwoForOneRealFFTCS(uint3 GroupID : SV_GroupID, uint3 GroupThreadID : SV_GroupThreadID)
 {
@@ -357,6 +363,8 @@ void SharedMemoryTwoForOneRealFFTCS(uint3 GroupID : SV_GroupID, uint3 GroupThrea
 #endif
 }
 
+[shader("compute")]
+[shader("compute")]
 [numthreads(SIGNAL_LENGTH, 1, 1)]
 void SharedMemoryTwoForOneRealIFFTCS(uint3 GroupID : SV_GroupID, uint3 GroupThreadID : SV_GroupThreadID)
 {
@@ -420,6 +428,8 @@ void SharedMemoryTwoForOneRealIFFTCS(uint3 GroupID : SV_GroupID, uint3 GroupThre
 #endif
 }
 
+[shader("compute")]
+[shader("compute")]
 [numthreads(SIGNAL_LENGTH, 1, 1)]
 void SharedMemoryComplexFFTConvolutionCS(uint3 GroupID : SV_GroupID, uint3 GroupThreadID : SV_GroupThreadID)
 {

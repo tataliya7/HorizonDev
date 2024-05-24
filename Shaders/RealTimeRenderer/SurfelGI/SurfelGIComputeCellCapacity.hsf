@@ -8,6 +8,7 @@ BIND_BYTE_ADDRESS_BUFFER_UAV(2, SurfelGIAliveSurfelIndirectionBuffer);
 BIND_BYTE_ADDRESS_BUFFER_UAV(3, SurfelGISurfelHotDataBuffer);
 BIND_BYTE_ADDRESS_BUFFER_UAV(4, SurfelGICellHeaderBuffer);
 
+[shader("compute")]
 [numthreads(SurfelGIIndirectDispatchGroupThreadCount, 1, 1)]
 void SurfelGIComputeCellCapacityCS(uint3 DispatchThreadID : SV_DispatchThreadID)
 {

@@ -36,6 +36,8 @@ float2 IntegrateBRDF(float NdotV, float roughness)
     return result / float(SampleCount);
 }
 
+[shader("compute")]
+[shader("compute")]
 [numthreads(8, 8, 1)]
 void PreIntegratedBRDFCS(uint3 DispatchThreadID : SV_DispatchThreadID)
 {

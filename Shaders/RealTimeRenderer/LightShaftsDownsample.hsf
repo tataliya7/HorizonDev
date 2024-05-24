@@ -16,6 +16,7 @@ BIND_TEXTURE_2D_UAV(3, float3, OutputTexture);
 //    float2 LightShaftParameters;
 // };
 
+[shader("compute")]
 [numthreads(8, 8, 1)]
 void LightShaftsDownsampleCS(uint3 DispatchThreadID : SV_DispatchThreadID)
 {

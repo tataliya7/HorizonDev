@@ -53,6 +53,7 @@ float3 UvToSkyViewLutParams(in float4 skyViewLutSizeAndInvSize, in float bottomR
     return viewDir;
 }
 
+[shader("compute")]
 [numthreads(8, 8, 1)]
 void SkyAtmosphereSkyViewLutCS(uint3 DispatchThreadID : SV_DispatchThreadID)
 {

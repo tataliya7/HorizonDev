@@ -33,6 +33,7 @@ struct ImGuiVSToPS
     float2 texCoord0 : TEXCOORD0;
 };
 
+[shader("vertex")]
 void ImGuiVS(uint vertexID : SV_VertexID, out ImGuiVSToPS output)
 {
     int vertexOffset = ShaderArguments.vertexOffset;
@@ -49,6 +50,7 @@ void ImGuiVS(uint vertexID : SV_VertexID, out ImGuiVSToPS output)
     output.position = float4(vertex.position * scale + translate, 0.0f, 1.0f);
 }
 
+[shader("pixel")]
 void ImGuiPS(ImGuiVSToPS input, out float4 color : SV_Target)
 {
     Texture2D texture = GetImGuiTextureSRV();

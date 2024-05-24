@@ -9,6 +9,7 @@ struct DebugDrawLinesVSToPS
     float4 color : COLOR;
 };
 
+[shader("vertex")]
 void DebugDrawLinesVS(uint vertexIndex : SV_VertexID, out float4 svPosition : SV_Position, out DebugDrawLinesVSToPS output)
 {
     PerFrameData perFrameData = GetPerFrameData();
@@ -24,6 +25,7 @@ void DebugDrawLinesVS(uint vertexIndex : SV_VertexID, out float4 svPosition : SV
     svPosition = clipPosition;
 }
 
+[shader("pixel")]
 void DebugDrawLinesPS(in DebugDrawLinesVSToPS input, out float4 outColor : SV_Target0)
 {
     outColor = input.color;

@@ -10,6 +10,7 @@ BIND_TEXTURE_2D_UAV(5, float4, GBuffer0);
 BIND_TEXTURE_2D_UAV(6, float4, GBuffer1);
 BIND_TEXTURE_2D_UAV(7, float4, GBuffer2);
 
+[shader("compute")]
 [numthreads(8, 8, 1)]
 void GBufferCS(uint3 DispatchThreadID : SV_DispatchThreadID)
 {

@@ -13,6 +13,7 @@ float3 GetVertexPosition(uint vertexIndex)
     return vertexBuffer0.Load<float3>(vertexIndex * sizeof(float3));
 }
 
+[shader("vertex")]
 void EditorSelectionOutlineMaskGenVS(uint vertexIndex : SV_VertexID, out float4 svPosition : SV_Position)
 {
     PerFrameData perFrameData = GetPerFrameData();
@@ -24,6 +25,7 @@ void EditorSelectionOutlineMaskGenVS(uint vertexIndex : SV_VertexID, out float4 
     svPosition = clipPosition;
 }
 
+[shader("pixel")]
 void EditorSelectionOutlineMaskGenPS(out float4 output : SV_Target0)
 {
     output = 1.0f;

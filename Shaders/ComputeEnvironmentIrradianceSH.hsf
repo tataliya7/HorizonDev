@@ -10,6 +10,7 @@ static const uint SampleCount = THREAD_GROUP_SIZE * THREAD_GROUP_SIZE;
 
 groupshared ThreeBandSHCoefficientsRGB SharedSHCoefficients[THREAD_GROUP_SIZE * THREAD_GROUP_SIZE];
 
+[shader("compute")]
 [numthreads(THREAD_GROUP_SIZE, THREAD_GROUP_SIZE, 1)]
 void ComputeEnvironmentIrradianceSHCS(uint3 DispatchThreadID : SV_DispatchThreadID)
 {

@@ -85,6 +85,7 @@ void UpdateGaussian(float delta, uint radius)
     }
 }
 
+[shader("compute")]
 [numthreads(8, 8, 1)]
 void SDDSpatialFilteringCS(uint2 DispatchThreadId : SV_DispatchThreadID)
 {

@@ -61,6 +61,7 @@ float InterpolateExposure(float srcExposure, float dstExposure, float deltaTimeI
     return exposure;
 }
 
+[shader("compute")]
 [numthreads(1, 1, 1)]
 void AutoExposureComputeExposureCS(uint3 DispatchThreadID : SV_DispatchThreadID)
 {

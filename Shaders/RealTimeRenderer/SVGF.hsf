@@ -195,6 +195,7 @@ bool loadPrevData(uint2 ipos, uint2 imageDim, out float4 prevIllum, out float2 p
     return valid;
 }
 
+[shader("compute")]
 [numthreads(8, 8, 1)]
 void SVGFReprojectCS(uint3 DispatchThreadID : SV_DispatchThreadID)
 {
@@ -250,6 +251,7 @@ void SVGFReprojectCS(uint3 DispatchThreadID : SV_DispatchThreadID)
     historyLengthUAV[pixelCoord] = historyLength;
 }
 
+[shader("compute")]
 [numthreads(8, 8, 1)]
 void SVGFFilterMomentsCS(uint3 DispatchThreadID : SV_DispatchThreadID)
 {
@@ -376,6 +378,7 @@ float computeVarianceCenter(int2 ipos, RWTexture2D<float4> gIllumination)
     return sum;
 }
 
+[shader("compute")]
 [numthreads(8, 8, 1)]
 void SVGFAtrousCS(uint3 DispatchThreadID : SV_DispatchThreadID)
 {

@@ -16,6 +16,7 @@ static const float varianceExitThreshold = 0.005; // Variance needs to be higher
 static const uint2 bilateralMinMaxRadius = uint2(0, 2); // Chosen by variance
 #define BILATERAL_SIGMA 0.9
 
+[shader("compute")]
 [numthreads(SSR_THREAD_GROUP_SIZE, SSR_THREAD_GROUP_SIZE, 1)]
 void SSRSpatialFilteringCS(uint3 DispatchThreadID : SV_DispatchThreadID)
 {

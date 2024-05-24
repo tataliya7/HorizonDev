@@ -15,6 +15,7 @@ struct LocalLightShadowsVSToPS
     uint renderTargetIndex : SV_RenderTargetArrayIndex;
 };
 
+[shader("vertex")]
 void LocalLightShadowsVS(uint instanceID : SV_InstanceID, uint vertexIndex : SV_VertexID, out LocalLightShadowsVSToPS output)
 {
     PerFrameData perFrameData = GetPerFrameData();
@@ -37,6 +38,7 @@ void LocalLightShadowsVS(uint instanceID : SV_InstanceID, uint vertexIndex : SV_
     output.renderTargetIndex = 0;
 }
 
+[shader("pixel")]
 void LocalLightShadowsPS(in LocalLightShadowsVSToPS input, in uint primitiveID : SV_PrimitiveID)
 {
     PerFrameData perFrameData = GetPerFrameData();

@@ -5,6 +5,7 @@
 BIND_BYTE_ADDRESS_BUFFER_UAV(0, SurfelGIInfoBuffer);
 BIND_BYTE_ADDRESS_BUFFER_UAV(1, SurfelGIFreeSurfelBuffer);
 
+[shader("compute")]
 [numthreads(SurfelGIIndirectDispatchGroupThreadCount, 1, 1)]
 void SurfelGIFreeSurfelsCS(uint3 DispatchThreadID : SV_DispatchThreadID)
 {

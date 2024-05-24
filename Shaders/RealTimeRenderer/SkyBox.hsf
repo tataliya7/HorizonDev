@@ -10,6 +10,7 @@ struct SkyBoxVSToPS
     float3 uvw : POSITION0;
 };
 
+[shader("vertex")]
 void SkyBoxVS(uint vertexIndex : SV_VertexID, out SkyBoxVSToPS output)
 {
     PerFrameData perFrameData = GetPerFrameData();
@@ -24,6 +25,7 @@ void SkyBoxVS(uint vertexIndex : SV_VertexID, out SkyBoxVSToPS output)
     output.position.z = 0.0f; // Let the depth value always be 0.
 }
 
+[shader("pixel")]
 void SkyBoxPS(SkyBoxVSToPS input, out float4 color : SV_Target)
 {
     TextureCube environmentMap = GetEnvironmentMapSRV();

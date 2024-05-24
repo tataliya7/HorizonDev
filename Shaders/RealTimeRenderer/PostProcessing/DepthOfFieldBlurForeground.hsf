@@ -29,6 +29,7 @@ float ComputeCoC(float linearDepth, float focalDistance, float focalRegion)
     return saturate(coc + 0.5);
 }
 
+[shader("compute")]
 [numthreads(POST_PROCESS_THREAD_GROUP_SIZE, POST_PROCESS_THREAD_GROUP_SIZE, 1)]
 void DepthOfFieldSetupCS(uint3 DispatchThreadID : SV_DispatchThreadID)
 {

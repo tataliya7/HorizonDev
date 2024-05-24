@@ -14,6 +14,7 @@ struct ShadowMapVSToPS
     float2 texCoord0 : TEXCOORD0;
 };
 
+[shader("vertex")]
 void ShadowMapVS(uint vertexIndex : SV_VertexID, out ShadowMapVSToPS output)
 {
     PerFrameData perFrameData = GetPerFrameData();
@@ -41,6 +42,7 @@ void ShadowMapVS(uint vertexIndex : SV_VertexID, out ShadowMapVSToPS output)
     output.texCoord0 = vertexTexCoord0;
 }
 
+[shader("pixel")]
 void ShadowMapPS(in ShadowMapVSToPS input, in uint primitiveID : SV_PrimitiveID)
 {
     PerFrameData perFrameData = GetPerFrameData();

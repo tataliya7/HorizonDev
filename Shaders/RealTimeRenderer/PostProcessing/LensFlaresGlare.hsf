@@ -55,6 +55,7 @@ struct LensFlaresGlareVSOutput
     float2 uv : TEXCOORD0;
 };
 
+[shader("vertex")]
 void LensFlaresGlareVS(uint instanceID : SV_InstanceID, uint vertexID : SV_VertexID, out LensFlaresGlareVSOutput output)
 {
     Texture2D<float3> tileCullingTexture = GetLensFlaresTileCullingTextureSRV();
@@ -128,6 +129,7 @@ void LensFlaresGlareVS(uint instanceID : SV_InstanceID, uint vertexID : SV_Verte
     }
 }
 
+[shader("pixel")]
 void LensFlaresGlarePS(LensFlaresGlareVSOutput vsOutput, out float3 outColor : SV_Target)
 {
     Texture2D glareLUTTexture = GetLensFlaresGlareLUTTextureSRV();

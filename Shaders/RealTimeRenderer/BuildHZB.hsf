@@ -9,6 +9,7 @@ BIND_TEXTURE_2D_UAV(1, float, ClosestHZBTexture);
 BIND_TEXTURE_2D_UAV(2, float, FurthestHZBTexture);
 #endif
 
+[shader("compute")]
 [numthreads(8, 8, 1)]
 void BuildHZBCS(uint2 DispatchThreadID : SV_DispatchThreadID, uint GroupIndex : SV_GroupIndex)
 {

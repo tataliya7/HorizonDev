@@ -3,6 +3,7 @@
 BIND_TEXTURE_2D_SRV(0, InputTexture);
 BIND_TEXTURE_2D_UAV(1, float4, OutputMip);
 
+[shader("compute")]
 [numthreads(8, 8, 1)]
 void DownsampleTexture2DCS(uint3 DispatchThreadID : SV_DispatchThreadID)
 {

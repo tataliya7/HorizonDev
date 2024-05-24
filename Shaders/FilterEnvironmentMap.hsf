@@ -50,6 +50,7 @@ float3 FilterEnvironmentMap(TextureCube environmentMap, float3 N, float roughnes
     return radiance / weight;
 }
 
+[shader("compute")]
 [numthreads(8, 8, 6)]
 void FilterEnvironmentMapCS(uint3 DispatchThreadID : SV_DispatchThreadID)
 {

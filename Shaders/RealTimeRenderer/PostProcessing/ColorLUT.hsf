@@ -109,6 +109,7 @@ float3 PurkinjeShift(float3 linearRGB)
     return linearRGB + rgb_gain;
 }
 
+[shader("compute")]
 [numthreads(8, 8, 8)]
 void ColorLUTCS(uint3 DispatchThreadID : SV_DispatchThreadID)
 {

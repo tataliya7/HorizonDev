@@ -67,6 +67,7 @@ uint3 DecodeTriangleIndices(MeshletDesc meshletDesc, uint triangleIndex)
 }
 
 #if __SHADER_TARGET_STAGE == __SHADER_STAGE_AMPLIFICATION
+[shader("amplification")]
 [numthreads(TASK_SHADER_WORKGROUP_SIZE, 1, 1)]
 void VisibilityBufferTS(uint DispatchThreadID : SV_DispatchThreadID)
 {
@@ -91,6 +92,7 @@ void VisibilityBufferTS(uint DispatchThreadID : SV_DispatchThreadID)
 #endif
 
 #if __SHADER_TARGET_STAGE == __SHADER_STAGE_MESH
+[shader("mesh")]
 [outputtopology("triangle")]
 [numthreads(128, 1, 1)]
 void VisibilityBufferMS(
@@ -150,6 +152,7 @@ void VisibilityBufferMS(
 #endif
 
 #if __SHADER_TARGET_STAGE == __SHADER_STAGE_PIXEL
+[shader("pixel")]
 void VisibilityBufferPS(
     VertexAttributes vertexAttributes,
     PrimitiveAttributes primitiveAttributes,

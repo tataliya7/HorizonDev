@@ -20,6 +20,7 @@ bool RecyclingHeuristic(uint totalLiveSurfels, uint framesSinceSeen, uint distan
     return probability > rand ? true : false;
 }
 
+[shader("compute")]
 [numthreads(SurfelGIIndirectDispatchGroupThreadCount, 1, 1)]
 void SurfelGIPositionUpdateCS(uint3 DispatchThreadID : SV_DispatchThreadID)
 {

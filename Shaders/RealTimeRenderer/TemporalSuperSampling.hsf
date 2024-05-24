@@ -275,6 +275,7 @@ float3 InverseTonemap(float3 color)
     return color.rgb / max(0.0001, 1.0 - max(color.r, max(color.g, color.b))).xxx;
 }
 
+[shader("compute")]
 [numthreads(8, 8, 1)]
 void TemporalSuperSamplingCS(uint3 DispatchThreadID : SV_DispatchThreadID)
 {

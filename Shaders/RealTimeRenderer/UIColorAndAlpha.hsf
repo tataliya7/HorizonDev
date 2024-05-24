@@ -31,6 +31,7 @@ struct UIColorAndAlphaVSOutput
     float2 texCoord0 : TEXCOORD0;
 };
 
+[shader("vertex")]
 void UIColorAndAlphaVS(uint vertexID : SV_VertexID, out UIColorAndAlphaVSOutput output)
 {
     int vertexOffset = ShaderArguments.vertexOffset;
@@ -47,6 +48,7 @@ void UIColorAndAlphaVS(uint vertexID : SV_VertexID, out UIColorAndAlphaVSOutput 
     output.position = float4(vertex.position * scale + translate, 0.0f, 1.0f);
 }
 
+[shader("pixel")]
 void UIColorAndAlphaPS(UIColorAndAlphaVSOutput input, out float4 color : SV_Target)
 {
     Texture2D texture = GetImGuiTextureSRV();

@@ -13,6 +13,7 @@ BIND_BYTE_ADDRESS_BUFFER_UAV(8, OutputVertexBuffer2);
 
 #define MAX_NUM_BONES_PER_VERTEX 4
 
+[shader("compute")]
 [numthreads(64, 1, 1)]
 void SkinningCS(uint3 DispatchThreadID : SV_DispatchThreadID)
 {

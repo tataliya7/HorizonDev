@@ -72,6 +72,7 @@ float KarisAverage(float3 color)
     return 1.0f / (1.0f + luma);
 }
 
+[shader("compute")]
 [numthreads(POST_PROCESS_THREAD_GROUP_SIZE, POST_PROCESS_THREAD_GROUP_SIZE, 1)]
 void GaussianBloomDownsampleCS(uint3 DispatchThreadID : SV_DispatchThreadID)
 {

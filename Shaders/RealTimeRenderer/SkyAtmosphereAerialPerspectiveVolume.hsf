@@ -9,6 +9,7 @@ BIND_TEXTURE_2D_SRV(2, TransmittanceLutTexture);
 BIND_TEXTURE_2D_SRV(3, MultipleScatteringLutTexture);
 BIND_TEXTURE_3D_UAV(4, float4, AerialPerspectiveVolumeTexture);
 
+[shader("compute")]
 [numthreads(4, 4, 4)]
 void SkyAtmosphereAerialPerspectiveVolumeCS(uint3 DispatchThreadID : SV_DispatchThreadID)
 {

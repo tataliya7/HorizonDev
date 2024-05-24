@@ -13,6 +13,7 @@ struct SubsurfaceScatteringRecombineVSOutput
     float2 uv : TEXCOORD0;
 };
 
+[shader("vertex")]
 void SubsurfaceScatteringRecombineVS(uint VertexID : SV_VertexID, uint InstanceID : SV_InstanceID, out SubsurfaceScatteringRecombineVSOutput output)
 {
     PerFrameData perFrameData = GetPerFrameData();
@@ -25,6 +26,7 @@ void SubsurfaceScatteringRecombineVS(uint VertexID : SV_VertexID, uint InstanceI
     output.uv = float2(vertexPosition) * perFrameData.renderResolutionAndInvRenderResolution.zw;
 }
 
+[shader("pixel")]
 void SubsurfaceScatteringRecombinePS(SubsurfaceScatteringRecombineVSOutput vsOutput, out float4 outColor : SV_Target0)
 {
     Texture2D sceneColorTexture = GetSceneColorTextureSRV();

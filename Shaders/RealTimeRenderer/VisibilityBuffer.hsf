@@ -39,6 +39,7 @@ struct VisibilityBufferVSToPS
     float2 texCoord0 : TEXCOORD0;
 };
 
+[shader("vertex")]
 void VisibilityBufferVS(uint vertexIndex : SV_VertexID, out VisibilityBufferVSToPS output)
 {
     PerFrameData perFrameData = GetPerFrameData();
@@ -58,6 +59,7 @@ void VisibilityBufferVS(uint vertexIndex : SV_VertexID, out VisibilityBufferVSTo
 
 // TODO: Turning on [earlydepthstencil] will cause alpha cutoff to work inproperly
 // [earlydepthstencil]
+[shader("pixel")]
 void VisibilityBufferPS(
     in VisibilityBufferVSToPS input,
     in bool isFrontFace : SV_IsFrontFace,

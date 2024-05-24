@@ -8,6 +8,7 @@ BIND_BYTE_ADDRESS_BUFFER_UAV(10, SurfelGIAliveSurfelBuffer);
 BIND_BYTE_ADDRESS_BUFFER_UAV(7, SurfelGICellHeaderBuffer);
 BIND_BYTE_ADDRESS_BUFFER_UAV(7, SurfelGICellDataBuffer);
 
+[shader("compute")]
 [numthreads(64, 1, 1)]
 void main(uint3 DispatchThreadID : SV_DispatchThreadID)
 {

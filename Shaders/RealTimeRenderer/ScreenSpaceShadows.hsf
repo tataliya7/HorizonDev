@@ -9,6 +9,7 @@ BIND_TEXTURE_2D_ARRAY_SRV(3, ShadowMap);
 BIND_BUFFER_ELEMENT(4, CascadedShadowMapShaderParameters, CascadedShadowMapShaderParameters);
 BIND_TEXTURE_2D_UAV(5, float4, ScreenSpaceShadowMaskTexture);
 
+[shader("compute")]
 [numthreads(8, 8, 1)]
 void ScreenSpaceShadowsDirectionalLightCS(uint3 DispatchThreadID : SV_DispatchThreadID)
 {
