@@ -9,41 +9,41 @@
 #include <dxcisense.h>
 #include <d3d12shader.h>
 
-namespace Horizon
+namespace DXCUtils
 {
-    namespace DXCUtils
+    std::wstring Widen(const std::string& input)
     {
-        std::wstring Widen(const std::string& input)
+        std::wstring result = {};
+        if (input.length() > 0)
         {
-            std::wstring result = {};
-            if (input.length() > 0)
+            int length = MultiByteToWideChar(CP_UTF8, 0, input.c_str(), (int)input.size(), NULL, 0);
+            if (length > 0)
             {
-                int length = MultiByteToWideChar(CP_UTF8, 0, input.c_str(), (int)input.size(), NULL, 0);
-                if (length > 0)
-                {
-                    result.resize(length);
-                    MultiByteToWideChar(CP_UTF8, 0, input.c_str(), (int)input.size(), result.data(), (int)result.size());
-                }
+                result.resize(length);
+                MultiByteToWideChar(CP_UTF8, 0, input.c_str(), (int)input.size(), result.data(), (int)result.size());
             }
-            return result;
         }
-
-        std::string Narrow(const std::wstring& input)
-        {
-            std::string result = {};
-            if (input.length() > 0)
-            {
-                int length = WideCharToMultiByte(CP_UTF8, 0, input.c_str(), (int)input.size(), NULL, 0, NULL, NULL);
-                if (length > 0)
-                {
-                    result.resize(length);
-                    WideCharToMultiByte(CP_UTF8, 0, input.c_str(), (int)input.size(), result.data(), (int)result.size(), NULL, NULL);
-                }
-            }
-            return result;
-        }
+        return result;
     }
 
+    std::string Narrow(const std::wstring& input)
+    {
+        std::string result = {};
+        if (input.length() > 0)
+        {
+            int length = WideCharToMultiByte(CP_UTF8, 0, input.c_str(), (int)input.size(), NULL, 0, NULL, NULL);
+            if (length > 0)
+            {
+                result.resize(length);
+                WideCharToMultiByte(CP_UTF8, 0, input.c_str(), (int)input.size(), result.data(), (int)result.size(), NULL, NULL);
+            }
+        }
+        return result;
+    }
+}
+
+namespace Horizon
+{
     struct DXCShaderCompilerIncludeHandler : public IDxcIncludeHandler
     {
         std::unordered_set<std::wstring> dependencies = {};
@@ -81,10 +81,10 @@ namespace Horizon
     class DXCShaderCompiler : public ShaderCompiler
     {
     public:
-        bool CompileShader(const ShaderCompilerSettings& settings, const ShaderSource& source, ShadingLanguage language, ShaderCompilerOutput* output) override;
+        bool CompileShader(const ShaderCompilerOptions& options, const ShaderSourceDescription& source, ShadingLanguage language, ShaderCompilerOutput* output) override;
     };
 
-    bool DXCShaderCompiler::CompileShader(const ShaderCompilerSettings& settings, const ShaderSource& source, ShadingLanguage language, ShaderCompilerOutput* output)
+    bool DXCShaderCompiler::CompileShader(const ShaderCompilerOptions& options, const ShaderSourceDescription& source, ShadingLanguage language, ShaderCompilerOutput* output)
     {
         assert(output != nullptr);
         assert(output->blob.IsValid() == false);
@@ -97,7 +97,7 @@ namespace Horizon
         hr = DxcCreateInstance(CLSID_DxcCompilerArgs, IID_PPV_ARGS(&dxcCompilerArgs));
         if (FAILED(hr))
         {
-            output->errorMessage = std::format("Failed to create DxcCompilerArgs, HRESULT: {:#010x}.", (uint32)hr);
+            output->errorMessage = std::format("Failed to create DxcCompilerArgs, HRESULT: {:#010x}.", uint32(hr));
             return false;
         }
 
@@ -105,7 +105,7 @@ namespace Horizon
         hr = DxcCreateInstance(CLSID_DxcUtils, IID_PPV_ARGS(&dxcUtils));
         if (FAILED(hr))
         {
-            output->errorMessage = std::format("Failed to create DxcUtils, HRESULT: {:#010x}.", (uint32)hr);
+            output->errorMessage = std::format("Failed to create DxcUtils, HRESULT: {:#010x}.", uint32(hr));
             return false;
         }
 
@@ -113,7 +113,7 @@ namespace Horizon
         hr = DxcCreateInstance(CLSID_DxcLibrary, IID_PPV_ARGS(&dxcLibrary));
         if (FAILED(hr))
         {
-            output->errorMessage = std::format("Failed to create DxcLibrary, HRESULT: {:#010x}.", (uint32)hr);
+            output->errorMessage = std::format("Failed to create DxcLibrary, HRESULT: {:#010x}.", uint32(hr));
             return false;
         }
 
@@ -121,7 +121,7 @@ namespace Horizon
         hr = DxcCreateInstance(CLSID_DxcCompiler, IID_PPV_ARGS(&dxcCompiler));
         if (FAILED(hr))
         {
-            output->errorMessage = std::format("Failed to create DxcCompiler, HRESULT: {:#010x}.", (uint32)hr);
+            output->errorMessage = std::format("Failed to create DxcCompiler, HRESULT: {:#010x}.", uint32(hr));
             return false;
         }
 
@@ -129,29 +129,29 @@ namespace Horizon
         hr = dxcUtils->CreateDefaultIncludeHandler(&includeHandler.defaultIncludeHandler);
         if (FAILED(hr))
         {
-            output->errorMessage = std::format("Failed to create include handler, HRESULT: {:#010x}.", (uint32)hr);
+            output->errorMessage = std::format("Failed to create include handler, HRESULT: {:#010x}.", uint32(hr));
             return false;
         }
 
-        HLSLShaderModelVersion shaderTargetVersion = GetHLSLShaderModelVersion(settings.shaderModel);
+        HLSLShaderModelVersion shaderModelVersion = GetHLSLShaderModelVersion(source.shaderModel);
 
         std::wstring targetProfile = {};
         switch (source.stage)
         {
         case ShaderStage::Compute:
-            targetProfile = std::format(L"cs_{}_{}", shaderTargetVersion.major, shaderTargetVersion.minor);
+            targetProfile = std::format(L"cs_{}_{}", shaderModelVersion.major, shaderModelVersion.minor);
             break;
         case ShaderStage::Vertex:
-            targetProfile = std::format(L"vs_{}_{}", shaderTargetVersion.major, shaderTargetVersion.minor);
+            targetProfile = std::format(L"vs_{}_{}", shaderModelVersion.major, shaderModelVersion.minor);
             break;
         case ShaderStage::Pixel:
-            targetProfile = std::format(L"ps_{}_{}", shaderTargetVersion.major, shaderTargetVersion.minor);
+            targetProfile = std::format(L"ps_{}_{}", shaderModelVersion.major, shaderModelVersion.minor);
             break;
         case ShaderStage::Task:
-            targetProfile = std::format(L"as_{}_{}", shaderTargetVersion.major, shaderTargetVersion.minor);
+            targetProfile = std::format(L"as_{}_{}", shaderModelVersion.major, shaderModelVersion.minor);
             break;
         case ShaderStage::Mesh:
-            targetProfile = std::format(L"ms_{}_{}", shaderTargetVersion.major, shaderTargetVersion.minor);
+            targetProfile = std::format(L"ms_{}_{}", shaderModelVersion.major, shaderModelVersion.minor);
             break;
         default:
             std::unreachable();
@@ -159,7 +159,9 @@ namespace Horizon
         }
 
         std::wstring filename = DXCUtils::Widen(source.filename);
+
         std::wstring entryPoint = DXCUtils::Widen(source.entryPoint);
+
         std::vector<LPCWSTR> arguments =
         {
             filename.c_str(),
@@ -183,7 +185,7 @@ namespace Horizon
             break;
         }
 
-        if (settings.generateDebugInfo)
+        if (options.generateDebugInfo)
         {
             arguments.push_back(L"-Zi");
             arguments.push_back(L"-Zss");
@@ -200,13 +202,13 @@ namespace Horizon
             }
         }
 
-        if (settings.skipOptimization)
+        if (options.skipOptimization)
         {
             arguments.push_back(L"-Od");
         }
         else
         {
-            switch (settings.optimizationLevel)
+            switch (options.optimizationLevel)
             {
             case ShaderOptimizationLevel::O0:
                 arguments.push_back(L"-O0");
@@ -226,12 +228,12 @@ namespace Horizon
             }
         }
 
-        if (settings.warningAreErrors)
+        if (options.warningAreErrors)
         {
             arguments.push_back(L"-WX");
         }
 
-        if (settings.enable16BitTypes)
+        if (options.enable16BitTypes)
         {
             arguments.push_back(L"-enable-16bit-types");
         }
@@ -257,21 +259,23 @@ namespace Horizon
             dxcDefines[index].Value = defineValues[index].c_str();
         }
 
-        dxcCompilerArgs->AddArguments(arguments.data(), (uint32)arguments.size());
-        dxcCompilerArgs->AddDefines(dxcDefines.data(), (uint32)dxcDefines.size());
+        dxcCompilerArgs->AddArguments(arguments.data(), static_cast<UINT32>(arguments.size()));
+        dxcCompilerArgs->AddDefines(dxcDefines.data(), static_cast<UINT32>(dxcDefines.size()));
 
-        const DxcBuffer dxcBuffer = {
-            .Ptr = (LPCVOID)source.sourceData,
-            .Size = (SIZE_T)source.sourceSize,
+        const DxcBuffer dxcBuffer =
+        {
+            .Ptr = static_cast<LPCVOID>(source.code),
+            .Size = static_cast<SIZE_T>(source.codeSize),
             .Encoding = DXC_CP_UTF8
         };
 
         Microsoft::WRL::ComPtr<IDxcResult> dxcResult = nullptr;
-        hr = dxcCompiler->Compile(&dxcBuffer, arguments.data(), (uint32)arguments.size(), &includeHandler, IID_PPV_ARGS(&dxcResult));
+        hr = dxcCompiler->Compile(&dxcBuffer, arguments.data(), static_cast<UINT32>(arguments.size()), &includeHandler, IID_PPV_ARGS(&dxcResult));
         assert(dxcResult != nullptr);
 
         Microsoft::WRL::ComPtr<IDxcBlobUtf8> dxcErrorBlob = nullptr;
-        if (SUCCEEDED(dxcResult->GetOutput(DXC_OUT_ERRORS, IID_PPV_ARGS(&dxcErrorBlob), nullptr)) && dxcErrorBlob != nullptr && dxcErrorBlob->GetStringLength() != 0)
+        hr = dxcResult->GetOutput(DXC_OUT_ERRORS, IID_PPV_ARGS(&dxcErrorBlob), nullptr);
+        if (SUCCEEDED(hr) && (dxcErrorBlob != nullptr) && (dxcErrorBlob->GetStringLength() != 0))
         {
             output->errorMessage = std::string(dxcErrorBlob->GetStringPointer());
         }
@@ -285,7 +289,7 @@ namespace Horizon
         hr = dxcResult->GetStatus(&resultStatus);
         if (FAILED(hr) || FAILED(resultStatus))
         {
-            output->errorMessage += std::format("Failed to get result status, result status: {:#010x}, HRESULT: {:#010x}.", (uint32)resultStatus, (uint32)hr);
+            output->errorMessage += std::format("Failed to get result status, result status: {:#010x}, HRESULT: {:#010x}.", uint32(resultStatus), uint32(hr));
             return false;
         }
 
@@ -293,7 +297,7 @@ namespace Horizon
         hr = dxcResult->GetOutput(DXC_OUT_OBJECT, IID_PPV_ARGS(&dxcBlob), nullptr);
         if (FAILED(hr))
         {
-            output->errorMessage += std::format("Failed to get ouput, HRESULT: {:#010x}.", (uint32)hr);
+            output->errorMessage += std::format("Failed to get ouput, HRESULT: {:#010x}.", uint32(hr));
             return false;
         }
 
@@ -316,7 +320,8 @@ namespace Horizon
 
     void DestroyDXCShaderCompiler(ShaderCompiler* compiler)
     {
-        DXCShaderCompiler* dxcCompiler = (DXCShaderCompiler*)compiler;
+        assert(dynamic_cast<DXCShaderCompiler*>(compiler) != nullptr);
+        DXCShaderCompiler* dxcCompiler = static_cast<DXCShaderCompiler*>(compiler);
         delete dxcCompiler;
     }
 }

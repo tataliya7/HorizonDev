@@ -25,25 +25,6 @@ namespace Horizon
         SPIRV,
     };
 
-    struct ShaderMacroDefine
-    {
-        std::string name;
-        std::string value;
-    };
-
-    struct ShaderSource
-    {
-        const char* filename;
-        const uint8* sourceData;
-        uint64 sourceSize;
-        const char* entryPoint;
-        ShaderStage stage;
-        const ShaderMacroDefine* defines;
-        uint32 numDefines;
-        const char** includeDirectories;
-        uint32 numIncludeDirectories;
-    };
-
     enum class HLSLShaderModel
     {
         ShaderModel_6_6,
@@ -89,30 +70,50 @@ namespace Horizon
         O3,
     };
 
-    struct ShaderCompilerSettings
+    struct ShaderCompilerOptions
     {
-        bool generateDebugInfo = false;
-        bool skipOptimization = false;
-        bool warningAreErrors = false;
-        bool enable16BitTypes = false;
-        ShaderOptimizationLevel optimizationLevel = ShaderOptimizationLevel::O3;
-        HLSLShaderModel shaderModel = HLSLShaderModel::ShaderModel_6_6;
+        bool generateDebugInfo;
+        bool skipOptimization;
+        bool warningAreErrors;
+        bool enable16BitTypes;
+        ShaderOptimizationLevel optimizationLevel;
+    };
+
+    struct ShaderMacroDefine
+    {
+        std::string name;
+        std::string value;
+    };
+
+    struct ShaderSourceDescription
+    {
+        const char* filename;
+        const uint8* code;
+        uint64 codeSize;
+        const char* entryPoint;
+        ShaderStage stage;
+        const ShaderMacroDefine* defines;
+        uint32 numDefines;
+        const char** includeDirectories;
+        uint32 numIncludeDirectories;
+        HLSLShaderModel shaderModel;
     };
 
     class ShaderBlob
     {
     public:
         ShaderBlob()
-            : data(nullptr), size(0) {}
+            : data(nullptr)
+            , size(0) {}
 
         ~ShaderBlob()
         {
             Release();
         }
 
-        ShaderBlob(ShaderBlob&) = delete;
+        ShaderBlob(ShaderBlob&&) = delete;
         ShaderBlob(const ShaderBlob&) = delete;
-        ShaderBlob& operator=(ShaderBlob&) = delete;
+        ShaderBlob& operator=(ShaderBlob&&) = delete;
         ShaderBlob& operator=(const ShaderBlob&) = delete;
 
         bool IsValid() const
@@ -122,7 +123,7 @@ namespace Horizon
 
         const uint8* GetData() const
         {
-            return (uint8*)data;
+            return static_cast<uint8*>(data);
         }
 
         uint64 GetSize() const
@@ -130,30 +131,14 @@ namespace Horizon
             return size;
         }
 
-        void Allocate(const void* srcData, uint64 srcSize)
-        {
-            assert(!IsValid() && srcData != nullptr && srcSize > 0);
-            void* memory = malloc(srcSize);
-            if (memory != nullptr)
-            {
-                memcpy(memory, srcData, srcSize);
-                data = memory;
-                size = srcSize;
-            }
-        }
+        void Allocate(const void* srcData, uint64 srcSize);
 
-        void Release()
-        {
-            if (IsValid())
-            {
-                free(data);
-                data = nullptr;
-                size = 0;
-            }
-        }
+        void Release();
 
     protected:
+
         void* data;
+
         uint64 size;
     };
 
@@ -167,7 +152,6 @@ namespace Horizon
     class ShaderCompiler
     {
     public:
-        virtual ~ShaderCompiler() = default;
-        virtual bool CompileShader(const ShaderCompilerSettings& settings, const ShaderSource& source, ShadingLanguage language, ShaderCompilerOutput* output) = 0;
+        virtual bool CompileShader(const ShaderCompilerOptions& options, const ShaderSourceDescription& source, ShadingLanguage language, ShaderCompilerOutput* output) = 0;
     };
 }

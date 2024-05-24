@@ -99,17 +99,19 @@ namespace Horizon
         uint32 maxNumShaders;
         RenderBackend* renderBackend;
         ShadingLanguage shadingLanguage;
-        ShaderCompilerSettings shaderCompilerSettings;
+        ShaderCompilerOptions shaderCompilerOptions;
         std::vector<const char*> includeDirs;
         std::vector<Shader> loadedShaders;
     };
 
-    void LoadShaderSourceFromFile(const char* filename, std::vector<uint8>& outData);
+    class ShaderLibrary
+    {
+    public:
+    private:
+        ShadingLanguage shadingLanguage;
+    };
 
-    //class ShaderLibrary
-    //{
-    //public:
-    //};
+    void LoadShaderSourceFromFile(const char* filename, std::vector<uint8>& outData);
 
     // https://therealmjp.github.io/posts/shader-permutations-part1/
     // https://therealmjp.github.io/posts/shader-permutations-part2/
