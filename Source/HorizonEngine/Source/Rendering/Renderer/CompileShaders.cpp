@@ -1,9 +1,8 @@
-#include "ShaderID_Deprecated.h"
 #include "ShaderLibrary.h"
 
 namespace Horizon
 {
-    static void CompileSkyAtmosphereShaders_Deprecated(ShaderLibrary_Deprecated* shaderLibrary)
+    static void CompileSkyAtmosphereShaders_Deprecated(ShaderLibrary* shaderLibrary)
     {
         ShaderDesc shaderDesc = {};
 
@@ -29,7 +28,7 @@ namespace Horizon
         shaderLibrary->LoadShader(ShaderID::SkyAtmosphereRayMarching, shaderDesc);
     }
 
-    static void CompileRayTracingShaders_Deprecated(ShaderLibrary_Deprecated* shaderLibrary)
+    static void CompileRayTracingShaders_Deprecated(ShaderLibrary* shaderLibrary)
     {
 #if 0
         if (renderEngine->IsHardwareRayTracingEnabled())
@@ -88,7 +87,7 @@ namespace Horizon
 #endif
     }
 
-    void CompileShaders_Deprecated(ShaderLibrary_Deprecated* shaderLibrary)
+    void CompileShaders_Deprecated(ShaderLibrary* shaderLibrary)
     {
         CompileSkyAtmosphereShaders_Deprecated(shaderLibrary);
         CompileRayTracingShaders_Deprecated(shaderLibrary);
@@ -248,7 +247,7 @@ namespace Horizon
         shaderLibrary->LoadShader(ShaderID::SurfelGIGapFilling, shaderDesc);
 
         shaderDesc = ShaderDesc::CreateCompute("Shaders/RealTimeRenderer/SurfelGI/SurfelGIIndirectArguments.hsm", "SurfelGIIndirectArgumentsCS");
-        shaderLibrary->LoadShader(ShaderID::SurfelGIIndirectAruguments, shaderDesc);
+        shaderLibrary->LoadShader(ShaderID::SurfelGIIndirectArguments, shaderDesc);
 
         shaderDesc = ShaderDesc::CreateCompute("Shaders/RealTimeRenderer/SurfelGI/SurfelGIGridReset.hsm", "SurfelGIGridResetCS");
         shaderLibrary->LoadShader(ShaderID::SurfelGIGridReset, shaderDesc);
@@ -318,7 +317,7 @@ namespace Horizon
         shaderLibrary->LoadShader(ShaderID::LensFlaresCombine, shaderDesc);
 
         shaderDesc = ShaderDesc::CreateCompute("Shaders/RealTimeRenderer/PostProcessing/LocalExposureComputeLuminance.hsm", "LocalExposureComputeLuminanceCS");
-        shaderLibrary->LoadShader(ShaderID::LocalExposureComputeLuminances, shaderDesc);
+        shaderLibrary->LoadShader(ShaderID::LocalExposureComputeLuminance, shaderDesc);
 
         shaderDesc = ShaderDesc::CreateCompute("Shaders/RealTimeRenderer/PostProcessing/LocalExposureComputeWeights.hsm", "LocalExposureComputeWeightsCS");
         shaderLibrary->LoadShader(ShaderID::LocalExposureComputeWeights, shaderDesc);

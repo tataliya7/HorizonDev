@@ -2,7 +2,7 @@
 
 namespace Horizon
 {
-    void LoadShaderSourceFromFile(const char* filename, std::vector<uint8>& outData)
+    static void LoadShaderSourceFromFile(const char* filename, std::vector<uint8>& outData)
     {
         std::ifstream file(filename, std::ios::ate | std::ios::binary);
         if (!file.is_open())

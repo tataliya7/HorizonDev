@@ -42,6 +42,7 @@
 #pragma comment(lib,"d3d12.lib")
 #pragma comment(lib,"dxgi.lib")
 
+#include <dxcapi.h>
 #include <pix.h>
 
 static void D3D12MessageCallback(
@@ -1605,7 +1606,7 @@ namespace Horizon
                     streamDesc.SizeInBytes = sizeof(psoStream),
                     streamDesc.pPipelineStateSubobjectStream = &psoStream
                 };
-
+                D3D12_RAYTRACING_PIPELINE_CONFIG
                 D3D12_CHECK(device2->CreatePipelineState(&streamDesc, IID_PPV_ARGS(&newGraphicsPipelineState->state)));
             }
             else

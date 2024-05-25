@@ -1,24 +1,117 @@
 #pragma once
 
 #include "RendererCommon.h"
-#include "ShaderID_Deprecated.h"
 
 namespace Horizon
 {
+    enum class ShaderID : uint32
+    {
+        PreIntegratedBRDF,
+        LatLongToCubemap,
+        DownsampleCubemap,
+        DownsampleTexture2D,
+        DownsampleTexture2D_PS,
+        ComputeEnvironmentIrradiance,
+        ComputeEnvironmentIrradianceSH,
+        FilterEnvironmentMap,
+        SharedMemoryComplexFFT,
+        SharedMemoryComplexIFFT,
+        SharedMemoryTwoForOneRealFFT,
+        SharedMemoryTwoForOneRealIFFT,
+        SharedMemoryComplexFFTConvolution,
+        UIColorAndAlpha,
+        // Begin: Real Time Renderer
+        VBuffer,
+        VBufferMeshlet,
+        GBuffer,
+        BuildHZB,
+        CascadedShadowMap,
+        RayTracedShadowMap,
+        CubeShadowMap,
+        LocalLightShadows,
+        ScreenSpaceShadowsDirectionalLight,
+        MotionVectors,
+        SurfelGIFreeSurfels,
+        SurfelGIGapFilling,
+        SurfelGIIndirectArguments,
+        SurfelGIGridReset,
+        SurfelGIComputeCellCapacity,
+        SurfelGIComputeCellOffset,
+        SurfelGIVisualization,
+        GTAOHorizonSearchAndIntegral,
+        GTAOSpatialFiltering,
+        GTAOTemporalFiltering,
+        IndirectLightingDiffuse,
+        IndirectLightingSpecular,
+        SSRTileClassificationHorizontal,
+        SSRTileClassificationVertical,
+        SSRRayAllocation,
+        SSRDispatchEarlyExitRays,
+        SSRDispatchCheapRays,
+        SSRDispatchExpensiveRays,
+        SSRResolve,
+        SSRTemporalFiltering,
+        SSRSpatialFiltering,
+        DirectLighting,
+        SkyBox,
+        SubsurfaceScatteringSetup,
+        SubsurfaceScatteringClassifyTiles,
+        SubsurfaceScatteringBuildIndirectArguments,
+        SubsurfaceScatteringSampleDiffusionProfile,
+        SubsurfaceScatteringComputeVariance,
+        SubsurfaceScatteringRecombine,
+        SubsurfaceScatteringCopyResults,
+        SkyAtmosphereTransmittanceLut,
+        SkyAtmosphereMultipleScatteringLut,
+        SkyAtmosphereSkyViewLut,
+        SkyAtmosphereAerialPerspectiveVolume,
+        SkyAtmosphereRayMarching,
+        LightShaftsDownsample,
+        LightShaftsRadialBlur,
+        LightShaftsApply,
+        TemporalSuperSampling,
+        DepthOfFieldSetup,
+        DepthOfFieldGather,
+        DepthOfFieldPostfilter,
+        DepthOfFieldRecombine,
+        AutoExposureBuildHistogram,
+        AutoExposureComputeExposure,
+        Downsample,
+        GaussianBloomDownsample,
+        GaussianBloomUpsample,
+        ConvolutionBloomResizeKernel,
+        LensFlaresGhost,
+        LensFlaresTileCulling,
+        LensFlaresGlare,
+        LensFlaresCombine,
+        LocalExposureComputeLuminance,
+        LocalExposureComputeWeights,
+        LocalExposureBlendExposures,
+        LocalExposureBlendLaplacian,
+        LocalExposureGuidedUpsampling,
+        ColorLUT,
+        ToneMapping,
+        EditorSelectionOutlineMaskGen,
+        EditorSelectionOutlineSetup,
+        EditorSelectionOutlineJumpFlood,
+        EditorSelectionOutlineComposite,
+        VisualizePrimitiveID,
+        VisualizeMaterialID,
+        VisualizeWorldSpaceNormal,
+        VisualizeMotionVectors,
+        VisualizeAmbientOcclusion,
+        VisualizeScreenSpaceShadowMask,
+        DebugDraw,
+        GUIComposition,
+        // End: Real Time Renderer
+        Count,
+    };
+
     struct ShaderDesc
     {
-        enum class Type
-        {
-            Compute,
-            Graphics,
-            Mesh,
-            RayTracing,
-        };
-
-        Type type;
-        std::string name;
+        ShaderStage stage;
         std::string filename;
-        std::string entryPoints[(uint32)RenderBackendShaderStage::Count];
+        std::string entryFunctionName;
         std::vector<ShaderMacroDefine> defines;
 
         static ShaderDesc CreateCompute(const std::string& filename, const std::string& csMain)
@@ -78,53 +171,32 @@ namespace Horizon
     {
         ShaderID id;
         ShaderDesc desc;
-        RenderBackendShaderProgramHandle handle;
+        RenderBackendShaderHandle handle;
         std::vector<std::filesystem::path> relatedFiles;
         std::vector<std::chrono::time_point<std::chrono::file_clock>> lastModifiedTime;
-        bool compiled = false;
+        bool compiled;
     };
 
-    class ShaderLibrary_Deprecated
-    {
-    public:
-        ShaderLibrary_Deprecated(RenderBackend* backend, ShaderCompiler* compiler, uint32 maxNumShaders, bool hotReloadEnabled);
-        virtual ~ShaderLibrary_Deprecated() {}
-        bool HotReload();
-        void AddIncludeDirectory(const char* dir);
-        bool LoadShader(ShaderID id, ShaderDesc& desc);
-        RenderBackendShaderProgramHandle GetShaderProgramHandle(ShaderID id);
-        ShaderCompiler* shaderCompiler;
-    private:
-        bool hotReloadEnabled;
-        uint32 maxNumShaders;
-        RenderBackend* renderBackend;
-        ShadingLanguage shadingLanguage;
-        ShaderCompilerOptions shaderCompilerOptions;
-        std::vector<const char*> includeDirs;
-        std::vector<Shader> loadedShaders;
-    };
+    // Currently, shader permutations are not supported.
+    // https://therealmjp.github.io/posts/shader-permutations-part1/
+    // https://therealmjp.github.io/posts/shader-permutations-part2/
 
     class ShaderLibrary
     {
     public:
+        ShaderLibrary(RenderBackend* renderBackend, const char* rootDirectory);
+        virtual ~ShaderLibrary();
+        bool HotReload();
+        bool LoadShader(ShaderID id, ShaderDesc& desc);
+        RenderBackendShaderHandle GetShader(ShaderID id);
     private:
+        const char* rootDirectory;
+        RenderBackend* renderBackend;
         ShadingLanguage shadingLanguage;
+        ShaderCompilerOptions shaderCompilerOptions;
+        std::vector<Shader> loadedShaders;
+        bool hotReloadEnabled;
     };
 
-    void LoadShaderSourceFromFile(const char* filename, std::vector<uint8>& outData);
-
-    // https://therealmjp.github.io/posts/shader-permutations-part1/
-    // https://therealmjp.github.io/posts/shader-permutations-part2/
-
-    //
-    //class
-    //{
-    //public:
-    //    class;
-    //    class;
-    //    static bool ShouldCompilePermutation()
-    //    {
-
-    //    }
-    //}
+    extern void CompileShaders_Deprecated(ShaderLibrary* shaderLibrary);
 }

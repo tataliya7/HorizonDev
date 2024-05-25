@@ -1,6 +1,6 @@
 #include "RenderUtils.h"
 #include "ShaderLibrary.h"
-#include "ShaderID_Deprecated.h"
+#include "ShaderID.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb/stb_image.h>

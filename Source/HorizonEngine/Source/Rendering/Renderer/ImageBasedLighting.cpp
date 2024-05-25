@@ -1,7 +1,7 @@
 #include "ImageBasedLighting.h"
 #include "RenderUtils.h"
 #include "ShaderLibrary.h"
-#include "ShaderID_Deprecated.h"
+#include "ShaderID.h"
 
 namespace Horizon
 {

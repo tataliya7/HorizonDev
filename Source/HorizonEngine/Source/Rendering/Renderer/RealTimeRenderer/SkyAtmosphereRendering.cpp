@@ -151,7 +151,8 @@ namespace Horizon
                         shaderArguments.BindBufferSRV(0, GetCurrentPerFrameDataBuffer());
                         shaderArguments.BindTextureUAV(1, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(transmittanceLut)));
 
-                        RenderBackendShaderProgramHandle computeShader = shaderLibrary->GetShaderProgramHandle(ShaderID::SkyAtmosphereTransmittanceLut);
+                        RenderBackendShaderHandle computeShader = shaderLibrary->GetShaderProgramHandle(ShaderID::SkyAtmosphereTransmittanceLut);
+                        RenderBackendShaderHandle computeShader = shaderLibrary->GetShader<SkyAtmosphereTransmittanceLutCS>();
 
                         commandList.Dispatch(
                             computeShader,

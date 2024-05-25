@@ -43,8 +43,8 @@ namespace Horizon
         class Sampler;
         class SwapChain;
         class TimingQueryHeap;
-        class ShaderProgram; // Deprecated
-        //class ShaderModule;
+        class Shader;
+        class ShaderModule;
         class RayTracingAccelerationStructure;
         class RayTracingPipelineState;
     }
@@ -54,8 +54,8 @@ namespace Horizon
     using RenderBackendSamplerHandle                                = RenderBackendHandle<RenderBackendHandleTypes::Sampler>;
     using RenderBackendSwapChainHandle                              = RenderBackendHandle<RenderBackendHandleTypes::SwapChain>;
     using RenderBackendTimingQueryHeapHandle                        = RenderBackendHandle<RenderBackendHandleTypes::TimingQueryHeap>;
-    using RenderBackendShaderProgramHandle                          = RenderBackendHandle<RenderBackendHandleTypes::ShaderProgram>; // Deprecated
-    //using RenderBackendShaderModuleHandle                           = RenderBackendHandle<RenderBackendHandleTypes::ShaderModule>;
+    using RenderBackendShaderHandle                                 = RenderBackendHandle<RenderBackendHandleTypes::Shader>;
+    using RenderBackendShaderModuleHandle                           = RenderBackendHandle<RenderBackendHandleTypes::ShaderModule>;
     using RenderBackendRayTracingAccelerationStructureHandle        = RenderBackendHandle<RenderBackendHandleTypes::RayTracingAccelerationStructure>;
     using RenderBackendRayTracingPipelineStateHandle                = RenderBackendHandle<RenderBackendHandleTypes::RayTracingPipelineState>;
 }
