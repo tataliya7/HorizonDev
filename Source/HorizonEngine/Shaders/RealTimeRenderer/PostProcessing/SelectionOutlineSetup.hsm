@@ -28,9 +28,9 @@ void SelectionOutlineSetupCS(uint3 DispatchThreadID : SV_DispatchThreadID)
     if (mask < 0.99) // exterior
     {
         outputTexture[pixelCoord] = float4(
-            EDITOR_SELECTION_OUTLINE_JUMP_FLOOD_INVALID_VALUE,
-            EDITOR_SELECTION_OUTLINE_JUMP_FLOOD_INVALID_VALUE,
-            EDITOR_SELECTION_OUTLINE_JUMP_FLOOD_INVALID_VALUE,
+            SELECTION_OUTLINE_JUMP_FLOOD_INVALID_VALUE,
+            SELECTION_OUTLINE_JUMP_FLOOD_INVALID_VALUE,
+            SELECTION_OUTLINE_JUMP_FLOOD_INVALID_VALUE,
             mask);
         return;
     }

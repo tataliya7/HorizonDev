@@ -199,8 +199,10 @@ namespace Horizon
         shaderDesc = ShaderDesc::CreateGraphics("Shaders/RealTimeRenderer/IndirectLightingSpecular.hsm", "IndirectLightingSpecularVS", "IndirectLightingSpecularPS");
         shaderLibrary->LoadShader(ShaderID::IndirectLightingSpecular, shaderDesc);
 
-        {shaderDesc = ShaderDesc::CreateCompute("Shaders/RealTimeRenderer/MotionVectors.hsm", "MotionVectorsCS");
-        shaderLibrary->LoadShader(ShaderID::MotionVectors, shaderDesc);
+        {
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/MotionVectors.hsm", "MotionVectorsCS");
+            shaderLibrary->LoadShader(ShaderID::MotionVectors, shaderDesc);
+        }
 
         shaderDesc = ShaderDesc::CreateGraphics("Shaders/RealTimeRenderer/DirectLighting.hsm", "DirectLightingVS", "DirectLightingPS");
         shaderLibrary->LoadShader(ShaderID::DirectLighting, shaderDesc);
@@ -298,46 +300,66 @@ namespace Horizon
 
         {shaderDesc = ShaderDesc::CreateCompute("Shaders/RealTimeRenderer/PostProcessing/LensFlaresTileCulling.hsm", "LensFlaresTileCullingCS");
         shaderLibrary->LoadShader(ShaderID::LensFlaresTileCulling, shaderDesc);
-
-        shaderDesc = ShaderDesc::CreateGraphics("Shaders/RealTimeRenderer/PostProcessing/LensFlaresGlare.hsm", "LensFlaresGlareVS", "LensFlaresGlarePS");
-        shaderLibrary->LoadShader(ShaderID::LensFlaresGlare, shaderDesc);
-
-        shaderDesc = ShaderDesc::CreateGraphics("Shaders/RealTimeRenderer/PostProcessing/LensFlaresCombine.hsm", "LensFlaresCombineVS", "LensFlaresCombinePS");
-        shaderLibrary->LoadShader(ShaderID::LensFlaresCombine, shaderDesc);
-
-        {shaderDesc = ShaderDesc::CreateCompute("Shaders/RealTimeRenderer/PostProcessing/LocalExposureComputeLuminance.hsm", "LocalExposureComputeLuminanceCS");
-        shaderLibrary->LoadShader(ShaderID::LocalExposureComputeLuminance, shaderDesc);
-
-        {shaderDesc = ShaderDesc::CreateCompute("Shaders/RealTimeRenderer/PostProcessing/LocalExposureComputeWeights.hsm", "LocalExposureComputeWeightsCS");
-        shaderLibrary->LoadShader(ShaderID::LocalExposureComputeWeights, shaderDesc);
-
-        {shaderDesc = ShaderDesc::CreateCompute("Shaders/RealTimeRenderer/PostProcessing/LocalExposureBlendExposures.hsm", "LocalExposureBlendExposuresCS");
-        shaderLibrary->LoadShader(ShaderID::LocalExposureBlendExposures, shaderDesc);
-
-        {shaderDesc = ShaderDesc::CreateCompute("Shaders/RealTimeRenderer/PostProcessing/LocalExposureBlendLaplacian.hsm", "LocalExposureBlendLaplacianCS");
-        shaderLibrary->LoadShader(ShaderID::LocalExposureBlendLaplacian, shaderDesc);
-
-        {shaderDesc = ShaderDesc::CreateCompute("Shaders/RealTimeRenderer/PostProcessing/LocalExposureGuidedUpsampling.hsm", "LocalExposureGuidedUpsamplingCS");
-        shaderLibrary->LoadShader(ShaderID::LocalExposureGuidedUpsampling, shaderDesc);
-
-        {shaderDesc = ShaderDesc::CreateCompute("Shaders/RealTimeRenderer/PostProcessing/ColorLUT.hsm", "ColorLUTCS");
-        shaderLibrary->LoadShader(ShaderID::ColorLUT, shaderDesc);
-
-        {shaderDesc = ShaderDesc::CreateCompute("Shaders/RealTimeRenderer/PostProcessing/ToneMapping.hsm", "ToneMappingCS");
-        shaderLibrary->LoadShader(ShaderID::ToneMapping, shaderDesc);
-
-        shaderDesc = ShaderDesc::CreateGraphics("Shaders/RealTimeRenderer/PostProcessing/EditorSelectionOutlineMaskGen.hsm", "EditorSelectionOutlineMaskGenVS", "EditorSelectionOutlineMaskGenPS");
-        shaderLibrary->LoadShader(ShaderID::EditorSelectionOutlineMaskGen, shaderDesc);
-
-        {shaderDesc = ShaderDesc::CreateCompute("Shaders/RealTimeRenderer/PostProcessing/EditorSelectionOutlineSetup.hsm", "EditorSelectionOutlineSetupCS");
-        shaderLibrary->LoadShader(ShaderID::EditorSelectionOutlineSetup, shaderDesc);
-
-        {shaderDesc = ShaderDesc::CreateCompute("Shaders/RealTimeRenderer/PostProcessing/EditorSelectionOutlineJumpFlood.hsm", "EditorSelectionOutlineJumpFloodCS");
-        shaderLibrary->LoadShader(ShaderID::EditorSelectionOutlineJumpFlood, shaderDesc);
-
-        {shaderDesc = ShaderDesc::CreateCompute("Shaders/RealTimeRenderer/PostProcessing/EditorSelectionOutlineComposite.hsm", "EditorSelectionOutlineCompositeCS");
-        shaderLibrary->LoadShader(ShaderID::EditorSelectionOutlineComposite, shaderDesc);
-
+        {
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Pixel, "Shaders/RealTimeRenderer/PostProcessing/LensFlaresGlare.hsm", "LensFlaresGlareVS");
+            shaderLibrary->LoadShader(ShaderID::LensFlaresGlareVS, shaderDesc);
+        }
+        {
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Pixel, "Shaders/RealTimeRenderer/PostProcessing/LensFlaresGlare.hsm", "LensFlaresGlarePS");
+            shaderLibrary->LoadShader(ShaderID::LensFlaresGlarePS, shaderDesc);
+        }
+        {
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Pixel, "Shaders/RealTimeRenderer/PostProcessing/LensFlaresCombine.hsm", "LensFlaresCombinePS");
+            shaderLibrary->LoadShader(ShaderID::LensFlaresCombine, shaderDesc);
+        }
+        {
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/PostProcessing/LocalExposureComputeLuminance.hsm", "LocalExposureComputeLuminanceCS");
+            shaderLibrary->LoadShader(ShaderID::LocalExposureComputeLuminance, shaderDesc);
+        }
+        {
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/PostProcessing/LocalExposureComputeWeights.hsm", "LocalExposureComputeWeightsCS");
+            shaderLibrary->LoadShader(ShaderID::LocalExposureComputeWeights, shaderDesc);
+        }
+        {
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/PostProcessing/LocalExposureBlendExposures.hsm", "LocalExposureBlendExposuresCS");
+            shaderLibrary->LoadShader(ShaderID::LocalExposureBlendExposures, shaderDesc);
+        }
+        {
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/PostProcessing/LocalExposureBlendLaplacian.hsm", "LocalExposureBlendLaplacianCS");
+            shaderLibrary->LoadShader(ShaderID::LocalExposureBlendLaplacian, shaderDesc);
+        }
+        {
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/PostProcessing/LocalExposureGuidedUpsampling.hsm", "LocalExposureGuidedUpsamplingCS");
+            shaderLibrary->LoadShader(ShaderID::LocalExposureGuidedUpsampling, shaderDesc);
+        }
+        {
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/PostProcessing/ColorLUT.hsm", "ColorLUTCS");
+            shaderLibrary->LoadShader(ShaderID::ColorLUT, shaderDesc);
+        }
+        {
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/PostProcessing/ToneMapping.hsm", "ToneMappingCS");
+            shaderLibrary->LoadShader(ShaderID::ToneMapping, shaderDesc);
+        }
+        {
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Vertex, "Shaders/RealTimeRenderer/PostProcessing/SelectionOutlineMask.hsm", "SelectionOutlineMaskVS");
+            shaderLibrary->LoadShader(ShaderID::SelectionOutlineMaskVS, shaderDesc);
+        }
+        {
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Pixel, "Shaders/RealTimeRenderer/PostProcessing/SelectionOutlineMask.hsm", "SelectionOutlineMaskPS");
+            shaderLibrary->LoadShader(ShaderID::SelectionOutlineMaskPS, shaderDesc);
+        }
+        {
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/PostProcessing/SelectionOutlineSetup.hsm", "SelectionOutlineSetupCS");
+            shaderLibrary->LoadShader(ShaderID::SelectionOutlineSetup, shaderDesc);
+        }
+        {
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/PostProcessing/SelectionOutlineJumpFlood.hsm", "SelectionOutlineJumpFloodCS");
+            shaderLibrary->LoadShader(ShaderID::SelectionOutlineJumpFlood, shaderDesc);
+        }
+        {
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/PostProcessing/SelectionOutlineComposite.hsm", "SelectionOutlineCompositeCS");
+            shaderLibrary->LoadShader(ShaderID::SelectionOutlineComposite, shaderDesc);
+        }
         {
             ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/PostProcessing/VisualizePrimitiveID.hsm", "VisualizePrimitiveIDCS");
             shaderLibrary->LoadShader(ShaderID::VisualizePrimitiveID, shaderDesc);
