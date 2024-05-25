@@ -49,7 +49,7 @@ namespace Horizon
                     RenderBackendGraphicsPipelineState graphicsPipelineState = {};
                     graphicsPipelineState.colorBlendState.targetBlends[0] = additiveColorBlendAttachmentStateRGB;
 
-                    RenderBackendShaderHandle graphicsShader = shaderLibrary->GetShaderHandle(ShaderID::LensFlaresGhost);
+                    RenderBackendShaderProgramHandle graphicsShader = shaderLibrary->GetShaderProgramHandle(ShaderID::LensFlaresGhost);
                     commandList.Draw(
                         graphicsShader,
                         graphicsPipelineState,
@@ -85,7 +85,7 @@ namespace Horizon
                     shaderArguments.BindTextureSRV(0, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(halfResolutionSceneColorTexture)));
                     shaderArguments.BindTextureUAV(1, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(tileCullingTexture), 0));
 
-                    RenderBackendShaderHandle computeShader = shaderLibrary->GetShaderHandle(ShaderID::LensFlaresTileCulling);
+                    RenderBackendShaderProgramHandle computeShader = shaderLibrary->GetShaderProgramHandle(ShaderID::LensFlaresTileCulling);
                     commandList.Dispatch2D(
                         computeShader,
                         shaderArguments,
@@ -127,7 +127,7 @@ namespace Horizon
                     RenderBackendGraphicsPipelineState graphicsPipelineState = {};
                     graphicsPipelineState.colorBlendState.targetBlends[0] = additiveColorBlendAttachmentStateRGB;
 
-                    RenderBackendShaderHandle graphicsShader = shaderLibrary->GetShaderHandle(ShaderID::LensFlaresGlare);
+                    RenderBackendShaderProgramHandle graphicsShader = shaderLibrary->GetShaderProgramHandle(ShaderID::LensFlaresGlare);
                     commandList.Draw(
                         graphicsShader,
                         graphicsPipelineState,
@@ -167,7 +167,7 @@ namespace Horizon
                     RenderBackendGraphicsPipelineState graphicsPipelineState = {};
                     graphicsPipelineState.colorBlendState.targetBlends[0] = additiveColorBlendAttachmentStateRGB;
 
-                    RenderBackendShaderHandle graphicsShader = shaderLibrary->GetShaderHandle(ShaderID::LensFlaresCombine);
+                    RenderBackendShaderProgramHandle graphicsShader = shaderLibrary->GetShaderProgramHandle(ShaderID::LensFlaresCombine);
                     commandList.Draw(
                         graphicsShader,
                         graphicsPipelineState,

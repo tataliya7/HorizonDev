@@ -218,7 +218,7 @@ namespace Horizon
          * Deprecated.
          */
         [[deprecated]]
-        virtual RenderBackendShaderHandle CreateShaderProgram(const RenderBackendShaderDesc* desc, const char* name) = 0;
+        virtual RenderBackendShaderProgramHandle CreateShaderProgram(const RenderBackendShaderProgramDesc* desc, const char* name) = 0;
 
         /**
          * Deprecated.

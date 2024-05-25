@@ -88,7 +88,7 @@ namespace Horizon
                     shaderArguments.BindTextureSRV(1, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(gbuffer1)));
                     shaderArguments.BindTextureUAV(3, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(tileClassificationHorizontalBuffer), 0));
 
-                    auto tileClassificationCS = shaderLibrary->GetShaderHandle(ShaderID::SSRTileClassificationHorizontal);
+                    auto tileClassificationCS = shaderLibrary->GetShaderProgramHandle(ShaderID::SSRTileClassificationHorizontal);
                     commandList.Dispatch2D(
                         tileClassificationCS,
                         shaderArguments,
@@ -127,7 +127,7 @@ namespace Horizon
                     shaderArguments.BindTextureUAV(7, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(expensiveTilesBuffer), 0));
                     shaderArguments.BindBuffer(8, rayAllocationBuffer, 0);
 
-                    auto tileClassificationCS = shaderLibrary->GetShaderHandle(ShaderID::SSRTileClassificationVertical);
+                    auto tileClassificationCS = shaderLibrary->GetShaderProgramHandle(ShaderID::SSRTileClassificationVertical);
                     commandList.Dispatch2D(
                         tileClassificationCS,
                         shaderArguments,
@@ -152,7 +152,7 @@ namespace Horizon
                     RenderBackendShaderArguments shaderArguments = {};
                     shaderArguments.BindBuffer(0, rayAllocationBuffer, 0);
 
-                    auto rayAllocationCS = shaderLibrary->GetShaderHandle(ShaderID::SSRRayAllocation);
+                    auto rayAllocationCS = shaderLibrary->GetShaderProgramHandle(ShaderID::SSRRayAllocation);
                     commandList.Dispatch(
                         rayAllocationCS,
                         shaderArguments,
@@ -245,7 +245,7 @@ namespace Horizon
 
                     commandList.ClearTexture(RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(debugOutputTexture), 0), RenderBackendTextureClearValue::CreateColorValueFloat4(0.0f, 0.0f, 0.0f, 0.0f));
 
-                    auto earlyExitRaysCS = shaderLibrary->GetShaderHandle(ShaderID::SSRDispatchEarlyExitRays);
+                    auto earlyExitRaysCS = shaderLibrary->GetShaderProgramHandle(ShaderID::SSRDispatchEarlyExitRays);
                     commandList.DispatchIndirect(
                         earlyExitRaysCS,
                         shaderArguments,
@@ -254,7 +254,7 @@ namespace Horizon
 
                     shaderArguments.BindTextureSRV(5, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(cheapTilesBuffer)));
 
-                    auto cheapRaysCS = shaderLibrary->GetShaderHandle(ShaderID::SSRDispatchCheapRays);
+                    auto cheapRaysCS = shaderLibrary->GetShaderProgramHandle(ShaderID::SSRDispatchCheapRays);
                     commandList.DispatchIndirect(
                         cheapRaysCS,
                         shaderArguments,
@@ -263,7 +263,7 @@ namespace Horizon
 
                     shaderArguments.BindTextureSRV(5, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(expensiveTilesBuffer)));
 
-                    auto expensiveRaysCS = shaderLibrary->GetShaderHandle(ShaderID::SSRDispatchExpensiveRays);
+                    auto expensiveRaysCS = shaderLibrary->GetShaderProgramHandle(ShaderID::SSRDispatchExpensiveRays);
                     commandList.DispatchIndirect(
                         expensiveRaysCS,
                         shaderArguments,
@@ -328,7 +328,7 @@ namespace Horizon
                     shaderArguments.BindTextureUAV(7, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(resolveVariance), 0));
                     shaderArguments.BindTextureUAV(8, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(reprojectionDepth), 0));
 
-                    auto resolveCS = shaderLibrary->GetShaderHandle(ShaderID::SSRResolve);
+                    auto resolveCS = shaderLibrary->GetShaderProgramHandle(ShaderID::SSRResolve);
                     commandList.Dispatch2D(
                         resolveCS,
                         shaderArguments,
@@ -414,7 +414,7 @@ namespace Horizon
                         shaderArguments.BindTextureUAV(10, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(temporalFilteringOutputTexture), 0));
                         shaderArguments.BindTextureUAV(11, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(temporalVarianceTexture), 0));
 
-                        auto temporalFilteringCS = shaderLibrary->GetShaderHandle(ShaderID::SSRTemporalFiltering);
+                        auto temporalFilteringCS = shaderLibrary->GetShaderProgramHandle(ShaderID::SSRTemporalFiltering);
                         commandList.Dispatch2D(
                             temporalFilteringCS,
                             shaderArguments,
@@ -462,7 +462,7 @@ namespace Horizon
                         shaderArguments.PushConstants(0, 1.0f);
                         shaderArguments.PushConstants(1, 0.0f);
 
-                        auto spatialFilteringCS = shaderLibrary->GetShaderHandle(ShaderID::SSRSpatialFiltering);
+                        auto spatialFilteringCS = shaderLibrary->GetShaderProgramHandle(ShaderID::SSRSpatialFiltering);
                         commandList.Dispatch2D(
                             spatialFilteringCS,
                             shaderArguments,
@@ -499,7 +499,7 @@ namespace Horizon
                         shaderArguments.PushConstants(0, 0.0f);
                         shaderArguments.PushConstants(1, 1.0f);
 
-                        auto spatialFilteringCS = shaderLibrary->GetShaderHandle(ShaderID::SSRSpatialFiltering);
+                        auto spatialFilteringCS = shaderLibrary->GetShaderProgramHandle(ShaderID::SSRSpatialFiltering);
                         commandList.Dispatch2D(
                             spatialFilteringCS,
                             shaderArguments,

@@ -38,7 +38,7 @@ namespace Horizon
                         shaderArguments.BindTextureUAV(1, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(colorLUTTexture), 0));
                         shaderArguments.PushConstants(0, (float)toneMappingOperator);
 
-                        RenderBackendShaderHandle computeShader = shaderLibrary->GetShaderHandle(ShaderID::ColorLUT);
+                        RenderBackendShaderProgramHandle computeShader = shaderLibrary->GetShaderProgramHandle(ShaderID::ColorLUT);
                         commandList.Dispatch(
                             computeShader,
                             shaderArguments,

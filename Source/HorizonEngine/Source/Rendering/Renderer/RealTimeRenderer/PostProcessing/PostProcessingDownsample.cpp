@@ -28,7 +28,7 @@ namespace Horizon
                         shaderArguments.BindTextureSRV(0, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(inputTexture)));
                         shaderArguments.BindTextureUAV(1, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(outputTexture), 0));
 
-                        RenderBackendShaderHandle computeShader = shaderLibrary->GetShaderHandle(ShaderID::Downsample);
+                        RenderBackendShaderProgramHandle computeShader = shaderLibrary->GetShaderProgramHandle(ShaderID::Downsample);
 
                         commandList.Dispatch(
                             computeShader,

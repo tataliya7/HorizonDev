@@ -29,7 +29,7 @@ namespace Horizon
                         RenderBackendScissor scissor(0, 0, renderResolution.width, renderResolution.height);
                         commandList.SetScissors(&scissor, 1);
 
-                        RenderBackendShaderHandle graphicsShader = shaderLibrary->GetShaderHandle(ShaderID::VBuffer);
+                        RenderBackendShaderProgramHandle graphicsShader = shaderLibrary->GetShaderProgramHandle(ShaderID::VBuffer);
 
                         RenderBackendGraphicsPipelineState graphicsPipelineState = {};
                         graphicsPipelineState.rasterizationState.cullMode = RenderBackendRasterizationCullMode::Back;
@@ -89,7 +89,7 @@ namespace Horizon
                         RenderBackendScissor scissor(0, 0, renderResolution.width, renderResolution.height);
                         commandList.SetScissors(&scissor, 1);
 
-                        RenderBackendShaderHandle graphicsShader = shaderLibrary->GetShaderHandle(ShaderID::VBufferMeshlet);
+                        RenderBackendShaderProgramHandle graphicsShader = shaderLibrary->GetShaderProgramHandle(ShaderID::VBufferMeshlet);
 
                         RenderBackendGraphicsPipelineState graphicsPipelineState = {};
                         graphicsPipelineState.rasterizationState.cullMode = RenderBackendRasterizationCullMode::Back;
@@ -153,7 +153,7 @@ namespace Horizon
                     uint32 groupCountX = ComputeWorkGroupCount(renderResolution.width, 8);
                     uint32 groupCountY = ComputeWorkGroupCount(renderResolution.height, 8);
 
-                    RenderBackendShaderHandle computeShader = shaderLibrary->GetShaderHandle(ShaderID::GBuffer);
+                    RenderBackendShaderProgramHandle computeShader = shaderLibrary->GetShaderProgramHandle(ShaderID::GBuffer);
                     commandList.Dispatch2D(
                         computeShader,
                         shaderArguments,
@@ -187,7 +187,7 @@ namespace Horizon
                     shaderArguments.BindTextureSRV(2, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(vbuffer0)));
                     shaderArguments.BindTextureUAV(3, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(motionVectors), 0));
 
-                    RenderBackendShaderHandle computeShader = shaderLibrary->GetShaderHandle(ShaderID::MotionVectors);
+                    RenderBackendShaderProgramHandle computeShader = shaderLibrary->GetShaderProgramHandle(ShaderID::MotionVectors);
                     commandList.Dispatch2D(
                         computeShader,
                         shaderArguments,
@@ -275,7 +275,7 @@ namespace Horizon
                     graphicsPipelineState.colorBlendState.targetBlends[0].alphaBlendOp = RenderBackendBlendOp::Add;
                     graphicsPipelineState.colorBlendState.targetBlends[0].colorWriteMask = RenderBackendColorComponentFlags::RGBA;
 
-                    RenderBackendShaderHandle graphicsShader = shaderLibrary->GetShaderHandle(ShaderID::DirectLighting);
+                    RenderBackendShaderProgramHandle graphicsShader = shaderLibrary->GetShaderProgramHandle(ShaderID::DirectLighting);
                     commandList.Draw(
                         graphicsShader,
                         graphicsPipelineState,
@@ -323,7 +323,7 @@ namespace Horizon
                     shaderArguments.BindTextureSRV(5, RenderBackendTextureSRVDesc::Create(renderEngine->irradianceEnvironmentMap));
                     shaderArguments.BindBuffer(6, renderEngine->irradianceEnvironmentMapSH, 0);
 
-                    RenderBackendShaderHandle graphicsShader = shaderLibrary->GetShaderHandle(ShaderID::IndirectLightingDiffuse);
+                    RenderBackendShaderProgramHandle graphicsShader = shaderLibrary->GetShaderProgramHandle(ShaderID::IndirectLightingDiffuse);
                     commandList.Draw(
                         graphicsShader,
                         graphicsPipelineState,
@@ -372,7 +372,7 @@ namespace Horizon
                     shaderArguments.BindTextureSRV(5, RenderBackendTextureSRVDesc::Create(renderEngine->GetDefaultResources().GetPreIntegratedBrdfLut()));
                     shaderArguments.BindTextureSRV(6, RenderBackendTextureSRVDesc::Create(renderEngine->filteredEnvironmentMap));
 
-                    RenderBackendShaderHandle graphicsShader = shaderLibrary->GetShaderHandle(ShaderID::IndirectLightingSpecular);
+                    RenderBackendShaderProgramHandle graphicsShader = shaderLibrary->GetShaderProgramHandle(ShaderID::IndirectLightingSpecular);
                     commandList.Draw(
                         graphicsShader,
                         graphicsPipelineState,

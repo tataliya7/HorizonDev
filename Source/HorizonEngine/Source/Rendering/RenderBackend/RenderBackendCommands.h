@@ -30,9 +30,6 @@ namespace Horizon
         ResolveTimingQueryResults,
         Dispatch,
         DispatchIndirect,
-        BuildBottomLevelAS,
-        BuildTopLevelAS,
-        DispatchRays,
         SetViewport,
         SetScissor,
         SetStencilReference,
@@ -44,6 +41,9 @@ namespace Horizon
         DispatchMeshIndirect,
         BeginDebugLabel,
         EndDebugLabel,
+        BuildBottomLevelAS,
+        BuildTopLevelAS,
+        DispatchRays,
         DispatchSuperSampling,
         Count,
     };
@@ -128,7 +128,7 @@ namespace Horizon
 
     struct RenderBackendCommandDispatch : RenderBackendCommand<RenderBackendCommandType::Dispatch, RenderBackendCommandQueueType::Compute>
     {
-        RenderBackendShaderDesc computeShader;
+        RenderBackendShaderProgramHandle shader;
         RenderBackendShaderArguments shaderArguments;
         uint32 threadGroupCountX;
         uint32 threadGroupCountY;
@@ -137,32 +137,10 @@ namespace Horizon
 
     struct RenderBackendCommandDispatchIndirect : RenderBackendCommand<RenderBackendCommandType::DispatchIndirect, RenderBackendCommandQueueType::Compute>
     {
-        RenderBackendShaderDesc computeShader;
+        RenderBackendShaderProgramHandle shader;
         RenderBackendShaderArguments shaderArguments;
         RenderBackendBufferHandle argumentBuffer;
         uint64 argumentBufferOffset;
-    };
-
-    struct RenderBackendCommandDispatchRays : RenderBackendCommand<RenderBackendCommandType::DispatchRays, RenderBackendCommandQueueType::Graphics>
-    {
-        RenderBackendRayTracingPipelineStateHandle pipelineState;
-        RenderBackendBufferHandle shaderBindingTable;
-        RenderBackendShaderArguments shaderArguments;
-        uint32 width;
-        uint32 height;
-        uint32 depth;
-    };
-
-    struct RenderBackendCommandBuildBottomLevelAS : RenderBackendCommand<RenderBackendCommandType::BuildBottomLevelAS, RenderBackendCommandQueueType::Compute>
-    {
-        RenderBackendRayTracingAccelerationStructureHandle srcBLAS;
-        RenderBackendRayTracingAccelerationStructureHandle dstBLAS;
-    };
-
-    struct RenderBackendCommandBuildTopLevelAS : RenderBackendCommand<RenderBackendCommandType::BuildTopLevelAS, RenderBackendCommandQueueType::Compute>
-    {
-        RenderBackendRayTracingAccelerationStructureHandle srcTLAS;
-        RenderBackendRayTracingAccelerationStructureHandle dstTLAS;
     };
 
     struct RenderBackendCommandSetViewport : RenderBackendCommand<RenderBackendCommandType::SetViewport, RenderBackendCommandQueueType::Graphics>
@@ -194,8 +172,7 @@ namespace Horizon
 
     struct RenderBackendCommandDraw : RenderBackendCommand<RenderBackendCommandType::Draw, RenderBackendCommandQueueType::Graphics>
     {
-        RenderBackendShaderDesc vertexShader;
-        RenderBackendShaderDesc pixelShader;
+        RenderBackendShaderProgramHandle shader;
         RenderBackendGraphicsPipelineState pipelineState;
         RenderBackendShaderArguments shaderArguments;
         RenderBackendBufferHandle indexBuffer;
@@ -203,26 +180,26 @@ namespace Horizon
         {
             struct
             {
-                uint32 numVertices;
-                uint32 numInstances;
+                uint32 vertexCount;
+                uint32 instanceCount;
                 uint32 firstVertex;
                 uint32 firstInstance;
-            };
+            } draw;
             struct
             {
-                uint32 numIndices;
-                uint32 numInstances;
+                uint32 indexCount;
+                uint32 instanceCount;
                 uint32 firstIndex;
                 int32 vertexOffset;
                 uint32 firstInstance;
-            };
+            } drawIndexed;
         };
         RenderBackendPrimitiveTopology topology;
     };
 
     struct RenderBackendCommandDrawIndirect : RenderBackendCommand<RenderBackendCommandType::DrawIndirect, RenderBackendCommandQueueType::Graphics>
     {
-        RenderBackendShaderHandle shader;
+        RenderBackendShaderProgramHandle shader;
         RenderBackendGraphicsPipelineState pipelineState;
         RenderBackendShaderArguments shaderArguments;
         RenderBackendBufferHandle indexBuffer;
@@ -234,7 +211,7 @@ namespace Horizon
 
     struct RenderBackendCommandDispatchMesh : RenderBackendCommand<RenderBackendCommandType::DispatchMesh, RenderBackendCommandQueueType::Graphics>
     {
-        RenderBackendShaderHandle shader;
+        RenderBackendShaderProgramHandle shader;
         RenderBackendGraphicsPipelineState pipelineState;
         RenderBackendShaderArguments shaderArguments;
         RenderBackendPrimitiveTopology topology;
@@ -245,7 +222,7 @@ namespace Horizon
 
     struct RenderBackendCommandDispatchMeshIndirect : RenderBackendCommand<RenderBackendCommandType::DispatchMeshIndirect, RenderBackendCommandQueueType::Graphics>
     {
-        RenderBackendShaderHandle shader;
+        RenderBackendShaderProgramHandle shader;
         RenderBackendGraphicsPipelineState pipelineState;
         RenderBackendShaderArguments shaderArguments;
         RenderBackendPrimitiveTopology topology;
@@ -263,6 +240,28 @@ namespace Horizon
     struct RenderBackendCommandEndDebugLabel : RenderBackendCommand<RenderBackendCommandType::EndDebugLabel, RenderBackendCommandQueueType::All>
     {
 
+    };
+
+    struct RenderBackendCommandBuildBottomLevelAS : RenderBackendCommand<RenderBackendCommandType::BuildBottomLevelAS, RenderBackendCommandQueueType::Compute>
+    {
+        RenderBackendRayTracingAccelerationStructureHandle srcBLAS;
+        RenderBackendRayTracingAccelerationStructureHandle dstBLAS;
+    };
+
+    struct RenderBackendCommandBuildTopLevelAS : RenderBackendCommand<RenderBackendCommandType::BuildTopLevelAS, RenderBackendCommandQueueType::Compute>
+    {
+        RenderBackendRayTracingAccelerationStructureHandle srcTLAS;
+        RenderBackendRayTracingAccelerationStructureHandle dstTLAS;
+    };
+
+    struct RenderBackendCommandDispatchRays : RenderBackendCommand<RenderBackendCommandType::DispatchRays, RenderBackendCommandQueueType::Graphics>
+    {
+        RenderBackendRayTracingPipelineStateHandle pipelineState;
+        RenderBackendBufferHandle shaderBindingTable;
+        RenderBackendShaderArguments shaderArguments;
+        uint32 width;
+        uint32 height;
+        uint32 depth;
     };
 
     struct RenderBackendCommandDispatchSuperSampling : RenderBackendCommand<RenderBackendCommandType::DispatchSuperSampling, RenderBackendCommandQueueType::Compute>

@@ -24,7 +24,7 @@ namespace Horizon
                         shaderArguments.BindBuffer(0, surfelGIInfoBuffer, 0);
                         shaderArguments.BindBuffer(1, surfelGIFreeSurfelBuffer, 0);
 
-                        RenderBackendShaderHandle computeShader = shaderLibrary->GetShaderHandle(ShaderID::SurfelGIFreeSurfels);
+                        RenderBackendShaderProgramHandle computeShader = shaderLibrary->GetShaderProgramHandle(ShaderID::SurfelGIFreeSurfels);
                         commandList.Dispatch(
                             computeShader,
                             shaderArguments,
@@ -57,7 +57,7 @@ namespace Horizon
                     shaderArguments.BindBuffer(7, surfelGIFreeSurfelBuffer, 0);
                     shaderArguments.BindBuffer(8, surfelGISurfelHotDataBuffer, 0);
 
-                    RenderBackendShaderHandle computeShader = shaderLibrary->GetShaderHandle(ShaderID::SurfelGIGapFilling);
+                    RenderBackendShaderProgramHandle computeShader = shaderLibrary->GetShaderProgramHandle(ShaderID::SurfelGIGapFilling);
                     commandList.Dispatch(
                         computeShader,
                         shaderArguments,
@@ -77,7 +77,7 @@ namespace Horizon
                     RenderBackendShaderArguments shaderArguments = {};
                     shaderArguments.BindBuffer(0, surfelGICellHeaderBuffer, 0);
 
-                    RenderBackendShaderHandle computeShader = shaderLibrary->GetShaderHandle(ShaderID::SurfelGIGridReset);
+                    RenderBackendShaderProgramHandle computeShader = shaderLibrary->GetShaderProgramHandle(ShaderID::SurfelGIGridReset);
                     commandList.Dispatch(
                         computeShader,
                         shaderArguments,
@@ -99,7 +99,7 @@ namespace Horizon
                     shaderArguments.BindBuffer(3, surfelGISurfelHotDataBuffer, 0);
                     shaderArguments.BindBuffer(4, surfelGICellHeaderBuffer, 0);
 
-                    RenderBackendShaderHandle computeShader = shaderLibrary->GetShaderHandle(ShaderID::SurfelGIComputeCellCapacity);
+                    RenderBackendShaderProgramHandle computeShader = shaderLibrary->GetShaderProgramHandle(ShaderID::SurfelGIComputeCellCapacity);
                     commandList.DispatchIndirect(
                         computeShader,
                         shaderArguments,
@@ -118,7 +118,7 @@ namespace Horizon
         //                RenderBackendShaderArguments shaderArguments = {};
         //                shaderArguments.BindBuffer(0, surfelGICellHeaderBuffer, 0);
 
-        //                RenderBackendShaderHandle computeShader = shaderLibrary->GetShaderHandle(ShaderID::SurfelGIComputeCellOffset);
+        //                RenderBackendShaderProgramHandle computeShader = shaderLibrary->GetShaderProgramHandle(ShaderID::SurfelGIComputeCellOffset);
         //                commandList.Dispatch(
         //                    computeShader,
         //                    shaderArguments,
@@ -137,7 +137,7 @@ namespace Horizon
                     shaderArguments.BindBuffer(0, surfelGIConstantsBuffer, 0);
                     shaderArguments.BindBuffer(1, surfelGIIndirectArguments, 0);
 
-                    RenderBackendShaderHandle computeShader = shaderLibrary->GetShaderHandle(ShaderID::SurfelGIIndirectAruguments);
+                    RenderBackendShaderProgramHandle computeShader = shaderLibrary->GetShaderProgramHandle(ShaderID::SurfelGIIndirectAruguments);
                     commandList.Dispatch(
                         computeShader,
                         shaderArguments,
@@ -179,7 +179,7 @@ namespace Horizon
                     shaderArguments.BindBuffer(6, surfelGISurfelHotDataBuffer, 0);
                     shaderArguments.BindTextureUAV(7, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(outputTexture), 0));
 
-                    RenderBackendShaderHandle computeShader = shaderLibrary->GetShaderHandle(ShaderID::SurfelGIVisualization);
+                    RenderBackendShaderProgramHandle computeShader = shaderLibrary->GetShaderProgramHandle(ShaderID::SurfelGIVisualization);
                     commandList.Dispatch2D(
                         computeShader,
                         shaderArguments,

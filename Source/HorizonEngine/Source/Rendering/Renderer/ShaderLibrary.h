@@ -78,7 +78,7 @@ namespace Horizon
     {
         ShaderID id;
         ShaderDesc desc;
-        RenderBackendShaderHandle handle;
+        RenderBackendShaderProgramHandle handle;
         std::vector<std::filesystem::path> relatedFiles;
         std::vector<std::chrono::time_point<std::chrono::file_clock>> lastModifiedTime;
         bool compiled = false;
@@ -92,7 +92,7 @@ namespace Horizon
         bool HotReload();
         void AddIncludeDirectory(const char* dir);
         bool LoadShader(ShaderID id, ShaderDesc& desc);
-        RenderBackendShaderHandle GetShaderHandle(ShaderID id);
+        RenderBackendShaderProgramHandle GetShaderProgramHandle(ShaderID id);
         ShaderCompiler* shaderCompiler;
     private:
         bool hotReloadEnabled;

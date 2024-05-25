@@ -23,7 +23,7 @@ namespace Horizon
 
                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
                 {
-                    RenderBackendShaderHandle buildHZBCS = shaderLibrary->GetShaderHandle(ShaderID::BuildHZB);
+                    RenderBackendShaderProgramHandle buildHZBCS = shaderLibrary->GetShaderProgramHandle(ShaderID::BuildHZB);
 
                     // Build first mip
                     {

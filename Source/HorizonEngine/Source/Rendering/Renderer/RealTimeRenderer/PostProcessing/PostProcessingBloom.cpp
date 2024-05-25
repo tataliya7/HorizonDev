@@ -54,7 +54,7 @@ namespace Horizon
                             shaderArguments.PushConstants(1, 1.0f / (float)outputTextureHeight);
                             shaderArguments.PushConstants(2, useKarisAverage ? 1.0f : 0.0f);
 
-                            RenderBackendShaderHandle computeShader = shaderLibrary->GetShaderHandle(ShaderID::GaussianBloomDownsample);
+                            RenderBackendShaderProgramHandle computeShader = shaderLibrary->GetShaderProgramHandle(ShaderID::GaussianBloomDownsample);
                             commandList.Dispatch2D(
                                 computeShader,
                                 shaderArguments,
@@ -106,7 +106,7 @@ namespace Horizon
                             shaderArguments.PushConstants(1, 1.0f / (float)outputTextureHeight);
                             shaderArguments.PushConstants(2, sceneViewShaderParameters.bloomRadius);
 
-                            RenderBackendShaderHandle computeShader = shaderLibrary->GetShaderHandle(ShaderID::GaussianBloomUpsample);
+                            RenderBackendShaderProgramHandle computeShader = shaderLibrary->GetShaderProgramHandle(ShaderID::GaussianBloomUpsample);
                             commandList.Dispatch2D(
                                 computeShader,
                                 shaderArguments,
@@ -193,7 +193,7 @@ namespace Horizon
                     shaderArguments.BindTextureSRV(0, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(bloomKernelTexture)));
                     shaderArguments.BindTextureUAV(1, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(resizedBloomKernelTexture), 0));
 
-                    RenderBackendShaderHandle computeShader = shaderLibrary->GetShaderHandle(ShaderID::ConvolutionBloomResizeKernel);
+                    RenderBackendShaderProgramHandle computeShader = shaderLibrary->GetShaderProgramHandle(ShaderID::ConvolutionBloomResizeKernel);
                     commandList.Dispatch2D(
                         computeShader,
                         shaderArguments,

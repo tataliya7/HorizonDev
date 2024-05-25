@@ -10,7 +10,7 @@ namespace Horizon
 
     void RenderPreIntegratedBrdfLut(ShaderLibrary_Deprecated* shaderLibrary, RenderBackendCommandList& commandList, RenderBackendTextureHandle preIntegratedBrdfLut)
     {
-        RenderBackendShaderHandle computeShader = shaderLibrary->GetShaderHandle(ShaderID::PreIntegratedBRDF);
+        RenderBackendShaderProgramHandle computeShader = shaderLibrary->GetShaderProgramHandle(ShaderID::PreIntegratedBRDF);
 
         RenderBackendBarrier transition(preIntegratedBrdfLut, RenderBackendTextureSubresourceRange::All, RenderBackendResourceState::Undefined, RenderBackendResourceState::UnorderedAccess);
         commandList.Transitions(&transition, 1);
@@ -35,7 +35,7 @@ namespace Horizon
 
     void GenerateCubemapMips(ShaderLibrary_Deprecated* shaderLibrary, RenderBackendCommandList& commandList, RenderBackendTextureHandle cubemap, uint32 numMipLevels)
     {
-        RenderBackendShaderHandle downsampleCubemapCS = shaderLibrary->GetShaderHandle(ShaderID::DownsampleCubemap);
+        RenderBackendShaderProgramHandle downsampleCubemapCS = shaderLibrary->GetShaderProgramHandle(ShaderID::DownsampleCubemap);
 
         for (uint32 mipLevel = 1; mipLevel < numMipLevels; mipLevel++)
         {
@@ -69,7 +69,7 @@ namespace Horizon
 
     void ComputeEnvironmentIrradiance(ShaderLibrary_Deprecated* shaderLibrary, RenderBackendCommandList& commandList, RenderBackendTextureHandle environmentMap, uint32 mipLevel, RenderBackendTextureHandle irradianceEnvironmentMap)
     {
-        RenderBackendShaderHandle computeEnvironmentIrradianceCS = shaderLibrary->GetShaderHandle(ShaderID::ComputeEnvironmentIrradiance);
+        RenderBackendShaderProgramHandle computeEnvironmentIrradianceCS = shaderLibrary->GetShaderProgramHandle(ShaderID::ComputeEnvironmentIrradiance);
 
         RenderBackendBarrier transition(irradianceEnvironmentMap, RenderBackendTextureSubresourceRange(0, 1, 0, 6), RenderBackendResourceState::Undefined, RenderBackendResourceState::UnorderedAccess);
         commandList.Transitions(&transition, 1);
@@ -99,7 +99,7 @@ namespace Horizon
         static const uint32 log2_16 = 4;
         uint32 sourceMipLevel = uint32(std::log2(float(environmentMapSize))) - log2_16;
 
-        RenderBackendShaderHandle computeEnvironmentIrradianceCS = shaderLibrary->GetShaderHandle(ShaderID::ComputeEnvironmentIrradianceSH);
+        RenderBackendShaderProgramHandle computeEnvironmentIrradianceCS = shaderLibrary->GetShaderProgramHandle(ShaderID::ComputeEnvironmentIrradianceSH);
 
         RenderBackendShaderArguments shaderArguments = {};
         shaderArguments.BindTextureSRV(0, RenderBackendTextureSRVDesc::Create(environmentMap));
@@ -116,7 +116,7 @@ namespace Horizon
 
     void FilterEnvironmentMap(ShaderLibrary_Deprecated* shaderLibrary, RenderBackendCommandList& commandList, RenderBackendTextureHandle environmentMap, uint32 numMipLevels, RenderBackendTextureHandle filteredEnvironmentMap)
     {
-        RenderBackendShaderHandle filterEnvironmentMapCS = shaderLibrary->GetShaderHandle(ShaderID::FilterEnvironmentMap);
+        RenderBackendShaderProgramHandle filterEnvironmentMapCS = shaderLibrary->GetShaderProgramHandle(ShaderID::FilterEnvironmentMap);
 
         RenderBackendBarrier transition(filteredEnvironmentMap, RenderBackendTextureSubresourceRange(0, RenderBackendTextureSubresourceRange::RemainingMipLevels, 0, RenderBackendTextureSubresourceRange::RemainingArrayLayers), RenderBackendResourceState::Undefined, RenderBackendResourceState::UnorderedAccess);
         commandList.Transitions(&transition, 1);
@@ -175,7 +175,7 @@ namespace Horizon
         shaderArguments.BindTextureSRV(0, RenderBackendTextureSRVDesc::Create(latLongTexture));
         shaderArguments.BindTextureUAV(1, RenderBackendTextureUAVDesc::Create(cubemapTexture, 0));
 
-        RenderBackendShaderHandle computeShader = shaderLibrary->GetShaderHandle(ShaderID::LatLongToCubemap);
+        RenderBackendShaderProgramHandle computeShader = shaderLibrary->GetShaderProgramHandle(ShaderID::LatLongToCubemap);
 
         commandList.Dispatch(
             computeShader,

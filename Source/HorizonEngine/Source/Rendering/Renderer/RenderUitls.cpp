@@ -274,7 +274,7 @@ namespace Horizon
             return;
         }
 
-        RenderBackendShaderHandle graphicsShader = shaderLibrary->GetShaderHandle(ShaderID::DownsampleTexture2D_PS);
+        RenderBackendShaderProgramHandle graphicsShader = shaderLibrary->GetShaderProgramHandle(ShaderID::DownsampleTexture2D_PS);
         for (uint32 mipLevel = 1; mipLevel < numMipLevels; mipLevel++)
         {
             width = width >> 1;

@@ -51,7 +51,7 @@ namespace Horizon
                             shaderArguments.BindBuffer(1, renderEngine->geometryBuffer, drawCallInfo.geometryIndex * sizeof(GeometryShaderParameters));
                             shaderArguments.BindBuffer(2, drawCallInfo.vertexBuffers[0], 0);
 
-                            RenderBackendShaderHandle graphicsShader = shaderLibrary->GetShaderHandle(ShaderID::EditorSelectionOutlineMaskGen);
+                            RenderBackendShaderProgramHandle graphicsShader = shaderLibrary->GetShaderProgramHandle(ShaderID::EditorSelectionOutlineMaskGen);
                             commandList.DrawIndexed(
                                 graphicsShader,
                                 graphicsPipelineState,
@@ -92,7 +92,7 @@ namespace Horizon
                         shaderArguments.BindTextureSRV(1, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(maskTexture)));
                         shaderArguments.BindTextureUAV(2, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(jumpFloodTexture0), 0));
 
-                        RenderBackendShaderHandle computeShader = shaderLibrary->GetShaderHandle(ShaderID::EditorSelectionOutlineSetup);
+                        RenderBackendShaderProgramHandle computeShader = shaderLibrary->GetShaderProgramHandle(ShaderID::EditorSelectionOutlineSetup);
                         commandList.Dispatch2D(
                             computeShader,
                             shaderArguments,
@@ -132,7 +132,7 @@ namespace Horizon
                             shaderArguments.BindTextureUAV(2, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(jumpFloodPassOutputTexture), 0));
                             shaderArguments.PushConstants(0, (float)stepWidth);
 
-                            RenderBackendShaderHandle computeShader = shaderLibrary->GetShaderHandle(ShaderID::EditorSelectionOutlineJumpFlood);
+                            RenderBackendShaderProgramHandle computeShader = shaderLibrary->GetShaderProgramHandle(ShaderID::EditorSelectionOutlineJumpFlood);
                             commandList.Dispatch2D(
                                 computeShader,
                                 shaderArguments,
@@ -164,7 +164,7 @@ namespace Horizon
                         shaderArguments.BindTextureSRV(1, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(jumpFloodTexture)));
                         shaderArguments.BindTextureUAV(2, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(outputTexture), 0));
 
-                        RenderBackendShaderHandle computeShader = shaderLibrary->GetShaderHandle(ShaderID::EditorSelectionOutlineComposite);
+                        RenderBackendShaderProgramHandle computeShader = shaderLibrary->GetShaderProgramHandle(ShaderID::EditorSelectionOutlineComposite);
                         commandList.Dispatch2D(
                             computeShader,
                             shaderArguments,

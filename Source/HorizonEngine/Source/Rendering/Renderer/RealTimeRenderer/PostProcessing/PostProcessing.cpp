@@ -182,7 +182,7 @@ namespace Horizon
                         shaderArguments.BindBuffer(0, GetCurrentPerFrameDataBuffer());
                         shaderArguments.BindBuffer(1, renderEngine->debugDrawLinesVertexBuffer, 0);
 
-                        RenderBackendShaderHandle graphicsShader = shaderLibrary->GetShaderHandle(ShaderID::DebugDraw);
+                        RenderBackendShaderProgramHandle graphicsShader = shaderLibrary->GetShaderProgramHandle(ShaderID::DebugDraw);
                         commandList.Draw(
                             graphicsShader,
                             graphicsPipelineState,

@@ -52,7 +52,7 @@ namespace Horizon
                             graphicsPipelineState.depthStencilState.depthWriteEnable = true;
                             graphicsPipelineState.depthStencilState.depthCompareFunction = RenderBackendCompareOp::GreaterOrEqual;
 
-                            RenderBackendShaderHandle graphicsShader = shaderLibrary->GetShaderHandle(ShaderID::CascadedShadowMap);
+                            RenderBackendShaderProgramHandle graphicsShader = shaderLibrary->GetShaderProgramHandle(ShaderID::CascadedShadowMap);
 
                             for (const auto& drawCallInfo : renderEngine->drawList)
                             {
@@ -98,8 +98,9 @@ namespace Horizon
                     RenderBackendScissor scissor(0, 0, renderResolution.width, renderResolution.height);
                     commandList.SetScissors(&scissor, 1);
 
-                    uint32 groupCountX = ComputeWorkGroupCount(renderResolution.width, 8);
-                    uint32 groupCountY = ComputeWorkGroupCount(renderResolution.height, 8);
+                    uint32 threadGroupCountX = ComputeWorkGroupCount(renderResolution.width, 8);
+                    uint32 threadGroupCountY = ComputeWorkGroupCount(renderResolution.height, 8);
+                    uint32 threadGroupCountZ = 1;
 
                     RenderBackendShaderArguments shaderArguments = {};
                     shaderArguments.BindBuffer(0, GetCurrentPerFrameDataBuffer());
@@ -108,12 +109,13 @@ namespace Horizon
                     shaderArguments.BindTextureSRV(3, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(shadowMap)));
                     shaderArguments.BindTextureUAV(5, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(screenSpaceShadowMaskTexture), 0));
 
-                    RenderBackendShaderHandle computeShader = shaderLibrary->GetShaderHandle(ShaderID::ScreenSpaceShadowsDirectionalLight);
-                    commandList.Dispatch2D(
+                    RenderBackendShaderProgramHandle computeShader = shaderLibrary->GetShaderProgramHandle(ShaderID::ScreenSpaceShadowsDirectionalLight);
+                    commandList.Dispatch(
                         computeShader,
                         shaderArguments,
-                        groupCountX,
-                        groupCountY);
+                        threadGroupCountX,
+                        threadGroupCountY,
+                        threadGroupCountZ);
                 };
             });
     }

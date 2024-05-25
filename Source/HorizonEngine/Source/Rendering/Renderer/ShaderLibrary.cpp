@@ -69,7 +69,7 @@ namespace Horizon
         return true;
     }
 
-    RenderBackendShaderHandle ShaderLibrary_Deprecated::GetShaderHandle(ShaderID id)
+    RenderBackendShaderProgramHandle ShaderLibrary_Deprecated::GetShaderProgramHandle(ShaderID id)
     {
         const uint32 shaderIndex = uint32(id);
         return loadedShaders[shaderIndex].handle;
@@ -226,7 +226,7 @@ namespace Horizon
         const uint32 shaderIndex = uint32(id);
         if (succeed)
         {
-            RenderBackendShaderHandle handle = renderBackend->CreateShader(&shaderDesc, desc.name.c_str());
+            RenderBackendShaderProgramHandle handle = renderBackend->CreateShader(&shaderDesc, desc.name.c_str());
             if (handle)
             {
                 loadedShaders[shaderIndex].compiled = true;

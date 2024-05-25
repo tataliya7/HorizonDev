@@ -10,19 +10,12 @@ namespace Horizon
     {
     public:
 
-        static const RenderBackendDeviceMask All()
-        {
-            return RenderBackendDeviceMask(~0u);
-        }
-
-        static const RenderBackendDeviceMask None()
-        {
-            return RenderBackendDeviceMask(0u);
-        }
+        static constexpr RenderBackendDeviceMask All = RenderBackendDeviceMask(~0u);
+        static constexpr RenderBackendDeviceMask None = RenderBackendDeviceMask(0u);
 
         explicit RenderBackendDeviceMask(uint32 mask) : mask(mask) {}
 
-        RenderBackendDeviceMask() : RenderBackendDeviceMask(RenderBackendDeviceMask::All()) {}
+        RenderBackendDeviceMask() : RenderBackendDeviceMask(RenderBackendDeviceMask::All) {}
 
         uint32 Get() const
         {
@@ -54,7 +47,7 @@ namespace Horizon
                 }
                 unsigned long result;
                 _BitScanForward(&result, value);
-                return (uint32)result;
+                return static_cast<uint32>(result);
             }
 
             explicit Iterator(uint32 mask) : mask(mask), firstNonZeroBit(0)
@@ -84,7 +77,6 @@ namespace Horizon
             uint32 operator*() const { return firstNonZeroBit; }
             bool operator !=(const Iterator& rhs) const { return mask != rhs.mask; }
             explicit operator bool() const { return mask != 0; }
-            bool operator !() const { return !(bool)*this; }
 
         private:
 

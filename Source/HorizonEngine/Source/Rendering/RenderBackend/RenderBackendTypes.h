@@ -290,6 +290,7 @@ namespace Horizon
         {
             return RenderBackendTextureClearValue(depth, stencil);
         }
+
         union
         {
             struct ClearColorValue
@@ -951,7 +952,7 @@ namespace Horizon
         const char* entryFunctionName;
     };
 
-    struct RenderBackendShaderProgramDesc_Deprecated
+    struct RenderBackendShaderProgramDesc
     {
         RenderBackendShaderBytecode stages[RenderBackendShaderStageCount];
     };

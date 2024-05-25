@@ -63,7 +63,7 @@ namespace Horizon
 
                     commandList.ClearTextureUAV(RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(gtaoDebugOutputTexture), 0), RenderBackendTextureClearValue::CreateColorValueFloat4(0.0f, 0.0f, 0.0f, 0.0f));
 
-                    RenderBackendShaderHandle computeShader = shaderLibrary->GetShaderHandle(ShaderID::GTAOHorizonSearchAndIntegral);
+                    RenderBackendShaderProgramHandle computeShader = shaderLibrary->GetShaderProgramHandle(ShaderID::GTAOHorizonSearchAndIntegral);
                     commandList.Dispatch2D(
                         computeShader,
                         shaderArguments,
@@ -93,7 +93,7 @@ namespace Horizon
                     shaderArguments.PushConstants(0, 1.0f / float(gtaoTextureWidth));
                     shaderArguments.PushConstants(1, 0.0f);
 
-                    RenderBackendShaderHandle computeShader = shaderLibrary->GetShaderHandle(ShaderID::GTAOSpatialFiltering);
+                    RenderBackendShaderProgramHandle computeShader = shaderLibrary->GetShaderProgramHandle(ShaderID::GTAOSpatialFiltering);
                     commandList.Dispatch2D(
                         computeShader,
                         shaderArguments,
@@ -140,7 +140,7 @@ namespace Horizon
                     shaderArguments.BindTextureSRV(10, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(historyAmbientOcclusionTexture)));
                     shaderArguments.BindTextureUAV(11, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(ambientOcclusionTexture), 0));
 
-                    RenderBackendShaderHandle computeShader = shaderLibrary->GetShaderHandle(ShaderID::GTAOTemporalFiltering);
+                    RenderBackendShaderProgramHandle computeShader = shaderLibrary->GetShaderProgramHandle(ShaderID::GTAOTemporalFiltering);
                     commandList.Dispatch2D(
                         computeShader,
                         shaderArguments,
