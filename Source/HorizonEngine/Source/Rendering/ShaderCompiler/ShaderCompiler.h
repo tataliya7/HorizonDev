@@ -9,7 +9,7 @@ namespace Horizon
         Compute = 0,
         Vertex = 1,
         Pixel = 2,
-        Task = 3,
+        Amplification = 3,
         Mesh = 4,
         //RayGen = 5,
         //Miss = 6,
@@ -85,9 +85,11 @@ namespace Horizon
         std::string value;
     };
 
-    struct ShaderModuleDescription
+    struct ShaderSourceDescription
     {
         const char* filename;
+        const char* entryPoint;
+        ShaderStage stage;
         const uint8* code;
         uint64 codeSize;
         const ShaderMacroDefine* defines;
@@ -96,6 +98,18 @@ namespace Horizon
         uint32 numIncludeDirectories;
         HLSLShaderModel shaderModel;
     };
+
+    // struct ShaderModuleDescription
+    // {
+    //     const char* filename;
+    //     const uint8* code;
+    //     uint64 codeSize;
+    //     const ShaderMacroDefine* defines;
+    //     uint32 numDefines;
+    //     const char** includeDirectories;
+    //     uint32 numIncludeDirectories;
+    //     HLSLShaderModel shaderModel;
+    // };
 
     class ShaderBlob
     {
@@ -150,6 +164,15 @@ namespace Horizon
     class ShaderCompiler
     {
     public:
-        virtual bool CompileShader(const ShaderCompilerOptions& options, const ShaderModuleDescription& module, ShadingLanguage language, ShaderCompilerOutput* output) = 0;
+
+        /**
+         * Compile a single entry point.
+         */
+        virtual bool CompileShader(const ShaderCompilerOptions& options, const ShaderSourceDescription& source, ShadingLanguage language, ShaderCompilerOutput* output) = 0;
+
+        /**
+         * Experimental: Compile a library.
+         */
+        //virtual bool CompileShaderModule(const ShaderCompilerOptions& options, const ShaderModuleDescription& module, ShadingLanguage language, ShaderCompilerOutput* output) = 0;
     };
 }
