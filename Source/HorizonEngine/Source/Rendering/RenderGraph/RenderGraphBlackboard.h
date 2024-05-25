@@ -1,7 +1,6 @@
 #pragma once
 
 #include "RenderGraphCommon.h"
-#include "RenderGraphHandles.h"
 
 namespace Horizon
 {

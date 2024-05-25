@@ -419,7 +419,7 @@ namespace Horizon
             uint32 enableFrameRateUpConversion : 1;
             uint32 enableSuperSamplingAntiAliasing : 1;
             uint32 enableSuperResolution : 1;
-            uint32 enableSkyAtmosphere : 1;
+            uint32 enableSkyAtmosphereRendering : 1;
             uint32 enableRayTracingShadows : 1;
             uint32 enableRayTracingReflections : 1;
             uint32 enableRayTracingAmbientOcclusion : 1;
