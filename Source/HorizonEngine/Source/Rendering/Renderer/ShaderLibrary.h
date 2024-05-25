@@ -10,6 +10,7 @@ namespace Horizon
 {
     enum class ShaderID : uint32
     {
+        FullScreenQuadVS,
         PreIntegratedBRDF,
         LatLongToCubemap,
         DownsampleCubemap,

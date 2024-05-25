@@ -36,6 +36,10 @@ namespace Horizon
         LoadSkyAtmosphereShaders_Deprecated(shaderLibrary);
 
         {
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Vertex, "Shaders/FullScreenQuad.hsm", "FullScreenQuadVS");
+            shaderLibrary->LoadShader(ShaderID::FullScreenQuadVS, shaderDesc);
+        }
+        {
             ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/PreIntegratedBRDF.hsm", "PreIntegratedBRDFCS");
             shaderLibrary->LoadShader(ShaderID::PreIntegratedBRDF, shaderDesc);
         }
