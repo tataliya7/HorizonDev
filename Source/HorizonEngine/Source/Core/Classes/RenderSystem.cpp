@@ -12,7 +12,7 @@
 
 namespace Horizon
 {
-    void Texture2DGenerateMips(ShaderLibrary_Deprecated* shaderLibrary, RenderBackendCommandList& commandList, RenderBackendTextureHandle textureHandle, uint32 width, uint32 height, uint32 numMipLevels)
+    void Texture2DGenerateMips(ShaderLibrary* shaderLibrary, RenderBackendCommandList& commandList, RenderBackendTextureHandle textureHandle, uint32 width, uint32 height, uint32 numMipLevels)
     {
         if (numMipLevels < 2)
         {
@@ -258,7 +258,7 @@ namespace Horizon
         GRenderer = this;
 
         // TODO: Remove this
-        shaderLibrary = new ShaderLibrary_Deprecated(renderBackend, shaderCompiler, ShaderID::Count, true);
+        shaderLibrary = new ShaderLibrary(renderBackend, shaderCompiler, ShaderID::Count, true);
         shaderLibrary->AddIncludeDirectory("../../../Shaders");
         shaderLibrary->AddIncludeDirectory("../../../Shaders/RealTimeRenderer");
         shaderLibrary->AddIncludeDirectory("../../../Shaders/RealTimeRenderer/SubsurfaceScattering");
@@ -266,7 +266,7 @@ namespace Horizon
         shaderLibrary->AddIncludeDirectory("../../../Shaders/RealTimeRenderer/PostProcessing");
 
         shaderCompiler = CreateDXCShaderCompiler();
-        shaderLibrary = new ShaderLibrary_Deprecated(renderBackend, shaderCompiler, (uint32)ShaderPipelineID::Count, true);
+        shaderLibrary = new ShaderLibrary(renderBackend, shaderCompiler, (uint32)ShaderPipelineID::Count, true);
         shaderLibrary->AddIncludeDirectory("../../../Shaders");
         shaderLibrary->AddIncludeDirectory("../../../Shaders/RealTimeRenderer");
 

@@ -295,10 +295,12 @@ namespace Horizon
                         shaderArguments.BindTextureSRV(3, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(aerialPerspectiveVolume)));
                         shaderArguments.BindTextureSRV(4, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(sceneDepthTexture)));
 
-                        RenderBackendShaderHandle graphicsShader = shaderLibrary->GetShader(ShaderID::SkyAtmosphereRayMarching);
+                        RenderBackendShaderHandle vertexShader = shaderLibrary->GetShader(ShaderID::SkyAtmosphereRayMarching);
+                        RenderBackendShaderHandle pixelShader = shaderLibrary->GetShader(ShaderID::SkyAtmosphereRayMarching);
 
                         commandList.Draw(
-                            graphicsShader,
+                            vertexShader,
+                            pixelShader,
                             graphicsPipelineState,
                             shaderArguments,
                             3, 1, 0, 0,

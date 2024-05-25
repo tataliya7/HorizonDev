@@ -57,7 +57,7 @@ namespace Horizon
         void InitializeDefaultResources(RenderBackendCommandList* commandList);
         void ReleaseDefaultResources();
 
-        ShaderLibrary_Deprecated* GetShaderLibrary()
+        ShaderLibrary* GetShaderLibrary()
         {
             return shaderLibrary;
         }
@@ -125,7 +125,7 @@ namespace Horizon
         FrameAllocator* frameAllocator;
         RenderBackend* renderBackend;
         ShaderCompiler* shaderCompiler;
-        ShaderLibrary_Deprecated* shaderLibrary;
+        ShaderLibrary* shaderLibrary;
 
         RenderBackendTimingQueryHeapHandle timingQueryHeap;
 

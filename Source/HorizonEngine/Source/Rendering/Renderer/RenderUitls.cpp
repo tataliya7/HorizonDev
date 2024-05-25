@@ -118,7 +118,7 @@ namespace Horizon
         file.close();
     }
 
-    RenderBackendTextureHandle LoadTextureFromFile(RenderBackend* renderBackend, ShaderLibrary_Deprecated* shaderLibrary, const char* filename, bool autoMipmaps, bool filpY, RenderBackendTextureFormat format)
+    RenderBackendTextureHandle LoadTextureFromFile(RenderBackend* renderBackend, ShaderLibrary* shaderLibrary, const char* filename, bool autoMipmaps, bool filpY, RenderBackendTextureFormat format)
     {
         RenderBackendTextureHandle texture = RenderBackendTextureHandle::Null;
 
@@ -267,7 +267,7 @@ namespace Horizon
         return texture;
     }
 
-    void Texture2DGenerateMips(ShaderLibrary_Deprecated* shaderLibrary, RenderBackendCommandList& commandList, RenderBackendTextureHandle textureHandle, uint32 width, uint32 height, uint32 numMipLevels)
+    void Texture2DGenerateMips(ShaderLibrary* shaderLibrary, RenderBackendCommandList& commandList, RenderBackendTextureHandle textureHandle, uint32 width, uint32 height, uint32 numMipLevels)
     {
         if (numMipLevels < 2)
         {

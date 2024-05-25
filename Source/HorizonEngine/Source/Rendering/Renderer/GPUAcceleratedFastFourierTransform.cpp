@@ -4,7 +4,7 @@
 namespace Horizon::GPUFFT
 {
     void DispatchSharedMemoryTwoForOneRealFFTCS(
-        ShaderLibrary_Deprecated* shaderLibrary,
+        ShaderLibrary* shaderLibrary,
         RenderGraph& renderGraph,
         bool isHorizontal,
         uint32 signalLength,
@@ -40,7 +40,7 @@ namespace Horizon::GPUFFT
     }
 
     void DispatchSharedMemoryComplexFFTCS(
-        ShaderLibrary_Deprecated* shaderLibrary,
+        ShaderLibrary* shaderLibrary,
         RenderGraph& renderGraph,
         bool isHorizontal,
         uint32 signalLength,
@@ -76,7 +76,7 @@ namespace Horizon::GPUFFT
     }
 
     void DispatchSharedMemoryComplexIFFTCS(
-        ShaderLibrary_Deprecated* shaderLibrary,
+        ShaderLibrary* shaderLibrary,
         RenderGraph& renderGraph,
         bool isHorizontal,
         uint32 signalLength,
@@ -112,7 +112,7 @@ namespace Horizon::GPUFFT
     }
 
     void DispatchSharedMemoryFFTConvolutionCS(
-        ShaderLibrary_Deprecated* shaderLibrary,
+        ShaderLibrary* shaderLibrary,
         RenderGraph& renderGraph,
         bool isHorizontal,
         uint32 signalLength,
@@ -147,7 +147,7 @@ namespace Horizon::GPUFFT
     }
 
     void DispatchSharedMemoryTwoForOneRealIFFTCS(
-        ShaderLibrary_Deprecated* shaderLibrary,
+        ShaderLibrary* shaderLibrary,
         RenderGraph& renderGraph,
         bool isHorizontal,
         uint32 signalLength,
