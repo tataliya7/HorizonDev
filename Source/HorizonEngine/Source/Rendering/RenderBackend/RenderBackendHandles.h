@@ -18,7 +18,7 @@ namespace Horizon
         uint32 GetIndex() const { return index; }
         uint32 GetDeviceMask() const { return deviceMask; }
     private:
-        static const uint32 InvalidIndex = std::numeric_limits<uint32>::max();
+        static constexpr  uint32 InvalidIndex = std::numeric_limits<uint32>::max();
         uint32 index = InvalidIndex;
         uint32 deviceMask = ~0u;
     };
@@ -43,7 +43,8 @@ namespace Horizon
         class Sampler;
         class SwapChain;
         class TimingQueryHeap;
-        class Shader;
+        class ShaderProgram; // Deprecated
+        //class ShaderModule;
         class RayTracingAccelerationStructure;
         class RayTracingPipelineState;
     }
@@ -53,7 +54,8 @@ namespace Horizon
     using RenderBackendSamplerHandle                                = RenderBackendHandle<RenderBackendHandleTypes::Sampler>;
     using RenderBackendSwapChainHandle                              = RenderBackendHandle<RenderBackendHandleTypes::SwapChain>;
     using RenderBackendTimingQueryHeapHandle                        = RenderBackendHandle<RenderBackendHandleTypes::TimingQueryHeap>;
-    using RenderBackendShaderHandle                                 = RenderBackendHandle<RenderBackendHandleTypes::Shader>;
+    using RenderBackendShaderProgramHandle                          = RenderBackendHandle<RenderBackendHandleTypes::ShaderProgram>; // Deprecated
+    //using RenderBackendShaderModuleHandle                           = RenderBackendHandle<RenderBackendHandleTypes::ShaderModule>;
     using RenderBackendRayTracingAccelerationStructureHandle        = RenderBackendHandle<RenderBackendHandleTypes::RayTracingAccelerationStructure>;
     using RenderBackendRayTracingPipelineStateHandle                = RenderBackendHandle<RenderBackendHandleTypes::RayTracingPipelineState>;
 }

@@ -1,9 +1,9 @@
-#include "ShaderID_DEPRECATED.h"
+#include "ShaderID_Deprecated.h"
 #include "ShaderLibrary.h"
 
 namespace Horizon
 {
-    static void CompileSkyAtmosphereShaders_DEPRECATED(ShaderLibrary_DEPRECATED* shaderLibrary)
+    static void CompileSkyAtmosphereShaders_Deprecated(ShaderLibrary_Deprecated* shaderLibrary)
     {
         ShaderDesc shaderDesc = {};
 
@@ -29,7 +29,7 @@ namespace Horizon
         shaderLibrary->LoadShader(ShaderID::SkyAtmosphereRayMarching, shaderDesc);
     }
 
-    static void CompileRayTracingShaders_DEPRECATED(ShaderLibrary_DEPRECATED* shaderLibrary)
+    static void CompileRayTracingShaders_Deprecated(ShaderLibrary_Deprecated* shaderLibrary)
     {
 #if 0
         if (renderEngine->IsHardwareRayTracingEnabled())
@@ -88,10 +88,10 @@ namespace Horizon
 #endif
     }
 
-    void CompileShaders_DEPRECATED(ShaderLibrary_DEPRECATED* shaderLibrary)
+    void CompileShaders_Deprecated(ShaderLibrary_Deprecated* shaderLibrary)
     {
-        CompileSkyAtmosphereShaders_DEPRECATED(shaderLibrary);
-        CompileRayTracingShaders_DEPRECATED(shaderLibrary);
+        CompileSkyAtmosphereShaders_Deprecated(shaderLibrary);
+        CompileRayTracingShaders_Deprecated(shaderLibrary);
 
         ShaderDesc shaderDesc;
 

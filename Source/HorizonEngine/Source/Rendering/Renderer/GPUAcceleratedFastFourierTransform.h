@@ -6,7 +6,7 @@
 namespace Horizon::GPUFFT
 {
     void DispatchSharedMemoryTwoForOneRealFFTCS(
-        ShaderLibrary_DEPRECATED* shaderLibrary,
+        ShaderLibrary_Deprecated* shaderLibrary,
         RenderGraph& renderGraph,
         bool isHorizontal,
         uint32 signalLength,
@@ -14,7 +14,7 @@ namespace Horizon::GPUFFT
         RenderGraphTextureHandle dstTexture, const Rect& dstRect);
 
     void DispatchSharedMemoryTwoForOneRealIFFTCS(
-        ShaderLibrary_DEPRECATED* shaderLibrary,
+        ShaderLibrary_Deprecated* shaderLibrary,
         RenderGraph& renderGraph,
         bool isHorizontal,
         uint32 signalLength,
@@ -22,7 +22,7 @@ namespace Horizon::GPUFFT
         RenderGraphTextureHandle dstTexture, const Rect& dstRect);
 
     void DispatchSharedMemoryComplexFFTCS(
-        ShaderLibrary_DEPRECATED* shaderLibrary,
+        ShaderLibrary_Deprecated* shaderLibrary,
         RenderGraph& renderGraph,
         bool isHorizontal,
         uint32 signalLength,
@@ -30,7 +30,7 @@ namespace Horizon::GPUFFT
         RenderGraphTextureHandle dstTexture, const Rect& dstRect);
 
     void DispatchSharedMemoryComplexIFFTCS(
-        ShaderLibrary_DEPRECATED* shaderLibrary,
+        ShaderLibrary_Deprecated* shaderLibrary,
         RenderGraph& renderGraph,
         bool isHorizontal,
         uint32 signalLength,
@@ -38,7 +38,7 @@ namespace Horizon::GPUFFT
         RenderGraphTextureHandle dstTexture, const Rect& dstRect);
 
     void DispatchSharedMemoryFFTConvolutionCS(
-        ShaderLibrary_DEPRECATED* shaderLibrary,
+        ShaderLibrary_Deprecated* shaderLibrary,
         RenderGraph& renderGraph,
         bool isHorizontal,
         uint32 signalLength,

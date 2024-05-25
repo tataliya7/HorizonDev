@@ -46,11 +46,11 @@ namespace Horizon
         return Extent2D(w, h);
     }
 
-    class ShaderLibrary_DEPRECATED;
+    class ShaderLibrary_Deprecated;
 
     extern RenderBackendTextureHandle LoadTextureFromHDRFile(RenderBackend* renderBackend, const char* filename, RenderBackendTextureDesc* outDesc = nullptr);
 
-    extern RenderBackendTextureHandle LoadTextureFromFile(RenderBackend* renderBackend, ShaderLibrary_DEPRECATED* shaderLibrary, const char* filename, bool autoMipmaps = true, bool flipY = true, RenderBackendTextureFormat format = RenderBackendTextureFormat::BGRA8Unorm);
+    extern RenderBackendTextureHandle LoadTextureFromFile(RenderBackend* renderBackend, ShaderLibrary_Deprecated* shaderLibrary, const char* filename, bool autoMipmaps = true, bool flipY = true, RenderBackendTextureFormat format = RenderBackendTextureFormat::BGRA8Unorm);
 
-    extern void Texture2DGenerateMips(ShaderLibrary_DEPRECATED* shaderLibrary, RenderBackendCommandList& commandList, RenderBackendTextureHandle textureHandle, uint32 width, uint32 height, uint32 numMipLevels);
+    extern void Texture2DGenerateMips(ShaderLibrary_Deprecated* shaderLibrary, RenderBackendCommandList& commandList, RenderBackendTextureHandle textureHandle, uint32 width, uint32 height, uint32 numMipLevels);
 }

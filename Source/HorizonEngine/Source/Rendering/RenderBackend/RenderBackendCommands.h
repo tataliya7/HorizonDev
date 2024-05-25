@@ -128,7 +128,7 @@ namespace Horizon
 
     struct RenderBackendCommandDispatch : RenderBackendCommand<RenderBackendCommandType::Dispatch, RenderBackendCommandQueueType::Compute>
     {
-        RenderBackendShaderHandle shader;
+        RenderBackendShaderDesc computeShader;
         RenderBackendShaderArguments shaderArguments;
         uint32 threadGroupCountX;
         uint32 threadGroupCountY;
@@ -137,7 +137,7 @@ namespace Horizon
 
     struct RenderBackendCommandDispatchIndirect : RenderBackendCommand<RenderBackendCommandType::DispatchIndirect, RenderBackendCommandQueueType::Compute>
     {
-        RenderBackendShaderHandle shader;
+        RenderBackendShaderDesc computeShader;
         RenderBackendShaderArguments shaderArguments;
         RenderBackendBufferHandle argumentBuffer;
         uint64 argumentBufferOffset;
@@ -194,7 +194,8 @@ namespace Horizon
 
     struct RenderBackendCommandDraw : RenderBackendCommand<RenderBackendCommandType::Draw, RenderBackendCommandQueueType::Graphics>
     {
-        RenderBackendShaderHandle shader;
+        RenderBackendShaderDesc vertexShader;
+        RenderBackendShaderDesc pixelShader;
         RenderBackendGraphicsPipelineState pipelineState;
         RenderBackendShaderArguments shaderArguments;
         RenderBackendBufferHandle indexBuffer;

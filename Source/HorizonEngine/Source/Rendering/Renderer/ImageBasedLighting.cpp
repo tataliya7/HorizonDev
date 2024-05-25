@@ -1,14 +1,14 @@
 #include "ImageBasedLighting.h"
 #include "RenderUtils.h"
 #include "ShaderLibrary.h"
-#include "ShaderID_DEPRECATED.h"
+#include "ShaderID_Deprecated.h"
 
 namespace Horizon
 {
     uint32 GPreIntegratedBrdfLutSize = 256;
     uint32 GIrradianceEnvironmentMapSize = 32;
 
-    void RenderPreIntegratedBrdfLut(ShaderLibrary_DEPRECATED* shaderLibrary, RenderBackendCommandList& commandList, RenderBackendTextureHandle preIntegratedBrdfLut)
+    void RenderPreIntegratedBrdfLut(ShaderLibrary_Deprecated* shaderLibrary, RenderBackendCommandList& commandList, RenderBackendTextureHandle preIntegratedBrdfLut)
     {
         RenderBackendShaderHandle computeShader = shaderLibrary->GetShaderHandle(ShaderID::PreIntegratedBRDF);
 
@@ -33,7 +33,7 @@ namespace Horizon
         commandList.Transitions(&transition, 1);
     }
 
-    void GenerateCubemapMips(ShaderLibrary_DEPRECATED* shaderLibrary, RenderBackendCommandList& commandList, RenderBackendTextureHandle cubemap, uint32 numMipLevels)
+    void GenerateCubemapMips(ShaderLibrary_Deprecated* shaderLibrary, RenderBackendCommandList& commandList, RenderBackendTextureHandle cubemap, uint32 numMipLevels)
     {
         RenderBackendShaderHandle downsampleCubemapCS = shaderLibrary->GetShaderHandle(ShaderID::DownsampleCubemap);
 
@@ -67,7 +67,7 @@ namespace Horizon
         commandList.Transitions(&transition, 1);
     }
 
-    void ComputeEnvironmentIrradiance(ShaderLibrary_DEPRECATED* shaderLibrary, RenderBackendCommandList& commandList, RenderBackendTextureHandle environmentMap, uint32 mipLevel, RenderBackendTextureHandle irradianceEnvironmentMap)
+    void ComputeEnvironmentIrradiance(ShaderLibrary_Deprecated* shaderLibrary, RenderBackendCommandList& commandList, RenderBackendTextureHandle environmentMap, uint32 mipLevel, RenderBackendTextureHandle irradianceEnvironmentMap)
     {
         RenderBackendShaderHandle computeEnvironmentIrradianceCS = shaderLibrary->GetShaderHandle(ShaderID::ComputeEnvironmentIrradiance);
 
@@ -94,7 +94,7 @@ namespace Horizon
         commandList.Transitions(&transition, 1);
     }
 
-    void ComputeEnvironmentIrradianceSH(ShaderLibrary_DEPRECATED* shaderLibrary, RenderBackendCommandList& commandList, RenderBackendTextureHandle environmentMap, uint32 environmentMapSize, RenderBackendBufferHandle irradianceEnvironmentMapSH)
+    void ComputeEnvironmentIrradianceSH(ShaderLibrary_Deprecated* shaderLibrary, RenderBackendCommandList& commandList, RenderBackendTextureHandle environmentMap, uint32 environmentMapSize, RenderBackendBufferHandle irradianceEnvironmentMapSH)
     {
         static const uint32 log2_16 = 4;
         uint32 sourceMipLevel = uint32(std::log2(float(environmentMapSize))) - log2_16;
@@ -114,7 +114,7 @@ namespace Horizon
             1);
     }
 
-    void FilterEnvironmentMap(ShaderLibrary_DEPRECATED* shaderLibrary, RenderBackendCommandList& commandList, RenderBackendTextureHandle environmentMap, uint32 numMipLevels, RenderBackendTextureHandle filteredEnvironmentMap)
+    void FilterEnvironmentMap(ShaderLibrary_Deprecated* shaderLibrary, RenderBackendCommandList& commandList, RenderBackendTextureHandle environmentMap, uint32 numMipLevels, RenderBackendTextureHandle filteredEnvironmentMap)
     {
         RenderBackendShaderHandle filterEnvironmentMapCS = shaderLibrary->GetShaderHandle(ShaderID::FilterEnvironmentMap);
 
@@ -146,7 +146,7 @@ namespace Horizon
         commandList.Transitions(&transition, 1);
     }
 
-    void ComputeEnvironmentCubemaps(ShaderLibrary_DEPRECATED* shaderLibrary, RenderBackendCommandList& commandList, RenderBackendTextureHandle environmentMap, uint32 cubemapSize, RenderBackendTextureHandle irradianceEnvironmentMap, RenderBackendBufferHandle irradianceEnvironmentMapSH, RenderBackendTextureHandle filteredEnvironmentMap)
+    void ComputeEnvironmentCubemaps(ShaderLibrary_Deprecated* shaderLibrary, RenderBackendCommandList& commandList, RenderBackendTextureHandle environmentMap, uint32 cubemapSize, RenderBackendTextureHandle irradianceEnvironmentMap, RenderBackendBufferHandle irradianceEnvironmentMapSH, RenderBackendTextureHandle filteredEnvironmentMap)
     {
         const uint32 numMipLevels = Math::MaxNumMipLevels(cubemapSize);
 
@@ -162,7 +162,7 @@ namespace Horizon
         FilterEnvironmentMap(shaderLibrary, commandList, environmentMap, numMipLevels, filteredEnvironmentMap);
     }
 
-    void ConvertLatLongToCubemap(ShaderLibrary_DEPRECATED* shaderLibrary, RenderBackendCommandList& commandList, RenderBackendTextureHandle latLongTexture, RenderBackendTextureHandle cubemapTexture, uint32 cubemapTextureSize)
+    void ConvertLatLongToCubemap(ShaderLibrary_Deprecated* shaderLibrary, RenderBackendCommandList& commandList, RenderBackendTextureHandle latLongTexture, RenderBackendTextureHandle cubemapTexture, uint32 cubemapTextureSize)
     {
         RenderBackendBarrier transition(cubemapTexture, RenderBackendTextureSubresourceRange(0, 1, 0, 6), RenderBackendResourceState::Undefined, RenderBackendResourceState::UnorderedAccess);
         commandList.Transitions(&transition, 1);

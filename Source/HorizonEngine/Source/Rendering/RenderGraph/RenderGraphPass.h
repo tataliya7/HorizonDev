@@ -12,12 +12,13 @@ namespace Horizon
     {
         None           = 0,
         Copy           = (1 << 0),
-        Graphics       = (1 << 1),
-        Compute        = (1 << 2),
-        AsyncCompute   = (1 << 3),
-        RayTracing     = (1 << 4),
-        NeverGetCulled = (1 << 5),
-        SkipRenderPass = (1 << 6),
+        Compute        = (1 << 1),
+        AsyncCompute   = (1 << 2),
+        Graphics       = (1 << 3),
+        MeshShading    = (1 << 4),
+        RayTracing     = (1 << 5),
+        NeverGetCulled = (1 << 6),
+        SkipRenderPass = (1 << 7),
         Readback = Copy | NeverGetCulled,
     };
     HORIZON_ENUM_CLASS_OPERATORS(RenderGraphPassFlags);

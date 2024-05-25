@@ -57,7 +57,7 @@ namespace Horizon
         void InitializeDefaultResources(RenderBackendCommandList* commandList);
         void ReleaseDefaultResources();
 
-        ShaderLibrary_DEPRECATED* GetShaderLibrary()
+        ShaderLibrary_Deprecated* GetShaderLibrary()
         {
             return shaderLibrary;
         }
@@ -115,7 +115,7 @@ namespace Horizon
 
     private:
 
-        void CompileShaders_DEPRECATED();
+        void CompileShaders_Deprecated();
 
         void AddLight(const SceneView& view, LightComponent& lightComponent, const CameraComponent& camera);
 
@@ -125,7 +125,7 @@ namespace Horizon
         FrameAllocator* frameAllocator;
         RenderBackend* renderBackend;
         ShaderCompiler* shaderCompiler;
-        ShaderLibrary_DEPRECATED* shaderLibrary;
+        ShaderLibrary_Deprecated* shaderLibrary;
 
         RenderBackendTimingQueryHeapHandle timingQueryHeap;
 

@@ -5,28 +5,28 @@ namespace Horizon
 {
     // Sky Atmosphere Rendering Configs
     // TODO: Make it changeable in flight.
-    uint32 TransmittanceLutWidth_DEPRECATED = 256;
-    uint32 TransmittanceLutHeight_DEPRECATED = 64;
-    uint32 MultipleScatteringLutWidth_DEPRECATED = 32;
-    uint32 MultipleScatteringLutHeight_DEPRECATED = 32;
-    uint32 SkyViewLutWidth_DEPRECATED = 192;
-    uint32 SkyViewLutHeight_DEPRECATED = 104;
-    uint32 AerialPerspectiveVolumeSize_DEPRECATED = 32;
-    uint32 TransmittanceLutSampleCount_DEPRECATED = 40; // Can go a low as 10 sample but energy lost starts to be visible
-    uint32 MultipleScatteringLutSampleCount_DEPRECATED = 20; // a minimum set of step is required for accuracy unfortunately
-    uint32 RayMarchingMinSampleCount_DEPRECATED = 4;
-    uint32 RayMarchingMaxSampleCount_DEPRECATED = 32;
+    uint32 TransmittanceLutWidth_Deprecated = 256;
+    uint32 TransmittanceLutHeight_Deprecated = 64;
+    uint32 MultipleScatteringLutWidth_Deprecated = 32;
+    uint32 MultipleScatteringLutHeight_Deprecated = 32;
+    uint32 SkyViewLutWidth_Deprecated = 192;
+    uint32 SkyViewLutHeight_Deprecated = 104;
+    uint32 AerialPerspectiveVolumeSize_Deprecated = 32;
+    uint32 TransmittanceLutSampleCount_Deprecated = 40; // Can go a low as 10 sample but energy lost starts to be visible
+    uint32 MultipleScatteringLutSampleCount_Deprecated = 20; // a minimum set of step is required for accuracy unfortunately
+    uint32 RayMarchingMinSampleCount_Deprecated = 4;
+    uint32 RayMarchingMaxSampleCount_Deprecated = 32;
 
     void SetupSkyAtmosphereShaderParameters(SkyAtmosphereShaderParameters& outParameters, const SkyAtmosphereRenderProxy& renderProxy)
     {
-        outParameters.transmittanceLutSize = GetSizeAndInverseSize(TransmittanceLutWidth_DEPRECATED, TransmittanceLutHeight_DEPRECATED);
-        outParameters.multipleScatteringLutSize = GetSizeAndInverseSize(MultipleScatteringLutWidth_DEPRECATED, MultipleScatteringLutHeight_DEPRECATED);
-        outParameters.skyViewLutSize = GetSizeAndInverseSize(SkyViewLutWidth_DEPRECATED, SkyViewLutHeight_DEPRECATED);
-        outParameters.aerialPerspectiveVolumeSize = Vector2(float(AerialPerspectiveVolumeSize_DEPRECATED), 1.0f / float(AerialPerspectiveVolumeSize_DEPRECATED));
-        outParameters.transmittanceLutSampleCount = float(TransmittanceLutSampleCount_DEPRECATED);
-        outParameters.multipleScatteringLutSampleCount = float(MultipleScatteringLutSampleCount_DEPRECATED);
-        outParameters.rayMarchingMinSampleCount = float(RayMarchingMinSampleCount_DEPRECATED);
-        outParameters.rayMarchingMaxSampleCount = float(RayMarchingMaxSampleCount_DEPRECATED);
+        outParameters.transmittanceLutSize = GetSizeAndInverseSize(TransmittanceLutWidth_Deprecated, TransmittanceLutHeight_Deprecated);
+        outParameters.multipleScatteringLutSize = GetSizeAndInverseSize(MultipleScatteringLutWidth_Deprecated, MultipleScatteringLutHeight_Deprecated);
+        outParameters.skyViewLutSize = GetSizeAndInverseSize(SkyViewLutWidth_Deprecated, SkyViewLutHeight_Deprecated);
+        outParameters.aerialPerspectiveVolumeSize = Vector2(float(AerialPerspectiveVolumeSize_Deprecated), 1.0f / float(AerialPerspectiveVolumeSize_Deprecated));
+        outParameters.transmittanceLutSampleCount = float(TransmittanceLutSampleCount_Deprecated);
+        outParameters.multipleScatteringLutSampleCount = float(MultipleScatteringLutSampleCount_Deprecated);
+        outParameters.rayMarchingMinSampleCount = float(RayMarchingMinSampleCount_Deprecated);
+        outParameters.rayMarchingMaxSampleCount = float(RayMarchingMaxSampleCount_Deprecated);
 
         const AtmosphereParameters& atmosphereParameters = renderProxy.GetAtmosphereParameters();
         outParameters.bottomRadius = atmosphereParameters.bottomRadius;
@@ -99,13 +99,13 @@ namespace Horizon
 
     void RealTimeRenderer::RenderSkyAtmosphereLUTs(RenderGraph& renderGraph)
     {
-        const uint32 transmittanceLutWidth = TransmittanceLutWidth_DEPRECATED;
-        const uint32 transmittanceLutHeight = TransmittanceLutHeight_DEPRECATED;
-        const uint32 multipleScatteringLutWidth = MultipleScatteringLutWidth_DEPRECATED;
-        const uint32 multipleScatteringLutHeight = MultipleScatteringLutHeight_DEPRECATED;
-        const uint32 skyViewLutWidth = SkyViewLutWidth_DEPRECATED;
-        const uint32 skyViewLutHeight = SkyViewLutHeight_DEPRECATED;
-        const uint32 aerialPerspectiveVolumeSize = AerialPerspectiveVolumeSize_DEPRECATED;
+        const uint32 transmittanceLutWidth = TransmittanceLutWidth_Deprecated;
+        const uint32 transmittanceLutHeight = TransmittanceLutHeight_Deprecated;
+        const uint32 multipleScatteringLutWidth = MultipleScatteringLutWidth_Deprecated;
+        const uint32 multipleScatteringLutHeight = MultipleScatteringLutHeight_Deprecated;
+        const uint32 skyViewLutWidth = SkyViewLutWidth_Deprecated;
+        const uint32 skyViewLutHeight = SkyViewLutHeight_Deprecated;
+        const uint32 aerialPerspectiveVolumeSize = AerialPerspectiveVolumeSize_Deprecated;
 
         RenderBackendTextureDesc transmittanceLutDesc = RenderBackendTextureDesc::Create2D(
             transmittanceLutWidth,

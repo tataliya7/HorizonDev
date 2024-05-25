@@ -409,7 +409,7 @@ namespace Horizon
             const SceneView& view);
 
         ShaderCompiler* shaderCompiler;
-        ShaderLibrary_DEPRECATED* shaderLibrary;
+        ShaderLibrary_Deprecated* shaderLibrary;
         RenderGraphResourcePool* resourcePool;
         RendererDefaultResources* defaultResources;
         PostProcessingSettings finalPostProcessingSettings;

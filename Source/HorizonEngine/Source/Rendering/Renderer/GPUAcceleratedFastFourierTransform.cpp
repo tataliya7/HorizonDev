@@ -1,10 +1,10 @@
 #include "GPUAcceleratedFastFourierTransform.h"
-#include "ShaderID_DEPRECATED.h"
+#include "ShaderID_Deprecated.h"
 
 namespace Horizon::GPUFFT
 {
     void DispatchSharedMemoryTwoForOneRealFFTCS(
-        ShaderLibrary_DEPRECATED* shaderLibrary,
+        ShaderLibrary_Deprecated* shaderLibrary,
         RenderGraph& renderGraph,
         bool isHorizontal,
         uint32 signalLength,
@@ -40,7 +40,7 @@ namespace Horizon::GPUFFT
     }
 
     void DispatchSharedMemoryComplexFFTCS(
-        ShaderLibrary_DEPRECATED* shaderLibrary,
+        ShaderLibrary_Deprecated* shaderLibrary,
         RenderGraph& renderGraph,
         bool isHorizontal,
         uint32 signalLength,
@@ -76,7 +76,7 @@ namespace Horizon::GPUFFT
     }
 
     void DispatchSharedMemoryComplexIFFTCS(
-        ShaderLibrary_DEPRECATED* shaderLibrary,
+        ShaderLibrary_Deprecated* shaderLibrary,
         RenderGraph& renderGraph,
         bool isHorizontal,
         uint32 signalLength,
@@ -112,7 +112,7 @@ namespace Horizon::GPUFFT
     }
 
     void DispatchSharedMemoryFFTConvolutionCS(
-        ShaderLibrary_DEPRECATED* shaderLibrary,
+        ShaderLibrary_Deprecated* shaderLibrary,
         RenderGraph& renderGraph,
         bool isHorizontal,
         uint32 signalLength,
@@ -147,7 +147,7 @@ namespace Horizon::GPUFFT
     }
 
     void DispatchSharedMemoryTwoForOneRealIFFTCS(
-        ShaderLibrary_DEPRECATED* shaderLibrary,
+        ShaderLibrary_Deprecated* shaderLibrary,
         RenderGraph& renderGraph,
         bool isHorizontal,
         uint32 signalLength,

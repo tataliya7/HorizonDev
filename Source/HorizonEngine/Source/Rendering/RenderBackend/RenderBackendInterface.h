@@ -6,6 +6,10 @@
 
 namespace Horizon
 {
+    class RenderBackendCommandList;
+
+    using PhysicalDeviceID = uint32;
+
     struct RenderBackendSuperSamplingTextureResource
     {
         /** VkImage or ID3D12Resource */
@@ -18,28 +22,28 @@ namespace Horizon
         void* view;
 
         /** Width in pixels */
-        uint32_t width;
+        uint32 width;
 
         /** Height in pixels */
-        uint32_t height;
+        uint32 height;
 
         /** Number of mip-map levels */
-        uint32_t mipLevels;
+        uint32 mipLevels;
 
         /** Number of arrays */
-        uint32_t arrayLayers;
+        uint32 arrayLayers;
 
         /** Native format */
-        uint32_t format;
+        uint32 format;
 
         /** VkImageLayout or D3D12_RESOURCE_STATES */
-        uint32_t state;
+        uint32 state;
 
         /** VkImageCreateFlags */
-        uint32_t flags;
+        uint32 flags;
 
         /** VkImageUsageFlags */
-        uint32_t usage;
+        uint32 usage;
     };
 
     struct RenderBackendSuperSamplingDescription
@@ -72,8 +76,6 @@ namespace Horizon
         float sharpeness;
     };
 
-    class RenderBackendCommandList;
-
     enum class RenderBackendType
     {
         Unknown,
@@ -81,10 +83,8 @@ namespace Horizon
         Vulkan,
     };
 
-    using PhysicalDeviceID = uint32;
-
     /**
-     * TBD.
+     * Render backend interface.
      */
     class RenderBackend
     {
@@ -185,7 +185,7 @@ namespace Horizon
          */
         virtual void GetTextureReadbackData(RenderBackendTextureHandle texture, void** data) = 0;
 
-        /** TODO: Do we need to create SRV/UAV explicitly?
+        /** TODO: Do we need to create SRV/UAV explicitly? */
         //virtual RenderBackendTextureSRVHandle CreateTextureSRV(const RenderBackendTextureSRVDesc* desc, const char* name) = 0;
         //virtual RenderBackendTextureUAVHandle CreateTextureUAV(const RenderBackendTextureUAVDesc* desc, const char* name) = 0;
 
@@ -215,14 +215,28 @@ namespace Horizon
         virtual void DestroySampler(RenderBackendSamplerHandle sampler) = 0;
 
         /**
-         * TBD.
+         * Deprecated.
          */
-        virtual RenderBackendShaderHandle CreateShader(const RenderBackendShaderDesc* desc, const char* name) = 0;
+        [[deprecated]]
+        virtual RenderBackendShaderHandle CreateShaderProgram(const RenderBackendShaderDesc* desc, const char* name) = 0;
 
         /**
-         * TBD.
+         * Deprecated.
          */
-        virtual void DestroyShader(RenderBackendShaderHandle shader) = 0;
+        [[deprecated]]
+        virtual void DestroyShaderProgram(RenderBackendShaderProgramHandle shader) = 0;
+
+#if 0
+        /**
+         * Experimental.
+         */
+        virtual RenderBackendShaderModuleHandle CreateShaderModule(const RenderBackendShaderDesc* desc, const char* name) = 0;
+
+        /**
+         * Experimental.
+         */
+        virtual void DestroyShaderModule(RenderBackendShaderModuleHandle shaderModule) = 0;
+#endif
 
         /**
          * TBD.

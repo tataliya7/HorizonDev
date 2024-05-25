@@ -930,34 +930,30 @@ namespace Horizon
 
     enum class RenderBackendShaderStage : uint8
     {
-        Vertex          = 0,
-        Pixel           = 1,
-        Compute         = 2,
-        Task            = 8,
-        Mesh            = 9,
-        RayGen          = 3,
+        Compute         = 0,
+        Vertex          = 1,
+        Pixel           = 2,
+        Task            = 3,
+        Mesh            = 4,
+        RayGen          = 5,
         Miss            = 6,
-        AnyHit          = 4,
-        ClosestHit      = 5,
-        Intersection    = 7,
+        AnyHit          = 7,
+        ClosestHit      = 8,
+        Intersection    = 9,
         Count           = 10,
     };
-    static_assert((uint8)RenderBackendShaderStage::Count == RenderBackendShaderStageCount);
+    static_assert(uint8(RenderBackendShaderStage::Count) == RenderBackendShaderStageCount);
 
-    enum RenderBackendShaderStageFlags
+    struct RenderBackendShaderBytecode
     {
-        None = 0,
-        Vertex = (1 << (int)RenderBackendShaderStage::Vertex),
-        Pixel = (1 << (int)RenderBackendShaderStage::Pixel),
-        Compute = (1 << (int)RenderBackendShaderStage::Compute),
-        RayGen = (1 << (int)RenderBackendShaderStage::RayGen),
-        AnyHit = (1 << (int)RenderBackendShaderStage::AnyHit),
-        ClosestHit = (1 << (int)RenderBackendShaderStage::ClosestHit),
-        Miss = (1 << (int)RenderBackendShaderStage::Miss),
-        Intersection = (1 << (int)RenderBackendShaderStage::Intersection),
-        Task = (1 << (int)RenderBackendShaderStage::Task),
-        Mesh = (1 << (int)RenderBackendShaderStage::Mesh),
-        All = 0x7FFFFFFF,
+        const void* code;
+        uint64 codeSize;
+        const char* entryFunctionName;
+    };
+
+    struct RenderBackendShaderProgramDesc_Deprecated
+    {
+        RenderBackendShaderBytecode stages[RenderBackendShaderStageCount];
     };
 
     enum class RenderBackendIndexType
@@ -1136,12 +1132,6 @@ namespace Horizon
         RenderBackendRasterizationState rasterizationState;
         RenderBackendDepthStencilState depthStencilState;
         RenderBackendColorBlendState colorBlendState;
-    };
-
-    struct RenderBackendShaderDesc
-    {
-        std::string entryPoints[RenderBackendShaderStageCount] = {};
-        RenderBackendShaderBlob stages[RenderBackendShaderStageCount] = {};
     };
 
     struct RenderBackendShaderArguments

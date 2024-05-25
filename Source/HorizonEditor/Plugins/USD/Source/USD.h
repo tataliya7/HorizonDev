@@ -21,7 +21,8 @@ extern "C"
 
     int USDGetVersion();
 
-    void USDInit_DEPRECATED(const std::string& path);
+    [[deprecated]]
+    void USDInit(const std::string& path);
 
     bool USDImport(const char* filename, const struct USDImportSettings* settings, bool asyncTask);
     bool USDExport(const char* filename, const struct USDImportSettings* settings, bool asyncTask);

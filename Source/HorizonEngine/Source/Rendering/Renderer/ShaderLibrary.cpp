@@ -17,7 +17,7 @@ namespace Horizon
         file.close();
     }
 
-    ShaderLibrary_DEPRECATED::ShaderLibrary_DEPRECATED(RenderBackend* backend, ShaderCompiler* compiler, uint32 maxNumShaders, bool hotReloadEnabled)
+    ShaderLibrary_Deprecated::ShaderLibrary_Deprecated(RenderBackend* backend, ShaderCompiler* compiler, uint32 maxNumShaders, bool hotReloadEnabled)
         : shaderCompiler(compiler)
         , hotReloadEnabled(hotReloadEnabled)
         , maxNumShaders(maxNumShaders)
@@ -28,12 +28,12 @@ namespace Horizon
         shadingLanguage = (renderBackend->GetType() == RenderBackendType::Vulkan) ? ShadingLanguage::SPIRV : ShadingLanguage::DXIL;
     }
 
-    void ShaderLibrary_DEPRECATED::AddIncludeDirectory(const char* dir)
+    void ShaderLibrary_Deprecated::AddIncludeDirectory(const char* dir)
     {
         includeDirs.push_back(dir);
     }
 
-    bool ShaderLibrary_DEPRECATED::HotReload()
+    bool ShaderLibrary_Deprecated::HotReload()
     {
         if (!hotReloadEnabled)
         {
@@ -69,13 +69,13 @@ namespace Horizon
         return true;
     }
 
-    RenderBackendShaderHandle ShaderLibrary_DEPRECATED::GetShaderHandle(ShaderID id)
+    RenderBackendShaderHandle ShaderLibrary_Deprecated::GetShaderHandle(ShaderID id)
     {
         const uint32 shaderIndex = uint32(id);
         return loadedShaders[shaderIndex].handle;
     }
 
-    bool ShaderLibrary_DEPRECATED::LoadShader(ShaderID id, ShaderDesc& desc)
+    bool ShaderLibrary_Deprecated::LoadShader(ShaderID id, ShaderDesc& desc)
     {
         std::filesystem::path path = std::filesystem::absolute(std::filesystem::path("../../../Shaders").append(desc.filename));
         std::string filename = path.string();

@@ -60,20 +60,20 @@ namespace Horizon
         command->clearValue = clearColor;
     }
 
-    void RenderBackendCommandList::Dispatch(RenderBackendShaderHandle shader, const RenderBackendShaderArguments& shaderArguments, uint32 x, uint32 y, uint32 z)
+    void RenderBackendCommandList::Dispatch(const RenderBackendShaderStageDesc& computeShader, const RenderBackendShaderArguments& shaderArguments, uint32 x, uint32 y, uint32 z)
     {
         RenderBackendCommandDispatch* command = AllocateCommand<RenderBackendCommandDispatch>(RenderBackendCommandDispatch::Type);
-        command->shader = shader;
+        command->computeShader = computeShader;
         command->threadGroupCountX = x;
         command->threadGroupCountY = y;
         command->threadGroupCountZ = z;
         memcpy(&command->shaderArguments, &shaderArguments, sizeof(RenderBackendShaderArguments));
     }
 
-    void RenderBackendCommandList::DispatchIndirect(RenderBackendShaderHandle shader, const RenderBackendShaderArguments& shaderArguments, RenderBackendBufferHandle argumentBuffer, uint64 argumentBufferOffset)
+    void RenderBackendCommandList::DispatchIndirect(const RenderBackendShaderStageDesc& computeShader, const RenderBackendShaderArguments& shaderArguments, RenderBackendBufferHandle argumentBuffer, uint64 argumentBufferOffset)
     {
         RenderBackendCommandDispatchIndirect* command = AllocateCommand<RenderBackendCommandDispatchIndirect>(RenderBackendCommandDispatchIndirect::Type);
-        command->shader = shader;
+        command->computeShader = computeShader;
         command->argumentBuffer = argumentBuffer;
         command->argumentBufferOffset = argumentBufferOffset;
         memcpy(&command->shaderArguments, &shaderArguments, sizeof(RenderBackendShaderArguments));

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "RendererCommon.h"
-#include "ShaderID_DEPRECATED.h"
+#include "ShaderID_Deprecated.h"
 
 namespace Horizon
 {
@@ -84,11 +84,11 @@ namespace Horizon
         bool compiled = false;
     };
 
-    class ShaderLibrary_DEPRECATED
+    class ShaderLibrary_Deprecated
     {
     public:
-        ShaderLibrary_DEPRECATED(RenderBackend* backend, ShaderCompiler* compiler, uint32 maxNumShaders, bool hotReloadEnabled);
-        virtual ~ShaderLibrary_DEPRECATED() {}
+        ShaderLibrary_Deprecated(RenderBackend* backend, ShaderCompiler* compiler, uint32 maxNumShaders, bool hotReloadEnabled);
+        virtual ~ShaderLibrary_Deprecated() {}
         bool HotReload();
         void AddIncludeDirectory(const char* dir);
         bool LoadShader(ShaderID id, ShaderDesc& desc);

@@ -55,8 +55,8 @@ namespace Horizon
         void UpdateBuffer(RenderBackendBufferHandle buffer, uint64 offset, const void* data, uint64 size);
         // Compute commands
         void ClearTextureUAV(const RenderBackendTextureUAVDesc& uav, const RenderBackendTextureClearValue& clearColor);
-        void Dispatch(RenderBackendShaderHandle shader, const RenderBackendShaderArguments& shaderArguments, uint32 x, uint32 y, uint32 z);
-        void DispatchIndirect(RenderBackendShaderHandle shader, const RenderBackendShaderArguments& shaderArguments, RenderBackendBufferHandle argumentBuffer, uint64 argumentBufferOffset);
+        void Dispatch(const RenderBackendShaderStageDesc& computeShader, const RenderBackendShaderArguments& shaderArguments, uint32 x, uint32 y, uint32 z);
+        void DispatchIndirect(const RenderBackendShaderStageDesc& computeShader, const RenderBackendShaderArguments& shaderArguments, RenderBackendBufferHandle argumentBuffer, uint64 argumentBufferOffset);
         void BuildRayTracingBottomLevelAccelerationStructure(RenderBackendRayTracingAccelerationStructureHandle tlas);
         void BuildRayTracingTopLevelAccelerationStructure(RenderBackendRayTracingAccelerationStructureHandle blas);
         void UpdateRayTracingBottomLevelAccelerationStructure(RenderBackendRayTracingAccelerationStructureHandle srcTLAS, RenderBackendRayTracingAccelerationStructureHandle dstTLAS);

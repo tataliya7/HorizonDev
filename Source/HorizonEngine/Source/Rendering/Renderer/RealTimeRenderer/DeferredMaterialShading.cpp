@@ -68,7 +68,7 @@ namespace Horizon
         }
         else
         {
-            renderGraph.AddPass(std::format("VisibilityBuffer"), RenderGraphPassFlags::Graphics,
+            renderGraph.AddPass(std::format("VisibilityBuffer"), RenderGraphPassFlags::MeshShading,
                 [&](RenderGraphBuilder& builder)
                 {
                     auto& sceneTextures = renderGraph.blackboard.Get<RealTimeRendererSceneTextures>();

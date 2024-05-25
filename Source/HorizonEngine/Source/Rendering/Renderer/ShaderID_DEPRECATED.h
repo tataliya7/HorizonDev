@@ -107,7 +107,7 @@ namespace Horizon
         Count,
     };
 
-    class ShaderLibrary_DEPRECATED;
+    class ShaderLibrary_Deprecated;
 
-    extern void CompileShaders_DEPRECATED(ShaderLibrary_DEPRECATED* shaderLibrary);
+    extern void CompileShaders_Deprecated(ShaderLibrary_Deprecated* shaderLibrary);
 }

@@ -8,4 +8,4 @@
 #include "Rendering/Renderer/RenderScene.h"
 #include "Rendering/Renderer/RenderUtils.h"
 #include "Rendering/Renderer/SceneRenderer.h"
-#include "Rendering/Renderer/ShaderID_DEPRECATED.h"
+#include "Rendering/Renderer/ShaderID_Deprecated.h"

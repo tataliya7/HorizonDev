@@ -26,7 +26,7 @@ namespace Horizon
             region.used = false;
         }
 
-        const float timestampPeriod = 1.0;
+        const float timestampPeriod = 1.0f;
         double millisecondsPerTick = 1e-6f * timestampPeriod;
 
         uint32 index = (currentBufferIndex + 1) % 3;
