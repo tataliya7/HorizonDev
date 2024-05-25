@@ -65,7 +65,7 @@ namespace Horizon
                     shaderArguments.BindTextureUAV(6, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(outputTexture), 0));
                     shaderArguments.PushConstants(0, reset);
 
-                    RenderBackendShaderProgramHandle computeShader = shaderLibrary->GetShaderProgramHandle(ShaderID::TemporalSuperSampling);
+                    RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::TemporalSuperSampling);
                     commandList.Dispatch2D(
                         computeShader,
                         shaderArguments,

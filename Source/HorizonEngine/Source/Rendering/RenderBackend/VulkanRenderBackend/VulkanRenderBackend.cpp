@@ -320,10 +320,10 @@ namespace Horizon
         VkPipelineColorBlendAttachmentState colorBlendAttachmentStates[RenderBackendMaxRenderTargetCount];
     };
 
-    struct VulkanShaderProgram
+    struct VulkanShader
     {
-        std::vector<VkPipelineShaderStageCreateInfo> stages;
-        std::vector<VkShaderModule> modules;
+        VkPipelineShaderStageCreateInfo stageInfo;
+        VkShaderModule module;
     };
 
     struct VulkanRayTracingAccelerationStructure
@@ -488,17 +488,19 @@ namespace Horizon
         int32 GetBufferBindlessDescriptorIndex(uint32 bufferIndex);
         uint32 CreateSampler(const RenderBackendSamplerDesc* desc, const char* name);
         void DestroySampler(uint32 index);
-        uint32 CreateShaderProgram(const RenderBackendShaderProgramDesc* desc, const char* name);
-        void DestroyShaderProgram(uint32 index);
+        uint32 CreateShader(const RenderBackendShaderDesc* desc, const char* name);
+        void DestroyShader(uint32 index);
         uint32 CreateBottomLevelAS(const RenderBackendRayTracingBottomLevelAccelerationDesc* desc, const char* name);
         uint32 CreateTopLevelAS(const RenderBackendRayTracingTopLevelAccelerationDesc* desc, const char* name);
         VkRenderPass FindOrCreateRenderPass(const VulkanRenderPassDesc& renderPassDesc);
         VulkanFramebuffer* FindOrCreateFramebuffer(const RenderBackendRenderPassInfo& renderPassInfo, const VulkanRenderPassDesc& renderPassDesc, VkRenderPass renderPass);
         VkPipelineLayout FindOrCreatePipelineLayout(uint32 pushConstantSize, RenderBackendPipelineType pipelineType);
-        VulkanPipeline* FindOrCreateComputePipeline(VulkanShaderProgram* shader, uint32 pushConstantSize);
-        VulkanPipeline* FindOrCreateRayTracingPipeline(VulkanShaderProgram* shader, uint32 pushConstantSize);
+        VulkanPipeline* FindOrCreateComputePipeline(VulkanShader* computeShader, uint32 pushConstantSize);
         VulkanPipeline* FindOrCreateGraphicsPipeline(
-            VulkanShaderProgram* shader,
+            VulkanShader* vertexShader,
+            VulkanShader* pixelShader,
+            VulkanShader* taskShader,
+            VulkanShader* meshShader,
             const RenderBackendGraphicsPipelineState& pipelineState,
             uint32 pushConstantSize,
             RenderBackendPrimitiveTopology topology,
@@ -506,6 +508,7 @@ namespace Horizon
             VulkanRenderingInfo* renderingInfo,
             VkRenderPass renderPass,
             uint32 activeColorAttachmentCount);
+        //VulkanPipeline* FindOrCreateRayTracingPipeline(VulkanShader* shader, uint32 pushConstantSize);
         void SetDebugUtilsObjectName(VkObjectType type, uint64 handle, const char* name);
 
         VkPhysicalDevice GetPhysicalDeviceHandle() const
@@ -560,7 +563,7 @@ namespace Horizon
             uint32 index = GetRenderBackendHandleRepresentation(handle.GetIndex());
             return &samplers[index];
         }
-        inline VulkanShaderProgram* GetShaderProgram(RenderBackendShaderProgramHandle handle)
+        inline VulkanShader* GetShader(RenderBackendShaderHandle handle)
         {
             uint32 index = GetRenderBackendHandleRepresentation(handle.GetIndex());
             return &shaders[index];
@@ -681,7 +684,7 @@ namespace Horizon
         std::vector<uint32> freeTextures;
         std::vector<VulkanSampler> samplers;
         std::vector<uint32> freeSamplers;
-        std::vector<VulkanShaderProgram> shaders;
+        std::vector<VulkanShader> shaders;
         std::vector<uint32> freeShaders;
         ResourceContainer<VulkanTimingQueryHeap> timingQueryHeaps;
 
@@ -854,8 +857,8 @@ namespace Horizon
         int32 GetBufferBindlessDescriptorIndex(RenderBackendBufferHandle buffer) override;
         RenderBackendSamplerHandle CreateSampler(const RenderBackendSamplerDesc* desc, const char* name) override;
         void DestroySampler(RenderBackendSamplerHandle sampler) override;
-        RenderBackendShaderProgramHandle CreateShaderProgram(const RenderBackendShaderProgramDesc* desc, const char* name) override;
-        void DestroyShaderProgram(RenderBackendShaderProgramHandle shader) override;
+        RenderBackendShaderHandle CreateShader(const RenderBackendShaderDesc* desc, const char* name) override;
+        void DestroyShader(RenderBackendShaderHandle shader) override;
         RenderBackendTimingQueryHeapHandle CreateTimingQueryHeap(const RenderBackendTimingQueryHeapDesc* desc, const char* name) override;
         void DestroyTimingQueryHeap(RenderBackendTimingQueryHeapHandle timingQueryHeap) override;
         void SubmitCommandLists(RenderBackendCommandList** commandLists, uint32 numCommandLists, RenderBackendSwapChainHandle swapChain) override;
@@ -2690,8 +2693,12 @@ namespace Horizon
 
     }
 
-    uint32 VulkanDevice::CreateShaderProgram(const RenderBackendShaderProgramDesc* desc, const char* name)
+    uint32 VulkanDevice::CreateShader(const RenderBackendShaderDesc* desc, const char* name)
     {
+        assert(desc->codeSize != 0);
+        assert(desc->code != nullptr);
+        assert(desc->entryFunctionName != nullptr);
+
         uint32 shaderIndex = 0;
         if (!freeShaders.empty())
         {
@@ -2703,41 +2710,33 @@ namespace Horizon
             shaderIndex = static_cast<uint32>(shaders.size());
             shaders.emplace_back();
         }
-        VulkanShaderProgram& shader = shaders[shaderIndex];
+        VulkanShader& shader = shaders[shaderIndex];
 
-        for (uint32 stageIndex = 0; stageIndex < uint32(RenderBackendShaderStage::Count); stageIndex++)
-        {
-            if (desc->stages[stageIndex].codeSize == 0 || !desc->stages[stageIndex].code || !desc->stages[stageIndex].entryFunctionName)
-            {
-                continue;
-            }
+        VkShaderStageFlagBits stage = ConvertToVkShaderStageFlagBits(desc->stage);
 
-            RenderBackendShaderStage stage = static_cast<RenderBackendShaderStage>(stageIndex);
+        VkShaderModule shaderModule = VK_NULL_HANDLE;
+        VkShaderModuleCreateInfo shaderModuleInfo = {
+            .sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
+            .codeSize = desc->codeSize,
+            .pCode = static_cast<const uint32_t*>(desc->code),
+        };
+        VK_CHECK(vkCreateShaderModule(handle, &shaderModuleInfo, VULKAN_ALLOCATION_CALLBACKS, &shaderModule));
+        SetDebugUtilsObjectName(VK_OBJECT_TYPE_SHADER_MODULE, reinterpret_cast<uint64_t>(shaderModule), name);
 
-            VkShaderModule shaderModule = VK_NULL_HANDLE;
-            VkShaderModuleCreateInfo shaderModuleInfo = {
-                .sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
-                .codeSize = desc->stages[stageIndex].codeSize,
-                .pCode = static_cast<const uint32_t*>(desc->stages[stageIndex].code),
-            };
-            VK_CHECK(vkCreateShaderModule(handle, &shaderModuleInfo, VULKAN_ALLOCATION_CALLBACKS, &shaderModule));
-            SetDebugUtilsObjectName(VK_OBJECT_TYPE_SHADER_MODULE, reinterpret_cast<uint64_t>(shaderModule), name);
+        VkPipelineShaderStageCreateInfo pipelineShaderStageCreateInfo = {
+            .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
+            .stage = stage,
+            .module = shaderModule,
+            .pName = desc->entryFunctionName,
+        };
 
-            VkPipelineShaderStageCreateInfo pipelineShaderStageCreateInfo = {
-                .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
-                .stage = ConvertToVkShaderStageFlagBits(stage),
-                .module = shaderModule,
-                .pName = desc->stages[stageIndex].entryFunctionName,
-            };
-
-            shader.stages.emplace_back(pipelineShaderStageCreateInfo);
-            shader.modules.emplace_back(shaderModule);
-        }
+        shader.stageInfo = pipelineShaderStageCreateInfo;
+        shader.module = shaderModule;
 
         return shaderIndex;
     }
 
-    void VulkanDevice::DestroyShaderProgram(uint32 index)
+    void VulkanDevice::DestroyShader(uint32 index)
     {
 
     }
@@ -3318,11 +3317,11 @@ namespace Horizon
         return pipelineLayout;
     }
 
-    VulkanPipeline* VulkanDevice::FindOrCreateComputePipeline(VulkanShaderProgram* shader, uint32 pushConstantSize)
+    VulkanPipeline* VulkanDevice::FindOrCreateComputePipeline(VulkanShader* computeShader, uint32 pushConstantSize)
     {
         assert(shader->stages.size() == 1);
 
-        uint32 pipelineHash = CRC32(shader->stages.data(), shader->stages.size() * sizeof(VkPipelineShaderStageCreateInfo), pushConstantSize);
+        uint32 pipelineHash = CRC32(&computeShader->stageInfo, sizeof(VkPipelineShaderStageCreateInfo), pushConstantSize);
 
         if (pipelineManager.pipelineMap.find(pipelineHash) != pipelineManager.pipelineMap.end())
         {
@@ -3333,7 +3332,7 @@ namespace Horizon
 
         VkComputePipelineCreateInfo computePipelineInfo = {
             .sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO,
-            .stage = shader->stages[0],
+            .stage = computeShader->stageInfo,
             .layout = pipelineLayout,
         };
 
@@ -3413,9 +3412,13 @@ namespace Horizon
         outInfo.blendConstants[3] = 1.0f;
     }
 
-    VulkanPipeline* VulkanDevice::FindOrCreateGraphicsPipeline(VulkanShaderProgram* shader, const RenderBackendGraphicsPipelineState& pipelineState, uint32 pushConstantSize, RenderBackendPrimitiveTopology topology, bool useDynamicRendering, VulkanRenderingInfo* renderingInfo, VkRenderPass renderPass, uint32 activeColorAttachmentCount)
+    VulkanPipeline* VulkanDevice::FindOrCreateGraphicsPipeline(VulkanShader* vertexShader, VulkanShader* pixelShader, VulkanShader* taskShader, VulkanShader* meshShader, const RenderBackendGraphicsPipelineState& pipelineState, uint32 pushConstantSize, RenderBackendPrimitiveTopology topology, bool useDynamicRendering, VulkanRenderingInfo* renderingInfo, VkRenderPass renderPass, uint32 activeColorAttachmentCount)
     {
         assert(useDynamicRendering ^ (renderPass != VK_NULL_HANDLE));
+
+        // TODO
+        bool useMeshShader = meshShader != nullptr;
+        assert(useMeshShader ? vertexShader == nullptr : taskShader == nullptr);
 
         uint32 colorAttachmentCount = useDynamicRendering ? renderingInfo->numColorAttachments : activeColorAttachmentCount;
 
@@ -3427,8 +3430,8 @@ namespace Horizon
         // TODO: Optimize this
         uint64 renderingInfoFullHash = renderingInfo ? CRC32(renderingInfo, sizeof(VulkanRenderingInfo)) : uint64(renderPass);
         uint64 pipelineStateDescHash = CRC32(&pipelineStateDesc, sizeof(VulkanGraphicsPipelineStateDesc));
-        uint64 values[] = { renderingInfoFullHash, pipelineStateDescHash, uint64(shader), uint64(topology), uint64(pushConstantSize) };
-        uint64 pipelineHash = uint64(CRC32(values, 5 * sizeof(uint64)));
+        uint64 values[] = { renderingInfoFullHash, pipelineStateDescHash, uint64(vertexShader), uint64(pixelShader), uint64(taskShader), uint64(meshShader), uint64(topology), uint64(pushConstantSize) };
+        uint64 pipelineHash = uint64(CRC32(values, ArraySize(values) * sizeof(uint64)));
 
         if (pipelineManager.pipelineMap.find(pipelineHash) != pipelineManager.pipelineMap.end())
         {
@@ -3437,14 +3440,28 @@ namespace Horizon
 
         VkPipelineLayout pipelineLayout = FindOrCreatePipelineLayout(pushConstantSize, RenderBackendPipelineType::Graphics);
 
-        // TODO
-        bool useMeshShader = false;
-        for (size_t i = 0; i < shader->stages.size(); i++)
+        std::vector<VkPipelineShaderStageCreateInfo> stages;
+        if (useMeshShader)
         {
-            if (shader->stages[i].stage == VK_SHADER_STAGE_MESH_BIT_EXT)
+            if (taskShader)
             {
-                useMeshShader = true;
+                stages.emplace_back(taskShader->stageInfo);
             }
+            if (meshShader)
+            {
+                stages.emplace_back(meshShader->stageInfo);
+            }
+        }
+        else
+        {
+            if (vertexShader)
+            {
+                stages.emplace_back(vertexShader->stageInfo);
+            }
+        }
+        if (pixelShader)
+        {
+            stages.emplace_back(pixelShader->stageInfo);
         }
 
         static const VkPipelineViewportStateCreateInfo viewportStateInfo = {
@@ -3498,8 +3515,8 @@ namespace Horizon
         VkGraphicsPipelineCreateInfo graphicsPipelineInfo = {
             .sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
             .pNext = useDynamicRendering ? &renderingInfo->pipelineRenderingInfo : nullptr,
-            .stageCount = static_cast<uint32_t>(shader->stages.size()),
-            .pStages = shader->stages.data(),
+            .stageCount = static_cast<uint32_t>(stages.size()),
+            .pStages = stages.data(),
             .pVertexInputState = useMeshShader ? nullptr : &vertexInputStateInfo,
             .pInputAssemblyState = useMeshShader ? nullptr : &inputAssemblyStateInfo,
             .pViewportState = &viewportStateInfo,
@@ -4549,8 +4566,9 @@ namespace Horizon
         bool CompileRenderBackendCommand(const RenderBackendCommandDispatchSuperSampling& command);
     private:
         void ApplyTransitions();
-        bool PrepareForDispatch(RenderBackendShaderProgramHandle shader, const RenderBackendShaderArguments& shaderArguments);
-        bool PrepareForDraw(RenderBackendShaderProgramHandle shader, const RenderBackendGraphicsPipelineState& pipelineState, RenderBackendPrimitiveTopology topology, RenderBackendBufferHandle indexBuffer, const RenderBackendShaderArguments& shaderArguments);
+        bool PrepareForDispatch(RenderBackendShaderHandle computeShader, const RenderBackendShaderArguments& shaderArguments);
+        bool PrepareForDraw(RenderBackendShaderHandle vertexShader, RenderBackendShaderHandle pixelShader, const RenderBackendGraphicsPipelineState& pipelineState, RenderBackendPrimitiveTopology topology, RenderBackendBufferHandle indexBuffer, const RenderBackendShaderArguments& shaderArguments);
+        bool PrepareForMeshShading(RenderBackendShaderHandle amplificationShader, RenderBackendShaderHandle meshShader, RenderBackendShaderHandle pixelShader, const RenderBackendGraphicsPipelineState& pipelineState, RenderBackendPrimitiveTopology topology, RenderBackendBufferHandle indexBuffer, const RenderBackendShaderArguments& shaderArguments);
         VulkanDevice* device;
         RenderBackendQueueFamily queueFamily;
         VkCommandBuffer commandBuffer;
@@ -4852,7 +4870,7 @@ namespace Horizon
         }
     }
 
-    bool VulkanRenderBackendCommandListContext::PrepareForDispatch(RenderBackendShaderProgramHandle shader, const RenderBackendShaderArguments& shaderArguments)
+    bool VulkanRenderBackendCommandListContext::PrepareForDispatch(RenderBackendShaderHandle computeShader, const RenderBackendShaderArguments& shaderArguments)
     {
         VulkanPushConstants pushConstants;
         for (uint32 i = 0; i < 16; i++)
@@ -4887,7 +4905,7 @@ namespace Horizon
         const void* pushConstantValue = &pushConstants;
         uint32 pushConstantSize = device->bindlessDescriptorManager.pushConstantSize;
 
-        VulkanPipeline* pipeline = device->FindOrCreateComputePipeline(device->GetShaderProgram(shader), pushConstantSize);
+        VulkanPipeline* pipeline = device->FindOrCreateComputePipeline(device->GetShader(computeShader), pushConstantSize);
         if (pipeline->handle != activeComputePipeline)
         {
             VkDescriptorSet set = device->GetBindlessGlobalSet();
@@ -4903,7 +4921,7 @@ namespace Horizon
 
     bool VulkanRenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandDispatch& command)
     {
-        if (!PrepareForDispatch(command.shader, command.shaderArguments))
+        if (!PrepareForDispatch(command.computeShader, command.shaderArguments))
         {
             return false;
         }
@@ -4913,7 +4931,7 @@ namespace Horizon
 
     bool VulkanRenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandDispatchIndirect& command)
     {
-        if (!PrepareForDispatch(command.shader, command.shaderArguments))
+        if (!PrepareForDispatch(command.computeShader, command.shaderArguments))
         {
             return false;
         }
@@ -5089,7 +5107,7 @@ namespace Horizon
         return true;
     }
 
-    bool VulkanRenderBackendCommandListContext::PrepareForDraw(RenderBackendShaderProgramHandle shader, const RenderBackendGraphicsPipelineState& pipelineState, RenderBackendPrimitiveTopology topology, RenderBackendBufferHandle indexBuffer, const RenderBackendShaderArguments& shaderArguments)
+    bool VulkanRenderBackendCommandListContext::PrepareForDraw(RenderBackendShaderHandle vertexShader, RenderBackendShaderHandle pixelShader, const RenderBackendGraphicsPipelineState& pipelineState, RenderBackendPrimitiveTopology topology, RenderBackendBufferHandle indexBuffer, const RenderBackendShaderArguments& shaderArguments)
     {
         VulkanPushConstantsTest pushConstantsTest;
         VulkanPushConstants pushConstants;
@@ -5144,7 +5162,18 @@ namespace Horizon
         uint32 pushConstantSize = device->bindlessDescriptorManager.pushConstantSize;
 
         assert(insideRenderPass);
-        VulkanPipeline* pipeline = device->FindOrCreateGraphicsPipeline(device->GetShaderProgram(shader), pipelineState, pushConstantSize, topology, true, &renderingInfo, VK_NULL_HANDLE, 0);
+        VulkanPipeline* pipeline = device->FindOrCreateGraphicsPipeline(
+            device->GetShader(vertexShader),
+            device->GetShader(pixelShader),
+            nullptr,
+            nullptr,
+            pipelineState,
+            pushConstantSize,
+            topology,
+            true,
+            &renderingInfo,
+            VK_NULL_HANDLE,
+            0);
 
         if (pipeline->handle != activeGraphicsPipeline)
         {
@@ -5169,7 +5198,7 @@ namespace Horizon
     {
         OPTICK_EVENT();
 
-        if (!PrepareForDraw(command.shader, command.pipelineState, command.topology, command.indexBuffer, command.shaderArguments))
+        if (!PrepareForDraw(command.vertexShader, command.pixelShader, command.pipelineState, command.topology, command.indexBuffer, command.shaderArguments))
         {
             return false;
         }
@@ -5197,7 +5226,7 @@ namespace Horizon
 
     bool VulkanRenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandDrawIndirect& command)
     {
-        if (!PrepareForDraw(command.shader, command.pipelineState, command.topology, command.indexBuffer, command.shaderArguments))
+        if (!PrepareForDraw(command.vertexShader, command.pixelShader, command.pipelineState, command.topology, command.indexBuffer, command.shaderArguments))
         {
             return false;
         }
@@ -5224,32 +5253,32 @@ namespace Horizon
 
     bool VulkanRenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandDispatchMesh& command)
     {
-        if (!PrepareForDraw(command.shader, command.pipelineState, command.topology, RenderBackendBufferHandle::Null, command.shaderArguments))
-        {
-            return false;
-        }
-        device->backend->vulkanFunctions.vkCmdDrawMeshTasksEXT(
-            commandBuffer,
-            command.threadGroupCountX,
-            command.threadGroupCountY,
-            command.threadGroupCountZ);
+        // if (!PrepareForDraw(nullptr, command.pixelShader, command.pipelineState, command.topology, RenderBackendBufferHandle::Null, command.shaderArguments))
+        // {
+        //     return false;
+        // }
+        // device->backend->vulkanFunctions.vkCmdDrawMeshTasksEXT(
+        //     commandBuffer,
+        //     command.threadGroupCountX,
+        //     command.threadGroupCountY,
+        //     command.threadGroupCountZ);
         return true;
     }
 
     bool VulkanRenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandDispatchMeshIndirect& command)
     {
-        if (!PrepareForDraw(command.shader, command.pipelineState, command.topology, RenderBackendBufferHandle::Null, command.shaderArguments))
-        {
-            return false;
-        }
-        VulkanBuffer* argumentBuffer = device->GetBuffer(command.argumentBuffer);
-        vkCmdDispatchIndirect(commandBuffer, argumentBuffer->handle, command.argumentBufferOffset);
-        device->backend->vulkanFunctions.vkCmdDrawMeshTasksIndirectEXT(
-            commandBuffer,
-            argumentBuffer->handle,
-            command.argumentBufferOffset,
-            command.numDraws,
-            sizeof(RenderBackendDispatchMeshIndirectArguments));
+        // if (!PrepareForDraw(nullptr, command.pixelShader, command.pipelineState, command.topology, RenderBackendBufferHandle::Null, command.shaderArguments))
+        // {
+        //     return false;
+        // }
+        // VulkanBuffer* argumentBuffer = device->GetBuffer(command.argumentBuffer);
+        // vkCmdDispatchIndirect(commandBuffer, argumentBuffer->handle, command.argumentBufferOffset);
+        // device->backend->vulkanFunctions.vkCmdDrawMeshTasksIndirectEXT(
+        //     commandBuffer,
+        //     argumentBuffer->handle,
+        //     command.argumentBufferOffset,
+        //     command.numDraws,
+        //     sizeof(RenderBackendDispatchMeshIndirectArguments));
         return true;
     }
 
@@ -5720,17 +5749,17 @@ namespace Horizon
         }
     }
 
-    RenderBackendShaderProgramHandle VulkanRenderBackend::CreateShaderProgram(const RenderBackendShaderProgramDesc* desc, const char* name)
+    RenderBackendShaderHandle VulkanRenderBackend::CreateShader(const RenderBackendShaderDesc* desc, const char* name)
     {
-        RenderBackendShaderProgramHandle handle = handleManager.Allocate<RenderBackendShaderProgramHandle>();
+        RenderBackendShaderHandle handle = handleManager.Allocate<RenderBackendShaderHandle>();
         {
-            uint32 index = device.CreateShaderProgram(desc, name);
+            uint32 index = device.CreateShader(desc, name);
             device.SetRenderBackendHandleRepresentation(handle.GetIndex(), index);
         }
         return handle;
     }
 
-    void VulkanRenderBackend::DestroyShaderProgram(RenderBackendShaderProgramHandle handle)
+    void VulkanRenderBackend::DestroyShader(RenderBackendShaderHandle handle)
     {
         {
             uint32 index = 0;
@@ -5738,7 +5767,7 @@ namespace Horizon
             {
                 return;
             }
-            device.DestroyShaderProgram(index);
+            device.DestroyShader(index);
             device.RemoveRenderBackendHandleRepresentation(handle.GetIndex());
         }
     }

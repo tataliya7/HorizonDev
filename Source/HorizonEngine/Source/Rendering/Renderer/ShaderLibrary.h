@@ -2,6 +2,10 @@
 
 #include "RendererCommon.h"
 
+// Currently, shader permutations are not supported.
+// https://therealmjp.github.io/posts/shader-permutations-part1/
+// https://therealmjp.github.io/posts/shader-permutations-part2/
+
 namespace Horizon
 {
     enum class ShaderID : uint32
@@ -9,8 +13,9 @@ namespace Horizon
         PreIntegratedBRDF,
         LatLongToCubemap,
         DownsampleCubemap,
-        DownsampleTexture2D,
-        DownsampleTexture2D_PS,
+        DownsampleTexture2DCS,
+        DownsampleTexture2DVS,
+        DownsampleTexture2DPS,
         ComputeEnvironmentIrradiance,
         ComputeEnvironmentIrradianceSH,
         FilterEnvironmentMap,
@@ -110,53 +115,17 @@ namespace Horizon
     struct ShaderDesc
     {
         ShaderStage stage;
-        std::string filename;
-        std::string entryFunctionName;
+        const char* filename;
+        const char* entryFunctionName;
         std::vector<ShaderMacroDefine> defines;
 
-        static ShaderDesc CreateCompute(const std::string& filename, const std::string& csMain)
+        static ShaderDesc Create(ShaderStage stage, const char* filename, const char* entryFunctionName)
         {
             ShaderDesc desc;
-            desc.type = ShaderDesc::Type::Compute;
+            desc.stage = stage;
             desc.filename = filename;
-            desc.entryPoints[(uint32)RenderBackendShaderStage::Compute] = csMain;
+            desc.entryFunctionName = entryFunctionName;
             return desc;
-        }
-
-        static ShaderDesc CreateGraphics(const std::string& filename, const std::string& vsMain, const std::string& psMain)
-        {
-            ShaderDesc desc;
-            desc.type = ShaderDesc::Type::Graphics;
-            desc.filename = filename;
-            desc.entryPoints[(uint32)RenderBackendShaderStage::Vertex] = vsMain;
-            desc.entryPoints[(uint32)RenderBackendShaderStage::Pixel] = psMain;
-            return desc;
-        }
-
-        static ShaderDesc CreateMesh(const std::string& filename, const std::string& tsMain, const std::string& msMain, const std::string& psMain)
-        {
-            ShaderDesc desc;
-            desc.type = ShaderDesc::Type::Mesh;
-            desc.filename = filename;
-            desc.entryPoints[(uint32)RenderBackendShaderStage::Task] = tsMain;
-            desc.entryPoints[(uint32)RenderBackendShaderStage::Mesh] = msMain;
-            desc.entryPoints[(uint32)RenderBackendShaderStage::Pixel] = psMain;
-            return desc;
-        }
-
-        static ShaderDesc CreateMesh(const std::string& filename, const std::string& msMain, const std::string& psMain)
-        {
-            ShaderDesc desc;
-            desc.type = ShaderDesc::Type::Mesh;
-            desc.filename = filename;
-            desc.entryPoints[(uint32)RenderBackendShaderStage::Mesh] = msMain;
-            desc.entryPoints[(uint32)RenderBackendShaderStage::Pixel] = psMain;
-            return desc;
-        }
-
-        static ShaderDesc CreateRayTracing()
-        {
-            // TODO
         }
 
         void AddDefine(const char* name, uint32 value)
@@ -177,26 +146,24 @@ namespace Horizon
         bool compiled;
     };
 
-    // Currently, shader permutations are not supported.
-    // https://therealmjp.github.io/posts/shader-permutations-part1/
-    // https://therealmjp.github.io/posts/shader-permutations-part2/
-
     class ShaderLibrary
     {
     public:
-        ShaderLibrary(RenderBackend* renderBackend, const char* rootDirectory);
+        ShaderLibrary(RenderBackend* renderBackend, const std::string& rootDirectory);
         virtual ~ShaderLibrary();
         bool HotReload();
         bool LoadShader(ShaderID id, ShaderDesc& desc);
-        RenderBackendShaderHandle GetShader(ShaderID id);
+        RenderBackendShaderHandle GetShader(ShaderID id) const;
     private:
-        const char* rootDirectory;
+        std::string rootDirectory;
         RenderBackend* renderBackend;
         ShadingLanguage shadingLanguage;
         ShaderCompilerOptions shaderCompilerOptions;
         std::vector<Shader> loadedShaders;
+
+        /** Experimental */
         bool hotReloadEnabled;
     };
 
-    extern void CompileShaders_Deprecated(ShaderLibrary* shaderLibrary);
+    extern void LoadAllShaders_Deprecated(ShaderLibrary* shaderLibrary);
 }

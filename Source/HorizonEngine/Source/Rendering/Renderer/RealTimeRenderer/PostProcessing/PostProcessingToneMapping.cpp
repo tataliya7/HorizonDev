@@ -99,7 +99,7 @@ namespace Horizon
                         shaderArguments.PushConstants(1, chromaticAberrationScale.x);
                         shaderArguments.PushConstants(2, chromaticAberrationScale.y);
 
-                        RenderBackendShaderProgramHandle computeShader = shaderLibrary->GetShaderProgramHandle(ShaderID::ToneMapping);
+                        RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::ToneMapping);
 
                         commandList.Dispatch(
                             computeShader,

@@ -40,7 +40,7 @@ namespace Horizon
                     RenderBackendShaderArguments shaderArguments = {};
                     shaderArguments.BindBuffer(0, registry.GetRenderBackendBufferHandle(tileCountBuffer), 0);
 
-                    RenderBackendShaderProgramHandle computeShader = shaderLibrary->GetShaderProgramHandle(ShaderID::SubsurfaceScatteringSetup);
+                    RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::SubsurfaceScatteringSetup);
                     commandList.Dispatch(
                         computeShader,
                         shaderArguments,
@@ -71,7 +71,7 @@ namespace Horizon
                     shaderArguments.BindBuffer(3, registry.GetRenderBackendBufferHandle(tileCountBuffer), 0);
                     shaderArguments.BindBuffer(4, registry.GetRenderBackendBufferHandle(tileDataBuffer), 0);
 
-                    RenderBackendShaderProgramHandle computeShader = shaderLibrary->GetShaderProgramHandle(ShaderID::SubsurfaceScatteringClassifyTiles);
+                    RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::SubsurfaceScatteringClassifyTiles);
                     commandList.Dispatch2D(
                         computeShader,
                         shaderArguments,
@@ -95,7 +95,7 @@ namespace Horizon
                     shaderArguments.BindBuffer(1, registry.GetRenderBackendBufferHandle(dispatchIndirectArgumentBuffer), 0);
                     shaderArguments.BindBuffer(2, registry.GetRenderBackendBufferHandle(drawIndirectArgumentBuffer), 0);
 
-                    RenderBackendShaderProgramHandle computeShader = shaderLibrary->GetShaderProgramHandle(ShaderID::SubsurfaceScatteringBuildIndirectArguments);
+                    RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::SubsurfaceScatteringBuildIndirectArguments);
                     commandList.Dispatch(
                         computeShader,
                         shaderArguments,
@@ -131,7 +131,7 @@ namespace Horizon
                     shaderArguments.BindBuffer(0, registry.GetRenderBackendBufferHandle(tileCountBuffer), 0);
                     shaderArguments.BindBuffer(1, registry.GetRenderBackendBufferHandle(argumentBuffer), 0);
 
-                    RenderBackendShaderProgramHandle computeShader = shaderLibrary->GetShaderProgramHandle(ShaderID::SubsurfaceScatteringSampleDiffusionProfile);
+                    RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::SubsurfaceScatteringSampleDiffusionProfile);
                     commandList.DispatchIndirect(
                         computeShader,
                         shaderArguments,
@@ -154,7 +154,7 @@ namespace Horizon
                     shaderArguments.BindBuffer(0, registry.GetRenderBackendBufferHandle(tileCountBuffer), 0);
                     shaderArguments.BindBuffer(1, registry.GetRenderBackendBufferHandle(argumentBuffer), 0);
 
-                    RenderBackendShaderProgramHandle computeShader = shaderLibrary->GetShaderProgramHandle(ShaderID::SubsurfaceScatteringComputeVariance);
+                    RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::SubsurfaceScatteringComputeVariance);
                     commandList.DispatchIndirect(
                         computeShader,
                         shaderArguments,
@@ -187,7 +187,7 @@ namespace Horizon
                     shaderArguments.BindBuffer(1, registry.GetRenderBackendBufferHandle(tileDataBuffer), 0);
                     shaderArguments.BindTextureSRV(2, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(subsurfaceScatteringTexture)));
 
-                    RenderBackendShaderProgramHandle graphicsShader = shaderLibrary->GetShaderProgramHandle(ShaderID::SubsurfaceScatteringRecombine);
+                    RenderBackendShaderHandle graphicsShader = shaderLibrary->GetShader(ShaderID::SubsurfaceScatteringRecombine);
                     commandList.DrawIndirect(
                         graphicsShader,
                         graphicsPipelineState,
@@ -223,7 +223,7 @@ namespace Horizon
                     shaderArguments.BindBuffer(1, registry.GetRenderBackendBufferHandle(tileDataBuffer), 0);
                     shaderArguments.BindTextureSRV(2, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(subsurfaceScatteringTexture)));
 
-                    RenderBackendShaderProgramHandle graphicsShader = shaderLibrary->GetShaderProgramHandle(ShaderID::SubsurfaceScatteringCopyResults);
+                    RenderBackendShaderHandle graphicsShader = shaderLibrary->GetShader(ShaderID::SubsurfaceScatteringCopyResults);
                     commandList.DrawIndirect(
                         graphicsShader,
                         graphicsPipelineState,

@@ -62,7 +62,7 @@ namespace Horizon
                         shaderArguments.PushConstants(0, highlights);
                         shaderArguments.PushConstants(1, shadows);
 
-                        RenderBackendShaderProgramHandle computeShader = shaderLibrary->GetShaderProgramHandle(ShaderID::LocalExposureComputeLuminances);
+                        RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::LocalExposureComputeLuminances);
                         commandList.Dispatch2D(
                             computeShader,
                             shaderArguments,
@@ -89,7 +89,7 @@ namespace Horizon
                         shaderArguments.BindTextureUAV(2, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(localExposureWeights), 0));
                         shaderArguments.PushConstants(0, sigma);
 
-                        RenderBackendShaderProgramHandle computeShader = shaderLibrary->GetShaderProgramHandle(ShaderID::LocalExposureComputeWeights);
+                        RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::LocalExposureComputeWeights);
                         commandList.Dispatch2D(
                             computeShader,
                             shaderArguments,
@@ -108,7 +108,7 @@ namespace Horizon
                         uint32 w = width;
                         uint32 h = height;
                         RenderBackendTextureHandle textureHandle = registry.GetRenderBackendTextureHandle(localExposureLuminances);
-                        RenderBackendShaderProgramHandle downsampleTexture2DCS = renderEngine->GetShaderLibrary()->GetShaderProgramHandle((uint32)ShaderPipelineID::DownsampleTexture2D);
+                        RenderBackendShaderHandle downsampleTexture2DCS = renderEngine->GetShaderLibrary()->GetShader((uint32)ShaderPipelineID::DownsampleTexture2D);
                         for (uint32 mipLevel = 1; mipLevel < mipLevels; mipLevel++)
                         {
                             if (mipLevel == 1)
@@ -164,7 +164,7 @@ namespace Horizon
                         uint32 w = width;
                         uint32 h = height;
                         RenderBackendTextureHandle textureHandle = registry.GetRenderBackendTextureHandle(localExposureWeights);
-                        RenderBackendShaderProgramHandle downsampleTexture2DCS = renderEngine->GetShaderLibrary()->GetShaderProgramHandle((uint32)ShaderPipelineID::DownsampleTexture2D);
+                        RenderBackendShaderHandle downsampleTexture2DCS = renderEngine->GetShaderLibrary()->GetShader((uint32)ShaderPipelineID::DownsampleTexture2D);
                         for (uint32 mipLevel = 1; mipLevel < mipLevels; mipLevel++)
                         {
                             if (mipLevel == 1)
@@ -231,7 +231,7 @@ namespace Horizon
                         shaderArguments.BindTextureUAV(3, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(localExposureAssemble), coarsestMipLevel));
                         shaderArguments.PushConstants(0, (float)coarsestMipLevel);
 
-                        RenderBackendShaderProgramHandle computeShader = shaderLibrary->GetShaderProgramHandle(ShaderID::LocalExposureBlendExposures);
+                        RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::LocalExposureBlendExposures);
                         commandList.Dispatch2D(
                             computeShader,
                             shaderArguments,
@@ -275,7 +275,7 @@ namespace Horizon
                             shaderArguments.BindTextureUAV(4, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(localExposureAssemble), mipLevel - 1));
                             shaderArguments.PushConstants(0, (float)mipLevel);
 
-                            RenderBackendShaderProgramHandle computeShader = shaderLibrary->GetShaderProgramHandle(ShaderID::LocalExposureBlendLaplacian);
+                            RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::LocalExposureBlendLaplacian);
                             commandList.Dispatch2D(
                                 computeShader,
                                 shaderArguments,
@@ -325,7 +325,7 @@ namespace Horizon
                         shaderArguments.PushConstants(3, 1.0f / (float)displayMipLevelWidth);
                         shaderArguments.PushConstants(4, 1.0f / (float)displayMipLevelHeight);
 
-                        RenderBackendShaderProgramHandle computeShader = shaderLibrary->GetShaderProgramHandle(ShaderID::LocalExposureGuidedUpsampling);
+                        RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::LocalExposureGuidedUpsampling);
                         commandList.Dispatch2D(
                             computeShader,
                             shaderArguments,

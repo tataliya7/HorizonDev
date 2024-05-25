@@ -39,7 +39,7 @@ namespace Horizon
 
                     commandList.ClearTextureUAV(RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(histogramTexture), 0), RenderBackendTextureClearValue::CreateColorValueFloat4(0.0f, 0.0f, 0.0f, 0.0f));
 
-                    RenderBackendShaderProgramHandle computeShader = shaderLibrary->GetShaderProgramHandle(ShaderID::AutoExposureBuildHistogram);
+                    RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::AutoExposureBuildHistogram);
                     commandList.Dispatch2D(
                         computeShader,
                         shaderArguments,
@@ -76,7 +76,7 @@ namespace Horizon
                     shaderArguments.BindBuffer(2, registry.GetRenderBackendBufferHandle(previousAutoExposureBuffer), 0);
                     shaderArguments.BindBuffer(3, registry.GetRenderBackendBufferHandle(autoExposureBuffer), 0);
 
-                    RenderBackendShaderProgramHandle computeShader = shaderLibrary->GetShaderProgramHandle(ShaderID::AutoExposureComputeExposure);
+                    RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::AutoExposureComputeExposure);
                     commandList.Dispatch(
                         computeShader,
                         shaderArguments,

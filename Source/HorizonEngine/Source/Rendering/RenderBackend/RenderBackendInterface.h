@@ -215,16 +215,14 @@ namespace Horizon
         virtual void DestroySampler(RenderBackendSamplerHandle sampler) = 0;
 
         /**
-         * Deprecated.
+         * TBD.
          */
-        [[deprecated]]
-        virtual RenderBackendShaderProgramHandle CreateShaderProgram(const RenderBackendShaderProgramDesc* desc, const char* name) = 0;
+        virtual RenderBackendShaderHandle CreateShader(const RenderBackendShaderDesc* desc, const char* name) = 0;
 
         /**
-         * Deprecated.
+         * TBD.
          */
-        [[deprecated]]
-        virtual void DestroyShaderProgram(RenderBackendShaderProgramHandle shader) = 0;
+        virtual void DestroyShader(RenderBackendShaderHandle shader) = 0;
 
 #if 0
         /**

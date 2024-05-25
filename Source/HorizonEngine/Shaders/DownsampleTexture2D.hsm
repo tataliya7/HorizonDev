@@ -1,7 +1,9 @@
 #include "ShaderCommon.hsh"
 
 BIND_TEXTURE_2D_SRV(0, InputTexture);
+#if __SHADER_TARGET_STAGE == __SHADER_STAGE_COMPUTE
 BIND_TEXTURE_2D_UAV(1, float4, OutputMip);
+#endif
 
 [shader("compute")]
 [numthreads(8, 8, 1)]

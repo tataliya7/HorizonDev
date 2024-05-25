@@ -61,7 +61,7 @@ namespace Horizon
                         shaderArguments.BindBuffer(2, renderEngine->materialBuffer, 0);
                         shaderArguments.BindBuffer(3, renderEngine->cubeShadowMapBuffer, sizeof(CubeShadowMapShaderParameters));
 
-                        RenderBackendShaderProgramHandle graphicsShader = shaderLibrary->GetShaderProgramHandle(ShaderID::LocalLightShadows);
+                        RenderBackendShaderHandle graphicsShader = shaderLibrary->GetShader(ShaderID::LocalLightShadows);
 
                         commandList.DrawIndexed(
                             graphicsShader,

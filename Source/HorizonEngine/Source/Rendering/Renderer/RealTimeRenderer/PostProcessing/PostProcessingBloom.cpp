@@ -54,7 +54,7 @@ namespace Horizon
                             shaderArguments.PushConstants(1, 1.0f / (float)outputTextureHeight);
                             shaderArguments.PushConstants(2, useKarisAverage ? 1.0f : 0.0f);
 
-                            RenderBackendShaderProgramHandle computeShader = shaderLibrary->GetShaderProgramHandle(ShaderID::GaussianBloomDownsample);
+                            RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::GaussianBloomDownsample);
                             commandList.Dispatch2D(
                                 computeShader,
                                 shaderArguments,
@@ -106,7 +106,7 @@ namespace Horizon
                             shaderArguments.PushConstants(1, 1.0f / (float)outputTextureHeight);
                             shaderArguments.PushConstants(2, sceneViewShaderParameters.bloomRadius);
 
-                            RenderBackendShaderProgramHandle computeShader = shaderLibrary->GetShaderProgramHandle(ShaderID::GaussianBloomUpsample);
+                            RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::GaussianBloomUpsample);
                             commandList.Dispatch2D(
                                 computeShader,
                                 shaderArguments,
@@ -193,7 +193,7 @@ namespace Horizon
                     shaderArguments.BindTextureSRV(0, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(bloomKernelTexture)));
                     shaderArguments.BindTextureUAV(1, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(resizedBloomKernelTexture), 0));
 
-                    RenderBackendShaderProgramHandle computeShader = shaderLibrary->GetShaderProgramHandle(ShaderID::ConvolutionBloomResizeKernel);
+                    RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::ConvolutionBloomResizeKernel);
                     commandList.Dispatch2D(
                         computeShader,
                         shaderArguments,

@@ -945,16 +945,12 @@ namespace Horizon
     };
     static_assert(uint8(RenderBackendShaderStage::Count) == RenderBackendShaderStageCount);
 
-    struct RenderBackendShaderBytecode
+    struct RenderBackendShaderDesc
     {
+        RenderBackendShaderStage stage;
         const void* code;
         uint64 codeSize;
         const char* entryFunctionName;
-    };
-
-    struct RenderBackendShaderProgramDesc
-    {
-        RenderBackendShaderBytecode stages[RenderBackendShaderStageCount];
     };
 
     enum class RenderBackendIndexType

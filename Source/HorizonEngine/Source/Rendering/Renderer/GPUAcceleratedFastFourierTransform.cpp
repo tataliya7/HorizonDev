@@ -27,7 +27,7 @@ namespace Horizon::GPUFFT
                             shaderArguments.BindTextureSRV(0, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(srcTexture)));
                             shaderArguments.BindTextureUAV(1, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(dstTexture), 0));
 
-                            RenderBackendShaderProgramHandle computeShader = shaderLibrary->GetShaderProgramHandle(ShaderID::SharedMemoryTwoForOneRealFFT);
+                            RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::SharedMemoryTwoForOneRealFFT);
                             commandList.Dispatch(
                                 computeShader,
                                 shaderArguments,
@@ -63,7 +63,7 @@ namespace Horizon::GPUFFT
                             shaderArguments.BindTextureSRV(0, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(srcTexture)));
                             shaderArguments.BindTextureUAV(1, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(dstTexture), 0));
 
-                            RenderBackendShaderProgramHandle computeShader = shaderLibrary->GetShaderProgramHandle(ShaderID::SharedMemoryComplexFFT);
+                            RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::SharedMemoryComplexFFT);
                             commandList.Dispatch(
                                 computeShader,
                                 shaderArguments,
@@ -99,7 +99,7 @@ namespace Horizon::GPUFFT
                             shaderArguments.BindTextureSRV(0, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(srcTexture)));
                             shaderArguments.BindTextureUAV(1, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(dstTexture), 0));
 
-                            RenderBackendShaderProgramHandle computeShader = shaderLibrary->GetShaderProgramHandle(ShaderID::SharedMemoryComplexIFFT);
+                            RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::SharedMemoryComplexIFFT);
                             commandList.Dispatch(
                                 computeShader,
                                 shaderArguments,
@@ -135,7 +135,7 @@ namespace Horizon::GPUFFT
                         shaderArguments.BindTextureUAV(1, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(dstTexture), 0));
                         shaderArguments.BindTextureSRV(2, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(kernelTexture)));
 
-                        RenderBackendShaderProgramHandle computeShader = shaderLibrary->GetShaderProgramHandle(ShaderID::SharedMemoryComplexFFTConvolution);
+                        RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::SharedMemoryComplexFFTConvolution);
                         commandList.Dispatch(
                             computeShader,
                             shaderArguments,
@@ -170,7 +170,7 @@ namespace Horizon::GPUFFT
                             shaderArguments.BindTextureSRV(0, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(srcTexture)));
                             shaderArguments.BindTextureUAV(1, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(dstTexture), 0));
 
-                            RenderBackendShaderProgramHandle computeShader = shaderLibrary->GetShaderProgramHandle(ShaderID::SharedMemoryTwoForOneRealIFFT);
+                            RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::SharedMemoryTwoForOneRealIFFT);
                             commandList.Dispatch(
                                 computeShader,
                                 shaderArguments,

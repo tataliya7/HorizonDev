@@ -29,7 +29,7 @@ namespace Horizon
                     shaderArguments.BindTextureSRV(1, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(vbuffer0)));
                     shaderArguments.BindTextureUAV(2, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(outputTexture), 0));
 
-                    RenderBackendShaderProgramHandle computeShader = shaderLibrary->GetShaderProgramHandle(ShaderID::VisualizePrimitiveID);
+                    RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::VisualizePrimitiveID);
                     commandList.Dispatch(
                         computeShader,
                         shaderArguments,
@@ -70,7 +70,7 @@ namespace Horizon
                     shaderArguments.BindTextureSRV(2, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(vbuffer0)));
                     shaderArguments.BindTextureUAV(3, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(outputTexture), 0));
 
-                    RenderBackendShaderProgramHandle computeShader = shaderLibrary->GetShaderProgramHandle(ShaderID::VisualizeMaterialID);
+                    RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::VisualizeMaterialID);
                     commandList.Dispatch(
                         computeShader,
                         shaderArguments,
@@ -110,7 +110,7 @@ namespace Horizon
                     shaderArguments.BindTextureSRV(1, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(motionVectorTexture)));
                     shaderArguments.BindTextureUAV(2, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(outputTexture), 0));
 
-                    RenderBackendShaderProgramHandle computeShader = shaderLibrary->GetShaderProgramHandle(ShaderID::VisualizeMotionVectors);
+                    RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::VisualizeMotionVectors);
                     commandList.Dispatch(
                         computeShader,
                         shaderArguments,
@@ -150,7 +150,7 @@ namespace Horizon
                     shaderArguments.BindTextureSRV(1, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(ambientOcclusionTexture)));
                     shaderArguments.BindTextureUAV(2, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(outputTexture), 0));
 
-                    RenderBackendShaderProgramHandle computeShader = shaderLibrary->GetShaderProgramHandle(ShaderID::VisualizeAmbientOcclusion);
+                    RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::VisualizeAmbientOcclusion);
                     commandList.Dispatch(
                         computeShader,
                         shaderArguments,
@@ -199,7 +199,7 @@ namespace Horizon
                     shaderArguments.BindTextureSRV(1, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(screenSpaceShadowMaskTexture)));
                     shaderArguments.BindTextureUAV(2, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(outputTexture), 0));
 
-                    RenderBackendShaderProgramHandle computeShader = shaderLibrary->GetShaderProgramHandle(ShaderID::VisualizeScreenSpaceShadowMask);
+                    RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::VisualizeScreenSpaceShadowMask);
                     commandList.Dispatch(
                         computeShader,
                         shaderArguments,

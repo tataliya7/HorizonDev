@@ -52,7 +52,7 @@ namespace Horizon
                             graphicsPipelineState.depthStencilState.depthWriteEnable = true;
                             graphicsPipelineState.depthStencilState.depthCompareFunction = RenderBackendCompareOp::GreaterOrEqual;
 
-                            RenderBackendShaderProgramHandle graphicsShader = shaderLibrary->GetShaderProgramHandle(ShaderID::CascadedShadowMap);
+                            RenderBackendShaderHandle graphicsShader = shaderLibrary->GetShader(ShaderID::CascadedShadowMap);
 
                             for (const auto& drawCallInfo : renderEngine->drawList)
                             {
@@ -109,7 +109,7 @@ namespace Horizon
                     shaderArguments.BindTextureSRV(3, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(shadowMap)));
                     shaderArguments.BindTextureUAV(5, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(screenSpaceShadowMaskTexture), 0));
 
-                    RenderBackendShaderProgramHandle computeShader = shaderLibrary->GetShaderProgramHandle(ShaderID::ScreenSpaceShadowsDirectionalLight);
+                    RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::ScreenSpaceShadowsDirectionalLight);
                     commandList.Dispatch(
                         computeShader,
                         shaderArguments,

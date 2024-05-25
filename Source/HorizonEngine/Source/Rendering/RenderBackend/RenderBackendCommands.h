@@ -128,7 +128,7 @@ namespace Horizon
 
     struct RenderBackendCommandDispatch : RenderBackendCommand<RenderBackendCommandType::Dispatch, RenderBackendCommandQueueType::Compute>
     {
-        RenderBackendShaderProgramHandle shader;
+        RenderBackendShaderHandle computeShader;
         RenderBackendShaderArguments shaderArguments;
         uint32 threadGroupCountX;
         uint32 threadGroupCountY;
@@ -137,7 +137,7 @@ namespace Horizon
 
     struct RenderBackendCommandDispatchIndirect : RenderBackendCommand<RenderBackendCommandType::DispatchIndirect, RenderBackendCommandQueueType::Compute>
     {
-        RenderBackendShaderProgramHandle shader;
+        RenderBackendShaderHandle computeShader;
         RenderBackendShaderArguments shaderArguments;
         RenderBackendBufferHandle argumentBuffer;
         uint64 argumentBufferOffset;
@@ -172,7 +172,8 @@ namespace Horizon
 
     struct RenderBackendCommandDraw : RenderBackendCommand<RenderBackendCommandType::Draw, RenderBackendCommandQueueType::Graphics>
     {
-        RenderBackendShaderProgramHandle shader;
+        RenderBackendShaderHandle vertexShader;
+        RenderBackendShaderHandle pixelShader;
         RenderBackendGraphicsPipelineState pipelineState;
         RenderBackendShaderArguments shaderArguments;
         RenderBackendBufferHandle indexBuffer;
@@ -199,7 +200,8 @@ namespace Horizon
 
     struct RenderBackendCommandDrawIndirect : RenderBackendCommand<RenderBackendCommandType::DrawIndirect, RenderBackendCommandQueueType::Graphics>
     {
-        RenderBackendShaderProgramHandle shader;
+        RenderBackendShaderHandle vertexShader;
+        RenderBackendShaderHandle pixelShader;
         RenderBackendGraphicsPipelineState pipelineState;
         RenderBackendShaderArguments shaderArguments;
         RenderBackendBufferHandle indexBuffer;
@@ -211,7 +213,9 @@ namespace Horizon
 
     struct RenderBackendCommandDispatchMesh : RenderBackendCommand<RenderBackendCommandType::DispatchMesh, RenderBackendCommandQueueType::Graphics>
     {
-        RenderBackendShaderProgramHandle shader;
+        RenderBackendShaderHandle amplificationShader;
+        RenderBackendShaderHandle meshShader;
+        RenderBackendShaderHandle pixelShader;
         RenderBackendGraphicsPipelineState pipelineState;
         RenderBackendShaderArguments shaderArguments;
         RenderBackendPrimitiveTopology topology;
@@ -222,7 +226,9 @@ namespace Horizon
 
     struct RenderBackendCommandDispatchMeshIndirect : RenderBackendCommand<RenderBackendCommandType::DispatchMeshIndirect, RenderBackendCommandQueueType::Graphics>
     {
-        RenderBackendShaderProgramHandle shader;
+        RenderBackendShaderHandle amplificationShader;
+        RenderBackendShaderHandle meshShader;
+        RenderBackendShaderHandle pixelShader;
         RenderBackendGraphicsPipelineState pipelineState;
         RenderBackendShaderArguments shaderArguments;
         RenderBackendPrimitiveTopology topology;

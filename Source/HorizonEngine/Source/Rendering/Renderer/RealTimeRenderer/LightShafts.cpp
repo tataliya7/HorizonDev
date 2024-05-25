@@ -67,7 +67,7 @@ namespace Horizon
                     shaderArguments.PushConstants(4, aspectRatioAndInvAspectRatio.x);
                     shaderArguments.PushConstants(5, aspectRatioAndInvAspectRatio.y);
 
-                    RenderBackendShaderProgramHandle computeShader = shaderLibrary->GetShaderProgramHandle(ShaderID::LightShaftsDownsample);
+                    RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::LightShaftsDownsample);
                     commandList.Dispatch2D(
                         computeShader,
                         shaderArguments,
@@ -107,7 +107,7 @@ namespace Horizon
                         shaderArguments.PushConstants(3, lightShaftsCenter.y);
                         shaderArguments.PushConstants(4, (float)blurPassIndex);
 
-                        RenderBackendShaderProgramHandle computeShader = shaderLibrary->GetShaderProgramHandle(ShaderID::LightShaftsRadialBlur);
+                        RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::LightShaftsRadialBlur);
                         commandList.Dispatch2D(
                             computeShader,
                             shaderArguments,
@@ -142,7 +142,7 @@ namespace Horizon
                     shaderArguments.BindTextureSRV(2, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(radialBlurTexture)));
                     shaderArguments.BindTextureUAV(3, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(lightShaftsApplyTexture), 0));
 
-                    RenderBackendShaderProgramHandle computeShader = shaderLibrary->GetShaderProgramHandle(ShaderID::LightShaftsApply);
+                    RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::LightShaftsApply);
                     commandList.Dispatch2D(
                         computeShader,
                         shaderArguments,

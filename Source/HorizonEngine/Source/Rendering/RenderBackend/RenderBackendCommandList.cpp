@@ -139,14 +139,14 @@ namespace Horizon
     }
 
     void RenderBackendCommandList::Dispatch(
-        RenderBackendShaderProgramHandle shader,
+        RenderBackendShaderHandle computeShader,
         const RenderBackendShaderArguments& shaderArguments,
         uint32 threadGroupCountX,
         uint32 threadGroupCountY,
         uint32 threadGroupCountZ)
     {
         RenderBackendCommandDispatch* command = AllocateCommand<RenderBackendCommandDispatch>(RenderBackendCommandDispatch::Type);
-        command->shader = shader;
+        command->computeShader = computeShader;
         command->threadGroupCountX = threadGroupCountX;
         command->threadGroupCountY = threadGroupCountY;
         command->threadGroupCountZ = threadGroupCountZ;
@@ -154,13 +154,13 @@ namespace Horizon
     }
 
     void RenderBackendCommandList::DispatchIndirect(
-        RenderBackendShaderProgramHandle shader,
+        RenderBackendShaderHandle computeShader,
         const RenderBackendShaderArguments& shaderArguments,
         RenderBackendBufferHandle argumentBuffer,
         uint64 argumentBufferOffset)
     {
         RenderBackendCommandDispatchIndirect* command = AllocateCommand<RenderBackendCommandDispatchIndirect>(RenderBackendCommandDispatchIndirect::Type);
-        command->shader = shader;
+        command->computeShader = computeShader;
         command->argumentBuffer = argumentBuffer;
         command->argumentBufferOffset = argumentBufferOffset;
         memcpy(&command->shaderArguments, &shaderArguments, sizeof(RenderBackendShaderArguments));
@@ -204,7 +204,8 @@ namespace Horizon
     }
 
     void RenderBackendCommandList::Draw(
-        RenderBackendShaderProgramHandle shader,
+        RenderBackendShaderHandle vertexShader,
+        RenderBackendShaderHandle pixelShader,
         const RenderBackendGraphicsPipelineState& graphicsPipelineState,
         const RenderBackendShaderArguments& shaderArguments,
         uint32 numVertices,
@@ -214,7 +215,8 @@ namespace Horizon
         RenderBackendPrimitiveTopology topology)
     {
         RenderBackendCommandDraw* command = AllocateCommand<RenderBackendCommandDraw>(RenderBackendCommandDraw::Type);
-        command->shader = shader;
+        command->vertexShader = vertexShader;
+        command->pixelShader = pixelShader;
         command->pipelineState = graphicsPipelineState;
         command->draw.vertexCount = numVertices;
         command->draw.instanceCount = numInstances;
@@ -226,7 +228,8 @@ namespace Horizon
     }
 
     void RenderBackendCommandList::DrawIndexed(
-        RenderBackendShaderProgramHandle shader,
+        RenderBackendShaderHandle vertexShader,
+        RenderBackendShaderHandle pixelShader,
         const RenderBackendGraphicsPipelineState& graphicsPipelineState,
         const RenderBackendShaderArguments& shaderArguments,
         RenderBackendBufferHandle indexBuffer,
@@ -238,7 +241,8 @@ namespace Horizon
         RenderBackendPrimitiveTopology topology)
     {
         RenderBackendCommandDraw* command = AllocateCommand<RenderBackendCommandDraw>(RenderBackendCommandDraw::Type);
-        command->shader = shader;
+        command->vertexShader = vertexShader;
+        command->pixelShader = pixelShader;
         command->pipelineState = graphicsPipelineState;
         command->indexBuffer = indexBuffer;
         command->drawIndexed.indexCount = numIndices;
@@ -251,7 +255,8 @@ namespace Horizon
     }
 
     void RenderBackendCommandList::DrawIndirect(
-        RenderBackendShaderProgramHandle shader,
+        RenderBackendShaderHandle vertexShader,
+        RenderBackendShaderHandle pixelShader,
         const RenderBackendGraphicsPipelineState& graphicsPipelineState,
         const RenderBackendShaderArguments& shaderArguments,
         RenderBackendBufferHandle indexBuffer,
@@ -261,7 +266,8 @@ namespace Horizon
         RenderBackendPrimitiveTopology topology)
     {
         RenderBackendCommandDrawIndirect* command = AllocateCommand<RenderBackendCommandDrawIndirect>(RenderBackendCommandDrawIndirect::Type);
-        command->shader = shader;
+        command->vertexShader = vertexShader;
+        command->pixelShader = pixelShader;
         command->pipelineState = graphicsPipelineState;
         command->indexBuffer = indexBuffer;
         command->argumentBuffer = argumentBuffer;
@@ -272,7 +278,8 @@ namespace Horizon
     }
 
     void RenderBackendCommandList::DrawIndexedIndirect(
-        RenderBackendShaderProgramHandle shader,
+        RenderBackendShaderHandle vertexShader,
+        RenderBackendShaderHandle pixelShader,
         const RenderBackendGraphicsPipelineState& graphicsPipelineState,
         const RenderBackendShaderArguments& shaderArguments,
         RenderBackendBufferHandle indexBuffer,
@@ -282,7 +289,8 @@ namespace Horizon
         RenderBackendPrimitiveTopology topology)
     {
         RenderBackendCommandDrawIndirect* command = AllocateCommand<RenderBackendCommandDrawIndirect>(RenderBackendCommandDrawIndirect::Type);
-        command->shader = shader;
+        command->vertexShader = vertexShader;
+        command->pixelShader = pixelShader;
         command->pipelineState = graphicsPipelineState;
         command->indexBuffer = indexBuffer;
         command->argumentBuffer = argumentBuffer;
@@ -293,7 +301,9 @@ namespace Horizon
     }
 
     void RenderBackendCommandList::DispatchMesh(
-        RenderBackendShaderProgramHandle shader,
+        RenderBackendShaderHandle amplificationShader,
+        RenderBackendShaderHandle meshShader,
+        RenderBackendShaderHandle pixelShader,
         const RenderBackendGraphicsPipelineState& graphicsPipelineState,
         const RenderBackendShaderArguments& shaderArguments,
         uint32 threadGroupCountX,
@@ -302,7 +312,9 @@ namespace Horizon
         RenderBackendPrimitiveTopology topology)
     {
         RenderBackendCommandDispatchMesh* command = AllocateCommand<RenderBackendCommandDispatchMesh>(RenderBackendCommandDispatchMesh::Type);
-        command->shader = shader;
+        command->amplificationShader = amplificationShader;
+        command->meshShader = meshShader;
+        command->pixelShader = pixelShader;
         command->pipelineState = graphicsPipelineState;
         command->topology = topology;
         command->threadGroupCountX = threadGroupCountX;
@@ -312,7 +324,9 @@ namespace Horizon
     }
 
     void RenderBackendCommandList::DispatchMeshIndirect(
-        RenderBackendShaderProgramHandle shader,
+        RenderBackendShaderHandle amplificationShader,
+        RenderBackendShaderHandle meshShader,
+        RenderBackendShaderHandle pixelShader,
         const RenderBackendGraphicsPipelineState& graphicsPipelineState,
         const RenderBackendShaderArguments& shaderArguments,
         RenderBackendBufferHandle argumentBuffer,
@@ -321,7 +335,9 @@ namespace Horizon
         RenderBackendPrimitiveTopology topology)
     {
         RenderBackendCommandDispatchMeshIndirect* command = AllocateCommand<RenderBackendCommandDispatchMeshIndirect>(RenderBackendCommandDispatchMeshIndirect::Type);
-        command->shader = shader;
+        command->amplificationShader = amplificationShader;
+        command->meshShader = meshShader;
+        command->pixelShader = pixelShader;
         command->pipelineState = graphicsPipelineState;
         command->topology = topology;
         command->argumentBuffer = argumentBuffer;

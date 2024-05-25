@@ -790,7 +790,7 @@ namespace Horizon
         //            shaderArguments.BindTextureSRV(1, RenderBackendTextureSRVDesc::Create(renderEngine->environmentMap));
         //            shaderArguments.PushConstants(0, 0.0f);
 
-        //            RenderBackendShaderProgramHandle graphicsShader = shaderLibrary->GetShaderProgramHandle(ShaderID::SkyBox);
+        //            RenderBackendShaderHandle graphicsShader = shaderLibrary->GetShader(ShaderID::SkyBox);
         //            commandList.Draw(
         //                graphicsShader,
         //                graphicsPipelineState,
@@ -871,7 +871,7 @@ namespace Horizon
                     RenderBackendShaderArguments shaderArguments = {};
                     shaderArguments.BindTextureSRV(0, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(uiColorAndAlphaTexture)));
 
-                    RenderBackendShaderProgramHandle graphicsShader = shaderLibrary->GetShaderProgramHandle(ShaderID::GUIComposition);
+                    RenderBackendShaderHandle graphicsShader = shaderLibrary->GetShader(ShaderID::GUIComposition);
                     commandList.Draw(
                         graphicsShader,
                         graphicsPipelineState,
