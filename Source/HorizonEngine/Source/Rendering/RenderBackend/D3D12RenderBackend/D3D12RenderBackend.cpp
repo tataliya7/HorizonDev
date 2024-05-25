@@ -354,13 +354,7 @@ namespace Horizon
 
     struct D3D12Shader
     {
-        D3D12_SHADER_BYTECODE cs;
-
-        D3D12_SHADER_BYTECODE vs;
-        D3D12_SHADER_BYTECODE ps;
-
-        D3D12_SHADER_BYTECODE as;
-        D3D12_SHADER_BYTECODE ms;
+        D3D12_SHADER_BYTECODE bytecode;
     };
 
     struct D3D12ComputePipelineState
@@ -1375,40 +1369,11 @@ namespace Horizon
         uint32 CreateD3D12Shader(const RenderBackendShaderDesc* desc, const char* name)
         {
             uint32 index = AllocateShader();
+
             D3D12Shader* shader = shaders[index];
 
-            for (uint32 stageIndex = 0; stageIndex < (uint32)RenderBackendShaderStage::Count; stageIndex++)
-            {
-                const RenderBackendShaderStage stage = (RenderBackendShaderStage)stageIndex;
-                if (desc->stages[stageIndex].size == 0)
-                {
-                    continue;
-                }
-
-                switch (stage)
-                {
-                case RenderBackendShaderStage::Compute:
-                    shader->cs.pShaderBytecode = desc->stages[stageIndex].data;
-                    shader->cs.BytecodeLength = desc->stages[stageIndex].size;
-                    break;
-                case RenderBackendShaderStage::Vertex:
-                    shader->vs.pShaderBytecode = desc->stages[stageIndex].data;
-                    shader->vs.BytecodeLength = desc->stages[stageIndex].size;
-                    break;
-                case RenderBackendShaderStage::Pixel:
-                    shader->ps.pShaderBytecode = desc->stages[stageIndex].data;
-                    shader->ps.BytecodeLength = desc->stages[stageIndex].size;
-                    break;
-                case RenderBackendShaderStage::Task:
-                    shader->as.pShaderBytecode = desc->stages[stageIndex].data;
-                    shader->as.BytecodeLength = desc->stages[stageIndex].size;
-                    break;
-                case RenderBackendShaderStage::Mesh:
-                    shader->ms.pShaderBytecode = desc->stages[stageIndex].data;
-                    shader->ms.BytecodeLength = desc->stages[stageIndex].size;
-                    break;
-                }
-            }
+            shader->bytecode.pShaderBytecode = desc->code;
+            shader->bytecode.BytecodeLength = desc->codeSize;
 
             return index;
         }
@@ -1511,7 +1476,7 @@ namespace Horizon
 
         D3D12ComputePipelineState* FindOrCreateComputePipelineState(D3D12Shader* shader)
         {
-            uint32 pipelineStateHash = CRC32(&shader->cs, sizeof(D3D12_SHADER_BYTECODE));
+            uint32 pipelineStateHash = CRC32(&shader->bytecode, sizeof(D3D12_SHADER_BYTECODE));
 
             if (computePipelineStateMap.find(pipelineStateHash) != computePipelineStateMap.end())
             {
@@ -1522,7 +1487,7 @@ namespace Horizon
 
             D3D12_COMPUTE_PIPELINE_STATE_DESC desc = {
                 .pRootSignature = rootSignature.Get(),
-                .CS = shader->cs,
+                .CS = shader->bytecode,
                 .NodeMask = mask.Get(),
                 // .CachedPSO = ,
                 .Flags = D3D12_PIPELINE_STATE_FLAG_NONE
@@ -1534,26 +1499,34 @@ namespace Horizon
             return computePipelineStateMap[pipelineStateHash];
         }
 
-        D3D12GraphicsPipelineState* FindOrCreateGraphicsPipelineState(D3D12Shader* shader, const RenderBackendGraphicsPipelineState& pipelineState, D3D12RenderPass* renderPass, RenderBackendPrimitiveTopology topology)
+        D3D12GraphicsPipelineState* FindOrCreateGraphicsPipelineState(
+            D3D12Shader* vertexShader,
+            D3D12Shader* pixelShader,
+            D3D12Shader* amplificationShader,
+            D3D12Shader* meshShader,
+            const RenderBackendGraphicsPipelineState& pipelineState,
+            D3D12RenderPass* renderPass,
+            RenderBackendPrimitiveTopology topology)
         {
+            bool useMeshShader = meshShader != nullptr;
+
+            // TODO: move this after lookup PSO
             D3D12GraphicsPipelineStateDesc pipelineStateDesc = {};
             InitD3D12RasterizerDesc(pipelineState.rasterizationState, pipelineStateDesc.rasterizerState);
             InitD3D12DepthStencilDesc(pipelineState.depthStencilState, pipelineStateDesc.depthStencilState);
             InitD3D12BlendDesc(pipelineState.colorBlendState, renderPass->numRenderTargets, pipelineStateDesc.blendState);
 
-            uint32 shaderHash = CRC32(shader, sizeof(D3D12Shader));
             uint64 pipelineStateDescHash = CRC32(&pipelineStateDesc, sizeof(D3D12GraphicsPipelineStateDesc));
             uint32 renderPassFullHash = CRC32(renderPass, sizeof(D3D12RenderPass));
 
-            uint64 values[] = { (uint64)renderPassFullHash, (uint64)topology, pipelineStateDescHash };
-            uint64 pipelineStateHash = (uint64(CRC32(values, 3 * sizeof(uint64))) << 32) | shaderHash;
+            // TODO: don't cast pointers to uint64
+            uint64 values[] = { uint64(vertexShader), uint64(pixelShader), uint64(amplificationShader), uint64(meshShader), uint64(topology), pipelineStateDescHash };
+            uint64 pipelineStateHash = (uint64(CRC32(values, ArraySize(values) * sizeof(uint64))) << 32) | renderPassFullHash;
 
             if (graphicsPipelineStateMap.find(pipelineStateHash) != graphicsPipelineStateMap.end())
             {
                 return graphicsPipelineStateMap[pipelineStateHash];
             }
-
-            bool useMeshShader = shader->ms.pShaderBytecode != nullptr;
 
             D3D12GraphicsPipelineState* newGraphicsPipelineState = new D3D12GraphicsPipelineState();
 
@@ -1578,9 +1551,9 @@ namespace Horizon
 
                 D3DX12_MESH_SHADER_PIPELINE_STATE_DESC meshShaderPipelineStateDesc = {
                     .pRootSignature = rootSignature.Get(),
-                    .AS = shader->as,
-                    .MS = shader->ms,
-                    .PS = shader->ps,
+                    .AS = amplificationShader ? amplificationShader->bytecode : D3D12_SHADER_BYTECODE(),
+                    .MS = meshShader->bytecode,
+                    .PS = pixelShader->bytecode, // TODO: allow no pixel shader
                     .BlendState = pipelineStateDesc.blendState,
                     .SampleMask = 0xFFFFFFFF,
                     .RasterizerState = pipelineStateDesc.rasterizerState,
@@ -1606,15 +1579,15 @@ namespace Horizon
                     streamDesc.SizeInBytes = sizeof(psoStream),
                     streamDesc.pPipelineStateSubobjectStream = &psoStream
                 };
-                D3D12_RAYTRACING_PIPELINE_CONFIG
+
                 D3D12_CHECK(device2->CreatePipelineState(&streamDesc, IID_PPV_ARGS(&newGraphicsPipelineState->state)));
             }
             else
             {
                 D3D12_GRAPHICS_PIPELINE_STATE_DESC graphicsPipelineStateDesc = {
                     .pRootSignature = rootSignature.Get(),
-                    .VS = shader->vs,
-                    .PS = shader->ps,
+                    .VS = vertexShader->bytecode,
+                    .PS = pixelShader->bytecode, // TODO: allow no pixel shader
                     // .DS = ,
                     // .HS = ,
                     // .GS = ,
@@ -2021,8 +1994,8 @@ namespace Horizon
         bool CompileRenderBackendCommand(const RenderBackendCommandEndDebugLabel& command);
         bool CompileRenderBackendCommand(const RenderBackendCommandDispatchSuperSampling& command);
     private:
-        bool PrepareForDispatch(RenderBackendShaderHandle shader, const RenderBackendShaderArguments& shaderArguments);
-        bool PrepareForDraw(RenderBackendShaderHandle shader, const RenderBackendGraphicsPipelineState& pipelineState, RenderBackendPrimitiveTopology topology, RenderBackendBufferHandle indexBuffer, const RenderBackendShaderArguments& shaderArguments);
+        bool PrepareForDispatch(RenderBackendShaderHandle computeShader, const RenderBackendShaderArguments& shaderArguments);
+        bool PrepareForDraw(RenderBackendShaderHandle vertexShader, RenderBackendShaderHandle pixelShader, const RenderBackendGraphicsPipelineState& pipelineState, RenderBackendPrimitiveTopology topology, RenderBackendBufferHandle indexBuffer, const RenderBackendShaderArguments& shaderArguments);
         D3D12Device* device;
         D3D12CommandQueueType queueType;
         D3D12CommandList* commandList;
@@ -2361,9 +2334,9 @@ namespace Horizon
         return true;
     }
 
-    bool D3D12RenderBackendCommandListContext::PrepareForDispatch(RenderBackendShaderHandle shader, const RenderBackendShaderArguments& shaderArguments)
+    bool D3D12RenderBackendCommandListContext::PrepareForDispatch(RenderBackendShaderHandle computeShader, const RenderBackendShaderArguments& shaderArguments)
     {
-        D3D12ComputePipelineState* pipelineState = device->FindOrCreateComputePipelineState(device->GetShader(shader));
+        D3D12ComputePipelineState* pipelineState = device->FindOrCreateComputePipelineState(device->GetShader(computeShader));
         if (pipelineState->GetID3D12PipelineState() != activeComputePipeline)
         {
             ID3D12RootSignature* rootSignature = device->GetID3D12RootSignature();
@@ -2421,7 +2394,7 @@ namespace Horizon
 
     bool D3D12RenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandDispatch& command)
     {
-        if (!PrepareForDispatch(command.shader, command.shaderArguments))
+        if (!PrepareForDispatch(command.computeShader, command.shaderArguments))
         {
             return false;
         }
@@ -2431,7 +2404,7 @@ namespace Horizon
 
     bool D3D12RenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandDispatchIndirect& command)
     {
-        if (!PrepareForDispatch(command.shader, command.shaderArguments))
+        if (!PrepareForDispatch(command.computeShader, command.shaderArguments))
         {
             return false;
         }
@@ -2651,33 +2624,33 @@ namespace Horizon
     {
         OPTICK_EVENT();
 
-        if (!PrepareForDraw(command.shader, command.pipelineState, command.topology, command.indexBuffer, command.shaderArguments))
+        if (!PrepareForDraw(command.vertexShader, command.pixelShader, command.pipelineState, command.topology, command.indexBuffer, command.shaderArguments))
         {
             return false;
         }
         if (!command.indexBuffer)
         {
             commandList->GetID3D12GraphicsCommandList6()->DrawInstanced(
-                command.numVertices,
-                command.numInstances,
-                command.firstVertex,
-                command.firstInstance);
+                command.draw.vertexCount,
+                command.draw.instanceCount,
+                command.draw.firstVertex,
+                command.draw.firstInstance);
         }
         else
         {
             commandList->GetID3D12GraphicsCommandList6()->DrawIndexedInstanced(
-                command.numIndices,
-                command.numInstances,
-                command.firstIndex,
-                command.vertexOffset,
-                command.firstInstance);
+                command.drawIndexed.indexCount,
+                command.drawIndexed.instanceCount,
+                command.drawIndexed.firstIndex,
+                command.drawIndexed.vertexOffset,
+                command.drawIndexed.firstInstance);
         }
         return true;
     }
 
     bool D3D12RenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandDrawIndirect& command)
     {
-        if (!PrepareForDraw(command.shader, command.pipelineState, command.topology, command.indexBuffer, command.shaderArguments))
+        if (!PrepareForDraw(command.vertexShader, command.pixelShader, command.pipelineState, command.topology, command.indexBuffer, command.shaderArguments))
         {
             return false;
         }
@@ -2706,30 +2679,30 @@ namespace Horizon
 
     bool D3D12RenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandDispatchMesh& command)
     {
-        if (!PrepareForDraw(command.shader, command.pipelineState, command.topology, RenderBackendBufferHandle::Null, command.shaderArguments))
-        {
-            return false;
-        }
-        commandList->GetID3D12GraphicsCommandList6()->DispatchMesh(
-            command.threadGroupCountX,
-            command.threadGroupCountY,
-            command.threadGroupCountZ);
+        // if (!PrepareForMeshShading(command.amplificationShader, command.meshShader, command.pixelShader, command.pipelineState, command.topology, command.shaderArguments))
+        // {
+        //     return false;
+        // }
+        // commandList->GetID3D12GraphicsCommandList6()->DispatchMesh(
+        //     command.threadGroupCountX,
+        //     command.threadGroupCountY,
+        //     command.threadGroupCountZ);
         return true;
     }
 
     bool D3D12RenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandDispatchMeshIndirect& command)
     {
-        if (!PrepareForDraw(command.shader, command.pipelineState, command.topology, RenderBackendBufferHandle::Null, command.shaderArguments))
-        {
-            return false;
-        }
-        commandList->GetID3D12GraphicsCommandList6()->ExecuteIndirect(
-            device->GetDispatchMeshIndirectCommandSignature(),
-            command.numDraws,
-            device->GetBuffer(command.argumentBuffer)->GetID3D12Resource(),
-            command.argumentBufferOffset,
-            nullptr,
-            0);
+        // if (!PrepareForMeshShading(command.amplificationShader, command.meshShader, command.pixelShader, command.pipelineState, command.topology, command.shaderArguments))
+        // {
+        //     return false;
+        // }
+        // commandList->GetID3D12GraphicsCommandList6()->ExecuteIndirect(
+        //     device->GetDispatchMeshIndirectCommandSignature(),
+        //     command.numDraws,
+        //     device->GetBuffer(command.argumentBuffer)->GetID3D12Resource(),
+        //     command.argumentBufferOffset,
+        //     nullptr,
+        //     0);
         return true;
     }
 

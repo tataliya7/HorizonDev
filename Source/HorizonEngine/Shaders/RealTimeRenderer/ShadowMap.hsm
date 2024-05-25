@@ -28,15 +28,9 @@ void ShadowMapVS(uint vertexIndex : SV_VertexID, out ShadowMapVSToPS output)
     float3 worldPosition = mul(worldTransform, float4(vertexPosition, 1.0)).xyz;
     float3 worldNormal = normalize(mul((float3x3)worldTransform, vertexNormal));
 
-#if SHADOW_MAP_TYPE == 0 // Cacaded shadow map
     CascadedShadowMapShaderParameters shadowMapShaderParameters = GetCascadedShadowMapShaderParameters();
     float cascadeIndex = SHADER_ARGUMENTS_DATA(0);
     float4x4 viewProjectionMatrix = shadowMapShaderParameters.viewProjectionMatrix[cascadeIndex];
-#else // Cube shadow map
-    CubeShadowMapShaderParameters shadowMapShaderParameters = GetCubeShadowMapShaderParameters();
-    float faceIndex = SHADER_ARGUMENTS_DATA(0);
-    float4x4 viewProjectionMatrix = shadowMapShaderParameters.viewProjectionMatrix[faceIndex];
-#endif
 
     output.svPosition = mul(viewProjectionMatrix, float4(worldPosition, 1.0));
     output.texCoord0 = vertexTexCoord0;

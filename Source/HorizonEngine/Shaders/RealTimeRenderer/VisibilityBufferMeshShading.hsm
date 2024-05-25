@@ -70,7 +70,7 @@ uint3 DecodeTriangleIndices(MeshletDesc meshletDesc, uint triangleIndex)
 
 [shader("amplification")]
 [numthreads(TASK_SHADER_WORKGROUP_SIZE, 1, 1)]
-void VisibilityBufferTS(uint DispatchThreadID : SV_DispatchThreadID)
+void VisibilityBufferAS(uint DispatchThreadID : SV_DispatchThreadID)
 {
     bool visible = false;
 
