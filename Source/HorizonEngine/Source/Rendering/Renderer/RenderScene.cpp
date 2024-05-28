@@ -21,12 +21,22 @@ namespace Horizon
 
     }
 
+    bool RenderScene::HasAtmosphericLight() const
+    {
+        return atmosphericLight != nullptr;
+    }
+
+    DistantLightRenderProxy* RenderScene::GetAtmosphericLight() const
+    {
+        return atmosphericLight;
+    }
+
     bool RenderScene::HasActiveSkyAtmosphere() const
     {
         return activeSkyAtmosphere != nullptr;
     }
 
-    SkyAtmosphereRenderProxy* RenderScene::GetActiveSkyAtmosphere()
+    SkyAtmosphereRenderProxy* RenderScene::GetActiveSkyAtmosphere() const
     {
         return activeSkyAtmosphere;
     }

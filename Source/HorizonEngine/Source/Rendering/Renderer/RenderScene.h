@@ -5,6 +5,11 @@
 
 namespace Horizon
 {
+    class MeshRenderProxy
+    {
+
+    };
+
     class LightRenderProxy
     {
     public:
@@ -144,66 +149,44 @@ namespace Horizon
         RenderScene();
         virtual ~RenderScene();
 
-        bool HasAtmosphericLight() const
-        {
-            return atmosphericLight != nullptr;
-        }
-
-        DistantLightRenderProxy* GetAtmosphericLight() const
-        {
-            return atmosphericLight;
-        }
-
-        SkyAtmosphereRenderProxy* GetActiveSkyAtmosphere() const
-        {
-            return skyAtmosphere;
-        }
-
-        bool HasSkyAtmosphere() const
-        {
-
-        }
-
         /**
          * Release this scene.
          */
         virtual void Release();
 
-        /**
-         * Adds a mesh component to the scene.
-         *
-         * @param[in] component - mesh component to add to the scene.
-         */
-        virtual void AddMesh(MeshComponent* component);
+        void Render();
 
         /**
-         * Removes a mesh component from the scene.
-         *
-         * @param[in] component - mesh component to remove from the scene.
+         * Adds a mesh to the scene.
          */
-        virtual void RemoveMesh(MeshComponent* component);
+        virtual void AddMesh(MeshRenderProxy* mesh);
+
+        /**
+         * Removes a mesh from the scene.
+         */
+        virtual void RemoveMesh(MeshRenderProxy* mesh);
 
         /**
          * Adds a new light to the scene.
-         *
-         * @param [in] light - light to add to the scene.
          */
         virtual void AddLight(LightRenderProxy* light);
 
         /**
-         * Removes a light component from the scene.
-         *
-         * @param [in] component light component to remove from the scene.
+         * Removes a light from the scene.
          */
-        virtual void RemoveLight(LightComponent* component);
+        virtual void RemoveLight(LightRenderProxy* light);
 
-        virtual void HasSkyLight() = 0;
+        // virtual void HasSkyLight() = 0;
+        //
+        // virtual void SetSkyLight(FSkyLightSceneProxy* component);
 
-        virtual void SetSkyLight(FSkyLightSceneProxy* component);
+        virtual bool HasAtmosphericLight() const;
+
+        virtual DistantLightRenderProxy* GetAtmosphericLight() const;
 
         virtual bool HasActiveSkyAtmosphere() const;
 
-        virtual SkyAtmosphereRenderProxy* GetActiveSkyAtmosphere();
+        virtual SkyAtmosphereRenderProxy* GetActiveSkyAtmosphere() const;
 
         virtual void AddSkyAtmosphere(SkyAtmosphereRenderProxy* skyAtmosphere);
 
@@ -214,8 +197,6 @@ namespace Horizon
         virtual void AddLocalFogVolume(LocalFogVolumeRenderProxy* localFogVolume);
 
         virtual void RemoveLocalFogVolume(LocalFogVolumeRenderProxy* localFogVolume);
-
-        void Render();
 
         void GetRenderStatistics(RenderStatistics& statistics) const;
 
@@ -229,15 +210,13 @@ namespace Horizon
 
         std::vector<LocalFogVolumeRenderProxy*> localFogVolumes;
 
-        RenderBackendRayTracingAccelerationStructureHandle rayTracingScene;
-        RenderBackendRayTracingAccelerationStructureHandle bottomLevelAS;
-
-        int64 updateCounter = 0;
-
         GPUScene gpuScene;
+
+        //RayTracingScene rayTracingScene;
+
         RenderStatistics renderStatistics;
 
-        void UpdateGeometry();
+        //void UpdateGeometry();
 
         struct DrawCallInfo
         {
@@ -249,7 +228,7 @@ namespace Horizon
             uint32 geometryIndex;
         };
 
-        enum class Mesh
+        enum class MeshType
         {
             Opaque,
             Translucency,
@@ -270,35 +249,33 @@ namespace Horizon
         std::vector<Matrix4x4> rowMajorTransforms;
         RenderBackendBufferHandle transformBuffer;
         RenderBackendBufferHandle transformUploadBuffer;
-
         RenderBackendBufferHandle previousTransformBuffer;
-
         RenderBackendBufferHandle transformBufferRowMajor;
 
         // Geometries
-        uint32 numGeometries = 0;
-        uint64 geometryBufferSize = 0;
-        std::vector<GeometryShaderParameters> geometries;
-        RenderBackendBufferHandle geometryUploadBuffer;
-        RenderBackendBufferHandle geometryBuffer;
+        // uint32 numGeometries = 0;
+        // uint64 geometryBufferSize = 0;
+        // std::vector<GeometryShaderParameters> geometries;
+        // RenderBackendBufferHandle geometryUploadBuffer;
+        // RenderBackendBufferHandle geometryBuffer;
 
         // Materials
-        uint32 numMaterials = 0;
-        uint64 materialBufferSize = 0;
-        std::vector<MaterialShaderParameters> materials;
-        RenderBackendBufferHandle materialUploadBuffer;
-        RenderBackendBufferHandle materialBuffer;
+        // uint32 numMaterials = 0;
+        // uint64 materialBufferSize = 0;
+        // std::vector<MaterialShaderParameters> materials;
+        // RenderBackendBufferHandle materialUploadBuffer;
+        // RenderBackendBufferHandle materialBuffer;
 
         // Lights
-        uint32 numLights;
-        LightShaderParameters lightData[RendererMaxLightCount];
-        LightInfo lightInfo[RendererMaxLightCount];
-        uint32 numCascadedShadowMaps = 0;
-        CascadedShadowMapShaderParameters cascadedShadowMapData[RendererMaxCascadedShadowMapCount];
-        uint32 numCubeShadowMaps = 0;
-        CubeShadowMapShaderParameters cubeShadowMapData[RendererMaxCubeShadowMapCount];
-        uint32 cubeShadowMapIndexToLightIndex[RendererMaxCubeShadowMapCount];
-        uint32 cascadedShadowMapIndexToLightIndex[RendererMaxCascadedShadowMapCount];
+        // uint32 numLights;
+        // LightShaderParameters lightData[RendererMaxLightCount];
+        // LightInfo lightInfo[RendererMaxLightCount];
+        // uint32 numCascadedShadowMaps = 0;
+        // CascadedShadowMapShaderParameters cascadedShadowMapData[RendererMaxCascadedShadowMapCount];
+        // uint32 numCubeShadowMaps = 0;
+        // CubeShadowMapShaderParameters cubeShadowMapData[RendererMaxCubeShadowMapCount];
+        // uint32 cubeShadowMapIndexToLightIndex[RendererMaxCubeShadowMapCount];
+        // uint32 cascadedShadowMapIndexToLightIndex[RendererMaxCascadedShadowMapCount];
 
         RenderBackendBufferHandle lightDataBuffer;
         RenderBackendBufferHandle lightDataUploadBuffer;
@@ -306,20 +283,19 @@ namespace Horizon
         RenderBackendBufferHandle cascadedShadowMapBuffer;
         RenderBackendBufferHandle cascadedShadowMapUploadBuffer;
 
-        RenderBackendBufferHandle cubeShadowMapBuffer;
-        RenderBackendBufferHandle cubeShadowMapUploadBuffer;
+        RenderBackendBufferHandle localLightShadowMapBuffer;
+        RenderBackendBufferHandle localLightShadowMapUploadBuffer;
 
         // Environment
-        RenderBackendTextureHandle environmentMap;
-        RenderBackendTextureHandle irradianceEnvironmentMap;
-        RenderBackendBufferHandle irradianceEnvironmentMapSH;
-        RenderBackendTextureHandle filteredEnvironmentMap;
+        // RenderBackendTextureHandle environmentMap;
+        // RenderBackendTextureHandle irradianceEnvironmentMap;
+        // RenderBackendBufferHandle irradianceEnvironmentMapSH;
+        // RenderBackendTextureHandle filteredEnvironmentMap;
 
         // Debug draw
-        std::vector<Vector3> debugDrawLinesVertices;
-
-        uint32 debugDrawLinesVertexBufferSize = 0;
-        RenderBackendBufferHandle debugDrawLinesVertexBuffer;
-        RenderBackendBufferHandle debugDrawLinesVertexUploadBuffer;
+        // std::vector<Vector3> debugDrawLinesVertices;
+        // uint32 debugDrawLinesVertexBufferSize = 0;
+        // RenderBackendBufferHandle debugDrawLinesVertexBuffer;
+        // RenderBackendBufferHandle debugDrawLinesVertexUploadBuffer;
     };
 }

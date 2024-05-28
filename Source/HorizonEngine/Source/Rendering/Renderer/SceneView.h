@@ -26,8 +26,7 @@ namespace Horizon
     {
     public:
         CameraTransformations()
-            : isCameraJitteringApplied(false)
-            , nonJitteredViewToClipMatrix(IdentityMatrix4x4)
+            : nonJitteredViewToClipMatrix(IdentityMatrix4x4)
             , worldToViewMatrix(IdentityMatrix4x4)
             , viewToWorldMatrix(IdentityMatrix4x4)
             , viewToClipMatrix(IdentityMatrix4x4)

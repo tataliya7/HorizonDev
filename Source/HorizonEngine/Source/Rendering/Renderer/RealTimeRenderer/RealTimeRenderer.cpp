@@ -298,9 +298,7 @@ namespace Horizon
             perFrameShaderParameters.displayResolution = Vector4(1.0f * displayResolution.width, 1.0f * displayResolution.height, 1.0f / displayResolution.width, 1.0f / displayResolution.height);
 
             perFrameShaderParameters.cameraPosition = view.GetCameraPosition();
-            perFrameShaderParameters.previousCameraPosition = historyFrame.cameraPosition;
             perFrameShaderParameters.cameraJitterOffset = view.GetCameraJitterOffset();
-            perFrameShaderParameters.previousCameraJitterOffset = historyFrame.cameraJitterOffset;
             perFrameShaderParameters.cameraUpVector = view.GetCameraUpVector();
             perFrameShaderParameters.cameraRightVector = view.GetCameraRightVector();
             perFrameShaderParameters.cameraForwardVector = view.GetCameraForwardVector();
@@ -308,6 +306,9 @@ namespace Horizon
             perFrameShaderParameters.aspectRatio = view.GetAspectRatio();
             perFrameShaderParameters.nearClippingPlane = view.GetNearClippingPlane();
             perFrameShaderParameters.farClippingPlane = view.GetFarClippingPlane();
+
+            perFrameShaderParameters.previousCameraPosition = historyFrame.cameraPosition;
+            perFrameShaderParameters.previousCameraJitterOffset = historyFrame.cameraJitterOffset;
 
             perFrameShaderParameters.worldToViewMatrix = view.GetTransformations().GetWorldToViewMatrix();
             perFrameShaderParameters.viewToWorldMatrix = view.GetTransformations().GetViewToWorldMatrix();

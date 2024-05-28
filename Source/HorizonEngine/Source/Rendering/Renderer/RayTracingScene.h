@@ -36,7 +36,7 @@ namespace Horizon
 
         RenderBackendBufferHandle instanceUploadBuffer;
         RenderBackendBufferHandle transformUploadBuffer;
-
+        
         //std::vector<RayTracingInstance> instances;
     };
 

@@ -167,11 +167,6 @@ namespace Horizon
 
         bool LoadShaders();
 
-        bool GatherRayTracingInstances(
-            RenderGraph& renderGraph,
-            SceneView& view,
-            RayTracingScene& rayTracingScene);
-
         void AddSurfleGIPasses(
             RenderGraph& renderGraph,
             const SceneView& view);
@@ -199,13 +194,13 @@ namespace Horizon
         void RenderScreenSpaceShadows(
             RenderGraph& renderGraph,
             const SceneView& view,
-            const LightComponent& light,
+            const LightRenderProxy& light,
             RenderGraphTextureHandle& screenSpaceShadowMaskTexture);
 
         void RenderRayTracingShadows(
             RenderGraph& renderGraph,
             const SceneView& view,
-            const LightComponent& light,
+            const LightRenderProxy& light,
             RenderGraphTextureHandle& screenSpaceShadowMaskTexture,
             RenderGraphTextureHandle& rayDistanceTexture);
 

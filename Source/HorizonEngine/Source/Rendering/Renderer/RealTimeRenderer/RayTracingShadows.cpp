@@ -5,11 +5,13 @@ namespace Horizon
     void RealTimeRenderer::RenderRayTracingShadows(
         RenderGraph& renderGraph,
         const SceneView& view,
-        const LightComponent& light,
+        const LightRenderProxy& light,
         RenderGraphTextureHandle& screenSpaceShadowMaskTexture,
         RenderGraphTextureHandle& rayDistanceTexture)
     {
-        renderGraph.AddPass("RayTracingShadowsPass", RenderGraphPassFlags::RayTracing,
+        renderGraph.AddPass(
+            "RayTracingShadowsPass",
+            RenderGraphPassFlags::RayTracing,
             [&](RenderGraphBuilder& builder)
             {
                 auto& sceneTextures = renderGraph.blackboard.Get<RealTimeRendererSceneTextures>();
@@ -31,11 +33,12 @@ namespace Horizon
                     shaderArguments.BindTextureSRV(2, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(sceneDepthTexture)));
                     shaderArguments.BindTextureUAV(3, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(screenSpaceShadowMaskTexture), 0));
                     shaderArguments.BindTextureUAV(4, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(rayDistanceTexture), 0));
+
                     shaderArguments.PushConstants(0, light.GetDirection().x);
                     shaderArguments.PushConstants(1, light.GetDirection().y);
                     shaderArguments.PushConstants(2, light.GetDirection().z);
 
-                    commandList.TraceRays(
+                    commandList.DispatchRays(
                         rayTracingShadowsPipelineState,
                         rayTracingShadowsSBT,
                         shaderArguments,

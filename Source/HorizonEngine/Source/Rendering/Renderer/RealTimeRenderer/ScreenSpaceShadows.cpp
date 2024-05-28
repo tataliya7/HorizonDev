@@ -5,7 +5,7 @@ namespace Horizon
     void RealTimeRenderer::RenderScreenSpaceShadows(
         RenderGraph& renderGraph,
         const SceneView& view,
-        const LightComponent& light,
+        const LightRenderProxy& light,
         RenderGraphTextureHandle& screenSpaceShadowMaskTexture)
     {
         uint32 numDynamicShadowCascades = light.GetNumDynamicShadowCascades();
