@@ -89,6 +89,12 @@ namespace Horizon
         Vector3 absorptionExtinction;
     };
 
+    class LocalFogVolumeRenderProxy
+    {
+    public:
+    private:
+    };
+
     class SkyAtmosphereRenderProxy
     {
     public:
@@ -189,13 +195,22 @@ namespace Horizon
 
         virtual void SetSkyAtmosphere(SkyAtmosphereRenderProxy* skyAtmosphere) = 0;
 
+        virtual void AddLocalFogVolume(LocalFogVolumeRenderProxy* localFogVolume);
+
+        virtual void RemoveLocalFogVolume(LocalFogVolumeRenderProxy* localFogVolume);
+
+        virtual bool HasAnyLocalFogVolume() const;
+
         void Render();
 
         void GetRenderStatistics(RenderStatistics& statistics) const;
 
     private:
 
+        std::vector<LocalFogVolumeRenderProxy*> localFogVolumes;
+
         DistantLightRenderProxy* atmosphericLight = nullptr;
+
         SkyAtmosphereRenderProxy* skyAtmosphere = nullptr;
 
         RenderBackendRayTracingAccelerationStructureHandle rayTracingScene;

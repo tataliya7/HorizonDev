@@ -78,6 +78,9 @@ namespace Horizon
         float indirectLightingIntensity = 1.0f;
     };
 
+    /**
+     * TBD.
+     */
     struct RenderSettings
     {
         RendererType rendererType;

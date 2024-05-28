@@ -4,6 +4,31 @@
 
 namespace Horizon
 {
+    void RenderScene::AddLocalFogVolume(LocalFogVolumeRenderProxy* localFogVolume)
+    {
+        assert(localFogVolume);
+
+        localFogVolumes.push_back(localFogVolume);
+    }
+
+    void RenderScene::RemoveLocalFogVolume(LocalFogVolumeRenderProxy* localFogVolume)
+    {
+        assert(localFogVolume);
+
+        // Avoid the overhead of moving the items as the order does not matter.
+        auto iter = std::ranges::find(localFogVolumes, localFogVolume);
+        if (iter != localFogVolumes.end())
+        {
+            std::swap(*iter, localFogVolumes.back());
+            localFogVolumes.pop_back();
+        }
+    }
+
+    bool RenderScene::HasAnyLocalFogVolume() const
+    {
+        return !localFogVolumes.empty();
+    }
+
     void RenderScene::GetRenderStatistics(RenderStatistics& statistics) const
     {
 

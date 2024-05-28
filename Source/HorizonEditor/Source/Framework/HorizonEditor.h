@@ -4,6 +4,7 @@
 #include "WindowSystem.h"
 #include "HorizonEditorUI.h"
 #include "EditorCamera.h"
+#include "EditorSceneManager.h"
 
 #define HORIZON_EDITOR_APPLICATION_NAME "Horizon Editor"
 
@@ -236,14 +237,19 @@ namespace Horizon
         RenderSettings renderSettings;
         ImGuiContext* imguiContext = nullptr;
 
+        // Begin Scene View Window
+        SceneView* sceneView;
+        std::string currentDebugVisualizationMode;
+        EditorCamera editorCamera;
+        Point2D currentMousePosition;
+        // End Scene View Window
+
+        EditorSceneManager* sceneManager;
+
         Window* window = nullptr;
         RenderBackendSwapChainHandle swapChain = RenderBackendSwapChainHandle::Null;
         uint32 swapChainWidth = 0;
         uint32 swapChainHeight = 0;
-
-        //Scene* scene;
-        EditorCamera editorCamera;
-        SceneView* sceneView;
     };
 }
 

@@ -276,7 +276,7 @@ namespace Horizon
         SceneRenderer* sceneRenderer;
 
         /**
-         * Render settings used to render the scene.
+         * Global render settings for rendering the scene.
          */
         RenderSettings renderSettings;
 
