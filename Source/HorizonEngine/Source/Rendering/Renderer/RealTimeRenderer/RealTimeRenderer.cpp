@@ -1,6 +1,7 @@
 #include "RealTimeRenderer.h"
 #include "RealTimeRendererPrivate.h"
 #include "PerFrameShaderParameters.h"
+#include "SkyAtmosphereRendering.h"
 
 #include <optick.h>
 
@@ -131,7 +132,12 @@ namespace Horizon
         }
     }
 
-    void RealTimeRenderer::()
+    bool RealTimeRenderer::IsBloomEnabled() const
+    {
+        return IsGaussianBloomEnabled() || IsConvolutionBloomEnabled();
+    }
+
+    void RealTimeRenderer::OnRenderBegin()
     {
         // Super Resolution
         isDLSSEnabled = false;
@@ -241,11 +247,18 @@ namespace Horizon
             preExposure = view.renderSettings.fixedPreExposure;
         }
 
+        const RenderScene* scene = view.GetRenderScene();
+
         isSurfelGIEnabled = false;
         isRayTracingShadowsEnabled = settings.shadowsTechnique == ShadowsTechnique::RayTracingShadows;
         isRayTracingReflectionsEnabled = settings.reflectionsTechnique == ReflectionsTechnique::RayTracingReflections;
         isRayTracingAmbientOcclusionEnabled = settings.ambientOcclusionTechnique == AmbientOcclusionTechnique::RayTracingAmbientOcclusion;
         isSkyAtmosphereRenderingEnabled = IsSkyAtmosphereRenderingEnabled();
+
+        features.enableSkyAtmosphereRendering =
+            scene != nullptr &&
+            scene->HasAtmosphericLight() &&
+            scene->HasActiveSkyAtmosphere();
 
         bool isAutoExposureEnabled = (settings.exposureMethod == ExposureMethod::AutoExposure) || (settings.exposureMethod == ExposureMethod::FixedExposure);
         bool isBloomEnabled = settings.postProcessingSettings.bloomIntensity > 0.0f;
@@ -254,7 +267,7 @@ namespace Horizon
         bool isToneMappingEnabled = true;
         bool isLocalExposureEnabled = isToneMappingEnabled && settings.postProcessingSettings.localExposureEnabled;
 
-        if (IsFixedExposureEnabled())
+        if (!IsAutoExposureEnabled())
         {
             finalPostProcessingSettings.autoExposureMinExposureValue = finalPostProcessingSettings.fixedExposureValue;
             finalPostProcessingSettings.autoExposureMinExposureValue = finalPostProcessingSettings.fixedExposureValue;
@@ -285,9 +298,9 @@ namespace Horizon
             perFrameShaderParameters.displayResolution = Vector4(1.0f * displayResolution.width, 1.0f * displayResolution.height, 1.0f / displayResolution.width, 1.0f / displayResolution.height);
 
             perFrameShaderParameters.cameraPosition = view.GetCameraPosition();
-            perFrameShaderParameters.previousCameraPosition = view.GetPreviousCameraPosition();
+            perFrameShaderParameters.previousCameraPosition = historyFrame.cameraPosition;
             perFrameShaderParameters.cameraJitterOffset = view.GetCameraJitterOffset();
-            perFrameShaderParameters.previousCameraJitterOffset = view.GetPreviousCameraJitterOffset();
+            perFrameShaderParameters.previousCameraJitterOffset = historyFrame.cameraJitterOffset;
             perFrameShaderParameters.cameraUpVector = view.GetCameraUpVector();
             perFrameShaderParameters.cameraRightVector = view.GetCameraRightVector();
             perFrameShaderParameters.cameraForwardVector = view.GetCameraForwardVector();
@@ -304,19 +317,19 @@ namespace Horizon
             perFrameShaderParameters.clipToWorldMatrix = view.GetTransformations().GetClipToWorldMatrix();
             perFrameShaderParameters.nonJitteredWorldToClipMatrix = view.GetTransformations().GetNonJitteredViewToClipMatrix();
 
-            perFrameShaderParameters.previousWorldToViewMatrix = view.GetPreviousTransformations().GetWorldToViewMatrix();
-            perFrameShaderParameters.previousViewToWorldMatrix = view.GetPreviousTransformations().GetViewToWorldMatrix();
-            perFrameShaderParameters.previousViewToClipMatrix = view.GetPreviousTransformations().GetViewToClipMatrix();
-            perFrameShaderParameters.previousClipToViewMatrix = view.GetPreviousTransformations().GetClipToViewMatrix();
-            perFrameShaderParameters.previousWorldToClipMatrix = view.GetPreviousTransformations().GetWorldToClipMatrix();
-            perFrameShaderParameters.previousClipToWorldMatrix = view.GetPreviousTransformations().GetClipToWorldMatrix();
-            perFrameShaderParameters.previousNonJitteredWorldToClipMatrix = view.GetPreviousTransformations().GetNonJitteredViewToClipMatrix();
+            perFrameShaderParameters.previousWorldToViewMatrix = historyFrame.transformations.GetWorldToViewMatrix();
+            perFrameShaderParameters.previousViewToWorldMatrix = historyFrame.transformations.GetViewToWorldMatrix();
+            perFrameShaderParameters.previousViewToClipMatrix = historyFrame.transformations.GetViewToClipMatrix();
+            perFrameShaderParameters.previousClipToViewMatrix = historyFrame.transformations.GetClipToViewMatrix();
+            perFrameShaderParameters.previousWorldToClipMatrix = historyFrame.transformations.GetWorldToClipMatrix();
+            perFrameShaderParameters.previousClipToWorldMatrix = historyFrame.transformations.GetClipToWorldMatrix();
+            perFrameShaderParameters.previousNonJitteredWorldToClipMatrix = historyFrame.transformations.GetNonJitteredViewToClipMatrix();
 
             perFrameShaderParameters.materialTextureMipLodBias = materialTextureMipLodBias;
 
             perFrameShaderParameters.preExposure = preExposure;
             perFrameShaderParameters.oneOverPreExposure = 1.0f / preExposure;
-            perFrameShaderParameters.preExposureCorrection = preExposure / previousPreExposure;
+            perFrameShaderParameters.preExposureCorrection = preExposure / historyFrame.preExposure;
 
             perFrameShaderParameters.indirectLightingMultiplier = renderSettings.globalIlluminationSettings.indirectLightingIntensity * renderSettings.globalIlluminationSettings.indirectLightingColor;
 
@@ -776,8 +789,8 @@ namespace Horizon
 
         //        return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
         //        {
-        //            uint32 groupCountX = ComputeWorkGroupCount(renderResolution.width, 8);
-        //            uint32 groupCountY = ComputeWorkGroupCount(renderResolution.height, 8);
+        //            uint32 threadGroupCountX = ComputeWorkGroupCount(renderResolution.width, 8);
+        //            uint32 threadGroupCountY = ComputeWorkGroupCount(renderResolution.height, 8);
 
         //            RenderBackendGraphicsPipelineState graphicsPipelineState = {};
         //            graphicsPipelineState.rasterizationState.cullMode = RenderBackendRasterizationCullMode::None;
@@ -786,7 +799,7 @@ namespace Horizon
         //            graphicsPipelineState.depthStencilState.depthCompareFunction = RenderBackendCompareOp::Equal;
 
         //            RenderBackendShaderArguments shaderArguments = {};
-        //            shaderArguments.BindBuffer(0, GetCurrentPerFrameDataBuffer());
+        //            shaderArguments.BindBuffer(0, this->GetCurrentPerFrameDataBuffer());
         //            shaderArguments.BindTextureSRV(1, RenderBackendTextureSRVDesc::Create(renderEngine->environmentMap));
         //            shaderArguments.PushConstants(0, 0.0f);
 

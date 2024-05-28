@@ -1,5 +1,5 @@
-#include "Rendering/Renderer/RealTimeRenderer/RealTimeRenderer.h"
-#include "PostProcessing.h"
+#include "../RealTimeRenderer.h"
+#include "PostProcessingCommon.h"
 
 namespace Horizon
 {
@@ -109,7 +109,7 @@ namespace Horizon
 
             bool outputInHDR = false;
 
-            sceneColorTexture = AddToneMappingPass(renderGraph, view, sceneColorTexture, bloomTexture, autoExposureBuffer, colorLUTTexture, localExposureTexture, outputInHDR);
+            sceneColorTexture = AddToneMappingPass(renderGraph, view, sceneColorTexture, bloomTexture, colorLUTTexture, localExposureTexture, autoExposureBuffer, outputInHDR);
         }
         RenderGraphTextureHandle sceneColorTextureAfterToneMapping = sceneColorTexture;
 
@@ -179,7 +179,7 @@ namespace Horizon
                         graphicsPipelineState.depthStencilState.depthCompareFunction = RenderBackendCompareOp::GreaterOrEqual;
 
                         RenderBackendShaderArguments shaderArguments = {};
-                        shaderArguments.BindBuffer(0, GetCurrentPerFrameDataBuffer());
+                        shaderArguments.BindBuffer(0, this->GetCurrentPerFrameDataBuffer());
                         shaderArguments.BindBuffer(1, renderEngine->debugDrawLinesVertexBuffer, 0);
 
                         RenderBackendShaderHandle graphicsShader = shaderLibrary->GetShader(ShaderID::DebugDraw);

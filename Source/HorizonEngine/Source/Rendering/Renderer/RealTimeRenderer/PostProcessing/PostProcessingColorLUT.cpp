@@ -1,5 +1,5 @@
-#include "Rendering/Renderer/RealTimeRenderer/RealTimeRenderer.h"
-#include "PostProcessing.h"
+#include "../RealTimeRenderer.h"
+#include "PostProcessingCommon.h"
 
 namespace Horizon
 {
@@ -9,9 +9,9 @@ namespace Horizon
     {
         static const uint32 colorLUTTextureSize = 32;
 
-        static const uint32 groupCountX = colorLUTTextureSize / 8;
-        static const uint32 groupCountY = colorLUTTextureSize / 8;
-        static const uint32 groupCountZ = colorLUTTextureSize / 8;
+        static const uint32 threadGroupCountX = colorLUTTextureSize / 8;
+        static const uint32 threadGroupCountY = colorLUTTextureSize / 8;
+        static const uint32 threadGroupCountZ = colorLUTTextureSize / 8;
 
         RenderGraphTextureDesc colorLUTTextureDesc = RenderGraphTextureDesc::Create3D(
             colorLUTTextureSize, colorLUTTextureSize, colorLUTTextureSize,
@@ -34,7 +34,7 @@ namespace Horizon
                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
                     {
                         RenderBackendShaderArguments shaderArguments = {};
-                        shaderArguments.BindBuffer(0, GetCurrentPerFrameDataBuffer());
+                        shaderArguments.BindBuffer(0, this->GetCurrentPerFrameDataBuffer());
                         shaderArguments.BindTextureUAV(1, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(colorLUTTexture), 0));
                         shaderArguments.PushConstants(0, (float)toneMappingOperator);
 
@@ -42,9 +42,9 @@ namespace Horizon
                         commandList.Dispatch(
                             computeShader,
                             shaderArguments,
-                            groupCountX,
-                            groupCountY,
-                            groupCountZ);
+                            threadGroupCountX,
+                            threadGroupCountY,
+                            threadGroupCountZ);
                     };
             });
 

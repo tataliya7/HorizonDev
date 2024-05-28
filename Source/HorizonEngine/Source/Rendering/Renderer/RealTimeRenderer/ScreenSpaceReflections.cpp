@@ -80,8 +80,8 @@ namespace Horizon
 
                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
                 {
-                    uint32 groupCountX = ComputeWorkGroupCount(numTilesX, SSR_THREAD_GROUP_SIZE);
-                    uint32 groupCountY = ComputeWorkGroupCount(view.targetHeight, SSR_THREAD_GROUP_SIZE);
+                    uint32 threadGroupCountX = ComputeWorkGroupCount(numTilesX, SSR_THREAD_GROUP_SIZE);
+                    uint32 threadGroupCountY = ComputeWorkGroupCount(view.targetHeight, SSR_THREAD_GROUP_SIZE);
 
                     RenderBackendShaderArguments shaderArguments = {};
                     shaderArguments.BindTextureSRV(0, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(sceneDepth)));
@@ -92,7 +92,7 @@ namespace Horizon
                     commandList.Dispatch2D(
                         tileClassificationCS,
                         shaderArguments,
-                        groupCountX,
+                        threadGroupCountX,
                         groupCountY);
                 };
             });
@@ -114,8 +114,8 @@ namespace Horizon
 
                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
                 {
-                    uint32 groupCountX = ComputeWorkGroupCount(numTilesX, SSR_THREAD_GROUP_SIZE);
-                    uint32 groupCountY = ComputeWorkGroupCount(numTilesY, SSR_THREAD_GROUP_SIZE);
+                    uint32 threadGroupCountX = ComputeWorkGroupCount(numTilesX, SSR_THREAD_GROUP_SIZE);
+                    uint32 threadGroupCountY = ComputeWorkGroupCount(numTilesY, SSR_THREAD_GROUP_SIZE);
 
                     RenderBackendShaderArguments shaderArguments = {};
                     shaderArguments.BindTextureSRV(0, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(sceneDepth)));
@@ -131,7 +131,7 @@ namespace Horizon
                     commandList.Dispatch2D(
                         tileClassificationCS,
                         shaderArguments,
-                        groupCountX,
+                        threadGroupCountX,
                         groupCountY);
                 };
             });
@@ -314,8 +314,8 @@ namespace Horizon
 
                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
                 {
-                    uint32 groupCountX = ComputeWorkGroupCount(view.targetWidth, SSR_THREAD_GROUP_SIZE);
-                    uint32 groupCountY = ComputeWorkGroupCount(view.targetHeight, SSR_THREAD_GROUP_SIZE);
+                    uint32 threadGroupCountX = ComputeWorkGroupCount(view.targetWidth, SSR_THREAD_GROUP_SIZE);
+                    uint32 threadGroupCountY = ComputeWorkGroupCount(view.targetHeight, SSR_THREAD_GROUP_SIZE);
 
                     RenderBackendShaderArguments shaderArguments = {};
                     shaderArguments.BindBuffer(0, perFrameData.buffer, 0);
@@ -332,7 +332,7 @@ namespace Horizon
                     commandList.Dispatch2D(
                         resolveCS,
                         shaderArguments,
-                        groupCountX,
+                        threadGroupCountX,
                         groupCountY);
                 };
             });
@@ -397,8 +397,8 @@ namespace Horizon
 
                     return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
                     {
-                        uint32 groupCountX = ComputeWorkGroupCount(view.targetWidth, SSR_THREAD_GROUP_SIZE);
-                        uint32 groupCountY = ComputeWorkGroupCount(view.targetHeight, SSR_THREAD_GROUP_SIZE);
+                        uint32 threadGroupCountX = ComputeWorkGroupCount(view.targetWidth, SSR_THREAD_GROUP_SIZE);
+                        uint32 threadGroupCountY = ComputeWorkGroupCount(view.targetHeight, SSR_THREAD_GROUP_SIZE);
 
                         RenderBackendShaderArguments shaderArguments = {};
                         shaderArguments.BindBuffer(0, perFrameData.buffer, 0);
@@ -418,7 +418,7 @@ namespace Horizon
                         commandList.Dispatch2D(
                             temporalFilteringCS,
                             shaderArguments,
-                            groupCountX,
+                            threadGroupCountX,
                             groupCountY);
                     };
                 });
@@ -449,8 +449,8 @@ namespace Horizon
 
                     return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
                     {
-                        uint32 groupCountX = ComputeWorkGroupCount(view.targetWidth, SSR_THREAD_GROUP_SIZE);
-                        uint32 groupCountY = ComputeWorkGroupCount(view.targetHeight, SSR_THREAD_GROUP_SIZE);
+                        uint32 threadGroupCountX = ComputeWorkGroupCount(view.targetWidth, SSR_THREAD_GROUP_SIZE);
+                        uint32 threadGroupCountY = ComputeWorkGroupCount(view.targetHeight, SSR_THREAD_GROUP_SIZE);
 
                         RenderBackendShaderArguments shaderArguments = {};
                         shaderArguments.BindBuffer(0, perFrameData.buffer, 0);
@@ -466,7 +466,7 @@ namespace Horizon
                         commandList.Dispatch2D(
                             spatialFilteringCS,
                             shaderArguments,
-                            groupCountX,
+                            threadGroupCountX,
                             groupCountY);
                     };
                 });
@@ -486,8 +486,8 @@ namespace Horizon
 
                     return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
                     {
-                        uint32 groupCountX = ComputeWorkGroupCount(view.targetWidth, SSR_THREAD_GROUP_SIZE);
-                        uint32 groupCountY = ComputeWorkGroupCount(view.targetHeight, SSR_THREAD_GROUP_SIZE);
+                        uint32 threadGroupCountX = ComputeWorkGroupCount(view.targetWidth, SSR_THREAD_GROUP_SIZE);
+                        uint32 threadGroupCountY = ComputeWorkGroupCount(view.targetHeight, SSR_THREAD_GROUP_SIZE);
 
                         RenderBackendShaderArguments shaderArguments = {};
                         shaderArguments.BindBuffer(0, perFrameData.buffer, 0);
@@ -503,7 +503,7 @@ namespace Horizon
                         commandList.Dispatch2D(
                             spatialFilteringCS,
                             shaderArguments,
-                            groupCountX,
+                            threadGroupCountX,
                             groupCountY);
                     };
                 });

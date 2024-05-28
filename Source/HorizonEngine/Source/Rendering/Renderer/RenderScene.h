@@ -66,6 +66,14 @@ namespace Horizon
 
     };
 
+    class LocalFogVolumeRenderProxy
+    {
+    public:
+
+    private:
+
+    };
+
     struct AtmosphereParameters
     {
         float bottomRadius;
@@ -89,20 +97,17 @@ namespace Horizon
         Vector3 absorptionExtinction;
     };
 
-    class LocalFogVolumeRenderProxy
-    {
-    public:
-    private:
-    };
-
     class SkyAtmosphereRenderProxy
     {
     public:
+
         SkyAtmosphereRenderProxy();
+
+        ~SkyAtmosphereRenderProxy();
 
         const AtmosphereParameters& GetAtmosphereParameters() const
         {
-
+            return atmosphereParameters;
         }
 
         void SetAtmosphereParameters(const AtmosphereParameters& newValue)
@@ -121,7 +126,9 @@ namespace Horizon
         }
 
     private:
+
         AtmosphereParameters atmosphereParameters;
+
         Vector3 skyLuminanceFactor;
     };
 
@@ -133,6 +140,9 @@ namespace Horizon
     class RenderScene
     {
     public:
+
+        RenderScene();
+        virtual ~RenderScene();
 
         bool HasAtmosphericLight() const
         {
@@ -157,49 +167,53 @@ namespace Horizon
         /**
          * Release this scene.
          */
-        virtual void Release() = 0;
+        virtual void Release();
 
         /**
          * Adds a mesh component to the scene.
          *
          * @param[in] component - mesh component to add to the scene.
          */
-        virtual void AddMesh(MeshComponent* component) = 0;
+        virtual void AddMesh(MeshComponent* component);
 
         /**
          * Removes a mesh component from the scene.
          *
          * @param[in] component - mesh component to remove from the scene.
          */
-        virtual void RemoveMesh(MeshComponent* component) = 0;
+        virtual void RemoveMesh(MeshComponent* component);
 
         /**
          * Adds a new light to the scene.
          *
          * @param [in] light - light to add to the scene.
          */
-        virtual void AddLight(LightRenderProxy* light) = 0;
+        virtual void AddLight(LightRenderProxy* light);
 
         /**
          * Removes a light component from the scene.
          *
          * @param [in] component light component to remove from the scene.
          */
-        virtual void RemoveLight(LightComponent* component) = 0;
+        virtual void RemoveLight(LightComponent* component);
 
         virtual void HasSkyLight() = 0;
 
-        virtual void SetSkyLight(FSkyLightSceneProxy* component) = 0;
+        virtual void SetSkyLight(FSkyLightSceneProxy* component);
 
-        virtual void HasSkyAtmosphere() = 0;
+        virtual bool HasActiveSkyAtmosphere() const;
 
-        virtual void SetSkyAtmosphere(SkyAtmosphereRenderProxy* skyAtmosphere) = 0;
+        virtual SkyAtmosphereRenderProxy* GetActiveSkyAtmosphere();
+
+        virtual void AddSkyAtmosphere(SkyAtmosphereRenderProxy* skyAtmosphere);
+
+        virtual void RemoveSkyAtmosphere(SkyAtmosphereRenderProxy* skyAtmosphere);
+
+        virtual bool HasAnyLocalFogVolume() const;
 
         virtual void AddLocalFogVolume(LocalFogVolumeRenderProxy* localFogVolume);
 
         virtual void RemoveLocalFogVolume(LocalFogVolumeRenderProxy* localFogVolume);
-
-        virtual bool HasAnyLocalFogVolume() const;
 
         void Render();
 
@@ -207,11 +221,13 @@ namespace Horizon
 
     private:
 
+        DistantLightRenderProxy* atmosphericLight;
+
+        SkyAtmosphereRenderProxy* activeSkyAtmosphere;
+
+        std::vector<SkyAtmosphereRenderProxy*> skyAtmospheres;
+
         std::vector<LocalFogVolumeRenderProxy*> localFogVolumes;
-
-        DistantLightRenderProxy* atmosphericLight = nullptr;
-
-        SkyAtmosphereRenderProxy* skyAtmosphere = nullptr;
 
         RenderBackendRayTracingAccelerationStructureHandle rayTracingScene;
         RenderBackendRayTracingAccelerationStructureHandle bottomLevelAS;

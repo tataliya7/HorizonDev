@@ -1,5 +1,5 @@
-#include "Rendering/Renderer/RealTimeRenderer/RealTimeRenderer.h"
-#include "PostProcessing.h"
+#include "../RealTimeRenderer.h"
+#include "PostProcessingCommon.h"
 
 namespace Horizon
 {

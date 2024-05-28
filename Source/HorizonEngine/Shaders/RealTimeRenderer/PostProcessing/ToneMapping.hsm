@@ -6,15 +6,15 @@
 #include "ColorLUTCommon.hsh"
 
 BIND_BUFFER_ELEMENT(0, PerFrameData, PerFrameData);
-BIND_TEXTURE_2D_SRV(1, SceneColorTexture);
-BIND_TEXTURE_2D_SRV(2, BloomTexture);
-BIND_BYTE_ADDRESS_BUFFER_SRV(3, AutoExposureBuffer);
+BIND_TEXTURE_2D_SRV(1, LensDirtTexture);
+BIND_TEXTURE_2D_SRV(2, SceneColorTexture);
+BIND_TEXTURE_2D_SRV(3, BloomTexture);
 BIND_TEXTURE_3D_SRV(4, ColorLUTTexture);
-BIND_TEXTURE_2D_SRV(5, LensDirtTexture);
-BIND_TEXTURE_2D_SRV(6, LocalExposureTexture);
+BIND_TEXTURE_2D_SRV(5, LocalExposureTexture);
+BIND_BYTE_ADDRESS_BUFFER_SRV(6, AutoExposureBuffer);
 BIND_TEXTURE_2D_UAV(7, float4, OutputTexture);
 
-BIND_TEXTURE_2D_SRV(10, TestTexture);
+//BIND_TEXTURE_2D_SRV(10, TestTexture);
 
 float3 Lookup3DColorLUT(Texture3D colorLUT, float3 linearColor)
 {
@@ -26,7 +26,7 @@ float3 Lookup3DColorLUT(Texture3D colorLUT, float3 linearColor)
 }
 
 [shader("compute")]
-[numthreads(POST_PROCESSING_THREAD_GROUP_COUNT_X, POST_PROCESSING_THREAD_GROUP_COUNT_Y, 1)]
+[numthreads(POST_PROCESSING_THREAD_GROUP_SIZE_X, POST_PROCESSING_THREAD_GROUP_SIZE_Y, 1)]
 void ToneMappingCS(uint3 DispatchThreadID : SV_DispatchThreadID)
 {
     PerFrameData perFrameData = GetPerFrameData();

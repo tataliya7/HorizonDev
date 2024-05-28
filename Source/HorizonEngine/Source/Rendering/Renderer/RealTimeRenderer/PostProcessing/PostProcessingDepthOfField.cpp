@@ -1,5 +1,5 @@
-#include "Rendering/Renderer/RealTimeRenderer/RealTimeRenderer.h"
-#include "PostProcessing.h"
+#include "../RealTimeRenderer.h"
+#include "PostProcessingCommon.h"
 
 namespace Horizon
 {
@@ -100,11 +100,11 @@ namespace Horizon
 
                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
                 {
-                    uint32 groupCountX = ComputeWorkGroupCount(view.targetWidth, PostProcessingThreadGroupCountX);
-                    uint32 groupCountY = ComputeWorkGroupCount(view.targetHeight, PostProcessingThreadGroupCountY);
+                    uint32 threadGroupCountX = ComputeWorkGroupCount(view.targetWidth, PostProcessingThreadGroupSizeX);
+                    uint32 threadGroupCountY = ComputeWorkGroupCount(view.targetHeight, PostProcessingThreadGroupSizeY);
 
                     RenderBackendShaderArguments shaderArguments = {};
-                    shaderArguments.BindBuffer(0, GetCurrentPerFrameDataBuffer());
+                    shaderArguments.BindBuffer(0, this->GetCurrentPerFrameDataBuffer());
                     shaderArguments.BindTextureSRV(1, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(sceneColorTexture)));
                     shaderArguments.BindTextureSRV(2, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(sceneDepthTexture)));
                     shaderArguments.BindTextureUAV(3, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(depthOfFieldCoCTexture), 0));
@@ -118,7 +118,7 @@ namespace Horizon
                     commandList.Dispatch2D(
                         computeShader,
                         shaderArguments,
-                        groupCountX,
+                        threadGroupCountX,
                         groupCountY);
                 };
             });
@@ -133,11 +133,11 @@ namespace Horizon
 
                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
                 {
-                    uint32 groupCountX = ComputeWorkGroupCount(dofWidth, PostProcessingThreadGroupCountX);
-                    uint32 groupCountY = ComputeWorkGroupCount(dofHeight, PostProcessingThreadGroupCountY);
+                    uint32 threadGroupCountX = ComputeWorkGroupCount(dofWidth, PostProcessingThreadGroupSizeX);
+                    uint32 threadGroupCountY = ComputeWorkGroupCount(dofHeight, PostProcessingThreadGroupSizeY);
 
                     RenderBackendShaderArguments shaderArguments = {};
-                    shaderArguments.BindBuffer(0, GetCurrentPerFrameDataBuffer());
+                    shaderArguments.BindBuffer(0, this->GetCurrentPerFrameDataBuffer());
                     shaderArguments.BindTextureSRV(1, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(sceneColorInputTexture)));
                     shaderArguments.BindTextureSRV(2, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(depthOfFieldCoCTexture)));
                     shaderArguments.BindTextureUAV(3, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(depthOfFieldGatherTexture), 0));
@@ -148,7 +148,7 @@ namespace Horizon
                     commandList.Dispatch2D(
                         computeShader,
                         shaderArguments,
-                        groupCountX,
+                        threadGroupCountX,
                         groupCountY);
                 };
             });
@@ -163,11 +163,11 @@ namespace Horizon
 
                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
                 {
-                    uint32 groupCountX = ComputeWorkGroupCount(dofWidth, PostProcessingThreadGroupCountX);
-                    uint32 groupCountY = ComputeWorkGroupCount(dofHeight, PostProcessingThreadGroupCountY);
+                    uint32 threadGroupCountX = ComputeWorkGroupCount(dofWidth, PostProcessingThreadGroupSizeX);
+                    uint32 threadGroupCountY = ComputeWorkGroupCount(dofHeight, PostProcessingThreadGroupSizeY);
 
                     RenderBackendShaderArguments shaderArguments = {};
-                    shaderArguments.BindBuffer(0, GetCurrentPerFrameDataBuffer());
+                    shaderArguments.BindBuffer(0, this->GetCurrentPerFrameDataBuffer());
                     shaderArguments.BindTextureSRV(1, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(depthOfFieldGatherTexture)));
                     shaderArguments.BindTextureSRV(2, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(depthOfFieldCoCTexture)));
                     shaderArguments.BindTextureUAV(3, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(depthOfFieldPostfilterTexture), 0));
@@ -178,7 +178,7 @@ namespace Horizon
                     commandList.Dispatch2D(
                         computeShader,
                         shaderArguments,
-                        groupCountX,
+                        threadGroupCountX,
                         groupCountY);
                 };
             });
@@ -194,11 +194,11 @@ namespace Horizon
 
                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
                 {
-                    uint32 groupCountX = ComputeWorkGroupCount(view.targetWidth, PostProcessingThreadGroupCountX);
-                    uint32 groupCountY = ComputeWorkGroupCount(view.targetHeight, PostProcessingThreadGroupCountY);
+                    uint32 threadGroupCountX = ComputeWorkGroupCount(view.targetWidth, PostProcessingThreadGroupSizeX);
+                    uint32 threadGroupCountY = ComputeWorkGroupCount(view.targetHeight, PostProcessingThreadGroupSizeY);
 
                     RenderBackendShaderArguments shaderArguments = {};
-                    shaderArguments.BindBuffer(0, GetCurrentPerFrameDataBuffer());
+                    shaderArguments.BindBuffer(0, this->GetCurrentPerFrameDataBuffer());
                     shaderArguments.BindTextureSRV(1, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(sceneColorTexture)));
                     shaderArguments.BindTextureSRV(2, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(depthOfFieldPostfilterTexture)));
                     shaderArguments.BindTextureSRV(3, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(depthOfFieldCoCTexture)));
@@ -208,7 +208,7 @@ namespace Horizon
                     commandList.Dispatch2D(
                         computeShader,
                         shaderArguments,
-                        groupCountX,
+                        threadGroupCountX,
                         groupCountY);
                 };
             });

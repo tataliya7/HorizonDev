@@ -41,13 +41,13 @@ namespace Horizon
                         shaderArguments.PushConstants(0, invSrcSize.x);
                         shaderArguments.PushConstants(1, invSrcSize.y);
 
-                        uint32 groupCountX = ComputeWorkGroupCount(dstSize.x, 8);
-                        uint32 groupCountY = ComputeWorkGroupCount(dstSize.y, 8);
+                        uint32 threadGroupCountX = ComputeWorkGroupCount(dstSize.x, 8);
+                        uint32 threadGroupCountY = ComputeWorkGroupCount(dstSize.y, 8);
 
                         commandList.Dispatch2D(
                             buildHZBCS,
                             shaderArguments,
-                            groupCountX,
+                            threadGroupCountX,
                             groupCountY);
                     }
 
@@ -73,13 +73,13 @@ namespace Horizon
                         shaderArguments.PushConstants(0, invSrcSize.x);
                         shaderArguments.PushConstants(1, invSrcSize.y);
 
-                        uint32 groupCountX = ComputeWorkGroupCount(dstSize.x, 8);
-                        uint32 groupCountY = ComputeWorkGroupCount(dstSize.y, 8);
+                        uint32 threadGroupCountX = ComputeWorkGroupCount(dstSize.x, 8);
+                        uint32 threadGroupCountY = ComputeWorkGroupCount(dstSize.y, 8);
 
                         commandList.Dispatch2D(
                             buildHZBCS,
                             shaderArguments,
-                            groupCountX,
+                            threadGroupCountX,
                             groupCountY);
                     }
 

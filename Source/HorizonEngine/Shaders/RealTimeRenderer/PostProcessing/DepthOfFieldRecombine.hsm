@@ -9,7 +9,7 @@ BIND_TEXTURE_2D_SRV(3, DOFCoCTexture);
 BIND_TEXTURE_2D_UAV(4, float4, DOFOutputTexture);
 
 [shader("compute")]
-[numthreads(POST_PROCESSING_THREAD_GROUP_COUNT_X, POST_PROCESSING_THREAD_GROUP_COUNT_Y, 1)]
+[numthreads(POST_PROCESSING_THREAD_GROUP_SIZE_X, POST_PROCESSING_THREAD_GROUP_SIZE_Y, 1)]
 void DepthOfFieldRecombineCS(uint3 DispatchThreadID : SV_DispatchThreadID)
 {
     PerFrameData perFrameData = GetPerFrameData();

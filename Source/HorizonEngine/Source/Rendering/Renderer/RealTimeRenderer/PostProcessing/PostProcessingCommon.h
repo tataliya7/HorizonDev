@@ -4,6 +4,6 @@
 
 enum
 {
-    PostProcessingThreadGroupCountX = 8,
-    PostProcessingThreadGroupCountY = 8,
+    PostProcessingThreadGroupSizeX = 8,
+    PostProcessingThreadGroupSizeY = 8,
 };

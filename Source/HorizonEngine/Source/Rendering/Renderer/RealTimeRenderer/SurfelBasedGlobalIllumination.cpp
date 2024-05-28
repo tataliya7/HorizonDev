@@ -18,7 +18,7 @@ namespace Horizon
                 {
                     return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
                     {
-                        uint32 groupCountX = ComputeWorkGroupCount(SurfelGIMaxSurfelCount, SurfelGIIndirectDispatchGroupThreadCount);
+                        uint32 threadGroupCountX = ComputeWorkGroupCount(SurfelGIMaxSurfelCount, SurfelGIIndirectDispatchGroupThreadCount);
 
                         RenderBackendShaderArguments shaderArguments = {};
                         shaderArguments.BindBuffer(0, surfelGIInfoBuffer, 0);
@@ -28,7 +28,7 @@ namespace Horizon
                         commandList.Dispatch(
                             computeShader,
                             shaderArguments,
-                            groupCountX,
+                            threadGroupCountX,
                             1,
                             1);
                     };
@@ -43,11 +43,11 @@ namespace Horizon
 
                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
                 {
-                    uint32 groupCountX = ComputeWorkGroupCount(surfelGIRenderWidth, SurfelGIScreenTileSize);
-                    uint32 groupCountY = ComputeWorkGroupCount(surfelGIRenderHeight, SurfelGIScreenTileSize);
+                    uint32 threadGroupCountX = ComputeWorkGroupCount(surfelGIRenderWidth, SurfelGIScreenTileSize);
+                    uint32 threadGroupCountY = ComputeWorkGroupCount(surfelGIRenderHeight, SurfelGIScreenTileSize);
 
                     RenderBackendShaderArguments shaderArguments = {};
-                    shaderArguments.BindBuffer(0, GetCurrentPerFrameDataBuffer());
+                    shaderArguments.BindBuffer(0, this->GetCurrentPerFrameDataBuffer());
                     shaderArguments.BindTextureSRV(1, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(sceneDepthTexture)));
                     shaderArguments.BindTextureSRV(2, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(gbuffer0)));
                     shaderArguments.BindBuffer(3, surfelGIInfoBuffer, 0);
@@ -61,8 +61,8 @@ namespace Horizon
                     commandList.Dispatch(
                         computeShader,
                         shaderArguments,
-                        groupCountX,
-                        groupCountY,
+                        threadGroupCountX,
+                        threadGroupCountY,
                         1);
                 };
             });
@@ -72,7 +72,7 @@ namespace Horizon
             {
                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
                 {
-                    uint32 groupCountX = ComputeWorkGroupCount(SurfelGIUniformGridCellCount, SurfelGIIndirectDispatchGroupThreadCount);
+                    uint32 threadGroupCountX = ComputeWorkGroupCount(SurfelGIUniformGridCellCount, SurfelGIIndirectDispatchGroupThreadCount);
 
                     RenderBackendShaderArguments shaderArguments = {};
                     shaderArguments.BindBuffer(0, surfelGICellHeaderBuffer, 0);
@@ -81,7 +81,7 @@ namespace Horizon
                     commandList.Dispatch(
                         computeShader,
                         shaderArguments,
-                        groupCountX,
+                        threadGroupCountX,
                         1,
                         1);
                 };
@@ -93,7 +93,7 @@ namespace Horizon
                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
                 {
                     RenderBackendShaderArguments shaderArguments = {};
-                    shaderArguments.BindBuffer(0, GetCurrentPerFrameDataBuffer());
+                    shaderArguments.BindBuffer(0, this->GetCurrentPerFrameDataBuffer());
                     shaderArguments.BindBuffer(1, surfelGIInfoBuffer, 0);
                     shaderArguments.BindBuffer(2, surfelGIAliveSurfelIndirectionBuffer, 0);
                     shaderArguments.BindBuffer(3, surfelGISurfelHotDataBuffer, 0);
@@ -113,7 +113,7 @@ namespace Horizon
         //    {
         //        return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
         //            {
-        //                uint32 groupCountX = ComputeWorkGroupCount(SurfelGIUniformGridCellCount, 64);
+        //                uint32 threadGroupCountX = ComputeWorkGroupCount(SurfelGIUniformGridCellCount, 64);
 
         //                RenderBackendShaderArguments shaderArguments = {};
         //                shaderArguments.BindBuffer(0, surfelGICellHeaderBuffer, 0);
@@ -122,7 +122,7 @@ namespace Horizon
         //                commandList.Dispatch(
         //                    computeShader,
         //                    shaderArguments,
-        //                    groupCountX,
+        //                    threadGroupCountX,
         //                    1,
         //                    1);
         //            };
@@ -166,11 +166,11 @@ namespace Horizon
 
                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
                 {
-                    uint32 groupCountX = ComputeWorkGroupCount(targetResolution.width, PostProcessingThreadGroupCountX);
-                    uint32 groupCountY = ComputeWorkGroupCount(targetResolution.height, PostProcessingThreadGroupCountY);
+                    uint32 threadGroupCountX = ComputeWorkGroupCount(targetResolution.width, PostProcessingThreadGroupSizeX);
+                    uint32 threadGroupCountY = ComputeWorkGroupCount(targetResolution.height, PostProcessingThreadGroupSizeY);
 
                     RenderBackendShaderArguments shaderArguments = {};
-                    shaderArguments.BindBuffer(0, GetCurrentPerFrameDataBuffer());
+                    shaderArguments.BindBuffer(0, this->GetCurrentPerFrameDataBuffer());
                     shaderArguments.BindTextureSRV(1, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(sceneColorTexture)));
                     shaderArguments.BindTextureSRV(2, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(sceneDepthTexture)));
                     shaderArguments.BindBuffer(3, surfelGIInfoBuffer, 0);
@@ -183,7 +183,7 @@ namespace Horizon
                     commandList.Dispatch2D(
                         computeShader,
                         shaderArguments,
-                        groupCountX,
+                        threadGroupCountX,
                         groupCountY);
                 };
             });

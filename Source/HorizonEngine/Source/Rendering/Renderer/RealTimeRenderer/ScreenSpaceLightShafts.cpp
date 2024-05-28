@@ -50,12 +50,12 @@ namespace Horizon
 
                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
                 {
-                    uint32 groupCountX = ComputeWorkGroupCount(lightShaftsTextureSize.width, 8);
-                    uint32 groupCountY = ComputeWorkGroupCount(lightShaftsTextureSize.height, 8);
-                    uint32 groupCountZ = 1;
+                    uint32 threadGroupCountX = ComputeWorkGroupCount(lightShaftsTextureSize.width, 8);
+                    uint32 threadGroupCountY = ComputeWorkGroupCount(lightShaftsTextureSize.height, 8);
+                    uint32 threadGroupCountZ = 1;
 
                     RenderBackendShaderArguments shaderArguments = {};
-                    shaderArguments.BindBuffer(0, GetCurrentPerFrameDataBuffer());
+                    shaderArguments.BindBuffer(0, this->GetCurrentPerFrameDataBuffer());
                     shaderArguments.BindTextureSRV(1, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(sceneColorTexture)));
                     shaderArguments.BindTextureSRV(2, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(sceneDepthTexture)));
                     shaderArguments.BindTextureUAV(3, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(lightShaftsDownsampleOutputTexture), 0));
@@ -69,9 +69,9 @@ namespace Horizon
                     commandList.Dispatch(
                         computeShader,
                         shaderArguments,
-                        groupCountX,
-                        groupCountY,
-                        groupCountZ);
+                        threadGroupCountX,
+                        threadGroupCountY,
+                        threadGroupCountZ);
                 };
             });
 
@@ -96,12 +96,12 @@ namespace Horizon
 
                     return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
                         {
-                            uint32 groupCountX = ComputeWorkGroupCount(lightShaftsTextureSize.width, 8);
-                            uint32 groupCountY = ComputeWorkGroupCount(lightShaftsTextureSize.height, 8);
-                            uint32 groupCountZ = 1;
+                            uint32 threadGroupCountX = ComputeWorkGroupCount(lightShaftsTextureSize.width, 8);
+                            uint32 threadGroupCountY = ComputeWorkGroupCount(lightShaftsTextureSize.height, 8);
+                            uint32 threadGroupCountZ = 1;
 
                             RenderBackendShaderArguments shaderArguments = {};
-                            shaderArguments.BindBuffer(0, GetCurrentPerFrameDataBuffer());
+                            shaderArguments.BindBuffer(0, this->GetCurrentPerFrameDataBuffer());
                             shaderArguments.BindTextureSRV(1, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(radialBlurInputTexture)));
                             shaderArguments.BindTextureUAV(2, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(radialBlurOutputTexture), 0));
                             shaderArguments.PushConstants(2, lightShaftsCenter.width);
@@ -113,9 +113,9 @@ namespace Horizon
                             commandList.Dispatch(
                                 computeShader,
                                 shaderArguments,
-                                groupCountX,
-                                groupCountY,
-                                groupCountZ);
+                                threadGroupCountX,
+                                threadGroupCountY,
+                                threadGroupCountZ);
                         };
                 });
 
@@ -142,7 +142,7 @@ namespace Horizon
                         graphicsPipelineState.colorBlendState.targetBlends[0].writeMask = RenderBackendColorComponentFlags::RGB;
 
                         RenderBackendShaderArguments shaderArguments = {};
-                        shaderArguments.BindBuffer(0, GetCurrentPerFrameDataBuffer());
+                        shaderArguments.BindBuffer(0, this->GetCurrentPerFrameDataBuffer());
                         shaderArguments.BindTextureSRV(1, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(lightShaftsTexture)));
 
                         RenderBackendShaderHandle graphicsShader = shaderLibrary->GetShader(ShaderID::LightShaftsApply);

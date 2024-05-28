@@ -326,16 +326,16 @@ namespace Horizon
 
             commandList.EndRenderPass();
 
-            //uint32 groupCountX = ComputeWorkGroupCount(width, 8);
-            //uint32 groupCountY = ComputeWorkGroupCount(height, 8);
-            //uint32 groupCountZ = 1;
+            //uint32 threadGroupCountX = ComputeWorkGroupCount(width, 8);
+            //uint32 threadGroupCountY = ComputeWorkGroupCount(height, 8);
+            //uint32 threadGroupCountZ = 1;
 
             //commandList.Dispatch(
             //    downsampleTexture2DCS,
             //    shaderArguments,
-            //    groupCountX,
-            //    groupCountY,
-            //    groupCountZ);
+            //    threadGroupCountX,
+            //    threadGroupCountY,
+            //    threadGroupCountZ);
         }
         RenderBackendBarrier transition = RenderBackendBarrier(textureHandle, RenderBackendTextureSubresourceRange(numMipLevels - 1, RenderBackendTextureSubresourceRange::RemainingMipLevels, 0, RenderBackendTextureSubresourceRange::RemainingArrayLayers), RenderBackendResourceState::RenderTarget, RenderBackendResourceState::ShaderResource);
         commandList.Transitions(&transition, 1);

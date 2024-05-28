@@ -56,7 +56,7 @@ namespace Horizon
                     for (const auto& drawCallInfo : renderEngine->drawList)
                     {
                         RenderBackendShaderArguments shaderArguments = {};
-                        shaderArguments.BindBuffer(0, GetCurrentPerFrameDataBuffer());
+                        shaderArguments.BindBuffer(0, this->GetCurrentPerFrameDataBuffer());
                         shaderArguments.BindBuffer(1, renderEngine->geometryBuffer, drawCallInfo.geometryIndex * sizeof(GeometryShaderParameters));
                         shaderArguments.BindBuffer(2, renderEngine->materialBuffer, 0);
                         shaderArguments.BindBuffer(3, renderEngine->cubeShadowMapBuffer, sizeof(CubeShadowMapShaderParameters));

@@ -7,10 +7,14 @@ namespace Horizon
     class RendererDefaultResources
     {
     public:
+
         RenderGraphTextureHandle ImportBlackDummyTexture2D(RenderGraph& renderGraph) const;
+
         RenderGraphTextureHandle ImportWhiteDummyTexture2D(RenderGraph& renderGraph) const;
+
         RenderBackendTextureHandle GetPreIntegratedBrdfLut() const;
-    private:
+
+    //private:
 
         RenderBackendTextureHandle preIntegratedBrdfLut;
 
@@ -27,9 +31,9 @@ namespace Horizon
         RenderGraphPersistentTexture* whiteDummyTexture2D = nullptr;
     };
 
-    static inline uint32 ComputeWorkGroupCount(uint32 x, uint32 y)
+    static inline uint32 ComputeWorkGroupCount(uint32 threadCount, uint32 threadGroupSize)
     {
-        return ((x + y - 1) / y);
+        return ((threadCount + threadGroupSize - 1) / threadGroupSize);
     }
 
     static inline Vector4 GetSizeAndInverseSize(uint32 width, uint32 height)

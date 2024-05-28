@@ -22,10 +22,10 @@ namespace Horizon
         SurfelGIHeatmap,
     };
 
-    class SceneViewTransformations
+    class CameraTransformations
     {
     public:
-        SceneViewTransformations()
+        CameraTransformations()
             : isCameraJitteringApplied(false)
             , nonJitteredViewToClipMatrix(IdentityMatrix4x4)
             , worldToViewMatrix(IdentityMatrix4x4)
@@ -38,7 +38,7 @@ namespace Horizon
 
         }
 
-        SceneViewTransformations(
+        CameraTransformations(
             const Matrix4x4& viewMatrix,
             const Matrix4x4& projectionMatrix)
         {
@@ -53,7 +53,7 @@ namespace Horizon
             isCameraJitteringApplied = false;
         }
 
-        SceneViewTransformations(
+        CameraTransformations(
             const Matrix4x4& viewMatrix,
             const Matrix4x4& projectionMatrix,
             const Vector2& jitterOffset)
@@ -233,12 +233,12 @@ namespace Horizon
             return nearClippingPlane;
         }
 
-        const SceneViewTransformations& GetTransformations() const
+        const CameraTransformations& GetTransformations() const
         {
             return transformations;
         }
 
-        const SceneViewTransformations& GetPreviousTransformations() const
+        const CameraTransformations& GetPreviousTransformations() const
         {
             return previousTransformations;
         }
@@ -318,8 +318,6 @@ namespace Horizon
         Vector3 cameraRightVector;
         Vector3 cameraForwardVector;
 
-        Vector3 previousCameraPosition;
-
         /**
          * Vertical field of view in degrees.
          */
@@ -354,17 +352,10 @@ namespace Horizon
 
         Vector2 cameraJitterOffset;
 
-        Vector2 previousCameraJitterOffset;
-
         /**
          * Transformations of the current frame required for rasterization.
          */
-        SceneViewTransformations transformations;
-
-        /**
-         * Transformations of the previous frame required for rasterization.
-         */
-        SceneViewTransformations previousTransformations;
+        CameraTransformations transformations;
 
         uint32 displayWidth;
 

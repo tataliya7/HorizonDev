@@ -4,24 +4,51 @@
 
 namespace Horizon
 {
-    void RenderScene::AddLocalFogVolume(LocalFogVolumeRenderProxy* localFogVolume)
+    SkyAtmosphereRenderProxy::SkyAtmosphereRenderProxy()
     {
-        assert(localFogVolume);
 
-        localFogVolumes.push_back(localFogVolume);
     }
 
-    void RenderScene::RemoveLocalFogVolume(LocalFogVolumeRenderProxy* localFogVolume)
+    SkyAtmosphereRenderProxy::~SkyAtmosphereRenderProxy()
     {
-        assert(localFogVolume);
 
-        // Avoid the overhead of moving the items as the order does not matter.
-        auto iter = std::ranges::find(localFogVolumes, localFogVolume);
-        if (iter != localFogVolumes.end())
-        {
-            std::swap(*iter, localFogVolumes.back());
-            localFogVolumes.pop_back();
-        }
+    }
+
+    RenderScene::RenderScene()
+        : atmosphericLight(nullptr)
+        , activeSkyAtmosphere(nullptr)
+    {
+
+    }
+
+    bool RenderScene::HasActiveSkyAtmosphere() const
+    {
+        return activeSkyAtmosphere != nullptr;
+    }
+
+    SkyAtmosphereRenderProxy* RenderScene::GetActiveSkyAtmosphere()
+    {
+        return activeSkyAtmosphere;
+    }
+
+    void RenderScene::AddSkyAtmosphere(SkyAtmosphereRenderProxy* skyAtmosphere)
+    {
+        assert(skyAtmosphere != nullptr);
+        assert(std::ranges::find(skyAtmospheres, skyAtmosphere) == skyAtmospheres.end());
+
+        skyAtmospheres.push_back(skyAtmosphere);
+
+        activeSkyAtmosphere = skyAtmospheres.back();
+    }
+
+    void RenderScene::RemoveSkyAtmosphere(SkyAtmosphereRenderProxy* skyAtmosphere)
+    {
+        assert(skyAtmosphere != nullptr);
+        assert(std::ranges::find(skyAtmospheres, skyAtmosphere) != skyAtmospheres.end());
+
+        skyAtmospheres.erase(std::ranges::remove(skyAtmospheres, skyAtmosphere).begin(), skyAtmospheres.end());
+
+        activeSkyAtmosphere = skyAtmospheres.empty() ? nullptr : skyAtmospheres.back();
     }
 
     bool RenderScene::HasAnyLocalFogVolume() const
@@ -29,28 +56,29 @@ namespace Horizon
         return !localFogVolumes.empty();
     }
 
-    void RenderScene::GetRenderStatistics(RenderStatistics& statistics) const
+    void RenderScene::AddLocalFogVolume(LocalFogVolumeRenderProxy* localFogVolume)
     {
+        assert(localFogVolume != nullptr);
+        assert(std::ranges::find(localFogVolumes, localFogVolume) == localFogVolumes.end());
 
+        localFogVolumes.push_back(localFogVolume);
     }
 
-    void RenderScene::UpdateGeometry()
+    void RenderScene::RemoveLocalFogVolume(LocalFogVolumeRenderProxy* localFogVolume)
     {
-        OPTICK_EVENT();
+        assert(localFogVolume != nullptr);
+        assert(std::ranges::find(localFogVolumes, localFogVolume) != localFogVolumes.end());
 
-        for (auto& entity : entities)
+        // Avoid the overhead of moving the items as the order does not matter.
+        auto iter = std::ranges::find(localFogVolumes, localFogVolume);
+        //if (iter != localFogVolumes.end())
         {
-            if (entity->IsVisible())
-            {
-                if (entity->IsDirty())
-                {
-                    entity->UpdateGeometry();
-                }
-            }
+            std::swap(*iter, localFogVolumes.back());
+            localFogVolumes.pop_back();
         }
     }
 
-    void RenderScene::SetSkyAtmosphere()
+    void RenderScene::GetRenderStatistics(RenderStatistics& statistics) const
     {
 
     }

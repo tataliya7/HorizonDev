@@ -42,7 +42,7 @@ namespace Horizon
                         {
                             RenderBackendShaderArguments shaderArguments = {};
                             shaderArguments.debugName = "VisibilityBuffer";
-                            shaderArguments.BindBuffer(0, GetCurrentPerFrameDataBuffer());
+                            shaderArguments.BindBuffer(0, this->GetCurrentPerFrameDataBuffer());
                             shaderArguments.BindBuffer(1, renderEngine->geometryBuffer, drawCallInfo.geometryIndex * sizeof(GeometryShaderParameters));
                             shaderArguments.BindBuffer(2, renderEngine->materialBuffer, 0);
                             shaderArguments.BindBuffer(3, drawCallInfo.vertexBuffers[0], 0);
@@ -101,7 +101,7 @@ namespace Horizon
                         for (const auto& drawCallInfo : renderEngine->drawList)
                         {
                             RenderBackendShaderArguments shaderArguments = {};
-                            shaderArguments.BindBuffer(0, GetCurrentPerFrameDataBuffer());
+                            shaderArguments.BindBuffer(0, this->GetCurrentPerFrameDataBuffer());
                             shaderArguments.BindBuffer(1, renderEngine->geometryBuffer, drawCallInfo.geometryIndex * sizeof(GeometryShaderParameters));
                             shaderArguments.BindBuffer(2, renderEngine->materialBuffer, 0);
                             shaderArguments.PushConstants(0, (float)drawCallInfo.geometryIndex);
@@ -141,7 +141,7 @@ namespace Horizon
                 {
                     RenderBackendShaderArguments shaderArguments = {};
                     shaderArguments.debugName = "GBuffer";
-                    shaderArguments.BindBuffer(0, GetCurrentPerFrameDataBuffer());
+                    shaderArguments.BindBuffer(0, this->GetCurrentPerFrameDataBuffer());
                     shaderArguments.BindBuffer(1, renderEngine->geometryBuffer, 0);
                     shaderArguments.BindBuffer(2, renderEngine->materialBuffer, 0);
                     shaderArguments.BindTextureSRV(3, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(vbuffer0)));
@@ -150,14 +150,14 @@ namespace Horizon
                     shaderArguments.BindTextureUAV(6, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(gbuffer1)));
                     shaderArguments.BindTextureUAV(7, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(gbuffer2)));
 
-                    uint32 groupCountX = ComputeWorkGroupCount(renderResolution.width, 8);
-                    uint32 groupCountY = ComputeWorkGroupCount(renderResolution.height, 8);
+                    uint32 threadGroupCountX = ComputeWorkGroupCount(renderResolution.width, 8);
+                    uint32 threadGroupCountY = ComputeWorkGroupCount(renderResolution.height, 8);
 
                     RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::GBuffer);
                     commandList.Dispatch2D(
                         computeShader,
                         shaderArguments,
-                        groupCountX,
+                        threadGroupCountX,
                         groupCountY);
                 };
             });
@@ -178,11 +178,11 @@ namespace Horizon
 
                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
                 {
-                    uint32 groupCountX = ComputeWorkGroupCount(renderResolution.width, 8);
-                    uint32 groupCountY = ComputeWorkGroupCount(renderResolution.height, 8);
+                    uint32 threadGroupCountX = ComputeWorkGroupCount(renderResolution.width, 8);
+                    uint32 threadGroupCountY = ComputeWorkGroupCount(renderResolution.height, 8);
 
                     RenderBackendShaderArguments shaderArguments = {};
-                    shaderArguments.BindBuffer(0, GetCurrentPerFrameDataBuffer());
+                    shaderArguments.BindBuffer(0, this->GetCurrentPerFrameDataBuffer());
                     shaderArguments.BindBuffer(1, renderEngine->geometryBuffer, 0);
                     shaderArguments.BindTextureSRV(2, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(vbuffer0)));
                     shaderArguments.BindTextureUAV(3, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(motionVectors), 0));
@@ -191,7 +191,7 @@ namespace Horizon
                     commandList.Dispatch2D(
                         computeShader,
                         shaderArguments,
-                        groupCountX,
+                        threadGroupCountX,
                         groupCountY);
                 };
             });
@@ -236,7 +236,7 @@ namespace Horizon
                 {
                     RenderBackendShaderArguments shaderArguments = {};
                     shaderArguments.debugName = "DirectLighting";
-                    shaderArguments.BindBuffer(0, GetCurrentPerFrameDataBuffer());
+                    shaderArguments.BindBuffer(0, this->GetCurrentPerFrameDataBuffer());
                     shaderArguments.BindTextureSRV(1, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(sceneDepthTexture)));
                     shaderArguments.BindTextureSRV(2, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(vbuffer0)));
                     shaderArguments.BindTextureSRV(3, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(vbuffer1)));
@@ -315,7 +315,7 @@ namespace Horizon
                     graphicsPipelineState.depthStencilState.depthWriteEnable = false;
 
                     RenderBackendShaderArguments shaderArguments = {};
-                    shaderArguments.BindBuffer(0, GetCurrentPerFrameDataBuffer());
+                    shaderArguments.BindBuffer(0, this->GetCurrentPerFrameDataBuffer());
                     shaderArguments.BindTextureSRV(1, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(gbuffer0)));
                     shaderArguments.BindTextureSRV(2, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(gbuffer1)));
                     shaderArguments.BindTextureSRV(3, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(gbuffer2)));
@@ -363,7 +363,7 @@ namespace Horizon
                     graphicsPipelineState.colorBlendState.targetBlends[0] = additiveColorBlendAttachmentStateRGBA;
 
                     RenderBackendShaderArguments shaderArguments = {};
-                    shaderArguments.BindBuffer(0, GetCurrentPerFrameDataBuffer());
+                    shaderArguments.BindBuffer(0, this->GetCurrentPerFrameDataBuffer());
                     shaderArguments.BindTextureSRV(1, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(gbuffer0)));
                     shaderArguments.BindTextureSRV(2, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(gbuffer1)));
                     shaderArguments.BindTextureSRV(7, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(gbuffer2)));

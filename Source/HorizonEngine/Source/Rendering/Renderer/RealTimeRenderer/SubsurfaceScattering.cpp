@@ -61,11 +61,11 @@ namespace Horizon
 
                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
                 {
-                    uint32 groupCountX = ComputeWorkGroupCount(renderResolution.width, 16);
-                    uint32 groupCountY = ComputeWorkGroupCount(renderResolution.height, 16);
+                    uint32 threadGroupCountX = ComputeWorkGroupCount(renderResolution.width, 16);
+                    uint32 threadGroupCountY = ComputeWorkGroupCount(renderResolution.height, 16);
 
                     RenderBackendShaderArguments shaderArguments = {};
-                    shaderArguments.BindBuffer(0, GetCurrentPerFrameDataBuffer());
+                    shaderArguments.BindBuffer(0, this->GetCurrentPerFrameDataBuffer());
                     shaderArguments.BindTextureSRV(1, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(sceneColorTexture)));
                     shaderArguments.BindTextureSRV(2, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(sceneDepthTexture)));
                     shaderArguments.BindBuffer(3, registry.GetRenderBackendBufferHandle(tileCountBuffer), 0);
@@ -75,7 +75,7 @@ namespace Horizon
                     commandList.Dispatch2D(
                         computeShader,
                         shaderArguments,
-                        groupCountX,
+                        threadGroupCountX,
                         groupCountY);
                 };
             });
@@ -183,7 +183,7 @@ namespace Horizon
                     graphicsPipelineState.depthStencilState.depthWriteEnable = false;
 
                     RenderBackendShaderArguments shaderArguments = {};
-                    shaderArguments.BindBuffer(0, GetCurrentPerFrameDataBuffer());
+                    shaderArguments.BindBuffer(0, this->GetCurrentPerFrameDataBuffer());
                     shaderArguments.BindBuffer(1, registry.GetRenderBackendBufferHandle(tileDataBuffer), 0);
                     shaderArguments.BindTextureSRV(2, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(subsurfaceScatteringTexture)));
 
@@ -219,7 +219,7 @@ namespace Horizon
                     graphicsPipelineState.depthStencilState.depthWriteEnable = false;
 
                     RenderBackendShaderArguments shaderArguments = {};
-                    shaderArguments.BindBuffer(0, GetCurrentPerFrameDataBuffer());
+                    shaderArguments.BindBuffer(0, this->GetCurrentPerFrameDataBuffer());
                     shaderArguments.BindBuffer(1, registry.GetRenderBackendBufferHandle(tileDataBuffer), 0);
                     shaderArguments.BindTextureSRV(2, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(subsurfaceScatteringTexture)));
 

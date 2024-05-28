@@ -141,7 +141,11 @@ namespace Horizon
 
         bool IsConvolutionBloomEnabled() const;
 
+        bool IsBloomEnabled() const;
+
     private:
+
+        void OnRenderBegin();
 
         void UpdatePerFrameDataBuffer() const;
 
@@ -301,9 +305,9 @@ namespace Horizon
             const SceneView& view,
             RenderGraphTextureHandle sceneColorTexture,
             RenderGraphTextureHandle bloomTexture,
-            RenderGraphBufferHandle autoExposureBuffer,
             RenderGraphTextureHandle colorLUTTexture,
             RenderGraphTextureHandle localExposureTexture,
+            RenderGraphBufferHandle autoExposureBuffer,
             bool outputInHDR);
 
         RenderGraphTextureHandle AddTemporalSuperSamplingPass(
@@ -414,7 +418,7 @@ namespace Horizon
         RendererDefaultResources* defaultResources;
         PostProcessingSettings finalPostProcessingSettings;
 
-        struct
+        struct RenderFeatures
         {
             uint32 enableFrameRateUpConversion : 1;
             uint32 enableSuperSamplingAntiAliasing : 1;
@@ -440,7 +444,7 @@ namespace Horizon
         Extent2D targetResolution;
         Extent2D displayResolution;
 
-        static const uint32 MaxNumFramesInFlight = 3;
+        static const int32 MaxNumFramesInFlight = 3;
         int32 currentPerFrameDataBufferIndex = 0;
         RenderBackendBufferHandle perFrameDataBuffers[MaxNumFramesInFlight];
 
@@ -449,9 +453,6 @@ namespace Horizon
         float materialTextureMipLodBias;
 
         float preExposure = 1.0f;
-        float previousPreExposure = 1.0f;
-
-        RenderGraphPersistentBuffer* autoExposureBufferHistory = nullptr;
 
         struct AutoExposureData
         {
@@ -460,7 +461,7 @@ namespace Horizon
             float exposureCompensation;
             float averageSceneLuminance;
         };
-        static const uint32 NumAutoExposureReadbackBuffers = 4;
+        static const int32 NumAutoExposureReadbackBuffers = 4;
         int32 currentAutoExposureReadbackBufferIndex = 0;
         RenderGraphPersistentBuffer* autoExposureReadbackBuffers[NumAutoExposureReadbackBuffers];
 
@@ -468,8 +469,18 @@ namespace Horizon
 
         void UpdateAutoExposureDataFromReadbackBuffer();
 
-        RenderGraphPersistentTexture* sceneDepthTextureHistory = nullptr;
-        RenderGraphPersistentTexture* ambientOcclusionTextureHistory = nullptr;
-        RenderGraphPersistentTexture* temporalSuperSamplingTextureHistory = nullptr;
+        struct HistoryFrame
+        {
+            Vector3 cameraPosition;
+            Vector2 cameraJitterOffset;
+            CameraTransformations transformations;
+            float preExposure;
+            RenderGraphPersistentBuffer* autoExposureBuffer;
+            RenderGraphPersistentTexture* sceneDepthTexture;
+            RenderGraphPersistentTexture* ambientOcclusionTexture;
+            RenderGraphPersistentTexture* temporalSuperSamplingTexture;
+        };
+
+        HistoryFrame historyFrame;
     };
 }

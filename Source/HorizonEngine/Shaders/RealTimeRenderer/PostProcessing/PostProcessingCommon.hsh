@@ -1,11 +1,11 @@
 #pragma once
 
-#ifndef POST_PROCESSING_THREAD_GROUP_COUNT_X
-    #error "POST_PROCESSING_THREAD_GROUP_COUNT_X must be defined"
+#ifndef POST_PROCESSING_THREAD_GROUP_SIZE_X
+    #error "POST_PROCESSING_THREAD_GROUP_SIZE_X must be defined"
 #endif
 
-#ifndef POST_PROCESSING_THREAD_GROUP_COUNT_Y
-    #error "POST_PROCESSING_THREAD_GROUP_COUNT_Y must be defined"
+#ifndef POST_PROCESSING_THREAD_GROUP_SIZE_Y
+    #error "POST_PROCESSING_THREAD_GROUP_SIZE_Y must be defined"
 #endif
 
 /**

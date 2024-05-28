@@ -6,7 +6,7 @@ BIND_TEXTURE_2D_SRV(0, InputTexture);
 BIND_TEXTURE_2D_UAV(1, float4, OutputTexture);
 
 [shader("compute")]
-[numthreads(POST_PROCESSING_THREAD_GROUP_COUNT_X, POST_PROCESSING_THREAD_GROUP_COUNT_Y, 1)]
+[numthreads(POST_PROCESSING_THREAD_GROUP_SIZE_X, POST_PROCESSING_THREAD_GROUP_SIZE_Y, 1)]
 void ConvolutionBloomResizeKernelCS(uint3 DispatchThreadID : SV_DispatchThreadID)
 {
     Texture2D inputTexture = GetInputTextureSRV();
