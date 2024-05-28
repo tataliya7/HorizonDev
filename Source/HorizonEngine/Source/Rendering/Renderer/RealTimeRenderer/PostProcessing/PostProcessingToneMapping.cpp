@@ -32,25 +32,26 @@ namespace Horizon
 
         // Chromatic Aberration
         Vector2 chromaticAberrationScale = Vector2(0.0f, 0.0f);
-        {
-            float chromaticAberrationIntensity = settings.postProcessingSettings.chromaticAberrationIntensity;
-            float chromaticAberrationOffset = settings.postProcessingSettings.chromaticAberrationOffset;
-
-            // Wavelength of primarie colors in nm
-            const float wavelengthR = 611.3f;
-            const float wavelengthG = 549.1f;
-            const float wavelengthB = 464.3f;
-
-            const float scaleR = 0.007f * (wavelengthR - wavelengthB);
-            const float scaleG = 0.007f * (wavelengthG - wavelengthB);
-
-            if (chromaticAberrationOffset < 1.0f)
-            {
-                float offset = chromaticAberrationIntensity * 0.01f;
-                float multiplier = 1.0f / (1.0f - chromaticAberrationOffset);
-                chromaticAberrationScale = Vector2(scaleR * offset * multiplier, scaleG * offset * multiplier);
-            }
-        }
+        // TODO: Implement chromatic aberration
+        // {
+        //     float chromaticAberrationIntensity = settings.postProcessingSettings.chromaticAberrationIntensity;
+        //     float chromaticAberrationOffset = settings.postProcessingSettings.chromaticAberrationOffset;
+        //
+        //     // Wavelength of primarie colors in nm
+        //     const float wavelengthR = 611.3f;
+        //     const float wavelengthG = 549.1f;
+        //     const float wavelengthB = 464.3f;
+        //
+        //     const float scaleR = 0.007f * (wavelengthR - wavelengthB);
+        //     const float scaleG = 0.007f * (wavelengthG - wavelengthB);
+        //
+        //     if (chromaticAberrationOffset < 1.0f)
+        //     {
+        //         float offset = chromaticAberrationIntensity * 0.01f;
+        //         float multiplier = 1.0f / (1.0f - chromaticAberrationOffset);
+        //         chromaticAberrationScale = Vector2(scaleR * offset * multiplier, scaleG * offset * multiplier);
+        //     }
+        // }
 
         RenderBackendTextureFormat outputTextureFormat = RenderBackendTextureFormat::RGB10A2Unorm;
 

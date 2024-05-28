@@ -22,7 +22,7 @@ float3 Lookup3DColorLUT(Texture3D colorLUT, float3 linearColor)
     float3 encodedColor = LinearToLog(linearColor + LogToLinear(0));
     float3 uvw = encodedColor * (size - 1.0) / size + 0.5 / size;
     float3 color = colorLUT.SampleLevel(GlobalSamplerLinearClamp, uvw, 0).rgb;
-    return color * 1.05;
+    return color * 1.05f;
 }
 
 [shader("compute")]
@@ -30,21 +30,18 @@ float3 Lookup3DColorLUT(Texture3D colorLUT, float3 linearColor)
 void ToneMappingCS(uint3 DispatchThreadID : SV_DispatchThreadID)
 {
     PerFrameData perFrameData = GetPerFrameData();
-    uint width = perFrameData.targetResolutionX;
-    uint height = perFrameData.targetResolutionY;
+    Texture2D sceneColorTexture = GetSceneColorTextureSRV();
+    RWTexture2D<float4> outputTexture = GetOutputTextureUAV();
+
+    uint width = perFrameData.targetWidth;
+    uint height = perFrameData.targetHeight;
     if (DispatchThreadID.x >= width || DispatchThreadID.y >= height)
     {
         return;
     }
 
     uint2 pixelCoord = DispatchThreadID.xy;
-    float2 uv = (pixelCoord + 0.5) / float2(width, height);
-
-    Texture2D sceneColorTexture = GetSceneColorTextureSRV();
-    RWTexture2D<float4> outputTexture = GetOutputTextureUAV();
-
-    float gamma = perFrameData.gamma;
-    float exposure = perFrameData.exposure;
+    float2 uv = (pixelCoord + 0.5f) * targetResolution.zw;
 
     if (SHADER_ARGUMENTS_INDEX(3) >= 0)
     {
@@ -77,7 +74,6 @@ void ToneMappingCS(uint3 DispatchThreadID : SV_DispatchThreadID)
 
     float oneOverPreExposure = perFrameData.oneOverPreExposure;
     float4 hdrColor = sceneColor;
-    //hdrColor.rgb *= oneOverPreExposure;
 
     // Apply local toneMapping
     // if (SHADER_ARGUMENTS_INDEX(6) >= 0)
