@@ -4,9 +4,14 @@
 
 namespace Horizon
 {
+    struct TemporalSuperSamplingDispatchParameters
+    {
+
+    };
+
     class TemporalSuperSamplingInterface
     {
     public:
-        virtual RenderGraphTextureHandle Dispatch(RenderGraph& renderGraph, const FSceneView& View, const FInputs& Inputs) const = 0;
+        virtual RenderGraphTextureHandle Dispatch(RenderGraph& renderGraph, const SceneView& view, const TemporalSuperSamplingDispatchParameters& dispatchParameters) const = 0;
     };
 }

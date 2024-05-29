@@ -305,13 +305,6 @@ namespace Horizon
             RenderGraphBufferHandle autoExposureBuffer,
             bool outputInHDR);
 
-        RenderGraphTextureHandle AddTemporalSuperSamplingPass(
-            RenderGraph& renderGraph,
-            const SceneView& view,
-            RenderGraphTextureHandle sceneColorTexture,
-            RenderGraphTextureHandle sceneDepthTexture,
-            RenderGraphTextureHandle motionVectorTexture);
-
         RenderGraphTextureHandle AddFSR2Pass(
             RenderGraph& renderGraph,
             const SceneView& view,
