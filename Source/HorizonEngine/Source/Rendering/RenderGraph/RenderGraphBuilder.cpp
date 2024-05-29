@@ -81,7 +81,7 @@ namespace Horizon
 
     void RenderGraphBuilder::BindDepthTarget(RenderGraphTextureHandle handle, RenderBackendRenderPassBeginningAccessType depthLoadOp, RenderBackendRenderPassEndingAccessType depthStoreOp, uint32 mipLevel, uint32 arraylayer)
     {
-        pass->depthStentcil = {
+        pass->depthStencil = {
             .texture = handle,
             .mipLevel = mipLevel,
             .arrayLayer = arraylayer,
@@ -94,7 +94,7 @@ namespace Horizon
 
     void RenderGraphBuilder::BindDepthStencilTarget(RenderGraphTextureHandle handle, RenderBackendRenderPassBeginningAccessType depthLoadOp, RenderBackendRenderPassEndingAccessType depthStoreOp, RenderBackendRenderPassBeginningAccessType stencilLoadOp, RenderBackendRenderPassEndingAccessType stencilStoreOp, uint32 mipLevel, uint32 arraylayer)
     {
-        pass->depthStentcil = {
+        pass->depthStencil = {
             .texture = handle,
             .mipLevel = mipLevel,
             .arrayLayer = arraylayer,

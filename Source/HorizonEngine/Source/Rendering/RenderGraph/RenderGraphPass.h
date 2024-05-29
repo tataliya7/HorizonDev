@@ -4,7 +4,6 @@
 #include "RenderGraphHandles.h"
 #include "RenderGraphNode.h"
 #include "RenderGraphRegistry.h"
-#include "RenderGraphResources.h"
 
 namespace Horizon
 {
@@ -63,7 +62,7 @@ namespace Horizon
 
         std::vector<RenderBackendBarrier> barriers;
 
-        struct ColorRenderTarget
+        struct RenderTarget
         {
             RenderGraphTextureHandle texture;
             uint32 mipLevel;
@@ -71,7 +70,7 @@ namespace Horizon
             RenderBackendRenderPassBeginningAccessType loadOp;
             RenderBackendRenderPassEndingAccessType storeOp;
         };
-        struct DepthStencilTarget
+        struct DepthStencil
         {
             RenderGraphTextureHandle texture;
             uint32 mipLevel;
@@ -81,8 +80,8 @@ namespace Horizon
             RenderBackendRenderPassBeginningAccessType stencilLoadOp;
             RenderBackendRenderPassEndingAccessType stencilStoreOp;
         };
-        ColorRenderTarget renderTargets[RenderBackendMaxRenderTargetCount];
-        DepthStencilTarget depthStentcil;
+        RenderTarget renderTargets[RenderBackendMaxRenderTargetCount];
+        DepthStencil depthStencil;
     };
 
     class RenderGraphLambdaPass : public RenderGraphPass

@@ -6,7 +6,6 @@
 #include "RenderGraphPass.h"
 #include "RenderGraphResources.h"
 #include "RenderGraphBuilder.h"
-#include "RenderGraphRegistry.h"
 #include "RenderGraphBlackboard.h"
 
 namespace Horizon

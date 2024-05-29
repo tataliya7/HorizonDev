@@ -334,16 +334,16 @@ namespace Horizon
                         };
                     }
                 }
-                if (pass->depthStentcil.texture)
+                if (pass->depthStencil.texture)
                 {
                     renderPass.depthStencil = {
-                        .texture = registry.GetRenderBackendTextureHandle(pass->depthStentcil.texture),
-                        .mipLevel = pass->depthStentcil.mipLevel,
-                        .arrayLayer = pass->depthStentcil.arrayLayer,
-                        .depthLoadOp = pass->depthStentcil.depthLoadOp,
-                        .depthStoreOp = pass->depthStentcil.depthStoreOp,
-                        .stencilLoadOp = pass->depthStentcil.stencilLoadOp,
-                        .stencilStoreOp = pass->depthStentcil.stencilStoreOp,
+                        .texture = registry.GetRenderBackendTextureHandle(pass->depthStencil.texture),
+                        .mipLevel = pass->depthStencil.mipLevel,
+                        .arrayLayer = pass->depthStencil.arrayLayer,
+                        .depthLoadOp = pass->depthStencil.depthLoadOp,
+                        .depthStoreOp = pass->depthStencil.depthStoreOp,
+                        .stencilLoadOp = pass->depthStencil.stencilLoadOp,
+                        .stencilStoreOp = pass->depthStencil.stencilStoreOp,
                     };
                 }
                 commandList.BeginRenderPass(renderPass);
