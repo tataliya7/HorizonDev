@@ -3,7 +3,12 @@
 
 namespace Horizon
 {
-//     void RealTimeRenderer::AddSurfleGIPasses(
+    bool RealTimeRenderer::IsSurfelGIEnabled() const
+    {
+        return features.enableSurfelGI;
+    }
+
+    //     void RealTimeRenderer::AddSurfleGIPasses(
 //         RenderGraph& renderGraph,
 //         const SceneView& view)
 //     {

@@ -823,12 +823,12 @@ namespace Horizon
         // TODO
         const bool shouldRenderSubsurfaceScattering = false;
 
-        if (shouldRenderSubsurfaceScattering)
+        if (IsS)
         {
             RenderSubsurfaceScattering(renderGraph, view);
         }
 
-        if (shouldRenderSkyAtmosphere)
+        if (IsSkyAtmosphereRenderingEnabled())
         {
             RenderSkyAtmosphere(renderGraph, *skyAtmosphere, *(renderEngine->skyAtmosphereComponent), renderResolution.width, renderResolution.height, sceneViewShaderParametersBuffer);
         }

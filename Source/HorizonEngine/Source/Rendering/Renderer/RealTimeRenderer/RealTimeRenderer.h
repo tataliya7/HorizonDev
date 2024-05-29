@@ -74,36 +74,38 @@ namespace Horizon
         RenderGraphTextureHandle gbuffer0;
         RenderGraphTextureHandle gbuffer1;
         RenderGraphTextureHandle gbuffer2;
+        RenderGraphTextureHandle depthPyramidTexture;
         RenderGraphTextureHandle sceneColorTexture;
         RenderGraphTextureHandle sceneDepthTexture;
         RenderGraphTextureHandle motionVectorTexture;
         RenderGraphTextureHandle ambientOcclusionTexture;
         RenderGraphTextureHandle hudLessColorTexture;
-        RenderGraphTextureHandle uiColorAndAlphaTexture;
-        RenderGraphTextureHandle finalColorTexture;
+        //RenderGraphTextureHandle uiColorAndAlphaTexture;
+        //RenderGraphTextureHandle targetTexture;
+        //RenderGraphTextureHandle displayTexture;
     };
     static const RenderGraphBlackboardRegistry<RealTimeRendererSceneTextures> RealTimeRendererSceneTexturesRegistry;
 
-    struct RealTimeRendererDebugViewModeTextures
-    {
-        RenderGraphTextureDesc screenSpaceShadowMaskTextureDesc;
-        RenderGraphTextureHandle screenSpaceShadowMaskTexture;
-    };
-    static const RenderGraphBlackboardRegistry<RealTimeRendererDebugViewModeTextures> RealTimeRendererSceneTexturesRegistry;
+    // struct RealTimeRendererDebugViewModeTextures
+    // {
+    //     RenderGraphTextureDesc screenSpaceShadowMaskTextureDesc;
+    //     RenderGraphTextureHandle screenSpaceShadowMaskTexture;
+    // };
+    // static const RenderGraphBlackboardRegistry<RealTimeRendererDebugViewModeTextures> RealTimeRendererSceneTexturesRegistry;
+    //
+    // struct RenderGraphFinalTexture
+    // {
+    //     RenderGraphTextureDesc finalTextureDesc;
+    //     RenderGraphTextureHandle finalTexture;
+    // };
+    // static const RenderGraphBlackboardRegistry<RenderGraphFinalTexture> RealTimeRendererSceneTexturesRegistry;
 
-    struct RenderGraphFinalTexture
-    {
-        RenderGraphTextureDesc finalTextureDesc;
-        RenderGraphTextureHandle finalTexture;
-    };
-    static const RenderGraphBlackboardRegistry<RenderGraphFinalTexture> RealTimeRendererSceneTexturesRegistry;
-
-    struct RenderGraphOutputTexture
-    {
-        RenderBackendTextureDesc outputTextureDesc;
-        RenderGraphTextureHandle outputTexture;
-    };
-    static const RenderGraphBlackboardRegistry<RenderGraphOutputTexture> RealTimeRendererSceneTexturesRegistry;
+    // struct RenderGraphOutputTexture
+    // {
+    //     RenderBackendTextureDesc outputTextureDesc;
+    //     RenderGraphTextureHandle outputTexture;
+    // };
+    // static const RenderGraphBlackboardRegistry<RenderGraphOutputTexture> RealTimeRendererSceneTexturesRegistry;
 
     class RealTimeRenderer final : public SceneRenderer
     {
@@ -125,7 +127,15 @@ namespace Horizon
 
         bool IsSkyAtmosphereDebugVisualizationEnabled() const;
 
+        bool IsSubsurfaceScatteringEnabled() const;
+
         bool IsSurfelGIEnabled() const;
+
+        bool IsScreenSpaceShadowsEnabled() const;
+
+        bool IsScreenSpaceReflectionsEnabled() const;
+
+        bool IsScreenSpaceAmbientOcclusionEnabled() const;
 
         bool IsRayTracingShadowsEnabled() const;
 
@@ -149,21 +159,21 @@ namespace Horizon
 
         void UpdatePerFrameDataBuffer() const;
 
-        bool ShouldApplyCameraJittering() const
-        {
-            if (settings.forceEnableSubpixelJittering)
-            {
-                return true;
-            }
-            if (IsTemporalAAEnabled() ||
-                IsDLAAEnabled() ||
-                IsDLSSEnabled() ||
-                IsFSR2Enabled())
-            {
-                return true;
-            }
-            return false;
-        }
+        // bool ShouldApplyCameraJittering() const
+        // {
+        //     if (settings.forceEnableSubpixelJittering)
+        //     {
+        //         return true;
+        //     }
+        //     if (IsTemporalAAEnabled() ||
+        //         IsDLAAEnabled() ||
+        //         IsDLSSEnabled() ||
+        //         IsFSR2Enabled())
+        //     {
+        //         return true;
+        //     }
+        //     return false;
+        // }
 
         bool LoadShaders();
 
@@ -210,15 +220,7 @@ namespace Horizon
 
         void RenderScreenSpaceReflections(
             RenderGraph& renderGraph,
-            const SceneView& view,
-            uint32 hzbWidth,
-            uint32 hzbHeight,
-            RenderGraphTextureHandle hzb,
-            RenderGraphTextureHandle historySceneColor,
-            RenderGraphTextureHandle historySceneDepth,
-            RenderBackendBufferHandle rayAllocationBuffer,
-            RenderGraphTextureHandle& ssrTexture,
-            RenderGraphTextureHandle& debugOutputTexture);
+            const SceneView& view);
 
         RenderGraphTextureHandle RenderScreenSpaceAmbientOcclusion(
             RenderGraph& renderGraph,
@@ -412,11 +414,15 @@ namespace Horizon
             uint32 enableSuperSamplingAntiAliasing : 1;
             uint32 enableSuperResolution : 1;
             uint32 enableSkyAtmosphereRendering : 1;
+            uint32 enableSubsurfaceScattering : 1;
+            uint32 enableScreenSpaceShadows : 1;
+            uint32 enableScreenSpaceReflections : 1;
+            uint32 enableScreenSpaceAmbientOcclusion : 1;
+            uint32 enableScreenSpaceLightShafts : 1;
             uint32 enableRayTracingShadows : 1;
             uint32 enableRayTracingReflections : 1;
             uint32 enableRayTracingAmbientOcclusion : 1;
             uint32 enableSurfelGI : 1;
-            uint32 enableScreenSpaceLightShafts : 1;
             uint32 enableMotionBlur : 1;
             uint32 enableAutoExposure : 1;
             uint32 enableLocalExposure : 1;

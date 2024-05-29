@@ -110,11 +110,6 @@ namespace Horizon
         Matrix4x4 viewProjectionMatrix[6];
     };
 
-    struct LightInfo
-    {
-        const LightComponent* component;
-    };
-
     struct LightShaderParameters
     {
         Vector3 color;
