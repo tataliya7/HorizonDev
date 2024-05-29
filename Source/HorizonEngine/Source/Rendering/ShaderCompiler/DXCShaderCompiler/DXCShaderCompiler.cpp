@@ -16,11 +16,11 @@ namespace DXCUtils
         std::wstring result = {};
         if (input.length() > 0)
         {
-            int length = MultiByteToWideChar(CP_UTF8, 0, input.c_str(), (int)input.size(), NULL, 0);
+            int length = MultiByteToWideChar(CP_UTF8, 0, input.c_str(), int(input.size()), NULL, 0);
             if (length > 0)
             {
                 result.resize(length);
-                MultiByteToWideChar(CP_UTF8, 0, input.c_str(), (int)input.size(), result.data(), (int)result.size());
+                MultiByteToWideChar(CP_UTF8, 0, input.c_str(), int(input.size()), result.data(), int(result.size()));
             }
         }
         return result;
@@ -31,11 +31,11 @@ namespace DXCUtils
         std::string result = {};
         if (input.length() > 0)
         {
-            int length = WideCharToMultiByte(CP_UTF8, 0, input.c_str(), (int)input.size(), NULL, 0, NULL, NULL);
+            int length = WideCharToMultiByte(CP_UTF8, 0, input.c_str(), int(input.size()), NULL, 0, NULL, NULL);
             if (length > 0)
             {
                 result.resize(length);
-                WideCharToMultiByte(CP_UTF8, 0, input.c_str(), (int)input.size(), result.data(), (int)result.size(), NULL, NULL);
+                WideCharToMultiByte(CP_UTF8, 0, input.c_str(), int(input.size()), result.data(), int(result.size()), NULL, NULL);
             }
         }
         return result;
