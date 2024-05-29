@@ -326,7 +326,7 @@ namespace Horizon
         }
         {
             ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/PostProcessing/DownsampleSceneColor.hsm", "DownsampleSceneColorCS");
-            shaderLibrary->LoadShader(ShaderID::DownsampleSceneColor, shaderDesc);
+            shaderLibrary->LoadShader(ShaderID::ColorPyramidGeneration, shaderDesc);
         }
         {
             ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/PostProcessing/GaussianBloomDownsample.hsm", "GaussianBloomDownsampleCS");

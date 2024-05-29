@@ -260,6 +260,8 @@ namespace Horizon
             scene->HasAtmosphericLight() &&
             scene->HasActiveSkyAtmosphere();
 
+        features.enableDepthOfField = finalPostProcessingSettings.depthOfFiledScale > 0.0f;
+
         bool isAutoExposureEnabled = (settings.exposureMethod == ExposureMethod::AutoExposure) || (settings.exposureMethod == ExposureMethod::FixedExposure);
         bool isBloomEnabled = settings.postProcessingSettings.bloomIntensity > 0.0f;
         bool isLensFlaresEnabled = isBloomEnabled && settings.postProcessingSettings.lensFlaresIntensity > 0.0f;

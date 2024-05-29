@@ -145,13 +145,15 @@ namespace Horizon
 
         bool IsMotionBlurEnabled() const;
 
-        bool IsDepthOfFieldEnbled() const;
+        bool IsDepthOfFieldEnabled() const;
 
         bool IsGaussianBloomEnabled() const;
 
         bool IsConvolutionBloomEnabled() const;
 
         bool IsBloomEnabled() const;
+
+        bool IsLensFlaresEnabled() const;
 
     private:
 
@@ -362,7 +364,7 @@ namespace Horizon
             RenderGraphTextureHandle inputTexture,
             RenderGraphTextureHandle outputTexture);
 
-        void AddGenerateSceneColorMipChainPass(
+        void GenerateSceneColorPyramid(
             RenderGraph& renderGraph,
             const SceneView& view,
             RenderGraphTextureHandle sceneColorTexture,

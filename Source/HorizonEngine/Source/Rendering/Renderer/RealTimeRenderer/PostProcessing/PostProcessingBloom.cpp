@@ -37,7 +37,9 @@ namespace Horizon
                     RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::UnorderedAccess | RenderBackendTextureCreateFlags::RenderTarget);
                 RenderGraphTextureHandle outputTexture = renderGraph.CreateTexture(outputTextureDesc, "GaussianBloomDownsampleTexture");
 
-                renderGraph.AddPass(std::format("GaussianBloomDownsample (Compute, {}x{})", outputTextureWidth, outputTextureHeight), RenderGraphPassFlags::Compute,
+                renderGraph.AddPass(
+                    std::format("GaussianBloomDownsample (Compute, {}x{})", outputTextureWidth, outputTextureHeight),
+                    RenderGraphPassFlags::Compute,
                     [&](RenderGraphBuilder& builder)
                     {
                         inputTexture = builder.ReadTexture(inputTexture, RenderBackendResourceState::ShaderResource);
@@ -47,6 +49,7 @@ namespace Horizon
                         {
                             uint32 threadGroupCountX = ComputeWorkGroupCount(outputTextureWidth, PostProcessingThreadGroupSizeX);
                             uint32 threadGroupCountY = ComputeWorkGroupCount(outputTextureHeight, PostProcessingThreadGroupSizeY);
+                            uint32 threadGroupCountZ = 1;
 
                             RenderBackendShaderArguments shaderArguments = {};
                             shaderArguments.BindTextureSRV(0, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(inputTexture)));
@@ -56,11 +59,12 @@ namespace Horizon
                             shaderArguments.PushConstants(2, useKarisAverage ? 1.0f : 0.0f);
 
                             RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::GaussianBloomDownsample);
-                            commandList.Dispatch2D(
+                            commandList.Dispatch(
                                 computeShader,
                                 shaderArguments,
                                 threadGroupCountX,
-                                groupCountY);
+                                threadGroupCountY,
+                                threadGroupCountZ);
                         };
                     });
 
@@ -87,7 +91,9 @@ namespace Horizon
                     RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::UnorderedAccess | RenderBackendTextureCreateFlags::RenderTarget);
                 RenderGraphTextureHandle outputTexture = renderGraph.CreateTexture(outputTextureDesc, "GaussianBloomUpsampleTexture");
 
-                renderGraph.AddPass(std::format("GaussianBloomUpsample (Compute, {}x{})", outputTextureWidth, outputTextureHeight), RenderGraphPassFlags::Compute,
+                renderGraph.AddPass(
+                    std::format("GaussianBloomUpsample (Compute, {}x{})", outputTextureWidth, outputTextureHeight),
+                    RenderGraphPassFlags::Compute,
                     [&](RenderGraphBuilder& builder)
                     {
                         downsampledInputTexture = builder.ReadTexture(downsampledInputTexture, RenderBackendResourceState::ShaderResource);
@@ -98,6 +104,7 @@ namespace Horizon
                         {
                             uint32 threadGroupCountX = ComputeWorkGroupCount(outputTextureWidth, PostProcessingThreadGroupSizeX);
                             uint32 threadGroupCountY = ComputeWorkGroupCount(outputTextureHeight, PostProcessingThreadGroupSizeY);
+                            uint32 threadGroupCountZ = 1;
 
                             RenderBackendShaderArguments shaderArguments = {};
                             shaderArguments.BindTextureSRV(0, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(downsampledInputTexture)));
@@ -105,14 +112,14 @@ namespace Horizon
                             shaderArguments.BindTextureUAV(2, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(outputTexture), 0));
                             shaderArguments.PushConstants(0, 1.0f / (float)outputTextureWidth);
                             shaderArguments.PushConstants(1, 1.0f / (float)outputTextureHeight);
-                            shaderArguments.PushConstants(2, sceneViewShaderParameters.bloomRadius);
 
                             RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::GaussianBloomUpsample);
-                            commandList.Dispatch2D(
+                            commandList.Dispatch(
                                 computeShader,
                                 shaderArguments,
                                 threadGroupCountX,
-                                groupCountY);
+                                threadGroupCountY,
+                                threadGroupCountZ);
                         };
                     });
 
@@ -124,6 +131,7 @@ namespace Horizon
         return bloomTexture;
     }
 
+#if 0
     RenderGraphTextureHandle RealTimeRenderer::AddConvolutionBloomPass(
         RenderGraph& renderGraph,
         const SceneView& view,
@@ -189,17 +197,19 @@ namespace Horizon
                 {
                     uint32 threadGroupCountX = ComputeWorkGroupCount(bloomKernelTextureDesc.width, PostProcessingThreadGroupSizeX);
                     uint32 threadGroupCountY = ComputeWorkGroupCount(bloomKernelTextureDesc.height, PostProcessingThreadGroupSizeY);
+                    uint32 threadGroupCountZ = 1;
 
                     RenderBackendShaderArguments shaderArguments = {};
                     shaderArguments.BindTextureSRV(0, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(bloomKernelTexture)));
                     shaderArguments.BindTextureUAV(1, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(resizedBloomKernelTexture), 0));
 
                     RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::ConvolutionBloomResizeKernel);
-                    commandList.Dispatch2D(
+                    commandList.Dispatch(
                         computeShader,
                         shaderArguments,
                         threadGroupCountX,
-                        groupCountY);
+                        threadGroupCountY,
+                        threadGroupCountZ);
                 };
             });
 
@@ -287,4 +297,5 @@ namespace Horizon
 
         return bloomOutputTexture;
     }
+#endif
 }

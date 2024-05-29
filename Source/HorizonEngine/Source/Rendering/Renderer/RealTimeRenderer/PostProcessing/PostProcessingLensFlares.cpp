@@ -3,6 +3,12 @@
 
 namespace Horizon
 {
+    bool RealTimeRenderer::IsLensFlaresEnabled() const
+    {
+        return features.enableLensFlares;
+    }
+
+#if 0
     RenderGraphTextureHandle RealTimeRenderer::AddLensFlaresPass(
         RenderGraph& renderGraph,
         const SceneView& view,
@@ -179,4 +185,5 @@ namespace Horizon
 
         return lensFlaresTexture;
     }
+#endif
 }

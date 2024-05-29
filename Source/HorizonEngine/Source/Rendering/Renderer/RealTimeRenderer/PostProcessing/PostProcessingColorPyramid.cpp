@@ -3,7 +3,7 @@
 
 namespace Horizon
 {
-    RenderGraphTextureHandle AddDownsamplePass(
+    RenderGraphTextureHandle RealTimeRenderer::AddDownsamplePass(
         RenderGraph& renderGraph,
         const SceneView& view,
         uint32 inputTextureWidth,
@@ -13,37 +13,39 @@ namespace Horizon
         RenderGraphTextureHandle inputTexture,
         RenderGraphTextureHandle outputTexture)
     {
-        renderGraph.AddPass(std::format("Downsample (Compute, {}x{} -> {}x{})", inputTextureWidth, inputTextureHeight, outputTextureWidth, outputTextureHeight), RenderGraphPassFlags::Compute,
+        renderGraph.AddPass(
+            std::format("Downsample (Compute, {}x{} -> {}x{})", inputTextureWidth, inputTextureHeight, outputTextureWidth, outputTextureHeight),
+            RenderGraphPassFlags::Compute,
             [&](RenderGraphBuilder& builder)
             {
                 inputTexture = builder.ReadTexture(inputTexture, RenderBackendResourceState::ShaderResource);
                 outputTexture = builder.WriteTexture(outputTexture, RenderBackendResourceState::UnorderedAccess);
 
                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
-                    {
-                        uint32 threadGroupCountX = ComputeWorkGroupCount(outputTextureWidth, 8);
-                        uint32 threadGroupCountY = ComputeWorkGroupCount(outputTextureHeight, 8);
-                        uint32 threadGroupCountZ = 1;
+                {
+                    uint32 threadGroupCountX = ComputeWorkGroupCount(outputTextureWidth, 8);
+                    uint32 threadGroupCountY = ComputeWorkGroupCount(outputTextureHeight, 8);
+                    uint32 threadGroupCountZ = 1;
 
-                        RenderBackendShaderArguments shaderArguments = {};
-                        shaderArguments.BindTextureSRV(0, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(inputTexture)));
-                        shaderArguments.BindTextureUAV(1, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(outputTexture), 0));
+                    RenderBackendShaderArguments shaderArguments = {};
+                    shaderArguments.BindTextureSRV(0, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(inputTexture)));
+                    shaderArguments.BindTextureUAV(1, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(outputTexture), 0));
 
-                        RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::Downsample);
+                    RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::ColorPyramidGeneration);
 
-                        commandList.Dispatch(
-                            computeShader,
-                            shaderArguments,
-                            threadGroupCountX,
-                            threadGroupCountY,
-                            threadGroupCountZ);
-                    };
+                    commandList.Dispatch(
+                        computeShader,
+                        shaderArguments,
+                        threadGroupCountX,
+                        threadGroupCountY,
+                        threadGroupCountZ);
+                };
             });
 
         return outputTexture;
     }
 
-    void RealTimeRenderer::AddGenerateSceneColorMipChainPass(
+    void RealTimeRenderer::GenerateSceneColorPyramid(
         RenderGraph& renderGraph,
         const SceneView& view,
         RenderGraphTextureHandle sceneColorTexture,

@@ -13,11 +13,12 @@ namespace Horizon
     {
         auto& sceneTextures = renderGraph.blackboard.Get<RealTimeRendererSceneTextures>();
 
-        renderGraph.AddPass(std::format("BuildHZB-Closets&Furthest (Compute, {}x{})", hzbWidth, hzbHeight), RenderGraphPassFlags::Compute,
+        renderGraph.AddPass(
+            std::format("BuildHZB-Closets&Furthest (Compute, {}x{})", hzbWidth, hzbHeight),
+            RenderGraphPassFlags::Compute,
             [&](RenderGraphBuilder& builder)
             {
                 auto sceneDepthTexture = builder.ReadTexture(sceneTextures.sceneDepthTexture, RenderBackendResourceState::ShaderResource);
-
                 closestHZBTexture = builder.WriteTexture(closestHZBTexture, RenderBackendResourceState::UnorderedAccess);
                 furthestHZBTexture = builder.WriteTexture(furthestHZBTexture, RenderBackendResourceState::UnorderedAccess);
 
@@ -43,12 +44,14 @@ namespace Horizon
 
                         uint32 threadGroupCountX = ComputeWorkGroupCount(dstSize.x, 8);
                         uint32 threadGroupCountY = ComputeWorkGroupCount(dstSize.y, 8);
+                        uint32 threadGroupCountZ = 1;
 
-                        commandList.Dispatch2D(
+                        commandList.Dispatch(
                             buildHZBCS,
                             shaderArguments,
                             threadGroupCountX,
-                            groupCountY);
+                            threadGroupCountY,
+                            threadGroupCountZ);
                     }
 
                     // Build other mips
@@ -75,12 +78,14 @@ namespace Horizon
 
                         uint32 threadGroupCountX = ComputeWorkGroupCount(dstSize.x, 8);
                         uint32 threadGroupCountY = ComputeWorkGroupCount(dstSize.y, 8);
+                        uint32 threadGroupCountZ = 1;
 
-                        commandList.Dispatch2D(
+                        commandList.Dispatch(
                             buildHZBCS,
                             shaderArguments,
                             threadGroupCountX,
-                            groupCountY);
+                            threadGroupCountY,
+                            threadGroupCountZ);
                     }
 
                     // TODO: Find better way to do this

@@ -3,6 +3,7 @@
 
 namespace Horizon
 {
+#if 0
     RenderGraphTextureHandle RealTimeRenderer::AddLocalExposurePass(
         RenderGraph& renderGraph,
         const SceneView& view,
@@ -336,4 +337,5 @@ namespace Horizon
 
         return localExposureTexture;
     }
+#endif
 }

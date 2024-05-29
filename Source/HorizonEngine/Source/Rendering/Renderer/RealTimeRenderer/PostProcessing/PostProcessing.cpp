@@ -1,5 +1,6 @@
+#include "PostProcessing.h"
 #include "../RealTimeRenderer.h"
-#include "PostProcessingCommon.h"
+#include "../TemporalSuperSampling.h"
 
 namespace Horizon
 {
@@ -7,60 +8,47 @@ namespace Horizon
         RenderGraph& renderGraph,
         const SceneView& view)
     {
-        auto& sceneTextures = renderGraph.blackboard.Get<RealTimeRendererSceneTextures>();
+        RealTimeRendererSceneTextures& sceneTextures = renderGraph.blackboard.Get<RealTimeRendererSceneTextures>();
 
         RenderGraphTextureHandle sceneColorTexture = sceneTextures.sceneColorTexture;
         RenderGraphTextureHandle sceneDepthTexture = sceneTextures.sceneDepthTexture;
         RenderGraphTextureHandle motionVectorTexture = sceneTextures.motionVectorTexture;
 
-        RenderGraphBufferHandle previousAutoExposureBuffer = renderGraph.ImportExternalBuffer(autoExposureBufferHistory.get());
+        RenderGraphBufferHandle previousAutoExposureBuffer = renderGraph.ImportExternalBuffer(historyFrame.autoExposureBuffer, "PreviousAutoExposureBuffer");
         RenderGraphBufferHandle autoExposureBuffer = previousAutoExposureBuffer;
 
-        const bool generateSceneColorMipChain = isBloomEnabled;
+        const bool generateSceneColorMipChain = IsBloomEnabled();
 
-#if WITH_HORIZON_EDITOR
+#if HORIZON_EDITOR
         const bool isEditorSelectionOutlineEnabled = true;
         const bool isEditorGizmosEnabled = true;
 #endif
 
-        const bool isVisualizePrimitiveIDEnabled = (view.debugViewMode == DebugViewMode::PrimitiveID);
-        const bool isVisualizeMaterialIDEnabled = (view.debugViewMode == DebugViewMode::MaterialID);
-        const bool isVisualizeWorldSpaceNormalEnabled = (view.debugViewMode == DebugViewMode::WorldSpaceNormal);
-        const bool isVisualizeMotionVectorsEnabled = (view.debugViewMode == DebugViewMode::MotionVectors);
-        const bool isVisualizeAmbientOcclusionEnabled = (view.debugViewMode == DebugViewMode::AmbientOcclusion);
-        const bool isVisualizeShadowMaskEnabled = (view.debugViewMode == DebugViewMode::ShadowMask);
+        const bool isVisualizePrimitiveIDEnabled         = (view.debugVisualizationMode == SceneViewDebugVisualizationMode::PrimitiveID);
+        const bool isVisualizeMaterialIDEnabled          = (view.debugVisualizationMode == SceneViewDebugVisualizationMode::MaterialID);
+        const bool isVisualizeWorldSpaceNormalEnabled    = (view.debugVisualizationMode == SceneViewDebugVisualizationMode::WorldSpaceNormal);
+        const bool isVisualizeMotionVectorsEnabled       = (view.debugVisualizationMode == SceneViewDebugVisualizationMode::MotionVectors);
+        const bool isVisualizeAmbientOcclusionEnabled    = (view.debugVisualizationMode == SceneViewDebugVisualizationMode::AmbientOcclusion);
+        const bool isVisualizeShadowMaskEnabled          = (view.debugVisualizationMode == SceneViewDebugVisualizationMode::ShadowMask);
 
-        bool depthOfFieldEnabled = settings.postProcessingSettings.dofScale > 0;
-        if (depthOfFieldEnabled)
+        if (IsDepthOfFieldEnabled())
         {
             sceneColorTexture = AddDepthOfFieldPass(renderGraph, view, sceneColorTexture);
         }
 
         if (IsSuperResolutionEnabled())
         {
-            if (IsFSR2Enabled())
+            if (true) // Currently, only third party temporal super sampling methods are supported.
             {
-
-                sceneColorTexture = AddFSR2Pass(renderGraph, view, sceneColorTexture, sceneDepthTexture, motionVectorTexture);
-            }
-            else if (IsDLSSEnabled())
-            {
-                sceneColorTexture = AddDLSSPass(renderGraph, view, sceneColorTexture, sceneDepthTexture, motionVectorTexture);
-            }
-        }
-        else
-        {
-            if (IsTemporalAAEnabled())
-            {
-                sceneColorTexture = AddTemporalSuperSamplingPass(renderGraph, view, sceneColorTexture, sceneDepthTexture, motionVectorTexture);
-            }
-            else if (IsDLAAEnabled())
-            {
-                sceneColorTexture = AddDLSSPass(renderGraph, view, sceneColorTexture, sceneDepthTexture, motionVectorTexture);
+                TemporalSuperSamplingDispatchParameters tssDispatchParameters;
+                tssDispatchParameters.colorTexture = sceneColorTexture;
+                tssDispatchParameters.depthTexture = sceneDepthTexture;
+                tssDispatchParameters.motionVectorTexture = motionVectorTexture;
+                sceneColorTexture = DispatchCustomTemporalSuperSampling(renderGraph, view, tssDispatchParameters);
             }
         }
 
-        if (false)
+        if (IsMotionBlurEnabled())
         {
             sceneColorTexture = AddMotionBlurPass(renderGraph, view);
         }
@@ -69,10 +57,11 @@ namespace Horizon
         PostProcessingSceneColorMipChain sceneColorMipChain;
         if (generateSceneColorMipChain)
         {
-            AddGenerateSceneColorMipChainPass(renderGraph, view, sceneColorTexture, &sceneColorMipChain);
+            GenerateSceneColorPyramid(renderGraph, view, sceneColorTexture, &sceneColorMipChain);
         }
 
-        if (isAutoExposureEnabled)
+        // The auto exposure pass is always executed.
+        // When fixed exposure is enabled, the auto exposure pass will force output the specified exposure.
         {
             RenderGraphTextureHandle autoExposureHistogramTexture = AddAutoExposureBuildHistogramPass(renderGraph, view, sceneColorTexture);
 
@@ -80,30 +69,31 @@ namespace Horizon
         }
 
         RenderGraphTextureHandle localExposureTexture = RenderGraphTextureHandle::Null;
-        if (isLocalExposureEnabled)
+        if (IsLocalExposureEnabled())
         {
             localExposureTexture = AddLocalExposurePass(renderGraph, view, sceneColorTexture, RenderGraphTextureHandle::Null);
         }
 
         RenderGraphTextureHandle bloomTexture = RenderGraphTextureHandle::Null;
-        if (isBloomEnabled)
+        if (IsBloomEnabled())
         {
-            if (isConvolutionBloomEnabled)
+            if (IsGaussianBloomEnabled())
             {
-                bloomTexture = AddConvolutionBloomPass(renderGraph, view, sceneColorMipChain);
+                bloomTexture = AddGaussianBloomPass(renderGraph, view, sceneColorMipChain.textures[0]);
             }
             else
             {
-                bloomTexture = AddGaussianBloomPass(renderGraph, view, sceneColorMipChain);
+                assert(IsConvolutionBloomEnabled());
+                bloomTexture = AddConvolutionBloomPass(renderGraph, view, sceneColorMipChain.textures[0]);
             }
 
-            if (isLensFlaresEnabled)
+            if (IsLensFlaresEnabled())
             {
                 bloomTexture = AddLensFlaresPass(renderGraph, view, sceneColorMipChain.textures[1], bloomTexture);
             }
         }
 
-        if (isToneMappingEnabled)
+        if (true) // Tone mapping is always enabled.
         {
             RenderGraphTextureHandle colorLUTTexture = AddColorLUTPass(renderGraph, view);
 
@@ -111,50 +101,51 @@ namespace Horizon
 
             sceneColorTexture = AddToneMappingPass(renderGraph, view, sceneColorTexture, bloomTexture, colorLUTTexture, localExposureTexture, autoExposureBuffer, outputInHDR);
         }
+
         RenderGraphTextureHandle sceneColorTextureAfterToneMapping = sceneColorTexture;
 
 #if WITH_HORIZON_EDITOR
-        if (isEditorSelectionOutlineEnabled)
-        {
-            sceneColorTexture = AddEditorSelectionOutlinePass(renderGraph, view, sceneColorTexture);
-        }
-
-        /*if (isEditorGizmosEnabled)
-        {
-            sceneColorTexture = AddEditorGizmosPass(renderGraph, view, sceneColorTexture);
-        }*/
+        // if (isEditorSelectionOutlineEnabled)
+        // {
+        //     sceneColorTexture = AddEditorSelectionOutlinePass(renderGraph, view, sceneColorTexture);
+        // }
+        //
+        // if (isEditorGizmosEnabled)
+        // {
+        //     sceneColorTexture = AddEditorGizmosPass(renderGraph, view, sceneColorTexture);
+        // }
 #endif
+
         if (isVisualizePrimitiveIDEnabled)
         {
             sceneColorTexture = AddVisualizePrimitiveIDPass(renderGraph, view);
         }
-        else if (isVisualizeMaterialIDEnabled)
+        if (isVisualizeMaterialIDEnabled)
         {
             sceneColorTexture = AddVisualizeMaterialIDPass(renderGraph, view);
         }
-        else if (isVisualizeWorldSpaceNormalEnabled)
+        if (isVisualizeWorldSpaceNormalEnabled)
         {
             sceneColorTexture = AddVisualizeWorldSpaceNormalPass(renderGraph, view);
         }
-        else if (isVisualizeMotionVectorsEnabled)
+        if (isVisualizeMotionVectorsEnabled)
         {
             sceneColorTexture = AddVisualizeMotionVectorsPass(renderGraph, view);
         }
-        else if (isVisualizeAmbientOcclusionEnabled)
+        if (isVisualizeAmbientOcclusionEnabled)
         {
             sceneColorTexture = AddVisualizeAmbientOcclusionPass(renderGraph, view);
         }
-        else if (isVisualizeShadowMaskEnabled)
+        if (isVisualizeShadowMaskEnabled)
         {
             sceneColorTexture = AddVisualizeShadowMaskPass(renderGraph, view, sceneColorTexture);
         }
 
-        // TODO
-        auto& finalTextureData = renderGraph.blackboard.Get<RenderGraphFinalTexture>();
-        finalTextureData.finalTexture = sceneColorTexture;
+        sceneTextures.hudLessColorTexture = sceneColorTexture;
 
         // TODO: distortion, screenshot
 
+#if 0
         if (false)
         {
             renderGraph.AddPass("DebugDrawLinesPass", RenderGraphPassFlags::Graphics,
@@ -195,5 +186,6 @@ namespace Horizon
                     };
                 });
         }
+#endif
     }
 }

@@ -42,6 +42,12 @@ namespace Horizon
         }
     }
 
+    bool RealTimeRenderer::IsDepthOfFieldEnabled() const
+    {
+        return features.enableDepthOfField;
+    }
+
+#if 0
     RenderGraphTextureHandle RealTimeRenderer::AddDepthOfFieldPass(
         RenderGraph& renderGraph,
         const SceneView& view,
@@ -215,4 +221,5 @@ namespace Horizon
 
         return depthOfFieldOutputTexture;
     }
+#endif
 }

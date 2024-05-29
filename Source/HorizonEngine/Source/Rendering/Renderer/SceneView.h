@@ -262,8 +262,6 @@ namespace Horizon
             perFrameShaderParameters.nonJitteredPrevInvViewProjectionMatrix = nonJitteredPrevInvViewProjectionMatrix;
         }
 
-    private:
-
         /**
          * The scene to be rendered.
          */

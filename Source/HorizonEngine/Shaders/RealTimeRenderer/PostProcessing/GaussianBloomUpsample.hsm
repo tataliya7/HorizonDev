@@ -26,9 +26,9 @@ void GaussianBloomUpsampleCS(uint3 DispatchThreadID : SV_DispatchThreadID)
     Texture2D lowResolutionInputTexture = GetLowResolutionInputTextureSRV();
     RWTexture2D<float3> outputTexture = GetOutputTextureUAV();
 
+    float radius = perFrameData.bloomRadius;
     float outputTextureInvWidth = SHADER_ARGUMENTS_DATA(0);
     float outputTextureInvHeight = SHADER_ARGUMENTS_DATA(1);
-    float radius = SHADER_ARGUMENTS_DATA(2);
 
     float2 outputTextureInvSize = float2(outputTextureInvWidth, outputTextureInvHeight);
 
