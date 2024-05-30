@@ -48,7 +48,7 @@ void RayTracingShadowsRayGen()
     // Reconstruct world position from the depth buffer
     float2 pixelCenter = pixelCoord + 0.5;
     float2 uv = pixelCenter / float2(launchDimensions.xy);
-    float3 worldSpacePosition = ReconstructWorldSpacePositionFromDepth(uv, depth, perFrameParameters.invViewProjectionMatrix);
+    float3 worldSpacePosition = ReconstructWorldSpacePositionFromDepth(uv, depth, perFrameParameters.clipToWorldMatrix);
 
     uint randSeed = RandInit(launchIndex.x + launchIndex.y * launchDimensions.x, perFrameParameters.frameIndex);
 

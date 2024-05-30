@@ -112,19 +112,19 @@ namespace Horizon
             shaderLibrary->LoadShader(ShaderID::VisibilityBufferPS, shaderDesc);
         }
         {
-            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Amplification, "Shaders/RealTimeRenderer/VisibilityBufferMeshShading.hsm", "VisibilityBufferAS");
-            shaderLibrary->LoadShader(ShaderID::VisibilityBufferMeshShadingAS, shaderDesc);
+            //ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Amplification, "Shaders/RealTimeRenderer/VisibilityBufferMeshShading.hsm", "VisibilityBufferAS");
+            //shaderLibrary->LoadShader(ShaderID::VisibilityBufferMeshShadingAS, shaderDesc);
         }
         {
-            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Mesh, "Shaders/RealTimeRenderer/VisibilityBufferMeshShading.hsm", "VisibilityBufferMS");
-            shaderLibrary->LoadShader(ShaderID::VisibilityBufferMeshShadingMS, shaderDesc);
+            //ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Mesh, "Shaders/RealTimeRenderer/VisibilityBufferMeshShading.hsm", "VisibilityBufferMS");
+            //shaderLibrary->LoadShader(ShaderID::VisibilityBufferMeshShadingMS, shaderDesc);
         }
         {
-            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Pixel, "Shaders/RealTimeRenderer/VisibilityBufferMeshShading.hsm", "VisibilityBufferPS");
-            shaderLibrary->LoadShader(ShaderID::VisibilityBufferMeshShadingPS, shaderDesc);
+            //ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Pixel, "Shaders/RealTimeRenderer/VisibilityBufferMeshShading.hsm", "VisibilityBufferPS");
+            //shaderLibrary->LoadShader(ShaderID::VisibilityBufferMeshShadingPS, shaderDesc);
         }
         {
-            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Pixel, "Shaders/RealTimeRenderer/BuildHZB.hsm", "BuildHZBCS");
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/BuildHZB.hsm", "BuildHZBCS");
             shaderDesc.AddDefine("SHADOW_MAP_TYPE", 0);
             shaderLibrary->LoadShader(ShaderID::BuildHZB, shaderDesc);
         }
@@ -297,24 +297,24 @@ namespace Horizon
             shaderLibrary->LoadShader(ShaderID::LightShaftsApply, shaderDesc);
         }
         {
-            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/TemporalSuperSampling.hsm", "TemporalSuperSamplingCS");
-            shaderLibrary->LoadShader(ShaderID::TemporalSuperSampling, shaderDesc);
+            //ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/TemporalSuperSampling.hsm", "TemporalSuperSamplingCS");
+            //shaderLibrary->LoadShader(ShaderID::TemporalSuperSampling, shaderDesc);
         }
         {
-            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/PostProcessing/DepthOfFieldSetup.hsm", "DepthOfFieldSetupCS");
-            shaderLibrary->LoadShader(ShaderID::DepthOfFieldSetup, shaderDesc);
+            //ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/PostProcessing/DepthOfFieldSetup.hsm", "DepthOfFieldSetupCS");
+            //shaderLibrary->LoadShader(ShaderID::DepthOfFieldSetup, shaderDesc);
         }
         {
-            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/PostProcessing/DepthOfFieldGather.hsm", "DepthOfFieldGatherCS");
-            shaderLibrary->LoadShader(ShaderID::DepthOfFieldGather, shaderDesc);
+            //ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/PostProcessing/DepthOfFieldGather.hsm", "DepthOfFieldGatherCS");
+            //shaderLibrary->LoadShader(ShaderID::DepthOfFieldGather, shaderDesc);
         }
         {
-            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/PostProcessing/DepthOfFieldPostfilter.hsm", "DepthOfFieldPostfilterCS");
-            shaderLibrary->LoadShader(ShaderID::DepthOfFieldPostfilter, shaderDesc);
+            //ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/PostProcessing/DepthOfFieldPostfilter.hsm", "DepthOfFieldPostfilterCS");
+            //shaderLibrary->LoadShader(ShaderID::DepthOfFieldPostfilter, shaderDesc);
         }
         {
-            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/PostProcessing/DepthOfFieldRecombine.hsm", "DepthOfFieldRecombineCS");
-            shaderLibrary->LoadShader(ShaderID::DepthOfFieldRecombine, shaderDesc);
+            //ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/PostProcessing/DepthOfFieldRecombine.hsm", "DepthOfFieldRecombineCS");
+            //shaderLibrary->LoadShader(ShaderID::DepthOfFieldRecombine, shaderDesc);
         }
         {
             ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/PostProcessing/AutoExposureBuildHistogram.hsm", "AutoExposureBuildHistogramCS");
@@ -340,26 +340,26 @@ namespace Horizon
             ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/PostProcessing/ConvolutionBloomResizeKernel.hsm", "ConvolutionBloomResizeKernelCS");
             shaderLibrary->LoadShader(ShaderID::ConvolutionBloomResizeKernel, shaderDesc);
         }
-        {
-            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Pixel, "Shaders/RealTimeRenderer/PostProcessing/LensFlaresGhost.hsm", "LensFlaresGhostPS");
-            shaderLibrary->LoadShader(ShaderID::LensFlaresGhost, shaderDesc);
-        }
-        {
-            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/PostProcessing/LensFlaresTileCulling.hsm", "LensFlaresTileCullingCS");
-            shaderLibrary->LoadShader(ShaderID::LensFlaresTileCulling, shaderDesc);
-        }
-        {
-            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Pixel, "Shaders/RealTimeRenderer/PostProcessing/LensFlaresGlare.hsm", "LensFlaresGlareVS");
-            shaderLibrary->LoadShader(ShaderID::LensFlaresGlareVS, shaderDesc);
-        }
-        {
-            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Pixel, "Shaders/RealTimeRenderer/PostProcessing/LensFlaresGlare.hsm", "LensFlaresGlarePS");
-            shaderLibrary->LoadShader(ShaderID::LensFlaresGlarePS, shaderDesc);
-        }
-        {
-            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Pixel, "Shaders/RealTimeRenderer/PostProcessing/LensFlaresCombine.hsm", "LensFlaresCombinePS");
-            shaderLibrary->LoadShader(ShaderID::LensFlaresCombine, shaderDesc);
-        }
+        // {
+        //     ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Pixel, "Shaders/RealTimeRenderer/PostProcessing/LensFlaresGhost.hsm", "LensFlaresGhostPS");
+        //     shaderLibrary->LoadShader(ShaderID::LensFlaresGhost, shaderDesc);
+        // }
+        // {
+        //     ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/PostProcessing/LensFlaresTileCulling.hsm", "LensFlaresTileCullingCS");
+        //     shaderLibrary->LoadShader(ShaderID::LensFlaresTileCulling, shaderDesc);
+        // }
+        // {
+        //     ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Pixel, "Shaders/RealTimeRenderer/PostProcessing/LensFlaresGlare.hsm", "LensFlaresGlareVS");
+        //     shaderLibrary->LoadShader(ShaderID::LensFlaresGlareVS, shaderDesc);
+        // }
+        // {
+        //     ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Pixel, "Shaders/RealTimeRenderer/PostProcessing/LensFlaresGlare.hsm", "LensFlaresGlarePS");
+        //     shaderLibrary->LoadShader(ShaderID::LensFlaresGlarePS, shaderDesc);
+        // }
+        // {
+        //     ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Pixel, "Shaders/RealTimeRenderer/PostProcessing/LensFlaresCombine.hsm", "LensFlaresCombinePS");
+        //     shaderLibrary->LoadShader(ShaderID::LensFlaresCombine, shaderDesc);
+        // }
         {
             ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/PostProcessing/LocalExposureComputeLuminance.hsm", "LocalExposureComputeLuminanceCS");
             shaderLibrary->LoadShader(ShaderID::LocalExposureComputeLuminance, shaderDesc);
@@ -409,27 +409,27 @@ namespace Horizon
             shaderLibrary->LoadShader(ShaderID::SelectionOutlineComposite, shaderDesc);
         }
         {
-            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/PostProcessing/VisualizePrimitiveID.hsm", "VisualizePrimitiveIDCS");
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/DebugVisualization/VisualizePrimitiveID.hsm", "VisualizePrimitiveIDCS");
             shaderLibrary->LoadShader(ShaderID::VisualizePrimitiveID, shaderDesc);
         }
         {
-            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/PostProcessing/VisualizeMaterialID.hsm", "VisualizeMaterialIDCS");
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/DebugVisualization/VisualizeMaterialID.hsm", "VisualizeMaterialIDCS");
             shaderLibrary->LoadShader(ShaderID::VisualizeMaterialID, shaderDesc);
         }
         {
-            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/PostProcessing/VisualizeWorldSpaceNormal.hsm", "VisualizeWorldSpaceNormalCS");
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/DebugVisualization/VisualizeWorldSpaceNormal.hsm", "VisualizeWorldSpaceNormalCS");
             shaderLibrary->LoadShader(ShaderID::VisualizeWorldSpaceNormal, shaderDesc);
         }
         {
-            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/PostProcessing/VisualizeMotionVectors.hsm", "VisualizeMotionVectorsCS");
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/DebugVisualization/VisualizeMotionVectors.hsm", "VisualizeMotionVectorsCS");
             shaderLibrary->LoadShader(ShaderID::VisualizeMotionVectors, shaderDesc);
         }
         {
-            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/PostProcessing/VisualizeAmbientOcclusion.hsm", "VisualizeAmbientOcclusionCS");
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/DebugVisualization/VisualizeAmbientOcclusion.hsm", "VisualizeAmbientOcclusionCS");
             shaderLibrary->LoadShader(ShaderID::VisualizeAmbientOcclusion, shaderDesc);
         }
         {
-            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/PostProcessing/VisualizeScreenSpaceShadowMask.hsm", "VisualizeScreenSpaceShadowMaskCS");
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/DebugVisualization/VisualizeScreenSpaceShadowMask.hsm", "VisualizeScreenSpaceShadowMaskCS");
             shaderLibrary->LoadShader(ShaderID::VisualizeScreenSpaceShadowMask, shaderDesc);
         }
         {

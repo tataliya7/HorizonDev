@@ -31,11 +31,11 @@ void ScreenSpaceShadowsDirectionalLightCS(uint3 DispatchThreadID : SV_DispatchTh
     CascadedShadowMapShaderParameters shadowMapShaderParameters = GetCascadedShadowMapShaderParameters();
 
     float sceneDepth = sceneDepthTexture[pixelCoord].r;
-    float3 worldSpacePosition = ReconstructWorldSpacePositionFromDepth(uv, sceneDepth, perFrameParameters.invViewProjectionMatrix);
-    float4 cameraSpacePosition = mul(perFrameParameters.viewMatrix, float4(worldSpacePosition, 1.0));
+    float3 worldSpacePosition = ReconstructWorldSpacePositionFromDepth(uv, sceneDepth, perFrameParameters.clipToWorldMatrix);
+    float4 cameraSpacePosition = mul(perFrameParameters.viewToClipMatrix, float4(worldSpacePosition, 1.0));
     uint cascadeIndex = CalculateCascadeIndex(cameraSpacePosition.z, shadowMapShaderParameters);
 
-    float4 shadowMapCoord = mul(shadowMapShaderParameters.viewProjectionMatrix[cascadeIndex], float4(worldSpacePosition, 1.0));
+    float4 shadowMapCoord = mul(shadowMapShaderParameters.worldToClipMatrix[cascadeIndex], float4(worldSpacePosition, 1.0));
     shadowMapCoord /= shadowMapCoord.w;
     shadowMapCoord.x = (1.0 + shadowMapCoord.x) * 0.5;
     shadowMapCoord.y = (1.0 - shadowMapCoord.y) * 0.5;

@@ -70,9 +70,9 @@ float2 ClipSpaceToUV(float2 xy)
     return uv;
 }
 
-float3 ViewSpaceToClipSpacePosition(float3 position, float4x4 projectionMatrix)
+float3 ViewSpaceToClipSpacePosition(float3 position, float4x4 viewToClipMatrix)
 {
-    float4 clipSpacePosition = mul(projectionMatrix, float4(position, 1.0));
+    float4 clipSpacePosition = mul(viewToClipMatrix, float4(position, 1.0));
     return float3(clipSpacePosition.xyz / clipSpacePosition.w);
 }
 

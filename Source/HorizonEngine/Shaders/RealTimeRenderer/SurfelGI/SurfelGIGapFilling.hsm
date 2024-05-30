@@ -59,7 +59,7 @@ void SurfelGIGapFillingCS(
         return;
     }
 
-    float3 worldSpacePosition = ReconstructWorldSpacePositionFromDepth(uv, sceneDepth, perFrameParameters.invViewProjectionMatrix);
+    float3 worldSpacePosition = ReconstructWorldSpacePositionFromDepth(uv, sceneDepth, perFrameParameters.clipToWorldMatrix);
 
     float4 gbuffer0Data = gbuffer0.SampleLevel(GlobalSamplerPointClamp, uv, 0);
     float3 worldSpaceNormal = DecodeNormalFromONV(gbuffer0Data.xy);

@@ -4,7 +4,7 @@
 
 struct CascadedShadowMapShaderParameters
 {
-    float4x4 viewProjectionMatrix[MAX_NUM_SHADOW_MAP_CASCADES];
+    float4x4 worldToClipMatrix[MAX_NUM_SHADOW_MAP_CASCADES];
     float splitDepth[MAX_NUM_SHADOW_MAP_CASCADES];
     uint numCascades;
     // float shadowMapInvSize;
@@ -12,7 +12,7 @@ struct CascadedShadowMapShaderParameters
 
 struct CubeShadowMapShaderParameters
 {
-    float4x4 viewProjectionMatrix[6];
+    float4x4 worldToClipMatrix[6];
 };
 
 static const float2 PoissonOffsets[32] = {

@@ -305,11 +305,11 @@ float4 ComputeClipSpacePosition(float2 uv, float depth)
     return float4(uv.x * 2.0 - 1.0, (1.0 - uv.y) * 2.0 - 1.0, depth, 1.0);
 }
 
-float3 ReconstructWorldSpacePositionFromDepth(float2 uv, float depth, float4x4 invViewProjectionMatrix)
+float3 ReconstructWorldSpacePositionFromDepth(float2 uv, float depth, float4x4 clipToWorldMatrix)
 {
     float2 xy = float2(uv.x * 2.0 - 1.0, (1.0 - uv.y) * 2.0 - 1.0);
     float4 clipSpacePosition = float4(xy, depth, 1.0);
-    float4 position = mul(invViewProjectionMatrix, clipSpacePosition);
+    float4 position = mul(clipToWorldMatrix, clipSpacePosition);
     return position.xyz / position.w;
 }
 

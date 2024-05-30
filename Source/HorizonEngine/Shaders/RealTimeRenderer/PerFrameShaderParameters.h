@@ -113,6 +113,7 @@ struct PerFrameShaderParameters
     float chromaticAberrationIntensity;
     float chromaticAberrationOffset;
     float whiteBalance;
+    //float3 lensDirtScaleFactor;
     //float4 colorCorrectionSaturation;
     //float4 colorCorrectionContrast;
     //float4 colorCorrectionGamma;

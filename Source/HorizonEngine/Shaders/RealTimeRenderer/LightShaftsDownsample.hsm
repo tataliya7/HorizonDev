@@ -24,10 +24,10 @@ void LightShaftsDownsampleCS(uint3 DispatchThreadID : SV_DispatchThreadID)
     RWTexture2D<float3> outputTexture = GetOutputTextureUAV();
 
     LightShaftsDownsapmpleShaderArguments parameters = (LightShaftsDownsapmpleShaderArguments)0;
-    parameters.aspectRatio = SHADER_ARGUMENTS_DATA(2);
-    parameters.TextureSpaceBlurOrigin;
-    parameters.BloomTintAndThreshold;
-    parameters.LightShaftParameters;
+    // parameters.AspectRatioAndInvAspectRatio = SHADER_ARGUMENTS_DATA(2);
+    // parameters.TextureSpaceBlurOrigin;
+    // parameters.BloomTintAndThreshold;
+    // parameters.LightShaftParameters;
 
     uint outputTextureWidth, outputTextureHeight;
     outputTexture.GetDimensions(outputTextureWidth, outputTextureHeight);

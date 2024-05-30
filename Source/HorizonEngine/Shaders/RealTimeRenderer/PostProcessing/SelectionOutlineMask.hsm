@@ -1,5 +1,5 @@
-#include "../ShaderCommon.hsh"
-#include "RealTimeRendererCommon.hsh"
+#include "../../ShaderCommon.hsh"
+#include "../RealTimeRendererCommon.hsh"
 #include "PostProcessingCommon.hsh"
 #include "SelectionOutlineCommon.hsh"
 
@@ -21,7 +21,7 @@ void SelectionOutlineMaskVS(uint vertexIndex : SV_VertexID, out float4 svPositio
     float3 vertexPosition = GetVertexPosition(vertexIndex);
     float4x4 worldMatrix = GetRWByteAddressBuffer(geometry.transformBuffer).Load<float4x4>(geometry.transformIndex * sizeof(float4x4));
     float3 worldPosition = mul(worldMatrix, float4(vertexPosition, 1.0)).xyz;
-    float4 clipPosition = mul(perFrameParameters.nonJitteredViewProjectionMatrix, float4(worldPosition, 1.0));
+    float4 clipPosition = mul(perFrameParameters.nonJitteredWorldToClipMatrix, float4(worldPosition, 1.0));
     svPosition = clipPosition;
 }
 

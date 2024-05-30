@@ -165,7 +165,7 @@ namespace Horizon
         std::vector<LPCWSTR> arguments =
         {
             filename.c_str(),
-            entryPoint.c_str(),
+            L"-E", entryPoint.c_str(),
             L"-T", targetProfile.c_str(),
         };
 
@@ -270,7 +270,7 @@ namespace Horizon
         };
 
         Microsoft::WRL::ComPtr<IDxcResult> dxcResult = nullptr;
-        hr = dxcCompiler->Compile(&dxcBuffer, arguments.data(), static_cast<UINT32>(arguments.size()), &includeHandler, IID_PPV_ARGS(&dxcResult));
+        hr = dxcCompiler->Compile(&dxcBuffer, dxcCompilerArgs->GetArguments(), dxcCompilerArgs->GetCount(), &includeHandler, IID_PPV_ARGS(&dxcResult));
         assert(dxcResult != nullptr);
 
         Microsoft::WRL::ComPtr<IDxcBlobUtf8> dxcErrorBlob = nullptr;

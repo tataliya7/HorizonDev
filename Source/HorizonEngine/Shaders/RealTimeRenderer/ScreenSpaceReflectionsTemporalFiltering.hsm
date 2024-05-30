@@ -26,12 +26,12 @@ inline bool is_saturated(float2 a) { return all(a == saturate(a)); }
 inline bool is_saturated(float3 a) { return all(a == saturate(a)); }
 inline bool is_saturated(float4 a) { return all(a == saturate(a)); }
 
-float2 CalculateReprojectionBuffer(float2 uv, float depth, float4x4 invViewProjectionMatrix, float4x4 prevViewProjectionMatrix)
+float2 CalculateReprojectionBuffer(float2 uv, float depth, float4x4 clipToWorldMatrix, float4x4 previousWorldToClipMatrix)
 {
     float2 screenPosition = uv_to_clipspace(uv);
     float4 currClipPosition = float4(screenPosition, depth, 1);
-    float4 worldPosition = mul(currClipPosition, invViewProjectionMatrix);
-    float4 prevClipPosition = mul(worldPosition, prevViewProjectionMatrix);
+    float4 worldPosition = mul(currClipPosition, clipToWorldMatrix);
+    float4 prevClipPosition = mul(worldPosition, previousWorldToClipMatrix);
     float2 prevScreenPosition = prevClipPosition.xy / prevClipPosition.w;
     return clipspace_to_uv(prevScreenPosition);
 }
@@ -197,7 +197,7 @@ void SSRTemporalFilteringCS(uint3 DispatchThreadID : SV_DispatchThreadID)
     float2 uv = (DispatchThreadID.xy + 0.5f) * float2(1.0 / resolution.x, 1.0 / resolution.y);
 
     float2 prevUVVelocity = uv + velocity;
-    float2 prevUVReflectionHit = CalculateReprojectionBuffer(uv, reprojectionDepth, perFrameParameters.invViewProjectionMatrix, perFrameParameters.prevViewProjectionMatrix);
+    float2 prevUVReflectionHit = CalculateReprojectionBuffer(uv, reprojectionDepth, perFrameParameters.clipToWorldMatrix, perFrameParameters.previousWorldToClipMatrix);
 
     float4 previousColorVelocity = historyOutputTexture.SampleLevel(GlobalSamplerLinearClamp, prevUVVelocity, 0);
     float4 previousColorReflectionHit = historyOutputTexture.SampleLevel(GlobalSamplerLinearClamp, prevUVReflectionHit, 0);

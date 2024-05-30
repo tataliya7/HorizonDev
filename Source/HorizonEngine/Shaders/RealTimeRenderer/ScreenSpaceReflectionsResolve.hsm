@@ -89,7 +89,7 @@ void ScreenSpaceReflectionsResolveCS(uint3 DispatchThreadID : SV_DispatchThreadI
         return;
     }
 
-    const float3 P = ReconstructWorldSpacePositionFromDepth(uv, depth, perFrameParameters.invViewProjectionMatrix);
+    const float3 P = ReconstructWorldSpacePositionFromDepth(uv, depth, perFrameParameters.clipToWorldMatrix);
     const float3 N = gbuffer1[coord].rgb;
     const float3 V = normalize(perFrameParameters.cameraPosition - P);
     const float NdotV = saturate(dot(N, V));

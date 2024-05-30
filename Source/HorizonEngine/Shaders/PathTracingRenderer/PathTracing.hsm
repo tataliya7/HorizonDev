@@ -147,8 +147,8 @@ void PathTracingRG()
     float throughput = 1.0f;
 
     // Create camera ray
-    float4 nearPoint = mul(perFrameParameters.invViewProjectionMatrix, float4(position, 1.0f, 1.0f));
-    float4 farPoint = mul(perFrameParameters.invViewProjectionMatrix, float4(position, 0.0f, 1.0f));
+    float4 nearPoint = mul(perFrameParameters.clipToWorldMatrix, float4(position, 1.0f, 1.0f));
+    float4 farPoint = mul(perFrameParameters.clipToWorldMatrix, float4(position, 0.0f, 1.0f));
     float3 rayOrigin = nearPoint.xyz / nearPoint.w;
     float3 rayDirection = normalize(farPoint.xyz / farPoint.w - nearPoint.xyz / nearPoint.w);
 

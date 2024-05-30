@@ -43,6 +43,8 @@ void SubsurfaceScatteringRecombinePS(SubsurfaceScatteringRecombineVSOutput vsOut
         return;
     }
 
+    float3 baseColor = 0;
+
     float3 subsurfaceScatteringColor = burleyNormalizedTexture.SampleLevel(GlobalSamplerPointBorder, uv, 0).rgb;
 
     SubsurfaceScatteringDiffuseAndSpecluar diffuseAndSpecluar = ReconstructDiffuseAndSpecluar(sceneColor.rgb, sceneColor.a);

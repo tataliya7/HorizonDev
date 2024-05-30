@@ -52,7 +52,7 @@ VertexAttributes GetVertexAttributes(PerFrameShaderParameters perFrameParameters
     float4x4 worldMatrix = transformBuffer.Load<float4x4>(geometry.transformIndex * sizeof(float4x4));
     float3 vertexPosition = GetRWByteAddressBuffer(geometry.vertexBuffer0).Load<float3>(index0 * sizeof(float3));
     float3 positionWS = mul(worldMatrix, float4(vertexPosition, 1.0f)).xyz;
-    float4 positionHS = mul(perFrameParameters.viewProjectionMatrix, float4(positionWS, 1.0f));
+    float4 positionHS = mul(perFrameParameters.worldToClipMatrix, float4(positionWS, 1.0f));
 #else
     float4 positionHS = 0;
 #endif

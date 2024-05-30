@@ -1,6 +1,6 @@
-#include "../ShaderCommon.hsh"
-#include "../ACES.hsh"
-#include "RealTimeRendererCommon.hsh"
+#include "../../ShaderCommon.hsh"
+#include "../../ACES.hsh"
+#include "../RealTimeRendererCommon.hsh"
 #include "PostProcessingCommon.hsh"
 #include "ToneMappingCommon.hsh"
 #include "ColorLUTCommon.hsh"
@@ -116,7 +116,7 @@ void ColorLUTCS(uint3 DispatchThreadID : SV_DispatchThreadID)
     PerFrameShaderParameters perFrameParameters = GetPerFrameShaderParameters();
     RWTexture3D<float4> colorLUTTexture = GetColorLUTTextureUAV();
 
-    float whiteBalanceColorTemperature = perFrameParameters.colorGradingWhiteBalanceColorTemperature;
+    float whiteBalanceColorTemperature = perFrameParameters.whiteBalance;
 
     uint3 pixelCoord = DispatchThreadID;
 

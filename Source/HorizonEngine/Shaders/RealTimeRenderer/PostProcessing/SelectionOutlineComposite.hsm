@@ -1,5 +1,5 @@
-#include "../ShaderCommon.hsh"
-#include "RealTimeRendererCommon.hsh"
+#include "../../ShaderCommon.hsh"
+#include "../RealTimeRendererCommon.hsh"
 #include "PostProcessingCommon.hsh"
 #include "SelectionOutlineCommon.hsh"
 
@@ -13,8 +13,8 @@ void SelectionOutlineCompositeCS(uint3 DispatchThreadID : SV_DispatchThreadID)
 {
     PerFrameShaderParameters perFrameParameters = GetPerFrameShaderParameters();
     uint2 pixelCoord = DispatchThreadID.xy;
-    uint width = perFrameParameters.targetResolutionX;
-    uint height = perFrameParameters.targetResolutionY;
+    uint width = perFrameParameters.targetWidth;
+    uint height = perFrameParameters.targetHeight;
     if (pixelCoord.x >= width || pixelCoord.y >= height)
     {
         return;

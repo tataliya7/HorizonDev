@@ -1,5 +1,5 @@
-#include "../ShaderCommon.hsh"
-#include "RealTimeRendererCommon.hsh"
+#include "../../ShaderCommon.hsh"
+#include "../RealTimeRendererCommon.hsh"
 #include "AutoExposureCommon.hsh"
 
 BIND_BUFFER_ELEMENT(0, PerFrameShaderParameters, PerFrameShaderParameters);
@@ -67,7 +67,7 @@ void AutoExposureComputeExposureCS(uint3 DispatchThreadID : SV_DispatchThreadID)
 {
     PerFrameShaderParameters perFrameParameters = GetPerFrameShaderParameters();
 
-    float deltaTime = perFrameParameters.deltaTime;
+    float deltaTimeInSeconds = perFrameParameters.deltaTimeInSeconds;
     float exposureCompensation = perFrameParameters.autoExposureExposureCompensation;
     float minExposureValue = perFrameParameters.autoExposureMinExposureValue;
     float maxExposureValue = perFrameParameters.autoExposureMaxExposureValue;
@@ -97,7 +97,7 @@ void AutoExposureComputeExposureCS(uint3 DispatchThreadID : SV_DispatchThreadID)
     {
         float sourceExposure = previousAutoExposureBuffer.Load<float>(0);
         sourceExposure = exposureCompensation / (sourceExposure != 0 ? sourceExposure : 1.0f);
-        adaptedExposure = InterpolateExposure(sourceExposure, targetExposure, deltaTime, speedDarkToBright, speedBrightToDark);
+        adaptedExposure = InterpolateExposure(sourceExposure, targetExposure, deltaTimeInSeconds, speedDarkToBright, speedBrightToDark);
         adaptedExposure = clamp(adaptedExposure, minExposure, maxExposure);
     }
 

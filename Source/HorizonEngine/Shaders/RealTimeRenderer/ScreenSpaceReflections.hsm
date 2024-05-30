@@ -132,7 +132,7 @@ void ScreenSpaceReflectionsCS(uint3 GroupID : SV_GroupID, uint3 GroupThreadID : 
         return;
     }
 
-    float3 P = ReconstructWorldSpacePositionFromDepth(jitteredUV, depth, perFrameParameters.invViewProjectionMatrix);
+    float3 P = ReconstructWorldSpacePositionFromDepth(jitteredUV, depth, perFrameParameters.clipToWorldMatrix);
     float3 N = gbuffer1[jitteredPixel].rgb;
     float3 V = normalize(perFrameParameters.cameraPosition - P);
 
@@ -160,8 +160,8 @@ void ScreenSpaceReflectionsCS(uint3 GroupID : SV_GroupID, uint3 GroupThreadID : 
         L = reflect(-V, N);
     }
 
-    float4 rayStartClip = mul(perFrameParameters.viewProjectionMatrix, float4(P, 1.0));
-    float4 rayEndClip = mul(perFrameParameters.viewProjectionMatrix, float4(P + L, 1.0));
+    float4 rayStartClip = mul(perFrameParameters.worldToClipMatrix, float4(P, 1.0));
+    float4 rayEndClip = mul(perFrameParameters.worldToClipMatrix, float4(P + L, 1.0));
 
     float3 rayStartScreen = rayStartClip.xyz / rayStartClip.w;
     float3 rayEndScreen = rayEndClip.xyz / rayEndClip.w;
@@ -270,11 +270,11 @@ void ScreenSpaceReflectionsCS(uint3 GroupID : SV_GroupID, uint3 GroupThreadID : 
 
 #endif // SSR_CHEAP_RAYS
 
-    float3 worldSpaceHitPoint = ReconstructWorldSpacePositionFromDepth(hit.xy, hit.z, perFrameParameters.invViewProjectionMatrix);
+    float3 worldSpaceHitPoint = ReconstructWorldSpacePositionFromDepth(hit.xy, hit.z, perFrameParameters.clipToWorldMatrix);
     float3 worldSpaceRayDirection = normalize(worldSpaceHitPoint - P);
     float worldSpaceRayLength = length(worldSpaceHitPoint - P);
 
-    float4 worldSpaceHitPointClip = mul(perFrameParameters.viewProjectionMatrix, float4(worldSpaceHitPoint, 1.0));
+    float4 worldSpaceHitPointClip = mul(perFrameParameters.worldToClipMatrix, float4(worldSpaceHitPoint, 1.0));
     float3 worldSpaceHitPointScreen = worldSpaceHitPointClip.xyz / worldSpaceHitPointClip.w;
     float2 worldSpaceHitPointUV = clipspace_to_uv(worldSpaceHitPointScreen.xy);
 

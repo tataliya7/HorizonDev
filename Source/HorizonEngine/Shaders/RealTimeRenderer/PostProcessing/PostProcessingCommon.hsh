@@ -1,5 +1,9 @@
 #pragma once
 
+// TODO: remove this
+#define POST_PROCESSING_THREAD_GROUP_SIZE_X 8
+#define POST_PROCESSING_THREAD_GROUP_SIZE_Y 8
+
 #ifndef POST_PROCESSING_THREAD_GROUP_SIZE_X
     #error "POST_PROCESSING_THREAD_GROUP_SIZE_X must be defined"
 #endif

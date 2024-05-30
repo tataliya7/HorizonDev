@@ -1,5 +1,5 @@
-#include "../ShaderCommon.hsh"
-#include "RealTimeRendererCommon.hsh"
+#include "../../ShaderCommon.hsh"
+#include "../RealTimeRendererCommon.hsh"
 #include "PostProcessingCommon.hsh"
 
 BIND_BUFFER_ELEMENT(0, PerFrameShaderParameters, PerFrameShaderParameters);

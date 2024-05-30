@@ -30,9 +30,9 @@ void LocalLightShadowsVS(uint instanceID : SV_InstanceID, uint vertexIndex : SV_
     ByteAddressBuffer localLightShadowsBuffer = GetLocalLightShadowsBufferSRV();
     CubeShadowMapShaderParameters shadowMapParameters = localLightShadowsBuffer.Load<CubeShadowMapShaderParameters>(instanceID / 6 * sizeof(CubeShadowMapShaderParameters));
     float faceIndex = instanceID % 6;
-    float4x4 viewProjectionMatrix = shadowMapParameters.viewProjectionMatrix[faceIndex];
+    float4x4 worldToClipMatrix = shadowMapParameters.worldToClipMatrix[faceIndex];
 
-    output.svPosition = mul(viewProjectionMatrix, float4(worldPosition, 1.0));
+    output.svPosition = mul(worldToClipMatrix, float4(worldPosition, 1.0));
     output.texCoord0 = vertexTexCoord0;
     output.viewportIndex = instanceID;
     output.renderTargetIndex = 0;

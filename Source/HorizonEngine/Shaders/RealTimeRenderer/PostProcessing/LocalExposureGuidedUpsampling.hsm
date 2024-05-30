@@ -1,5 +1,5 @@
-#include "../ShaderCommon.hsh"
-#include "RealTimeRendererCommon.hsh"
+#include "../../ShaderCommon.hsh"
+#include "../RealTimeRendererCommon.hsh"
 #include "PostProcessingCommon.hsh"
 #include "ToneMappingCommon.hsh"
 
@@ -25,13 +25,14 @@ void LocalExposureGuidedUpsamplingCS(uint3 DispatchThreadID : SV_DispatchThreadI
     uint2 pixelCoord = DispatchThreadID.xy;
     float2 uv = (pixelCoord + 0.5) / float2(width, height);
 
+    PerFrameShaderParameters perFrameParameters = GetPerFrameShaderParameters();
     Texture2D sceneColorTexture = GetSceneColorTextureSRV();
     Texture2D luminanceTexture = GetLuminanceTextureSRV();
     Texture2D assembleTexture = GetAssembleTextureSRV();
 
     //Texture2D<float> autoExposureTexture = GetAutoExposureTextureSRV();
     //float exposure = autoExposureTexture[uint2(1, 0)];
-    PerFrameShaderParameters perFrameParameters = GetPerFrameShaderParameters(); float exposure = perFrameParameters.exposure;
+    float exposure = 1;//perFrameParameters.exposure;
 
     float displayMipLevel = SHADER_ARGUMENTS_DATA(0);
 

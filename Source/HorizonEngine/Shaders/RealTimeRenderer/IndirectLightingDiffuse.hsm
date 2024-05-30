@@ -1,7 +1,7 @@
 #include "../ShaderCommon.hsh"
 #include "../BRDFCommon.hsh"
-#include "../../PrincipledBSDF.hsh"
-#include "../../SphericalHarmonics.hsh"
+#include "../PrincipledBSDF.hsh"
+#include "../SphericalHarmonics.hsh"
 #include "RealTimeRendererCommon.hsh"
 #include "LightingCommon.hsh"
 

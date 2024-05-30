@@ -5,6 +5,7 @@ BIND_TEXTURE_2D_SRV(0, InputTexture);
 BIND_TEXTURE_2D_UAV(1, float4, OutputMip);
 #endif
 
+#if __SHADER_TARGET_STAGE == __SHADER_STAGE_COMPUTE
 [shader("compute")]
 [numthreads(8, 8, 1)]
 void DownsampleTexture2DCS(uint3 DispatchThreadID : SV_DispatchThreadID)
@@ -27,6 +28,7 @@ void DownsampleTexture2DCS(uint3 DispatchThreadID : SV_DispatchThreadID)
 
     outputMip[coord] = color;
 }
+#endif
 
 [shader("vertex")]
 void DownsampleTexture2DVS(uint vertexID : SV_VertexID, out float4 outPosition : SV_Position)

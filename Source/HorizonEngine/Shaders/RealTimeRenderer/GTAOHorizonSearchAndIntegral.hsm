@@ -284,7 +284,7 @@ void GTAOHorizonSearchAndIntegralCS(uint3 DispatchThreadID : SV_DispatchThreadID
     float3 worldSpaceNormal = DecodeNormalFromGBuffer(gbuffer0Data.xyz);
 
     float3 viewSpacePosition = ReconstructViewSpacePositionFromDepth(uv, sceneDepth, perFrameParameters.clipToViewMatrix);
-    float3 viewSpaceNormal = normalize(mul((float3x3)perFrameParameters.viewMatrix, worldSpaceNormal));
+    float3 viewSpaceNormal = normalize(mul((float3x3)perFrameParameters.viewToClipMatrix, worldSpaceNormal));
     float3 viewVector = normalize(-viewSpacePosition);
 
     float2 depthBufferTexelSize = perFrameParameters.renderResolution.zw;
@@ -303,8 +303,8 @@ void GTAOHorizonSearchAndIntegralCS(uint3 DispatchThreadID : SV_DispatchThreadID
     {
         float3 rayStartView = viewSpacePosition;
         float3 rayEndView = viewSpacePosition + seachRadius * float3(searchDirection.xy, 0.0);
-        float3 rayStartClip = ViewSpaceToClipSpacePosition(rayStartView, perFrameParameters.projectionMatrix);
-        float3 rayEndClip = ViewSpaceToClipSpacePosition(rayEndView, perFrameParameters.projectionMatrix);
+        float3 rayStartClip = ViewSpaceToClipSpacePosition(rayStartView, perFrameParameters.viewToClipMatrix);
+        float3 rayEndClip = ViewSpaceToClipSpacePosition(rayEndView, perFrameParameters.viewToClipMatrix);
         rayEndClip.z = rayStartClip.z;
 
         float2 rayStartScreen = ClipSpaceToUV(rayStartClip.xy);

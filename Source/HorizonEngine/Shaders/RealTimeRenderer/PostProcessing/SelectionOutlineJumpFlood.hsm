@@ -1,5 +1,5 @@
-#include "../ShaderCommon.hsh"
-#include "RealTimeRendererCommon.hsh"
+#include "../../ShaderCommon.hsh"
+#include "../RealTimeRendererCommon.hsh"
 #include "PostProcessingCommon.hsh"
 #include "SelectionOutlineCommon.hsh"
 
@@ -25,8 +25,8 @@ void SelectionOutlineJumpFloodCS(uint3 DispatchThreadID : SV_DispatchThreadID)
 {
     PerFrameShaderParameters perFrameParameters = GetPerFrameShaderParameters();
     uint2 pixelCoord = DispatchThreadID.xy;
-    uint width = perFrameParameters.targetResolutionX;
-    uint height = perFrameParameters.targetResolutionY;
+    uint width = perFrameParameters.targetWidth;
+    uint height = perFrameParameters.targetHeight;
     if (pixelCoord.x >= width || pixelCoord.y >= height)
     {
         return;
@@ -36,7 +36,7 @@ void SelectionOutlineJumpFloodCS(uint3 DispatchThreadID : SV_DispatchThreadID)
     RWTexture2D<float4> outputTexture = GetOutputTextureUAV();
 
     float stepWidth = SHADER_ARGUMENTS_DATA(0);
-    uint2 size = uint2(perFrameParameters.targetResolutionX, perFrameParameters.targetResolutionY);
+    uint2 size = uint2(perFrameParameters.targetWidth, perFrameParameters.targetHeight);
 
     float4 center = inputTexture[pixelCoord];
     [unroll] for(int sampleIndex = 0; sampleIndex < 8; sampleIndex++)

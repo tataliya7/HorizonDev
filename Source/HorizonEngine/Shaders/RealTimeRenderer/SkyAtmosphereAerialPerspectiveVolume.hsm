@@ -53,7 +53,8 @@ void SkyAtmosphereAerialPerspectiveVolumeCS(uint3 DispatchThreadID : SV_Dispatch
     uint3 pixelCoord = DispatchThreadID;
     float2 uv = (float2(pixelCoord.xy) + 0.5f) * aerialPerspectiveVolumeSize.y;
 
-    float3 worldSpaceCameraPositionKm = perFrameParameters.cameraPosition * M_TO_KM;
+    float3 worldSpaceCameraPosition = perFrameParameters.cameraPosition;
+    float3 worldSpaceCameraPositionKm = worldSpaceCameraPosition * M_TO_KM;
     float3 planetCenterWorldSpacePositionKm = float3(0.0f, 0.0f, -skyAtmosphereParameters.bottomRadius);
     float3 planetCenterToCameraKm = worldSpaceCameraPositionKm - planetCenterWorldSpacePositionKm;
 

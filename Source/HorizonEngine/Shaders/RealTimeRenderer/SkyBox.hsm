@@ -20,7 +20,7 @@ void SkyBoxVS(uint vertexIndex : SV_VertexID, out SkyBoxVSToPS output)
     float4 clipPosition = float4(uv * 2.0f - 1.0f, 1.0f, 1.0f);
 
     // If A is a rotation matrix, then inverse(A) is equal to transpose(A).
-    output.uvw = mul(transpose(ConvertFloat3x3To4x4(ConvertFloat4x4To3x3(perFrameParameters.viewMatrix))), mul(perFrameParameters.clipToViewMatrix, clipPosition)).xyz;
+    output.uvw = mul(transpose(ConvertFloat3x3To4x4(ConvertFloat4x4To3x3(perFrameParameters.viewToClipMatrix))), mul(perFrameParameters.clipToViewMatrix, clipPosition)).xyz;
     output.position = clipPosition;
     output.position.z = 0.0f; // Let the depth value always be 0.
 }

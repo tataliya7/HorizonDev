@@ -1,7 +1,7 @@
 #include "../ShaderCommon.hsh"
 #include "../BRDFCommon.hsh"
-#include "../../PrincipledBSDF.hsh"
-#include "../../SphericalHarmonics.hsh"
+#include "../PrincipledBSDF.hsh"
+#include "../SphericalHarmonics.hsh"
 #include "RealTimeRendererCommon.hsh"
 #include "LightingCommon.hsh"
 
@@ -74,7 +74,7 @@ void IndirectLightingSpecularPS(float4 svPosition : SV_Position, out float4 outS
     float sceneDepth = sceneDepthTexture[pixelCoord].r;
     float ambientOcclusion = ambientOcclusionTexture[pixelCoord].r;
 
-    float3 position = ReconstructWorldSpacePositionFromDepth(uv, sceneDepth, perFrameParameters.invViewProjectionMatrix);
+    float3 position = ReconstructWorldSpacePositionFromDepth(uv, sceneDepth, perFrameParameters.clipToWorldMatrix);
     float3 normal = DecodeNormalFromGBuffer(gbuffer0Data.xyz);
     float metallic = gbuffer1Data.x;
     float specular = gbuffer1Data.y;

@@ -1,6 +1,6 @@
 #include "../ShaderCommon.hsh"
 #include "../BRDFCommon.hsh"
-#include "../../PrincipledBSDF.hsh"
+#include "../PrincipledBSDF.hsh"
 #include "RealTimeRendererCommon.hsh"
 #include "LightingCommon.hsh"
 #include "ShadowMapCommon.hsh"
@@ -208,7 +208,7 @@ float3 ComputeDirectLightingContribution(PerFrameShaderParameters perFrameParame
                 Texture2DArray<float> localLightShadowMapAtlas = GetLocalLightShadowMapAtlasSRV();
                 float3 uvw = WorldSpaceDirectionToCubemapUvAndFaceIndex(-L);
                 int faceIndex = (int)uvw.z;
-                float4 shadowMapCoord = mul(cubeShadowMapParameters.viewProjectionMatrix[faceIndex], float4(surface.P, 1.0));
+                float4 shadowMapCoord = mul(cubeShadowMapParameters.worldToClipMatrix[faceIndex], float4(surface.P, 1.0));
                 shadowMapCoord /= shadowMapCoord.w;
                 shadowMapCoord.x = (1.0 + shadowMapCoord.x) * 0.5;
                 shadowMapCoord.y = (1.0 - shadowMapCoord.y) * 0.5;
@@ -364,7 +364,7 @@ void DirectLightingPS(float4 svPosition : SV_Position, out float4 outSceneColor 
     ByteAddressBuffer materialBuffer = GetMaterialBufferSRV();
     Material material = materialBuffer.Load<Material>(geometry.materialBufferOffset + (materialIndex * sizeof(Material)));
 
-    float3 position = ReconstructWorldSpacePositionFromDepth(uv, sceneDepth, perFrameParameters.invViewProjectionMatrix);
+    float3 position = ReconstructWorldSpacePositionFromDepth(uv, sceneDepth, perFrameParameters.clipToWorldMatrix);
     float3 normal = DecodeNormalFromGBuffer(gbuffer0Data.xyz);
     float metallic = gbuffer1Data.x;
     float specular = gbuffer1Data.y;

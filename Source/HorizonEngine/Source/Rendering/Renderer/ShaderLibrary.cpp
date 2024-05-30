@@ -33,6 +33,8 @@ namespace Horizon
         };
 
         this->hotReloadEnabled = true;
+
+        loadedShaders.resize((size_t)ShaderID::Count);
     }
 
     ShaderLibrary::~ShaderLibrary()
@@ -132,7 +134,7 @@ namespace Horizon
 
             if (succeed)
             {
-                LogError(GLogger, std::format("Shader compilation succeeded. Path: {}, Entry Point: {}.", filename, desc.entryFunctionName));
+                //LogInfo(GLogger, std::format("Shader compilation succeeded. Path: {}, Entry Point: {}.", filename, desc.entryFunctionName));
                 for (const std::string& f : compilerOutput.includedFiles)
                 {
                     relatedFiles.insert(f);

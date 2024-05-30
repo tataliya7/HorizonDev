@@ -32,7 +32,7 @@ struct ImGuiVSOutput
 };
 
 [shader("vertex")]
-void ImGuiVS(uint vertexID : SV_VertexID, out UIColorAndAlphaVSOutput output)
+void ImGuiVS(uint vertexID : SV_VertexID, out ImGuiVSOutput output)
 {
     int vertexOffset = ShaderArguments.vertexOffset;
     float2 scale = ShaderArguments.scale;
@@ -49,7 +49,7 @@ void ImGuiVS(uint vertexID : SV_VertexID, out UIColorAndAlphaVSOutput output)
 }
 
 [shader("pixel")]
-void ImGuiPS(UIColorAndAlphaVSOutput input, out float4 color : SV_Target)
+void ImGuiPS(ImGuiVSOutput input, out float4 color : SV_Target)
 {
     Texture2D texture = GetImGuiTextureSRV();
     color = input.color * texture.SampleLevel(GlobalSamplerLinearWarp, input.texCoord0, 0);
