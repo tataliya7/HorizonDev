@@ -121,6 +121,8 @@ namespace Horizon
         swapChain = renderBackend->CreateSwapChain(&swapChainDesc);
         swapChainWidth = window->GetWidth();
         swapChainHeight = window->GetHeight();
+
+        shaderLibrary = new ShaderLibrary();
 //
 //        ShaderGraphSystemInit();
 //
@@ -171,6 +173,8 @@ namespace Horizon
         editorCamera.Update(deltaTimeInSeconds);
 
         sceneView->SetRenderSettings(renderSettings);
+
+        shaderLibrary->HotReload();
 
         // RenderBackendCommandList* commandList = renderBackend->AllocateCommandList();
         //

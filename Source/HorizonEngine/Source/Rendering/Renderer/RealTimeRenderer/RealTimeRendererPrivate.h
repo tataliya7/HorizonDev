@@ -1,18 +1,18 @@
 #pragma once
 
-#include "Core/CoreModule.h"
-
-enum
-{
-    RendererMaxLightCount = 128,
-    RendererMaxShadowMapCascadeCount = 4,
-    RendererMaxCascadedShadowMapCount = 2,
-    RendererMaxCubeShadowMapCount = 8,
-    RendererMaxMaterialTextureSlotCount = 16,
-};
+#include "RealTimeRendererCommon.h"
 
 namespace Horizon
 {
+    enum
+    {
+        RendererMaxLightCount = 128,
+        RendererMaxShadowMapCascadeCount = 4,
+        RendererMaxCascadedShadowMapCount = 2,
+        RendererMaxCubeShadowMapCount = 8,
+        RendererMaxMaterialTextureSlotCount = 16,
+    };
+
     //static const Matrix4x4 CubeFaceMatrices[6] =
     //{
     //    /* +X */

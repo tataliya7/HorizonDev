@@ -433,12 +433,8 @@ namespace Horizon
             shaderLibrary->LoadShader(ShaderID::VisualizeScreenSpaceShadowMask, shaderDesc);
         }
         {
-            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Vertex, "Shaders/RealTimeRenderer/GUIComposition.hsm", "GUICompositionVS");
-            shaderLibrary->LoadShader(ShaderID::GUIComposition, shaderDesc);
-        }
-        {
             ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Pixel, "Shaders/RealTimeRenderer/GUIComposition.hsm", "GUICompositionPS");
-            shaderLibrary->LoadShader(ShaderID::GUIComposition, shaderDesc);
+            shaderLibrary->LoadShader(ShaderID::GUICompositionPS, shaderDesc);
         }
     }
 }

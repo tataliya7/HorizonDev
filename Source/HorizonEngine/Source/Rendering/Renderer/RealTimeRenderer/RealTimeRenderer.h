@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Rendering/Renderer/RealTimeRenderer/RealTimeRendererCommon.h"
-#include "Rendering/Renderer/RealTimeRenderer/PostProcessing/PostProcessing.h"
+#include "RealTimeRendererCommon.h"
+#include "PostProcessing/PostProcessing.h"
 
 namespace Horizon
 {
@@ -111,9 +111,9 @@ namespace Horizon
     {
     public:
 
-        RealTimeRenderer(SceneView* view);
+        RealTimeRenderer();
 
-        ~RealTimeRenderer();
+        virtual ~RealTimeRenderer();
 
         void Render(RenderGraph& renderGraph) override;
 
@@ -136,6 +136,8 @@ namespace Horizon
         bool IsScreenSpaceReflectionsEnabled() const;
 
         bool IsScreenSpaceAmbientOcclusionEnabled() const;
+
+        bool IsScreenSpaceLightShaftsEnabled() const;
 
         bool IsRayTracingShadowsEnabled() const;
 
@@ -232,7 +234,7 @@ namespace Horizon
             RenderGraph& renderGraph,
             const SceneView& view);
 
-        void RenderHZB(
+        void RenderDepthPyramid(
             RenderGraph& renderGraph,
             const SceneView& view,
             uint32 hzbWidth,
@@ -255,9 +257,13 @@ namespace Horizon
             RenderGraph& renderGraph,
             const SceneView& view);
 
-        void RenderSkyAtmosphereLUTs(RenderGraph& renderGraph);
+        void RenderSkyAtmosphereLUTs(
+            RenderGraph& renderGraph,
+            const SceneView& view);
 
-        void RenderSkyAtmosphere(RenderGraph& renderGraph);
+        void RenderSkyAtmosphere(
+            RenderGraph& renderGraph,
+            const SceneView& view);
 
         void AddSkyAtmosphereDebugVisualizationPass();
 
@@ -308,25 +314,6 @@ namespace Horizon
             RenderGraphTextureHandle localExposureTexture,
             RenderGraphBufferHandle autoExposureBuffer,
             bool outputInHDR);
-
-        RenderGraphTextureHandle AddFSR2Pass(
-            RenderGraph& renderGraph,
-            const SceneView& view,
-            RenderGraphTextureHandle sceneColorTexture,
-            RenderGraphTextureHandle sceneDepthTexture,
-            RenderGraphTextureHandle motionVectorTexture);
-
-        RenderGraphTextureHandle AddDLSSPass(
-            RenderGraph& renderGraph,
-            const SceneView& view,
-            RenderGraphTextureHandle sceneColorTexture,
-            RenderGraphTextureHandle sceneDepthTexture,
-            RenderGraphTextureHandle motionVectorTexture);
-
-        //RenderGraphTextureHandle AddFXAAPass(
-        //    RenderGraph& renderGraph,
-        //    const SceneView& view,
-        //    RenderGraphTextureHandle sceneColor);
 
         //void DenoiseShadowMaskSSD(
         //    RenderGraph& renderGraph,
@@ -400,15 +387,17 @@ namespace Horizon
             const SceneView& view,
             RenderGraphTextureHandle sceneColorTexture);
 
-        RenderGraphTextureHandle RenderUI(
+        RenderGraphTextureHandle RenderUserInterface(
             RenderGraph& renderGraph,
             const SceneView& view);
 
+        RenderBackend* renderBackend;
         ShaderCompiler* shaderCompiler;
         ShaderLibrary* shaderLibrary;
         RenderGraphResourcePool* resourcePool;
         RendererDefaultResources* defaultResources;
         PostProcessingSettings finalPostProcessingSettings;
+        SceneView& view;
 
         struct RenderFeatures
         {

@@ -15,6 +15,8 @@ namespace Horizon
     public:
         LightRenderProxy();
         virtual ~LightRenderProxy();
+
+        virtual bool CastRayTracingShadows() const { return false; }
     private:
     };
 
@@ -44,8 +46,14 @@ namespace Horizon
             return atmosphericLightDiskColorFactor;
         }
 
+        bool CastRayTracingShadows() const override
+        {
+            return castRayTracingShadows;
+        }
+
     private:
         Vector3 direction;
+        bool castRayTracingShadows;
         float halfApexAngleInRadians;
         Vector3 atmosphericLightDiskColorFactor;
     };
@@ -66,9 +74,12 @@ namespace Horizon
     private:
     };
 
-    class EnvironmentLight
+    class SkyLightRenderProxy
     {
-
+    public:
+        SkyLightRenderProxy();
+        virtual ~SkyLightRenderProxy();
+    private:
     };
 
     class LocalFogVolumeRenderProxy

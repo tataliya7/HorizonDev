@@ -7,6 +7,6 @@ namespace Horizon
     class EditorSceneManager
     {
     public:
-        Scene* GetActiveScene() const;
+        //Scene* GetActiveScene() const;
     };
 }

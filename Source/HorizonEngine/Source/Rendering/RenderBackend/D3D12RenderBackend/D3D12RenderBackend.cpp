@@ -2541,11 +2541,11 @@ namespace Horizon
         return true;
     }
 
-    bool D3D12RenderBackendCommandListContext::PrepareForDraw(RenderBackendShaderHandle shader, const RenderBackendGraphicsPipelineState& pipelineStateDesc, RenderBackendPrimitiveTopology topology, RenderBackendBufferHandle indexBuffer, const RenderBackendShaderArguments& shaderArguments)
+    bool D3D12RenderBackendCommandListContext::PrepareForDraw(RenderBackendShaderHandle vertexShader, RenderBackendShaderHandle pixelShader, const RenderBackendGraphicsPipelineState& pipelineStateDesc, RenderBackendPrimitiveTopology topology, RenderBackendBufferHandle indexBuffer, const RenderBackendShaderArguments& shaderArguments)
     {
         assert(insideRenderPass);
 
-        D3D12GraphicsPipelineState* pipelineState = device->FindOrCreateGraphicsPipelineState(device->GetShader(shader), pipelineStateDesc, &activeRenderPass, topology);
+        D3D12GraphicsPipelineState* pipelineState = device->FindOrCreateGraphicsPipelineState(device->GetShader(vertexShader), device->GetShader(pixelShader), nullptr, nullptr, pipelineStateDesc, &activeRenderPass, topology);
         if (pipelineState->GetID3D12PipelineState() != activeGraphicsPipeline)
         {
             ID3D12RootSignature* rootSignature = device->rootSignature.Get();
@@ -3684,7 +3684,7 @@ namespace Horizon
 
         D3D12_STATIC_SAMPLER_DESC staticSamplers[5] = {};
         {
-            RenderBackendSamplerDesc desc = RenderBackendSamplerDesc::CreateLinearClamp(0.0f, -FLOAT_MAX, FLOAT_MAX, 1);
+            RenderBackendSamplerDesc desc = RenderBackendSamplerDesc::CreateLinearClamp(0.0f, -FLT_MAX, FLT_MAX, 1);
             staticSamplers[0].Filter = ConvertToD3D12Filter(desc.filter);
             staticSamplers[0].AddressU = ConvertToD3D12TextureAddressMode(desc.addressModeU);
             staticSamplers[0].AddressV = ConvertToD3D12TextureAddressMode(desc.addressModeV);
@@ -3700,7 +3700,7 @@ namespace Horizon
             staticSamplers[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
         }
         {
-            RenderBackendSamplerDesc desc = RenderBackendSamplerDesc::CreateLinearWarp(0.0f, -FLOAT_MAX, FLOAT_MAX, 1);
+            RenderBackendSamplerDesc desc = RenderBackendSamplerDesc::CreateLinearWarp(0.0f, -FLT_MAX, FLT_MAX, 1);
             staticSamplers[1].Filter = ConvertToD3D12Filter(desc.filter);
             staticSamplers[1].AddressU = ConvertToD3D12TextureAddressMode(desc.addressModeU);
             staticSamplers[1].AddressV = ConvertToD3D12TextureAddressMode(desc.addressModeV);
@@ -3716,7 +3716,7 @@ namespace Horizon
             staticSamplers[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
         }
         {
-            RenderBackendSamplerDesc desc = RenderBackendSamplerDesc::CreatePointClamp(0.0f, -FLOAT_MAX, FLOAT_MAX, 1);
+            RenderBackendSamplerDesc desc = RenderBackendSamplerDesc::CreatePointClamp(0.0f, -FLT_MAX, FLT_MAX, 1);
             staticSamplers[2].Filter = ConvertToD3D12Filter(desc.filter);
             staticSamplers[2].AddressU = ConvertToD3D12TextureAddressMode(desc.addressModeU);
             staticSamplers[2].AddressV = ConvertToD3D12TextureAddressMode(desc.addressModeV);
@@ -3732,7 +3732,7 @@ namespace Horizon
             staticSamplers[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
         }
         {
-            RenderBackendSamplerDesc desc = RenderBackendSamplerDesc::CreateComparisonLinearClamp(0.0f, -FLOAT_MAX, FLOAT_MAX, 0, RenderBackendCompareOp::Greater);
+            RenderBackendSamplerDesc desc = RenderBackendSamplerDesc::CreateComparisonLinearClamp(0.0f, -FLT_MAX, FLT_MAX, 0, RenderBackendCompareOp::Greater);
             staticSamplers[3].Filter = ConvertToD3D12Filter(desc.filter);
             staticSamplers[3].AddressU = ConvertToD3D12TextureAddressMode(desc.addressModeU);
             staticSamplers[3].AddressV = ConvertToD3D12TextureAddressMode(desc.addressModeV);
@@ -3748,7 +3748,7 @@ namespace Horizon
             staticSamplers[3].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
         }
         {
-            RenderBackendSamplerDesc desc = RenderBackendSamplerDesc::CreateComparisonLinearClamp(0.0f, -FLOAT_MAX, FLOAT_MAX, 1, RenderBackendCompareOp::Less);
+            RenderBackendSamplerDesc desc = RenderBackendSamplerDesc::CreateComparisonLinearClamp(0.0f, -FLT_MAX, FLT_MAX, 1, RenderBackendCompareOp::Less);
             staticSamplers[4].Filter = ConvertToD3D12Filter(desc.filter);
             staticSamplers[4].AddressU = ConvertToD3D12TextureAddressMode(desc.addressModeU);
             staticSamplers[4].AddressV = ConvertToD3D12TextureAddressMode(desc.addressModeV);

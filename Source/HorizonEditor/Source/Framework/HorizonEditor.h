@@ -8,7 +8,7 @@
 
 #define HORIZON_EDITOR_APPLICATION_NAME "Horizon Editor"
 
-class ImGuiContext;
+struct ImGuiContext;
 
 namespace Horizon
 {
@@ -234,6 +234,7 @@ namespace Horizon
 
         RenderBackendType renderBackendType = RenderBackendType::D3D12;
         RenderBackend* renderBackend = nullptr;
+        ShaderLibrary* shaderLibrary = nullptr;
         RenderSettings renderSettings;
         ImGuiContext* imguiContext = nullptr;
 

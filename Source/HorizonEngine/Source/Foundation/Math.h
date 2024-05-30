@@ -27,8 +27,8 @@
 #define KINDA_SMALL_NUMBER    (1.e-4f)
 #define BIG_NUMBER              (3.4e+38f)
 #define DELTA                  (0.00001f)
-#define FLOAT_MIN              (1.175494351e-38f)
-#define FLOAT_MAX              (3.402823466e+38f)
+// #define FLOAT_MIN              (1.175494351e-38f)
+// #define FLOAT_MAX              (3.402823466e+38f)
 
 namespace Horizon
 {

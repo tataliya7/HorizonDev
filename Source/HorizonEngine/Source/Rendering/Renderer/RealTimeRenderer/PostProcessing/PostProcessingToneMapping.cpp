@@ -1,5 +1,5 @@
 #include "../RealTimeRenderer.h"
-#include "PostProcessingCommon.h"
+#include "PostProcessing.h"
 
 namespace Horizon
 {
@@ -26,7 +26,7 @@ namespace Horizon
         }
 
         // TODO: Implement lens dirt
-        RenderBackendTextureHandle lensDirtTexture = defaultResources->blackDummyTexture2D->GetHandle();
+        RenderBackendTextureHandle lensDirtTexture = defaultResources->GetBlackDummyTexture2D()->GetHandle();
 
         uint32 flags = 0;
 

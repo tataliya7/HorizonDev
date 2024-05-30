@@ -22,102 +22,99 @@ namespace Horizon
         SurfelGIHeatmap,
     };
 
-    class CameraTransformations
+    struct CameraTransformations
     {
-    public:
         CameraTransformations()
-            : nonJitteredViewToClipMatrix(IdentityMatrix4x4)
-            , worldToViewMatrix(IdentityMatrix4x4)
+            : worldToViewMatrix(IdentityMatrix4x4)
             , viewToWorldMatrix(IdentityMatrix4x4)
             , viewToClipMatrix(IdentityMatrix4x4)
             , clipToViewMatrix(IdentityMatrix4x4)
             , worldToClipMatrix(IdentityMatrix4x4)
             , clipToWorldMatrix(IdentityMatrix4x4)
+            , nonJitteredViewToClipMatrix(IdentityMatrix4x4)
         {
 
         }
-
-        CameraTransformations(
-            const Matrix4x4& viewMatrix,
-            const Matrix4x4& projectionMatrix)
-        {
-            worldToViewMatrix = viewMatrix;
-            viewToWorldMatrix = Math::InverseMatrix(viewMatrix);
-            viewToClipMatrix = projectionMatrix;
-            clipToViewMatrix = Math::InverseMatrix(projectionMatrix);
-            nonJitteredViewToClipMatrix = projectionMatrix;
-            worldToClipMatrix = viewToClipMatrix * worldToViewMatrix;
-            clipToWorldMatrix = viewToWorldMatrix * clipToViewMatrix;
-            cameraJitterOffset = ZeroVector2;
-            isCameraJitteringApplied = false;
-        }
-
-        CameraTransformations(
-            const Matrix4x4& viewMatrix,
-            const Matrix4x4& projectionMatrix,
-            const Vector2& jitterOffset)
-        {
-            Matrix4x4 jitteredProjectionMatrix = projectionMatrix;
-            jitteredProjectionMatrix[2][0] += -jitterOffset.x;
-            jitteredProjectionMatrix[2][1] += -jitterOffset.y;
-
-            worldToViewMatrix = viewMatrix;
-            viewToWorldMatrix = Math::InverseMatrix(viewMatrix);
-            viewToClipMatrix = jitteredProjectionMatrix;
-            clipToViewMatrix = Math::InverseMatrix(jitteredProjectionMatrix);
-            nonJitteredViewToClipMatrix = projectionMatrix;
-            worldToClipMatrix = viewToClipMatrix * worldToViewMatrix;
-            clipToWorldMatrix = viewToWorldMatrix * clipToViewMatrix;
-            cameraJitterOffset = jitterOffset;
-            isCameraJitteringApplied = true;
-        }
-
-        inline bool IsPerspectiveProjection() const
-        {
-            return viewToClipMatrix[3][3] < 1.0f;
-        }
-
-        inline bool IsCameraJitteringApplied() const
-        {
-            return isCameraJitteringApplied;
-        }
-
-        inline const Matrix4x4& GetWorldToViewMatrix() const
-        {
-            return worldToViewMatrix;
-        }
-
-        inline const Matrix4x4& GetViewToWorldMatrix() const
-        {
-            return viewToWorldMatrix;
-        }
-
-        inline const Matrix4x4& GetViewToClipMatrix() const
-        {
-            return viewToClipMatrix;
-        }
-
-        inline const Matrix4x4& GetClipToViewMatrix() const
-        {
-            return clipToViewMatrix;
-        }
-
-        inline const Matrix4x4& GetNonJitteredViewToClipMatrix() const
-        {
-            return nonJitteredViewToClipMatrix;
-        }
-
-        inline const Matrix4x4& GetWorldToClipMatrix() const
-        {
-            return worldToClipMatrix;
-        }
-
-        inline const Matrix4x4& GetClipToWorldMatrix() const
-        {
-            return clipToWorldMatrix;
-        }
-
-    private:
+        //
+        // CameraTransformations(
+        //     const Matrix4x4& viewMatrix,
+        //     const Matrix4x4& projectionMatrix)
+        // {
+        //     worldToViewMatrix = viewMatrix;
+        //     viewToWorldMatrix = Math::InverseMatrix(viewMatrix);
+        //     viewToClipMatrix = projectionMatrix;
+        //     clipToViewMatrix = Math::InverseMatrix(projectionMatrix);
+        //     nonJitteredViewToClipMatrix = projectionMatrix;
+        //     worldToClipMatrix = viewToClipMatrix * worldToViewMatrix;
+        //     clipToWorldMatrix = viewToWorldMatrix * clipToViewMatrix;
+        //     cameraJitterOffset = ZeroVector2;
+        //     isCameraJitteringApplied = false;
+        // }
+        //
+        // CameraTransformations(
+        //     const Matrix4x4& viewMatrix,
+        //     const Matrix4x4& projectionMatrix,
+        //     const Vector2& jitterOffset)
+        // {
+        //     Matrix4x4 jitteredProjectionMatrix = projectionMatrix;
+        //     jitteredProjectionMatrix[2][0] += -jitterOffset.x;
+        //     jitteredProjectionMatrix[2][1] += -jitterOffset.y;
+        //
+        //     worldToViewMatrix = viewMatrix;
+        //     viewToWorldMatrix = Math::InverseMatrix(viewMatrix);
+        //     viewToClipMatrix = jitteredProjectionMatrix;
+        //     clipToViewMatrix = Math::InverseMatrix(jitteredProjectionMatrix);
+        //     nonJitteredViewToClipMatrix = projectionMatrix;
+        //     worldToClipMatrix = viewToClipMatrix * worldToViewMatrix;
+        //     clipToWorldMatrix = viewToWorldMatrix * clipToViewMatrix;
+        //     cameraJitterOffset = jitterOffset;
+        //     isCameraJitteringApplied = true;
+        // }
+        //
+        // inline bool IsPerspectiveProjection() const
+        // {
+        //     return viewToClipMatrix[3][3] < 1.0f;
+        // }
+        //
+        // inline bool IsCameraJitteringApplied() const
+        // {
+        //     return isCameraJitteringApplied;
+        // }
+        //
+        // inline const Matrix4x4& GetWorldToViewMatrix() const
+        // {
+        //     return worldToViewMatrix;
+        // }
+        //
+        // inline const Matrix4x4& GetViewToWorldMatrix() const
+        // {
+        //     return viewToWorldMatrix;
+        // }
+        //
+        // inline const Matrix4x4& GetViewToClipMatrix() const
+        // {
+        //     return viewToClipMatrix;
+        // }
+        //
+        // inline const Matrix4x4& GetClipToViewMatrix() const
+        // {
+        //     return clipToViewMatrix;
+        // }
+        //
+        // inline const Matrix4x4& GetNonJitteredViewToClipMatrix() const
+        // {
+        //     return nonJitteredViewToClipMatrix;
+        // }
+        //
+        // inline const Matrix4x4& GetWorldToClipMatrix() const
+        // {
+        //     return worldToClipMatrix;
+        // }
+        //
+        // inline const Matrix4x4& GetClipToWorldMatrix() const
+        // {
+        //     return clipToWorldMatrix;
+        // }
 
         Matrix4x4 worldToViewMatrix;
         Matrix4x4 viewToWorldMatrix;
@@ -136,11 +133,6 @@ namespace Horizon
     public:
 
         explicit SceneView(RenderScene* scene);
-
-        RenderBackend* GetRenderBackend() const
-        {
-
-        }
 
         bool HasValidScene() const
         {
@@ -182,11 +174,6 @@ namespace Horizon
             return cameraPosition;
         }
 
-        const Vector3& GetPreviousCameraPosition() const
-        {
-            return previousCameraPosition;
-        }
-
         const Vector3& GetCameraUpVector() const
         {
             return cameraForwardVector;
@@ -205,11 +192,6 @@ namespace Horizon
         const Vector2& GetCameraJitterOffset() const
         {
             return cameraJitterOffset;
-        }
-
-        const Vector2& GetPreviousCameraJitterOffset() const
-        {
-            return previousCameraJitterOffset;
         }
 
         float GetFieldOfView() const
@@ -237,30 +219,25 @@ namespace Horizon
             return transformations;
         }
 
-        const CameraTransformations& GetPreviousTransformations() const
-        {
-            return previousTransformations;
-        }
-
-        void UpdateTransformations(const CameraComponent& camera)
-        {
-            perFrameShaderParameters.viewMatrix = view.camera.viewMatrix;
-            perFrameShaderParameters.invViewMatrix = view.camera.invViewMatrix;
-            perFrameShaderParameters.projectionMatrix = jitteredProjectionMatrix;
-            perFrameShaderParameters.inverseProjectionMatrix = jitteredInvProjectionMatrix;
-            perFrameShaderParameters.viewProjectionMatrix = jitteredProjectionMatrix * view.camera.viewMatrix;
-            perFrameShaderParameters.invViewProjectionMatrix = view.camera.invViewMatrix * jitteredInvProjectionMatrix;
-            perFrameShaderParameters.prevProjectionMatrix = jitteredPrevProjectionMatrix;
-            perFrameShaderParameters.prevViewProjectionMatrix = jitteredPrevViewProjectionMatrix;
-            perFrameShaderParameters.prevInvViewProjectionMatrix = jitteredPrevInvViewProjectionMatrix;
-            perFrameShaderParameters.nonJitteredProjectionMatrix = view.camera.projectionMatrix;
-            perFrameShaderParameters.nonJitteredInvProjectionMatrix = view.camera.invProjectionMatrix;
-            perFrameShaderParameters.nonJitteredViewProjectionMatrix = view.camera.projectionMatrix * view.camera.viewMatrix;
-            perFrameShaderParameters.nonJitteredInvViewProjectionMatrix = view.camera.invViewMatrix * view.camera.invProjectionMatrix;
-            perFrameShaderParameters.nonJitteredPrevProjectionMatrix = nonJitteredPrevProjectionMatrix;
-            perFrameShaderParameters.nonJitteredPrevViewProjectionMatrix = nonJitteredPrevViewProjectionMatrix;
-            perFrameShaderParameters.nonJitteredPrevInvViewProjectionMatrix = nonJitteredPrevInvViewProjectionMatrix;
-        }
+        // void UpdateTransformations(const CameraComponent& camera)
+        // {
+        //     perFrameShaderParameters.viewMatrix = view.camera.viewMatrix;
+        //     perFrameShaderParameters.invViewMatrix = view.camera.invViewMatrix;
+        //     perFrameShaderParameters.projectionMatrix = jitteredProjectionMatrix;
+        //     perFrameShaderParameters.inverseProjectionMatrix = jitteredInvProjectionMatrix;
+        //     perFrameShaderParameters.viewProjectionMatrix = jitteredProjectionMatrix * view.camera.viewMatrix;
+        //     perFrameShaderParameters.invViewProjectionMatrix = view.camera.invViewMatrix * jitteredInvProjectionMatrix;
+        //     perFrameShaderParameters.prevProjectionMatrix = jitteredPrevProjectionMatrix;
+        //     perFrameShaderParameters.prevViewProjectionMatrix = jitteredPrevViewProjectionMatrix;
+        //     perFrameShaderParameters.prevInvViewProjectionMatrix = jitteredPrevInvViewProjectionMatrix;
+        //     perFrameShaderParameters.nonJitteredProjectionMatrix = view.camera.projectionMatrix;
+        //     perFrameShaderParameters.nonJitteredInvProjectionMatrix = view.camera.invProjectionMatrix;
+        //     perFrameShaderParameters.nonJitteredViewProjectionMatrix = view.camera.projectionMatrix * view.camera.viewMatrix;
+        //     perFrameShaderParameters.nonJitteredInvViewProjectionMatrix = view.camera.invViewMatrix * view.camera.invProjectionMatrix;
+        //     perFrameShaderParameters.nonJitteredPrevProjectionMatrix = nonJitteredPrevProjectionMatrix;
+        //     perFrameShaderParameters.nonJitteredPrevViewProjectionMatrix = nonJitteredPrevViewProjectionMatrix;
+        //     perFrameShaderParameters.nonJitteredPrevInvViewProjectionMatrix = nonJitteredPrevInvViewProjectionMatrix;
+        // }
 
         /**
          * The scene to be rendered.
@@ -354,13 +331,17 @@ namespace Horizon
          */
         CameraTransformations transformations;
 
+        uint32 targetWidth;
+
+        uint32 targetHeight;
+
+        RenderBackendTextureHandle targetTexture;
+
         uint32 displayWidth;
 
         uint32 displayHeight;
 
         RenderBackendSwapChainHandle swapChain;
-
-        RenderBackendTextureHandle targetTexture;
 
         /**
          * A point that represents the cursor's position in screen coordinates.

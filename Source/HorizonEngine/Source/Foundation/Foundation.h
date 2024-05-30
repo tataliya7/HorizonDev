@@ -87,6 +87,9 @@ namespace Horizon
     {
         int32 x;
         int32 y;
+
+        Offset2D() : x(0), y(0) {}
+        explicit Offset2D(int32 x, int32 y) : x(x), y(y) {}
     };
 
     struct Offset3D

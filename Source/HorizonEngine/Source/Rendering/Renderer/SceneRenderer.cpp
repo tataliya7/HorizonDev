@@ -17,7 +17,7 @@ namespace Horizon
 
     RenderBackend* SceneRenderer::GetRenderBackend() const
     {
-        return sceneView->GetRenderBackend();
+        return renderBackend;
     }
 
     SceneRenderer* CreateSceneRenderer(SceneView* sceneView)

@@ -7,16 +7,6 @@
 
 namespace Horizon
 {
-    static bool ShouldRenderRayTracingShadowsForLight(const LightComponent& light)
-    {
-        // Currently, only ray tracing shadows for directional lights are supoorted
-        if (light.type != LightComponent::LightType::Directional || !light.UseRayTracingShadows())
-        {
-            return false;
-        }
-        return true;
-    }
-
 #if 0
     RealTimeRenderer::RealTimeRenderer(RenderSystem* renderSystem)
         : renderBackend(backend)
@@ -117,16 +107,16 @@ namespace Horizon
     void RealTimeRenderer::UpdateAutoExposureDataFromReadbackBuffer()
     {
         RenderGraphPersistentBuffer* autoExposureReadbackBuffer = autoExposureReadbackBuffers[currentAutoExposureReadbackBufferIndex];
-        if (autoExposureReadbackBuffer)
+        if (autoExposureReadbackBuffer != nullptr)
         {
             void* data = nullptr;
             renderBackend->MapBuffer(autoExposureReadbackBuffer->GetHandle(), &data);
             if (data != nullptr)
             {
-                autoExposureData.adaptedExposure = ((float*)data)[0];
-                autoExposureData.targetExposure = ((float*)data)[1];
-                autoExposureData.exposureCompensation = ((float*)data)[2];
-                autoExposureData.averageSceneLuminance = ((float*)data)[3];
+                autoExposureData.adaptedExposure = static_cast<float*>(data)[0];
+                autoExposureData.targetExposure = static_cast<float*>(data)[1];
+                autoExposureData.exposureCompensation = static_cast<float*>(data)[2];
+                autoExposureData.averageSceneLuminance = static_cast<float*>(data)[3];
                 renderBackend->UnmapBuffer(autoExposureReadbackBuffer->GetHandle());
             }
         }
@@ -140,55 +130,56 @@ namespace Horizon
     void RealTimeRenderer::OnRenderBegin()
     {
         // Super Resolution
-        isDLSSEnabled = false;
-        isFSR2Enabled = false;
-        isSuperResolutionEnabled = false;
-        switch (view.renderSettings.superResolutionTechnique)
-        {
-        case SuperResolutionTechnique::FSR2:
-            {
-                isFSR2Enabled = true;
-                isSuperResolutionEnabled = true;
-            } break;
-        case SuperResolutionTechnique::DLSSSuperResolution:
-            {
-                isDLSSEnabled = true;
-                isSuperResolutionEnabled = true;
-            } break;
-        default: break;
-        }
+        //isDLSSEnabled = false;
+        //isFSR2Enabled = false;
+        //isSuperResolutionEnabled = false;
+        //switch (view.renderSettings.superResolutionTechnique)
+        //{
+        //case SuperResolutionTechnique::FSR2:
+        //    {
+        //        isFSR2Enabled = true;
+        //        isSuperResolutionEnabled = true;
+        //    } break;
+        //case SuperResolutionTechnique::DLSSSuperResolution:
+        //    {
+        //        isDLSSEnabled = true;
+        //        isSuperResolutionEnabled = true;
+        //    } break;
+        //default: break;
+        //}
 
-        // Antialiasing
-        isDLAAEnabled = false;
-        isTemporalAAEnabled = false;
-        if (!IsSuperResolutionEnabled())
-        {
-            switch (view.renderSettings.antialiasingTechnique)
-            {
-            case AntialiasingTechnique::TemporalAA:
-                {
-                    isTemporalAAEnabled = true;
-                } break;
-            case AntialiasingTechnique::DLAA:
-                {
-                    isDLAAEnabled = true;
-                } break;
-            default: break;
-            }
-        }
+        //// Antialiasing
+        //isDLAAEnabled = false;
+        //isTemporalAAEnabled = false;
+        //if (!IsSuperResolutionEnabled())
+        //{
+        //    switch (view.renderSettings.antialiasingTechnique)
+        //    {
+        //    case AntialiasingTechnique::TemporalAA:
+        //        {
+        //            isTemporalAAEnabled = true;
+        //        } break;
+        //    case AntialiasingTechnique::DLAA:
+        //        {
+        //            isDLAAEnabled = true;
+        //        } break;
+        //    default: break;
+        //    }
+        //}
 
         upscaleRatio = 1.0f;
 
-        renderResolution = view.swapChainBufferExtent;
-        targetResolution = view.swapChainBufferExtent;
-        displayResolution = view.swapChainBufferExtent;
+        renderResolution = Extent2D(view.targetWidth, view.targetHeight);
+        targetResolution = Extent2D(view.targetWidth, view.targetHeight);
+        displayResolution = Extent2D(view.targetWidth, view.targetHeight);
 
         materialTextureMipLodBias = 0.0f;
 
-        if (IsAutoMaterialTextureMipLodBiasEnabled())
+        //if (IsAutoMaterialTextureMipLodBiasEnabled())
         {
             materialTextureMipLodBias = std::log2f(float(renderResolution.width) / float(targetResolution.width));
         }
+
         // TODO: Override overrideMaterialTextureMipLodBias
         //if (overrideMaterialTextureMipLodBias)
         //{
@@ -196,7 +187,7 @@ namespace Horizon
         //}
 
         Vector2 cameraJitterOffset = { 0.0f, 0.0f };
-        if (ShouldApplyCameraJittering())
+        /*if (ShouldApplyCameraJittering())
         {
             if (IsFSR2Enabled())
             {
@@ -229,45 +220,43 @@ namespace Horizon
 
         Vector3 previousCameraPosition = perFrameShaderParameters.cameraPosition;
 
-        enableFixedExposure = settings.exposureMethod == ExposureMethod::FixedExposure;
+        enableFixedExposure = settings.exposureMethod == ExposureMethod::FixedExposure;*/
 
-        float prevpreExposure = perFrameShaderParameters.preExposure;
-        if (view.frameIndex == 0)
-        {
-            prevpreExposure = 1.0f;
-        }
+        //float prevpreExposure = perFrameShaderParameters.preExposure;
+        //if (view.frameIndex == 0)
+        //{
+        //    prevpreExposure = 1.0f;
+        //}
 
-        float preExposure = 1.0f;
-        if (view. != 0)
-        {
-            preExposure = preExposure;
-        }
-        if ()
-        {
-            preExposure = view.renderSettings.fixedPreExposure;
-        }
+        //float preExposure = 1.0f;
+        //if (view. != 0)
+        //{
+        //    preExposure = preExposure;
+        //}
+        //if ()
+        //{
+        //    preExposure = view.renderSettings.fixedPreExposure;
+        //}
+
+        //isSurfelGIEnabled = false;
+        //isRayTracingShadowsEnabled = settings.shadowsTechnique == ShadowsTechnique::RayTracingShadows;
+        //isRayTracingReflectionsEnabled = settings.reflectionsTechnique == ReflectionsTechnique::RayTracingReflections;
+        //isRayTracingAmbientOcclusionEnabled = settings.ambientOcclusionTechnique == AmbientOcclusionTechnique::RayTracingAmbientOcclusion;
 
         const RenderScene* scene = view.GetRenderScene();
-
-        isSurfelGIEnabled = false;
-        isRayTracingShadowsEnabled = settings.shadowsTechnique == ShadowsTechnique::RayTracingShadows;
-        isRayTracingReflectionsEnabled = settings.reflectionsTechnique == ReflectionsTechnique::RayTracingReflections;
-        isRayTracingAmbientOcclusionEnabled = settings.ambientOcclusionTechnique == AmbientOcclusionTechnique::RayTracingAmbientOcclusion;
-        isSkyAtmosphereRenderingEnabled = IsSkyAtmosphereRenderingEnabled();
 
         features.enableSkyAtmosphereRendering =
             scene != nullptr &&
             scene->HasAtmosphericLight() &&
             scene->HasActiveSkyAtmosphere();
 
-        features.enableDepthOfField = finalPostProcessingSettings.depthOfFiledScale > 0.0f;
+        features.enableDepthOfField = false;// finalPostProcessingSettings.depthOfFieldScale > 0.0f;
 
-        bool isAutoExposureEnabled = (settings.exposureMethod == ExposureMethod::AutoExposure) || (settings.exposureMethod == ExposureMethod::FixedExposure);
-        bool isBloomEnabled = settings.postProcessingSettings.bloomIntensity > 0.0f;
-        bool isLensFlaresEnabled = isBloomEnabled && settings.postProcessingSettings.lensFlaresIntensity > 0.0f;
-        bool isConvolutionBloomEnabled = false;
-        bool isToneMappingEnabled = true;
-        bool isLocalExposureEnabled = isToneMappingEnabled && settings.postProcessingSettings.localExposureEnabled;
+        features.enableAutoExposure = (finalPostProcessingSettings.exposureMethod == ExposureMethod::AutoExposure);
+
+        features.enableGaussianBloom = finalPostProcessingSettings.bloomIntensity > 0.0f;
+
+        features.enableConvolutionBloom = false;
 
         if (!IsAutoExposureEnabled())
         {
@@ -312,21 +301,21 @@ namespace Horizon
             perFrameShaderParameters.previousCameraPosition = historyFrame.cameraPosition;
             perFrameShaderParameters.previousCameraJitterOffset = historyFrame.cameraJitterOffset;
 
-            perFrameShaderParameters.worldToViewMatrix = view.GetTransformations().GetWorldToViewMatrix();
-            perFrameShaderParameters.viewToWorldMatrix = view.GetTransformations().GetViewToWorldMatrix();
-            perFrameShaderParameters.viewToClipMatrix = view.GetTransformations().GetViewToClipMatrix();
-            perFrameShaderParameters.clipToViewMatrix = view.GetTransformations().GetClipToViewMatrix();
-            perFrameShaderParameters.worldToClipMatrix = view.GetTransformations().GetWorldToClipMatrix();
-            perFrameShaderParameters.clipToWorldMatrix = view.GetTransformations().GetClipToWorldMatrix();
-            perFrameShaderParameters.nonJitteredWorldToClipMatrix = view.GetTransformations().GetNonJitteredViewToClipMatrix();
+            perFrameShaderParameters.worldToViewMatrix = view.transformations.worldToViewMatrix;
+            perFrameShaderParameters.viewToWorldMatrix = view.transformations.viewToWorldMatrix;
+            perFrameShaderParameters.viewToClipMatrix = view.transformations.viewToClipMatrix;
+            perFrameShaderParameters.clipToViewMatrix = view.transformations.clipToViewMatrix;
+            perFrameShaderParameters.worldToClipMatrix = view.transformations.worldToClipMatrix;
+            perFrameShaderParameters.clipToWorldMatrix = view.transformations.clipToWorldMatrix;
+            perFrameShaderParameters.nonJitteredWorldToClipMatrix = view.transformations.nonJitteredViewToClipMatrix;
 
-            perFrameShaderParameters.previousWorldToViewMatrix = historyFrame.transformations.GetWorldToViewMatrix();
-            perFrameShaderParameters.previousViewToWorldMatrix = historyFrame.transformations.GetViewToWorldMatrix();
-            perFrameShaderParameters.previousViewToClipMatrix = historyFrame.transformations.GetViewToClipMatrix();
-            perFrameShaderParameters.previousClipToViewMatrix = historyFrame.transformations.GetClipToViewMatrix();
-            perFrameShaderParameters.previousWorldToClipMatrix = historyFrame.transformations.GetWorldToClipMatrix();
-            perFrameShaderParameters.previousClipToWorldMatrix = historyFrame.transformations.GetClipToWorldMatrix();
-            perFrameShaderParameters.previousNonJitteredWorldToClipMatrix = historyFrame.transformations.GetNonJitteredViewToClipMatrix();
+            perFrameShaderParameters.previousWorldToViewMatrix = historyFrame.transformations.worldToViewMatrix;
+            perFrameShaderParameters.previousViewToWorldMatrix = historyFrame.transformations.viewToWorldMatrix;
+            perFrameShaderParameters.previousViewToClipMatrix = historyFrame.transformations.viewToClipMatrix;
+            perFrameShaderParameters.previousClipToViewMatrix = historyFrame.transformations.clipToViewMatrix;
+            perFrameShaderParameters.previousWorldToClipMatrix = historyFrame.transformations.worldToClipMatrix;
+            perFrameShaderParameters.previousClipToWorldMatrix = historyFrame.transformations.clipToWorldMatrix;
+            perFrameShaderParameters.previousNonJitteredWorldToClipMatrix = historyFrame.transformations.nonJitteredViewToClipMatrix;
 
             perFrameShaderParameters.materialTextureMipLodBias = materialTextureMipLodBias;
 
@@ -461,51 +450,48 @@ namespace Horizon
     }
 #endif
 
-    RenderGraphTextureHandle RealTimeRenderer::RenderUI(
+    RenderGraphTextureHandle RealTimeRenderer::RenderUserInterface(
         RenderGraph& renderGraph,
         const SceneView& view)
     {
-        RealTimeRendererSceneTextures& sceneTextures = renderGraph.blackboard.Get<RealTimeRendererSceneTextures>();
-        RenderGraphTextureHandle uiColorAndAlphaTexture = sceneTextures.uiColorAndAlphaTexture;
+        RenderGraphTextureDesc uiColorAndAlphaTextureDesc = RenderGraphTextureDesc::Create2D(
+            targetResolution.width,
+            targetResolution.height,
+            RenderBackendTextureFormat::RGB10A2Unorm,
+            RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::RenderTarget);
+        RenderGraphTextureHandle uiColorAndAlphaTexture = renderGraph.CreateTexture(uiColorAndAlphaTextureDesc, "UIColorAndAlphaTexture");
 
-        renderGraph.AddPass(std::format("UIColorAndAlpha (Graphics, {}x{})", targetResolution.width, targetResolution.height), RenderGraphPassFlags::Graphics | RenderGraphPassFlags::SkipRenderPass,
-        [&](RenderGraphBuilder& builder)
-        {
-            uiColorAndAlphaTexture = sceneTextures.uiColorAndAlphaTexture = builder.WriteTexture(sceneTextures.uiColorAndAlphaTexture, RenderBackendResourceState::RenderTarget);
-
-            builder.BindColorTarget(0, uiColorAndAlphaTexture, RenderBackendRenderPassBeginningAccessType::Clear, RenderBackendRenderPassEndingAccessType::Preserve);
-
-            return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
+        renderGraph.AddPass(
+            std::format("UIColorAndAlpha (Graphics, {}x{})", targetResolution.width, targetResolution.height),
+            RenderGraphPassFlags::Graphics | RenderGraphPassFlags::SkipRenderPass,
+            [&](RenderGraphBuilder& builder)
             {
-                renderEngine->DrawUI(commandList, registry.GetRenderBackendTextureHandle(uiColorAndAlphaTexture));
-            };
-        });
+                uiColorAndAlphaTexture = builder.WriteTexture(uiColorAndAlphaTexture, RenderBackendResourceState::RenderTarget);
+
+                builder.BindColorTarget(0, uiColorAndAlphaTexture, RenderBackendRenderPassBeginningAccessType::Clear, RenderBackendRenderPassEndingAccessType::Preserve);
+
+                return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
+                {
+                    //renderEngine->DrawUI(commandList, registry.GetRenderBackendTextureHandle(uiColorAndAlphaTexture));
+                };
+            });
 
         return uiColorAndAlphaTexture;
     }
+
+#define NearClipPlaneDepthValue 1.0f
+#define FarClipPlaneDepthValue 0.0f
+
+    RenderBackendTextureClearValue clearColor = RenderBackendTextureClearValue::CreateColorValueFloat4(0.0f, 0.0f, 0.0f, 0.0f);
+    RenderBackendTextureClearValue clearDepth = RenderBackendTextureClearValue::CreateDepthValue(FarClipPlaneDepthValue);
+    RenderBackendTextureClearValue clearVisibilityBufferColor = RenderBackendTextureClearValue::CreateColorValueUnit4(0x0FFFFFFF, 0x0FFFFFFF, 0x0FFFFFFF, 0x0FFFFFFF);
 
     void RealTimeRenderer::Render(RenderGraph& renderGraph)
     {
         OPTICK_EVENT();
 
-        uint32 deviceMask = ~0u;
-
-        // TODO: move to other place
-        shaderLibrary->HotReload();
-
         RealTimeRendererSceneTextures& sceneTextures = renderGraph.blackboard.Create<RealTimeRendererSceneTextures>();
-        auto& historyInfo = renderGraph.blackboard.Create<RealTimeRendererHistoryInfo>();
-        auto& finalTextureData = renderGraph.blackboard.Create<RenderGraphFinalTexture>();
-        auto& ouptutTextureData = renderGraph.blackboard.Create<RenderGraphOutputTexture>();
-
-        auto& debugViewModeTextures = renderGraph.blackboard.Create<RealTimeRendererDebugViewModeTextures>();
-
-        RenderBackendTextureClearValue clearColor = RenderBackendTextureClearValue::CreateColorValueFloat4(0.0f, 0.0f, 0.0f, 0.0f);
-        RenderBackendTextureClearValue clearDepth = RenderBackendTextureClearValue::CreateDepthValue(FarClipPlaneDepthValue);
-        RenderBackendTextureClearValue clearVisibilityBufferColor = RenderBackendTextureClearValue::CreateColorValueUnit4(0x0FFFFFFF, 0x0FFFFFFF, 0x0FFFFFFF, 0x0FFFFFFF);
-
-        const bool shouldRenderSkyAtmosphere = ShouldRenderSkyAtmosphere();
-        const bool shouldRenderAmbientOcclusion = settings.ambientOcclusionTechnique != AmbientOcclusionTechnique::None;
+        //RealTimeRendererDebugViewModeTextures& debugViewModeTextures = renderGraph.blackboard.Create<RealTimeRendererDebugViewModeTextures>();
 
         RenderGraphTextureDesc vbuffer0Desc = RenderGraphTextureDesc::Create2D(
             renderResolution.width,
@@ -556,7 +542,6 @@ namespace Horizon
             1,
             1,
             RenderBackendResourceState::UnorderedAccess);
-        sceneTextures.sceneColorTextureDesc = sceneColorTextureDesc;
         sceneTextures.sceneColorTexture = renderGraph.CreateTexture(sceneColorTextureDesc, "SceneColorTexture");
 
         RenderGraphTextureDesc sceneDepthTextureDesc = RenderGraphTextureDesc::Create2D(
@@ -577,51 +562,44 @@ namespace Horizon
             RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::UnorderedAccess);
         sceneTextures.motionVectorTexture = renderGraph.CreateTexture(motionVectorTextureDesc, "MotionVectorTexture");
 
-        RenderGraphTextureDesc uiColorAndAlphaTextureDesc = RenderGraphTextureDesc::Create2D(
-            targetResolution.width,
-            targetResolution.height,
-            RenderBackendTextureFormat::RGB10A2Unorm,
-            RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::RenderTarget);
-        sceneTextures.uiColorAndAlphaTexture = renderGraph.CreateTexture(uiColorAndAlphaTextureDesc, "UIColorAndAlphaTexture");
+        // RenderGraphTextureDesc finalTextureDesc = RenderGraphTextureDesc::Create2D(
+        //     targetResolution.width,
+        //     targetResolution.height,
+        //     RenderBackendTextureFormat::RGB10A2Unorm,
+        //     RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::RenderTarget | RenderBackendTextureCreateFlags::UnorderedAccess,
+        //     RenderBackendTextureClearValue::None,
+        //     1,
+        //     1,
+        //     RenderBackendResourceState::UnorderedAccess);
+        // finalTextureData.finalTextureDesc = finalTextureDesc;
+        // finalTextureData.finalTexture = renderGraph.CreateTexture(finalTextureDesc, "FinalTexture");
+        //
+        // ouptutTextureData.outputTexture = renderGraph.ImportExternalTexture(view.target, view.targetDesc, RenderBackendResourceState::Undefined, "CameraTarget");
+        // ouptutTextureData.outputTextureDesc = view.targetDesc;
 
-        RenderGraphTextureDesc finalTextureDesc = RenderGraphTextureDesc::Create2D(
-            targetResolution.width,
-            targetResolution.height,
-            RenderBackendTextureFormat::RGB10A2Unorm,
-            RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::RenderTarget | RenderBackendTextureCreateFlags::UnorderedAccess,
-            RenderBackendTextureClearValue::None,
-            1,
-            1,
-            RenderBackendResourceState::UnorderedAccess);
-        finalTextureData.finalTextureDesc = finalTextureDesc;
-        finalTextureData.finalTexture = renderGraph.CreateTexture(finalTextureDesc, "FinalTexture");
+        // if (!historySceneDepthTextureCache.texture || (historySceneDepthTextureCache.desc != sceneDepthTextureDesc))
+        // {
+        //     historySceneDepthTextureCache.desc = sceneDepthTextureDesc;
+        //     historySceneDepthTextureCache.texture = renderBackend->CreateTexture(deviceMask, &historySceneDepthTextureCache.desc, nullptr, "HistorySceneDepthTexture");
+        //     historySceneDepthTextureCache.initialState = RenderBackendResourceState::DepthStencil;
+        // }
+        // historyInfo.historySceneDepthTexture = renderGraph.ImportExternalTexture(historySceneDepthTextureCache.texture, historySceneDepthTextureCache.desc, historySceneDepthTextureCache.initialState, "HistorySceneDepthTexture");
+        // renderGraph.ExportTextureDeferred(sceneTextures.sceneDepthTexture, &historySceneDepthTextureCache);
+        //
+        // if (!historySceneColorTextureCache.texture || (historySceneColorTextureCache.desc != sceneColorTextureDesc))
+        // {
+        //     historySceneColorTextureCache.desc = sceneColorTextureDesc;
+        //     historySceneColorTextureCache.texture = renderBackend->CreateTexture(deviceMask, &historySceneColorTextureCache.desc, nullptr, "HistorySceneColorTexture");
+        //     historySceneColorTextureCache.initialState = RenderBackendResourceState::UnorderedAccess;
+        // }
+        // RenderGraphTextureHandle historySceneColor = renderGraph.ImportExternalTexture(historySceneColorTextureCache.texture, historySceneColorTextureCache.desc, historySceneColorTextureCache.initialState, "HistorySceneColorTexture");
+        // renderGraph.ExportTextureDeferred(sceneTextures.sceneColorTexture, &historySceneColorTextureCache);
 
-        ouptutTextureData.outputTexture = renderGraph.ImportExternalTexture(view.target, view.targetDesc, RenderBackendResourceState::Undefined, "CameraTarget");
-        ouptutTextureData.outputTextureDesc = view.targetDesc;
+        //RenderVisibilityBuffer(renderGraph, view);
 
-        if (!historySceneDepthTextureCache.texture || (historySceneDepthTextureCache.desc != sceneDepthTextureDesc))
-        {
-            historySceneDepthTextureCache.desc = sceneDepthTextureDesc;
-            historySceneDepthTextureCache.texture = renderBackend->CreateTexture(deviceMask, &historySceneDepthTextureCache.desc, nullptr, "HistorySceneDepthTexture");
-            historySceneDepthTextureCache.initialState = RenderBackendResourceState::DepthStencil;
-        }
-        historyInfo.historySceneDepthTexture = renderGraph.ImportExternalTexture(historySceneDepthTextureCache.texture, historySceneDepthTextureCache.desc, historySceneDepthTextureCache.initialState, "HistorySceneDepthTexture");
-        renderGraph.ExportTextureDeferred(sceneTextures.sceneDepthTexture, &historySceneDepthTextureCache);
+        //RenderGBuffer(renderGraph, view);
 
-        if (!historySceneColorTextureCache.texture || (historySceneColorTextureCache.desc != sceneColorTextureDesc))
-        {
-            historySceneColorTextureCache.desc = sceneColorTextureDesc;
-            historySceneColorTextureCache.texture = renderBackend->CreateTexture(deviceMask, &historySceneColorTextureCache.desc, nullptr, "HistorySceneColorTexture");
-            historySceneColorTextureCache.initialState = RenderBackendResourceState::UnorderedAccess;
-        }
-        RenderGraphTextureHandle historySceneColor = renderGraph.ImportExternalTexture(historySceneColorTextureCache.texture, historySceneColorTextureCache.desc, historySceneColorTextureCache.initialState, "HistorySceneColorTexture");
-        renderGraph.ExportTextureDeferred(sceneTextures.sceneColorTexture, &historySceneColorTextureCache);
-
-        RenderVisibilityBuffer(renderGraph, view);
-
-        RenderGBuffer(renderGraph, view);
-
-        RenderMotionVectors(renderGraph, view);
+        //RenderMotionVectors(renderGraph, view);
 
         // Hierarchical z-buffer must be aligned quad tree
         uint32 hzbWidth = Math::Max(Math::RoundUpToPowerOfTwo(renderResolution.width) >> 1, 1u);
@@ -638,234 +616,187 @@ namespace Horizon
         RenderGraphTextureHandle closestHZBTexture = renderGraph.CreateTexture(hzbDesc, "ClosestHZBTexture");
         RenderGraphTextureHandle furthestHZBTexture = renderGraph.CreateTexture(hzbDesc, "FurthestHZBTexture");
 
-        RenderHZB(renderGraph, view, hzbWidth, hzbHeight, hzbMipLevels, closestHZBTexture, furthestHZBTexture);
+        RenderDepthPyramid(renderGraph, view, hzbWidth, hzbHeight, hzbMipLevels, closestHZBTexture, furthestHZBTexture);
 
-        if (shouldRenderSkyAtmosphere)
+        if (IsSkyAtmosphereRenderingEnabled())
         {
-            RenderSkyAtmosphereLUTs(renderGraph);
+            RenderSkyAtmosphereLUTs(renderGraph, view);
         }
 
-        if (settings.ambientOcclusionTechnique == AmbientOcclusionTechnique::GroundTruthAmbientOcclusion)
+        if (IsScreenSpaceAmbientOcclusionEnabled())
         {
             sceneTextures.ambientOcclusionTexture = RenderScreenSpaceAmbientOcclusion(renderGraph, view);
         }
-        else if (settings.ambientOcclusionTechnique == AmbientOcclusionTechnique::RayTracingAmbientOcclusion)
-        {
-            sceneTextures.ambientOcclusionTexture = RenderRayTracingAmbientOcclusion(renderGraph, view);
-        }
-        else
-        {
-            sceneTextures.ambientOcclusionTexture = renderEngine->GetDefaultResources().ImportWhiteDummyTexture2D(renderGraph);
-        }
+        // if (IsRayTracingAmbientOcclusionEnabled())
+        // {
+        //     sceneTextures.ambientOcclusionTexture = RenderRayTracingAmbientOcclusion(renderGraph, view);
+        // }
 
-        AddIndirectLightingDiffusePass(renderGraph, view);
+        //AddIndirectLightingDiffusePass(renderGraph, view);
 
-        RenderGraphTextureDesc reflectionsTextureDesc = RenderGraphTextureDesc::Create2D(
-            renderResolution.width,
-            renderResolution.height,
-            RenderBackendTextureFormat::RGBA16Float,
-            RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::UnorderedAccess);
-        RenderGraphTextureHandle reflectionsTexture = renderGraph.CreateTexture(reflectionsTextureDesc, "ReflectionsTexture");
+        // RenderGraphTextureDesc reflectionsTextureDesc = RenderGraphTextureDesc::Create2D(
+        //     renderResolution.width,
+        //     renderResolution.height,
+        //     RenderBackendTextureFormat::RGBA16Float,
+        //     RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::UnorderedAccess);
+        // RenderGraphTextureHandle reflectionsTexture = renderGraph.CreateTexture(reflectionsTextureDesc, "ReflectionsTexture");
+        //
+        // RenderGraphTextureHandle ssrDebugOutputTexture = renderGraph.CreateTexture(RenderGraphTextureDesc::Create2D(
+        //     renderResolution.width,
+        //     renderResolution.height,
+        //     RenderBackendTextureFormat::RGBA16Float,
+        //     RenderBackendTextureCreateFlags::UnorderedAccess | RenderBackendTextureCreateFlags::ShaderResource),
+        //     "SSRDebugOutputTexture");
+        //
+        // if (settings.reflectionsTechnique == ReflectionsTechnique::ScreenSpaceReflections)
+        // {
+        //   /*  RenderScreenSpaceReflections(
+        //         renderGraph,
+        //         view,
+        //         hzbWidth,
+        //         hzbHeight,
+        //         closestHZBTexture,
+        //         historySceneColor,
+        //         historyInfo.historySceneDepth,
+        //         ssrRayAllocationBuffer,
+        //         reflectionsTexture,
+        //         ssrDebugOutputTexture);*/
+        // }
+        // else if (settings.reflectionsTechnique == ReflectionsTechnique::RayTracingReflections)
+        // {
+        //     //RenderRayTracingReflections();
+        // }
+        // else
+        // {
+        //     renderGraph.AddPass("ClearReflectionTexture", RenderGraphPassFlags::Compute,
+        //         [&](RenderGraphBuilder& builder)
+        //         {
+        //             reflectionsTexture = builder.WriteTexture(reflectionsTexture, RenderBackendResourceState::UnorderedAccess);
+        //
+        //             return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
+        //             {
+        //                 commandList.ClearTextureUAV(
+        //                     RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(reflectionsTexture), 0),
+        //                     RenderBackendTextureClearValue::Black);
+        //             };
+        //         });
+        // }
 
-        RenderGraphTextureHandle ssrDebugOutputTexture = renderGraph.CreateTexture(RenderGraphTextureDesc::Create2D(
-            renderResolution.width,
-            renderResolution.height,
-            RenderBackendTextureFormat::RGBA16Float,
-            RenderBackendTextureCreateFlags::UnorderedAccess | RenderBackendTextureCreateFlags::ShaderResource),
-            "SSRDebugOutputTexture");
-
-        if (settings.reflectionsTechnique == ReflectionsTechnique::ScreenSpaceReflections)
-        {
-          /*  RenderScreenSpaceReflections(
-                renderGraph,
-                view,
-                hzbWidth,
-                hzbHeight,
-                closestHZBTexture,
-                historySceneColor,
-                historyInfo.historySceneDepth,
-                ssrRayAllocationBuffer,
-                reflectionsTexture,
-                ssrDebugOutputTexture);*/
-        }
-        else if (settings.reflectionsTechnique == ReflectionsTechnique::RayTracingReflections)
-        {
-            //RenderRayTracingReflections();
-        }
-        else
-        {
-            renderGraph.AddPass("ClearReflectionTexture", RenderGraphPassFlags::Compute,
-                [&](RenderGraphBuilder& builder)
-                {
-                    reflectionsTexture = builder.WriteTexture(reflectionsTexture, RenderBackendResourceState::UnorderedAccess);
-
-                    return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
-                    {
-                        commandList.ClearTextureUAV(
-                            RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(reflectionsTexture), 0),
-                            RenderBackendTextureClearValue::Black);
-                    };
-                });
-        }
-
-        AddIndirectLightingSpecularPass(renderGraph, view);
+        //AddIndirectLightingSpecularPass(renderGraph, view);
 
         // AddSurfleGIPasses(renderGraph, view);
 
-        RenderGraphTextureDesc screenSpaceShadowMaskTextureDesc = RenderGraphTextureDesc::Create2D(
-            renderResolution.width,
-            renderResolution.height,
-            RenderBackendTextureFormat::RGBA16Float,
-            RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::UnorderedAccess);
-        RenderGraphTextureHandle screenSpaceShadowMaskTexture = renderGraph.CreateTexture(screenSpaceShadowMaskTextureDesc, "ScreenSpaceShadowMaskTexture");
+        // RenderGraphTextureDesc screenSpaceShadowMaskTextureDesc = RenderGraphTextureDesc::Create2D(
+        //     renderResolution.width,
+        //     renderResolution.height,
+        //     RenderBackendTextureFormat::RGBA16Float,
+        //     RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::UnorderedAccess);
+        // RenderGraphTextureHandle screenSpaceShadowMaskTexture = renderGraph.CreateTexture(screenSpaceShadowMaskTextureDesc, "ScreenSpaceShadowMaskTexture");
+        //
+        // if (view.visualizationMode == SceneViewVisualizationMode::ShadowMask)
+        // {
+        //     debugViewModeTextures.screenSpaceShadowMaskTextureDesc = screenSpaceShadowMaskTextureDesc;
+        //     debugViewModeTextures.screenSpaceShadowMaskTexture = renderGraph.CreateTexture(screenSpaceShadowMaskTextureDesc, "ScreenSpaceShadowMaskTexture (Copy)");
+        // }
+        //
+        // RenderGraphTextureDesc rayDistanceDesc = RenderGraphTextureDesc::Create2D(
+        //     renderResolution.width,
+        //     renderResolution.height,
+        //     RenderBackendTextureFormat::R16Float,
+        //     RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::UnorderedAccess);
+        // RenderGraphTextureHandle rayDistance = renderGraph.CreateTexture(screenSpaceShadowMaskTextureDesc, "RayTracingShadowsRayDistance");
+        //
+        // for (uint32 lightIndex = 0; lightIndex < renderEngine->numLights; lightIndex++)
+        // {
+        //     if (renderEngine->lightData[lightIndex].type == (uint32)LightComponent::LightType::Directional)
+        //     {
+        //         if (ShouldRenderRayTracingShadowsForLight(*renderEngine->lightInfo[lightIndex].component))
+        //         {
+        //             RenderRayTracingShadows(renderGraph, view, *renderEngine->lightInfo[lightIndex].component, screenSpaceShadowMaskTexture, rayDistance);
+        //         }
+        //         else
+        //         {
+        //             RenderScreenSpaceShadows(renderGraph, view, *renderEngine->lightInfo[lightIndex].component, screenSpaceShadowMaskTexture);
+        //         }
+        //         //if (true)
+        //         //{
+        //         //    auto filteredShadowMask = renderGraph->CreateTexture(shadowMaskDesc, "FilteredShadowMask");
+        //         //    DenoiseShadowMaskSSD(*renderGraph, blackboard, *view, filteredShadowMask, shadowMask);
+        //         //}
+        //         if (view.visualizationMode == SceneViewVisualizationMode::ShadowMask)
+        //         {
+        //             auto& debugViewModeTextures = renderGraph.blackboard.Get<RealTimeRendererDebugViewModeTextures>();
+        //
+        //             renderGraph.AddPass("CopyScreenSpaceShadowMaskTexture", RenderGraphPassFlags::Copy,
+        //                 [&](RenderGraphBuilder& builder)
+        //                 {
+        //                     builder.ReadTexture(screenSpaceShadowMaskTexture, RenderBackendResourceState::CopySrc);
+        //                     auto screenSpaceShadowMaskTextureCopy = debugViewModeTextures.screenSpaceShadowMaskTexture = builder.WriteTexture(debugViewModeTextures.screenSpaceShadowMaskTexture, RenderBackendResourceState::CopyDst);
+        //
+        //                     return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
+        //                         {
+        //                             Offset2D offset = { 0, 0 };
+        //                             Extent2D extent = { debugViewModeTextures.screenSpaceShadowMaskTextureDesc.width, debugViewModeTextures.screenSpaceShadowMaskTextureDesc.height };
+        //
+        //                             commandList.CopyTexture2D(
+        //                                 registry.GetRenderBackendTextureHandle(screenSpaceShadowMaskTexture),
+        //                                 offset,
+        //                                 0,
+        //                                 registry.GetRenderBackendTextureHandle(screenSpaceShadowMaskTextureCopy),
+        //                                 offset,
+        //                                 0,
+        //                                 extent);
+        //                         };
+        //                 });
+        //         }
+        //         break;
+        //     }
+        // }
 
-        if (view.visualizationMode == SceneViewVisualizationMode::ShadowMask)
-        {
-            debugViewModeTextures.screenSpaceShadowMaskTextureDesc = screenSpaceShadowMaskTextureDesc;
-            debugViewModeTextures.screenSpaceShadowMaskTexture = renderGraph.CreateTexture(screenSpaceShadowMaskTextureDesc, "ScreenSpaceShadowMaskTexture (Copy)");
-        }
+        //RenderGraphTextureHandle localLightShadowMapAtlas = RenderLocalLightShadows(renderGraph, view);
+        //AddDirectLightingPass(renderGraph, view, screenSpaceShadowMaskTexture, localLightShadowMapAtlas);
 
-        RenderGraphTextureDesc rayDistanceDesc = RenderGraphTextureDesc::Create2D(
-            renderResolution.width,
-            renderResolution.height,
-            RenderBackendTextureFormat::R16Float,
-            RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::UnorderedAccess);
-        RenderGraphTextureHandle rayDistance = renderGraph.CreateTexture(screenSpaceShadowMaskTextureDesc, "RayTracingShadowsRayDistance");
-
-        for (uint32 lightIndex = 0; lightIndex < renderEngine->numLights; lightIndex++)
-        {
-            if (renderEngine->lightData[lightIndex].type == (uint32)LightComponent::LightType::Directional)
-            {
-                if (ShouldRenderRayTracingShadowsForLight(*renderEngine->lightInfo[lightIndex].component))
-                {
-                    RenderRayTracingShadows(renderGraph, view, *renderEngine->lightInfo[lightIndex].component, screenSpaceShadowMaskTexture, rayDistance);
-                }
-                else
-                {
-                    RenderScreenSpaceShadows(renderGraph, view, *renderEngine->lightInfo[lightIndex].component, screenSpaceShadowMaskTexture);
-                }
-                //if (true)
-                //{
-                //    auto filteredShadowMask = renderGraph->CreateTexture(shadowMaskDesc, "FilteredShadowMask");
-                //    DenoiseShadowMaskSSD(*renderGraph, blackboard, *view, filteredShadowMask, shadowMask);
-                //}
-                if (view.visualizationMode == SceneViewVisualizationMode::ShadowMask)
-                {
-                    auto& debugViewModeTextures = renderGraph.blackboard.Get<RealTimeRendererDebugViewModeTextures>();
-
-                    renderGraph.AddPass("CopyScreenSpaceShadowMaskTexture", RenderGraphPassFlags::Copy,
-                        [&](RenderGraphBuilder& builder)
-                        {
-                            builder.ReadTexture(screenSpaceShadowMaskTexture, RenderBackendResourceState::CopySrc);
-                            auto screenSpaceShadowMaskTextureCopy = debugViewModeTextures.screenSpaceShadowMaskTexture = builder.WriteTexture(debugViewModeTextures.screenSpaceShadowMaskTexture, RenderBackendResourceState::CopyDst);
-
-                            return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
-                                {
-                                    Offset2D offset = { 0, 0 };
-                                    Extent2D extent = { debugViewModeTextures.screenSpaceShadowMaskTextureDesc.width, debugViewModeTextures.screenSpaceShadowMaskTextureDesc.height };
-
-                                    commandList.CopyTexture2D(
-                                        registry.GetRenderBackendTextureHandle(screenSpaceShadowMaskTexture),
-                                        offset,
-                                        0,
-                                        registry.GetRenderBackendTextureHandle(screenSpaceShadowMaskTextureCopy),
-                                        offset,
-                                        0,
-                                        extent);
-                                };
-                        });
-                }
-                break;
-            }
-        }
-
-        RenderGraphTextureHandle localLightShadowMapAtlas = RenderLocalLightShadows(renderGraph, view);
-
-        //renderGraph.AddPass("Sky", RenderGraphPassFlags::Graphics,
-        //    [&](RenderGraphBuilder& builder)
-        //    {
-        //        auto sceneDepthTexture = builder.ReadTexture(sceneTextures.sceneDepthTexture, RenderBackendResourceState::DepthStencil);
-        //        auto sceneColorTexture = sceneTextures.sceneColorTexture = builder.ReadWriteTexture(sceneTextures.sceneColorTexture, RenderBackendResourceState::RenderTarget);
-
-        //        builder.BindColorTarget(0, sceneColorTexture, RenderBackendRenderTargetLoadOp::Load, RenderBackendRenderTargetStoreOp::Store);
-        //        builder.BindDepthTarget(sceneDepthTexture, RenderBackendRenderTargetLoadOp::Load, RenderBackendRenderTargetStoreOp::Store);
-
-        //        return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
-        //        {
-        //            uint32 threadGroupCountX = ComputeWorkGroupCount(renderResolution.width, 8);
-        //            uint32 threadGroupCountY = ComputeWorkGroupCount(renderResolution.height, 8);
-
-        //            RenderBackendGraphicsPipelineState graphicsPipelineState = {};
-        //            graphicsPipelineState.rasterizationState.cullMode = RenderBackendRasterizationCullMode::None;
-        //            graphicsPipelineState.depthStencilState.depthTestEnable = true;
-        //            graphicsPipelineState.depthStencilState.depthWriteEnable = false;
-        //            graphicsPipelineState.depthStencilState.depthCompareFunction = RenderBackendCompareOp::Equal;
-
-        //            RenderBackendShaderArguments shaderArguments = {};
-        //            shaderArguments.BindBuffer(0, this->GetCurrentPerFrameDataBuffer());
-        //            shaderArguments.BindTextureSRV(1, RenderBackendTextureSRVDesc::Create(renderEngine->environmentMap));
-        //            shaderArguments.PushConstants(0, 0.0f);
-
-        //            RenderBackendShaderHandle graphicsShader = shaderLibrary->GetShader(ShaderID::SkyBox);
-        //            commandList.Draw(
-        //                graphicsShader,
-        //                graphicsPipelineState,
-        //                shaderArguments,
-        //                3, 1, 0, 0,
-        //                RenderBackendPrimitiveTopology::TriangleList);
-        //        };
-        //    });
-
-        AddDirectLightingPass(
-            renderGraph,
-            view,
-            screenSpaceShadowMaskTexture,
-            localLightShadowMapAtlas);
-
-        // TODO
-        const bool shouldRenderSubsurfaceScattering = false;
-
-        if (IsS)
+        if (IsSubsurfaceScatteringEnabled())
         {
             RenderSubsurfaceScattering(renderGraph, view);
         }
 
         if (IsSkyAtmosphereRenderingEnabled())
         {
-            RenderSkyAtmosphere(renderGraph, *skyAtmosphere, *(renderEngine->skyAtmosphereComponent), renderResolution.width, renderResolution.height, sceneViewShaderParametersBuffer);
+            RenderSkyAtmosphere(renderGraph, view);
         }
 
-        const bool isVisualizeSufelEnabled = (view.visualizationMode == SceneViewVisualizationMode::SurfelGISurfel);
+        // const bool isVisualizeSufelEnabled = (view.visualizationMode == SceneViewVisualizationMode::SurfelGISurfel);
+        //
+        // if (isVisualizeSufelEnabled)
+        // {
+        //     AddSurfleGIVisualizationPass(renderGraph, view);
+        // }
 
-        if (isVisualizeSufelEnabled)
+        if (IsScreenSpaceLightShaftsEnabled())
         {
-            AddSurfleGIVisualizationPass(renderGraph, view);
+            RenderScreenSpaceLightShafts(renderGraph, view);
         }
 
-        const bool shouldRenderLightShafts = true; // ShouldRenderLightShafts();
-        if (shouldRenderLightShafts)
-        {
-            RenderLightShafts(renderGraph, view);
-        }
+        RenderPostProcessingEffects(renderGraph, view);
 
-        AddPostProcessingPasses(renderGraph, view);
+        RenderGraphTextureHandle uiColorAndAlphaTexture = RenderUserInterface(renderGraph, view);
 
-        RenderUIColorAndAlpha(renderGraph, view);
+        RenderGraphTextureHandle targetTexture = renderGraph.ImportExternalTexture(view.targetTexture, "TargetTexture");
 
-        renderGraph.AddPass(std::format("FinalComposite (Graphics, {}x{})", targetResolution.width, targetResolution.height), RenderGraphPassFlags::Graphics,
+        renderGraph.AddPass(
+            std::format("GUIComposition (Graphics, {}x{})", targetResolution.width, targetResolution.height),
+            RenderGraphPassFlags::Graphics,
             [&](RenderGraphBuilder& builder)
             {
-                auto& sceneTextures = renderGraph.blackboard.Get<RealTimeRendererSceneTextures>();
-                auto& finalColorTextureData = renderGraph.blackboard.Get<RenderGraphFinalTexture>();
+                uiColorAndAlphaTexture = builder.ReadTexture(uiColorAndAlphaTexture, RenderBackendResourceState::ShaderResource);
+                targetTexture = builder.WriteTexture(targetTexture, RenderBackendResourceState::RenderTarget);
 
-                auto uiColorAndAlphaTexture = builder.ReadTexture(sceneTextures.uiColorAndAlphaTexture, RenderBackendResourceState::ShaderResource);
-                auto finalColorTexture = finalColorTextureData.finalTexture = builder.WriteTexture(finalColorTextureData.finalTexture, RenderBackendResourceState::RenderTarget);
-
-                builder.BindColorTarget(0, finalColorTexture, RenderBackendRenderPassBeginningAccessType::Preserve, RenderBackendRenderPassEndingAccessType::Preserve);
+                builder.BindColorTarget(0, targetTexture, RenderBackendRenderPassBeginningAccessType::Preserve, RenderBackendRenderPassEndingAccessType::Preserve);
 
                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
                 {
-                    RenderBackendViewport viewport(0.0f, 0.0f, (float)targetResolution.width, (float)targetResolution.height);
+                    RenderBackendViewport viewport(0.0f, 0.0f, float(targetResolution.width), float(targetResolution.height));
                     commandList.SetViewports(&viewport, 1);
 
                     RenderBackendScissor scissor(0, 0, targetResolution.width, targetResolution.height);
@@ -882,14 +813,17 @@ namespace Horizon
                     graphicsPipelineState.colorBlendState.targetBlends[0].srcAlphaBlendFactor = RenderBackendBlendFactor::One;
                     graphicsPipelineState.colorBlendState.targetBlends[0].dstAlphaBlendFactor = RenderBackendBlendFactor::OneMinusSrcAlpha;
                     graphicsPipelineState.colorBlendState.targetBlends[0].alphaBlendOp = RenderBackendBlendOp::Add;
-                    graphicsPipelineState.colorBlendState.targetBlends[0].colorWriteMask = RenderBackendColorComponentFlags::RGBA;
+                    graphicsPipelineState.colorBlendState.targetBlends[0].writeMask = RenderBackendColorComponentFlags::RGBA;
 
                     RenderBackendShaderArguments shaderArguments = {};
                     shaderArguments.BindTextureSRV(0, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(uiColorAndAlphaTexture)));
 
-                    RenderBackendShaderHandle graphicsShader = shaderLibrary->GetShader(ShaderID::GUIComposition);
+                    RenderBackendShaderHandle vertexShader = shaderLibrary->GetShader(ShaderID::FullScreenQuadVS);
+                    RenderBackendShaderHandle pixelShader = shaderLibrary->GetShader(ShaderID::GUICompositionPS);
+
                     commandList.Draw(
-                        graphicsShader,
+                        vertexShader,
+                        pixelShader,
                         graphicsPipelineState,
                         shaderArguments,
                         3, 1, 0, 0,
@@ -897,40 +831,31 @@ namespace Horizon
                 };
             });
 
-        renderGraph.AddPass("Present", RenderGraphPassFlags::NeverGetCulled,
-            [&](RenderGraphBuilder& builder)
-            {
-                auto& finalTextureData = renderGraph.blackboard.Get<RenderGraphFinalTexture>();
-                auto& outputTextureData = renderGraph.blackboard.Get<RenderGraphOutputTexture>();
-
-                auto finalTexture = builder.ReadTexture(finalTextureData.finalTexture, RenderBackendResourceState::CopySrc);
-                auto outputTexture = outputTextureData.outputTexture = builder.WriteTexture(outputTextureData.outputTexture, RenderBackendResourceState::CopyDst);
-
-                return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
-                {
-                    Offset2D offset = { 0, 0 };
-                    Extent2D extent = { targetResolution.width, targetResolution.height };
-
-                    commandList.CopyTexture2D(
-                        registry.GetRenderBackendTextureHandle(finalTexture),
-                        offset,
-                        0,
-                        registry.GetRenderBackendTextureHandle(outputTexture),
-                        offset,
-                        0,
-                        extent);
-
-                    RenderBackendBarrier transitions[] =
-                    {
-                        RenderBackendBarrier(registry.GetRenderBackendTextureHandle(outputTexture), RenderBackendTextureSubresourceRange(0, 1, 0, 1), RenderBackendResourceState::CopyDst, RenderBackendResourceState::Present)
-                    };
-                    commandList.Transitions(transitions, 1);
-                };
-            });
-    }
-
-    bool RealTimeRenderer::IsSuperResolutionEnabled() const
-    {
-        return features.enableSuperResolution;
+        // renderGraph.AddPass(
+        //     std::format("Present"),
+        //     RenderGraphPassFlags::NeverGetCulled,
+        //     [&](RenderGraphBuilder& builder)
+        //     {
+        //         auto finalTexture = builder.ReadTexture(finalTextureData.finalTexture, RenderBackendResourceState::CopySrc);
+        //         auto outputTexture = outputTextureData.outputTexture = builder.WriteTexture(outputTextureData.outputTexture, RenderBackendResourceState::CopyDst);
+        //
+        //         return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
+        //         {
+        //             commandList.CopyTexture2D(
+        //                 registry.GetRenderBackendTextureHandle(finalTexture),
+        //                 Offset2D(0, 0),
+        //                 0,
+        //                 registry.GetRenderBackendTextureHandle(outputTexture),
+        //                 Offset2D(0, 0),
+        //                 0,
+        //                 targetResolution);
+        //
+        //             RenderBackendBarrier transitions[] =
+        //             {
+        //                 RenderBackendBarrier(registry.GetRenderBackendTextureHandle(outputTexture), RenderBackendTextureSubresourceRange(0, 1, 0, 1), RenderBackendResourceState::CopyDst, RenderBackendResourceState::Present)
+        //             };
+        //             commandList.Transitions(transitions, 1);
+        //         };
+        //     });
     }
 }

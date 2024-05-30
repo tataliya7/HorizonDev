@@ -4,17 +4,37 @@
 
 namespace Horizon
 {
+    // TODO: may we don't need to get a shader library
+    class ShaderLibrary;
+
     class RendererDefaultResources
     {
     public:
+
+        RendererDefaultResources(RenderBackend* renderBackend, RenderGraphResourcePool* resourcePool, ShaderLibrary* shaderLibrary);
+
+        ~RendererDefaultResources();
+
+        void Initialize(RenderBackendCommandList& commandList);
+
+        void Release();
+
+        RenderBackendTextureHandle GetPreIntegratedBrdfLut() const;
 
         RenderGraphTextureHandle ImportBlackDummyTexture2D(RenderGraph& renderGraph) const;
 
         RenderGraphTextureHandle ImportWhiteDummyTexture2D(RenderGraph& renderGraph) const;
 
-        RenderBackendTextureHandle GetPreIntegratedBrdfLut() const;
+        RenderGraphPersistentTexture* GetBlackDummyTexture2D() const;
 
-    //private:
+        RenderGraphPersistentTexture* GetWhiteDummyTexture2D() const;
+
+    private:
+
+        RenderBackend* renderBackend;
+        RenderGraphResourcePool* renderGraphResourcePool;
+        ShaderLibrary* shaderLibrary;
+        bool initialized;
 
         RenderBackendTextureHandle preIntegratedBrdfLut;
 
@@ -27,8 +47,8 @@ namespace Horizon
         RenderBackendSamplerHandle globalSamplerComparisonGreaterLinearClamp;
         RenderBackendSamplerHandle globalSamplerComparisonLessLinearClamp;
 
-        RenderGraphPersistentTexture* blackDummyTexture2D = nullptr;
-        RenderGraphPersistentTexture* whiteDummyTexture2D = nullptr;
+        RenderGraphPersistentTexture* blackDummyTexture2D;
+        RenderGraphPersistentTexture* whiteDummyTexture2D;
     };
 
     static inline uint32 ComputeWorkGroupCount(uint32 threadCount, uint32 threadGroupSize)

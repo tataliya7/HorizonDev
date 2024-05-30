@@ -118,7 +118,7 @@ namespace Horizon
         VisualizeAmbientOcclusion,
         VisualizeScreenSpaceShadowMask,
         DebugDraw,
-        GUIComposition,
+        GUICompositionPS,
         // End: Real Time Renderer
         Count,
     };

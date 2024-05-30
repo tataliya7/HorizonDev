@@ -1,5 +1,4 @@
 #include "GPUAcceleratedFastFourierTransform.h"
-#include "ShaderID.h"
 
 namespace Horizon::GPUFFT
 {
@@ -15,26 +14,28 @@ namespace Horizon::GPUFFT
         {
             const uint32 numGroups = isHorizontal ? srcRect.GetHeight() : srcRect.GetWidth();
 
-            renderGraph.AddPass("FFT", RenderGraphPassFlags::Compute,
+            renderGraph.AddPass(
+                "FFT",
+                RenderGraphPassFlags::Compute,
                 [&](RenderGraphBuilder& builder)
                 {
                     srcTexture = builder.ReadTexture(srcTexture, RenderBackendResourceState::ShaderResource);
                     dstTexture = builder.WriteTexture(dstTexture, RenderBackendResourceState::UnorderedAccess);
 
                     return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
-                        {
-                            RenderBackendShaderArguments shaderArguments = {};
-                            shaderArguments.BindTextureSRV(0, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(srcTexture)));
-                            shaderArguments.BindTextureUAV(1, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(dstTexture), 0));
+                    {
+                        RenderBackendShaderArguments shaderArguments = {};
+                        shaderArguments.BindTextureSRV(0, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(srcTexture)));
+                        shaderArguments.BindTextureUAV(1, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(dstTexture), 0));
 
-                            RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::SharedMemoryTwoForOneRealFFT);
-                            commandList.Dispatch(
-                                computeShader,
-                                shaderArguments,
-                                1,
-                                numGroups,
-                                1);
-                        };
+                        RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::SharedMemoryTwoForOneRealFFT);
+                        commandList.Dispatch(
+                            computeShader,
+                            shaderArguments,
+                            1,
+                            numGroups,
+                            1);
+                    };
                 });
         }
     }
@@ -51,26 +52,28 @@ namespace Horizon::GPUFFT
         {
             const uint32 numGroups = 1024;//isHorizontal ? srcRect.GetHeight() : srcRect.GetWidth();
 
-            renderGraph.AddPass("FFT", RenderGraphPassFlags::Compute,
+            renderGraph.AddPass(
+                "FFT",
+                RenderGraphPassFlags::Compute,
                 [&](RenderGraphBuilder& builder)
                 {
                     srcTexture = builder.ReadTexture(srcTexture, RenderBackendResourceState::ShaderResource);
                     dstTexture = builder.WriteTexture(dstTexture, RenderBackendResourceState::UnorderedAccess);
 
                     return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
-                        {
-                            RenderBackendShaderArguments shaderArguments = {};
-                            shaderArguments.BindTextureSRV(0, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(srcTexture)));
-                            shaderArguments.BindTextureUAV(1, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(dstTexture), 0));
+                    {
+                        RenderBackendShaderArguments shaderArguments = {};
+                        shaderArguments.BindTextureSRV(0, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(srcTexture)));
+                        shaderArguments.BindTextureUAV(1, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(dstTexture), 0));
 
-                            RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::SharedMemoryComplexFFT);
-                            commandList.Dispatch(
-                                computeShader,
-                                shaderArguments,
-                                1,
-                                numGroups,
-                                1);
-                        };
+                        RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::SharedMemoryComplexFFT);
+                        commandList.Dispatch(
+                            computeShader,
+                            shaderArguments,
+                            1,
+                            numGroups,
+                            1);
+                    };
                 });
         }
     }
@@ -87,26 +90,28 @@ namespace Horizon::GPUFFT
         {
             const uint32 numGroups = 1024;//isHorizontal ? srcRect.GetHeight() : srcRect.GetWidth();
 
-            renderGraph.AddPass("FFT", RenderGraphPassFlags::Compute,
+            renderGraph.AddPass(
+                "FFT",
+                RenderGraphPassFlags::Compute,
                 [&](RenderGraphBuilder& builder)
                 {
                     srcTexture = builder.ReadTexture(srcTexture, RenderBackendResourceState::ShaderResource);
                     dstTexture = builder.WriteTexture(dstTexture, RenderBackendResourceState::UnorderedAccess);
 
                     return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
-                        {
-                            RenderBackendShaderArguments shaderArguments = {};
-                            shaderArguments.BindTextureSRV(0, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(srcTexture)));
-                            shaderArguments.BindTextureUAV(1, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(dstTexture), 0));
+                    {
+                        RenderBackendShaderArguments shaderArguments = {};
+                        shaderArguments.BindTextureSRV(0, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(srcTexture)));
+                        shaderArguments.BindTextureUAV(1, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(dstTexture), 0));
 
-                            RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::SharedMemoryComplexIFFT);
-                            commandList.Dispatch(
-                                computeShader,
-                                shaderArguments,
-                                1,
-                                numGroups,
-                                1);
-                        };
+                        RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::SharedMemoryComplexIFFT);
+                        commandList.Dispatch(
+                            computeShader,
+                            shaderArguments,
+                            1,
+                            numGroups,
+                            1);
+                    };
                 });
         }
     }
@@ -122,27 +127,29 @@ namespace Horizon::GPUFFT
     {
         const uint32 numGroups = 1024;//isHorizontal ? srcRect.GetHeight() : srcRect.GetWidth();
 
-        renderGraph.AddPass("SharedMemoryFFTConvolution", RenderGraphPassFlags::Compute,
+        renderGraph.AddPass(
+            "SharedMemoryFFTConvolution",
+            RenderGraphPassFlags::Compute,
             [&](RenderGraphBuilder& builder)
             {
                 srcTexture = builder.ReadTexture(srcTexture, RenderBackendResourceState::ShaderResource);
                 dstTexture = builder.WriteTexture(dstTexture, RenderBackendResourceState::UnorderedAccess);
 
                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
-                    {
-                        RenderBackendShaderArguments shaderArguments = {};
-                        shaderArguments.BindTextureSRV(0, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(srcTexture)));
-                        shaderArguments.BindTextureUAV(1, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(dstTexture), 0));
-                        shaderArguments.BindTextureSRV(2, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(kernelTexture)));
+                {
+                    RenderBackendShaderArguments shaderArguments = {};
+                    shaderArguments.BindTextureSRV(0, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(srcTexture)));
+                    shaderArguments.BindTextureUAV(1, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(dstTexture), 0));
+                    shaderArguments.BindTextureSRV(2, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(kernelTexture)));
 
-                        RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::SharedMemoryComplexFFTConvolution);
-                        commandList.Dispatch(
-                            computeShader,
-                            shaderArguments,
-                            1,
-                            numGroups,
-                            1);
-                    };
+                    RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::SharedMemoryComplexFFTConvolution);
+                    commandList.Dispatch(
+                        computeShader,
+                        shaderArguments,
+                        1,
+                        numGroups,
+                        1);
+                };
             });
     }
 
@@ -158,26 +165,28 @@ namespace Horizon::GPUFFT
         {
             const uint32 numGroups = isHorizontal ? srcRect.GetHeight() : srcRect.GetWidth();
 
-            renderGraph.AddPass("IFFT", RenderGraphPassFlags::Compute,
+            renderGraph.AddPass(
+                "IFFT",
+                RenderGraphPassFlags::Compute,
                 [&](RenderGraphBuilder& builder)
                 {
                     srcTexture = builder.ReadTexture(srcTexture, RenderBackendResourceState::ShaderResource);
                     dstTexture = builder.WriteTexture(dstTexture, RenderBackendResourceState::UnorderedAccess);
 
                     return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
-                        {
-                            RenderBackendShaderArguments shaderArguments = {};
-                            shaderArguments.BindTextureSRV(0, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(srcTexture)));
-                            shaderArguments.BindTextureUAV(1, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(dstTexture), 0));
+                    {
+                        RenderBackendShaderArguments shaderArguments = {};
+                        shaderArguments.BindTextureSRV(0, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(srcTexture)));
+                        shaderArguments.BindTextureUAV(1, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(dstTexture), 0));
 
-                            RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::SharedMemoryTwoForOneRealIFFT);
-                            commandList.Dispatch(
-                                computeShader,
-                                shaderArguments,
-                                1,
-                                numGroups,
-                                1);
-                        };
+                        RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::SharedMemoryTwoForOneRealIFFT);
+                        commandList.Dispatch(
+                            computeShader,
+                            shaderArguments,
+                            1,
+                            numGroups,
+                            1);
+                    };
                 });
         }
     }

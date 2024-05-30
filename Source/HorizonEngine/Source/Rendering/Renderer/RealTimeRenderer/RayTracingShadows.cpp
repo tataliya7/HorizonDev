@@ -2,6 +2,15 @@
 
 namespace Horizon
 {
+    bool ShouldRenderRayTracingShadowsForLight(const LightRenderProxy& light)
+    {
+        if (light.CastRayTracingShadows())
+        {
+            return true;
+        }
+        return false;
+    }
+
     void RealTimeRenderer::RenderRayTracingShadows(
         RenderGraph& renderGraph,
         const SceneView& view,

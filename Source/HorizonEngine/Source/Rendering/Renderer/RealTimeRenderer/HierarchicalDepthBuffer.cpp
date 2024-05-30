@@ -2,7 +2,7 @@
 
 namespace Horizon
 {
-    void RealTimeRenderer::RenderHZB(
+    void RealTimeRenderer::RenderDepthPyramid(
         RenderGraph& renderGraph,
         const SceneView& view,
         uint32 hzbWidth,

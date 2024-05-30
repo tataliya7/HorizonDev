@@ -3,5 +3,8 @@
 
 namespace Horizon
 {
-
+    bool RealTimeRenderer::IsSuperResolutionEnabled() const
+    {
+        return features.enableSuperResolution;
+    }
 }

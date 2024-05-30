@@ -5,6 +5,11 @@ namespace Horizon
     static constexpr uint32 GScreenSpaceLightShaftsDownsampleFactor = 2;
     static constexpr uint32 GScreenSpaceLightShaftsRadialBlurPassCount = 3;
 
+    bool RealTimeRenderer::IsScreenSpaceLightShaftsEnabled() const
+    {
+        return features.enableScreenSpaceLightShafts;
+    }
+
     void RealTimeRenderer::RenderScreenSpaceLightShafts(
         RenderGraph& renderGraph,
         const SceneView& view)

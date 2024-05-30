@@ -1,12 +1,18 @@
 #pragma once
 
-#include "PostProcessingCommon.h"
+#include "../RealTimeRendererCommon.h"
 
 namespace Horizon
 {
+    enum
+    {
+        PostProcessingThreadGroupSizeX = 8,
+        PostProcessingThreadGroupSizeY = 8,
+    };
+
     struct PostProcessingSceneColorMipChain
     {
-        static const uint32 MaxMipCount = 4;
+        static constexpr uint32 MaxMipCount = 4;
 
         /** Number of generated mip level count. */
         uint32 mipCount = 0;

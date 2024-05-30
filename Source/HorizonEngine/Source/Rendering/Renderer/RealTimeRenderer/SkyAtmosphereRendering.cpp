@@ -93,7 +93,9 @@ namespace Horizon
         return features.enableSkyAtmosphereRendering;
     }
 
-    void RealTimeRenderer::RenderSkyAtmosphereLUTs(RenderGraph& renderGraph)
+    void RealTimeRenderer::RenderSkyAtmosphereLUTs(
+        RenderGraph& renderGraph,
+        const SceneView& view)
     {
         const uint32 transmittanceLutWidth = TransmittanceLutWidth;
         const uint32 transmittanceLutHeight = TransmittanceLutHeight;
@@ -263,7 +265,9 @@ namespace Horizon
         skyAtmosphereLUTs.aerialPerspectiveVolume = aerialPerspectiveVolume;
     }
 
-    void RealTimeRenderer::RenderSkyAtmosphere(RenderGraph& renderGraph)
+    void RealTimeRenderer::RenderSkyAtmosphere(
+        RenderGraph& renderGraph,
+        const SceneView& view)
     {
         renderGraph.AddPass(
             std::format("SkyAtmosphereRayMarching (Graphics, {}x{})", renderResolution.width, renderResolution.height),

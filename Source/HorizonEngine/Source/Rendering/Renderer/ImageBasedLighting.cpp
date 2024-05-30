@@ -1,7 +1,6 @@
 #include "ImageBasedLighting.h"
 #include "RenderUtils.h"
 #include "ShaderLibrary.h"
-#include "ShaderID.h"
 
 namespace Horizon
 {
@@ -10,7 +9,7 @@ namespace Horizon
 
     void RenderPreIntegratedBrdfLut(ShaderLibrary* shaderLibrary, RenderBackendCommandList& commandList, RenderBackendTextureHandle preIntegratedBrdfLut)
     {
-        RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::PreIntegratedBrdfcsBrdf);
+        RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::PreIntegratedBRDF);
 
         RenderBackendBarrier transition(preIntegratedBrdfLut, RenderBackendTextureSubresourceRange::All, RenderBackendResourceState::Undefined, RenderBackendResourceState::UnorderedAccess);
         commandList.Transitions(&transition, 1);
@@ -185,39 +184,39 @@ namespace Horizon
             threadGroupCountZ);
     }
 
-    void RenderSystem::UpdateSkyLight(EnvironmentLightComponent& skyLight)
-    {
-        uint32 deviceMask = ~0u;
-        uint32 cubemapSize = skyLight.GetCubemapResolution();
-        RenderBackendTextureHandle equirectangular = LoadTextureFromHDRFile(renderBackend, skyLight.GetCubemap().c_str());
-        RenderBackendTextureDesc cubemapDesc = RenderBackendTextureDesc::CreateCube(
-            cubemapSize,
-            RenderBackendTextureFormat::RGBA16Float,
-            RenderBackendTextureCreateFlags::UnorderedAccess | RenderBackendTextureCreateFlags::ShaderResource,
-            Math::MaxNumMipLevels(cubemapSize));
-        skyLight.environmentMap = renderBackend->CreateTexture(deviceMask, &cubemapDesc, nullptr, "EnvironmentMap");
-
-        RenderBackendTextureDesc irradianceEnvironmentMapDesc = RenderBackendTextureDesc::CreateCube(
-            GIrradianceEnvironmentMapSize,
-            RenderBackendTextureFormat::RGBA16Float,
-            RenderBackendTextureCreateFlags::UnorderedAccess | RenderBackendTextureCreateFlags::ShaderResource);
-        skyLight.irradianceEnvironmentMap = renderBackend->CreateTexture(deviceMask, &irradianceEnvironmentMapDesc, nullptr, "IrradianceEnvironmentMap");
-
-        RenderBackendBufferDesc irradianceEnvironmentMapSHDesc = RenderBackendBufferDesc::CreateByteAddress(sizeof(float) * 27);
-        skyLight.irradianceEnvironmentMapSH = renderBackend->CreateBuffer(deviceMask, &irradianceEnvironmentMapSHDesc, nullptr, "IrradianceEnvironmentMapSH");
-
-        skyLight.filteredEnvironmentMap = renderBackend->CreateTexture(deviceMask, &cubemapDesc, nullptr, "FilteredEnvironmentMap");
-
-        RenderBackendCommandList* commandList = new RenderBackendCommandList(GArena);
-
-        ConvertLatLongToCubemap(shaderLibrary, *commandList, equirectangular, skyLight.environmentMap, cubemapSize);
-
-        ComputeEnvironmentCubemaps(shaderLibrary, *commandList, skyLight.environmentMap, cubemapSize, skyLight.irradianceEnvironmentMap, skyLight.irradianceEnvironmentMapSH, skyLight.filteredEnvironmentMap);
-
-        renderBackend->SubmitCommandLists(&commandList, 1, RenderBackendSwapChainHandle::Null);
-
-        delete commandList;
-
-        skyLight.SetDirty(false);
-    }
+    // void RenderSystem::UpdateSkyLight(EnvironmentLightComponent& skyLight)
+    // {
+    //     uint32 deviceMask = ~0u;
+    //     uint32 cubemapSize = skyLight.GetCubemapResolution();
+    //     RenderBackendTextureHandle equirectangular = LoadTextureFromHDRFile(renderBackend, skyLight.GetCubemap().c_str());
+    //     RenderBackendTextureDesc cubemapDesc = RenderBackendTextureDesc::CreateCube(
+    //         cubemapSize,
+    //         RenderBackendTextureFormat::RGBA16Float,
+    //         RenderBackendTextureCreateFlags::UnorderedAccess | RenderBackendTextureCreateFlags::ShaderResource,
+    //         Math::MaxNumMipLevels(cubemapSize));
+    //     skyLight.environmentMap = renderBackend->CreateTexture(deviceMask, &cubemapDesc, nullptr, "EnvironmentMap");
+    //
+    //     RenderBackendTextureDesc irradianceEnvironmentMapDesc = RenderBackendTextureDesc::CreateCube(
+    //         GIrradianceEnvironmentMapSize,
+    //         RenderBackendTextureFormat::RGBA16Float,
+    //         RenderBackendTextureCreateFlags::UnorderedAccess | RenderBackendTextureCreateFlags::ShaderResource);
+    //     skyLight.irradianceEnvironmentMap = renderBackend->CreateTexture(deviceMask, &irradianceEnvironmentMapDesc, nullptr, "IrradianceEnvironmentMap");
+    //
+    //     RenderBackendBufferDesc irradianceEnvironmentMapSHDesc = RenderBackendBufferDesc::CreateByteAddress(sizeof(float) * 27);
+    //     skyLight.irradianceEnvironmentMapSH = renderBackend->CreateBuffer(deviceMask, &irradianceEnvironmentMapSHDesc, nullptr, "IrradianceEnvironmentMapSH");
+    //
+    //     skyLight.filteredEnvironmentMap = renderBackend->CreateTexture(deviceMask, &cubemapDesc, nullptr, "FilteredEnvironmentMap");
+    //
+    //     RenderBackendCommandList* commandList = new RenderBackendCommandList(GArena);
+    //
+    //     ConvertLatLongToCubemap(shaderLibrary, *commandList, equirectangular, skyLight.environmentMap, cubemapSize);
+    //
+    //     ComputeEnvironmentCubemaps(shaderLibrary, *commandList, skyLight.environmentMap, cubemapSize, skyLight.irradianceEnvironmentMap, skyLight.irradianceEnvironmentMapSH, skyLight.filteredEnvironmentMap);
+    //
+    //     renderBackend->SubmitCommandLists(&commandList, 1, RenderBackendSwapChainHandle::Null);
+    //
+    //     delete commandList;
+    //
+    //     skyLight.SetDirty(false);
+    // }
 }

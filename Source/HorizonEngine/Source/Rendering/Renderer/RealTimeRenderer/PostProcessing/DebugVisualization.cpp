@@ -1,4 +1,5 @@
-#include "PostProcessingCommon.h"
+#include "../RealTimeRenderer.h"
+#include "PostProcessing.h"
 
 namespace Horizon
 {
@@ -89,6 +90,13 @@ namespace Horizon
         //     });
         //
         // return outputTexture;
+    }
+
+    RenderGraphTextureHandle RealTimeRenderer::AddVisualizeWorldSpaceNormalPass(
+        RenderGraph& renderGraph,
+        const SceneView& view)
+    {
+        return RenderGraphTextureHandle::Null;
     }
 
     RenderGraphTextureHandle RealTimeRenderer::AddVisualizeMotionVectorsPass(
