@@ -93,6 +93,18 @@ namespace Horizon
         //}
     }
 #endif
+    RealTimeRenderer::RealTimeRenderer(
+        RenderBackend* renderBackend,
+        RenderGraphResourcePool* resourcePool,
+        ShaderLibrary* shaderLibrary,
+        RendererDefaultResources* defaultResources)
+        : renderBackend(renderBackend)
+        , resourcePool(resourcePool)
+        , shaderLibrary(shaderLibrary)
+        , defaultResources(defaultResources)
+    {
+
+    }
 
     RealTimeRenderer::~RealTimeRenderer()
     {
@@ -166,6 +178,8 @@ namespace Horizon
         //    default: break;
         //    }
         //}
+
+        const SceneView& view = *sceneView;
 
         upscaleRatio = 1.0f;
 
@@ -490,6 +504,8 @@ namespace Horizon
     {
         OPTICK_EVENT();
 
+        const SceneView& view = *sceneView;
+
         RealTimeRendererSceneTextures& sceneTextures = renderGraph.blackboard.Create<RealTimeRendererSceneTextures>();
         //RealTimeRendererDebugViewModeTextures& debugViewModeTextures = renderGraph.blackboard.Create<RealTimeRendererDebugViewModeTextures>();
 
@@ -782,7 +798,8 @@ namespace Horizon
 
         RenderGraphTextureHandle uiColorAndAlphaTexture = RenderUserInterface(renderGraph, view);
 
-        RenderGraphTextureHandle targetTexture = renderGraph.ImportExternalTexture(view.targetTexture, "TargetTexture");
+        RenderGraphTextureHandle targetTexture;
+            //= renderGraph.ImportExternalTexture(view.targetTexture, "TargetTexture");
 
         renderGraph.AddPass(
             std::format("GUIComposition (Graphics, {}x{})", targetResolution.width, targetResolution.height),

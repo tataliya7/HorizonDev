@@ -5,7 +5,7 @@
 #include "ToneMappingCommon.hsh"
 #include "ColorLUTCommon.hsh"
 
-BIND_BUFFER_ELEMENT(0, PerFrameData, PerFrameData);
+BIND_BUFFER_ELEMENT(0, PerFrameShaderParameters, PerFrameShaderParameters);
 BIND_TEXTURE_3D_UAV(1, float4, ColorLUTTexture);
 
 // Accurate for 4000K < Temp < 25000K
@@ -113,10 +113,10 @@ float3 PurkinjeShift(float3 linearRGB)
 [numthreads(8, 8, 8)]
 void ColorLUTCS(uint3 DispatchThreadID : SV_DispatchThreadID)
 {
-    PerFrameData perFrameData = GetPerFrameData();
+    PerFrameShaderParameters perFrameParameters = GetPerFrameShaderParameters();
     RWTexture3D<float4> colorLUTTexture = GetColorLUTTextureUAV();
 
-    float whiteBalanceColorTemperature = perFrameData.colorGradingWhiteBalanceColorTemperature;
+    float whiteBalanceColorTemperature = perFrameParameters.colorGradingWhiteBalanceColorTemperature;
 
     uint3 pixelCoord = DispatchThreadID;
 

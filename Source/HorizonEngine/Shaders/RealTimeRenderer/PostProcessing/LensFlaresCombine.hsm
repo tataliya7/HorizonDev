@@ -2,7 +2,7 @@
 #include "RealTimeRendererCommon.hsh"
 #include "PostProcessingCommon.hsh"
 
-BIND_BUFFER_ELEMENT(0, PerFrameData, PerFrameData);
+BIND_BUFFER_ELEMENT(0, PerFrameShaderParameters, PerFrameShaderParameters);
 BIND_TEXTURE_2D_SRV(1, LensFlaresGradiantLUTTexture);
 BIND_TEXTURE_2D_SRV(2, LensFlaresGhostTexture);
 BIND_TEXTURE_2D_SRV(3, LensFlaresGlareTexture);
@@ -24,7 +24,7 @@ float2 ComputeFisheyeUV(float2 uv, float f, float zoom)
 [shader("pixel")]
 void LensFlaresCombinePS(float4 position : SV_Position, out float3 outColor : SV_Target)
 {
-    PerFrameData perFrameData = GetPerFrameData();
+    PerFrameShaderParameters perFrameParameters = GetPerFrameShaderParameters();
     Texture2D ghostTexture = GetLensFlaresGhostTextureSRV();
     Texture2D glareTexture = GetLensFlaresGlareTextureSRV();
     Texture2D gradientLUTTexture = GetLensFlaresGradiantLUTTextureSRV();
@@ -33,7 +33,7 @@ void LensFlaresCombinePS(float4 position : SV_Position, out float3 outColor : SV
     float outputTextureHeight = SHADER_ARGUMENTS_DATA(1);
     float2 outputTextureInvSize = 1.0f / float2(outputTextureWidth, outputTextureHeight);
 
-    float lensFlaresIntensity = perFrameData.lensFlaresIntensity;
+    float lensFlaresIntensity = perFrameParameters.lensFlaresIntensity;
 
     float2 uv = position.xy * outputTextureInvSize;
 

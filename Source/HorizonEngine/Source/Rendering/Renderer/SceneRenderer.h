@@ -14,25 +14,25 @@ namespace Horizon
         Count,
     };
 
-    class SceneView;
+    //class SceneView;
 
-    /**
-     * The renderer implements the process of generating visual images.
-     */
-    class SceneRenderer
-    {
-    public:
-        SceneRenderer(SceneView* sceneView);
-        virtual ~SceneRenderer();
+    ///**
+    // * The renderer implements the process of generating visual images.
+    // */
+    //class SceneRenderer
+    //{
+    //public:
+    //    SceneRenderer();
+    //    virtual ~SceneRenderer();
 
-        virtual void Render(RenderGraph& renderGraph) = 0;
+    //    virtual void Render(RenderGraph& renderGraph) = 0;
 
-        RenderBackend* GetRenderBackend() const;
+    //    //RenderBackend* GetRenderBackend() const;
 
-    private:
-        SceneView* sceneView;
-    };
+    //private:
+    //    //SceneView* sceneView;
+    //};
 
-    SceneRenderer* CreateSceneRenderer(SceneView* sceneView);
-    void DestroySceneRenderer(SceneRenderer* sceneRenderer);
+    //SceneRenderer* CreateSceneRenderer();
+    //void DestroySceneRenderer(SceneRenderer* sceneRenderer);
 }

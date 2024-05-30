@@ -1,7 +1,7 @@
 #include "../ShaderCommon.hsh"
 #include "RealTimeRendererCommon.hsh"
 
-BIND_BUFFER_ELEMENT(0, PerFrameData, PerFrameData);
+BIND_BUFFER_ELEMENT(0, PerFrameShaderParameters, PerFrameShaderParameters);
 BIND_BYTE_ADDRESS_BUFFER_SRV(1, GeometryBuffer);
 BIND_BYTE_ADDRESS_BUFFER_SRV(2, TransformBuffer);
 BIND_BYTE_ADDRESS_BUFFER_UAV(3, DrawCallArgsBuffer);
@@ -52,7 +52,7 @@ void InstanceCullingCS(uint3 DispatchThreadID : SV_DispatchThreadID)
     boundsCorner[6] = mul(worldTransform, float4(boundsMax.x, boundsMax.y, boundsMin.z, 1.0)).xyz;
     boundsCorner[7] = mul(worldTransform, float4(boundsMax.x, boundsMax.y, boundsMax.z, 1.0)).xyz;
 
-    PerFrameData perFrameData = GetPerFrameData();
+    PerFrameShaderParameters perFrameParameters = GetPerFrameShaderParameters();
     bool visible = true;
     for (int planeIndex = 0; planeIndex < 6; planeIndex++)
     {
@@ -60,7 +60,7 @@ void InstanceCullingCS(uint3 DispatchThreadID : SV_DispatchThreadID)
         [unroll]
         for (int cornerIndex = 0; cornerIndex < 8; cornerIndex++)
         {
-            allBoundsCornerOutsideThisPlane &= PointOutsidePlane(boundsCorner[cornerIndex].xyz, perFrameData.frustumPlanes[planeIndex]);
+            allBoundsCornerOutsideThisPlane &= PointOutsidePlane(boundsCorner[cornerIndex].xyz, perFrameParameters.frustumPlanes[planeIndex]);
         }
         if (allBoundsCornerOutsideThisPlane)
         {

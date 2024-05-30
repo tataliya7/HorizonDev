@@ -1,7 +1,7 @@
 #include "../ShaderCommon.hsh"
 #include "RealTimeRendererCommon.hsh"
 
-BIND_BUFFER_ELEMENT(0, PerFrameData, PerFrameData);
+BIND_BUFFER_ELEMENT(0, PerFrameShaderParameters, PerFrameShaderParameters);
 BIND_BYTE_ADDRESS_BUFFER_SRV(1, GeometryBuffer);
 BIND_TEXTURE_2D_TYPED_SRV(2, uint2, VisibilityBuffer);
 BIND_TEXTURE_2D_UAV(3, float2, MotionVectors);
@@ -31,20 +31,20 @@ float3 RayTriangleIntersectionBarycentrics3D(float3 rayOrigin, float3 rayDirecti
 [numthreads(8, 8, 1)]
 void MotionVectorsCS(uint3 DispatchThreadID : SV_DispatchThreadID)
 {
-    PerFrameData perFrameData = GetPerFrameData();
-    uint width = perFrameData.renderResolutionX;
-    uint height = perFrameData.renderResolutionY;
+    PerFrameShaderParameters perFrameParameters = GetPerFrameShaderParameters();
+    uint width = perFrameParameters.renderWidth;
+    uint height = perFrameParameters.renderHeight;
     if (DispatchThreadID.x >= width || DispatchThreadID.y >= height)
     {
         return;
     }
 
-    float2 invSize = perFrameData.renderResolution.zw;
+    float2 invSize = perFrameParameters.renderResolution.zw;
     uint2 coord = DispatchThreadID.xy;
     float2 uv = (coord.xy + 0.5) * invSize;
-    float2 jitteredUV = (coord + 0.5 + perFrameData.cameraJitterOffset) * invSize;
+    float2 jitteredUV = (coord + 0.5 + perFrameParameters.cameraJitterOffset) * invSize;
 
-    float2 motionVectorJitterCancellation = perFrameData.previousCameraJitterOffset - perFrameData.cameraJitterOffset;
+    float2 motionVectorJitterCancellation = perFrameParameters.previousCameraJitterOffset - perFrameParameters.cameraJitterOffset;
     // Transform to screen UV space
     motionVectorJitterCancellation = motionVectorJitterCancellation * invSize;
 
@@ -54,9 +54,9 @@ void MotionVectorsCS(uint3 DispatchThreadID : SV_DispatchThreadID)
     uint geometryID = visibilityID.r;
     uint primitiveID = visibilityID.g;
 
-    float4 unprojected = mul(perFrameData.invViewProjectionMatrix, float4(uv_to_clipspace(uv), 0.0, 1.0));
+    float4 unprojected = mul(perFrameParameters.invViewProjectionMatrix, float4(uv_to_clipspace(uv), 0.0, 1.0));
     unprojected.xyz /= unprojected.w;
-    float3 cameraRayOrigin = perFrameData.cameraPosition;
+    float3 cameraRayOrigin = perFrameParameters.cameraPosition;
     float3 cameraRayDirection = normalize(unprojected.xyz - cameraRayOrigin);
 
     float3 hitPointPrevWorldPosition;
@@ -108,7 +108,7 @@ void MotionVectorsCS(uint3 DispatchThreadID : SV_DispatchThreadID)
 
         RWTexture2D<float2> motionVectors = GetMotionVectorsUAV();
         float2 currPosition = uv;
-        float4 prevClipPosition = mul(perFrameData.prevViewProjectionMatrix, float4(hitPointPrevWorldPosition, 1.0));
+        float4 prevClipPosition = mul(perFrameParameters.prevViewProjectionMatrix, float4(hitPointPrevWorldPosition, 1.0));
         float2 prevPosition = clipspace_to_uv(prevClipPosition.xy / prevClipPosition.w);
         float2 motionVector = prevPosition - currPosition;
         motionVector -= motionVectorJitterCancellation;
@@ -122,11 +122,11 @@ void MotionVectorsCS(uint3 DispatchThreadID : SV_DispatchThreadID)
     else
     {
         // -0.01 to prevent division by zero in perspective division
-        hitPointPrevWorldPosition = cameraRayOrigin + cameraRayDirection * (perFrameData.farClippingPlane - 0.0001);
-        hitPointPrevWorldPosition = hitPointPrevWorldPosition - perFrameData.cameraPosition + perFrameData.previousCameraPosition;
+        hitPointPrevWorldPosition = cameraRayOrigin + cameraRayDirection * (perFrameParameters.farClippingPlane - 0.0001);
+        hitPointPrevWorldPosition = hitPointPrevWorldPosition - perFrameParameters.cameraPosition + perFrameParameters.previousCameraPosition;
         RWTexture2D<float2> motionVectors = GetMotionVectorsUAV();
         float2 currPosition = uv;
-        float4 prevClipPosition = mul(perFrameData.prevViewProjectionMatrix, float4(hitPointPrevWorldPosition, 1.0));
+        float4 prevClipPosition = mul(perFrameParameters.prevViewProjectionMatrix, float4(hitPointPrevWorldPosition, 1.0));
         float2 prevPosition = clipspace_to_uv(prevClipPosition.xy / prevClipPosition.w);
         float2 motionVector = prevPosition - currPosition;
         motionVector -= motionVectorJitterCancellation;

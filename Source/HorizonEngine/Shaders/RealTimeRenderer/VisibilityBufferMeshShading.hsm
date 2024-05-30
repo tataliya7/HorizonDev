@@ -3,7 +3,7 @@
 
 const static uint TASK_SHADER_WORKGROUP_SIZE = 32; // Assumes availability of wave size of 32 threads
 
-BIND_BUFFER_ELEMENT(0, PerFrameData, PerFrameData);
+BIND_BUFFER_ELEMENT(0, PerFrameShaderParameters, PerFrameShaderParameters);
 BIND_BYTE_ADDRESS_BUFFER_SRV(1, GeometryDataBuffer);
 BIND_BYTE_ADDRESS_BUFFER_SRV(2, MeshletDescBuffer);
 
@@ -43,7 +43,7 @@ MeshletDesc GetMeshletDesc(ByteAddressBuffer meshletDescBuffer, uint meshletInde
     return meshletDesc;
 }
 
-VertexAttributes GetVertexAttributes(PerFrameData perFrameData, MeshletDesc meshletDesc, uint vertexIndex)
+VertexAttributes GetVertexAttributes(PerFrameShaderParameters perFrameParameters, MeshletDesc meshletDesc, uint vertexIndex)
 {
 #if 0
     ByteAddressBuffer geometryBuffer = GetGeometryBufferSRV();
@@ -52,7 +52,7 @@ VertexAttributes GetVertexAttributes(PerFrameData perFrameData, MeshletDesc mesh
     float4x4 worldMatrix = transformBuffer.Load<float4x4>(geometry.transformIndex * sizeof(float4x4));
     float3 vertexPosition = GetRWByteAddressBuffer(geometry.vertexBuffer0).Load<float3>(index0 * sizeof(float3));
     float3 positionWS = mul(worldMatrix, float4(vertexPosition, 1.0f)).xyz;
-    float4 positionHS = mul(perFrameData.viewProjectionMatrix, float4(positionWS, 1.0f));
+    float4 positionHS = mul(perFrameParameters.viewProjectionMatrix, float4(positionWS, 1.0f));
 #else
     float4 positionHS = 0;
 #endif
@@ -119,7 +119,7 @@ void VisibilityBufferMS(
         return;
     }
 
-    PerFrameData perFrameData = GetPerFrameData();
+    PerFrameShaderParameters perFrameParameters = GetPerFrameShaderParameters();
     //ByteAddressBuffer meshletDescBuffer = GetMeshletDescBufferSRV();
 
     MeshletDesc meshletDesc;// = GetMeshletDesc(meshletDescBuffer, meshletIndex);
@@ -131,13 +131,13 @@ void VisibilityBufferMS(
     uint vertexOutputIndex = GroupThreadID;
     if (vertexOutputIndex < vertexCount)
     {
-        VertexAttributes vertex = GetVertexAttributes(perFrameData, meshletDesc, vertexOutputIndex);
+        VertexAttributes vertex = GetVertexAttributes(perFrameParameters, meshletDesc, vertexOutputIndex);
         outVertices[vertexOutputIndex] = vertex;
     }
     vertexOutputIndex += 128;
     if (vertexOutputIndex < vertexCount)
     {
-        VertexAttributes vertex = GetVertexAttributes(perFrameData, meshletDesc, vertexOutputIndex);
+        VertexAttributes vertex = GetVertexAttributes(perFrameParameters, meshletDesc, vertexOutputIndex);
         outVertices[vertexOutputIndex] = vertex;
     }
 

@@ -3319,8 +3319,6 @@ namespace Horizon
 
     VulkanPipeline* VulkanDevice::FindOrCreateComputePipeline(VulkanShader* computeShader, uint32 pushConstantSize)
     {
-        assert(shader->stages.size() == 1);
-
         uint32 pipelineHash = CRC32(&computeShader->stageInfo, sizeof(VkPipelineShaderStageCreateInfo), pushConstantSize);
 
         if (pipelineManager.pipelineMap.find(pipelineHash) != pipelineManager.pipelineMap.end())

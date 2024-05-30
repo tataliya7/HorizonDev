@@ -2,7 +2,7 @@
 #include "RealTimeRendererCommon.hsh"
 #include "ScreenSpaceReflectionsCommon.hsh"
 
-BIND_BUFFER_ELEMENT(0, PerFrameData, PerFrameData);
+BIND_BUFFER_ELEMENT(0, PerFrameShaderParameters, PerFrameShaderParameters);
 BIND_TEXTURE_2D_SRV(1, SceneDepth);
 BIND_TEXTURE_2D_SRV(2, GBuffer1);
 BIND_TEXTURE_2D_SRV(3, VelocityBuffer);
@@ -47,14 +47,14 @@ float GetDisocclusion(float depth, float depthHistory, float near, float far)
     return disocclusion;
 }
 
-float4 SamplePreviousColor(PerFrameData perFrameData, Texture2D historyOutputTexture, Texture2D historyDepthBuffer, float2 prevUV, float2 size, float depth, out float disocclusion, out float2 prevUVSample)
+float4 SamplePreviousColor(PerFrameShaderParameters perFrameParameters, Texture2D historyOutputTexture, Texture2D historyDepthBuffer, float2 prevUV, float2 size, float depth, out float disocclusion, out float2 prevUVSample)
 {
     prevUVSample = prevUV;
 
     float4 previousColor = historyOutputTexture.SampleLevel(GlobalSamplerLinearClamp, prevUVSample, 0);
     float previousDepth = historyDepthBuffer.SampleLevel(GlobalSamplerLinearClamp, prevUVSample, 0).r;
 
-    disocclusion = GetDisocclusion(depth, previousDepth, perFrameData.nearClippingPlane, perFrameData.farClippingPlane);
+    disocclusion = GetDisocclusion(depth, previousDepth, perFrameParameters.nearClippingPlane, perFrameParameters.farClippingPlane);
     if (disocclusion > disocclusionThreshold) // Good enough
     {
         return previousColor;
@@ -76,7 +76,7 @@ float4 SamplePreviousColor(PerFrameData perFrameData, Texture2D historyOutputTex
 
                 float samplePreviousDepth = historyDepthBuffer.SampleLevel(GlobalSamplerPointClamp, sampleUV, 0).r;
 
-                float weight = GetDisocclusion(depth, samplePreviousDepth, perFrameData.nearClippingPlane, perFrameData.farClippingPlane);
+                float weight = GetDisocclusion(depth, samplePreviousDepth, perFrameParameters.nearClippingPlane, perFrameParameters.farClippingPlane);
                 if (weight > disocclusion)
                 {
                     disocclusion = weight;
@@ -124,7 +124,7 @@ float4 SamplePreviousColor(PerFrameData perFrameData, Texture2D historyOutputTex
         previousDepthResult /= max(weightSum, 0.00001);
 
         previousColor = previousColorResult;
-        disocclusion = GetDisocclusion(depth, previousDepthResult, perFrameData.nearClippingPlane, perFrameData.farClippingPlane);
+        disocclusion = GetDisocclusion(depth, previousDepthResult, perFrameParameters.nearClippingPlane, perFrameParameters.farClippingPlane);
     }
 
     disocclusion = disocclusion < disocclusionThreshold ? 0.0 : disocclusion;
@@ -135,7 +135,7 @@ float4 SamplePreviousColor(PerFrameData perFrameData, Texture2D historyOutputTex
 [numthreads(SSR_THREAD_GROUP_SIZE, SSR_THREAD_GROUP_SIZE, 1)]
 void SSRTemporalFilteringCS(uint3 DispatchThreadID : SV_DispatchThreadID)
 {
-    PerFrameData perFrameData = GetPerFrameData();
+    PerFrameShaderParameters perFrameParameters = GetPerFrameShaderParameters();
     Texture2D sceneDepth = GetSceneDepthSRV();
     Texture2D gbuffer1 = GetGBuffer1SRV();
     Texture2D velocityBuffer = GetVelocityBufferSRV();
@@ -149,9 +149,9 @@ void SSRTemporalFilteringCS(uint3 DispatchThreadID : SV_DispatchThreadID)
     RWTexture2D<float4> outputTexture = GetOutputTextureUAV();
     RWTexture2D<float> temporalVariance = GetTemporalVarianceUAV();
 
-    float2 resolution = float2(perFrameData.renderResolutionX, perFrameData.renderResolutionY);
+    float2 resolution = float2(perFrameParameters.renderWidth, perFrameParameters.renderHeight);
 
-    if (perFrameData.frameIndex == 0)
+    if (perFrameParameters.frameIndex == 0)
     {
         outputTexture[DispatchThreadID.xy] = resolveTexture[DispatchThreadID.xy];
         temporalVariance[DispatchThreadID.xy] = 0.0;
@@ -197,7 +197,7 @@ void SSRTemporalFilteringCS(uint3 DispatchThreadID : SV_DispatchThreadID)
     float2 uv = (DispatchThreadID.xy + 0.5f) * float2(1.0 / resolution.x, 1.0 / resolution.y);
 
     float2 prevUVVelocity = uv + velocity;
-    float2 prevUVReflectionHit = CalculateReprojectionBuffer(uv, reprojectionDepth, perFrameData.invViewProjectionMatrix, perFrameData.prevViewProjectionMatrix);
+    float2 prevUVReflectionHit = CalculateReprojectionBuffer(uv, reprojectionDepth, perFrameParameters.invViewProjectionMatrix, perFrameParameters.prevViewProjectionMatrix);
 
     float4 previousColorVelocity = historyOutputTexture.SampleLevel(GlobalSamplerLinearClamp, prevUVVelocity, 0);
     float4 previousColorReflectionHit = historyOutputTexture.SampleLevel(GlobalSamplerLinearClamp, prevUVReflectionHit, 0);
@@ -209,7 +209,7 @@ void SSRTemporalFilteringCS(uint3 DispatchThreadID : SV_DispatchThreadID)
 
     float disocclusion = 0.0;
     float2 prevUVSample = 0.0;
-    float4 previousColor = SamplePreviousColor(perFrameData, historyOutputTexture, historyDepthBuffer, prevUV, resolution, depth, disocclusion, prevUVSample);
+    float4 previousColor = SamplePreviousColor(perFrameParameters, historyOutputTexture, historyDepthBuffer, prevUV, resolution, depth, disocclusion, prevUVSample);
 
     float4 currentColor = resolveTexture[DispatchThreadID.xy];
     float4 resultColor = currentColor;

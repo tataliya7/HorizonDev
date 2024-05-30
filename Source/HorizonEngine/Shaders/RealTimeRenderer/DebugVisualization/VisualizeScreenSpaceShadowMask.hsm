@@ -1,7 +1,7 @@
 #include "../ShaderCommon.hsh"
 #include "RealTimeRendererCommon.hsh"
 
-BIND_BUFFER_ELEMENT(0, PerFrameData, PerFrameData);
+BIND_BUFFER_ELEMENT(0, PerFrameShaderParameters, PerFrameShaderParameters);
 BIND_TEXTURE_2D_SRV(1, ShadowMaskTexture);
 BIND_TEXTURE_2D_UAV(2, float4, OutputTexture);
 
@@ -9,7 +9,7 @@ BIND_TEXTURE_2D_UAV(2, float4, OutputTexture);
 [numthreads(8, 8, 1)]
 void VisualizeScreenSpaceShadowMaskCS(uint3 DispatchThreadID : SV_DispatchThreadID)
 {
-    PerFrameData perFrameData = GetPerFrameData();
+    PerFrameShaderParameters perFrameParameters = GetPerFrameShaderParameters();
     Texture2D screenSpaceShadowMaskTexture = GetShadowMaskTextureSRV();
     RWTexture2D<float4> outputTexture = GetOutputTextureUAV();
 

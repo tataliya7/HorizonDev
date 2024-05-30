@@ -2,7 +2,7 @@
 #include "../RealTimeRendererCommon.hsh"
 #include "SurfelGICommon.hsh"
 
-BIND_BUFFER_ELEMENT(0, PerFrameData, PerFrameData);
+BIND_BUFFER_ELEMENT(0, PerFrameShaderParameters, PerFrameShaderParameters);
 BIND_BYTE_ADDRESS_BUFFER_UAV(1, SurfelGIInfoBuffer);
 BIND_BYTE_ADDRESS_BUFFER_UAV(2, SurfelGIAliveSurfelIndirectionBuffer);
 BIND_BYTE_ADDRESS_BUFFER_UAV(3, SurfelGISurfelHotDataBuffer);
@@ -19,7 +19,7 @@ void SurfelGIComputeCellCapacityCS(uint3 DispatchThreadID : SV_DispatchThreadID)
         return;
     }
 
-    PerFrameData perFrameData = GetPerFrameData();
+    PerFrameShaderParameters perFrameParameters = GetPerFrameShaderParameters();
     RWByteAddressBuffer aliveSurfelIndirectionBuffer = GetSurfelGIAliveSurfelIndirectionBufferUAV();
     RWByteAddressBuffer surfelBuffer = GetSurfelGISurfelHotDataBufferUAV();
     RWByteAddressBuffer cellHeaderBuffer = GetSurfelGICellHeaderBufferUAV();
@@ -29,11 +29,11 @@ void SurfelGIComputeCellCapacityCS(uint3 DispatchThreadID : SV_DispatchThreadID)
 
     // Iterate over all 27 neighbors.
     {
-        int3 centerCellID = GetUniformGridCellID(surfel.position, perFrameData.cameraPosition);
+        int3 centerCellID = GetUniformGridCellID(surfel.position, perFrameParameters.cameraPosition);
         for (uint i = 0; i < 27; i++)
         {
             int3 cellID = centerCellID + SurfelGICellIDOffsets[i];
-            if (SurfelUniformGridCellIntersection(surfel.position, surfel.radius, perFrameData.cameraPosition, cellID))
+            if (SurfelUniformGridCellIntersection(surfel.position, surfel.radius, perFrameParameters.cameraPosition, cellID))
             {
                 uint cellIndex = GetUniformGridCellIndex(cellID);
                 uint unused;

@@ -1,7 +1,7 @@
 #include "../ShaderCommon.hsh"
 #include "RealTimeRendererCommon.hsh"
 
-BIND_BUFFER_ELEMENT(0, PerFrameData, PerFrameData);
+BIND_BUFFER_ELEMENT(0, PerFrameShaderParameters, PerFrameShaderParameters);
 BIND_BYTE_ADDRESS_BUFFER_SRV(1, GeometryBuffer);
 BIND_BYTE_ADDRESS_BUFFER_SRV(2, MaterialBuffer);
 BIND_TEXTURE_2D_TYPED_SRV(3, uint2, VBuffer0);
@@ -14,10 +14,10 @@ BIND_TEXTURE_2D_UAV(7, float4, GBuffer2);
 [numthreads(8, 8, 1)]
 void GBufferCS(uint3 DispatchThreadID : SV_DispatchThreadID)
 {
-    PerFrameData perFrameData = GetPerFrameData();
+    PerFrameShaderParameters perFrameParameters = GetPerFrameShaderParameters();
 
     uint2 pixelCoord = DispatchThreadID.xy;
-    float2 uv = (pixelCoord.xy + 0.5) / float2(perFrameData.renderResolutionX, perFrameData.renderResolutionY);
+    float2 uv = (pixelCoord.xy + 0.5) / float2(perFrameParameters.renderWidth, perFrameParameters.renderHeight);
 
     Texture2D<uint2> vBuffer0 = GetVBuffer0SRV();
     Texture2D<float3> vBuffer1 = GetVBuffer1SRV();
@@ -44,7 +44,7 @@ void GBufferCS(uint3 DispatchThreadID : SV_DispatchThreadID)
         Material material = materialBuffer.Load<Material>(geometry.materialBufferOffset + (materialIndex * sizeof(Material)));
 
         Surface surface;
-        SurfaceInit(surface, perFrameData, uv, geometry, primitiveID, barycentrics, material);
+        SurfaceInit(surface, perFrameParameters, uv, geometry, primitiveID, barycentrics, material);
 
         surface.specular = 0.5;
 

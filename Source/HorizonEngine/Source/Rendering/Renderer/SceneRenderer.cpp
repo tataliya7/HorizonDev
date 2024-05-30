@@ -4,7 +4,7 @@
 
 namespace Horizon
 {
-    SceneRenderer::SceneRenderer(SceneView* sceneView)
+    /*SceneRenderer::SceneRenderer(SceneView* sceneView)
         : sceneView(sceneView)
     {
 
@@ -13,11 +13,6 @@ namespace Horizon
     SceneRenderer::~SceneRenderer()
     {
 
-    }
-
-    RenderBackend* SceneRenderer::GetRenderBackend() const
-    {
-        return renderBackend;
     }
 
     SceneRenderer* CreateSceneRenderer(SceneView* sceneView)
@@ -50,5 +45,5 @@ namespace Horizon
         renderBackend->FlushRenderDevices();
 
         delete sceneRenderer;
-    }
+    }*/
 }

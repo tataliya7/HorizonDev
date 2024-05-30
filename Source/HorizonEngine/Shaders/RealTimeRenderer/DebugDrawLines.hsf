@@ -1,7 +1,7 @@
 #include "../ShaderCommon.hsh"
 #include "RealTimeRendererCommon.hsh"
 
-BIND_BUFFER_ELEMENT(0, PerFrameData, PerFrameData);
+BIND_BUFFER_ELEMENT(0, PerFrameShaderParameters, PerFrameShaderParameters);
 BIND_BYTE_ADDRESS_BUFFER_SRV(1, LineVertexBuffer);
 
 struct DebugDrawLinesVSToPS
@@ -12,13 +12,13 @@ struct DebugDrawLinesVSToPS
 [shader("pixel")]
 void DebugDrawLinesVS(uint vertexIndex : SV_VertexID, out float4 svPosition : SV_Position, out DebugDrawLinesVSToPS output)
 {
-    PerFrameData perFrameData = GetPerFrameData();
+    PerFrameShaderParameters perFrameParameters = GetPerFrameShaderParameters();
 
     ByteAddressBuffer vertexBuffer = GetLineVertexBufferSRV();
     uint bufferIndex = SHADER_ARGUMENTS_INDEX(1);
     float3 vertexPosition = vertexBuffer.Load<float3>((bufferIndex & 0xffff) + vertexIndex * sizeof(float3));
 
-    float4 clipPosition = mul(perFrameData.nonJitteredViewProjectionMatrix, float4(vertexPosition, 1.0));
+    float4 clipPosition = mul(perFrameParameters.nonJitteredViewProjectionMatrix, float4(vertexPosition, 1.0));
 
     output.color = float4(1, 0, 0, 1);
     // output.color = color;

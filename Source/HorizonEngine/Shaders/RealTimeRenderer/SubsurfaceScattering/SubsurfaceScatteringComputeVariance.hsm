@@ -3,7 +3,7 @@
 #include "../RealTimeRendererCommon.hsh"
 #include "SubsurfaceScatteringCommon.hsh"
 
-BIND_BUFFER_ELEMENT(0, PerFrameData, PerFrameData);
+BIND_BUFFER_ELEMENT(0, PerFrameShaderParameters, PerFrameShaderParameters);
 BIND_TEXTURE_2D_SRV(1, SceneColorTexture);
 BIND_TEXTURE_2D_SRV(2, SceneDepthTexture);
 BIND_BYTE_ADDRESS_BUFFER_UAV(3, SubsurfaceScatteringTileCountBuffer);
@@ -14,7 +14,7 @@ BIND_TEXTURE_2D_UAV(5, float4, OutputTexture);
 [numthreads(SUBSURFACE_SCATTERING_TILE_SIZE * SUBSURFACE_SCATTERING_TILE_SIZE, 1, 1)]
 void SubsurfaceScatteringComputeVarianceCS(uint3 GroupID : SV_GroupID, uint GroupIndex : SV_GroupIndex)
 {
-    // PerFrameData perFrameData = GetPerFrameData();
+    // PerFrameShaderParameters perFrameParameters = GetPerFrameShaderParameters();
     // Texture2D sceneColorTexture = GetSceneColorTextureSRV();
     // Texture2D sceneDepthTexture = GetSceneDepthTextureSRV();
     // RWByteAddressBuffer tileCountBuffer = GetSubsurfaceScatteringTileCountBufferUAV();
@@ -42,8 +42,8 @@ void SubsurfaceScatteringComputeVarianceCS(uint3 GroupID : SV_GroupID, uint Grou
     //     float3 diffuse = sceneColor.rgb * ratioOfDiffuse;
 
     //     float sceneDepth = sceneDepthTexture.SampleLevel(GlobalSamplerPointClamp, uv, 0).r;
-    //     float noise = InterleavedGradientNoise(uv, perFrameData.frameIndex % 8);
-    //     float linearSceneDepth = LinearDepth01(sceneDepth, perFrameData.nearClippingPlane, perFrameData.farClippingPlane);
+    //     float noise = InterleavedGradientNoise(uv, perFrameParameters.frameIndex % 8);
+    //     float linearSceneDepth = LinearDepth01(sceneDepth, perFrameParameters.nearClippingPlane, perFrameParameters.farClippingPlane);
     //     float depth = linearSceneDepth + noise * (linearSceneDepth / 1024.0f);
 
     //     outColor = float4(diffuse, depth);

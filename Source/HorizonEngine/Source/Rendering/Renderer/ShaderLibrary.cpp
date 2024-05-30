@@ -2,19 +2,19 @@
 
 namespace Horizon
 {
-    static void LoadShaderSourceFromFile(const char* filename, std::vector<uint8>& outData)
+    static bool LoadShaderSourceFromFile(const char* filename, std::vector<uint8>& outData)
     {
         std::ifstream file(filename, std::ios::ate | std::ios::binary);
         if (!file.is_open())
         {
-            LogError(GLogger, std::format(("Failed to open shader source file.")));
-            return;
+            return false;
         }
         size_t fileSize = (size_t)file.tellg();
         outData.resize(fileSize);
         file.seekg(0);
-        file.read(reinterpret_cast<char*>(outData.data()), file.tellg());
+        file.read(reinterpret_cast<char*>(outData.data()), fileSize);
         file.close();
+        return true;
     }
 
     ShaderLibrary::ShaderLibrary(RenderBackend* renderBackend, const std::string& rootDirectory)
@@ -33,6 +33,11 @@ namespace Horizon
         };
 
         this->hotReloadEnabled = true;
+    }
+
+    ShaderLibrary::~ShaderLibrary()
+    {
+
     }
 
     bool ShaderLibrary::HotReload()
@@ -79,18 +84,27 @@ namespace Horizon
 
     bool ShaderLibrary::LoadShader(ShaderID id, ShaderDesc& desc)
     {
-        std::filesystem::path path = std::filesystem::absolute(std::filesystem::path("../../../Shaders").append(desc.filename));
-        std::string filename = path.string();
+        std::filesystem::path path = std::filesystem::absolute(std::filesystem::path("../../../Source/HorizonEngine").append(desc.filename));
+        std::string filename = path.generic_string();
+        std::string dir = path.parent_path().generic_string();
 
         std::vector<uint8> source;
         std::unordered_set<std::string> relatedFiles;
 
         relatedFiles.insert(filename);
 
-        LoadShaderSourceFromFile(filename.c_str(), source);
+        bool open = LoadShaderSourceFromFile(filename.c_str(), source);
+        if (!open)
+        {
+            LogError(GLogger, std::format("Failed to open shader source file."));
+            return false;
+        }
+
+        std::string rootDirectoryABS1 = std::filesystem::absolute(rootDirectory).generic_string();
 
         std::vector<const char*> includeDirectories;
-        includeDirectories.push_back(rootDirectory.c_str());
+        includeDirectories.push_back(rootDirectoryABS1.c_str());
+        includeDirectories.push_back(dir.c_str());
 
         ShaderCompilerOutput compilerOutput;
 
@@ -107,6 +121,7 @@ namespace Horizon
             shaderSource.numDefines = static_cast<uint32>(desc.defines.size());
             shaderSource.includeDirectories = includeDirectories.data();
             shaderSource.numIncludeDirectories = static_cast<uint32>(includeDirectories.size());
+            shaderSource.shaderModel = HLSLShaderModel::ShaderModel_6_8;
 
             ShaderCompiler* shaderCompiler = CreateDXCShaderCompiler();
             if (shaderCompiler)
@@ -117,6 +132,7 @@ namespace Horizon
 
             if (succeed)
             {
+                LogError(GLogger, std::format("Shader compilation succeeded. Path: {}, Entry Point: {}.", filename, desc.entryFunctionName));
                 for (const std::string& f : compilerOutput.includedFiles)
                 {
                     relatedFiles.insert(f);
@@ -124,7 +140,7 @@ namespace Horizon
             }
             else
             {
-                // TODO: log error message
+                LogError(GLogger, std::format("Shader compilation failed. Path: {}, Entry Point: {}, Error: {}.", filename, desc.entryFunctionName, compilerOutput.errorMessage));
             }
         }
 

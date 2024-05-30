@@ -3,7 +3,7 @@
 #include "RealTimeRendererCommon.hsh"
 #include "ShadowMapCommon.hsh"
 
-BIND_BUFFER_ELEMENT(0, PerFrameData, PerFrameData);
+BIND_BUFFER_ELEMENT(0, PerFrameShaderParameters, PerFrameShaderParameters);
 BIND_TEXTURE_2D_SRV(2, SceneDepthTexture);
 BIND_TEXTURE_2D_ARRAY_SRV(3, ShadowMap);
 BIND_BUFFER_ELEMENT(4, CascadedShadowMapShaderParameters, CascadedShadowMapShaderParameters);
@@ -13,9 +13,9 @@ BIND_TEXTURE_2D_UAV(5, float4, ScreenSpaceShadowMaskTexture);
 [numthreads(8, 8, 1)]
 void ScreenSpaceShadowsDirectionalLightCS(uint3 DispatchThreadID : SV_DispatchThreadID)
 {
-    PerFrameData perFrameData = GetPerFrameData();
-    uint width = perFrameData.renderResolutionX;
-    uint height = perFrameData.renderResolutionY;
+    PerFrameShaderParameters perFrameParameters = GetPerFrameShaderParameters();
+    uint width = perFrameParameters.renderWidth;
+    uint height = perFrameParameters.renderHeight;
     if (DispatchThreadID.x >= width || DispatchThreadID.y >= height)
     {
         return;
@@ -31,8 +31,8 @@ void ScreenSpaceShadowsDirectionalLightCS(uint3 DispatchThreadID : SV_DispatchTh
     CascadedShadowMapShaderParameters shadowMapShaderParameters = GetCascadedShadowMapShaderParameters();
 
     float sceneDepth = sceneDepthTexture[pixelCoord].r;
-    float3 worldSpacePosition = ReconstructWorldSpacePositionFromDepth(uv, sceneDepth, perFrameData.invViewProjectionMatrix);
-    float4 cameraSpacePosition = mul(perFrameData.viewMatrix, float4(worldSpacePosition, 1.0));
+    float3 worldSpacePosition = ReconstructWorldSpacePositionFromDepth(uv, sceneDepth, perFrameParameters.invViewProjectionMatrix);
+    float4 cameraSpacePosition = mul(perFrameParameters.viewMatrix, float4(worldSpacePosition, 1.0));
     uint cascadeIndex = CalculateCascadeIndex(cameraSpacePosition.z, shadowMapShaderParameters);
 
     float4 shadowMapCoord = mul(shadowMapShaderParameters.viewProjectionMatrix[cascadeIndex], float4(worldSpacePosition, 1.0));
@@ -45,7 +45,7 @@ void ScreenSpaceShadowsDirectionalLightCS(uint3 DispatchThreadID : SV_DispatchTh
         shadowMapCoord.y > 0.0 && shadowMapCoord.y < 1.0 &&
         shadowMapCoord.z > 0.0 && shadowMapCoord.z < 1.0)
     {
-        uint randSeed = RandInit(pixelCoord.x + pixelCoord.y * width, perFrameData.frameIndex);
+        uint randSeed = RandInit(pixelCoord.x + pixelCoord.y * width, perFrameParameters.frameIndex);
         float random = Rand(randSeed);
 
         float rotationAngle = random * 3.1415926;

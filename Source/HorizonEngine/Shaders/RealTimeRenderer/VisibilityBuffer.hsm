@@ -1,7 +1,7 @@
 #include "../ShaderCommon.hsh"
 #include "RealTimeRendererCommon.hsh"
 
-BIND_BUFFER_ELEMENT(0, PerFrameData, PerFrameData);
+BIND_BUFFER_ELEMENT(0, PerFrameShaderParameters, PerFrameShaderParameters);
 BIND_BUFFER_ELEMENT(1, Geometry, Geometry);
 BIND_BYTE_ADDRESS_BUFFER_SRV(2, MaterialBuffer);
 BIND_BYTE_ADDRESS_BUFFER_SRV(3, VertexBuffer0);
@@ -42,7 +42,7 @@ struct VisibilityBufferVSToPS
 [shader("vertex")]
 void VisibilityBufferVS(uint vertexIndex : SV_VertexID, out VisibilityBufferVSToPS output)
 {
-    PerFrameData perFrameData = GetPerFrameData();
+    PerFrameShaderParameters perFrameParameters = GetPerFrameShaderParameters();
     Geometry geometry = GetGeometry();
 
     float3 vertexPosition = GetVertexPosition(vertexIndex);
@@ -51,7 +51,7 @@ void VisibilityBufferVS(uint vertexIndex : SV_VertexID, out VisibilityBufferVSTo
     RWByteAddressBuffer transformBuffer = GetRWByteAddressBuffer(geometry.transformBuffer);
     float4x4 worldMatrix = transformBuffer.Load<float4x4>(geometry.transformIndex * sizeof(float4x4));
     float3 worldPosition = mul(worldMatrix, float4(vertexPosition, 1.0)).xyz;
-    float4 clipPosition = mul(perFrameData.viewProjectionMatrix, float4(worldPosition, 1.0));
+    float4 clipPosition = mul(perFrameParameters.viewProjectionMatrix, float4(worldPosition, 1.0));
 
     output.svPosition = clipPosition;
     output.texCoord0 = vertexTexCoord0;
@@ -71,12 +71,12 @@ void VisibilityBufferPS(
     out uint2 vbuffer0 : SV_Target0,
     out float4 vbuffer1 : SV_Target1)
 {
-    PerFrameData perFrameData = GetPerFrameData();
+    PerFrameShaderParameters perFrameParameters = GetPerFrameShaderParameters();
     Geometry geometry = GetGeometry();
 
     float2 texCoord0 = input.texCoord0;
-    float gamma = perFrameData.gamma;
-    float mipLodBias = perFrameData.mipLodBias;
+    float gamma = perFrameParameters.gamma;
+    float materialTextureMipLodBias = perFrameParameters.materialTextureMipLodBias;
 
     uint geometryID = uint(SHADER_ARGUMENTS_DATA(0));
     uint2 visibilityID = uint2(geometryID, primitiveID);
@@ -99,11 +99,11 @@ void VisibilityBufferPS(
     float3 worldPosition1 = mul(worldTransform, float4(vertex1, 1.0)).xyz;
     float3 worldPosition2 = mul(worldTransform, float4(vertex2, 1.0)).xyz;
 
-    float4 clipPosition0 = mul(perFrameData.viewProjectionMatrix, float4(worldPosition0, 1.0));
-    float4 clipPosition1 = mul(perFrameData.viewProjectionMatrix, float4(worldPosition1, 1.0));
-    float4 clipPosition2 = mul(perFrameData.viewProjectionMatrix, float4(worldPosition2, 1.0));
+    float4 clipPosition0 = mul(perFrameParameters.viewProjectionMatrix, float4(worldPosition0, 1.0));
+    float4 clipPosition1 = mul(perFrameParameters.viewProjectionMatrix, float4(worldPosition1, 1.0));
+    float4 clipPosition2 = mul(perFrameParameters.viewProjectionMatrix, float4(worldPosition2, 1.0));
 
-    float2 uv = input.svPosition.xy / float2(perFrameData.renderResolutionX, perFrameData.renderResolutionY);
+    float2 uv = input.svPosition.xy / float2(perFrameParameters.renderWidth, perFrameParameters.renderHeight);
     float3 perspectiveCorrectBarycentrics = CalculatePerspectiveCorrectBarycentric(clipPosition0, clipPosition1, clipPosition2, uv_to_clipspace(uv));
 #endif
 #endif
@@ -125,7 +125,7 @@ void VisibilityBufferPS(
     if (material.GetBaseColorMapIndex() > 0)
     {
         Texture2D baseColorMap = GetTexture2DNonUniform(material.GetBaseColorMapIndex());
-        baseColor *= baseColorMap.SampleBias(GlobalSamplerLinearWarp, texCoord0, mipLodBias);
+        baseColor *= baseColorMap.SampleBias(GlobalSamplerLinearWarp, texCoord0, materialTextureMipLodBias);
     }
 
     float alphaCutoff = 0.2;

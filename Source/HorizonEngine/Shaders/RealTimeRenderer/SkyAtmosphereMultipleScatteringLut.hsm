@@ -32,7 +32,7 @@
 #include "RealTimeRendererCommon.hsh"
 #include "SkyAtmosphereCommon.hsh"
 
-BIND_BUFFER_ELEMENT(0, PerFrameData, PerFrameData);
+BIND_BUFFER_ELEMENT(0, PerFrameShaderParameters, PerFrameShaderParameters);
 BIND_TEXTURE_2D_SRV(1, TransmittanceLutTexture);
 BIND_TEXTURE_2D_UAV(2, float3, MultipleScatteringLutTexture);
 
@@ -43,8 +43,8 @@ groupshared float3 LSharedMem[64];
 [numthreads(1, 1, 64)]
 void SkyAtmosphereMultipleScatteringLutCS(uint3 DispatchThreadID : SV_DispatchThreadID)
 {
-    PerFrameData perFrameData = GetPerFrameData();
-    SkyAtmosphereShaderParameters skyAtmosphereParameters = GetSkyAtmosphereShaderParameters(perFrameData);
+    PerFrameShaderParameters perFrameParameters = GetPerFrameShaderParameters();
+    SkyAtmosphereShaderParameters skyAtmosphereParameters = GetSkyAtmosphereShaderParameters(perFrameParameters);
     Texture2D transmittanceLutTexture = GetTransmittanceLutTextureSRV();
     RWTexture2D<float3> multipleScatteringLutTexture = GetMultipleScatteringLutTextureUAV();
 
@@ -96,7 +96,7 @@ void SkyAtmosphereMultipleScatteringLutCS(uint3 DispatchThreadID : SV_DispatchTh
         worldDir.z = cosPhi;
 
         SingleScatteringResult result = IntegrateSingleScatteredLuminance(
-            perFrameData,
+            perFrameParameters,
             skyAtmosphereParameters,
             transmittanceLutTexture,
             uv,

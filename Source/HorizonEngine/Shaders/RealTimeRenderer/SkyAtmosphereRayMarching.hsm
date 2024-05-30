@@ -32,7 +32,7 @@
 #include "RealTimeRendererCommon.hsh"
 #include "SkyAtmosphereCommon.hsh"
 
-BIND_BUFFER_ELEMENT(0, PerFrameData, PerFrameData);
+BIND_BUFFER_ELEMENT(0, PerFrameShaderParameters, PerFrameShaderParameters);
 BIND_TEXTURE_2D_SRV(1, TransmittanceLutTexture);
 BIND_TEXTURE_2D_SRV(2, SkyViewLutTexture);
 BIND_TEXTURE_3D_SRV(3, AerialPerspectiveVolumeTexture);
@@ -72,7 +72,7 @@ void SkyViewLutParamsToUv(in bool intersectGround, in float viewZenithCosAngle, 
 }
 
 float3 GetLightDiskLuminance(
-    PerFrameData perFrameData,
+    PerFrameShaderParameters perFrameParameters,
     Texture2D transmittanceLutTexture,
     float3 planetCenterToCamera,
     float3 worldDir,
@@ -80,10 +80,10 @@ float3 GetLightDiskLuminance(
     float topRadius)
 {
     const float3 maxLightDiskLuminance = 64000.0f;
-    const float3 atmosphericLightDirection = perFrameData.atmosphericLightDirection;
-    const float3 atmosphericLightDiscLuminance = perFrameData.atmosphericLightDiscLuminance;
-    const float atmosphericLightDiscCosHalfApexAngle = perFrameData.atmosphericLightDiscCosHalfApexAngle;
-    const float preExposure = perFrameData.preExposure;
+    const float3 atmosphericLightDirection = perFrameParameters.atmosphericLightDirection;
+    const float3 atmosphericLightDiscLuminance = perFrameParameters.atmosphericLightDiscLuminance;
+    const float atmosphericLightDiscCosHalfApexAngle = perFrameParameters.atmosphericLightDiscCosHalfApexAngle;
+    const float preExposure = perFrameParameters.preExposure;
     const float viewDotLight = dot(worldDir, atmosphericLightDirection);
     const float cosHalfApex = atmosphericLightDiscCosHalfApexAngle;
     if (viewDotLight > cosHalfApex)
@@ -122,19 +122,19 @@ void SkyAtmosphereRayMarchingVS(uint vertexID : SV_VertexID, out float4 outPosit
 [shader("pixel")]
 void SkyAtmosphereRayMarchingPS(float4 position : SV_Position, out float4 outLuminance : SV_Target0)
 {
-    PerFrameData perFrameData = GetPerFrameData();
+    PerFrameShaderParameters perFrameParameters = GetPerFrameShaderParameters();
     SkyAtmosphereShaderParameters skyAtmosphereParameters = GetSkyAtmosphereShaderParameters();
     Texture2D transmittanceLutTexture = GetTransmittanceLutTextureSRV();
     Texture2D skyViewLutTexture = GetSkyViewLutTextureSRV();
     Texture3D aerialPerspectiveVolumeTexture = GetAerialPerspectiveVolumeTextureSRV();
     Texture2D sceneDepthTexture = GetSceneDepthTextureSRV();
 
-    float2 uv = position.xy * perFrameData.renderResolution.zw;
+    float2 uv = position.xy * perFrameParameters.renderResolution.zw;
 
     float deviceDepth = sceneDepthTexture.SampleLevel(GlobalSamplerPointClamp, uv, 0).r;
-    float3 worldSpacePixelPosition =  GetWorldSpacePositionFromUvAndDepth(uv, deviceDepth, perFrameData.clipToWorldMatrix);
+    float3 worldSpacePixelPosition =  GetWorldSpacePositionFromUvAndDepth(uv, deviceDepth, perFrameParameters.clipToWorldMatrix);
     float3 worldSpacePixelPositionKm = worldSpacePixelPosition * M_TO_KM;
-    float3 worldSpaceCameraPosition = perFrameData.cameraPosition;
+    float3 worldSpaceCameraPosition = perFrameParameters.cameraPosition;
     float3 worldSpaceCameraPositionKm = worldSpaceCameraPosition * M_TO_KM;
     float3 worldPos = worldSpaceCameraPositionKm - float3(0.0f, 0.0f, -skyAtmosphereParameters.bottomRadius);
     float3 worldDir = normalize(worldSpacePixelPosition - worldSpaceCameraPosition);
@@ -143,8 +143,8 @@ void SkyAtmosphereRayMarchingPS(float4 position : SV_Position, out float4 outLum
 
     if (deviceDepth == FarClipPlaneDepthValue)
     {
-        skyAtmosphereSkyLuminanceFactor = perFrameData.skyAtmosphereSkyLuminanceFactor;
-        preExposedL += GetLightDiskLuminance(perFrameData, transmittanceLutTexture, worldPos, worldDir, skyAtmosphereParameters.bottomRadius, skyAtmosphereParameters.topRadius);
+        skyAtmosphereSkyLuminanceFactor = perFrameParameters.skyAtmosphereSkyLuminanceFactor;
+        preExposedL += GetLightDiskLuminance(perFrameParameters, transmittanceLutTexture, worldPos, worldDir, skyAtmosphereParameters.bottomRadius, skyAtmosphereParameters.topRadius);
     }
 
     float viewHeight = length(worldPos);
@@ -152,7 +152,7 @@ void SkyAtmosphereRayMarchingPS(float4 position : SV_Position, out float4 outLum
     {
         float2 texCoord;
 
-        float3x3 localReferencial = perFrameData.skyAtmosphereSkyViewLutReferential;
+        float3x3 localReferencial = perFrameParameters.skyAtmosphereSkyViewLutReferential;
 
         float3 worldPosLocal = float3(0.0f, 0.0f, viewHeight);
         float3 upVectorLocal = float3(0.0f, 0.0f, 1.0f);

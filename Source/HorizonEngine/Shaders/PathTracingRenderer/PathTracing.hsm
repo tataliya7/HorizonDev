@@ -1,7 +1,7 @@
 #include "../ShaderCommon.hsh"
 #include "PathTracingRendererCommon.hsh"
 
-BIND_BUFFER_ELEMENT(0, PerFrameData, PerFrameData);
+BIND_BUFFER_ELEMENT(0, PerFrameShaderParameters, PerFrameShaderParameters);
 BIND_TLAS_SRV(1, TopLevelAS);
 BIND_TEXTURE_CUBE_SRV(1, SkyLightTexture);
 BIND_TEXTURE_2D_UAV(4, float4, RadianceTexture);
@@ -132,23 +132,23 @@ void PathTracingRG()
     uint3 dispatchRaysIndex = DispatchRaysIndex();
     uint3 dispatchRaysDimensions = DispatchRaysDimensions();
 
-    PerFrameData perFrameData = GetPerFrameData();
+    PerFrameShaderParameters perFrameParameters = GetPerFrameShaderParameters();
     RaytracingAccelerationStructure topLevelAS = GetTopLevelAS();
     RWTexture2D<float4> radianceTexture = GetRadianceTextureUAV();
 
     float2 subpixelJitter = 0.5f;//float2(randf(seed), randf(seed));
 
     uint2 pixelCoord = dispatchRaysIndex.xy;
-    float2 uv = (float2(pixelCoord) + subpixelJitter) * perFrameData.outputSizeAndInvOutputSize.zw;
+    float2 uv = (float2(pixelCoord) + subpixelJitter) * perFrameParameters.outputSizeAndInvOutputSize.zw;
     float2 position = UVToClipSpace(uv);
 
-    uint maxBounces = perFrameData.maxBounces;
+    uint maxBounces = perFrameParameters.maxBounces;
 
     float throughput = 1.0f;
 
     // Create camera ray
-    float4 nearPoint = mul(perFrameData.invViewProjectionMatrix, float4(position, 1.0f, 1.0f));
-    float4 farPoint = mul(perFrameData.invViewProjectionMatrix, float4(position, 0.0f, 1.0f));
+    float4 nearPoint = mul(perFrameParameters.invViewProjectionMatrix, float4(position, 1.0f, 1.0f));
+    float4 farPoint = mul(perFrameParameters.invViewProjectionMatrix, float4(position, 0.0f, 1.0f));
     float3 rayOrigin = nearPoint.xyz / nearPoint.w;
     float3 rayDirection = normalize(farPoint.xyz / farPoint.w - nearPoint.xyz / nearPoint.w);
 

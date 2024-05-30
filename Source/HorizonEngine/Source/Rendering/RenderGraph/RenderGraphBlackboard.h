@@ -40,7 +40,7 @@ namespace Horizon
             bool firstTime = false;
             const uint32 structTypeIndex = GetStructTypeIndex<StructType>(firstTime);
             assert(!firstTime && "RegisterStructType() must be called before Get().");
-            assert((blackboard[structTypeIndex] != nullptr) && std::format("Failed to get instance of struct '{}'. Please register and create instance for this type first.", typeid(StructType).name()));
+            assert((blackboard[structTypeIndex] != nullptr) && std::format("Failed to get instance of struct '{}'. Please register and create instance for this type first.", typeid(StructType).name()).c_str());
             StructInstanceContainer<StructType>* result = static_cast<StructInstanceContainer<StructType>*>(blackboard[structTypeIndex]);
             return result->instance;
         }

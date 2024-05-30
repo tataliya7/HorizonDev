@@ -4,7 +4,7 @@
 
 namespace Horizon
 {
-    class PathTracingRenderer : public SceneRenderer
+    class PathTracingRenderer// : public SceneRenderer
     {
     public:
 

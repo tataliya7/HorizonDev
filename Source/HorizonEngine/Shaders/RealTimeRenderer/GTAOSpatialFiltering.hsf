@@ -3,7 +3,7 @@
 #include "../Random.hsh"
 #include "RealTimeRendererCommon.hsh"
 
-BIND_BUFFER_ELEMENT(0, PerFrameData, PerFrameData);
+BIND_BUFFER_ELEMENT(0, PerFrameShaderParameters, PerFrameShaderParameters);
 BIND_TEXTURE_2D_SRV(1, SceneDepthTexture);
 BIND_TEXTURE_2D_SRV(2, GTAOHorizonSearchAndIntegralTexture);
 BIND_TEXTURE_2D_UAV(3, float, GTAOSpatialFilteringTexture);
@@ -12,7 +12,7 @@ BIND_TEXTURE_2D_UAV(3, float, GTAOSpatialFilteringTexture);
 [numthreads(8, 8, 1)]
 void GTAOSpatialFilteringCS(uint3 DispatchThreadID : SV_DispatchThreadID)
 {
-    PerFrameData perFrameData = GetPerFrameData();
+    PerFrameShaderParameters perFrameParameters = GetPerFrameShaderParameters();
     Texture2D sceneDepthTexture = GetSceneDepthTextureSRV();
     Texture2D horizonSearchAndIntegralTexture = GetGTAOHorizonSearchAndIntegralTextureSRV();
     RWTexture2D<float> outputTexture = GetGTAOSpatialFilteringTextureUAV();
@@ -20,8 +20,8 @@ void GTAOSpatialFilteringCS(uint3 DispatchThreadID : SV_DispatchThreadID)
     uint2 pixelCoord = DispatchThreadID.xy;
 
     float result = horizonSearchAndIntegralTexture[pixelCoord].r;
-    // uint width = perFrameData.renderResolutionX / 2;
-    // uint height = perFrameData.renderResolutionY / 2;
+    // uint width = perFrameParameters.renderWidth / 2;
+    // uint height = perFrameParameters.renderHeight / 2;
     // if (pixelCoord.x >= width || pixelCoord.y >= height)
     // {
     //     return;

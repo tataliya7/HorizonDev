@@ -84,7 +84,7 @@ namespace Horizon
         //RenderGraphTextureHandle targetTexture;
         //RenderGraphTextureHandle displayTexture;
     };
-    static const RenderGraphBlackboardRegistry<RealTimeRendererSceneTextures> RealTimeRendererSceneTexturesRegistry;
+    extern const RenderGraphBlackboardRegistry<RealTimeRendererSceneTextures> RealTimeRendererSceneTexturesRegistry;
 
     // struct RealTimeRendererDebugViewModeTextures
     // {
@@ -107,15 +107,19 @@ namespace Horizon
     // };
     // static const RenderGraphBlackboardRegistry<RenderGraphOutputTexture> RealTimeRendererSceneTexturesRegistry;
 
-    class RealTimeRenderer final : public SceneRenderer
+    class RealTimeRenderer// : public SceneRenderer
     {
     public:
 
-        RealTimeRenderer();
+        RealTimeRenderer(
+            RenderBackend* renderBackend,
+            RenderGraphResourcePool* resourcePool,
+            ShaderLibrary* shaderLibrary,
+            RendererDefaultResources* defaultResources);
 
         virtual ~RealTimeRenderer();
 
-        void Render(RenderGraph& renderGraph) override;
+        void Render(RenderGraph& renderGraph);
 
         bool IsSuperResolutionEnabled() const;
 
@@ -392,12 +396,10 @@ namespace Horizon
             const SceneView& view);
 
         RenderBackend* renderBackend;
-        ShaderCompiler* shaderCompiler;
-        ShaderLibrary* shaderLibrary;
         RenderGraphResourcePool* resourcePool;
+        ShaderLibrary* shaderLibrary;
         RendererDefaultResources* defaultResources;
-        PostProcessingSettings finalPostProcessingSettings;
-        SceneView& view;
+        SceneView* sceneView;
 
         struct RenderFeatures
         {
@@ -428,6 +430,8 @@ namespace Horizon
         Extent2D renderResolution;
         Extent2D targetResolution;
         Extent2D displayResolution;
+
+        PostProcessingSettings finalPostProcessingSettings;
 
         static const int32 MaxNumFramesInFlight = 3;
         int32 currentPerFrameDataBufferIndex = 0;

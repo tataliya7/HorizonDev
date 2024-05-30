@@ -28,7 +28,7 @@ namespace Horizon
 
         Vector3 GetPhysicalLightColor() const
         {
-
+            return color;
         }
 
         Vector3 GetDirection() const
@@ -52,6 +52,7 @@ namespace Horizon
         }
 
     private:
+        Vector3 color;
         Vector3 direction;
         bool castRayTracingShadows;
         float halfApexAngleInRadians;

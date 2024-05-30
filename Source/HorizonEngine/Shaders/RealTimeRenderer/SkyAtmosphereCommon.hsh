@@ -355,7 +355,7 @@ struct SingleScatteringResult
 };
 
 SingleScatteringResult IntegrateSingleScatteredLuminance(
-    in PerFrameData perFrameData,
+    in PerFrameShaderParameters perFrameData,
     in SkyAtmosphereShaderParameters Atmosphere,
 #if SAMPLE_TRANSMITTANCE_LUT
     in Texture2D TransmittanceLutTexture,
@@ -391,7 +391,7 @@ SingleScatteringResult IntegrateSingleScatteredLuminance(
     // Compute next intersection with atmosphere or ground
     float3 PlanetCenter = float3(0.0f, 0.0f, 0.0f);
     float tMax = 0.0f;
-#if 0 // The bottom code causes the skyview lut to flicker when view from space afar
+#if 0 // The bottom code causes the skyview lut to flicker when view from space far
     float tBottom = RaySphereIntersectNearest(WorldPos, WorldDir, PlanetCenter, Atmosphere.bottomRadius);
     float tTop = RaySphereIntersectNearest(WorldPos, WorldDir, PlanetCenter, Atmosphere.topRadius);
     if (tBottom < 0.0f)
@@ -700,7 +700,7 @@ float4 GetAerialPerspectiveLuminanceTransmittance(
     return AP;
 }
 
-SkyAtmosphereShaderParameters GetSkyAtmosphereShaderParameters(in PerFrameData perFrameData)
+SkyAtmosphereShaderParameters GetSkyAtmosphereShaderParameters(in PerFrameShaderParameters perFrameData)
 {
     SkyAtmosphereShaderParameters parameters = (SkyAtmosphereShaderParameters)0;
 

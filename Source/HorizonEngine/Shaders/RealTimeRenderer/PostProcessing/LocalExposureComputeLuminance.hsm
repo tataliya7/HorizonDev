@@ -3,7 +3,7 @@
 #include "PostProcessingCommon.hsh"
 #include "ToneMappingCommon.hsh"
 
-BIND_BUFFER_ELEMENT(0, PerFrameData, PerFrameData);
+BIND_BUFFER_ELEMENT(0, PerFrameShaderParameters, PerFrameShaderParameters);
 BIND_TEXTURE_2D_SRV(1, SceneColorTexture);
 BIND_TEXTURE_2D_TYPED_SRV(2, float, AutoExposureTexture);
 BIND_TEXTURE_2D_UAV(3, float4, OutputTexture);
@@ -26,7 +26,7 @@ void LocalExposureComputeLuminanceCS(uint3 DispatchThreadID : SV_DispatchThreadI
     Texture2D sceneColorTexture = GetSceneColorTextureSRV();
     //Texture2D<float> autoExposureTexture = GetAutoExposureTextureSRV();
     //float exposure = autoExposureTexture[uint2(1, 0)];
-    PerFrameData perFrameData = GetPerFrameData(); float exposure = perFrameData.exposure;
+    PerFrameShaderParameters perFrameParameters = GetPerFrameShaderParameters(); float exposure = perFrameParameters.exposure;
 
     float highlights = SHADER_ARGUMENTS_DATA(0);
     float shadows = SHADER_ARGUMENTS_DATA(1);

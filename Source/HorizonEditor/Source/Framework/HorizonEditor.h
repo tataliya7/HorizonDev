@@ -232,7 +232,7 @@ namespace Horizon
         HorizonEditorColorTheme colorTheme = HorizonEditorColorTheme::Light;
         RenderBackendTextureHandle fontTexture;
 
-        RenderBackendType renderBackendType = RenderBackendType::D3D12;
+        RenderBackendType renderBackendType = RenderBackendType::Vulkan;
         RenderBackend* renderBackend = nullptr;
         ShaderLibrary* shaderLibrary = nullptr;
         RenderSettings renderSettings;

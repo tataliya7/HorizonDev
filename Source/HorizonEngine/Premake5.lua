@@ -27,9 +27,6 @@ project "HorizonEngine"
         "Source/Foundation/**.cppm",
         "Source/Foundation/**.inl",
 
---         "Source/Engine/HorizonEngineModule.h",
---         "Source/Engine/HorizonEngineVersion.h",
-
         "Source/Input/**.h",
         "Source/Input/**.c",
         "Source/Input/**.hpp",
@@ -68,6 +65,9 @@ project "HorizonEngine"
 --         "Source/Core/**.cppm",
 --         "Source/Core/**.inl",
 --         "Source/Core/**.lua",
+
+        "Source/Engine/HorizonEngineModule.h",
+        "Source/Engine/HorizonEngineVersion.h",
 
         "Source/Engine/**.h",
         "Source/Engine/**.c",

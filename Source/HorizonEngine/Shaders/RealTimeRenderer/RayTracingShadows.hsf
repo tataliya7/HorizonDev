@@ -2,7 +2,7 @@
 #include "../Random.hsh"
 #include "RealTimeRendererCommon.hsh"
 
-BIND_BUFFER_ELEMENT(0, PerFrameData, PerFrameData);
+BIND_BUFFER_ELEMENT(0, PerFrameShaderParameters, PerFrameShaderParameters);
 BIND_TLAS_SRV(1, TopLevelAS);
 BIND_TEXTURE_2D_SRV(2, SceneDepth);
 BIND_TEXTURE_2D_UAV(3, float, ShadowMask);
@@ -27,7 +27,7 @@ void RayTracingShadowsRayGen()
     uint3 launchIndex = DispatchRaysIndex();
     uint3 launchDimensions = DispatchRaysDimensions();
 
-    PerFrameData perFrameData = GetPerFrameData();
+    PerFrameShaderParameters perFrameParameters = GetPerFrameShaderParameters();
     Texture2D sceneDepth = GetSceneDepthSRV();
     RWTexture2D<float> shadowMask = GetShadowMaskUAV();
     RWTexture2D<float> rayDistance = GetRayDistanceUAV();
@@ -48,9 +48,9 @@ void RayTracingShadowsRayGen()
     // Reconstruct world position from the depth buffer
     float2 pixelCenter = pixelCoord + 0.5;
     float2 uv = pixelCenter / float2(launchDimensions.xy);
-    float3 worldSpacePosition = ReconstructWorldSpacePositionFromDepth(uv, depth, perFrameData.invViewProjectionMatrix);
+    float3 worldSpacePosition = ReconstructWorldSpacePositionFromDepth(uv, depth, perFrameParameters.invViewProjectionMatrix);
 
-    uint randSeed = RandInit(launchIndex.x + launchIndex.y * launchDimensions.x, perFrameData.frameIndex);
+    uint randSeed = RandInit(launchIndex.x + launchIndex.y * launchDimensions.x, perFrameParameters.frameIndex);
 
     float cosThetaMax = 0.999;
     // Generate a random direction based on the cone angle.
@@ -58,7 +58,7 @@ void RayTracingShadowsRayGen()
     float3 randDirection = UniformSampleCone(float2(Rand(randSeed), Rand(randSeed)), cosThetaMax);
 
     float3 N = -normalize(float3(SHADER_ARGUMENTS_DATA(0), SHADER_ARGUMENTS_DATA(1), SHADER_ARGUMENTS_DATA(2)));
-    //float3 N = -perFrameData.sunDirection;
+    //float3 N = -perFrameParameters.sunDirection;
     //float3 B = GetPerpendicularVector(N);
     //float3 T = cross(B, N);
 

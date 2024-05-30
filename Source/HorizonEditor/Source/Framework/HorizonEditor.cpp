@@ -122,7 +122,11 @@ namespace Horizon
         swapChainWidth = window->GetWidth();
         swapChainHeight = window->GetHeight();
 
-        shaderLibrary = new ShaderLibrary();
+        shaderLibrary = new ShaderLibrary(renderBackend, "../../../Source/HorizonEngine/Shaders");
+        LoadAllShaders_Deprecated(shaderLibrary);
+
+        Input::SetCurrentContext(window->GetGLFWwindow());
+
 //
 //        ShaderGraphSystemInit();
 //
@@ -168,11 +172,9 @@ namespace Horizon
 //
 //        renderEngine->BeginDrawUI();
 //
-        OnDrawUI();
+        //OnDrawUI();
 
         editorCamera.Update(deltaTimeInSeconds);
-
-        sceneView->SetRenderSettings(renderSettings);
 
         shaderLibrary->HotReload();
 
