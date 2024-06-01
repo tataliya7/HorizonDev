@@ -1,4 +1,4 @@
-#include "Entity/EntityManager.h"
+#include "EntityManager.h"
 
 namespace Horizon
 {
