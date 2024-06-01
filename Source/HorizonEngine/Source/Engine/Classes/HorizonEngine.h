@@ -1,6 +1,5 @@
 #pragma once
 
-#include "HorizonEngineCommon.h"
 #include "Subsystem.h"
 
 namespace Horizon
@@ -29,6 +28,8 @@ namespace Horizon
         }
 
     private:
+
+        void RegisterAndInitializeSubsystems();
 
         static HorizonEngine* Instance;
 

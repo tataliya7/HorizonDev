@@ -27,7 +27,7 @@ namespace Horizon
 
         // Raleigh
         constexpr Vector3 earthRayleighScattering = Vector3(0.005802f, 0.013558f, 0.033100f);
-        component->rayleighScatteringScale = std::max(earthRayleighScattering.r, earthRayleighScattering.g, earthRayleighScattering.b);
+        component->rayleighScatteringScale = std::max(std::max(earthRayleighScattering.r, earthRayleighScattering.g), earthRayleighScattering.b);
         component->rayleighScattering = earthRayleighScattering / component->rayleighScatteringScale;
         component->rayleighExponentialDistribution = earthRayleighScaleHeight;
 
@@ -35,9 +35,9 @@ namespace Horizon
         constexpr Vector3 earthMieScattering = Vector3(0.003996f, 0.003996f, 0.003996f);
         constexpr Vector3 earthMieExtinction = Vector3(0.004440f, 0.004440f, 0.004440f);
         constexpr Vector3 earthMieAbsorption = earthMieExtinction - earthMieScattering;
-        component->mieScatteringScale = std::max(earthMieScattering.r, earthMieScattering.g, earthMieScattering.b);
+        component->mieScatteringScale = std::max(std::max(earthMieScattering.r, earthMieScattering.g), earthMieScattering.b);
         component->mieScattering = earthMieScattering / component->mieScatteringScale;
-        component->mieAbsorptionScale = std::max(earthMieAbsorption.r, earthMieAbsorption.g, earthMieAbsorption.b);
+        component->mieAbsorptionScale = std::max(std::max(earthMieAbsorption.r, earthMieAbsorption.g), earthMieAbsorption.b);
         component->mieAbsorption = earthMieAbsorption / component->mieAbsorptionScale;
         component->mieAsymmetry = 0.8f;
         component->mieExponentialDistribution = earthMieScaleHeight;
@@ -46,7 +46,7 @@ namespace Horizon
         constexpr Vector3 earthAbsorptionExtinction = Vector3(0.000650f, 0.001881f, 0.000085f);
         component->absorptionDensity[0] = { 25.0f, 0.0f, 0.0f, 1.0f / 15.0f, -2.0f / 3.0f };
         component->absorptionDensity[1] = { 0.0f, 0.0f, 0.0f, -1.0f / 15.0f, 8.0f / 3.0f };
-        component->absorptionExtinctionScale = std::max(earthAbsorptionExtinction.r, earthAbsorptionExtinction.g, earthAbsorptionExtinction.b);
+        component->absorptionExtinctionScale = std::max(std::max(earthAbsorptionExtinction.r, earthAbsorptionExtinction.g), earthAbsorptionExtinction.b);
         component->absorptionExtinction = earthAbsorptionExtinction / component->absorptionExtinctionScale;
     }
 
@@ -74,7 +74,7 @@ namespace Horizon
     {
         outAtmosphereParameters.bottomRadius = skyAtmosphereComponent.groundRadius;
         outAtmosphereParameters.topRadius = skyAtmosphereComponent.groundRadius + skyAtmosphereComponent.atmosphereHeight;
-        outAtmosphereParameters.groundAlbedo = skyAtmosphereComponent.groundAlbedo; // TODO: sRGB to sRGBLinear
+        outAtmosphereParameters.groundAlbedo = skyAtmosphereComponent.groundAlbedo; // TODO: sRGB to linear color
         outAtmosphereParameters.rayleighScattering = skyAtmosphereComponent.rayleighScatteringScale * skyAtmosphereComponent.rayleighScattering;
         outAtmosphereParameters.rayleighDensityExpScale = -1.0f / skyAtmosphereComponent.rayleighExponentialDistribution;
         outAtmosphereParameters.mieScattering = skyAtmosphereComponent.mieScatteringScale * skyAtmosphereComponent.mieScattering;

@@ -2,7 +2,7 @@
 
 #include "Foundation/FoundationModule.h"
 #include "Rendering/RenderingModule.h"
-#include "Physics/PhysicsModule.h"
+//#include "Physics/PhysicsModule.h"
 #include "Engine/ECS/EntityManager.h"
 #include "Engine/Serialization/SerializationModule.h"
 
@@ -40,54 +40,38 @@ namespace Horizon
             return entityManager;
         }
 
-        void SetParent(EntityHandle child, EntityHandle parent)
-        {
-            if (parent != EntityHandle::Null)
-            {
-                SceneHierarchyComponent& childHierarchyComponent = entityManager->GetComponent<SceneHierarchyComponent>(child);
-                SceneHierarchyComponent& parentHierarchyComponent = entityManager->GetComponent<SceneHierarchyComponent>(parent);
+        // void SetParent(EntityHandle child, EntityHandle parent)
+        // {
+        //     if (parent != EntityHandle::Null)
+        //     {
+        //         SceneHierarchyComponent& childHierarchyComponent = entityManager->GetComponent<SceneHierarchyComponent>(child);
+        //         SceneHierarchyComponent& parentHierarchyComponent = entityManager->GetComponent<SceneHierarchyComponent>(parent);
+        //
+        //         childHierarchyComponent.depth = parentHierarchyComponent.depth + 1;
+        //         childHierarchyComponent.parent = parent;
+        //         childHierarchyComponent.next = parentHierarchyComponent.firstChild;
+        //
+        //         if (parentHierarchyComponent.firstChild != EntityHandle::Null)
+        //         {
+        //             SceneHierarchyComponent& siblingHierarchyComponent = entityManager->GetComponent<SceneHierarchyComponent>(parentHierarchyComponent.firstChild);
+        //             siblingHierarchyComponent.prev = child;
+        //         }
+        //
+        //         parentHierarchyComponent.firstChild = child;
+        //         parentHierarchyComponent.numChildren += 1;
+        //     }
+        // }
 
-                childHierarchyComponent.depth = parentHierarchyComponent.depth + 1;
-                childHierarchyComponent.parent = parent;
-                childHierarchyComponent.next = parentHierarchyComponent.firstChild;
+        bool enablePhysicsSimulation;
 
-                if (parentHierarchyComponent.firstChild != EntityHandle::Null)
-                {
-                    SceneHierarchyComponent& siblingHierarchyComponent = entityManager->GetComponent<SceneHierarchyComponent>(parentHierarchyComponent.firstChild);
-                    siblingHierarchyComponent.prev = child;
-                }
+        bool shouldUpdateScripts;
 
-                parentHierarchyComponent.firstChild = child;
-                parentHierarchyComponent.numChildren += 1;
-            }
-        }
-
-        bool ShouldSimulate() const
-        {
-            return shouldSimulate;
-        }
-
-        bool ShouldUpdateScripts() const
-        {
-            return shouldUpdateScripts;
-        }
-
-        void SetShouldSimulate(bool value)
-        {
-            shouldSimulate = value;
-        }
-
-        void SetShouldUpdateScripts(bool value)
-        {
-            shouldUpdateScripts = value;
-        }
-
-        SceneSettings* GetSceneSettings() const;
+        SceneSettings* GetSceneSettings();
 
         /**
          * Returns a pointer to the physics scene for this scene.
          */
-        PhysicsScene* GetPhysicsScene() const;
+        //PhysicsScene* GetPhysicsScene() const;
 
         /**
          * Returns a pointer to the render scene for this scene.
@@ -114,11 +98,7 @@ namespace Horizon
 
         RenderScene* renderScene;
 
-        PhysicsScene* physicsScene;
-
-        bool enablePhysicsSimulation;
-
-        bool shouldUpdateScripts;
+        //PhysicsScene* physicsScene;
 
         bool paused;
     };

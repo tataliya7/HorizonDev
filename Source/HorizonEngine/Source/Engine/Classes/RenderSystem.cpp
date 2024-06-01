@@ -1,9 +1,4 @@
-﻿#include "Rendering/RenderSystem.h"
-#include "Rendering/RenderGraph/RenderGraph.h"
-#include "Rendering/ShaderLibrary.h"
-#include "Rendering/ShaderCompiler/ShaderCompiler.h"
-#include "Rendering/ShaderCompiler/DxcShaderCompiler/DxcShaderCompiler.h"
-#include "Rendering/Renderer/RealTimeRenderer/RealTimeRenderer.h"
+﻿#include "RenderSystem.h"
 
 #include <imgui.h>
 #include <backends/imgui_impl_glfw.h>
@@ -12,6 +7,68 @@
 
 namespace Horizon
 {
+    RenderSystem::RenderSystem()
+    {
+
+    }
+
+    RenderSystem::~RenderSystem()
+    {
+
+    }
+
+    void RenderSystem::Init()
+    {
+        // TODO: make it configurable
+        RenderBackendType renderBackendType = RenderBackendType::Vulkan;
+        bool enableDebugLayers = true;
+        bool enableHardwareRayTracing = false;
+
+        if (renderBackendType == RenderBackendType::Vulkan)
+        {
+            int flags = VULKAN_RENDER_BACKEND_CREATE_FLAGS_SURFACE;
+            if (enableDebugLayers)
+            {
+                flags |= VULKAN_RENDER_BACKEND_CREATE_FLAGS_VALIDATION_LAYERS;
+            }
+            if (enableHardwareRayTracing)
+            {
+                flags |= VULKAN_RENDER_BACKEND_CREATE_FLAGS_RAY_TRACING;
+            }
+            renderBackend = RenderBackendCreateVulkan(flags);
+        }
+        else if (renderBackendType == RenderBackendType::D3D12)
+        {
+            D3D12RenderBackendDesc d3d12RenderBackendDesc = {
+                .useDebugLayers = enableDebugLayers,
+                .useGPUBasedValidation = enableDebugLayers,
+            };
+            renderBackend = RenderBackendCreateD3D12(&d3d12RenderBackendDesc);
+        }
+        else
+        {
+            LogError(GLogger, std::format("Unknown RenderBackendType!"));
+        }
+
+        // Currently, multiple devices are not supported.
+        uint32 primaryDeviceMask = 0;
+        uint32 physicalDeviceID = 0;
+        renderBackend->CreateRenderDevices(&physicalDeviceID, 1, &primaryDeviceMask);
+
+        shaderLibrary = new ShaderLibrary(renderBackend, "../../../Source/HorizonEngine/Shaders");
+        LoadAllShaders_Deprecated(shaderLibrary);
+
+        renderGraphResourcePool = new RenderGraphResourcePool(renderBackend);
+
+        gpuProfiler = new RenderBackendGPUProfiler(renderBackend);
+    }
+
+    void RenderSystem::Exit()
+    {
+
+    }
+
+#if 0
     void Texture2DGenerateMips(ShaderLibrary* shaderLibrary, RenderBackendCommandList& commandList, RenderBackendTextureHandle textureHandle, uint32 width, uint32 height, uint32 numMipLevels)
     {
         if (numMipLevels < 2)
@@ -26,7 +83,7 @@ namespace Horizon
             height = height >> 1;
 
             RenderBackendViewport viewport(0.0f, 0.0f, (float)width, (float)height);
-            commandList.SetViewports(&viewport, 1); 
+            commandList.SetViewports(&viewport, 1);
 
             RenderBackendScissor scissor(0, 0, width, height);
             commandList.SetScissors(&scissor, 1);
@@ -1257,4 +1314,5 @@ namespace Horizon
 
         renderGraphResourcePool->Tick();
     }
+#endif
 }

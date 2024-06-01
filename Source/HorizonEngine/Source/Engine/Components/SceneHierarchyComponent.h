@@ -8,6 +8,7 @@ namespace Horizon
 {
     class SceneHierarchyComponent
     {
+    public:
         uint32 depth;
         uint32 numChildren;
         EntityHandle parent;

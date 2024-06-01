@@ -8,22 +8,22 @@ namespace Horizon
     {
         entityManager = new EntityManager();
 
-        entityManager->OnConstruct<TransformComponent>().connect<&entt::registry::emplace_or_replace<TransformDirtyComponent>>();
-        entityManager->OnUpdate<TransformComponent>().connect<&entt::registry::emplace_or_replace<TransformDirtyComponent>>();
+        // entityManager->OnConstruct<TransformComponent>().connect<&entt::registry::emplace_or_replace<TransformDirtyComponent>>();
+        // entityManager->OnUpdate<TransformComponent>().connect<&entt::registry::emplace_or_replace<TransformDirtyComponent>>();
+        //
+        // /*entityManager->OnConstruct<SkyLightComponent>().connect<&Scene::OnSkyLightComponentConstruct>(this);
+        // entityManager->OnDestroy<SkyLightComponent>().connect<&Scene::OnSkyLightComponentDestroy>(this);*/
+        //
+        // entityManager->OnConstruct<RigidBodyComponent>().connect<&Scene::OnRigidBodyComponentConstruct>(this);
+        // entityManager->OnDestroy<RigidBodyComponent>().connect<&Scene::OnRigidBodyComponentDestroy>(this);
 
-        /*entityManager->OnConstruct<SkyLightComponent>().connect<&Scene::OnSkyLightComponentConstruct>(this);
-        entityManager->OnDestroy<SkyLightComponent>().connect<&Scene::OnSkyLightComponentDestroy>(this);*/
-
-        entityManager->OnConstruct<RigidBodyComponent>().connect<&Scene::OnRigidBodyComponentConstruct>(this);
-        entityManager->OnDestroy<RigidBodyComponent>().connect<&Scene::OnRigidBodyComponentDestroy>(this);
-
-        physicsScene = new PhysicsScene();
+        //physicsScene = new PhysicsScene();
         // renderEngine = new RenderEngine();
     }
 
     Scene::~Scene()
     {
-        delete physicsScene;
+        //delete physicsScene;
         delete entityManager;
     }
 
@@ -36,10 +36,10 @@ namespace Horizon
         return entity;
     }
 
-    void Scene::Clear()
-    {
-        entityManager->Clear();
-    }
+    // void Scene::Clear()
+    // {
+    //     entityManager->Clear();
+    // }
 
     /*void Scene::OnSkyLightComponentConstruct(entt::registry& registry, entt::entity entity)
     {
@@ -61,131 +61,131 @@ namespace Horizon
 
     }*/
 
-    SceneSettings* Scene::GetSceneSettings() const
+    SceneSettings* Scene::GetSceneSettings()
     {
         return &settings;
     }
 
-    PhysicsScene* Scene::GetPhysicsScene() const
-    {
-        return physicsScene;
-    }
+    // PhysicsScene* Scene::GetPhysicsScene() const
+    // {
+    //     return physicsScene;
+    // }
 
     RenderScene* Scene::GetRenderScene() const
     {
         return renderScene;
     }
 
-    uint32 Scene::GetEntityCount() const
-    {
+    // uint32 Scene::GetEntityCount() const
+    // {
+    //
+    // }
+    //
+    // void Scene::OnRigidBodyComponentConstruct(entt::registry& registry, entt::entity entity)
+    // {
+    //     physicsScene->CreateActor(entityManager, entity);
+    // }
+    //
+    // void Scene::OnRigidBodyComponentDestroy(entt::registry& registry, entt::entity entity)
+    // {
+    //     physicsScene->RemoveActor(entityManager, entity);
+    // }
+    //
+    // static void UpdateTransform_Deprecated(EntityManager* manager, EntityHandle entity)
+    // {
+    //     const SceneHierarchyComponent& hierarchy = manager->GetComponent<SceneHierarchyComponent>(entity);
+    //     TransformComponent& transform = manager->GetComponent<TransformComponent>(entity);
+    //     transform.Update();
+    //     if (hierarchy.parent != EntityHandle::Null)
+    //     {
+    //         TransformComponent& parentTransform = manager->GetComponent<TransformComponent>(hierarchy.parent);
+    //         transform.localToWorldMatrix = transform.relativeTransform * parentTransform.localToWorldMatrix;
+    //     }
+    //     else
+    //     {
+    //         transform.localToWorldMatrix = transform.relativeTransform;
+    //     }
+    //     EntityHandle currentEntity = hierarchy.firstChild;
+    //     for (uint32 i = 0; i < hierarchy.numChildren; i++)
+    //     {
+    //         if (manager->HasComponent<TransformDirtyComponent>(currentEntity))
+    //         {
+    //             continue;
+    //         }
+    //         UpdateTransform_Deprecated(manager, currentEntity);
+    //         currentEntity = manager->GetComponent<SceneHierarchyComponent>(currentEntity).next;
+    //     }
+    //     manager->RemoveComponent<TransformDirtyComponent>(entity);
+    // }
+    //
+    // struct UpdateTransformJobData
+    // {
+    //     EntityManager* manager;
+    //     EntityHandle entity;
+    // };
+    //
+    // static void UpdateTransform(void* data)
+    // {
+    //     EntityManager* manager = ((UpdateTransformJobData*)data)->manager;
+    //     EntityHandle entity = ((UpdateTransformJobData*)data)->entity;
+    //     const SceneHierarchyComponent& hierarchy = manager->GetComponent<SceneHierarchyComponent>(entity);
+    //     TransformComponent& transform = manager->GetComponent<TransformComponent>(entity);
+    //     transform.Update();
+    //     EntityHandle currentEntity = hierarchy.firstChild;
+    //     for (uint32 i = 0; i < hierarchy.numChildren; i++)
+    //     {
+    //         if (manager->HasComponent<TransformDirtyComponent>(currentEntity))
+    //         {
+    //             continue;
+    //         }
+    //         UpdateTransform(data);
+    //         currentEntity = manager->GetComponent<SceneHierarchyComponent>(currentEntity).next;
+    //     }
+    //     manager->RemoveComponent<TransformDirtyComponent>(entity);
+    // }
 
-    }
-
-    void Scene::OnRigidBodyComponentConstruct(entt::registry& registry, entt::entity entity)
-    {
-        physicsScene->CreateActor(entityManager, entity);
-    }
-
-    void Scene::OnRigidBodyComponentDestroy(entt::registry& registry, entt::entity entity)
-    {
-        physicsScene->RemoveActor(entityManager, entity);
-    }
-
-    static void UpdateTransform_Deprecated(EntityManager* manager, EntityHandle entity)
-    {
-        const SceneHierarchyComponent& hierarchy = manager->GetComponent<SceneHierarchyComponent>(entity);
-        TransformComponent& transform = manager->GetComponent<TransformComponent>(entity);
-        transform.Update();
-        if (hierarchy.parent != EntityHandle::Null)
-        {
-            TransformComponent& parentTransform = manager->GetComponent<TransformComponent>(hierarchy.parent);
-            transform.localToWorldMatrix = transform.relativeTransform * parentTransform.localToWorldMatrix;
-        }
-        else
-        {
-            transform.localToWorldMatrix = transform.relativeTransform;
-        }
-        EntityHandle currentEntity = hierarchy.firstChild;
-        for (uint32 i = 0; i < hierarchy.numChildren; i++)
-        {
-            if (manager->HasComponent<TransformDirtyComponent>(currentEntity))
-            {
-                continue;
-            }
-            UpdateTransform_Deprecated(manager, currentEntity);
-            currentEntity = manager->GetComponent<SceneHierarchyComponent>(currentEntity).next;
-        }
-        manager->RemoveComponent<TransformDirtyComponent>(entity);
-    }
-
-    struct UpdateTransformJobData
-    {
-        EntityManager* manager;
-        EntityHandle entity;
-    };
-
-    static void UpdateTransform(void* data)
-    {
-        EntityManager* manager = ((UpdateTransformJobData*)data)->manager;
-        EntityHandle entity = ((UpdateTransformJobData*)data)->entity;
-        const SceneHierarchyComponent& hierarchy = manager->GetComponent<SceneHierarchyComponent>(entity);
-        TransformComponent& transform = manager->GetComponent<TransformComponent>(entity);
-        transform.Update();
-        EntityHandle currentEntity = hierarchy.firstChild;
-        for (uint32 i = 0; i < hierarchy.numChildren; i++)
-        {
-            if (manager->HasComponent<TransformDirtyComponent>(currentEntity))
-            {
-                continue;
-            }
-            UpdateTransform(data);
-            currentEntity = manager->GetComponent<SceneHierarchyComponent>(currentEntity).next;
-        }
-        manager->RemoveComponent<TransformDirtyComponent>(entity);
-    }
-
-    void Scene::Update(float deltaTime)
-    {
-        if (ShouldUpdateScripts())
-        {
-            // Update scripts
-            entityManager->GetView<ScriptComponent>().each([&](EntityHandle entity, auto& script)
-            {
-                if (script.scriptable == nullptr)
-                {
-                    script.ConstructorFunc();
-                    script.scriptable->manager = entityManager;
-                    script.scriptable->entity = entity;
-                    if (script.OnCreateFunc)
-                    {
-                        script.OnCreateFunc(script.scriptable);
-                    }
-                }
-                if (script.OnUpdateFunc)
-                {
-                    script.OnUpdateFunc(script.scriptable, deltaTime);
-                }
-            });
-        }
-
-        if (ShouldSimulate())
-        {
-            physicsScene->Simulate(deltaTime);
-        }
-
-        // Update transforms
-        {
-            entityManager->Get()->sort<TransformDirtyComponent>([&](EntityHandle lhs, EntityHandle rhs)
-            {
-                const auto& lc = entityManager->GetComponent<SceneHierarchyComponent>(lhs);
-                const auto& rc = entityManager->GetComponent<SceneHierarchyComponent>(rhs);
-                return lc.depth < rc.depth;
-            });
-
-            entityManager->GetView<TransformDirtyComponent>().each([&](EntityHandle entity)
-            {
-                UpdateTransform_Deprecated(entityManager, entity);
-            });
+    //void Scene::Tick(float deltaTime)
+    //{
+        // if (ShouldUpdateScripts())
+        // {
+        //     // Update scripts
+        //     entityManager->GetView<ScriptComponent>().each([&](EntityHandle entity, auto& script)
+        //     {
+        //         if (script.scriptable == nullptr)
+        //         {
+        //             script.ConstructorFunc();
+        //             script.scriptable->manager = entityManager;
+        //             script.scriptable->entity = entity;
+        //             if (script.OnCreateFunc)
+        //             {
+        //                 script.OnCreateFunc(script.scriptable);
+        //             }
+        //         }
+        //         if (script.OnUpdateFunc)
+        //         {
+        //             script.OnUpdateFunc(script.scriptable, deltaTime);
+        //         }
+        //     });
+        // }
+        //
+        // if (ShouldSimulate())
+        // {
+        //     physicsScene->Simulate(deltaTime);
+        // }
+        //
+        // // Update transforms
+        // {
+        //     entityManager->Get()->sort<TransformDirtyComponent>([&](EntityHandle lhs, EntityHandle rhs)
+        //     {
+        //         const auto& lc = entityManager->GetComponent<SceneHierarchyComponent>(lhs);
+        //         const auto& rc = entityManager->GetComponent<SceneHierarchyComponent>(rhs);
+        //         return lc.depth < rc.depth;
+        //     });
+        //
+        //     entityManager->GetView<TransformDirtyComponent>().each([&](EntityHandle entity)
+        //     {
+        //         UpdateTransform_Deprecated(entityManager, entity);
+        //     });
 
             /*uint32 numTransformsToUpdate = 0;
             std::vector<JobSystemJobDecl> updateTransformJobs;
@@ -210,7 +210,7 @@ namespace Horizon
 
             JobSystemAtomicCounterHandle counter = JobSystemRunJobs(updateTransformJobs.data(), numTransformsToUpdate);
             JobSystemWaitForCounter(counter, 0);*/
-        }
+        //}
 
         // Update armatures
         /*{
@@ -233,38 +233,38 @@ namespace Horizon
         }*/
 
         // Update cameras
-        {
-            entityManager->GetView<CameraComponent>().each([&](EntityHandle entity, CameraComponent& camera)
-            {
-                const TransformComponent& transform = entityManager->GetComponent<TransformComponent>(entity);
-                camera.position = transform.position;
-                camera.rotation = Math::QuaternionFromEulerAngles(Math::DegreesToRadians(transform.rotation));
-                camera.Update();
-            });
-        }
-
-        // Update lights
-        {
-            entityManager->GetView<LightComponent>().each([&](EntityHandle entity, LightComponent& light)
-            {
-                const TransformComponent& transform = entityManager->GetComponent<TransformComponent>(entity);
-                light.position = transform.position;
-                light.forwardVec = Math::Normalize(Vector3(Math::QuaternionFromEulerAngles(Math::DegreesToRadians(transform.rotation)) * Vector4(0.0, 0.0, -1.0, 0.0)));
-            });
-        }
-
-        // Update meshes
-        {
-            entityManager->GetView<MeshComponent>().each([&](EntityHandle entity, MeshComponent& mesh)
-            {
-                auto& transform = entityManager->GetComponent<TransformComponent>(entity);
-                // mesh.worldMatrix = transform.world;
-            });
-        }
+        // {
+        //     entityManager->GetView<CameraComponent>().each([&](EntityHandle entity, CameraComponent& camera)
+        //     {
+        //         const TransformComponent& transform = entityManager->GetComponent<TransformComponent>(entity);
+        //         camera.position = transform.position;
+        //         camera.rotation = Math::QuaternionFromEulerAngles(Math::DegreesToRadians(transform.rotation));
+        //         camera.Update();
+        //     });
+        // }
+        //
+        // // Update lights
+        // {
+        //     entityManager->GetView<LightComponent>().each([&](EntityHandle entity, LightComponent& light)
+        //     {
+        //         const TransformComponent& transform = entityManager->GetComponent<TransformComponent>(entity);
+        //         light.position = transform.position;
+        //         light.forwardVec = Math::Normalize(Vector3(Math::QuaternionFromEulerAngles(Math::DegreesToRadians(transform.rotation)) * Vector4(0.0, 0.0, -1.0, 0.0)));
+        //     });
+        // }
+        //
+        // // Update meshes
+        // {
+        //     entityManager->GetView<MeshComponent>().each([&](EntityHandle entity, MeshComponent& mesh)
+        //     {
+        //         auto& transform = entityManager->GetComponent<TransformComponent>(entity);
+        //         // mesh.worldMatrix = transform.world;
+        //     });
+        // }
 
         // Update audio sources and listeners
-        {
-
-        }
-    }
+    //     {
+    //
+    //     }
+    // }
 }
