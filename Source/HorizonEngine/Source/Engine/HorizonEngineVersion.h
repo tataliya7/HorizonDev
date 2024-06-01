@@ -7,3 +7,5 @@
 #define HORIZON_ENGINE_VERSION_PATCH(version) (((uint32_t)(version) >> 8) & 0xFFU)
 
 #define HORIZON_ENGINE_VERSION HORIZON_ENGINE_MAKE_VERSION(1, 0, 0)
+
+#define HORIZON_ENGINE_NAME "Horizon Engine"

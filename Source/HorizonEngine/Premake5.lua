@@ -9,14 +9,7 @@ project "HorizonEngine"
     scanformoduledependencies "true"
 
     files {
-        -- "**.h",
-        -- "**.c",
-        -- "**.hpp",
-        -- "**.cpp",
-        -- "**.cppm",
-        -- "**.inl",
         "**.lua",
-
         "Shaders/**.h",
         "Shaders/**.hsh",
         "Shaders/**.hsm",
@@ -36,39 +29,12 @@ project "HorizonEngine"
         "Source/Input/**.inl",
         "Source/Input/**.lua",
 
-        -- "Source/Rendering/RenderBackend/**.h",
-        -- "Source/Rendering/RenderBackend/**.c",
-        -- "Source/Rendering/RenderBackend/**.hpp",
-        -- "Source/Rendering/RenderBackend/**.cpp",
-        -- "Source/Rendering/RenderBackend/**.cppm",
-        -- "Source/Rendering/RenderBackend/**.inl",
-        -- "Source/Rendering/RenderBackend/**.lua",
-
-        -- "Source/Rendering/RenderGraph/**.h",
-        -- "Source/Rendering/RenderGraph/**.c",
-        -- "Source/Rendering/RenderGraph/**.hpp",
-        -- "Source/Rendering/RenderGraph/**.cpp",
-        -- "Source/Rendering/RenderGraph/**.cppm",
-        -- "Source/Rendering/RenderGraph/**.inl",
-        -- "Source/Rendering/RenderGraph/**.lua",
-
         "Source/Rendering/**.h",
         "Source/Rendering/**.c",
         "Source/Rendering/**.hpp",
         "Source/Rendering/**.cpp",
         "Source/Rendering/**.cppm",
         "Source/Rendering/**.inl",
-
-        "Source/Core/**.h",
-        "Source/Core/**.c",
-        "Source/Core/**.hpp",
-        "Source/Core/**.cpp",
-        "Source/Core/**.cppm",
-        "Source/Core/**.inl",
-        "Source/Core/**.lua",
-
-        "Source/Engine/HorizonEngineModule.h",
-        "Source/Engine/HorizonEngineVersion.h",
 
         "Source/Engine/**.h",
         "Source/Engine/**.c",
