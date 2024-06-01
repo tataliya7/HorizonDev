@@ -21,6 +21,32 @@ namespace Horizon
 
     }
 
+    RenderScene::~RenderScene()
+    {
+
+    }
+
+    void RenderScene::Release()
+    {
+
+    }
+
+    void RenderScene::AddMesh(MeshRenderProxy* mesh)
+    {
+    }
+
+    void RenderScene::RemoveMesh(MeshRenderProxy* mesh)
+    {
+    }
+
+    void RenderScene::AddLight(LightRenderProxy* light)
+    {
+    }
+
+    void RenderScene::RemoveLight(LightRenderProxy* light)
+    {
+    }
+
     bool RenderScene::HasAtmosphericLight() const
     {
         return atmosphericLight != nullptr;

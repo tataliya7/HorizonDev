@@ -219,7 +219,9 @@ namespace Horizon
         //     skyAtmosphereTransmittanceLUT = skyAtmosphereLUTs.transmittanceLut;
         // }
         //
-        // renderGraph.AddPass(std::format("DirectLighting (Graphics, {}x{})", renderResolution.width, renderResolution.height), RenderGraphPassFlags::Graphics,
+        // renderGraph.AddPass(
+        //     std::format("DirectLighting (Graphics, {}x{})", renderResolution.width, renderResolution.height),
+        //     RenderGraphPassFlags::Graphics,
         //     [&](RenderGraphBuilder& builder)
         //     {
         //         RealTimeRendererSceneTextures& sceneTextures = renderGraph.blackboard.Get<RealTimeRendererSceneTextures>();

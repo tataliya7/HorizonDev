@@ -7,6 +7,9 @@
 
 namespace Horizon
 {
+    const RenderGraphBlackboardRegistry<RealTimeRendererSceneTextures> RealTimeRendererSceneTexturesRegistry;
+    const RenderGraphBlackboardRegistry<RealTimeRendererSkyAtmosphereLUTs> RealTimeRendererSkyAtmosphereLUTsRegistry;
+
 #if 0
     RealTimeRenderer::RealTimeRenderer(RenderSystem* renderSystem)
         : renderBackend(backend)
@@ -103,7 +106,19 @@ namespace Horizon
         , shaderLibrary(shaderLibrary)
         , defaultResources(defaultResources)
     {
+        RenderBackendBufferDesc perFrameDataBufferDesc = RenderBackendBufferDesc::CreateByteAddress(sizeof(PerFrameShaderParameters), true);
+        for (uint32 index = 0; index < MaxNumFramesInFlight; index++)
+        {
+            perFrameDataBuffers[index] = renderBackend->CreateBuffer(&perFrameDataBufferDesc, nullptr, "PerFrameDataBuffer");
+        }
 
+        RenderBackendBufferDesc autoExposureReadbackBufferDesc = RenderBackendBufferDesc::CreateReadback(sizeof(AutoExposureData));
+        for (uint32 index = 0; index < NumAutoExposureReadbackBuffers; index++)
+        {
+            autoExposureReadbackBuffers[index] = resourcePool->AllocateBuffer(autoExposureReadbackBufferDesc, "AutoExposureReadBackBuffer");
+        }
+
+        ResetHistoryFrame();
     }
 
     RealTimeRenderer::~RealTimeRenderer()
@@ -134,13 +149,25 @@ namespace Horizon
         }
     }
 
+    void RealTimeRenderer::ResetHistoryFrame()
+    {
+        historyFrame.cameraPosition = Vector3(0.0f, 0.0f, 0.0f);
+        historyFrame.cameraJitterOffset = Vector2(0.0f, 0.0f);
+        historyFrame.transformations.Reset();
+        historyFrame.preExposure = 1.0f;
+
+        RenderBackendBufferDesc autoExposureBufferDesc = RenderBackendBufferDesc::Create(sizeof(AutoExposureData), 1, RenderBackendBufferCreateFlags::ShaderResource | RenderBackendBufferCreateFlags::UnorderedAccess);
+        historyFrame.autoExposureBuffer = resourcePool->AllocateBuffer(autoExposureBufferDesc, "AutoExposureBuffer");
+    }
+
     bool RealTimeRenderer::IsBloomEnabled() const
     {
         return IsGaussianBloomEnabled() || IsConvolutionBloomEnabled();
     }
 
-    void RealTimeRenderer::OnRenderBegin()
+    void RealTimeRenderer::OnRenderBegin(SceneView* v)
     {
+        sceneView = v;
         // Super Resolution
         //isDLSSEnabled = false;
         //isFSR2Enabled = false;
@@ -259,12 +286,18 @@ namespace Horizon
 
         const RenderScene* scene = view.GetRenderScene();
 
+        features.enableSuperResolution = false;
+
         features.enableSkyAtmosphereRendering =
             scene != nullptr &&
             scene->HasAtmosphericLight() &&
             scene->HasActiveSkyAtmosphere();
 
+        features.enableScreenSpaceAmbientOcclusion = false;
+        features.enableScreenSpaceLightShafts = false;
+
         features.enableDepthOfField = false;// finalPostProcessingSettings.depthOfFieldScale > 0.0f;
+        features.enableMotionBlur = false;
 
         features.enableAutoExposure = (finalPostProcessingSettings.exposureMethod == ExposureMethod::AutoExposure);
 
@@ -277,19 +310,22 @@ namespace Horizon
             finalPostProcessingSettings.autoExposureMinExposureValue = finalPostProcessingSettings.fixedExposureValue;
             finalPostProcessingSettings.autoExposureMinExposureValue = finalPostProcessingSettings.fixedExposureValue;
         }
+
+        UpdatePerFrameDataBuffer();
     }
 
     void RealTimeRenderer::UpdatePerFrameDataBuffer() const
     {
         const SceneView& view = *sceneView;
-        const RenderSettings& renderSettings = view.GetRenderSettings();
+        const RenderSettings& renderSettings = view.renderSettings;
+        const RenderScene* scene = view.scene;
 
         // Setup PerFrameShaderParameters
         PerFrameShaderParameters perFrameShaderParameters = {};
         {
-            perFrameShaderParameters.frameIndex = view.GetFrameIndex();
+            perFrameShaderParameters.frameIndex = view.frameIndex;
 
-            perFrameShaderParameters.deltaTimeInSeconds = view.GetDeltaTimeInSeconds();
+            perFrameShaderParameters.deltaTimeInSeconds = view.deltaTimeInSeconds;
 
             perFrameShaderParameters.renderWidth = renderResolution.width;
             perFrameShaderParameters.renderHeight = renderResolution.height;
@@ -302,15 +338,15 @@ namespace Horizon
             perFrameShaderParameters.targetResolution = Vector4(1.0f * targetResolution.width, 1.0f * targetResolution.height, 1.0f / targetResolution.width, 1.0f / targetResolution.height);
             perFrameShaderParameters.displayResolution = Vector4(1.0f * displayResolution.width, 1.0f * displayResolution.height, 1.0f / displayResolution.width, 1.0f / displayResolution.height);
 
-            perFrameShaderParameters.cameraPosition = view.GetCameraPosition();
-            perFrameShaderParameters.cameraJitterOffset = view.GetCameraJitterOffset();
-            perFrameShaderParameters.cameraUpVector = view.GetCameraUpVector();
-            perFrameShaderParameters.cameraRightVector = view.GetCameraRightVector();
-            perFrameShaderParameters.cameraForwardVector = view.GetCameraForwardVector();
-            perFrameShaderParameters.halfFovInRadians = Math::DegreesToRadians(view.GetFieldOfView()) * 0.5f;
-            perFrameShaderParameters.aspectRatio = view.GetAspectRatio();
-            perFrameShaderParameters.nearClippingPlane = view.GetNearClippingPlane();
-            perFrameShaderParameters.farClippingPlane = view.GetFarClippingPlane();
+            perFrameShaderParameters.cameraPosition = view.cameraPosition;
+            perFrameShaderParameters.cameraJitterOffset = view.cameraJitterOffset;
+            perFrameShaderParameters.cameraUpVector = view.cameraUpVector;
+            perFrameShaderParameters.cameraRightVector = view.cameraRightVector;
+            perFrameShaderParameters.cameraForwardVector = view.cameraForwardVector;
+            perFrameShaderParameters.halfFovInRadians = Math::DegreesToRadians(view.fieldOfView) * 0.5f;
+            perFrameShaderParameters.aspectRatio = view.aspectRatio;
+            perFrameShaderParameters.nearClippingPlane = view.nearClippingPlane;
+            perFrameShaderParameters.farClippingPlane = view.farClippingPlane;
 
             perFrameShaderParameters.previousCameraPosition = historyFrame.cameraPosition;
             perFrameShaderParameters.previousCameraJitterOffset = historyFrame.cameraJitterOffset;
@@ -339,9 +375,8 @@ namespace Horizon
 
             perFrameShaderParameters.indirectLightingMultiplier = renderSettings.globalIlluminationSettings.indirectLightingIntensity * renderSettings.globalIlluminationSettings.indirectLightingColor;
 
-            if (view.HasValidScene())
+            if (scene != nullptr)
             {
-                const RenderScene* scene = view.GetRenderScene();
                 if (scene->HasAtmosphericLight())
                 {
                     const DistantLightRenderProxy* atmosphericLight = scene->GetAtmosphericLight();
@@ -477,7 +512,7 @@ namespace Horizon
 
         renderGraph.AddPass(
             std::format("UIColorAndAlpha (Graphics, {}x{})", targetResolution.width, targetResolution.height),
-            RenderGraphPassFlags::Graphics | RenderGraphPassFlags::SkipRenderPass,
+            RenderGraphPassFlags::Graphics, // | RenderGraphPassFlags::SkipRenderPass,
             [&](RenderGraphBuilder& builder)
             {
                 uiColorAndAlphaTexture = builder.WriteTexture(uiColorAndAlphaTexture, RenderBackendResourceState::RenderTarget);
@@ -496,7 +531,7 @@ namespace Horizon
 #define NearClipPlaneDepthValue 1.0f
 #define FarClipPlaneDepthValue 0.0f
 
-    RenderBackendTextureClearValue clearColor = RenderBackendTextureClearValue::CreateColorValueFloat4(0.0f, 0.0f, 0.0f, 0.0f);
+    RenderBackendTextureClearValue clearColor = RenderBackendTextureClearValue::CreateColorValueFloat4(1.0f, 1.0f, 1.0f, 1.0f);
     RenderBackendTextureClearValue clearDepth = RenderBackendTextureClearValue::CreateDepthValue(FarClipPlaneDepthValue);
     RenderBackendTextureClearValue clearVisibilityBufferColor = RenderBackendTextureClearValue::CreateColorValueUnit4(0x0FFFFFFF, 0x0FFFFFFF, 0x0FFFFFFF, 0x0FFFFFFF);
 
@@ -554,7 +589,7 @@ namespace Horizon
             renderResolution.height,
             RenderBackendTextureFormat::RGBA16Float,
             RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::UnorderedAccess | RenderBackendTextureCreateFlags::RenderTarget,
-            RenderBackendTextureClearValue::None,
+            clearColor,
             1,
             1,
             RenderBackendResourceState::UnorderedAccess);
@@ -632,7 +667,7 @@ namespace Horizon
         RenderGraphTextureHandle closestHZBTexture = renderGraph.CreateTexture(hzbDesc, "ClosestHZBTexture");
         RenderGraphTextureHandle furthestHZBTexture = renderGraph.CreateTexture(hzbDesc, "FurthestHZBTexture");
 
-        RenderDepthPyramid(renderGraph, view, hzbWidth, hzbHeight, hzbMipLevels, closestHZBTexture, furthestHZBTexture);
+        //RenderDepthPyramid(renderGraph, view, hzbWidth, hzbHeight, hzbMipLevels, closestHZBTexture, furthestHZBTexture);
 
         if (IsSkyAtmosphereRenderingEnabled())
         {
@@ -770,7 +805,22 @@ namespace Horizon
         // }
 
         //RenderGraphTextureHandle localLightShadowMapAtlas = RenderLocalLightShadows(renderGraph, view);
+
         //AddDirectLightingPass(renderGraph, view, screenSpaceShadowMaskTexture, localLightShadowMapAtlas);
+        renderGraph.AddPass(
+            std::format("DirectLighting (Graphics, {}x{})", renderResolution.width, renderResolution.height),
+            RenderGraphPassFlags::Graphics,
+            [&](RenderGraphBuilder& builder)
+            {
+                RenderGraphTextureHandle sceneColorTexture = sceneTextures.sceneColorTexture = builder.WriteTexture(sceneTextures.sceneColorTexture, RenderBackendResourceState::RenderTarget);
+
+                builder.BindColorTarget(0, sceneColorTexture, RenderBackendRenderPassBeginningAccessType::Clear, RenderBackendRenderPassEndingAccessType::Preserve);
+
+                return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
+                {
+
+                };
+            });
 
         if (IsSubsurfaceScatteringEnabled())
         {
@@ -798,16 +848,13 @@ namespace Horizon
 
         RenderGraphTextureHandle uiColorAndAlphaTexture = RenderUserInterface(renderGraph, view);
 
-        RenderGraphTextureHandle targetTexture;
-            //= renderGraph.ImportExternalTexture(view.targetTexture, "TargetTexture");
-
         renderGraph.AddPass(
             std::format("GUIComposition (Graphics, {}x{})", targetResolution.width, targetResolution.height),
             RenderGraphPassFlags::Graphics,
             [&](RenderGraphBuilder& builder)
             {
                 uiColorAndAlphaTexture = builder.ReadTexture(uiColorAndAlphaTexture, RenderBackendResourceState::ShaderResource);
-                targetTexture = builder.WriteTexture(targetTexture, RenderBackendResourceState::RenderTarget);
+                RenderGraphTextureHandle targetTexture = sceneTextures.hudLessColorTexture = builder.WriteTexture(sceneTextures.hudLessColorTexture, RenderBackendResourceState::RenderTarget);
 
                 builder.BindColorTarget(0, targetTexture, RenderBackendRenderPassBeginningAccessType::Preserve, RenderBackendRenderPassEndingAccessType::Preserve);
 
@@ -847,32 +894,5 @@ namespace Horizon
                         RenderBackendPrimitiveTopology::TriangleList);
                 };
             });
-
-        // renderGraph.AddPass(
-        //     std::format("Present"),
-        //     RenderGraphPassFlags::NeverGetCulled,
-        //     [&](RenderGraphBuilder& builder)
-        //     {
-        //         auto finalTexture = builder.ReadTexture(finalTextureData.finalTexture, RenderBackendResourceState::CopySrc);
-        //         auto outputTexture = outputTextureData.outputTexture = builder.WriteTexture(outputTextureData.outputTexture, RenderBackendResourceState::CopyDst);
-        //
-        //         return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
-        //         {
-        //             commandList.CopyTexture2D(
-        //                 registry.GetRenderBackendTextureHandle(finalTexture),
-        //                 Offset2D(0, 0),
-        //                 0,
-        //                 registry.GetRenderBackendTextureHandle(outputTexture),
-        //                 Offset2D(0, 0),
-        //                 0,
-        //                 targetResolution);
-        //
-        //             RenderBackendBarrier transitions[] =
-        //             {
-        //                 RenderBackendBarrier(registry.GetRenderBackendTextureHandle(outputTexture), RenderBackendTextureSubresourceRange(0, 1, 0, 1), RenderBackendResourceState::CopyDst, RenderBackendResourceState::Present)
-        //             };
-        //             commandList.Transitions(transitions, 1);
-        //         };
-        //     });
     }
 }

@@ -35,6 +35,18 @@ namespace Horizon
         {
 
         }
+
+        void Reset()
+        {
+            worldToViewMatrix = IdentityMatrix4x4;
+            viewToWorldMatrix = IdentityMatrix4x4;
+            viewToClipMatrix = IdentityMatrix4x4;
+            clipToViewMatrix = IdentityMatrix4x4;
+            worldToClipMatrix = IdentityMatrix4x4;
+            clipToWorldMatrix = IdentityMatrix4x4;
+            nonJitteredViewToClipMatrix = IdentityMatrix4x4;
+        }
+
         //
         // CameraTransformations(
         //     const Matrix4x4& viewMatrix,
@@ -131,8 +143,6 @@ namespace Horizon
     class SceneView
     {
     public:
-
-        explicit SceneView(RenderScene* scene);
 
         bool HasValidScene() const
         {
@@ -335,7 +345,7 @@ namespace Horizon
 
         uint32 targetHeight;
 
-        RenderBackendTextureHandle targetTexture;
+        RenderGraphPersistentTexture* targetTexture;
 
         uint32 displayWidth;
 

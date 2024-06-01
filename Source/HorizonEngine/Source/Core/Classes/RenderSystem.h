@@ -145,8 +145,6 @@ namespace Horizon
         RenderBackendBufferHandle indexBuffer[3];
         RenderBackendBufferHandle indexBufferUpload[3];
 
-        void RenderPreIntegratedBrdfLut(RenderBackendCommandList* commandList);
-
         bool shouldUpdateRayTracingScene = false;
 
         void UpdateRayTracingAccelerationStructures(SceneView* view, RenderBackendCommandList* commandList);

@@ -55,9 +55,9 @@ namespace Horizon
 
         //sceneColorTexture = renderGraph.ImportExternalTexture(localExposureTestTexture, localExposureTestTextureDesc, RenderBackendResourceState::ShaderResource, "Test");
         PostProcessingSceneColorMipChain sceneColorMipChain;
-        if (generateSceneColorMipChain)
+        if (false)
         {
-            GenerateSceneColorPyramid(renderGraph, view, sceneColorTexture, &sceneColorMipChain);
+            RenderSceneColorPyramid(renderGraph, view, sceneColorTexture, &sceneColorMipChain);
         }
 
         // The auto exposure pass is always executed.
@@ -79,12 +79,12 @@ namespace Horizon
         {
             if (IsGaussianBloomEnabled())
             {
-                bloomTexture = AddGaussianBloomPass(renderGraph, view, sceneColorMipChain.textures[0]);
+                bloomTexture = DispatchGaussianBloom(renderGraph, view, sceneColorMipChain.textures[0]);
             }
             else
             {
                 assert(IsConvolutionBloomEnabled());
-                bloomTexture = AddConvolutionBloomPass(renderGraph, view, sceneColorMipChain.textures[0]);
+                bloomTexture = DispatchConvolutionBloom(renderGraph, view, sceneColorMipChain.textures[0]);
             }
 
             if (IsLensFlaresEnabled())
@@ -115,31 +115,31 @@ namespace Horizon
         //     sceneColorTexture = AddEditorGizmosPass(renderGraph, view, sceneColorTexture);
         // }
 #endif
-
-        if (isVisualizePrimitiveIDEnabled)
-        {
-            sceneColorTexture = AddVisualizePrimitiveIDPass(renderGraph, view);
-        }
-        if (isVisualizeMaterialIDEnabled)
-        {
-            sceneColorTexture = AddVisualizeMaterialIDPass(renderGraph, view);
-        }
-        if (isVisualizeWorldSpaceNormalEnabled)
-        {
-            sceneColorTexture = AddVisualizeWorldSpaceNormalPass(renderGraph, view);
-        }
-        if (isVisualizeMotionVectorsEnabled)
-        {
-            sceneColorTexture = AddVisualizeMotionVectorsPass(renderGraph, view);
-        }
-        if (isVisualizeAmbientOcclusionEnabled)
-        {
-            sceneColorTexture = AddVisualizeAmbientOcclusionPass(renderGraph, view);
-        }
-        if (isVisualizeShadowMaskEnabled)
-        {
-            sceneColorTexture = AddVisualizeShadowMaskPass(renderGraph, view, sceneColorTexture);
-        }
+        //
+        // if (isVisualizePrimitiveIDEnabled)
+        // {
+        //     sceneColorTexture = AddVisualizePrimitiveIDPass(renderGraph, view);
+        // }
+        // if (isVisualizeMaterialIDEnabled)
+        // {
+        //     sceneColorTexture = AddVisualizeMaterialIDPass(renderGraph, view);
+        // }
+        // if (isVisualizeWorldSpaceNormalEnabled)
+        // {
+        //     sceneColorTexture = AddVisualizeWorldSpaceNormalPass(renderGraph, view);
+        // }
+        // if (isVisualizeMotionVectorsEnabled)
+        // {
+        //     sceneColorTexture = AddVisualizeMotionVectorsPass(renderGraph, view);
+        // }
+        // if (isVisualizeAmbientOcclusionEnabled)
+        // {
+        //     sceneColorTexture = AddVisualizeAmbientOcclusionPass(renderGraph, view);
+        // }
+        // if (isVisualizeShadowMaskEnabled)
+        // {
+        //     sceneColorTexture = AddVisualizeShadowMaskPass(renderGraph, view, sceneColorTexture);
+        // }
 
         sceneTextures.hudLessColorTexture = sceneColorTexture;
 

@@ -1,4 +1,5 @@
 project "HorizonEngine"
+    --kind "SharedLib"
     kind "StaticLib"
     language "C++"
     cppdialect "C++latest"
@@ -98,4 +99,8 @@ project "HorizonEngine"
         thirdpartypath("streamline/include"),
         thirdpartypath("ffx-fsr2/include"),
         thirdpartypath("concurrentqueue/include")
+    }
+
+    links {
+        --thirdpartypath("glfw/glfw-3.3.9.bin.WIN64/lib-vc2022/glfw3.lib"),
     }

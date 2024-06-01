@@ -47,12 +47,15 @@ namespace Horizon
         return features.enableDepthOfField;
     }
 
-#if 0
+
     RenderGraphTextureHandle RealTimeRenderer::AddDepthOfFieldPass(
         RenderGraph& renderGraph,
         const SceneView& view,
         RenderGraphTextureHandle sceneColorTexture)
     {
+        return RenderGraphTextureHandle::Null;
+    }
+#if 0
         // GenerateOctawebSamples();
 
         const uint32 downsampleFactor = 2;

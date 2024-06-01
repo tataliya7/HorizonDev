@@ -3,13 +3,21 @@
 
 namespace Horizon
 {
-#if 0
+    bool RealTimeRenderer::IsLocalExposureEnabled() const
+    {
+        return features.enableLocalExposure;
+    }
+
+
     RenderGraphTextureHandle RealTimeRenderer::AddLocalExposurePass(
         RenderGraph& renderGraph,
         const SceneView& view,
         RenderGraphTextureHandle sceneColorTexture,
         RenderGraphTextureHandle autoExposureTexture)
     {
+        return RenderGraphTextureHandle::Null;
+    }
+#if 0
         float highlights = std::pow(2.0f, -settings.postProcessingSettings.localExposureHighlights);
         float shadows = std::pow(2.0f, settings.postProcessingSettings.localExposureShadows);
         float sigma = settings.postProcessingSettings.localExposurePreferenceSigma * settings.postProcessingSettings.localExposurePreferenceSigma;

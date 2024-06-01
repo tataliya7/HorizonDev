@@ -220,6 +220,7 @@ namespace Horizon
 
     struct VulkanTexture
     {
+        const char* name;
         VkImage handle;
         bool swapchainBuffer;
         VmaAllocation allocation;
@@ -1987,6 +1988,7 @@ namespace Horizon
 
         VulkanTexture& texture = textures[textureIndex];
         texture = {
+            .name = name,
             .swapchainBuffer = false,
             .width = desc->width,
             .height = desc->height,
@@ -5816,7 +5818,7 @@ namespace Horizon
     {
         OPTICK_EVENT();
 
-        if (!commandLists || !numCommandLists)
+        if (!commandLists || numCommandLists == 0)
         {
             return;
         }
@@ -5824,10 +5826,10 @@ namespace Horizon
         RenderBackendCommandContainer* commandContainer = commandLists[0]->GetCommandContainer();
         uint32 numCommands = commandContainer->numCommands;
 
-        if (numCommands == 0)
-        {
-            return;
-        }
+        //if (numCommands == 0)
+        //{
+        //    return;
+        //}
 
         std::vector<VkSubmitInfo2> submitInfos[RenderBackendQueueFamilyCount];
         VulkanSubmitContext submitContext = {};

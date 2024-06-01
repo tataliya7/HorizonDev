@@ -98,7 +98,7 @@ namespace Horizon
         bool open = LoadShaderSourceFromFile(filename.c_str(), source);
         if (!open)
         {
-            LogError(GLogger, std::format("Failed to open shader source file."));
+            LogError(GLogger, std::format("Failed to open shader source file: {}.", filename));
             return false;
         }
 
@@ -150,6 +150,7 @@ namespace Horizon
         if (succeed)
         {
             RenderBackendShaderDesc shaderDesc = {
+                .stage = static_cast<RenderBackendShaderStage>(desc.stage),
                 .code = compilerOutput.blob.GetData(),
                 .codeSize = compilerOutput.blob.GetSize(),
                 .entryFunctionName = desc.entryFunctionName

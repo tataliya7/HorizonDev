@@ -143,11 +143,11 @@ namespace Horizon
 
         bool IsScreenSpaceLightShaftsEnabled() const;
 
-        bool IsRayTracingShadowsEnabled() const;
+        //bool IsRayTracingShadowsEnabled() const;
 
-        bool IsRayTracingReflectionsEnabled() const;
+        //bool IsRayTracingReflectionsEnabled() const;
 
-        bool IsRayTracingAmbientOcclusionEnabled() const;
+        //bool IsRayTracingAmbientOcclusionEnabled() const;
 
         bool IsMotionBlurEnabled() const;
 
@@ -161,9 +161,9 @@ namespace Horizon
 
         bool IsLensFlaresEnabled() const;
 
-    private:
+        void OnRenderBegin(SceneView* sceneView);
 
-        void OnRenderBegin();
+    private:
 
         void UpdatePerFrameDataBuffer() const;
 
@@ -335,12 +335,12 @@ namespace Horizon
             RenderGraphTextureHandle halfResolutionSceneColorTexture,
             RenderGraphTextureHandle bloomTexture);
 
-        RenderGraphTextureHandle AddGaussianBloomPass(
+        RenderGraphTextureHandle DispatchGaussianBloom(
             RenderGraph& renderGraph,
             const SceneView& view,
             RenderGraphTextureHandle halfResolutionSceneColorTexture);
 
-        RenderGraphTextureHandle AddConvolutionBloomPass(
+        RenderGraphTextureHandle DispatchConvolutionBloom(
             RenderGraph& renderGraph,
             const SceneView& view,
             RenderGraphTextureHandle sceneColorTexture);
@@ -355,7 +355,7 @@ namespace Horizon
             RenderGraphTextureHandle inputTexture,
             RenderGraphTextureHandle outputTexture);
 
-        void GenerateSceneColorPyramid(
+        void RenderSceneColorPyramid(
             RenderGraph& renderGraph,
             const SceneView& view,
             RenderGraphTextureHandle sceneColorTexture,
@@ -471,5 +471,7 @@ namespace Horizon
         };
 
         HistoryFrame historyFrame;
+
+        void ResetHistoryFrame();
     };
 }

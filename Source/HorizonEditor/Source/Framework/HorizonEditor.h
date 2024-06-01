@@ -238,11 +238,20 @@ namespace Horizon
         RenderSettings renderSettings;
         ImGuiContext* imguiContext = nullptr;
 
+        RenderGraphResourcePool* renderGraphResourcePool;
+
+        RenderBackendGPUProfiler* gpuProfiler;
+
+        RenderScene* renderScene;
+        RendererDefaultResources* rendererDefaultResources;
+
         // Begin Scene View Window
         SceneView* sceneView;
         std::string currentDebugVisualizationMode;
         EditorCamera editorCamera;
         Point2D currentMousePosition;
+        RealTimeRenderer* renderer;
+        RenderGraphPersistentTexture* targetTexture;
         // End Scene View Window
 
         EditorSceneManager* sceneManager;

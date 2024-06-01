@@ -3252,7 +3252,7 @@ namespace Horizon
     {
         OPTICK_EVENT();
 
-        if (!commandLists || !numCommandLists)
+        if (!commandLists || numCommandLists == 0)
         {
             return;
         }

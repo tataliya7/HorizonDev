@@ -25,6 +25,10 @@ namespace Horizon
             bloomTexture = defaultResources->ImportBlackDummyTexture2D(renderGraph);
         }
 
+        if (!isLocalExposureTextureValid)
+        {
+            localExposureTexture = defaultResources->ImportBlackDummyTexture2D(renderGraph);
+        }
         // TODO: Implement lens dirt
         RenderBackendTextureHandle lensDirtTexture = defaultResources->GetBlackDummyTexture2D()->GetHandle();
 
@@ -54,13 +58,13 @@ namespace Horizon
         // }
 
         RenderBackendTextureFormat outputTextureFormat = RenderBackendTextureFormat::RGB10A2Unorm;
-
         RenderGraphTextureDesc outputTextureDesc = RenderGraphTextureDesc::Create2D(
             targetResolution.width,
             targetResolution.height,
             outputTextureFormat,
             RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::UnorderedAccess | RenderBackendTextureCreateFlags::RenderTarget);
-        RenderGraphTextureHandle outputTexture = renderGraph.CreateTexture(outputTextureDesc, "ToneMappingTexture");
+        //RenderGraphTextureHandle outputTexture = renderGraph.CreateTexture(outputTextureDesc, "ToneMappingTexture");
+        RenderGraphTextureHandle outputTexture = renderGraph.ImportExternalTexture(view.targetTexture, "TargetTexture");
 
         renderGraph.AddPass(
             std::format("ToneMapping (Compute, {}x{})", outputTextureDesc.width, outputTextureDesc.height),
@@ -76,8 +80,8 @@ namespace Horizon
 
                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
                 {
-                    uint32 threadGroupCountX = ComputeWorkGroupCount(outputTextureDesc.width, PostProcessingThreadGroupSizeX);
-                    uint32 threadGroupCountY = ComputeWorkGroupCount(outputTextureDesc.height, PostProcessingThreadGroupSizeY);
+                    uint32 threadGroupCountX = ComputeThreadGroupCount(outputTextureDesc.width, PostProcessingThreadGroupSizeX);
+                    uint32 threadGroupCountY = ComputeThreadGroupCount(outputTextureDesc.height, PostProcessingThreadGroupSizeY);
                     uint32 threadGroupCountZ = 1;
 
                     RenderBackendShaderArguments shaderArguments = {};

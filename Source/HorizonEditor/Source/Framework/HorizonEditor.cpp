@@ -127,6 +127,36 @@ namespace Horizon
 
         Input::SetCurrentContext(window->GetGLFWwindow());
 
+        renderGraphResourcePool = new RenderGraphResourcePool(renderBackend);
+
+        gpuProfiler = new RenderBackendGPUProfiler(renderBackend);
+
+        RenderBackendTextureFormat targetTextureFormat = RenderBackendTextureFormat::RGB10A2Unorm;
+        RenderGraphTextureDesc targetTextureDesc = RenderGraphTextureDesc::Create2D(
+            swapChainWidth,
+            swapChainHeight,
+            targetTextureFormat,
+            RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::UnorderedAccess | RenderBackendTextureCreateFlags::RenderTarget);
+        targetTexture = renderGraphResourcePool->AllocateTexture(targetTextureDesc, "SceneViewTexture");
+
+        renderScene = new RenderScene();
+
+        SkyAtmosphereRenderProxy* skyAtmosphere = new SkyAtmosphereRenderProxy();
+        renderScene->AddSkyAtmosphere(skyAtmosphere);
+
+        RenderBackendCommandList* commandList = new RenderBackendCommandList(GArena);
+        rendererDefaultResources = new RendererDefaultResources(renderBackend, renderGraphResourcePool, shaderLibrary);
+        rendererDefaultResources->Initialize(*commandList);
+
+        RenderBackendBarrier transitions[] =
+        {
+            RenderBackendBarrier(targetTexture->GetHandle(), RenderBackendTextureSubresourceRange(0, 1, 0, 1), RenderBackendResourceState::Undefined, RenderBackendResourceState::ShaderResource),
+        };
+        commandList->Transitions(transitions, 1);
+
+        renderBackend->SubmitCommandLists(&commandList, 1, RenderBackendSwapChainHandle::Null);
+
+        renderer = new RealTimeRenderer(renderBackend, renderGraphResourcePool, shaderLibrary, rendererDefaultResources);
 //
 //        ShaderGraphSystemInit();
 //
@@ -178,7 +208,8 @@ namespace Horizon
 
         shaderLibrary->HotReload();
 
-        // RenderBackendCommandList* commandList = renderBackend->AllocateCommandList();
+        //RenderBackendCommandList* commandList = renderBackend->AllocateCommandList();
+        RenderBackendCommandList* commandList = new RenderBackendCommandList(GArena);
         //
         // commandList->BeginDebugLabel();
         // commandList->BeginTimingQuery();
@@ -193,6 +224,79 @@ namespace Horizon
         // commandList->EndTimingQuery();
         // commandList->EndDebugLabel();
 
+        Vector3 cameraRightVector   = Math::Normalize(editorCamera.GetRotation() * Vector3(1.0f, 0.0f, 0.0f));
+        Vector3 cameraForwardVector = Math::Normalize(editorCamera.GetRotation() * Vector3(0.0f, 1.0f, 0.0f));
+        Vector3 cameraUpVector      = Math::Normalize(editorCamera.GetRotation() * Vector3(0.0f, 0.0f, 1.0f));
+
+        SceneView sceneView;
+        sceneView.scene = renderScene;
+        sceneView.renderSettings = renderSettings;
+        sceneView.debugVisualizationMode = SceneViewDebugVisualizationMode::Lighting;//currentDebugVisualizationMode;
+        sceneView.reset = false;
+        sceneView.cameraPosition = editorCamera.GetPosition();
+        sceneView.cameraRotation = editorCamera.GetRotation();
+        sceneView.cameraUpVector = cameraUpVector;
+        sceneView.cameraRightVector = cameraRightVector;
+        sceneView.cameraForwardVector = cameraForwardVector;
+        sceneView.fieldOfView = editorCamera.fieldOfView;
+        sceneView.aspectRatio = editorCamera.aspectRatio;
+        sceneView.nearClippingPlane = editorCamera.nearClippingPlane;
+        sceneView.farClippingPlane = editorCamera.farClippingPlane;
+        sceneView.backgroundColor = Vector3(0.0f, 0.0f, 0.0f);
+        sceneView.targetWidth = swapChainWidth;
+        sceneView.targetHeight = swapChainHeight;
+        sceneView.targetTexture = targetTexture;
+
+        gpuProfiler->BeginFrame(commandList);
+        uint32 frameTimingQueryRegion = gpuProfiler->BeginRegion(commandList, "GPU Frametime");
+
+        renderer->OnRenderBegin(&sceneView);
+
+        RenderGraph renderGraph(GArena, renderGraphResourcePool, gpuProfiler);
+
+        renderer->Render(renderGraph);
+
+        renderGraph.Execute(*commandList);
+
+        gpuProfiler->EndRegion(frameTimingQueryRegion, commandList);
+        gpuProfiler->EndFrame(commandList);
+
+        //renderer->OnRenderEnd();
+
+        RenderBackendTextureHandle swapChainTexture = renderBackend->GetActiveSwapChainBuffer(swapChain);
+
+        {
+            RenderBackendBarrier transitions[] =
+            {
+                RenderBackendBarrier(targetTexture->GetHandle(), RenderBackendTextureSubresourceRange(0, 1, 0, 1), RenderBackendResourceState::ShaderResource, RenderBackendResourceState::CopySrc),
+                RenderBackendBarrier(swapChainTexture, RenderBackendTextureSubresourceRange(0, 1, 0, 1), RenderBackendResourceState::Undefined, RenderBackendResourceState::CopyDst)
+            };
+            commandList->Transitions(transitions, 2);
+        }
+
+        commandList->CopyTexture2D(
+            targetTexture->GetHandle(),
+            Offset2D(0, 0),
+            0,
+            swapChainTexture,
+            Offset2D(0, 0),
+            0,
+            Extent2D(swapChainWidth, swapChainHeight));
+
+        {
+            RenderBackendBarrier transitions[] =
+            {
+                RenderBackendBarrier(targetTexture->GetHandle(), RenderBackendTextureSubresourceRange(0, 1, 0, 1), RenderBackendResourceState::CopySrc, RenderBackendResourceState::ShaderResource),
+                RenderBackendBarrier(swapChainTexture, RenderBackendTextureSubresourceRange(0, 1, 0, 1), RenderBackendResourceState::CopyDst, RenderBackendResourceState::Present)
+            };
+            commandList->Transitions(transitions, 2);
+        }
+
+        renderBackend->SubmitCommandLists(&commandList, 1, swapChain);
+
+        renderGraphResourcePool->Tick();
+
+        GArena->Reset();
 //
 //        renderEngine->EndDrawUI();
 //
@@ -270,7 +374,7 @@ namespace Horizon
 //            streamlineContext->ReflexSetMarkerPresentStart();
 //#endif
 //
-            //renderBackend->PresentSwapChain(swapChain);
+            renderBackend->PresentSwapChain(swapChain);
 //
 //#if HE_ENBALE_STREAMLINE_SUPPORT
 //            streamlineContext->ReflexSetMarkerPresentEnd();

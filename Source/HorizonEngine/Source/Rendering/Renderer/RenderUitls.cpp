@@ -44,7 +44,7 @@ namespace Horizon
             RenderBackendTextureCreateFlags::UnorderedAccess | RenderBackendTextureCreateFlags::ShaderResource);
         preIntegratedBrdfLut = renderBackend->CreateTexture(&preIntegratedBrdfLutDesc, nullptr, "PreIntegratedBrdfLut");
 
-        RenderPreIntegratedBrdfLut(shaderLibrary, commandList);
+        RenderPreIntegratedBrdfLut(shaderLibrary, commandList, preIntegratedBrdfLut);
 
         RenderBackendSamplerDesc globalSamplerLinearWarpDesc = RenderBackendSamplerDesc::CreateLinearWarp(0.0f, -std::numeric_limits<float>::max(), std::numeric_limits<float>::max(), 1);
         globalSamplerLinearWarp = renderBackend->CreateSampler(&globalSamplerLinearWarpDesc, "GlobalSamplerLinearWarp");

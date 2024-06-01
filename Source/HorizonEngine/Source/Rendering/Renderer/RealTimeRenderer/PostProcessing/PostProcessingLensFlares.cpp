@@ -8,13 +8,15 @@ namespace Horizon
         return features.enableLensFlares;
     }
 
-#if 0
     RenderGraphTextureHandle RealTimeRenderer::AddLensFlaresPass(
         RenderGraph& renderGraph,
         const SceneView& view,
         RenderGraphTextureHandle halfResolutionSceneColorTexture,
         RenderGraphTextureHandle bloomTexture)
     {
+        return RenderGraphTextureHandle::Null;
+    }
+#if 0
         uint32 lensFlaresTextureWidth = targetResolution.width / 4;
         uint32 lensFlaresTextureHeight = targetResolution.height / 4;
 

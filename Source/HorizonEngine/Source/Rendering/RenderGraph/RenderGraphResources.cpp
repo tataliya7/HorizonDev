@@ -32,8 +32,18 @@ namespace Horizon
 
     void RenderGraphResourcePool::Tick()
     {
+        for (RenderGraphPersistentTexture* texture : allocatedTextures)
+        {
+            texture->active = false;
+        }
+        for (RenderGraphPersistentBuffer* buffer : allocatedBuffers)
+        {
+            buffer->active = false;
+        }
+
         // TODO: destroy unused resources here
 
+        
         tickCount++;
     }
 

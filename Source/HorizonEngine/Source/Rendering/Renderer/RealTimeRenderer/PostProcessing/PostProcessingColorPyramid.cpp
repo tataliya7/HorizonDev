@@ -23,8 +23,8 @@ namespace Horizon
 
                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
                 {
-                    uint32 threadGroupCountX = ComputeWorkGroupCount(outputTextureWidth, 8);
-                    uint32 threadGroupCountY = ComputeWorkGroupCount(outputTextureHeight, 8);
+                    uint32 threadGroupCountX = ComputeThreadGroupCount(outputTextureWidth, 8);
+                    uint32 threadGroupCountY = ComputeThreadGroupCount(outputTextureHeight, 8);
                     uint32 threadGroupCountZ = 1;
 
                     RenderBackendShaderArguments shaderArguments = {};
@@ -45,7 +45,7 @@ namespace Horizon
         return outputTexture;
     }
 
-    void RealTimeRenderer::GenerateSceneColorPyramid(
+    void RealTimeRenderer::RenderSceneColorPyramid(
         RenderGraph& renderGraph,
         const SceneView& view,
         RenderGraphTextureHandle sceneColorTexture,

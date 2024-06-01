@@ -6,6 +6,11 @@ namespace Horizon
     // TODO: Make it configurable
     static constexpr uint32 GHistogramBinCount = 256;
 
+    bool RealTimeRenderer::IsAutoExposureEnabled() const
+    {
+        return features.enableAutoExposure;
+    }
+
     RenderGraphTextureHandle RealTimeRenderer::AddAutoExposureBuildHistogramPass(
         RenderGraph& renderGraph,
         const SceneView& view,
@@ -31,8 +36,8 @@ namespace Horizon
                 {
                     // Quarter resolution
                     // TODO: change to 1/2 resolution
-                    uint32 threadGroupCountX = ComputeWorkGroupCount(sceneColorTextureDesc.width, 16);
-                    uint32 threadGroupCountY = ComputeWorkGroupCount(sceneColorTextureDesc.height, 16);
+                    uint32 threadGroupCountX = ComputeThreadGroupCount(sceneColorTextureDesc.width, 16);
+                    uint32 threadGroupCountY = ComputeThreadGroupCount(sceneColorTextureDesc.height, 16);
                     uint32 threadGroupCountZ = 1;
 
                     RenderBackendShaderArguments shaderArguments = {};

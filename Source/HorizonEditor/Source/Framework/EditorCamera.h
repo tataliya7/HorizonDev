@@ -71,9 +71,21 @@ namespace Horizon
         Vector3 rotationVelocity;
     };
 
-    struct EditorCamera
+    class EditorCamera
     {
         //CameraProjectionMode projectionMode;
+
+    public:
+
+        Vector3 GetPosition() const
+        {
+            return position;
+        }
+
+        Vector3 GetRotation() const
+        {
+            return rotation;
+        }
 
         float nearClippingPlane;
 
@@ -85,15 +97,17 @@ namespace Horizon
 
         bool overrideAspectRatio;
 
+        float cameraSpeed;
+
+        EditorCameraControllerUserImpulseData userImpulseData;
+
+    //private:
+
         Vector3 position;
 
         Vector3 rotation;
 
-        float cameraSpeed;
-
         EditorCameraController controller;
-
-        EditorCameraControllerUserImpulseData userImpulseData;
 
         void Update(float deltaTimeInSeconds);
     };

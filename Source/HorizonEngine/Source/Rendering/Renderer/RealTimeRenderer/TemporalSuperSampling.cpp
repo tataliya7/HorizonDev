@@ -7,4 +7,9 @@ namespace Horizon
     {
         return features.enableSuperResolution;
     }
+
+    RenderGraphTextureHandle DispatchCustomTemporalSuperSampling(RenderGraph& renderGraph, const SceneView& view, const TemporalSuperSamplingDispatchParameters& dispatchParameters)
+    {
+        return RenderGraphTextureHandle::Null;
+    }
 }

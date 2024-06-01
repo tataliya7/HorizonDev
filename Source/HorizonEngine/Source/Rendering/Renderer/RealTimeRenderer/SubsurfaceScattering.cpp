@@ -18,8 +18,8 @@ namespace Horizon
 
         assert((renderResolution.width == sceneColorTextureDesc.width) && (renderResolution.height == sceneColorTextureDesc.height));
 
-        const uint32 tileCountX = ComputeWorkGroupCount(sceneColorTextureDesc.width, GSubsurfaceScatteringTileSize);
-        const uint32 tileCountY = ComputeWorkGroupCount(sceneColorTextureDesc.height, GSubsurfaceScatteringTileSize);
+        const uint32 tileCountX = ComputeThreadGroupCount(sceneColorTextureDesc.width, GSubsurfaceScatteringTileSize);
+        const uint32 tileCountY = ComputeThreadGroupCount(sceneColorTextureDesc.height, GSubsurfaceScatteringTileSize);
         const uint32 tileCount = tileCountX * tileCountY;
 
         RenderGraphTextureHandle subsurfaceScatteringTexture = renderGraph.CreateTexture(sceneColorTextureDesc, "SubsurfaceScatteringTexture");
@@ -69,8 +69,8 @@ namespace Horizon
 
                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
                 {
-                    uint32 threadGroupCountX = ComputeWorkGroupCount(sceneColorTextureDesc.width, 16);
-                    uint32 threadGroupCountY = ComputeWorkGroupCount(sceneColorTextureDesc.height, 16);
+                    uint32 threadGroupCountX = ComputeThreadGroupCount(sceneColorTextureDesc.width, 16);
+                    uint32 threadGroupCountY = ComputeThreadGroupCount(sceneColorTextureDesc.height, 16);
 
                     RenderBackendShaderArguments shaderArguments = {};
                     shaderArguments.BindBuffer(0, this->GetCurrentPerFrameDataBuffer());

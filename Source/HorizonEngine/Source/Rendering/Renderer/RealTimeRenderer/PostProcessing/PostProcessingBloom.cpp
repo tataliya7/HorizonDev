@@ -3,7 +3,17 @@
 
 namespace Horizon
 {
-    RenderGraphTextureHandle RealTimeRenderer::AddGaussianBloomPass(
+    bool RealTimeRenderer::IsGaussianBloomEnabled() const
+    {
+        return features.enableGaussianBloom;
+    }
+
+    bool RealTimeRenderer::IsConvolutionBloomEnabled() const
+    {
+        return features.enableConvolutionBloom;
+    }
+
+    RenderGraphTextureHandle RealTimeRenderer::DispatchGaussianBloom(
         RenderGraph& renderGraph,
         const SceneView& view,
         RenderGraphTextureHandle halfResolutionSceneColorTexture)
@@ -47,8 +57,8 @@ namespace Horizon
 
                         return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
                         {
-                            uint32 threadGroupCountX = ComputeWorkGroupCount(outputTextureWidth, PostProcessingThreadGroupSizeX);
-                            uint32 threadGroupCountY = ComputeWorkGroupCount(outputTextureHeight, PostProcessingThreadGroupSizeY);
+                            uint32 threadGroupCountX = ComputeThreadGroupCount(outputTextureWidth, PostProcessingThreadGroupSizeX);
+                            uint32 threadGroupCountY = ComputeThreadGroupCount(outputTextureHeight, PostProcessingThreadGroupSizeY);
                             uint32 threadGroupCountZ = 1;
 
                             RenderBackendShaderArguments shaderArguments = {};
@@ -102,8 +112,8 @@ namespace Horizon
 
                         return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
                         {
-                            uint32 threadGroupCountX = ComputeWorkGroupCount(outputTextureWidth, PostProcessingThreadGroupSizeX);
-                            uint32 threadGroupCountY = ComputeWorkGroupCount(outputTextureHeight, PostProcessingThreadGroupSizeY);
+                            uint32 threadGroupCountX = ComputeThreadGroupCount(outputTextureWidth, PostProcessingThreadGroupSizeX);
+                            uint32 threadGroupCountY = ComputeThreadGroupCount(outputTextureHeight, PostProcessingThreadGroupSizeY);
                             uint32 threadGroupCountZ = 1;
 
                             RenderBackendShaderArguments shaderArguments = {};
@@ -131,12 +141,15 @@ namespace Horizon
         return bloomTexture;
     }
 
-#if 0
-    RenderGraphTextureHandle RealTimeRenderer::AddConvolutionBloomPass(
+
+    RenderGraphTextureHandle RealTimeRenderer::DispatchConvolutionBloom(
         RenderGraph& renderGraph,
         const SceneView& view,
         RenderGraphTextureHandle sceneColorTexture)
     {
+        return RenderGraphTextureHandle::Null;
+    }
+#if 0
         const uint32 downsampleFactor = 2;
         const uint32 sceneColorWidth = view.targetWidth;
         const uint32 sceneColorHeight = view.targetHeight;

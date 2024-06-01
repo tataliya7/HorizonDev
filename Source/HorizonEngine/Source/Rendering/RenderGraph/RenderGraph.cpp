@@ -268,7 +268,7 @@ namespace Horizon
 
         for (RenderGraphTexture* texture : textures)
         {
-            if (!texture->IsCulled() && !texture->IsImported() && !texture->HasInternalTexture())
+            if (/* !texture->IsCulled() && */!texture->IsImported() && !texture->HasInternalTexture())
             {
                 RenderGraphPersistentTexture* newTexture = resourcePool->AllocateTexture(texture->GetDesc(), texture->GetName());
                 texture->SetInternalTexture(newTexture, RenderBackendResourceState::Undefined);
@@ -277,7 +277,7 @@ namespace Horizon
 
         for (RenderGraphBuffer* buffer : buffers)
         {
-            if (!buffer->IsCulled() && !buffer->IsImported() && !buffer->HasInternalBuffer())
+            if (/* !buffer->IsCulled() && */!buffer->IsImported() && !buffer->HasInternalBuffer())
             {
                 RenderGraphPersistentBuffer* newBuffer = resourcePool->AllocateBuffer(buffer->GetDesc(), buffer->GetName());
                 buffer->SetInternalBuffer(newBuffer, RenderBackendResourceState::Undefined);
@@ -286,10 +286,10 @@ namespace Horizon
 
         for (RenderGraphPass* pass : passes)
         {
-            if (pass->IsCulled())
-            {
-                continue;
-            }
+            //if (pass->IsCulled())
+            //{
+            //    continue;
+            //}
 
             RenderGraphPassFlags passFlags = pass->GetFlags();
             RenderGraphRegistry registry(this, pass);
@@ -325,7 +325,8 @@ namespace Horizon
                 {
                     if (pass->renderTargets[i].texture)
                     {
-                        renderPass.renderTargets[i] = {
+                        renderPass.renderTargets[i] =
+                        {
                             .texture = registry.GetRenderBackendTextureHandle(pass->renderTargets[i].texture),
                             .mipLevel = pass->renderTargets[i].mipLevel,
                             .arrayLayer = pass->renderTargets[i].arrayLayer,
@@ -336,7 +337,8 @@ namespace Horizon
                 }
                 if (pass->depthStencil.texture)
                 {
-                    renderPass.depthStencil = {
+                    renderPass.depthStencil =
+                    {
                         .texture = registry.GetRenderBackendTextureHandle(pass->depthStencil.texture),
                         .mipLevel = pass->depthStencil.mipLevel,
                         .arrayLayer = pass->depthStencil.arrayLayer,
@@ -365,7 +367,8 @@ namespace Horizon
         {
             if (texture->intermediateState != texture->finalState)
             {
-                std::array<RenderBackendBarrier, 1> barriers = {
+                std::array<RenderBackendBarrier, 1> barriers =
+                {
                     RenderBackendBarrier(texture->GetRenderBackendTextureHandle(), RenderBackendTextureSubresourceRange::All, texture->intermediateState, texture->finalState)
                 };
                 commandList.Transitions(barriers.data(), (uint32)barriers.size());
