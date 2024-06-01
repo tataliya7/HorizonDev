@@ -3,8 +3,8 @@
 #include "PostProcessingCommon.hsh"
 #include "SelectionOutlineCommon.hsh"
 
-BIND_BUFFER_ELEMENT(0, PerFrameShaderParameters, PerFrameShaderParameters);
-BIND_BUFFER_ELEMENT(1, Geometry, Geometry);
+BIND_BYTE_ADDRESS_BUFFER_SRV(0, PerFrameDataBuffer);
+// BIND_BYTE_ADDRESS_BUFFER_SRV(1, Geometry, Geometry);
 BIND_BYTE_ADDRESS_BUFFER_SRV(2, VertexBuffer0);
 
 float3 GetVertexPosition(uint vertexIndex)
@@ -16,13 +16,15 @@ float3 GetVertexPosition(uint vertexIndex)
 [shader("vertex")]
 void SelectionOutlineMaskVS(uint vertexIndex : SV_VertexID, out float4 svPosition : SV_Position)
 {
-    PerFrameShaderParameters perFrameParameters = GetPerFrameShaderParameters();
-    Geometry geometry = GetGeometry();
-    float3 vertexPosition = GetVertexPosition(vertexIndex);
-    float4x4 worldMatrix = GetRWByteAddressBuffer(geometry.transformBuffer).Load<float4x4>(geometry.transformIndex * sizeof(float4x4));
-    float3 worldPosition = mul(worldMatrix, float4(vertexPosition, 1.0)).xyz;
-    float4 clipPosition = mul(perFrameParameters.nonJitteredWorldToClipMatrix, float4(worldPosition, 1.0));
-    svPosition = clipPosition;
+    // ByteAddressBuffer perFrameDataBuffer = GetPerFrameDataBufferSRV();
+    // PerFrameShaderParameters perFrameParameters = perFrameDataBuffer.Load<PerFrameShaderParameters>(0);
+    // Geometry geometry = GetGeometry();
+    // float3 vertexPosition = GetVertexPosition(vertexIndex);
+    // float4x4 worldMatrix = GetRWByteAddressBuffer(geometry.transformBuffer).Load<float4x4>(geometry.transformIndex * sizeof(float4x4));
+    // float3 worldPosition = mul(worldMatrix, float4(vertexPosition, 1.0)).xyz;
+    // float4 clipPosition = mul(perFrameParameters.nonJitteredWorldToClipMatrix, float4(worldPosition, 1.0));
+    // svPosition = clipPosition;
+    svPosition = 0;
 }
 
 [shader("pixel")]

@@ -3,7 +3,7 @@
 #include "PostProcessingCommon.hsh"
 #include "ToneMappingCommon.hsh"
 
-BIND_BUFFER_ELEMENT(0, PerFrameShaderParameters, PerFrameShaderParameters);
+BIND_BYTE_ADDRESS_BUFFER_SRV(0, PerFrameDataBuffer);
 BIND_TEXTURE_2D_SRV(1, SceneColorTexture);
 BIND_TEXTURE_2D_SRV(2, LuminanceTexture);
 BIND_TEXTURE_2D_SRV(3, AssembleTexture);
@@ -25,7 +25,8 @@ void LocalExposureGuidedUpsamplingCS(uint3 DispatchThreadID : SV_DispatchThreadI
     uint2 pixelCoord = DispatchThreadID.xy;
     float2 uv = (pixelCoord + 0.5) / float2(width, height);
 
-    PerFrameShaderParameters perFrameParameters = GetPerFrameShaderParameters();
+    ByteAddressBuffer perFrameDataBuffer = GetPerFrameDataBufferSRV();
+    PerFrameShaderParameters perFrameParameters = perFrameDataBuffer.Load<PerFrameShaderParameters>(0);
     Texture2D sceneColorTexture = GetSceneColorTextureSRV();
     Texture2D luminanceTexture = GetLuminanceTextureSRV();
     Texture2D assembleTexture = GetAssembleTextureSRV();

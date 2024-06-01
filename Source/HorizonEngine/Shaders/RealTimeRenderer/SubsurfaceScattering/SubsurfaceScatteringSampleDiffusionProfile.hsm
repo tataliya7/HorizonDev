@@ -3,7 +3,7 @@
 #include "../RealTimeRendererCommon.hsh"
 #include "SubsurfaceScatteringCommon.hsh"
 
-BIND_BUFFER_ELEMENT(0, PerFrameShaderParameters, PerFrameShaderParameters);
+BIND_BYTE_ADDRESS_BUFFER_SRV(0, PerFrameDataBuffer);
 BIND_TEXTURE_2D_SRV(1, SceneColorTexture);
 BIND_TEXTURE_2D_SRV(2, SceneDepthTexture);
 BIND_TEXTURE_2D_SRV(3, GBuffer0);
@@ -15,7 +15,8 @@ BIND_TEXTURE_2D_UAV(5, float4, OutputTexture);
 [numthreads(SUBSURFACE_SCATTERING_TILE_SIZE * SUBSURFACE_SCATTERING_TILE_SIZE, 1, 1)]
 void SubsurfaceScatteringSampleDiffusionProfileCS(uint3 GroupID : SV_GroupID, uint GroupIndex : SV_GroupIndex)
 {
-    // PerFrameShaderParameters perFrameParameters = GetPerFrameShaderParameters();
+    // ByteAddressBuffer perFrameDataBuffer = GetPerFrameDataBufferSRV();
+    // PerFrameShaderParameters perFrameParameters = perFrameDataBuffer.Load<PerFrameShaderParameters>(0);
     // Texture2D gbuffer0 = GetGBuffer0SRV();
     // ByteAddressBuffer tileDataBuffer = GetSubsurfaceScatteringTileDataBufferSRV();
     // RWTexture2D<float4> outputTexture = GetOutputTextureUAV();

@@ -3,7 +3,7 @@
 #include "PostProcessingCommon.hsh"
 #include "SelectionOutlineCommon.hsh"
 
-BIND_BUFFER_ELEMENT(0, PerFrameShaderParameters, PerFrameShaderParameters);
+BIND_BYTE_ADDRESS_BUFFER_SRV(0, PerFrameDataBuffer);
 BIND_TEXTURE_2D_SRV(1, InputTexture);
 BIND_TEXTURE_2D_UAV(2, float4, OutputTexture);
 
@@ -23,7 +23,8 @@ static const int2 JumpFloodSampleOffsets3x3[8] =
 [numthreads(POST_PROCESSING_THREAD_GROUP_SIZE_X, POST_PROCESSING_THREAD_GROUP_SIZE_Y, 1)]
 void SelectionOutlineJumpFloodCS(uint3 DispatchThreadID : SV_DispatchThreadID)
 {
-    PerFrameShaderParameters perFrameParameters = GetPerFrameShaderParameters();
+    ByteAddressBuffer perFrameDataBuffer = GetPerFrameDataBufferSRV();
+    PerFrameShaderParameters perFrameParameters = perFrameDataBuffer.Load<PerFrameShaderParameters>(0);
     uint2 pixelCoord = DispatchThreadID.xy;
     uint width = perFrameParameters.targetWidth;
     uint height = perFrameParameters.targetHeight;

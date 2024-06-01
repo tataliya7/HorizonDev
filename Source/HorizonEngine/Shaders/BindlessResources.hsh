@@ -148,25 +148,18 @@ Texture2D GetTexture2DNonUniform(uint index)
     return BindlessResource_Texture2D[NonUniformResourceIndex(index)];
 }
 
-#define BIND_BUFFER_ELEMENT(slot, name, type) \
-type Get##name() \
-{ \
-    uint bufferIndex = SHADER_ARGUMENTS_INDEX(slot); \
-    return BindlessResource_RWByteAddressBuffer[(bufferIndex >> 16) & 0xffff].Load<type>(bufferIndex & 0xffff); \
-}
-
 #define BIND_BYTE_ADDRESS_BUFFER_SRV(slot, name) \
 ByteAddressBuffer Get##name##SRV() \
 { \
     uint bufferIndex = SHADER_ARGUMENTS_INDEX(slot); \
-    return BindlessResource_ByteAddressBuffer[(bufferIndex >> 16) & 0xffff]; \
+    return BindlessResource_ByteAddressBuffer[bufferIndex]; \
 }
 
 #define BIND_BYTE_ADDRESS_BUFFER_UAV(slot, name) \
 RWByteAddressBuffer Get##name##UAV() \
 { \
     uint bufferIndex = SHADER_ARGUMENTS_INDEX(slot); \
-    return BindlessResource_RWByteAddressBuffer[(bufferIndex >> 16) & 0xffff]; \
+    return BindlessResource_RWByteAddressBuffer[bufferIndex]; \
 }
 
 #define BIND_TEXTURE_1D_SRV(slot, name) \
@@ -289,19 +282,11 @@ Texture2D GetTexture2DNonUniform(uint index)
     return ResourceDescriptorHeap[NonUniformResourceIndex(index)];
 }
 
-#define BIND_BUFFER_ELEMENT(slot, name, type) \
-type Get##name() \
-{ \
-    uint bufferIndex = SHADER_ARGUMENTS_INDEX(slot); \
-    RWByteAddressBuffer buffer = ResourceDescriptorHeap[(bufferIndex >> 16) & 0xffff]; \
-    return buffer.Load<type>(bufferIndex & 0xffff); \
-}
-
 #define BIND_BYTE_ADDRESS_BUFFER_SRV(slot, name) \
 ByteAddressBuffer Get##name##SRV() \
 { \
     uint bufferIndex = SHADER_ARGUMENTS_INDEX(slot); \
-    ByteAddressBuffer buffer = ResourceDescriptorHeap[(bufferIndex >> 16) & 0xffff]; \
+    ByteAddressBuffer buffer = ResourceDescriptorHeap[bufferIndex]; \
     return buffer; \
 }
 
@@ -309,7 +294,7 @@ ByteAddressBuffer Get##name##SRV() \
 RWByteAddressBuffer Get##name##UAV() \
 { \
     uint bufferIndex = SHADER_ARGUMENTS_INDEX(slot); \
-    RWByteAddressBuffer buffer = ResourceDescriptorHeap[(bufferIndex >> 16) & 0xffff]; \
+    RWByteAddressBuffer buffer = ResourceDescriptorHeap[bufferIndex]; \
     return buffer; \
 }
 

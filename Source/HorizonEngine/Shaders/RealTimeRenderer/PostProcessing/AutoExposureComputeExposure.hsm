@@ -2,7 +2,7 @@
 #include "../RealTimeRendererCommon.hsh"
 #include "AutoExposureCommon.hsh"
 
-BIND_BUFFER_ELEMENT(0, PerFrameShaderParameters, PerFrameShaderParameters);
+BIND_BYTE_ADDRESS_BUFFER_SRV(0, PerFrameDataBuffer);
 BIND_TEXTURE_2D_TYPED_SRV(1, uint, AutoExposureHistogramTexture);
 BIND_BYTE_ADDRESS_BUFFER_SRV(2, PreviousAutoExposureBuffer);
 BIND_BYTE_ADDRESS_BUFFER_UAV(3, CurrentAutoExposureBuffer);
@@ -65,7 +65,8 @@ float InterpolateExposure(float srcExposure, float dstExposure, float deltaTimeI
 [numthreads(1, 1, 1)]
 void AutoExposureComputeExposureCS(uint3 DispatchThreadID : SV_DispatchThreadID)
 {
-    PerFrameShaderParameters perFrameParameters = GetPerFrameShaderParameters();
+    ByteAddressBuffer perFrameDataBuffer = GetPerFrameDataBufferSRV();
+    PerFrameShaderParameters perFrameParameters = perFrameDataBuffer.Load<PerFrameShaderParameters>(0);
 
     float deltaTimeInSeconds = perFrameParameters.deltaTimeInSeconds;
     float exposureCompensation = perFrameParameters.autoExposureExposureCompensation;

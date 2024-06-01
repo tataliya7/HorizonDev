@@ -2,11 +2,11 @@
 #include "RealTimeRendererCommon.hsh"
 #include "ShadowMapCommon.hsh"
 
-BIND_BUFFER_ELEMENT(0, PerFrameShaderParameters, PerFrameShaderParameters);
-BIND_BUFFER_ELEMENT(1, Geometry, Geometry);
+BIND_BYTE_ADDRESS_BUFFER_SRV(0, PerFrameDataBuffer);
+BIND_BYTE_ADDRESS_BUFFER_SRV(1, Geometry, Geometry);
 BIND_BYTE_ADDRESS_BUFFER_SRV(2, MaterialBuffer);
-BIND_BUFFER_ELEMENT(3, CascadedShadowMapShaderParameters, CascadedShadowMapShaderParameters);
-BIND_BUFFER_ELEMENT(4, CubeShadowMapShaderParameters, CubeShadowMapShaderParameters);
+BIND_BYTE_ADDRESS_BUFFER_SRV(3, CascadedShadowMapShaderParameters, CascadedShadowMapShaderParameters);
+BIND_BYTE_ADDRESS_BUFFER_SRV(4, CubeShadowMapShaderParameters, CubeShadowMapShaderParameters);
 
 struct ShadowMapVSToPS
 {
@@ -17,7 +17,8 @@ struct ShadowMapVSToPS
 [shader("vertex")]
 void ShadowMapVS(uint vertexIndex : SV_VertexID, out ShadowMapVSToPS output)
 {
-    PerFrameShaderParameters perFrameParameters = GetPerFrameShaderParameters();
+    ByteAddressBuffer perFrameDataBuffer = GetPerFrameDataBufferSRV();
+    PerFrameShaderParameters perFrameParameters = perFrameDataBuffer.Load<PerFrameShaderParameters>(0);
     Geometry geometry = GetGeometry();
 
     float3 vertexPosition = GetRWByteAddressBuffer(geometry.vertexBuffer0).Load<float3>(vertexIndex * sizeof(float3));
@@ -39,7 +40,8 @@ void ShadowMapVS(uint vertexIndex : SV_VertexID, out ShadowMapVSToPS output)
 [shader("pixel")]
 void ShadowMapPS(in ShadowMapVSToPS input, in uint primitiveID : SV_PrimitiveID)
 {
-    PerFrameShaderParameters perFrameParameters = GetPerFrameShaderParameters();
+    ByteAddressBuffer perFrameDataBuffer = GetPerFrameDataBufferSRV();
+    PerFrameShaderParameters perFrameParameters = perFrameDataBuffer.Load<PerFrameShaderParameters>(0);
     Geometry geometry = GetGeometry();
 
     float2 texCoord0 = input.texCoord0;

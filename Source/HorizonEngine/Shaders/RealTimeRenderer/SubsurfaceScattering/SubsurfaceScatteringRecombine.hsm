@@ -2,7 +2,7 @@
 #include "../RealTimeRendererCommon.hsh"
 #include "SubsurfaceScatteringCommon.hsh"
 
-BIND_BUFFER_ELEMENT(0, PerFrameShaderParameters, PerFrameShaderParameters);
+BIND_BYTE_ADDRESS_BUFFER_SRV(0, PerFrameDataBuffer);
 BIND_BYTE_ADDRESS_BUFFER_SRV(1, SubsurfaceScatteringTileDataBuffer);
 BIND_TEXTURE_2D_SRV(2, SceneColorTexture);
 BIND_TEXTURE_2D_SRV(3, BurleyNormalizedTexture);
@@ -16,7 +16,8 @@ struct SubsurfaceScatteringRecombineVSOutput
 [shader("vertex")]
 void SubsurfaceScatteringRecombineVS(uint VertexID : SV_VertexID, uint InstanceID : SV_InstanceID, out SubsurfaceScatteringRecombineVSOutput output)
 {
-    PerFrameShaderParameters perFrameParameters = GetPerFrameShaderParameters();
+    ByteAddressBuffer perFrameDataBuffer = GetPerFrameDataBufferSRV();
+    PerFrameShaderParameters perFrameParameters = perFrameDataBuffer.Load<PerFrameShaderParameters>(0);
     ByteAddressBuffer tileDataBuffer = GetSubsurfaceScatteringTileDataBufferSRV();
 
     uint2 tileIndex = tileDataBuffer.Load<uint2>(InstanceID * sizeof(uint2));

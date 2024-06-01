@@ -1,7 +1,7 @@
 #include "../ShaderCommon.hsh"
 #include "PathTracingRendererCommon.hsh"
 
-BIND_BUFFER_ELEMENT(0, PerFrameShaderParameters, PerFrameShaderParameters);
+BIND_BYTE_ADDRESS_BUFFER_SRV(0, PerFrameDataBuffer);
 BIND_TLAS_SRV(1, TopLevelAS);
 BIND_TEXTURE_CUBE_SRV(1, SkyLightTexture);
 BIND_TEXTURE_2D_UAV(4, float4, RadianceTexture);
@@ -132,7 +132,8 @@ void PathTracingRG()
     uint3 dispatchRaysIndex = DispatchRaysIndex();
     uint3 dispatchRaysDimensions = DispatchRaysDimensions();
 
-    PerFrameShaderParameters perFrameParameters = GetPerFrameShaderParameters();
+    ByteAddressBuffer perFrameDataBuffer = GetPerFrameDataBufferSRV();
+    PerFrameShaderParameters perFrameParameters = perFrameDataBuffer.Load<PerFrameShaderParameters>(0);
     RaytracingAccelerationStructure topLevelAS = GetTopLevelAS();
     RWTexture2D<float4> radianceTexture = GetRadianceTextureUAV();
 

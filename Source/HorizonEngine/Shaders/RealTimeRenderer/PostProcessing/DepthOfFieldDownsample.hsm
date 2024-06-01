@@ -2,7 +2,7 @@
 #include "../RealTimeRendererCommon.hsh"
 #include "PostProcessingCommon.hsh"
 
-BIND_BUFFER_ELEMENT(0, PerFrameShaderParameters, PerFrameShaderParameters);
+BIND_BYTE_ADDRESS_BUFFER_SRV(0, PerFrameDataBuffer);
 BIND_TEXTURE_2D_SRV(1, SceneColor);
 BIND_TEXTURE_2D_SRV(2, SceneDepth);
 BIND_TEXTURE_2D_UAV(3, float, DOFCoCTexture);
@@ -33,7 +33,8 @@ float ComputeCoC(float linearDepth, float focalDistance, float focalRegion)
 [numthreads(POST_PROCESSING_THREAD_GROUP_SIZE_X, POST_PROCESSING_THREAD_GROUP_SIZE_Y, 1)]
 void DepthOfFieldSetupCS(uint3 DispatchThreadID : SV_DispatchThreadID)
 {
-    PerFrameShaderParameters perFrameParameters = GetPerFrameShaderParameters();
+    ByteAddressBuffer perFrameDataBuffer = GetPerFrameDataBufferSRV();
+    PerFrameShaderParameters perFrameParameters = perFrameDataBuffer.Load<PerFrameShaderParameters>(0);
     uint width = perFrameParameters.targetWidth / 2;
     uint height = perFrameParameters.targetHeight / 2;
     if (DispatchThreadID.x >= width || DispatchThreadID.y >= height)

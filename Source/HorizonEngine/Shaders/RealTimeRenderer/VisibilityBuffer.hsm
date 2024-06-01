@@ -1,8 +1,8 @@
 #include "../ShaderCommon.hsh"
 #include "RealTimeRendererCommon.hsh"
 
-BIND_BUFFER_ELEMENT(0, PerFrameShaderParameters, PerFrameShaderParameters);
-BIND_BUFFER_ELEMENT(1, Geometry, Geometry);
+BIND_BYTE_ADDRESS_BUFFER_SRV(0, PerFrameDataBuffer);
+BIND_BYTE_ADDRESS_BUFFER_SRV(1, Geometry, Geometry);
 BIND_BYTE_ADDRESS_BUFFER_SRV(2, MaterialBuffer);
 BIND_BYTE_ADDRESS_BUFFER_SRV(3, VertexBuffer0);
 BIND_BYTE_ADDRESS_BUFFER_SRV(4, VertexBuffer1);
@@ -42,7 +42,8 @@ struct VisibilityBufferVSToPS
 [shader("vertex")]
 void VisibilityBufferVS(uint vertexIndex : SV_VertexID, out VisibilityBufferVSToPS output)
 {
-    PerFrameShaderParameters perFrameParameters = GetPerFrameShaderParameters();
+    ByteAddressBuffer perFrameDataBuffer = GetPerFrameDataBufferSRV();
+    PerFrameShaderParameters perFrameParameters = perFrameDataBuffer.Load<PerFrameShaderParameters>(0);
     Geometry geometry = GetGeometry();
 
     float3 vertexPosition = GetVertexPosition(vertexIndex);
@@ -71,7 +72,8 @@ void VisibilityBufferPS(
     out uint2 vbuffer0 : SV_Target0,
     out float4 vbuffer1 : SV_Target1)
 {
-    PerFrameShaderParameters perFrameParameters = GetPerFrameShaderParameters();
+    ByteAddressBuffer perFrameDataBuffer = GetPerFrameDataBufferSRV();
+    PerFrameShaderParameters perFrameParameters = perFrameDataBuffer.Load<PerFrameShaderParameters>(0);
     Geometry geometry = GetGeometry();
 
     float2 texCoord0 = input.texCoord0;

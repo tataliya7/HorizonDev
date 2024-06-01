@@ -4,7 +4,7 @@
 #include "ScreenSpaceReflectionsCommon.hsh"
 #include "ScreenSpaceRayTracing.hsh"
 
-BIND_BUFFER_ELEMENT(0, PerFrameShaderParameters, PerFrameShaderParameters);
+BIND_BYTE_ADDRESS_BUFFER_SRV(0, PerFrameDataBuffer);
 BIND_TEXTURE_2D_SRV(1, GBuffer1);
 BIND_TEXTURE_2D_SRV(2, VelocityBuffer);
 BIND_TEXTURE_2D_SRV(3, SceneDepth);
@@ -83,7 +83,8 @@ uint2 GetReflectionIndirectDispatchCoord(uint3 GroupID, uint3 GroupThreadID, Tex
 [numthreads(SSR_THREAD_GROUP_SIZE * SSR_THREAD_GROUP_SIZE, 1, 1)]
 void ScreenSpaceReflectionsCS(uint3 GroupID : SV_GroupID, uint3 GroupThreadID : SV_GroupThreadID)
 {
-    PerFrameShaderParameters perFrameParameters = GetPerFrameShaderParameters();
+    ByteAddressBuffer perFrameDataBuffer = GetPerFrameDataBufferSRV();
+    PerFrameShaderParameters perFrameParameters = perFrameDataBuffer.Load<PerFrameShaderParameters>(0);
     Texture2D gbuffer1 = GetGBuffer1SRV();
     Texture2D velocityBuffer = GetVelocityBufferSRV();
     Texture2D sceneDepth = GetSceneDepthSRV();

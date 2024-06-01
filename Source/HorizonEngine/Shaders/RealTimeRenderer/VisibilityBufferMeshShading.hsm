@@ -3,7 +3,7 @@
 
 const static uint TASK_SHADER_WORKGROUP_SIZE = 32; // Assumes availability of wave size of 32 threads
 
-BIND_BUFFER_ELEMENT(0, PerFrameShaderParameters, PerFrameShaderParameters);
+BIND_BYTE_ADDRESS_BUFFER_SRV(0, PerFrameDataBuffer);
 BIND_BYTE_ADDRESS_BUFFER_SRV(1, GeometryDataBuffer);
 BIND_BYTE_ADDRESS_BUFFER_SRV(2, MeshletDescBuffer);
 
@@ -119,7 +119,8 @@ void VisibilityBufferMS(
         return;
     }
 
-    PerFrameShaderParameters perFrameParameters = GetPerFrameShaderParameters();
+    ByteAddressBuffer perFrameDataBuffer = GetPerFrameDataBufferSRV();
+    PerFrameShaderParameters perFrameParameters = perFrameDataBuffer.Load<PerFrameShaderParameters>(0);
     //ByteAddressBuffer meshletDescBuffer = GetMeshletDescBufferSRV();
 
     MeshletDesc meshletDesc;// = GetMeshletDesc(meshletDescBuffer, meshletIndex);

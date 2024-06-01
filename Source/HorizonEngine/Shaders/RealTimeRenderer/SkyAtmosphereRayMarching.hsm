@@ -32,7 +32,7 @@
 #include "RealTimeRendererCommon.hsh"
 #include "SkyAtmosphereCommon.hsh"
 
-BIND_BUFFER_ELEMENT(0, PerFrameShaderParameters, PerFrameShaderParameters);
+BIND_BYTE_ADDRESS_BUFFER_SRV(0, PerFrameDataBuffer);
 BIND_TEXTURE_2D_SRV(1, TransmittanceLutTexture);
 BIND_TEXTURE_2D_SRV(2, SkyViewLutTexture);
 BIND_TEXTURE_3D_SRV(3, AerialPerspectiveVolumeTexture);
@@ -122,7 +122,8 @@ void SkyAtmosphereRayMarchingVS(uint vertexID : SV_VertexID, out float4 outPosit
 [shader("pixel")]
 void SkyAtmosphereRayMarchingPS(float4 position : SV_Position, out float4 outLuminance : SV_Target0)
 {
-    PerFrameShaderParameters perFrameParameters = GetPerFrameShaderParameters();
+    ByteAddressBuffer perFrameDataBuffer = GetPerFrameDataBufferSRV();
+    PerFrameShaderParameters perFrameParameters = perFrameDataBuffer.Load<PerFrameShaderParameters>(0);
     SkyAtmosphereShaderParameters skyAtmosphereParameters = GetSkyAtmosphereShaderParameters(perFrameParameters);
     Texture2D transmittanceLutTexture = GetTransmittanceLutTextureSRV();
     Texture2D skyViewLutTexture = GetSkyViewLutTextureSRV();

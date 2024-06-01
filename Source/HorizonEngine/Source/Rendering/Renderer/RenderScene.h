@@ -17,6 +17,7 @@ namespace Horizon
         virtual ~LightRenderProxy();
 
         virtual bool CastRayTracingShadows() const { return false; }
+        virtual bool IsUsedAsAtmosphericLight() const { return false; }
     private:
     };
 
@@ -51,10 +52,16 @@ namespace Horizon
             return castRayTracingShadows;
         }
 
-    private:
+        bool IsUsedAsAtmosphericLight() const override
+        {
+            return usedAsAtmosphericLight;
+        }
+
+    //private:
         Vector3 color;
         Vector3 direction;
         bool castRayTracingShadows;
+        bool usedAsAtmosphericLight;
         float halfApexAngleInRadians;
         Vector3 atmosphericLightDiskColorFactor;
     };

@@ -284,6 +284,8 @@ namespace Horizon
         //isRayTracingReflectionsEnabled = settings.reflectionsTechnique == ReflectionsTechnique::RayTracingReflections;
         //isRayTracingAmbientOcclusionEnabled = settings.ambientOcclusionTechnique == AmbientOcclusionTechnique::RayTracingAmbientOcclusion;
 
+        finalPostProcessingSettings = view.renderSettings.postProcessingSettings;
+
         const RenderScene* scene = view.GetRenderScene();
 
         features.enableSuperResolution = false;
@@ -818,7 +820,11 @@ namespace Horizon
 
                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
                 {
+                    RenderBackendViewport viewport(0.0f, 0.0f, float(renderResolution.width), float(renderResolution.height));
+                    commandList.SetViewports(&viewport, 1);
 
+                    RenderBackendScissor scissor(0, 0, renderResolution.width, renderResolution.height);
+                    commandList.SetScissors(&scissor, 1);
                 };
             });
 

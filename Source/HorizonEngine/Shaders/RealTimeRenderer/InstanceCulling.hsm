@@ -1,7 +1,7 @@
 #include "../ShaderCommon.hsh"
 #include "RealTimeRendererCommon.hsh"
 
-BIND_BUFFER_ELEMENT(0, PerFrameShaderParameters, PerFrameShaderParameters);
+BIND_BYTE_ADDRESS_BUFFER_SRV(0, PerFrameDataBuffer);
 BIND_BYTE_ADDRESS_BUFFER_SRV(1, GeometryBuffer);
 BIND_BYTE_ADDRESS_BUFFER_SRV(2, TransformBuffer);
 BIND_BYTE_ADDRESS_BUFFER_UAV(3, DrawCallArgsBuffer);
@@ -52,7 +52,8 @@ void InstanceCullingCS(uint3 DispatchThreadID : SV_DispatchThreadID)
     boundsCorner[6] = mul(worldTransform, float4(boundsMax.x, boundsMax.y, boundsMin.z, 1.0)).xyz;
     boundsCorner[7] = mul(worldTransform, float4(boundsMax.x, boundsMax.y, boundsMax.z, 1.0)).xyz;
 
-    PerFrameShaderParameters perFrameParameters = GetPerFrameShaderParameters();
+    ByteAddressBuffer perFrameDataBuffer = GetPerFrameDataBufferSRV();
+    PerFrameShaderParameters perFrameParameters = perFrameDataBuffer.Load<PerFrameShaderParameters>(0);
     bool visible = true;
     for (int planeIndex = 0; planeIndex < 6; planeIndex++)
     {

@@ -5,7 +5,7 @@
 #include "ToneMappingCommon.hsh"
 #include "ColorLUTCommon.hsh"
 
-BIND_BUFFER_ELEMENT(0, PerFrameShaderParameters, PerFrameShaderParameters);
+BIND_BYTE_ADDRESS_BUFFER_SRV(0, PerFrameDataBuffer);
 BIND_TEXTURE_3D_UAV(1, float4, ColorLUTTexture);
 
 // Accurate for 4000K < Temp < 25000K
@@ -113,10 +113,11 @@ float3 PurkinjeShift(float3 linearRGB)
 [numthreads(8, 8, 8)]
 void ColorLUTCS(uint3 DispatchThreadID : SV_DispatchThreadID)
 {
-    PerFrameShaderParameters perFrameParameters = GetPerFrameShaderParameters();
+    ByteAddressBuffer perFrameDataBuffer = GetPerFrameDataBufferSRV();
+    PerFrameShaderParameters perFrameParameters = perFrameDataBuffer.Load<PerFrameShaderParameters>(0);
     RWTexture3D<float4> colorLUTTexture = GetColorLUTTextureUAV();
 
-    float whiteBalanceColorTemperature = perFrameParameters.whiteBalance;
+    float whiteBalance = perFrameParameters.whiteBalance;
 
     uint3 pixelCoord = DispatchThreadID;
 
@@ -125,7 +126,7 @@ void ColorLUTCS(uint3 DispatchThreadID : SV_DispatchThreadID)
 
     //linearColor = PurkinjeShift(linearColor);
 
-    linearColor = WhiteBalance(linearColor, whiteBalanceColorTemperature);
+    linearColor = WhiteBalance(linearColor, whiteBalance);
 
     const float3x3 sRGB_2_AP1_MAT = mul(XYZ_2_AP1_MAT, mul(D65_2_D60_CAT, sRGB_2_XYZ_MAT));
     const float3x3 AP1_2_sRGB_MAT = mul(XYZ_2_sRGB_MAT, mul(D60_2_D65_CAT, AP1_2_XYZ_MAT));
@@ -134,13 +135,13 @@ void ColorLUTCS(uint3 DispatchThreadID : SV_DispatchThreadID)
 
     float3 outputColor = max(0.0f, mul(AP1_2_sRGB_MAT, acescg));
 
-    uint toneMappingOperator = (uint)SHADER_ARGUMENTS_DATA(0);
-    if (toneMappingOperator == 0)
-    {
-        outputColor = saturate(linearColor);
-        outputColor = GammaCorrection(outputColor);
-    }
-    if (toneMappingOperator == 1)
+    // uint toneMappingOperator = (uint)SHADER_ARGUMENTS_DATA(0);
+    // if (toneMappingOperator == 0)
+    // {
+    //     outputColor = saturate(linearColor);
+    //     outputColor = GammaCorrection(outputColor);
+    // }
+    // if (toneMappingOperator == 1)
     {
         // TODO: Middle Gray
         // TODO: Adjustable curve shape
@@ -152,16 +153,16 @@ void ColorLUTCS(uint3 DispatchThreadID : SV_DispatchThreadID)
         float3 odt = ODT_sRGB_100nits_dim(oces);
         outputColor = odt;
     }
-    if (toneMappingOperator == 2)
-    {
-        acescg = ToneMappingOperatorHable();
-    }
-    if (toneMappingOperator == 3)
-    {
-        // acescg = ToneMappingOperatorCustom();
-    }
+    // if (toneMappingOperator == 2)
+    // {
+    //     acescg = ToneMappingOperatorHable();
+    // }
+    // if (toneMappingOperator == 3)
+    // {
+    //     // acescg = ToneMappingOperatorCustom();
+    // }
 
-    float4 outColor = float4(outputColor / 1.05, 0);
+    float4 outColor = float4(outputColor / 1.05, 1.0f);
 
     colorLUTTexture[pixelCoord] = outColor;
 }

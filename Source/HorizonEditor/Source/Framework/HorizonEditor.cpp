@@ -141,6 +141,10 @@ namespace Horizon
 
         renderScene = new RenderScene();
 
+        DistantLightRenderProxy* distantLight = new DistantLightRenderProxy();
+        distantLight->usedAsAtmosphericLight = true;
+        renderScene->AddLight(distantLight);
+
         SkyAtmosphereRenderProxy* skyAtmosphere = new SkyAtmosphereRenderProxy();
         renderScene->AddSkyAtmosphere(skyAtmosphere);
 

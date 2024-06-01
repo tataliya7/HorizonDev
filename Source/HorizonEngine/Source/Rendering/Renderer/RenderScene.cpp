@@ -4,6 +4,24 @@
 
 namespace Horizon
 {
+    LightRenderProxy::LightRenderProxy()
+    {
+    }
+
+    LightRenderProxy::~LightRenderProxy()
+    {
+    }
+
+    DistantLightRenderProxy::DistantLightRenderProxy()
+    {
+
+    }
+
+    DistantLightRenderProxy::~DistantLightRenderProxy()
+    {
+
+    }
+
     SkyAtmosphereRenderProxy::SkyAtmosphereRenderProxy()
     {
 
@@ -41,6 +59,11 @@ namespace Horizon
 
     void RenderScene::AddLight(LightRenderProxy* light)
     {
+        if (light->IsUsedAsAtmosphericLight())
+        {
+            assert(atmosphericLight == nullptr);
+            atmosphericLight = dynamic_cast<DistantLightRenderProxy*>(light);
+        }
     }
 
     void RenderScene::RemoveLight(LightRenderProxy* light)

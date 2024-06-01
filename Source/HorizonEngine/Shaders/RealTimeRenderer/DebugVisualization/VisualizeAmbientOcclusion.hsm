@@ -1,7 +1,7 @@
 #include "../../ShaderCommon.hsh"
 #include "../RealTimeRendererCommon.hsh"
 
-BIND_BUFFER_ELEMENT(0, PerFrameShaderParameters, PerFrameShaderParameters);
+BIND_BYTE_ADDRESS_BUFFER_SRV(0, PerFrameDataBuffer);
 BIND_TEXTURE_2D_SRV(1, AmbientOcclusionTexture);
 BIND_TEXTURE_2D_UAV(2, float4, OutputTexture);
 
@@ -9,7 +9,8 @@ BIND_TEXTURE_2D_UAV(2, float4, OutputTexture);
 [numthreads(8, 8, 1)]
 void VisualizeAmbientOcclusionCS(uint3 DispatchThreadID : SV_DispatchThreadID)
 {
-    PerFrameShaderParameters perFrameParameters = GetPerFrameShaderParameters();
+    ByteAddressBuffer perFrameDataBuffer = GetPerFrameDataBufferSRV();
+    PerFrameShaderParameters perFrameParameters = perFrameDataBuffer.Load<PerFrameShaderParameters>(0);
     Texture2D ambientOcclusionTexture = GetAmbientOcclusionTextureSRV();
     RWTexture2D<float4> outputTexture = GetOutputTextureUAV();
 
