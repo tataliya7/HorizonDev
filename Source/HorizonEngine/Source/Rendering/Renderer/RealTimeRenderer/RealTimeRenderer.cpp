@@ -7,9 +7,6 @@
 
 namespace Horizon
 {
-    const RenderGraphBlackboardRegistry<RealTimeRendererSceneTextures> RealTimeRendererSceneTexturesRegistry;
-    const RenderGraphBlackboardRegistry<RealTimeRendererSkyAtmosphereLUTs> RealTimeRendererSkyAtmosphereLUTsRegistry;
-
 #if 0
     RealTimeRenderer::RealTimeRenderer(RenderSystem* renderSystem)
         : renderBackend(backend)

@@ -84,7 +84,6 @@ namespace Horizon
         //RenderGraphTextureHandle targetTexture;
         //RenderGraphTextureHandle displayTexture;
     };
-    extern const RenderGraphBlackboardRegistry<RealTimeRendererSceneTextures> RealTimeRendererSceneTexturesRegistry;
 
     // struct RealTimeRendererDebugViewModeTextures
     // {

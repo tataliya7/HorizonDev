@@ -2,7 +2,7 @@
 
 namespace Horizon
 {
-    uint32 RenderGraphBlackboard::RegisteredStructTypeCount = 0;
+    std::atomic<uint32> RenderGraphBlackboard::RegisteredStructTypeCount = 0;
 
     RenderGraphBlackboard::RenderGraphBlackboard(MemoryArena* arena)
         : arena(arena)

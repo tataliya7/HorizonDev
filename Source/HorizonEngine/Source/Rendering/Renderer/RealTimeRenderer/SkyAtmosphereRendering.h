@@ -11,7 +11,6 @@ namespace Horizon
         RenderGraphTextureHandle skyViewLut;
         RenderGraphTextureHandle aerialPerspectiveVolume;
     };
-    extern const RenderGraphBlackboardRegistry<RealTimeRendererSkyAtmosphereLUTs> RealTimeRendererSkyAtmosphereLUTsRegistry;
 
     struct SkyAtmosphereShaderParameters
     {
