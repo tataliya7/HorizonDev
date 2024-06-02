@@ -11,8 +11,8 @@ namespace Horizon
         // entityManager->OnConstruct<TransformComponent>().connect<&entt::registry::emplace_or_replace<TransformDirtyComponent>>();
         // entityManager->OnUpdate<TransformComponent>().connect<&entt::registry::emplace_or_replace<TransformDirtyComponent>>();
         //
-        // /*entityManager->OnConstruct<SkyLightComponent>().connect<&Scene::OnSkyLightComponentConstruct>(this);
-        // entityManager->OnDestroy<SkyLightComponent>().connect<&Scene::OnSkyLightComponentDestroy>(this);*/
+        // entityManager->OnConstruct<SkyLightComponent>().connect<&Scene::OnSkyLightComponentConstruct>(this);
+        // entityManager->OnDestroy<SkyLightComponent>().connect<&Scene::OnSkyLightComponentDestroy>(this);
         //
         // entityManager->OnConstruct<RigidBodyComponent>().connect<&Scene::OnRigidBodyComponentConstruct>(this);
         // entityManager->OnDestroy<RigidBodyComponent>().connect<&Scene::OnRigidBodyComponentDestroy>(this);
@@ -144,8 +144,8 @@ namespace Horizon
     //     manager->RemoveComponent<TransformDirtyComponent>(entity);
     // }
 
-    //void Scene::Tick(float deltaTime)
-    //{
+    void Scene::Tick(float deltaTimeInSeconds)
+    {
         // if (ShouldUpdateScripts())
         // {
         //     // Update scripts
@@ -262,9 +262,15 @@ namespace Horizon
         //     });
         // }
 
+        entityManager->GetView<SkyAtmosphereComponent>().each([&](EntityHandle entity)
+        {
+            SkyAtmosphereComponent& skyAtmosphereComponent = entityManager->GetComponent<SkyAtmosphereComponent>(entity);
+            skyAtmosphereComponent.UpdateRenderObject();
+        });
+
         // Update audio sources and listeners
-    //     {
-    //
-    //     }
-    // }
+        {
+
+        }
+    }
 }

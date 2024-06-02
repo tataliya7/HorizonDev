@@ -6,8 +6,8 @@ BIND_BYTE_ADDRESS_BUFFER_SRV(0, PerFrameDataBuffer);
 BIND_TEXTURE_2D_SRV(1, SceneColorTexture);
 BIND_TEXTURE_2D_UAV(2, uint, AutoExposureHistogramTexture);
 
-// @see https://bruop.github.io/exposure/
-// @see https://en.wikipedia.org/wiki/Exposure_value
+// https://bruop.github.io/exposure/
+// https://en.wikipedia.org/wiki/Exposure_value
 
 groupshared uint SharedHistogram[AUTO_EXPOSURE_HISTOGRAM_BIN_COUNT];
 
@@ -49,6 +49,7 @@ void AutoExposureBuildHistogramCS(uint3 DispatchThreadID : SV_DispatchThreadID, 
         sceneColor.rgb *= perFrameParameters.oneOverPreExposure;
 
         float sceneColorLuminance = ComputeSceneColorLuminance(sceneColor);
+
         float logSceneColorLuminance = log2(sceneColorLuminance);
 
         float inverseLogLuminanceRange = 1.0f / (histogramMaxEV100 - histogramMinEV100);

@@ -15,8 +15,7 @@ namespace Horizon
         //const float earthAtmosphereHeight = 100.0f; // 100km atmosphere radius, less edge visible and it contain 99.99% of the atmosphere medium https://en.wikipedia.org/wiki/K%C3%A1rm%C3%A1n_line
         constexpr float earthRayleighScaleHeight = 8.0f;
         constexpr float earthMieScaleHeight = 1.2f;
-
-        //const double maxSunZenithAngle = M_PI * 120.0 / 180.0;
+        //constexpr double maxSunZenithAngle = M_PI * 120.0 / 180.0;
 
         // Ground
         component->groundRadius = earthRadius;
@@ -85,9 +84,30 @@ namespace Horizon
         outAtmosphereParameters.absorptionDensity0LayerWidth = skyAtmosphereComponent.absorptionDensity[0].width;
         outAtmosphereParameters.absorptionDensity0ConstantTerm = skyAtmosphereComponent.absorptionDensity[0].constantTerm;
         outAtmosphereParameters.absorptionDensity0LinearTerm = skyAtmosphereComponent.absorptionDensity[0].linearTerm;
-        outAtmosphereParameters.absorptionDensity1ConstantTerm = skyAtmosphereComponent.absorptionDensity[0].constantTerm;
-        outAtmosphereParameters.absorptionDensity1LinearTerm = skyAtmosphereComponent.absorptionDensity[0].linearTerm;
+        outAtmosphereParameters.absorptionDensity1ConstantTerm = skyAtmosphereComponent.absorptionDensity[1].constantTerm;
+        outAtmosphereParameters.absorptionDensity1LinearTerm = skyAtmosphereComponent.absorptionDensity[1].linearTerm;
         outAtmosphereParameters.absorptionExtinction = skyAtmosphereComponent.absorptionExtinctionScale * skyAtmosphereComponent.absorptionExtinction;
+    }
+
+    bool SkyAtmosphereComponent::IsRenderObjectValid() const
+    {
+        return renderObject != nullptr;
+    }
+
+    void SkyAtmosphereComponent::CreateRenderObject(RenderScene* scene)
+    {
+        assert(renderObject == nullptr);
+
+        if (true)
+        {
+            renderObject = new SkyAtmosphereRenderObject();
+            scene->AddSkyAtmosphere(renderObject);
+        }
+    }
+
+    void SkyAtmosphereComponent::DestroyRenderObject(RenderScene* scene)
+    {
+
     }
 
     void SkyAtmosphereComponent::UpdateRenderObject()

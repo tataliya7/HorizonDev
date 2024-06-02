@@ -116,16 +116,47 @@ namespace Horizon
             Scene* scene = editorSceneManager->CreateScene("DefaultScene");
             editorSceneManager->SetActiveScene(scene);
 
-            RenderScene* renderScene = scene->GetRenderScene();
+            EntityHandle sunLight = scene->CreateEntity("SunLight");
+            {
+                TransformComponent& transformComponent = scene->GetEntityManager()->GetComponent<TransformComponent>(sunLight);
+                //transformComponent.rotation = Vector3(11.0f, -15.0f, 0.0f);
+                transformComponent.rotation = Vector3(11.0f, 6.0f, 0.0f);
 
-            DistantLightRenderObject* distantLight = new DistantLightRenderObject();
-            distantLight->usedAsAtmosphericLight = true;
-            renderScene->AddLight(distantLight);
+                LightComponent& lightComponent = scene->GetEntityManager()->AddComponent<LightComponent>(sunLight);
+                lightComponent.type = LightComponent::LightType::Distant;
+                lightComponent.forwardVec = DefaultLightDirection; //
+                lightComponent.color = Vector3(1.0f, 1.0f, 1.0f);
+                lightComponent.luminousIntensity = 120.0f;
+                lightComponent.apexAngleInDegrees = 0.5357f;
+                lightComponent.castShadows = true;
+                lightComponent.useColorTemperature = true;
+                lightComponent.colorTemperature = 6500.0f;
+                lightComponent.usedAsAtmosphericLight = true;
+                lightComponent.CreateRenderObject(scene->GetRenderScene());
+            }
 
-            SkyAtmosphereRenderObject* skyAtmosphere = new SkyAtmosphereRenderObject();
-            renderScene->AddSkyAtmosphere(skyAtmosphere);
+            EntityHandle skyAtmosphere = scene->CreateEntity("SkyAtmosphere");
+            {
+                SkyAtmosphereComponent& skyAtmosphereComponent = scene->GetEntityManager()->AddComponent<SkyAtmosphereComponent>(skyAtmosphere);
+                skyAtmosphereComponent.CreateRenderObject(scene->GetRenderScene());
+            }
+
+            // DistantLightRenderObject* distantLight = new DistantLightRenderObject();
+            // distantLight->usedAsAtmosphericLight = true;
+            // renderScene->AddLight(distantLight);
+            //
+            // SkyAtmosphereRenderObject* skyAtmosphere = new SkyAtmosphereRenderObject();
+            // renderScene->AddSkyAtmosphere(skyAtmosphere);
         }
 
+        editorCamera.position = Vector3(0.0f, 0.0f, 0.0f);
+        editorCamera.rotation = Vector3(0.0f, 0.0f, 0.0f);
+        editorCamera.fieldOfView = 90.0f;
+        editorCamera.aspectRatio = (float)swapChainWidth / (float)swapChainHeight;
+        editorCamera.nearClippingPlane = 0.1f;
+        editorCamera.farClippingPlane = 1000.0f;
+        editorCamera.cameraSpeed = 1.0f;
+        editorCamera.overrideAspectRatio = false;
 //
 //        ShaderGraphSystemInit();
 //
@@ -142,6 +173,16 @@ namespace Horizon
         GLFWExit();
     }
 
+    float HorizonEditor::CalculateDeltaTime()
+    {
+        static std::chrono::steady_clock::time_point previousTimePoint{ std::chrono::steady_clock::now() };
+        std::chrono::steady_clock::time_point timePoint = std::chrono::steady_clock::now();
+        std::chrono::duration<float> timeDuration = std::chrono::duration_cast<std::chrono::duration<float>>(timePoint - previousTimePoint);
+        float deltaTime = timeDuration.count();
+        previousTimePoint = timePoint;
+        return deltaTime;
+    }
+
     void HorizonEditor::Tick()
     {
         OPTICK_EVENT();
@@ -153,23 +194,13 @@ namespace Horizon
             return;
         }
 
+        deltaTimeInSeconds = CalculateDeltaTime() / 1000.0f;
+
         //
         //            //if (!window->IsFocused())
         //            //{
         //            //    OSSuspendCurrentThread(0.05f);
         //            //}
-        //
-        //            //static std::chrono::steady_clock::time_point previousTimePoint1{ std::chrono::steady_clock::now() };
-        //            //std::chrono::steady_clock::time_point timePoint = std::chrono::steady_clock::now();
-        //            //std::chrono::duration<float> timeDuration = std::chrono::duration_cast<std::chrono::duration<float>>(timePoint - previousTimePoint1);
-        //            //float deltaTimeT = timeDuration.count();
-        //            ////if (deltaTimeT < 0.033f)
-        //            //if (deltaTimeT < 0.01666667f)
-        //            ////if (deltaTimeT < 0.01111111f)
-        //            //{
-        //            //    continue;
-        //            //}
-        //            //previousTimePoint1 = timePoint;
         //
 
         uint32 width = window->GetWidth();
@@ -208,6 +239,8 @@ namespace Horizon
 
         engine->Tick(deltaTimeInSeconds);
 
+        editorSceneManager->GetActiveScene()->Tick(deltaTimeInSeconds);
+
         //RenderBackendCommandList* commandList = renderBackend->AllocateCommandList();
         //
         // commandList->BeginDebugLabel();
@@ -223,16 +256,19 @@ namespace Horizon
         // commandList->EndTimingQuery();
         // commandList->EndDebugLabel();
 
-        Vector3 cameraRightVector   = Math::Normalize(editorCamera.GetRotation() * Vector3(1.0f, 0.0f, 0.0f));
-        Vector3 cameraForwardVector = Math::Normalize(editorCamera.GetRotation() * Vector3(0.0f, 1.0f, 0.0f));
-        Vector3 cameraUpVector      = Math::Normalize(editorCamera.GetRotation() * Vector3(0.0f, 0.0f, 1.0f));
+        Quaternion quat = Math::QuaternionFromEulerAngles(Math::DegreesToRadians(editorCamera.GetRotation()));
+
+        Vector3 cameraRightVector   = Math::Normalize(quat * Vector3(1.0f, 0.0f, 0.0f));
+        Vector3 cameraForwardVector = Math::Normalize(quat * Vector3(0.0f, 1.0f, 0.0f));
+        Vector3 cameraUpVector      = Math::Normalize(quat * Vector3(0.0f, 0.0f, 1.0f));
 
         SceneView sceneView;
+        sceneView.deltaTimeInSeconds = deltaTimeInSeconds;
         sceneView.scene = editorSceneManager->GetActiveScene()->GetRenderScene();
         sceneView.renderSettings = renderSettings;
         sceneView.debugVisualizationMode = SceneViewDebugVisualizationMode::Lighting;//currentDebugVisualizationMode;
         sceneView.reset = false;
-        sceneView.cameraPosition = editorCamera.GetPosition();
+        sceneView.cameraPosition = editorCamera.GetPosition() + Vector3(0.0f, 0.0f, 10.0f);
         sceneView.cameraRotation = editorCamera.GetRotation();
         sceneView.cameraUpVector = cameraUpVector;
         sceneView.cameraRightVector = cameraRightVector;
@@ -245,6 +281,8 @@ namespace Horizon
         sceneView.targetWidth = swapChainWidth;
         sceneView.targetHeight = swapChainHeight;
         sceneView.targetTexture = targetTexture;
+
+        sceneView.transformations.Update(sceneView.cameraPosition, sceneView.cameraRotation, sceneView.fieldOfView, sceneView.aspectRatio, sceneView.nearClippingPlane, sceneView.farClippingPlane);
 
         engine->GetSubsystem<RenderSystem>()->RenderSceneView(renderer, &sceneView);
 

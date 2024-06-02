@@ -97,6 +97,8 @@ namespace Horizon
         //void Setup();
         //void Clear();
 
+        float CalculateDeltaTime();
+
         void SetColorTheme(HorizonEditorColorTheme theme) const;
 
         //void OnUpdate(float deltaTime);

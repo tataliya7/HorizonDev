@@ -5,6 +5,7 @@
 
 namespace Horizon
 {
+    class RenderScene;
     class SkyAtmosphereRenderObject;
 
     struct DensityProfileLayer
@@ -87,6 +88,9 @@ namespace Horizon
 
         void Serialize(Archive& archive);
 
+        bool IsRenderObjectValid() const;
+        void CreateRenderObject(RenderScene* scene);
+        void DestroyRenderObject(RenderScene* scene);
         void UpdateRenderObject();
 
     private:

@@ -68,7 +68,7 @@ namespace Horizon
         return handle;
     }
 
-    void RenderGraphBuilder::BindColorTarget(uint32 slot, RenderGraphTextureHandle handle, RenderBackendRenderPassBeginningAccessType loadOp, RenderBackendRenderPassEndingAccessType storeOp, uint32 mipLevel, uint32 arraylayer)
+    void RenderGraphBuilder::BindRenderTarget(uint32 slot, RenderGraphTextureHandle handle, RenderBackendRenderPassBeginningAccessType loadOp, RenderBackendRenderPassEndingAccessType storeOp, uint32 mipLevel, uint32 arraylayer)
     {
         pass->renderTargets[slot] = {
             .texture = handle,
@@ -79,7 +79,7 @@ namespace Horizon
         };
     }
 
-    void RenderGraphBuilder::BindDepthTarget(RenderGraphTextureHandle handle, RenderBackendRenderPassBeginningAccessType depthLoadOp, RenderBackendRenderPassEndingAccessType depthStoreOp, uint32 mipLevel, uint32 arraylayer)
+    void RenderGraphBuilder::BindDepthStencil(RenderGraphTextureHandle handle, RenderBackendRenderPassBeginningAccessType depthLoadOp, RenderBackendRenderPassEndingAccessType depthStoreOp, uint32 mipLevel, uint32 arraylayer)
     {
         pass->depthStencil = {
             .texture = handle,

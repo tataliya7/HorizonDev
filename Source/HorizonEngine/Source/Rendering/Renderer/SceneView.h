@@ -47,6 +47,23 @@ namespace Horizon
             nonJitteredViewToClipMatrix = IdentityMatrix4x4;
         }
 
+        void Update(const Vector3& position, const Vector3& rotation, float fieldOfView, float aspectRatio, float nearClippingPlane, float farClippingPlane)
+        {
+            // TODO: refactor this
+            // TODO: make it constexpr
+            static const Quaternion zUpQuat = glm::rotate(Quaternion(), Math::DegreesToRadians(90.0), Vector3(1.0, 0.0, 0.0));
+
+            // TODO: calculate worldToViewMatrix first
+            viewToWorldMatrix = Math::ComposeTransformMatrix(position, rotation * zUpQuat, Vector3(1.0f, 1.0f, 1.0f));
+            worldToViewMatrix = Math::InverseMatrix(viewToWorldMatrix);
+
+            viewToClipMatrix = Math::PerspectiveReverseZ_RH_ZO(Math::DegreesToRadians(fieldOfView), aspectRatio, nearClippingPlane, farClippingPlane);
+            clipToViewMatrix = Math::InverseMatrix(viewToClipMatrix);
+
+            worldToClipMatrix = viewToClipMatrix * worldToViewMatrix;
+            clipToWorldMatrix = viewToWorldMatrix * clipToViewMatrix;
+        }
+
         //
         // CameraTransformations(
         //     const Matrix4x4& viewMatrix,

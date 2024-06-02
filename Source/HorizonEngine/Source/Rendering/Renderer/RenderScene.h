@@ -10,22 +10,22 @@ namespace Horizon
 
     };
 
+    struct LightRenderObjectDescription
+    {
+        Vector3 color;
+        Vector3 position;
+        Vector3 direction;
+        bool castRayTracingShadows;
+        bool usedAsAtmosphericLight;
+        float halfApexAngleInRadians;
+        Vector3 atmosphericLightDiskColorFactor;
+    };
+
     class LightRenderObject
     {
     public:
-        LightRenderObject();
+        LightRenderObject(const LightRenderObjectDescription& description);
         virtual ~LightRenderObject();
-
-        virtual bool CastRayTracingShadows() const { return false; }
-        virtual bool IsUsedAsAtmosphericLight() const { return false; }
-    private:
-    };
-
-    class DistantLightRenderObject : public LightRenderObject
-    {
-    public:
-        DistantLightRenderObject();
-        virtual ~DistantLightRenderObject();
 
         Vector3 GetPhysicalLightColor() const
         {
@@ -47,39 +47,24 @@ namespace Horizon
             return atmosphericLightDiskColorFactor;
         }
 
-        bool CastRayTracingShadows() const override
+        bool CastRayTracingShadows() const
         {
             return castRayTracingShadows;
         }
 
-        bool IsUsedAsAtmosphericLight() const override
+        bool IsUsedAsAtmosphericLight() const
         {
             return usedAsAtmosphericLight;
         }
 
     //private:
         Vector3 color;
+        Vector3 position;
         Vector3 direction;
         bool castRayTracingShadows;
         bool usedAsAtmosphericLight;
         float halfApexAngleInRadians;
         Vector3 atmosphericLightDiskColorFactor;
-    };
-
-    class SpotLightRenderObject : public LightRenderObject
-    {
-    public:
-        SpotLightRenderObject();
-        virtual ~SpotLightRenderObject();
-    private:
-    };
-
-    class PointLightRenderObject : public LightRenderObject
-    {
-    public:
-        PointLightRenderObject();
-        virtual ~PointLightRenderObject();
-    private:
     };
 
     class SkyLightRenderObject
@@ -201,7 +186,7 @@ namespace Horizon
 
         virtual bool HasAtmosphericLight() const;
 
-        virtual DistantLightRenderObject* GetAtmosphericLight() const;
+        virtual LightRenderObject* GetAtmosphericLight() const;
 
         virtual bool HasActiveSkyAtmosphere() const;
 
@@ -221,7 +206,9 @@ namespace Horizon
 
     private:
 
-        DistantLightRenderObject* atmosphericLight;
+        std::vector<LightRenderObject*> lights;
+
+        LightRenderObject* atmosphericLight;
 
         SkyAtmosphereRenderObject* activeSkyAtmosphere;
 

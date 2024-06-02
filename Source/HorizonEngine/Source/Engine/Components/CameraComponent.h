@@ -44,7 +44,7 @@ namespace Horizon
         {
             static Quaternion zUpQuat = glm::rotate(Quaternion(), Math::DegreesToRadians(90.0), Vector3(1.0, 0.0, 0.0));
 
-            invViewMatrix = Math::Compose(position, rotation * zUpQuat, Vector3(1.0f, 1.0f, 1.0f));
+            invViewMatrix = Math::ComposeTransformMatrix(position, rotation * zUpQuat, Vector3(1.0f, 1.0f, 1.0f));
             viewMatrix = Math::InverseMatrix(invViewMatrix);
             projectionMatrix = Math::PerspectiveReverseZ_RH_ZO(Math::DegreesToRadians(fieldOfView), aspectRatio, nearClippingPlane, farClippingPlane);
             invProjectionMatrix = Math::InverseMatrix(projectionMatrix);

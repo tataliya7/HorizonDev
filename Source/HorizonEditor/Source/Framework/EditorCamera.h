@@ -28,7 +28,7 @@ namespace Horizon
     {
         float translationMultiplier               = 1.0f;
         float rotationMultiplier                  = 1.0f;
-        float translationAccelerationRate         = 20000.0f;
+        float translationAccelerationRate         = 1.0f;
         float rotationAccelerationRate            = 1600.0f;
         float maxTranslationVelocity              = std::numeric_limits<float>::max();
         float maxRotationVelocity                 = std::numeric_limits<float>::max();
@@ -37,8 +37,8 @@ namespace Horizon
         float translationVelocityDampingAmount    = 20.0f;
         float rotationVelocityDampingAmount       = 25.0f;
         bool enablePitchAngleRestriction          = true;
-        bool enablePhysicallyBasedTranslation     = true;
-        bool enablePhysicallyBasedRotation        = true;
+        bool enablePhysicallyBasedTranslation     = false;
+        bool enablePhysicallyBasedRotation        = false;
     };
 
     class EditorCameraController

@@ -5,20 +5,21 @@
 
 namespace Horizon
 {
+    class RenderScene;
     class LightRenderObject;
-
-    enum class LightType
-    {
-        Distant = 0,
-        Point = 1,
-        Spot = 2,
-        Area = 3,
-        Mesh = 4,
-    };
 
     class LightComponent
     {
     public:
+
+        enum class LightType
+        {
+            Distant = 0,
+            Point = 1,
+            Spot = 2,
+            Area = 3,
+            Mesh = 4,
+        };
 
         LightType type = LightType::Distant;
 
@@ -30,6 +31,7 @@ namespace Horizon
         float colorTemperature = 6500.0f;
 
         Vector3 color = Vector3(1.0f, 1.0f, 1.0f);
+
         float luminousIntensity = 1.0f;
 
         float radius;
@@ -52,7 +54,9 @@ namespace Horizon
 
         float shadowMapDepthBiasSlopeFactor = -5.0f;
 
-        float shadowSharpeness;
+        float shadowSharpness;
+
+        bool usedAsAtmosphericLight = false;
 
         // Atmosphere
         Vector3 atmosphericLightDiskColorFactor = Vector3(1.0f, 1.0f, 1.0f);
@@ -140,6 +144,11 @@ namespace Horizon
         Vector3 forwardVec;
         Vector3 rightVec;
         Vector3 upVec;
+
+        bool IsRenderObjectValid() const;
+        void CreateRenderObject(RenderScene* scene);
+        void DestroyRenderObject(RenderScene* scene);
+        void UpdateRenderObject();
 
     private:
 

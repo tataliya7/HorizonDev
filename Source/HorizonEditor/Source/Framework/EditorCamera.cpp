@@ -44,13 +44,10 @@ namespace Horizon
             userImpulseData.moveUpDownImpulse              // yaw
         );
 
-        Vector3 translationAcceleration;
-        {
-            // Compute camera orientation, and then transform the translation impulse from local space to world space.
-            const Quaternion cameraOrientation = Quaternion(Math::DegreesToRadians(cameraRotation));
-            Vector3 worldSpaceTranslationImpulse = cameraOrientation * localSpaceTranslationImpulse;
-            translationAcceleration = worldSpaceTranslationImpulse * settings.translationAccelerationRate * translationVelocityScale;
-        }
+        // Compute camera orientation, and then transform the translation impulse from local space to world space.
+        const Quaternion cameraOrientation = Quaternion(Math::DegreesToRadians(cameraRotation));
+        Vector3 worldSpaceTranslationImpulse = cameraOrientation * localSpaceTranslationImpulse;
+        Vector3 translationAcceleration = worldSpaceTranslationImpulse * settings.translationAccelerationRate * translationVelocityScale;
 
         if (settings.enablePhysicallyBasedTranslation)
         {
@@ -149,6 +146,13 @@ namespace Horizon
     {
         // TODO: make it configurable
         float impulse = 5.0;
+        const float translationMultiplier = controller.settings.translationMultiplier;
+        const float rotationMultiplier = controller.settings.rotationMultiplier;
+
+        const float cameraBoost = Input::GetKeyDown(KeyCode::LeftShift) ? 3.0f : 1.0f;
+        const float finalCameraSpeed = cameraSpeed * cameraBoost;
+
+        userImpulseData.Reset();
 
         if (Input::GetKeyDown(KeyCode::D))
         {
@@ -183,16 +187,15 @@ namespace Horizon
 
         if (Input::GetMouseButtonDown(MouseButtonID::ButtonMiddle))
         {
-            userImpulseData.moveRightLeftImpulse -= mouseMovement.x * controller.settings.translationMultiplier;
-            userImpulseData.moveUpDownImpulse += mouseMovement.y * controller.settings.translationMultiplier;
+            userImpulseData.moveRightLeftImpulse -= mouseMovement.x * translationMultiplier;
+            userImpulseData.moveUpDownImpulse += mouseMovement.y * translationMultiplier;
         }
         else if (Input::GetMouseButtonDown(MouseButtonID::ButtonRight))
         {
-            userImpulseData.rotatePitchImpulse -= mouseMovement.y * controller.settings.rotationMultiplier;
-            userImpulseData.rotateYawImpulse -= mouseMovement.x * controller.settings.rotationMultiplier;
+            userImpulseData.rotatePitchImpulse -= mouseMovement.y * rotationMultiplier;
+            userImpulseData.rotateYawImpulse -= mouseMovement.x * rotationMultiplier;
         }
 
-        controller.Update(userImpulseData, deltaTimeInSeconds, cameraSpeed, position, rotation);
+        controller.Update(userImpulseData, deltaTimeInSeconds, finalCameraSpeed, position, rotation);
     }
-
 }

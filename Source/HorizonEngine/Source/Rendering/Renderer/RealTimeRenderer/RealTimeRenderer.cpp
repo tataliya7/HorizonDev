@@ -378,7 +378,7 @@ namespace Horizon
             {
                 if (scene->HasAtmosphericLight())
                 {
-                    const DistantLightRenderObject* atmosphericLight = scene->GetAtmosphericLight();
+                    const LightRenderObject* atmosphericLight = scene->GetAtmosphericLight();
                     const float halfApexAngle = atmosphericLight->GetHalfApexAngleInRadians();
                     const float cosHalfApexAngle = std::cos(halfApexAngle);
                     const float solidAngle = 2.0f * M_PI * (1.0f - cosHalfApexAngle); // https://en.wikipedia.org/wiki/Solid_angle
@@ -410,7 +410,7 @@ namespace Horizon
                     {
                         .skyViewLutReferential = IdentityMatrix3x3,
                     };
-                    SetupSkyAtmosphereViewRelatedParameters(skyAtmosphereViewRelatedParameters, skyAtmosphere, view.GetCameraPosition(), view.GetCameraForwardVector());
+                    SetupSkyAtmosphereViewRelatedParameters(skyAtmosphereViewRelatedParameters, skyAtmosphere, view.cameraPosition, view.cameraForwardVector);
 
                     perFrameShaderParameters.skyAtmosphereTransmittanceLutSize = skyAtmosphereShaderParameters.transmittanceLutSize;
                     perFrameShaderParameters.skyAtmosphereMultipleScatteringLutSize = skyAtmosphereShaderParameters.multipleScatteringLutSize;
@@ -516,7 +516,7 @@ namespace Horizon
             {
                 uiColorAndAlphaTexture = builder.WriteTexture(uiColorAndAlphaTexture, RenderBackendResourceState::RenderTarget);
 
-                builder.BindColorTarget(0, uiColorAndAlphaTexture, RenderBackendRenderPassBeginningAccessType::Clear, RenderBackendRenderPassEndingAccessType::Preserve);
+                builder.BindRenderTarget(0, uiColorAndAlphaTexture, RenderBackendRenderPassBeginningAccessType::Clear, RenderBackendRenderPassEndingAccessType::Preserve);
 
                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
                 {
@@ -530,7 +530,7 @@ namespace Horizon
 #define NearClipPlaneDepthValue 1.0f
 #define FarClipPlaneDepthValue 0.0f
 
-    RenderBackendTextureClearValue clearColor = RenderBackendTextureClearValue::CreateColorValueFloat4(1.0f, 1.0f, 1.0f, 1.0f);
+    RenderBackendTextureClearValue clearColor = RenderBackendTextureClearValue::CreateColorValueFloat4(0.0f, 0.0f, 0.0f, 0.0f);
     RenderBackendTextureClearValue clearDepth = RenderBackendTextureClearValue::CreateDepthValue(FarClipPlaneDepthValue);
     RenderBackendTextureClearValue clearVisibilityBufferColor = RenderBackendTextureClearValue::CreateColorValueUnit4(0x0FFFFFFF, 0x0FFFFFFF, 0x0FFFFFFF, 0x0FFFFFFF);
 
@@ -812,8 +812,10 @@ namespace Horizon
             [&](RenderGraphBuilder& builder)
             {
                 RenderGraphTextureHandle sceneColorTexture = sceneTextures.sceneColorTexture = builder.WriteTexture(sceneTextures.sceneColorTexture, RenderBackendResourceState::RenderTarget);
+                RenderGraphTextureHandle sceneDepthTexture = sceneTextures.sceneDepthTexture = builder.WriteTexture(sceneTextures.sceneDepthTexture, RenderBackendResourceState::DepthStencil);
 
-                builder.BindColorTarget(0, sceneColorTexture, RenderBackendRenderPassBeginningAccessType::Clear, RenderBackendRenderPassEndingAccessType::Preserve);
+                builder.BindRenderTarget(0, sceneColorTexture, RenderBackendRenderPassBeginningAccessType::Clear, RenderBackendRenderPassEndingAccessType::Preserve);
+                builder.BindDepthStencil(sceneDepthTexture, RenderBackendRenderPassBeginningAccessType::Clear, RenderBackendRenderPassEndingAccessType::Preserve);
 
                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
                 {
@@ -859,7 +861,7 @@ namespace Horizon
                 uiColorAndAlphaTexture = builder.ReadTexture(uiColorAndAlphaTexture, RenderBackendResourceState::ShaderResource);
                 RenderGraphTextureHandle targetTexture = sceneTextures.hudLessColorTexture = builder.WriteTexture(sceneTextures.hudLessColorTexture, RenderBackendResourceState::RenderTarget);
 
-                builder.BindColorTarget(0, targetTexture, RenderBackendRenderPassBeginningAccessType::Preserve, RenderBackendRenderPassEndingAccessType::Preserve);
+                builder.BindRenderTarget(0, targetTexture, RenderBackendRenderPassBeginningAccessType::Preserve, RenderBackendRenderPassEndingAccessType::Preserve);
 
                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
                 {

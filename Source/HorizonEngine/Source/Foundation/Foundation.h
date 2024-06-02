@@ -9,7 +9,7 @@ namespace Horizon
     using Vector4 = Vector4f;
 
     using Matrix3x3 = Matrix3x3f;
-    using Matrix4x4 = Matrix3x3f;
+    using Matrix4x4 = Matrix4x4f;
 
     template <typename T, uint64 N>
     FORCEINLINE constexpr uint64 ArraySize(T(&array)[N])

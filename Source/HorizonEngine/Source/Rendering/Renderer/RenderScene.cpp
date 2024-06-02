@@ -4,27 +4,26 @@
 
 namespace Horizon
 {
-    LightRenderObject::LightRenderObject()
+    LightRenderObject::LightRenderObject(const LightRenderObjectDescription& description)
+        : color(description.color)
+        , position(description.position)
+        , direction(description.direction)
+        , castRayTracingShadows(description.castRayTracingShadows)
+        , usedAsAtmosphericLight(description.usedAsAtmosphericLight)
+        , halfApexAngleInRadians(description.halfApexAngleInRadians)
+        , atmosphericLightDiskColorFactor(description.atmosphericLightDiskColorFactor)
     {
+
     }
 
     LightRenderObject::~LightRenderObject()
-    {
-    }
-
-    DistantLightRenderObject::DistantLightRenderObject()
-    {
-
-    }
-
-    DistantLightRenderObject::~DistantLightRenderObject()
     {
 
     }
 
     SkyAtmosphereRenderObject::SkyAtmosphereRenderObject()
+        : atmosphereParameters()
     {
-
     }
 
     SkyAtmosphereRenderObject::~SkyAtmosphereRenderObject()
@@ -59,11 +58,16 @@ namespace Horizon
 
     void RenderScene::AddLight(LightRenderObject* light)
     {
+        assert(light != nullptr);
+        assert(std::ranges::find(lights, light) == lights.end());
+
         if (light->IsUsedAsAtmosphericLight())
         {
             assert(atmosphericLight == nullptr);
-            atmosphericLight = dynamic_cast<DistantLightRenderObject*>(light);
+            atmosphericLight = light;
         }
+
+        lights.push_back(light);
     }
 
     void RenderScene::RemoveLight(LightRenderObject* light)
@@ -75,7 +79,7 @@ namespace Horizon
         return atmosphericLight != nullptr;
     }
 
-    DistantLightRenderObject* RenderScene::GetAtmosphericLight() const
+    LightRenderObject* RenderScene::GetAtmosphericLight() const
     {
         return atmosphericLight;
     }

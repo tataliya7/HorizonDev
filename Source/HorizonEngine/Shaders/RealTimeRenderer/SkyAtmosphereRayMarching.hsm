@@ -139,12 +139,12 @@ void SkyAtmosphereRayMarchingPS(float4 position : SV_Position, out float4 outLum
     float3 worldSpaceCameraPositionKm = worldSpaceCameraPosition * M_TO_KM;
     float3 worldPos = worldSpaceCameraPositionKm - float3(0.0f, 0.0f, -skyAtmosphereParameters.bottomRadius);
     float3 worldDir = normalize(worldSpacePixelPosition - worldSpaceCameraPosition);
-    float3 skyAtmosphereSkyLuminanceFactor = 1.0f;
+    float3 skyLuminanceFactor = 1.0f;
     float3 preExposedL = 0.0f;
 
     if (deviceDepth == FarClipPlaneDepthValue)
     {
-        skyAtmosphereSkyLuminanceFactor = perFrameParameters.skyAtmosphereSkyLuminanceFactor;
+        skyLuminanceFactor = perFrameParameters.skyAtmosphereSkyLuminanceFactor;
         preExposedL += GetLightDiskLuminance(perFrameParameters, transmittanceLutTexture, worldPos, worldDir, skyAtmosphereParameters.bottomRadius, skyAtmosphereParameters.topRadius);
     }
 
@@ -166,7 +166,7 @@ void SkyAtmosphereRayMarchingPS(float4 position : SV_Position, out float4 outLum
 
         float3 skyLuminance = skyViewLutTexture.SampleLevel(GlobalSamplerLinearClamp, texCoord, 0).rgb;
 
-        preExposedL += skyAtmosphereSkyLuminanceFactor * skyLuminance;
+        preExposedL += skyLuminanceFactor * skyLuminance;
         outLuminance = float4(preExposedL, 1.0);
         return;
     }
@@ -180,7 +180,7 @@ void SkyAtmosphereRayMarchingPS(float4 position : SV_Position, out float4 outLum
         worldSpacePixelPositionKm,
         worldSpaceCameraPositionKm);
 
-    preExposedL += skyAtmosphereSkyLuminanceFactor * AP.rgb;
+    preExposedL += skyLuminanceFactor * AP.rgb;
 
     float transmittance = AP.a;
 

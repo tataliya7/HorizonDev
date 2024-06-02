@@ -23,14 +23,14 @@ namespace Horizon
         RenderGraphBufferHandle ReadBuffer(RenderGraphBufferHandle handle, RenderBackendResourceState initalState);
         RenderGraphBufferHandle WriteBuffer(RenderGraphBufferHandle handle, RenderBackendResourceState initalState);
         RenderGraphBufferHandle ReadWriteBuffer(RenderGraphBufferHandle handle, RenderBackendResourceState initalState);
-        void BindColorTarget(
+        void BindRenderTarget(
             uint32 slot,
             RenderGraphTextureHandle handle,
             RenderBackendRenderPassBeginningAccessType loadOp,
             RenderBackendRenderPassEndingAccessType storeOp,
             uint32 mipLevel = 0,
             uint32 arraylayer = 0);
-        void BindDepthTarget(
+        void BindDepthStencil(
             RenderGraphTextureHandle handle,
             RenderBackendRenderPassBeginningAccessType depthLoadOp,
             RenderBackendRenderPassEndingAccessType depthStoreOp,

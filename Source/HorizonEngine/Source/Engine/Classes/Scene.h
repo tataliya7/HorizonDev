@@ -83,6 +83,8 @@ namespace Horizon
          */
         uint32 GetEntityCount() const;
 
+        void Tick(float deltaTimeInSeconds);
+
         void Serialize(Archive& archive);
 
     private:

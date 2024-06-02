@@ -322,7 +322,7 @@ namespace Horizon::Math
         return glm::perspectiveRH_ZO(fovy, aspect, zFar, zNear);
     };
 
-    FORCEINLINE Matrix4x4f Compose(const Vector3f& translation, const Quaternion& rotation, const Vector3f& scale)
+    FORCEINLINE Matrix4x4f ComposeTransformMatrix(const Vector3f& translation, const Quaternion& rotation, const Vector3f& scale)
     {
         return glm::translate(glm::mat4(1), translation) * glm::mat4_cast(glm::normalize(rotation)) * glm::scale(glm::mat4(1.0f), scale);
     }
