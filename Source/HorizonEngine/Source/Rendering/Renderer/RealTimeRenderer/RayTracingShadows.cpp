@@ -2,7 +2,7 @@
 
 namespace Horizon
 {
-    bool ShouldRenderRayTracingShadowsForLight(const LightRenderProxy& light)
+    bool ShouldRenderRayTracingShadowsForLight(const LightRenderObject& light)
     {
         if (light.CastRayTracingShadows())
         {
@@ -14,7 +14,7 @@ namespace Horizon
     void RealTimeRenderer::RenderRayTracingShadows(
         RenderGraph& renderGraph,
         const SceneView& view,
-        const LightRenderProxy& light,
+        const LightRenderObject& light,
         RenderGraphTextureHandle& screenSpaceShadowMaskTexture,
         RenderGraphTextureHandle& rayDistanceTexture)
     {

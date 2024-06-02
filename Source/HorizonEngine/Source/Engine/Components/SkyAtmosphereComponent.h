@@ -5,7 +5,7 @@
 
 namespace Horizon
 {
-    class SkyAtmosphereRenderProxy;
+    class SkyAtmosphereRenderObject;
 
     struct DensityProfileLayer
     {
@@ -87,10 +87,10 @@ namespace Horizon
 
         void Serialize(Archive& archive);
 
-        void UpdateRenderProxy();
+        void UpdateRenderObject();
 
     private:
 
-        SkyAtmosphereRenderProxy* renderProxy;
+        SkyAtmosphereRenderObject* renderObject;
     };
 }

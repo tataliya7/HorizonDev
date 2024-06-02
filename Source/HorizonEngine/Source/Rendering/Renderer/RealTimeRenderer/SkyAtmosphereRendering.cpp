@@ -17,7 +17,7 @@ namespace Horizon
     uint32 RayMarchingMinSampleCount = 4;
     uint32 RayMarchingMaxSampleCount = 32;
 
-    void SetupSkyAtmosphereShaderParameters(SkyAtmosphereShaderParameters& outParameters, const SkyAtmosphereRenderProxy& renderProxy)
+    void SetupSkyAtmosphereShaderParameters(SkyAtmosphereShaderParameters& outParameters, const SkyAtmosphereRenderObject& renderObject)
     {
         outParameters.transmittanceLutSize = GetSizeAndInverseSize(TransmittanceLutWidth, TransmittanceLutHeight);
         outParameters.multipleScatteringLutSize = GetSizeAndInverseSize(MultipleScatteringLutWidth, MultipleScatteringLutHeight);
@@ -28,7 +28,7 @@ namespace Horizon
         outParameters.rayMarchingMinSampleCount = float(RayMarchingMinSampleCount);
         outParameters.rayMarchingMaxSampleCount = float(RayMarchingMaxSampleCount);
 
-        const AtmosphereParameters& atmosphereParameters = renderProxy.GetAtmosphereParameters();
+        const AtmosphereParameters& atmosphereParameters = renderObject.GetAtmosphereParameters();
         outParameters.bottomRadius = atmosphereParameters.bottomRadius;
         outParameters.topRadius = atmosphereParameters.topRadius;
         outParameters.groundAlbedo = atmosphereParameters.groundAlbedo;
@@ -62,9 +62,9 @@ namespace Horizon
         b2 = Vector3(b, sign + n.y * n.y* a, -n.y);
     }
 
-    void SetupSkyAtmosphereViewRelatedParameters(SkyAtmosphereViewRelatedParameters& outParameters, const SkyAtmosphereRenderProxy& renderProxy, const Vector3& worldSpaceCameraPosition, const Vector3& cameraForwardVector)
+    void SetupSkyAtmosphereViewRelatedParameters(SkyAtmosphereViewRelatedParameters& outParameters, const SkyAtmosphereRenderObject& renderObject, const Vector3& worldSpaceCameraPosition, const Vector3& cameraForwardVector)
     {
-        const AtmosphereParameters& atmosphereParameters = renderProxy.GetAtmosphereParameters();
+        const AtmosphereParameters& atmosphereParameters = renderObject.GetAtmosphereParameters();
         float bottomRadiusKm = atmosphereParameters.bottomRadius;
 
         Vector3 worldSpacePlanetCenterKm = Vector3(0.0f, 0.0f, -bottomRadiusKm);

@@ -211,13 +211,13 @@ namespace Horizon
         void RenderScreenSpaceShadows(
             RenderGraph& renderGraph,
             const SceneView& view,
-            const LightRenderProxy& light,
+            const LightRenderObject& light,
             RenderGraphTextureHandle& screenSpaceShadowMaskTexture);
 
         void RenderRayTracingShadows(
             RenderGraph& renderGraph,
             const SceneView& view,
-            const LightRenderProxy& light,
+            const LightRenderObject& light,
             RenderGraphTextureHandle& screenSpaceShadowMaskTexture,
             RenderGraphTextureHandle& rayDistanceTexture);
 

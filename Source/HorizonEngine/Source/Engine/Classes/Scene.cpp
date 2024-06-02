@@ -46,8 +46,8 @@ namespace Horizon
         if (!hasSkyLight)
         {
             auto& component = entityManager->GetComponent<SkyLightComponent>(entity);
-            component.proxy = new SkyLightRenderProxy(&component);
-            renderScene->SetSkyLight(component.proxy);
+            component.renderObject = new SkyLightRenderObject(&component);
+            renderScene->SetSkyLight(component.renderObject);
             hasSkyLight = true;
         }
         else

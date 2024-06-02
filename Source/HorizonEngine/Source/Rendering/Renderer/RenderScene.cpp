@@ -4,30 +4,30 @@
 
 namespace Horizon
 {
-    LightRenderProxy::LightRenderProxy()
+    LightRenderObject::LightRenderObject()
     {
     }
 
-    LightRenderProxy::~LightRenderProxy()
+    LightRenderObject::~LightRenderObject()
     {
     }
 
-    DistantLightRenderProxy::DistantLightRenderProxy()
-    {
-
-    }
-
-    DistantLightRenderProxy::~DistantLightRenderProxy()
+    DistantLightRenderObject::DistantLightRenderObject()
     {
 
     }
 
-    SkyAtmosphereRenderProxy::SkyAtmosphereRenderProxy()
+    DistantLightRenderObject::~DistantLightRenderObject()
     {
 
     }
 
-    SkyAtmosphereRenderProxy::~SkyAtmosphereRenderProxy()
+    SkyAtmosphereRenderObject::SkyAtmosphereRenderObject()
+    {
+
+    }
+
+    SkyAtmosphereRenderObject::~SkyAtmosphereRenderObject()
     {
 
     }
@@ -49,24 +49,24 @@ namespace Horizon
 
     }
 
-    void RenderScene::AddMesh(MeshRenderProxy* mesh)
+    void RenderScene::AddMesh(MeshRenderObject* mesh)
     {
     }
 
-    void RenderScene::RemoveMesh(MeshRenderProxy* mesh)
+    void RenderScene::RemoveMesh(MeshRenderObject* mesh)
     {
     }
 
-    void RenderScene::AddLight(LightRenderProxy* light)
+    void RenderScene::AddLight(LightRenderObject* light)
     {
         if (light->IsUsedAsAtmosphericLight())
         {
             assert(atmosphericLight == nullptr);
-            atmosphericLight = dynamic_cast<DistantLightRenderProxy*>(light);
+            atmosphericLight = dynamic_cast<DistantLightRenderObject*>(light);
         }
     }
 
-    void RenderScene::RemoveLight(LightRenderProxy* light)
+    void RenderScene::RemoveLight(LightRenderObject* light)
     {
     }
 
@@ -75,7 +75,7 @@ namespace Horizon
         return atmosphericLight != nullptr;
     }
 
-    DistantLightRenderProxy* RenderScene::GetAtmosphericLight() const
+    DistantLightRenderObject* RenderScene::GetAtmosphericLight() const
     {
         return atmosphericLight;
     }
@@ -85,12 +85,12 @@ namespace Horizon
         return activeSkyAtmosphere != nullptr;
     }
 
-    SkyAtmosphereRenderProxy* RenderScene::GetActiveSkyAtmosphere() const
+    SkyAtmosphereRenderObject* RenderScene::GetActiveSkyAtmosphere() const
     {
         return activeSkyAtmosphere;
     }
 
-    void RenderScene::AddSkyAtmosphere(SkyAtmosphereRenderProxy* skyAtmosphere)
+    void RenderScene::AddSkyAtmosphere(SkyAtmosphereRenderObject* skyAtmosphere)
     {
         assert(skyAtmosphere != nullptr);
         assert(std::ranges::find(skyAtmospheres, skyAtmosphere) == skyAtmospheres.end());
@@ -100,7 +100,7 @@ namespace Horizon
         activeSkyAtmosphere = skyAtmospheres.back();
     }
 
-    void RenderScene::RemoveSkyAtmosphere(SkyAtmosphereRenderProxy* skyAtmosphere)
+    void RenderScene::RemoveSkyAtmosphere(SkyAtmosphereRenderObject* skyAtmosphere)
     {
         assert(skyAtmosphere != nullptr);
         assert(std::ranges::find(skyAtmospheres, skyAtmosphere) != skyAtmospheres.end());
@@ -115,7 +115,7 @@ namespace Horizon
         return !localFogVolumes.empty();
     }
 
-    void RenderScene::AddLocalFogVolume(LocalFogVolumeRenderProxy* localFogVolume)
+    void RenderScene::AddLocalFogVolume(LocalFogVolumeRenderObject* localFogVolume)
     {
         assert(localFogVolume != nullptr);
         assert(std::ranges::find(localFogVolumes, localFogVolume) == localFogVolumes.end());
@@ -123,7 +123,7 @@ namespace Horizon
         localFogVolumes.push_back(localFogVolume);
     }
 
-    void RenderScene::RemoveLocalFogVolume(LocalFogVolumeRenderProxy* localFogVolume)
+    void RenderScene::RemoveLocalFogVolume(LocalFogVolumeRenderObject* localFogVolume)
     {
         assert(localFogVolume != nullptr);
         assert(std::ranges::find(localFogVolumes, localFogVolume) != localFogVolumes.end());

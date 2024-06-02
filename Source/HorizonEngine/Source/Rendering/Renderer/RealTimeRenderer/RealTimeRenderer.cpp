@@ -378,7 +378,7 @@ namespace Horizon
             {
                 if (scene->HasAtmosphericLight())
                 {
-                    const DistantLightRenderProxy* atmosphericLight = scene->GetAtmosphericLight();
+                    const DistantLightRenderObject* atmosphericLight = scene->GetAtmosphericLight();
                     const float halfApexAngle = atmosphericLight->GetHalfApexAngleInRadians();
                     const float cosHalfApexAngle = std::cos(halfApexAngle);
                     const float solidAngle = 2.0f * M_PI * (1.0f - cosHalfApexAngle); // https://en.wikipedia.org/wiki/Solid_angle
@@ -401,7 +401,7 @@ namespace Horizon
 
                 if (IsSkyAtmosphereRenderingEnabled())
                 {
-                    const SkyAtmosphereRenderProxy& skyAtmosphere = *scene->GetActiveSkyAtmosphere();
+                    const SkyAtmosphereRenderObject& skyAtmosphere = *scene->GetActiveSkyAtmosphere();
 
                     SkyAtmosphereShaderParameters skyAtmosphereShaderParameters = {};
                     SetupSkyAtmosphereShaderParameters(skyAtmosphereShaderParameters, skyAtmosphere);

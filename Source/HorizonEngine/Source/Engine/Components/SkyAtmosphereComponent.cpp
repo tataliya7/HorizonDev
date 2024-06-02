@@ -57,12 +57,12 @@ namespace Horizon
         skyLuminanceScale = 1.0f;
         skyLuminanceColor = Vector3(1.0f, 1.0f, 1.0f);
 
-        renderProxy = nullptr;
+        renderObject = nullptr;
     }
 
     SkyAtmosphereComponent::~SkyAtmosphereComponent()
     {
-        assert(renderProxy == nullptr);
+        assert(renderObject == nullptr);
     }
 
     void SkyAtmosphereComponent::Serialize(Archive& archive)
@@ -90,16 +90,16 @@ namespace Horizon
         outAtmosphereParameters.absorptionExtinction = skyAtmosphereComponent.absorptionExtinctionScale * skyAtmosphereComponent.absorptionExtinction;
     }
 
-    void SkyAtmosphereComponent::UpdateRenderProxy()
+    void SkyAtmosphereComponent::UpdateRenderObject()
     {
-        if (renderProxy)
+        if (renderObject)
         {
             AtmosphereParameters atmosphereParameters = {};
             SetupAtmosphereParameters(atmosphereParameters, *this);
-            renderProxy->SetAtmosphereParameters(atmosphereParameters);
+            renderObject->SetAtmosphereParameters(atmosphereParameters);
 
             Vector3 skyLuminanceFactor = skyLuminanceScale * skyLuminanceColor;
-            renderProxy->SetSkyLuminanceFactor(skyLuminanceFactor);
+            renderObject->SetSkyLuminanceFactor(skyLuminanceFactor);
         }
     }
 }

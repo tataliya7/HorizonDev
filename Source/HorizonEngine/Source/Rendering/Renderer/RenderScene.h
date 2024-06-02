@@ -5,27 +5,27 @@
 
 namespace Horizon
 {
-    class MeshRenderProxy
+    class MeshRenderObject
     {
 
     };
 
-    class LightRenderProxy
+    class LightRenderObject
     {
     public:
-        LightRenderProxy();
-        virtual ~LightRenderProxy();
+        LightRenderObject();
+        virtual ~LightRenderObject();
 
         virtual bool CastRayTracingShadows() const { return false; }
         virtual bool IsUsedAsAtmosphericLight() const { return false; }
     private:
     };
 
-    class DistantLightRenderProxy : public LightRenderProxy
+    class DistantLightRenderObject : public LightRenderObject
     {
     public:
-        DistantLightRenderProxy();
-        virtual ~DistantLightRenderProxy();
+        DistantLightRenderObject();
+        virtual ~DistantLightRenderObject();
 
         Vector3 GetPhysicalLightColor() const
         {
@@ -66,31 +66,31 @@ namespace Horizon
         Vector3 atmosphericLightDiskColorFactor;
     };
 
-    class SpotLightRenderProxy : public LightRenderProxy
+    class SpotLightRenderObject : public LightRenderObject
     {
     public:
-        SpotLightRenderProxy();
-        virtual ~SpotLightRenderProxy();
+        SpotLightRenderObject();
+        virtual ~SpotLightRenderObject();
     private:
     };
 
-    class PointLightRenderProxy : public LightRenderProxy
+    class PointLightRenderObject : public LightRenderObject
     {
     public:
-        PointLightRenderProxy();
-        virtual ~PointLightRenderProxy();
+        PointLightRenderObject();
+        virtual ~PointLightRenderObject();
     private:
     };
 
-    class SkyLightRenderProxy
+    class SkyLightRenderObject
     {
     public:
-        SkyLightRenderProxy();
-        virtual ~SkyLightRenderProxy();
+        SkyLightRenderObject();
+        virtual ~SkyLightRenderObject();
     private:
     };
 
-    class LocalFogVolumeRenderProxy
+    class LocalFogVolumeRenderObject
     {
     public:
 
@@ -121,13 +121,13 @@ namespace Horizon
         Vector3 absorptionExtinction;
     };
 
-    class SkyAtmosphereRenderProxy
+    class SkyAtmosphereRenderObject
     {
     public:
 
-        SkyAtmosphereRenderProxy();
+        SkyAtmosphereRenderObject();
 
-        ~SkyAtmosphereRenderProxy();
+        ~SkyAtmosphereRenderObject();
 
         const AtmosphereParameters& GetAtmosphereParameters() const
         {
@@ -178,22 +178,22 @@ namespace Horizon
         /**
          * Adds a mesh to the scene.
          */
-        virtual void AddMesh(MeshRenderProxy* mesh);
+        virtual void AddMesh(MeshRenderObject* mesh);
 
         /**
          * Removes a mesh from the scene.
          */
-        virtual void RemoveMesh(MeshRenderProxy* mesh);
+        virtual void RemoveMesh(MeshRenderObject* mesh);
 
         /**
          * Adds a new light to the scene.
          */
-        virtual void AddLight(LightRenderProxy* light);
+        virtual void AddLight(LightRenderObject* light);
 
         /**
          * Removes a light from the scene.
          */
-        virtual void RemoveLight(LightRenderProxy* light);
+        virtual void RemoveLight(LightRenderObject* light);
 
         // virtual void HasSkyLight() = 0;
         //
@@ -201,33 +201,33 @@ namespace Horizon
 
         virtual bool HasAtmosphericLight() const;
 
-        virtual DistantLightRenderProxy* GetAtmosphericLight() const;
+        virtual DistantLightRenderObject* GetAtmosphericLight() const;
 
         virtual bool HasActiveSkyAtmosphere() const;
 
-        virtual SkyAtmosphereRenderProxy* GetActiveSkyAtmosphere() const;
+        virtual SkyAtmosphereRenderObject* GetActiveSkyAtmosphere() const;
 
-        virtual void AddSkyAtmosphere(SkyAtmosphereRenderProxy* skyAtmosphere);
+        virtual void AddSkyAtmosphere(SkyAtmosphereRenderObject* skyAtmosphere);
 
-        virtual void RemoveSkyAtmosphere(SkyAtmosphereRenderProxy* skyAtmosphere);
+        virtual void RemoveSkyAtmosphere(SkyAtmosphereRenderObject* skyAtmosphere);
 
         virtual bool HasAnyLocalFogVolume() const;
 
-        virtual void AddLocalFogVolume(LocalFogVolumeRenderProxy* localFogVolume);
+        virtual void AddLocalFogVolume(LocalFogVolumeRenderObject* localFogVolume);
 
-        virtual void RemoveLocalFogVolume(LocalFogVolumeRenderProxy* localFogVolume);
+        virtual void RemoveLocalFogVolume(LocalFogVolumeRenderObject* localFogVolume);
 
         void GetRenderStatistics(RenderStatistics& statistics) const;
 
     private:
 
-        DistantLightRenderProxy* atmosphericLight;
+        DistantLightRenderObject* atmosphericLight;
 
-        SkyAtmosphereRenderProxy* activeSkyAtmosphere;
+        SkyAtmosphereRenderObject* activeSkyAtmosphere;
 
-        std::vector<SkyAtmosphereRenderProxy*> skyAtmospheres;
+        std::vector<SkyAtmosphereRenderObject*> skyAtmospheres;
 
-        std::vector<LocalFogVolumeRenderProxy*> localFogVolumes;
+        std::vector<LocalFogVolumeRenderObject*> localFogVolumes;
 
         GPUScene gpuScene;
 

@@ -5,7 +5,7 @@
 
 namespace Horizon
 {
-    class LightRenderProxy;
+    class LightRenderObject;
 
     enum class LightType
     {
@@ -143,6 +143,6 @@ namespace Horizon
 
     private:
 
-        LightRenderProxy* renderProxy = nullptr;
+        LightRenderObject* renderObject = nullptr;
     };
 }
