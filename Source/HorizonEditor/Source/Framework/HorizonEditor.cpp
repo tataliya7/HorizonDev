@@ -268,7 +268,7 @@ namespace Horizon
         sceneView.renderSettings = renderSettings;
         sceneView.debugVisualizationMode = SceneViewDebugVisualizationMode::Lighting;//currentDebugVisualizationMode;
         sceneView.reset = false;
-        sceneView.cameraPosition = editorCamera.GetPosition() + Vector3(0.0f, 0.0f, 10.0f);
+        sceneView.cameraPosition = editorCamera.GetPosition();
         sceneView.cameraRotation = editorCamera.GetRotation();
         sceneView.cameraUpVector = cameraUpVector;
         sceneView.cameraRightVector = cameraRightVector;

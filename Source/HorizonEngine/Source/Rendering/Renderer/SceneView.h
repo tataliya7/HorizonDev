@@ -51,7 +51,8 @@ namespace Horizon
         {
             // TODO: refactor this
             // TODO: make it constexpr
-            static const Quaternion zUpQuat = glm::rotate(Quaternion(), Math::DegreesToRadians(90.0), Vector3(1.0, 0.0, 0.0));
+            static Quaternion zUpQuat = glm::rotate(Quaternion(), Math::DegreesToRadians(90.0), Vector3(1.0, 0.0, 0.0));
+            zUpQuat = Quaternion();
 
             // TODO: calculate worldToViewMatrix first
             viewToWorldMatrix = Math::ComposeTransformMatrix(position, rotation * zUpQuat, Vector3(1.0f, 1.0f, 1.0f));
