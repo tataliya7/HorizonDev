@@ -28,6 +28,7 @@ namespace Horizon
             return instance;
         }
 
+        // TODO: Optimize this, use static reflection instead.
         template<typename SubsystemType>
         SubsystemType* GetSubsystem() const
         {

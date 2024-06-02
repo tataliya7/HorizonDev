@@ -11,4 +11,7 @@
 #include "Engine/ECS/EntityManager.h"
 #include "Engine/Components/Components.h"
 #include "Engine/ColorManagement/ColorManagement.h"
+#include "Engine/Classes/Scene.h"
+#include "Engine/Classes/RenderSystem.h"
+#include "Engine/Classes/HorizonEngine.h"
 #include "Engine/HorizonEngineVersion.h"

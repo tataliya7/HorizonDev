@@ -18,12 +18,18 @@ namespace Horizon
         /** Subsystem Interface: TBD. */
         void Exit() override;
 
-        void Tick();
+        void Tick(float deltaTimeInSeconds);
 
         RenderBackend* GetRenderBackend() const
         {
             return renderBackend;
         }
+
+        RenderGraphResourcePool* GetRenderGraphResourcePool() const
+        {
+            return renderGraphResourcePool;
+        }
+
         // RenderScene* CreateRenderScene();
         //
         // void RenderScene(SceneView* view) override;

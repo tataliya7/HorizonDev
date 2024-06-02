@@ -61,13 +61,33 @@ namespace Horizon
         renderGraphResourcePool = new RenderGraphResourcePool(renderBackend);
 
         gpuProfiler = new RenderBackendGPUProfiler(renderBackend);
+
+        RenderBackendCommandList* commandList = new RenderBackendCommandList(GArena);
+        rendererDefaultResources = new RendererDefaultResources(renderBackend, renderGraphResourcePool, shaderLibrary);
+        rendererDefaultResources->Initialize(*commandList);
+        renderBackend->SubmitCommandLists(&commandList, 1, RenderBackendSwapChainHandle::Null);
+
+        renderBackend->FlushRenderDevices();
     }
 
     void RenderSystem::Exit()
     {
-
+        RenderBackendType renderBackendType = renderBackend->GetType();
+        if (renderBackendType == RenderBackendType::Vulkan)
+        {
+            RenderBackendDestroyVulkan(renderBackend);
+        }
+        else if (renderBackendType == RenderBackendType::D3D12)
+        {
+            RenderBackendDestroyD3D12(renderBackend);
+        }
     }
 
+    void RenderSystem::Tick(float deltaTimeInSeconds)
+    {
+        shaderLibrary->HotReload();
+        renderGraphResourcePool->Tick();
+    }
 #if 0
     void Texture2DGenerateMips(ShaderLibrary* shaderLibrary, RenderBackendCommandList& commandList, RenderBackendTextureHandle textureHandle, uint32 width, uint32 height, uint32 numMipLevels)
     {

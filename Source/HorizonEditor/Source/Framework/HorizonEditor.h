@@ -232,18 +232,17 @@ namespace Horizon
         HorizonEditorColorTheme colorTheme = HorizonEditorColorTheme::Light;
         RenderBackendTextureHandle fontTexture;
 
-        RenderBackendType renderBackendType = RenderBackendType::Vulkan;
-        RenderBackend* renderBackend = nullptr;
-        ShaderLibrary* shaderLibrary = nullptr;
-        RenderSettings renderSettings;
         ImGuiContext* imguiContext = nullptr;
+        RenderSettings renderSettings;
+        // RenderBackendType renderBackendType = RenderBackendType::Vulkan;
+        RenderBackend* renderBackend = nullptr;
+        // ShaderLibrary* shaderLibrary = nullptr;
+        // RenderGraphResourcePool* renderGraphResourcePool;
+        // RenderBackendGPUProfiler* gpuProfiler;
+        // RendererDefaultResources* rendererDefaultResources;
 
-        RenderGraphResourcePool* renderGraphResourcePool;
-
-        RenderBackendGPUProfiler* gpuProfiler;
-
-        RenderScene* renderScene;
-        RendererDefaultResources* rendererDefaultResources;
+        HorizonEngine* engine = nullptr;
+        // RenderScene* renderScene;
 
         // Begin Scene View Window
         SceneView* sceneView;
@@ -254,7 +253,7 @@ namespace Horizon
         RenderGraphPersistentTexture* targetTexture;
         // End Scene View Window
 
-        EditorSceneManager* sceneManager;
+        EditorSceneManager* editorSceneManager;
 
         Window* window = nullptr;
         RenderBackendSwapChainHandle swapChain = RenderBackendSwapChainHandle::Null;

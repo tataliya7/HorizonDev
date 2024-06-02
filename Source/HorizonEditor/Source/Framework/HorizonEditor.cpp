@@ -1,7 +1,10 @@
 #include "HorizonEditor.h"
 
+#include "RenderDocPlugin.h"
+
 #include <optick.h>
 
+// TODO: delete this
 #define BIND_FUNCTION(func) [this](auto&&... args) -> decltype(auto) { return this->func(std::forward<decltype(args)> (args)...); }
 
 namespace Horizon
@@ -10,7 +13,7 @@ namespace Horizon
 
     HorizonEditor::HorizonEditor()
     {
-        assert(!Instance);
+        assert(Instance == nullptr);
         Instance = this;
 
         applicationName = HORIZON_EDITOR_APPLICATION_NAME;
@@ -18,7 +21,7 @@ namespace Horizon
 
     HorizonEditor::~HorizonEditor()
     {
-        assert(Instance);
+        assert(Instance != nullptr);
         Instance = nullptr;
     }
 
@@ -52,12 +55,12 @@ namespace Horizon
         };
         window = new Window(&windowInfo);
 
+        Input::SetCurrentContext(window->GetGLFWwindow());
+
         //window->keyPressEventCallback = BIND_FUNCTION(HorizonEditor::OnKeyPressedEvent);
         //window->keyReleaseEventCallback = BIND_FUNCTION(HorizonEditor::OnKeyReleasedEvent);
         //window->mouseButtonPressEventCallback = BIND_FUNCTION(HorizonEditor::OnMouseButtonPressedEvent);
         //window->mouseButtonReleaseEventCallback = BIND_FUNCTION(HorizonEditor::OnMouseButtonReleasedEvent);
-//
-//        Input::SetCurrentContext(window->GetGLFWHandle());
 //
 //        PhysXInit();
 //        Audio::AudioEngineInit();
@@ -66,49 +69,17 @@ namespace Horizon
 //        streamlineContext = new Streamline::StreamlineContext();
 //#endif
 //
-//        RenderDocPluginInit();
+        RenderDocPluginInit();
 //
 
-        // Initialize render backend
-        {
-            bool enableDebugLayers = true;
-            bool enableHardwareRayTracing = false;
 
-            if (renderBackendType == RenderBackendType::Vulkan)
-            {
-                int flags = VULKAN_RENDER_BACKEND_CREATE_FLAGS_SURFACE;
-                if (enableDebugLayers)
-                {
-                    flags |= VULKAN_RENDER_BACKEND_CREATE_FLAGS_VALIDATION_LAYERS;
-                }
-                if (enableHardwareRayTracing)
-                {
-                    flags |= VULKAN_RENDER_BACKEND_CREATE_FLAGS_RAY_TRACING;
-                }
-                renderBackend = RenderBackendCreateVulkan(flags);
-            }
-            else if (renderBackendType == RenderBackendType::D3D12)
-            {
-                D3D12RenderBackendDesc d3d12RenderBackendDesc = {
-                    .useDebugLayers = enableDebugLayers,
-                    .useGPUBasedValidation = enableDebugLayers,
-                };
-                renderBackend = RenderBackendCreateD3D12(&d3d12RenderBackendDesc);
-            }
-            else
-            {
-                LogError(GLogger, std::format("Unknown RenderBackendType!"));
-            }
+        InitializeEngine();
 
-            uint32 primaryDeviceMask = 0;
-            uint32 physicalDeviceID = 0;
-            renderBackend->CreateRenderDevices(&physicalDeviceID, 1, &primaryDeviceMask);
-        }
-//
-//        renderEngine = new RenderSystem();
-//        renderEngine->hardwareRayTracingEnabled = enableHardwareRayTracing;
-//        renderEngine->Init(window->GetGLFWHandle());
-//
+        engine = HorizonEngine::GetInstance();
+        RenderSystem* renderSystem = engine->GetSubsystem<RenderSystem>();
+        renderBackend = renderSystem->GetRenderBackend();
+        RenderGraphResourcePool* renderGraphResourcePool = renderSystem->GetRenderGraphResourcePool();
+
         RenderBackendSwapChainDesc swapChainDesc = {
             .width = window->GetWidth(),
             .height = window->GetHeight(),
@@ -122,15 +93,6 @@ namespace Horizon
         swapChainWidth = window->GetWidth();
         swapChainHeight = window->GetHeight();
 
-        shaderLibrary = new ShaderLibrary(renderBackend, "../../../Source/HorizonEngine/Shaders");
-        LoadAllShaders_Deprecated(shaderLibrary);
-
-        Input::SetCurrentContext(window->GetGLFWwindow());
-
-        renderGraphResourcePool = new RenderGraphResourcePool(renderBackend);
-
-        gpuProfiler = new RenderBackendGPUProfiler(renderBackend);
-
         RenderBackendTextureFormat targetTextureFormat = RenderBackendTextureFormat::RGB10A2Unorm;
         RenderGraphTextureDesc targetTextureDesc = RenderGraphTextureDesc::Create2D(
             swapChainWidth,
@@ -139,28 +101,31 @@ namespace Horizon
             RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::UnorderedAccess | RenderBackendTextureCreateFlags::RenderTarget);
         targetTexture = renderGraphResourcePool->AllocateTexture(targetTextureDesc, "SceneViewTexture");
 
-        renderScene = new RenderScene();
-
-        DistantLightRenderProxy* distantLight = new DistantLightRenderProxy();
-        distantLight->usedAsAtmosphericLight = true;
-        renderScene->AddLight(distantLight);
-
-        SkyAtmosphereRenderProxy* skyAtmosphere = new SkyAtmosphereRenderProxy();
-        renderScene->AddSkyAtmosphere(skyAtmosphere);
-
         RenderBackendCommandList* commandList = new RenderBackendCommandList(GArena);
-        rendererDefaultResources = new RendererDefaultResources(renderBackend, renderGraphResourcePool, shaderLibrary);
-        rendererDefaultResources->Initialize(*commandList);
-
         RenderBackendBarrier transitions[] =
         {
             RenderBackendBarrier(targetTexture->GetHandle(), RenderBackendTextureSubresourceRange(0, 1, 0, 1), RenderBackendResourceState::Undefined, RenderBackendResourceState::ShaderResource),
         };
         commandList->Transitions(transitions, 1);
-
         renderBackend->SubmitCommandLists(&commandList, 1, RenderBackendSwapChainHandle::Null);
 
         renderer = new RealTimeRenderer(renderBackend, renderGraphResourcePool, shaderLibrary, rendererDefaultResources);
+
+        editorSceneManager = new EditorSceneManager();
+        {
+            Scene* scene = editorSceneManager->CreateScene("DefaultScene");
+            editorSceneManager->SetActiveScene(scene);
+
+            RenderScene* renderScene = scene->GetRenderScene();
+
+            DistantLightRenderProxy* distantLight = new DistantLightRenderProxy();
+            distantLight->usedAsAtmosphericLight = true;
+            renderScene->AddLight(distantLight);
+
+            SkyAtmosphereRenderProxy* skyAtmosphere = new SkyAtmosphereRenderProxy();
+            renderScene->AddSkyAtmosphere(skyAtmosphere);
+        }
+
 //
 //        ShaderGraphSystemInit();
 //
@@ -172,15 +137,6 @@ namespace Horizon
 
     void HorizonEditor::Exit()
     {
-        if (renderBackendType == RenderBackendType::Vulkan)
-        {
-            RenderBackendDestroyVulkan(renderBackend);
-        }
-        else if (renderBackendType == RenderBackendType::D3D12)
-        {
-            RenderBackendDestroyD3D12(renderBackend);
-        }
-
         if (window) delete window;
 
         GLFWExit();
@@ -189,6 +145,46 @@ namespace Horizon
     void HorizonEditor::Tick()
     {
         OPTICK_EVENT();
+
+        WindowState state = window->GetState();
+
+        if (state == WindowState::Minimized)
+        {
+            return;
+        }
+
+        //
+        //            //if (!window->IsFocused())
+        //            //{
+        //            //    OSSuspendCurrentThread(0.05f);
+        //            //}
+        //
+        //            //static std::chrono::steady_clock::time_point previousTimePoint1{ std::chrono::steady_clock::now() };
+        //            //std::chrono::steady_clock::time_point timePoint = std::chrono::steady_clock::now();
+        //            //std::chrono::duration<float> timeDuration = std::chrono::duration_cast<std::chrono::duration<float>>(timePoint - previousTimePoint1);
+        //            //float deltaTimeT = timeDuration.count();
+        //            ////if (deltaTimeT < 0.033f)
+        //            //if (deltaTimeT < 0.01666667f)
+        //            ////if (deltaTimeT < 0.01111111f)
+        //            //{
+        //            //    continue;
+        //            //}
+        //            //previousTimePoint1 = timePoint;
+        //
+
+        uint32 width = window->GetWidth();
+        uint32 height = window->GetHeight();
+        if (width != swapChainWidth || height != swapChainHeight)
+        {
+            // Vulkan does not support swap chains with width and height set to zero
+            if (width != 0 && height != 0)
+            {
+                renderBackend->ResizeSwapChain(swapChain, &width, &height);
+                swapChainWidth = width;
+                swapChainHeight = height;
+            }
+        }
+
 //
 //        deltaTime = CalculateDeltaTime();
 //
@@ -210,7 +206,7 @@ namespace Horizon
 
         editorCamera.Update(deltaTimeInSeconds);
 
-        shaderLibrary->HotReload();
+        engine->Tick(deltaTimeInSeconds);
 
         //RenderBackendCommandList* commandList = renderBackend->AllocateCommandList();
         RenderBackendCommandList* commandList = new RenderBackendCommandList(GArena);
@@ -233,7 +229,7 @@ namespace Horizon
         Vector3 cameraUpVector      = Math::Normalize(editorCamera.GetRotation() * Vector3(0.0f, 0.0f, 1.0f));
 
         SceneView sceneView;
-        sceneView.scene = renderScene;
+        sceneView.scene = editorSceneManager->GetActiveScene()->GetRenderScene();
         sceneView.renderSettings = renderSettings;
         sceneView.debugVisualizationMode = SceneViewDebugVisualizationMode::Lighting;//currentDebugVisualizationMode;
         sceneView.reset = false;
@@ -298,9 +294,6 @@ namespace Horizon
 
         renderBackend->SubmitCommandLists(&commandList, 1, swapChain);
 
-        renderGraphResourcePool->Tick();
-
-        GArena->Reset();
 //
 //        renderEngine->EndDrawUI();
 //
@@ -313,6 +306,21 @@ namespace Horizon
 //#if HE_ENBALE_STREAMLINE_SUPPORT
 //        streamlineContext->ReflexSetMarkerRenderSubmitEnd();
 //#endif
+
+        //
+        //#if HE_ENBALE_STREAMLINE_SUPPORT
+        //            streamlineContext->ReflexSetMarkerPresentStart();
+        //#endif
+        //
+        renderBackend->PresentSwapChain(swapChain);
+        //
+        //#if HE_ENBALE_STREAMLINE_SUPPORT
+        //            streamlineContext->ReflexSetMarkerPresentEnd();
+        //#endif
+        //
+        //            GArena->Reset();
+        //
+        //            frameCounter++;
     }
 
     int HorizonEditor::Run()
@@ -333,71 +341,11 @@ namespace Horizon
                 SetExitRequest(true);
             }
 
-            WindowState state = window->GetState();
-
-            if (state == WindowState::Minimized)
-            {
-                continue;
-            }
-
-//
-//            //if (!window->IsFocused())
-//            //{
-//            //    OSSuspendCurrentThread(0.05f);
-//            //}
-//
-//            //static std::chrono::steady_clock::time_point previousTimePoint1{ std::chrono::steady_clock::now() };
-//            //std::chrono::steady_clock::time_point timePoint = std::chrono::steady_clock::now();
-//            //std::chrono::duration<float> timeDuration = std::chrono::duration_cast<std::chrono::duration<float>>(timePoint - previousTimePoint1);
-//            //float deltaTimeT = timeDuration.count();
-//            ////if (deltaTimeT < 0.033f)
-//            //if (deltaTimeT < 0.01666667f)
-//            ////if (deltaTimeT < 0.01111111f)
-//            //{
-//            //    continue;
-//            //}
-//            //previousTimePoint1 = timePoint;
-//
-
-            uint32 width = window->GetWidth();
-            uint32 height = window->GetHeight();
-            if (width != swapChainWidth || height != swapChainHeight)
-            {
-                // Vulkan does not support swap chains with width and height set to zero
-                if (width != 0 && height != 0)
-                {
-                    renderBackend->ResizeSwapChain(swapChain, &width, &height);
-                    swapChainWidth = width;
-                    swapChainHeight = height;
-                }
-            }
-
             Tick();
-//
-//#if HE_ENBALE_STREAMLINE_SUPPORT
-//            streamlineContext->ReflexSetMarkerPresentStart();
-//#endif
-//
-            renderBackend->PresentSwapChain(swapChain);
-//
-//#if HE_ENBALE_STREAMLINE_SUPPORT
-//            streamlineContext->ReflexSetMarkerPresentEnd();
-//#endif
-//
-//            GArena->Reset();
-//
-//            frameCounter++;
         }
 
         return 0;
     }
-
-    //void HorizonEditor::OnUpdate(float deltaTime)
-    //{
-        //OPTICK_EVENT();
-
-        //scene->Update(deltaTime);
-    //}
 }
 
 int HorizonEditorMain()

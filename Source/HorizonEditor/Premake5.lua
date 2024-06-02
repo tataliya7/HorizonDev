@@ -39,11 +39,12 @@ project "HorizonEditor"
 
     links {
         "HorizonEngine",
-        --"RenderDoc",
+        "RenderDoc",
     }
 
     includedirs {
         editorpath("Source"),
+        editorpath("Plugins/RenderDoc/Source"),
         enginepath("Source"),
         thirdpartypath("glm/include"),
         thirdpartypath("glfw/glfw-3.3.9.bin.WIN64/include"),
@@ -69,9 +70,9 @@ project "HorizonEditor"
     filter "configurations:Release"
         defines { "USE_OPTICK=0" }
 
--- group "EditorPlugins"
---     include "Plugins/RenderDoc"
---     include "Plugins/USD"
---     include "Plugins/TimeOfDay"
---     include "Plugins/LookDevStudio"
--- group ""
+group "EditorPlugins"
+    include "Plugins/RenderDoc"
+    -- include "Plugins/USD"
+    -- include "Plugins/TimeOfDay"
+    -- include "Plugins/LookDevStudio"
+group ""

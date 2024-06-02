@@ -5,6 +5,12 @@ namespace Horizon
 {
     HorizonEngine* HorizonEngine::Instance = nullptr;
 
+    void InitializeEngine()
+    {
+        HorizonEngine::Instance = new HorizonEngine();
+        HorizonEngine::Instance->RegisterAndInitializeSubsystems();
+    }
+
     HorizonEngine::HorizonEngine()
     {
         assert(Instance == nullptr);
@@ -15,6 +21,13 @@ namespace Horizon
     {
         assert(Instance == this);
         Instance = nullptr;
+    }
+
+    void HorizonEngine::Tick(float deltaTimeInSeconds)
+    {
+        GArena->Reset();
+
+
     }
 
     void HorizonEngine::RegisterAndInitializeSubsystems()

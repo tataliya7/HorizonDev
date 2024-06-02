@@ -21,6 +21,8 @@ namespace Horizon
         HorizonEngine& operator=(HorizonEngine&&) = delete;
         HorizonEngine& operator=(const HorizonEngine&) = delete;
 
+        void Tick(float deltaTimeInSeconds);
+
         template<typename SubsystemType>
         SubsystemType* GetSubsystem() const
         {
@@ -29,10 +31,14 @@ namespace Horizon
 
     private:
 
-        void RegisterAndInitializeSubsystems();
+        friend void InitializeEngine();
 
         static HorizonEngine* Instance;
 
+        void RegisterAndInitializeSubsystems();
+
         SubsystemRegistry subsystemRegistry;
     };
+
+    extern void InitializeEngine();
 }
