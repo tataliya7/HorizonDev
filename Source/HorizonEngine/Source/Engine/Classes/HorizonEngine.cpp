@@ -27,7 +27,8 @@ namespace Horizon
     {
         GArena->Reset();
 
-
+        RenderSystem* renderSystem = GetSubsystem<RenderSystem>();
+        renderSystem->Tick(deltaTimeInSeconds);
     }
 
     void HorizonEngine::RegisterAndInitializeSubsystems()

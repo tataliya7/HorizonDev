@@ -30,6 +30,10 @@ namespace Horizon
             return renderGraphResourcePool;
         }
 
+        RealTimeRenderer* CreateRenderer();
+
+        void RenderSceneView(RealTimeRenderer* renderer, SceneView* sceneView);
+
         // RenderScene* CreateRenderScene();
         //
         // void RenderScene(SceneView* view) override;

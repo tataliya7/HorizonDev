@@ -88,6 +88,34 @@ namespace Horizon
         shaderLibrary->HotReload();
         renderGraphResourcePool->Tick();
     }
+
+    RealTimeRenderer* RenderSystem::CreateRenderer()
+    {
+        return new RealTimeRenderer(renderBackend, renderGraphResourcePool, shaderLibrary, rendererDefaultResources);
+    }
+
+    void RenderSystem::RenderSceneView(RealTimeRenderer* renderer, SceneView* sceneView)
+    {
+        RenderBackendCommandList* commandList = new RenderBackendCommandList(GArena);
+
+        gpuProfiler->BeginFrame(commandList);
+        uint32 frameTimingQueryRegion = gpuProfiler->BeginRegion(commandList, "GPU Frametime");
+
+        renderer->OnRenderBegin(sceneView);
+
+        RenderGraph renderGraph(GArena, renderGraphResourcePool, gpuProfiler);
+
+        renderer->Render(renderGraph);
+
+        renderGraph.Execute(*commandList);
+
+        gpuProfiler->EndRegion(frameTimingQueryRegion, commandList);
+        gpuProfiler->EndFrame(commandList);
+
+        renderBackend->SubmitCommandLists(&commandList, 1, RenderBackendSwapChainHandle::Null);
+
+        delete commandList;
+    }
 #if 0
     void Texture2DGenerateMips(ShaderLibrary* shaderLibrary, RenderBackendCommandList& commandList, RenderBackendTextureHandle textureHandle, uint32 width, uint32 height, uint32 numMipLevels)
     {

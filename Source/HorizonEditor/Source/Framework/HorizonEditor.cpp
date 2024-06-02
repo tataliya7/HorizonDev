@@ -109,7 +109,7 @@ namespace Horizon
         commandList->Transitions(transitions, 1);
         renderBackend->SubmitCommandLists(&commandList, 1, RenderBackendSwapChainHandle::Null);
 
-        renderer = new RealTimeRenderer(renderBackend, renderGraphResourcePool, shaderLibrary, rendererDefaultResources);
+        renderer = renderSystem->CreateRenderer();
 
         editorSceneManager = new EditorSceneManager();
         {
@@ -209,7 +209,6 @@ namespace Horizon
         engine->Tick(deltaTimeInSeconds);
 
         //RenderBackendCommandList* commandList = renderBackend->AllocateCommandList();
-        RenderBackendCommandList* commandList = new RenderBackendCommandList(GArena);
         //
         // commandList->BeginDebugLabel();
         // commandList->BeginTimingQuery();
@@ -247,21 +246,9 @@ namespace Horizon
         sceneView.targetHeight = swapChainHeight;
         sceneView.targetTexture = targetTexture;
 
-        gpuProfiler->BeginFrame(commandList);
-        uint32 frameTimingQueryRegion = gpuProfiler->BeginRegion(commandList, "GPU Frametime");
+        engine->GetSubsystem<RenderSystem>()->RenderSceneView(renderer, &sceneView);
 
-        renderer->OnRenderBegin(&sceneView);
-
-        RenderGraph renderGraph(GArena, renderGraphResourcePool, gpuProfiler);
-
-        renderer->Render(renderGraph);
-
-        renderGraph.Execute(*commandList);
-
-        gpuProfiler->EndRegion(frameTimingQueryRegion, commandList);
-        gpuProfiler->EndFrame(commandList);
-
-        //renderer->OnRenderEnd();
+        RenderBackendCommandList* commandList = new RenderBackendCommandList(GArena);
 
         RenderBackendTextureHandle swapChainTexture = renderBackend->GetActiveSwapChainBuffer(swapChain);
 
@@ -293,6 +280,8 @@ namespace Horizon
         }
 
         renderBackend->SubmitCommandLists(&commandList, 1, swapChain);
+
+        delete commandList;
 
 //
 //        renderEngine->EndDrawUI();

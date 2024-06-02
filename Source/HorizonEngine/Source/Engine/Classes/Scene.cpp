@@ -18,7 +18,7 @@ namespace Horizon
         // entityManager->OnDestroy<RigidBodyComponent>().connect<&Scene::OnRigidBodyComponentDestroy>(this);
 
         //physicsScene = new PhysicsScene();
-        // renderEngine = new RenderEngine();
+        renderScene = new RenderScene();
     }
 
     Scene::~Scene()
