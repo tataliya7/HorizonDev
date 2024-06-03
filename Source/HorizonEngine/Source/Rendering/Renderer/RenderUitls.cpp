@@ -46,22 +46,27 @@ namespace Horizon
 
         RenderPreIntegratedBrdfLut(shaderLibrary, commandList, preIntegratedBrdfLut);
 
-        RenderBackendSamplerDesc globalSamplerLinearWarpDesc = RenderBackendSamplerDesc::CreateLinearWarp(0.0f, -std::numeric_limits<float>::max(), std::numeric_limits<float>::max(), 1);
-        globalSamplerLinearWarp = renderBackend->CreateSampler(&globalSamplerLinearWarpDesc, "GlobalSamplerLinearWarp");
-        RenderBackendSamplerDesc globalSamplerLinearClampDesc = RenderBackendSamplerDesc::CreateLinearClamp(0.0f, -std::numeric_limits<float>::max(), std::numeric_limits<float>::max(), 1);
-        globalSamplerLinearClamp = renderBackend->CreateSampler(&globalSamplerLinearClampDesc, "GlobalSamplerLinearClamp");
-        RenderBackendSamplerDesc globalSamplerLinearBorderDesc = RenderBackendSamplerDesc::CreateLinearBorder(0.0f, -std::numeric_limits<float>::max(), std::numeric_limits<float>::max(), 1);
-        globalSamplerLinearBorder = renderBackend->CreateSampler(&globalSamplerLinearBorderDesc, "GlobalSamplerLinearBorder");
-        RenderBackendSamplerDesc globalSamplerPointWarpDesc = RenderBackendSamplerDesc::CreatePointWarp(0.0f, -std::numeric_limits<float>::max(), std::numeric_limits<float>::max(), 1);
-        globalSamplerPointWarp = renderBackend->CreateSampler(&globalSamplerPointWarpDesc, "GlobalSamplerPointWarp");
-        RenderBackendSamplerDesc globalSamplerPointClampDesc = RenderBackendSamplerDesc::CreatePointClamp(0.0f, -std::numeric_limits<float>::max(), std::numeric_limits<float>::max(), 1);
-        globalSamplerPointClamp = renderBackend->CreateSampler(&globalSamplerPointClampDesc, "GlobalSamplerPointClamp");
-        RenderBackendSamplerDesc globalSamplerPointBorderDesc = RenderBackendSamplerDesc::CreatePointBorder(0.0f, -std::numeric_limits<float>::max(), std::numeric_limits<float>::max(), 1);
-        globalSamplerPointBorder = renderBackend->CreateSampler(&globalSamplerPointBorderDesc, "GlobalSamplerPointBorder");
-        RenderBackendSamplerDesc globalSamplerComparisonGreaterLinearClampDesc = RenderBackendSamplerDesc::CreateComparisonLinearClamp(0.0f, -std::numeric_limits<float>::max(), std::numeric_limits<float>::max(), 1, RenderBackendCompareOp::Greater);
-        globalSamplerComparisonGreaterLinearClamp = renderBackend->CreateSampler(&globalSamplerComparisonGreaterLinearClampDesc, "GlobalSamplerComparisonGreaterLinearClamp");
-        RenderBackendSamplerDesc globalSamplerComparisonLessLinearClampDesc = RenderBackendSamplerDesc::CreateComparisonLinearClamp(0.0f, -std::numeric_limits<float>::max(), std::numeric_limits<float>::max(), 1, RenderBackendCompareOp::Less);
-        globalSamplerComparisonLessLinearClamp = renderBackend->CreateSampler(&globalSamplerComparisonLessLinearClampDesc, "GlobalSamplerComparisonLessLinearClamp");
+        // TODO: refactor this
+        {
+            RenderBackendSamplerDesc globalSamplerPointWarpDesc = RenderBackendSamplerDesc::CreatePointWarp(0.0f, -std::numeric_limits<float>::max(), std::numeric_limits<float>::max(), 1);
+            globalSamplerPointWarp = renderBackend->CreateSampler(&globalSamplerPointWarpDesc, "GlobalSamplerPointWarp");
+            RenderBackendSamplerDesc globalSamplerPointClampDesc = RenderBackendSamplerDesc::CreatePointClamp(0.0f, -std::numeric_limits<float>::max(), std::numeric_limits<float>::max(), 1);
+            globalSamplerPointClamp = renderBackend->CreateSampler(&globalSamplerPointClampDesc, "GlobalSamplerPointClamp");
+            RenderBackendSamplerDesc globalSamplerPointBorderDesc = RenderBackendSamplerDesc::CreatePointBorder(0.0f, -std::numeric_limits<float>::max(), std::numeric_limits<float>::max(), 1);
+            globalSamplerPointBorder = renderBackend->CreateSampler(&globalSamplerPointBorderDesc, "GlobalSamplerPointBorder");
+
+            RenderBackendSamplerDesc globalSamplerLinearWarpDesc = RenderBackendSamplerDesc::CreateLinearWarp(0.0f, -std::numeric_limits<float>::max(), std::numeric_limits<float>::max(), 1);
+            globalSamplerLinearWarp = renderBackend->CreateSampler(&globalSamplerLinearWarpDesc, "GlobalSamplerLinearWarp");
+            RenderBackendSamplerDesc globalSamplerLinearClampDesc = RenderBackendSamplerDesc::CreateLinearClamp(0.0f, -std::numeric_limits<float>::max(), std::numeric_limits<float>::max(), 1);
+            globalSamplerLinearClamp = renderBackend->CreateSampler(&globalSamplerLinearClampDesc, "GlobalSamplerLinearClamp");
+            RenderBackendSamplerDesc globalSamplerLinearBorderDesc = RenderBackendSamplerDesc::CreateLinearBorder(0.0f, -std::numeric_limits<float>::max(), std::numeric_limits<float>::max(), 1);
+            globalSamplerLinearBorder = renderBackend->CreateSampler(&globalSamplerLinearBorderDesc, "GlobalSamplerLinearBorder");
+
+            RenderBackendSamplerDesc globalSamplerComparisonGreaterLinearClampDesc = RenderBackendSamplerDesc::CreateComparisonLinearClamp(0.0f, -std::numeric_limits<float>::max(), std::numeric_limits<float>::max(), 1, RenderBackendCompareOp::Greater);
+            globalSamplerComparisonGreaterLinearClamp = renderBackend->CreateSampler(&globalSamplerComparisonGreaterLinearClampDesc, "GlobalSamplerComparisonGreaterLinearClamp");
+            RenderBackendSamplerDesc globalSamplerComparisonLessLinearClampDesc = RenderBackendSamplerDesc::CreateComparisonLinearClamp(0.0f, -std::numeric_limits<float>::max(), std::numeric_limits<float>::max(), 1, RenderBackendCompareOp::Less);
+            globalSamplerComparisonLessLinearClamp = renderBackend->CreateSampler(&globalSamplerComparisonLessLinearClampDesc, "GlobalSamplerComparisonLessLinearClamp");
+        }
 
         initialized = true;
     }

@@ -16,7 +16,7 @@ struct GPUSceneGeometryData
 
 GPUSceneGeometryData GetGPUSceneGeometryData(ByteAddressBuffer geometryDataBuffer, uint geometryID)
 {
-	GPUSceneGeometryData geometryData = (GPUSceneGeometryData)0;
+    GPUSceneGeometryData geometryData = (GPUSceneGeometryData)0;
 
     uint offset = geometryID * sizeof(GPUSceneGeometryData);
     geometryData = geometryDataBuffer.Load<GPUSceneGeometryData>(offset);
@@ -35,7 +35,7 @@ struct GPUSceneGeometryInstanceData
 
 GPUSceneGeometryInstanceData GetGPUSceneGeometryInstanceData(ByteAddressBuffer geometryInstanceDataBuffer, uint instanceID)
 {
-	GPUSceneGeometryInstanceData instanceData = (GPUSceneGeometryInstanceData)0;
+    GPUSceneGeometryInstanceData instanceData = (GPUSceneGeometryInstanceData)0;
 
     uint offset = instanceID * sizeof(GPUSceneGeometryInstanceData);
     instanceData = geometryInstanceDataBuffer.Load<GPUSceneGeometryInstanceData>(offset);

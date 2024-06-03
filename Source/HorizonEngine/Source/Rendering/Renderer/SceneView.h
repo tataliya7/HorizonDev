@@ -52,10 +52,11 @@ namespace Horizon
             // TODO: refactor this
             // TODO: make it constexpr
             static Quaternion zUpQuat = glm::rotate(Quaternion(), Math::DegreesToRadians(90.0), Vector3(1.0, 0.0, 0.0));
-            zUpQuat = Quaternion();
+
+            Quaternion cameraOrientation = Math::QuaternionFromEulerAngles(Math::DegreesToRadians(rotation));
 
             // TODO: calculate worldToViewMatrix first
-            viewToWorldMatrix = Math::ComposeTransformMatrix(position, rotation * zUpQuat, Vector3(1.0f, 1.0f, 1.0f));
+            viewToWorldMatrix = Math::ComposeTransformMatrix(position, cameraOrientation * zUpQuat, Vector3(1.0f, 1.0f, 1.0f));
             worldToViewMatrix = Math::InverseMatrix(viewToWorldMatrix);
 
             viewToClipMatrix = Math::PerspectiveReverseZ_RH_ZO(Math::DegreesToRadians(fieldOfView), aspectRatio, nearClippingPlane, farClippingPlane);

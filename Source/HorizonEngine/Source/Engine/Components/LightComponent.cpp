@@ -8,11 +8,13 @@ namespace Horizon
         if (true)
         {
             LightRenderObjectDescription description;
-            description.color = color * luminousIntensity;
+            description.color = GetPhysicalLightColor();
             description.position = Vector3(0.0f, 0.0f, 0.0f);
             description.direction = forwardVec;
             description.castRayTracingShadows = castShadows;
             description.usedAsAtmosphericLight = usedAsAtmosphericLight;
+            description.halfApexAngleInRadians = GetHalfApexAngleInRadians();
+            description.atmosphericLightDiskColorFactor = atmosphericLightDiskColorFactor;
 
             renderObject = new LightRenderObject(description);
             scene->AddLight(renderObject);

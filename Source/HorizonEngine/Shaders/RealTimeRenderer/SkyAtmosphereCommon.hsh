@@ -139,10 +139,10 @@ float AerialPerspectiveDepthToSlice(float depth)
 float2 RaySphereIntersect(float3 r0, float3 rd, float3 s0, float sR)
 {
     float a = dot(rd, rd);
-	float3 s0_r0 = r0 - s0;
-	float b = 2.0f * dot(rd, s0_r0);
-	float c = dot(s0_r0, s0_r0) - (sR * sR);
-	float delta = b * b - 4.0f * a * c;
+    float3 s0_r0 = r0 - s0;
+    float b = 2.0f * dot(rd, s0_r0);
+    float c = dot(s0_r0, s0_r0) - (sR * sR);
+    float delta = b * b - 4.0f * a * c;
     float2 sol = -1.0f;
     [flatten]
     if (delta >= 0)
@@ -161,30 +161,30 @@ float2 RaySphereIntersect(float3 r0, float3 rd, float3 s0, float sR)
 float RaySphereIntersectNearest(float3 r0, float3 rd, float3 s0, float sR)
 {
 #if 0
-	float a = dot(rd, rd);
-	float3 s0_r0 = r0 - s0;
-	float b = 2.0f * dot(rd, s0_r0);
-	float c = dot(s0_r0, s0_r0) - (sR * sR);
-	float delta = b * b - 4.0f * a * c;
-	if (delta < 0.0f || a == 0.0f)
-	{
-		return -1.0f;
-	}
-	float sol0 = (-b - sqrt(delta)) / (2.0f * a);
-	float sol1 = (-b + sqrt(delta)) / (2.0f * a);
-	if (sol0 < 0.0f && sol1 < 0.0f)
-	{
-		return -1.0f;
-	}
-	if (sol0 < 0.0f)
-	{
-		return max(0.0f, sol1);
-	}
-	else if (sol1 < 0.0f)
-	{
-		return max(0.0f, sol0);
-	}
-	return max(0.0f, min(sol0, sol1));
+    float a = dot(rd, rd);
+    float3 s0_r0 = r0 - s0;
+    float b = 2.0f * dot(rd, s0_r0);
+    float c = dot(s0_r0, s0_r0) - (sR * sR);
+    float delta = b * b - 4.0f * a * c;
+    if (delta < 0.0f || a == 0.0f)
+    {
+        return -1.0f;
+    }
+    float sol0 = (-b - sqrt(delta)) / (2.0f * a);
+    float sol1 = (-b + sqrt(delta)) / (2.0f * a);
+    if (sol0 < 0.0f && sol1 < 0.0f)
+    {
+        return -1.0f;
+    }
+    if (sol0 < 0.0f)
+    {
+        return max(0.0f, sol1);
+    }
+    else if (sol1 < 0.0f)
+    {
+        return max(0.0f, sol0);
+    }
+    return max(0.0f, min(sol0, sol1));
 #else
     float2 sol = RaySphereIntersect(r0, rd, s0, sR);
     float sol0 = sol.x;
@@ -569,7 +569,7 @@ SingleScatteringResult IntegrateSingleScatteredLuminance(
         OpticalDepth += SampleOpticalDepth;
 
         const float3 UpVector = P / PHeight;
-        float LightZenithCosAngle = dot(LightDirection, UpVector);
+        float LightZenithCosAngle = dot(wi, UpVector);
 
 #if SAMPLE_TRANSMITTANCE_LUT
         float3 TransmittanceToLight = GetTransmittance(TransmittanceLutTexture, PHeight, LightZenithCosAngle, Atmosphere.bottomRadius, Atmosphere.topRadius);
@@ -594,7 +594,7 @@ SingleScatteringResult IntegrateSingleScatteredLuminance(
 #endif
 
         // Planet shadow
-        float tPlant = RaySphereIntersectNearest(P, LightDirection, PlanetCenter + PLANET_RADIUS_OFFSET * UpVector, Atmosphere.bottomRadius);
+        float tPlant = RaySphereIntersectNearest(P, wi, PlanetCenter + PLANET_RADIUS_OFFSET * UpVector, Atmosphere.bottomRadius);
         float PlanetShadow = (tPlant >= 0.0f) ? 0.0f : 1.0f;
         float shadow = 1.0f;
 // #if SHADOWMAP_ENABLED
@@ -639,14 +639,14 @@ SingleScatteringResult IntegrateSingleScatteredLuminance(
         float PHeight = length(P);
 
         const float3 UpVector = P / PHeight;
-        float LightZenithCosAngle = dot(LightDirection, UpVector);
+        float LightZenithCosAngle = dot(wi, UpVector);
 
 #if SAMPLE_TRANSMITTANCE_LUT
         float3 TransmittanceToLight = GetTransmittance(TransmittanceLutTexture, PHeight, LightZenithCosAngle, Atmosphere.bottomRadius, Atmosphere.topRadius);
 #else
         float3 TransmittanceToLight = 1.0f;
 #endif
-        const float NdotL = saturate(dot(UpVector, LightDirection));
+        const float NdotL = saturate(dot(UpVector, wi));
         L += LightIlluminance * TransmittanceToLight * Throughput * NdotL * Atmosphere.groundAlbedo.rgb / PI;
     }
 

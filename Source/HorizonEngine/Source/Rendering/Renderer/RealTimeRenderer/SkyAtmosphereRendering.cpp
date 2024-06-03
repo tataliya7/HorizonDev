@@ -72,20 +72,20 @@ namespace Horizon
 
         Vector3 planetCenterToCameraPositionKm = (worldSpaceCameraPosition - worldSpacePlanetCenter) * MetersToKilometers;
 
-        Vector3 upVector = Math::Normalize(planetCenterToCameraPositionKm);
         Vector3 forwardVector = cameraForwardVector;
-        Vector3 leftVector = Math::Normalize(Math::CrossProduct(forwardVector, upVector));
+        Vector3 upVector = Math::Normalize(planetCenterToCameraPositionKm);
+        Vector3 rightVector = Math::Normalize(Math::CrossProduct(forwardVector, upVector));
 
         if (std::abs(Math::DotProduct(upVector, forwardVector)) > 0.999f)
         {
-            BuildOrthonormalBasisBranchless(upVector, forwardVector, leftVector);
+            BuildOrthonormalBasisBranchless(upVector, forwardVector, rightVector);
         }
         else
         {
-            forwardVector = Math::Normalize(Math::CrossProduct(upVector, leftVector));
+            forwardVector = Math::Normalize(Math::CrossProduct(upVector, rightVector));
         }
 
-        outParameters.skyViewLutReferential = Matrix3x3(forwardVector, leftVector, upVector);
+        outParameters.skyViewLutReferential = Matrix3x3(forwardVector, rightVector, upVector);
     }
 
     bool RealTimeRenderer::IsSkyAtmosphereRenderingEnabled() const

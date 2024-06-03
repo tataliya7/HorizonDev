@@ -48,7 +48,7 @@ namespace Horizon
         float autoExposureHistogramLowerPercentage = 0.0f;
 
         /** The upper percentage of the histogram. Values beyond this threshold will be discarded and won't contribute to the scene average luminance. */
-        float autoExposureHistogramHigherPercentage = 100.0f;
+        float autoExposureHistogramHigherPercentage = 1.0f;
 
         /** Histogram minimum exposure value. This property is expressed in EV100. */
         float autoExposureHistogramMinEV100 = -10.0f;

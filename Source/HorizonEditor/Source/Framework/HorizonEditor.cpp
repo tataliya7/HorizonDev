@@ -120,13 +120,13 @@ namespace Horizon
             {
                 TransformComponent& transformComponent = scene->GetEntityManager()->GetComponent<TransformComponent>(sunLight);
                 //transformComponent.rotation = Vector3(11.0f, -15.0f, 0.0f);
-                transformComponent.rotation = Vector3(11.0f, 6.0f, 0.0f);
+                //transformComponent.rotation = Vector3(0.0f, 0.0f, 0.0f);
 
                 LightComponent& lightComponent = scene->GetEntityManager()->AddComponent<LightComponent>(sunLight);
                 lightComponent.type = LightComponent::LightType::Distant;
                 lightComponent.forwardVec = DefaultLightDirection; //
                 lightComponent.color = Vector3(1.0f, 1.0f, 1.0f);
-                lightComponent.luminousIntensity = 120.0f;
+                lightComponent.luminousIntensity = 120000.0f;
                 lightComponent.apexAngleInDegrees = 0.5357f;
                 lightComponent.castShadows = true;
                 lightComponent.useColorTemperature = true;
@@ -149,12 +149,13 @@ namespace Horizon
             // renderScene->AddSkyAtmosphere(skyAtmosphere);
         }
 
-        editorCamera.position = Vector3(0.0f, 0.0f, 0.0f);
+        editorCamera.position = Vector3(0.0f, 0.0f, 5.0f);
         editorCamera.rotation = Vector3(0.0f, 0.0f, 0.0f);
-        editorCamera.fieldOfView = 90.0f;
-        editorCamera.aspectRatio = (float)swapChainWidth / (float)swapChainHeight;
+        editorCamera.fieldOfView = 60.0f;
+        //editorCamera.aspectRatio = (float)swapChainWidth / (float)swapChainHeight;
+        editorCamera.aspectRatio = 16.0f/9.0f;
         editorCamera.nearClippingPlane = 0.1f;
-        editorCamera.farClippingPlane = 1000.0f;
+        editorCamera.farClippingPlane = 100.0f;
         editorCamera.cameraSpeed = 1.0f;
         editorCamera.overrideAspectRatio = false;
 //
@@ -256,11 +257,11 @@ namespace Horizon
         // commandList->EndTimingQuery();
         // commandList->EndDebugLabel();
 
-        Quaternion quat = Math::QuaternionFromEulerAngles(Math::DegreesToRadians(editorCamera.GetRotation()));
+        Quaternion cameraOrientation = Math::QuaternionFromEulerAngles(Math::DegreesToRadians(editorCamera.GetRotation()));
 
-        Vector3 cameraRightVector   = Math::Normalize(quat * Vector3(1.0f, 0.0f, 0.0f));
-        Vector3 cameraForwardVector = Math::Normalize(quat * Vector3(0.0f, 1.0f, 0.0f));
-        Vector3 cameraUpVector      = Math::Normalize(quat * Vector3(0.0f, 0.0f, 1.0f));
+        Vector3 cameraRightVector   = Math::Normalize(cameraOrientation * Vector3(1.0f, 0.0f, 0.0f));
+        Vector3 cameraForwardVector = Math::Normalize(cameraOrientation * Vector3(0.0f, 1.0f, 0.0f));
+        Vector3 cameraUpVector      = Math::Normalize(cameraOrientation * Vector3(0.0f, 0.0f, 1.0f));
 
         SceneView sceneView;
         sceneView.deltaTimeInSeconds = deltaTimeInSeconds;

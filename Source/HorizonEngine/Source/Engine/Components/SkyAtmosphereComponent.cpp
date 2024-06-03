@@ -11,8 +11,8 @@ namespace Horizon
         // All units in kilometers.
 
         constexpr float earthRadius = 6360.0f;
-        constexpr float earthAtmosphereHeight = 60.0f;
-        //const float earthAtmosphereHeight = 100.0f; // 100km atmosphere radius, less edge visible and it contain 99.99% of the atmosphere medium https://en.wikipedia.org/wiki/K%C3%A1rm%C3%A1n_line
+        //constexpr float earthAtmosphereHeight = 60.0f;
+        constexpr float earthAtmosphereHeight = 100.0f; // 100km atmosphere radius, less edge visible and it contain 99.99% of the atmosphere medium https://en.wikipedia.org/wiki/K%C3%A1rm%C3%A1n_line
         constexpr float earthRayleighScaleHeight = 8.0f;
         constexpr float earthMieScaleHeight = 1.2f;
         //constexpr double maxSunZenithAngle = M_PI * 120.0 / 180.0;
