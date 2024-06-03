@@ -1,3 +1,15 @@
+/*-------------------------------------------------------------------------------------
+ * Physically Based Bloom
+ * Core features:
+ * - Filtering both when downsampling and upsampling
+ * - Non-thresholed
+ * - Anti-fireflies
+ * References:
+ * - https://www.iryoku.com/next-generation-post-processing-in-call-of-duty-advanced-warfare/
+ * - https://www.froyok.fr/blog/2021-12-ue4-custom-bloom/
+ * - https://learnopengl.com/Guest-Articles/2022/Phys.-Based-Bloom
+ *-------------------------------------------------------------------------------------*/
+
 #include "../../ShaderCommon.hsh"
 #include "../RealTimeRendererCommon.hsh"
 #include "PostProcessingCommon.hsh"

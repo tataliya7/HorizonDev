@@ -1,9 +1,18 @@
+/*-------------------------------------------------------------------------------------
+ * Physically Based Bloom
+ * Core features:
+ * - Filtering both when downsampling and upsampling
+ * - Non-thresholed
+ * - Anti-fireflies
+ * References:
+ * - https://www.iryoku.com/next-generation-post-processing-in-call-of-duty-advanced-warfare/
+ * - https://www.froyok.fr/blog/2021-12-ue4-custom-bloom/
+ * - https://learnopengl.com/Guest-Articles/2022/Phys.-Based-Bloom
+ *-------------------------------------------------------------------------------------*/
+
 #include "../../ShaderCommon.hsh"
 #include "../RealTimeRendererCommon.hsh"
 #include "PostProcessingCommon.hsh"
-
-// https://www.froyok.fr/blog/2021-12-ue4-custom-bloom/
-// https://learnopengl.com/Guest-Articles/2022/Phys.-Based-Bloom
 
 BIND_BYTE_ADDRESS_BUFFER_SRV(0, PerFrameDataBuffer);
 BIND_TEXTURE_2D_SRV(1, InputTexture);
@@ -49,7 +58,7 @@ static const float GaussianBloomDownsampleWeights[13] = {
     0.0555555f,
     0.0555555f
 };
-#else
+#else // COD_METHOD == 1
 static const float GaussianBloomDownsampleWeights[13] = {
     0.125f,
     0.125f,

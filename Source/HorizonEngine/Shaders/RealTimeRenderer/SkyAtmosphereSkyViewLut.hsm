@@ -1,8 +1,8 @@
-/*
+/*-------------------------------------------------------------------------------------
  * A Scalable and Production Ready Sky and Atmosphere Rendering Technique
  * Paper: https://sebh.github.io/publications/egsr2020.pdf
  * Source Code: https://github.com/sebh/UnrealEngineSkyAtmosphere
- */
+ *-------------------------------------------------------------------------------------*/
 
 /*-------------------------------------------------------------------------------------
  * MIT License
