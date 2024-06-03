@@ -91,8 +91,8 @@ namespace HE
 
     struct ShaderCompilerSettings
     {
-        bool generateDebugInfo = false;
-        bool skipOptimization = false;
+        bool generateDebugInfo = true;
+        bool skipOptimization = true;
         bool warningAreErrors = false;
         bool enable16BitTypes = false;
         ShaderOptimizationLevel optimizationLevel = ShaderOptimizationLevel::O3;
