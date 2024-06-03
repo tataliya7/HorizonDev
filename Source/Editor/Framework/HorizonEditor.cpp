@@ -506,8 +506,8 @@ namespace HE
         USDImportSettings settings = {};
         settings.importMeshes = true;
         settings.importMaterials = true;
-        USDImport("../../../Assets/NewSponza/NewSponza.usdc", &settings, false);
-        //USDImport("../../../Assets/Test/Sponza/sponza.usdc", &settings, false);
+        //USDImport("../../../Assets/NewSponza/NewSponza.usdc", &settings, false);
+        USDImport("../../../Assets/Test/Sponza/sponza.usdc", &settings, false);
 
         auto& renderPipelineSettings = ((RenderSystem*)renderEngine)->GetRealTimeRendererSettings_Deprecated();
         renderPipelineSettings.indirectLightingIntensity = 1000.0f;
