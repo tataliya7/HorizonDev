@@ -17,7 +17,7 @@ namespace Horizon
         /** Number of generated mip level count. */
         uint32 mipCount = 0;
 
-        /** 1/1, 1/2, 1/4, 1/8 */
+        /** 1/2, 1/4, 1/8, 1/16 */
         RenderGraphTextureHandle textures[MaxMipCount] = {};
     };
 }

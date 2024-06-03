@@ -93,7 +93,7 @@ void ToneMappingCS(uint3 DispatchThreadID : SV_DispatchThreadID)
     //     bloomColor.rgb = bloomColor.rgb * (1.0f + lensDirtColor);
     // }
     float bloomMask = perFrameParameters.bloomIntensity * 0.1f;
-    //hdrColor.rgb = lerp(hdrColor.rgb, bloomColor.rgb, bloomMask);
+    hdrColor.rgb = lerp(hdrColor.rgb, bloomColor.rgb, bloomMask);
     hdrColor.rgb = hdrColor.rgb * (oneOverPreExposure * exposure);
 
 // #if 1

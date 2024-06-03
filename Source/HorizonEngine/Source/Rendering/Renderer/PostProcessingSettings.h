@@ -57,10 +57,10 @@ namespace Horizon
         float autoExposureHistogramMaxEV100 = 20.0f;
 
         /** Overall intensity of the bloom effect. */
-        float bloomIntensity;
+        float bloomIntensity = 1.0f;
 
         /** The radius of the bloom effect, controls how far the bloom extends out from the highlight. */
-        float bloomRadius;
+        float bloomRadius = 0.5f;
 
         /** The strength of the Chromatic Aberration effect. */
         float chromaticAberrationIntensity = 0.0f;

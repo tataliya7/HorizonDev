@@ -44,8 +44,6 @@ namespace Horizon
             RenderBackendTextureCreateFlags::UnorderedAccess | RenderBackendTextureCreateFlags::ShaderResource);
         preIntegratedBrdfLut = renderBackend->CreateTexture(&preIntegratedBrdfLutDesc, nullptr, "PreIntegratedBrdfLut");
 
-        RenderPreIntegratedBrdfLut(shaderLibrary, commandList, preIntegratedBrdfLut);
-
         // TODO: refactor this
         {
             RenderBackendSamplerDesc globalSamplerPointWarpDesc = RenderBackendSamplerDesc::CreatePointWarp(0.0f, -std::numeric_limits<float>::max(), std::numeric_limits<float>::max(), 1);
@@ -67,6 +65,8 @@ namespace Horizon
             RenderBackendSamplerDesc globalSamplerComparisonLessLinearClampDesc = RenderBackendSamplerDesc::CreateComparisonLinearClamp(0.0f, -std::numeric_limits<float>::max(), std::numeric_limits<float>::max(), 1, RenderBackendCompareOp::Less);
             globalSamplerComparisonLessLinearClamp = renderBackend->CreateSampler(&globalSamplerComparisonLessLinearClampDesc, "GlobalSamplerComparisonLessLinearClamp");
         }
+
+        RenderPreIntegratedBrdfLut(shaderLibrary, commandList, preIntegratedBrdfLut);
 
         initialized = true;
     }

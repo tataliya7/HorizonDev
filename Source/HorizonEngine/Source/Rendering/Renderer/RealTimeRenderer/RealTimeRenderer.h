@@ -164,7 +164,7 @@ namespace Horizon
 
     private:
 
-        void UpdatePerFrameDataBuffer() const;
+        void UpdatePerFrameDataBuffer();
 
         // bool ShouldApplyCameraJittering() const
         // {
@@ -444,10 +444,10 @@ namespace Horizon
 
         struct AutoExposureData
         {
-            float adaptedExposure;
-            float targetExposure;
-            float exposureCompensation;
-            float averageSceneLuminance;
+            float adaptedExposure = 1.0f;
+            float targetExposure = 1.0f;
+            float exposureCompensation = 0.0f;
+            float averageSceneLuminance = 0.0f;
         };
         static const int32 NumAutoExposureReadbackBuffers = 4;
         int32 currentAutoExposureReadbackBufferIndex = 0;

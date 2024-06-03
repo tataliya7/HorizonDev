@@ -57,10 +57,7 @@ namespace Horizon
         uint32 inputTextureWidth = targetResolution.width;
         uint32 inputTextureHeight = targetResolution.height;
 
-        outMipChain->textures[0] = sceneColorTexture;
-        outMipChain->mipCount = 1;
-
-        for (uint32 passIndex = 1; passIndex < PostProcessingSceneColorMipChain::MaxMipCount; passIndex++)
+        for (uint32 passIndex = 0; passIndex < PostProcessingSceneColorMipChain::MaxMipCount; passIndex++)
         {
             RenderGraphTextureDesc outputTextureDesc = RenderGraphTextureDesc::Create2D(
                 inputTextureWidth / 2,

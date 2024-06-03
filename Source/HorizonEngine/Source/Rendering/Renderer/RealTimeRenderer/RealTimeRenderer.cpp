@@ -313,7 +313,7 @@ namespace Horizon
         UpdatePerFrameDataBuffer();
     }
 
-    void RealTimeRenderer::UpdatePerFrameDataBuffer() const
+    void RealTimeRenderer::UpdatePerFrameDataBuffer()
     {
         const SceneView& view = *sceneView;
         const RenderSettings& renderSettings = view.renderSettings;
@@ -368,9 +368,16 @@ namespace Horizon
 
             perFrameShaderParameters.materialTextureMipLodBias = materialTextureMipLodBias;
 
+            UpdateAutoExposureDataFromReadbackBuffer();
+
+            preExposure = autoExposureData.adaptedExposure;
+
             perFrameShaderParameters.preExposure = preExposure;
             perFrameShaderParameters.oneOverPreExposure = 1.0f / preExposure;
             perFrameShaderParameters.preExposureCorrection = preExposure / historyFrame.preExposure;
+
+            // TODO: move this to other place?
+            historyFrame.preExposure = preExposure;
 
             perFrameShaderParameters.indirectLightingMultiplier = renderSettings.globalIlluminationSettings.indirectLightingIntensity * renderSettings.globalIlluminationSettings.indirectLightingColor;
 

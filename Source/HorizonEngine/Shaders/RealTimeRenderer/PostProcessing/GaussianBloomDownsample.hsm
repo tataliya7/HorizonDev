@@ -5,8 +5,9 @@
 // https://www.froyok.fr/blog/2021-12-ue4-custom-bloom/
 // https://learnopengl.com/Guest-Articles/2022/Phys.-Based-Bloom
 
-BIND_TEXTURE_2D_SRV(0, InputTexture);
-BIND_TEXTURE_2D_UAV(1, float3, OutputTexture);
+BIND_BYTE_ADDRESS_BUFFER_SRV(0, PerFrameDataBuffer);
+BIND_TEXTURE_2D_SRV(1, InputTexture);
+BIND_TEXTURE_2D_UAV(2, float3, OutputTexture);
 
 // 4  x  5  x  6
 // x  0  x  1  x
@@ -76,6 +77,8 @@ float KarisAverage(float3 color)
 [numthreads(POST_PROCESSING_THREAD_GROUP_SIZE_X, POST_PROCESSING_THREAD_GROUP_SIZE_Y, 1)]
 void GaussianBloomDownsampleCS(uint3 DispatchThreadID : SV_DispatchThreadID)
 {
+    ByteAddressBuffer perFrameDataBuffer = GetPerFrameDataBufferSRV();
+    PerFrameShaderParameters perFrameParameters = perFrameDataBuffer.Load<PerFrameShaderParameters>(0);
     Texture2D inputTexture = GetInputTextureSRV();
     RWTexture2D<float3> outputTexture = GetOutputTextureUAV();
 
@@ -89,6 +92,10 @@ void GaussianBloomDownsampleCS(uint3 DispatchThreadID : SV_DispatchThreadID)
     float2 uv = (pixelCoord + 0.5f) * outputTextureInvSize;
 
     float3 color = 0.0f;
+
+    // TODO: Apply pre-exposure
+    // float preExposure = perFrameParameters.preExposure;
+    // float oneOverPreExposure = perFrameParameters.oneOverPreExposure;
 
 #if COD_METHOD == 0
     [unroll]

@@ -17,7 +17,7 @@ namespace Horizon
         RenderGraphBufferHandle previousAutoExposureBuffer = renderGraph.ImportExternalBuffer(historyFrame.autoExposureBuffer, "PreviousAutoExposureBuffer");
         RenderGraphBufferHandle autoExposureBuffer = previousAutoExposureBuffer;
 
-        const bool generateSceneColorMipChain = IsBloomEnabled();
+        const bool shouldRenderSceneColorPyramid = IsBloomEnabled();
 
 #if HORIZON_EDITOR
         const bool isEditorSelectionOutlineEnabled = true;
@@ -55,7 +55,7 @@ namespace Horizon
 
         //sceneColorTexture = renderGraph.ImportExternalTexture(localExposureTestTexture, localExposureTestTextureDesc, RenderBackendResourceState::ShaderResource, "Test");
         PostProcessingSceneColorMipChain sceneColorMipChain;
-        if (false)
+        if (shouldRenderSceneColorPyramid)
         {
             RenderSceneColorPyramid(renderGraph, view, sceneColorTexture, &sceneColorMipChain);
         }

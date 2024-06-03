@@ -53,11 +53,11 @@ float ComputeAverageSceneLuminance(Texture2D<uint> histogramTexture, float lowPe
     return exp2(averageLogLuminance);
 }
 
-float InterpolateExposure(float srcExposure, float dstExposure, float deltaTimeInSeconds, float speedDarkToBright, float speedBrightToDark)
+float InterpolateExposure(float srcExposure, float dstExposure, float deltaTimeInMilliseconds, float speedDarkToBright, float speedBrightToDark)
 {
     float delta = dstExposure - srcExposure;
     float speed = (delta > 0.0f) ? speedBrightToDark : speedDarkToBright;
-    float exposure = srcExposure + delta * (1.0f - exp2(-deltaTimeInSeconds * 1000.0f * speed)); // Exponential decay
+    float exposure = srcExposure + delta * (1.0f - exp2(-deltaTimeInMilliseconds * speed)); // Exponential decay
     return exposure;
 }
 
@@ -96,9 +96,10 @@ void AutoExposureComputeExposureCS(uint3 DispatchThreadID : SV_DispatchThreadID)
     float adaptedExposure = targetExposure;
     if (!useTargetExposure)
     {
+        // TODO: Initialize previousAutoExposureBuffer with some default values.
         float sourceExposure = previousAutoExposureBuffer.Load<float>(0);
         sourceExposure = exposureCompensation / (sourceExposure != 0.0f ? sourceExposure : 1.0f);
-        adaptedExposure = InterpolateExposure(sourceExposure, targetExposure, deltaTimeInSeconds, speedDarkToBright, speedBrightToDark);
+        adaptedExposure = InterpolateExposure(sourceExposure, targetExposure, deltaTimeInSeconds * 1000.0f, speedDarkToBright, speedBrightToDark);
         adaptedExposure = clamp(adaptedExposure, minExposure, maxExposure);
     }
 

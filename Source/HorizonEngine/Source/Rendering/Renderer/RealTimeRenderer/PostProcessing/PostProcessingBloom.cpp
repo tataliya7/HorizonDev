@@ -62,13 +62,15 @@ namespace Horizon
                             uint32 threadGroupCountZ = 1;
 
                             RenderBackendShaderArguments shaderArguments = {};
-                            shaderArguments.BindTextureSRV(0, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(inputTexture)));
-                            shaderArguments.BindTextureUAV(1, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(outputTexture), 0));
+                            shaderArguments.BindBuffer(0, this->GetCurrentPerFrameDataBuffer());
+                            shaderArguments.BindTextureSRV(1, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(inputTexture)));
+                            shaderArguments.BindTextureUAV(2, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(outputTexture), 0));
                             shaderArguments.PushConstants(0, 1.0f / (float)outputTextureWidth);
                             shaderArguments.PushConstants(1, 1.0f / (float)outputTextureHeight);
                             shaderArguments.PushConstants(2, useKarisAverage ? 1.0f : 0.0f);
 
                             RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::GaussianBloomDownsample);
+
                             commandList.Dispatch(
                                 computeShader,
                                 shaderArguments,
@@ -117,13 +119,15 @@ namespace Horizon
                             uint32 threadGroupCountZ = 1;
 
                             RenderBackendShaderArguments shaderArguments = {};
-                            shaderArguments.BindTextureSRV(0, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(downsampledInputTexture)));
-                            shaderArguments.BindTextureSRV(1, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(lowResolutionInputTexture)));
-                            shaderArguments.BindTextureUAV(2, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(outputTexture), 0));
+                            shaderArguments.BindBuffer(0, this->GetCurrentPerFrameDataBuffer());
+                            shaderArguments.BindTextureSRV(1, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(downsampledInputTexture)));
+                            shaderArguments.BindTextureSRV(2, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(lowResolutionInputTexture)));
+                            shaderArguments.BindTextureUAV(3, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(outputTexture), 0));
                             shaderArguments.PushConstants(0, 1.0f / (float)outputTextureWidth);
                             shaderArguments.PushConstants(1, 1.0f / (float)outputTextureHeight);
 
                             RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::GaussianBloomUpsample);
+
                             commandList.Dispatch(
                                 computeShader,
                                 shaderArguments,
