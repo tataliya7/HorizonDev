@@ -84,7 +84,7 @@ float3 GetLightDiskLuminance(
     const float3 atmosphericLightDiskLuminance = perFrameParameters.atmosphericLightDiskLuminance;
     const float atmosphericLightDiskCosHalfApexAngle = perFrameParameters.atmosphericLightDiskCosHalfApexAngle;
     const float preExposure = perFrameParameters.preExposure;
-    const float viewDotLight = dot(worldDir, atmosphericLightDirection);
+    const float viewDotLight = dot(worldDir, -atmosphericLightDirection);
     const float cosHalfApex = atmosphericLightDiskCosHalfApexAngle;
     if (viewDotLight > cosHalfApex)
     {
@@ -139,12 +139,11 @@ void SkyAtmosphereRayMarchingPS(float4 position : SV_Position, out float4 outLum
     float3 worldSpaceCameraPositionKm = worldSpaceCameraPosition * M_TO_KM;
     float3 worldPos = worldSpaceCameraPositionKm - float3(0.0f, 0.0f, -skyAtmosphereParameters.bottomRadius);
     float3 worldDir = normalize(worldSpacePixelPosition - worldSpaceCameraPosition);
-    float3 skyLuminanceFactor = 1.0f;
+    float3 skyLuminanceFactor = perFrameParameters.skyAtmosphereSkyLuminanceFactor;
     float3 preExposedL = 0.0f;
 
     if (deviceDepth == FarClipPlaneDepthValue)
     {
-        skyLuminanceFactor = perFrameParameters.skyAtmosphereSkyLuminanceFactor;
         preExposedL += GetLightDiskLuminance(perFrameParameters, transmittanceLutTexture, worldPos, worldDir, skyAtmosphereParameters.bottomRadius, skyAtmosphereParameters.topRadius);
     }
 
