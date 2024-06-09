@@ -5348,6 +5348,7 @@ namespace Horizon
         VulkanTexture* colorTexture = device->GetTexture(command.color);
         VulkanTexture* depthTexture = device->GetTexture(command.depth);
         VulkanTexture* motionVectorTexture = device->GetTexture(command.motionVectors);
+        VulkanTexture* exposureTexture = device->GetTexture(command.exposure);
 
         auto GetRenderBackendTextureResourceVulkan = [](VulkanTexture* texture, bool uav)
         {
@@ -5369,8 +5370,9 @@ namespace Horizon
         RenderBackendTextureResource color = GetRenderBackendTextureResourceVulkan(colorTexture, false);
         RenderBackendTextureResource depth = GetRenderBackendTextureResourceVulkan(depthTexture, false);
         RenderBackendTextureResource motionVectors = GetRenderBackendTextureResourceVulkan(motionVectorTexture, false);
+        RenderBackendTextureResource exposure = GetRenderBackendTextureResourceVulkan(exposureTexture, false);
 
-        bool succeed = command.callback(static_cast<void*>(commandBuffer), command.context, output, color, depth, motionVectors);
+        bool succeed = command.callback(static_cast<void*>(commandBuffer), command.context, output, color, depth, motionVectors, exposure);
 
         // Restore bindless global descriptor set
         device->BindBindlessDescriptorSets(commandBuffer);

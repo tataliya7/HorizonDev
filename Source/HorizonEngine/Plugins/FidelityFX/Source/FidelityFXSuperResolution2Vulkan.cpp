@@ -12,7 +12,8 @@ namespace Horizon
         const RenderBackendTextureResource& output,
         const RenderBackendTextureResource& color,
         const RenderBackendTextureResource& depth,
-        const RenderBackendTextureResource& motionVectors)
+        const RenderBackendTextureResource& motionVectors,
+        const RenderBackendTextureResource& exposure)
     {
         FidelityFXSuperResolution2* fsr2 = static_cast<FidelityFXSuperResolution2*>(context);
         FidelityFxSuperResolution2State& fsr2State = *fsr2->state;
@@ -54,7 +55,10 @@ namespace Horizon
             fsr2ContextDescription.displaySize.width = targetWidth;
             fsr2ContextDescription.displaySize.height = targetHeight;
 
-            fsr2ContextDescription.flags = FFX_FSR2_ENABLE_HIGH_DYNAMIC_RANGE | FFX_FSR2_ENABLE_DEPTH_INVERTED;// | FFX_FSR2_ENABLE_DEPTH_INFINITE;
+            fsr2ContextDescription.flags |= FFX_FSR2_ENABLE_HIGH_DYNAMIC_RANGE;
+            fsr2ContextDescription.flags |= FFX_FSR2_ENABLE_DEPTH_INVERTED | FFX_FSR2_ENABLE_DEPTH_INFINITE;
+
+            //We never use FSR2's own auto-exposure.
             //fsr2ContextDescription.flags |= enableAutoExposure ? FFX_FSR2_ENABLE_AUTO_EXPOSURE : 0;
 
 #if !HORIZON_CONFIGURATION_RELEASE
@@ -117,7 +121,7 @@ namespace Horizon
             L"FSR2_InputMotionVectors",
             FFX_RESOURCE_STATE_COMPUTE_READ);
 
-        if (true)
+        if (false)
         {
             fsr2DispatchDescription.exposure = ffxGetTextureResourceVK(
                 &fsr2Context,
@@ -130,7 +134,15 @@ namespace Horizon
         }
         else
         {
-            // TODO
+            fsr2DispatchDescription.exposure = ffxGetTextureResourceVK(
+                &fsr2Context,
+                static_cast<VkImage>(exposure.texture),
+                static_cast<VkImageView>(exposure.view),
+                static_cast<uint32_t>(exposure.width),
+                static_cast<uint32_t>(exposure.height),
+                static_cast<VkFormat>(exposure.format),
+                L"FSR2_InputExposure",
+                FFX_RESOURCE_STATE_COMPUTE_READ);
         }
 
         if (true)

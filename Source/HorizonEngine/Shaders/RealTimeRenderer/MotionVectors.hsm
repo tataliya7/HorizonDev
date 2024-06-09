@@ -45,6 +45,7 @@ void MotionVectorsCS(uint3 DispatchThreadID : SV_DispatchThreadID)
     float2 uv = (pixelCoord + 0.5f) * invSize;
     float2 jitteredUV = (pixelCoord + 0.5f + perFrameParameters.cameraJitterOffset) * invSize;
 
+    // TODO: move this to per frame shader paramters
     float2 motionVectorJitterCancellation = perFrameParameters.previousCameraJitterOffset - perFrameParameters.cameraJitterOffset;
     // Transform to screen UV space
     motionVectorJitterCancellation = motionVectorJitterCancellation * invSize;

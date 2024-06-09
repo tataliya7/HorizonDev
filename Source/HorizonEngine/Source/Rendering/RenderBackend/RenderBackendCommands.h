@@ -278,5 +278,6 @@ namespace Horizon
         RenderBackendTextureHandle color;
         RenderBackendTextureHandle depth;
         RenderBackendTextureHandle motionVectors;
+        RenderBackendTextureHandle exposure;
     };
 }

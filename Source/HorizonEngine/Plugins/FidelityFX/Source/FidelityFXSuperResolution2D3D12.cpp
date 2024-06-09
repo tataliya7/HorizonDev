@@ -12,7 +12,8 @@ namespace Horizon
         const RenderBackendTextureResource& output,
         const RenderBackendTextureResource& color,
         const RenderBackendTextureResource& depth,
-        const RenderBackendTextureResource& motionVectors)
+        const RenderBackendTextureResource& motionVectors,
+        const RenderBackendTextureResource& exposure)
     {
         // FfxFsr2ContextDescription& fsr2InitializationParameters = device->fsr2InitializationParameters;
         // FfxFsr2Context& fsr2Context = device->fsr2Context;

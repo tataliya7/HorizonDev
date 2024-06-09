@@ -120,4 +120,44 @@ namespace Horizon
 
         return autoExposureBuffer;
     }
+
+    RenderGraphTextureHandle RealTimeRenderer::AddCopyExposurePass(
+        RenderGraph& renderGraph,
+        const SceneView& view,
+        RenderGraphBufferHandle autoExposureBuffer)
+    {
+        RenderGraphTextureDesc exposureTextureDesc = RenderGraphTextureDesc::Create2D(
+            1,
+            1,
+            RenderBackendTextureFormat::R32Float,
+            RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::UnorderedAccess);
+        RenderGraphTextureHandle exposureTexture = renderGraph.CreateTexture(exposureTextureDesc, "ExposureTexture");
+
+        renderGraph.AddPass(
+            std::format("CopyExposure (Compute, {}x{})", 1, 1),
+            RenderGraphPassFlags::Compute,
+            [&](RenderGraphBuilder& builder)
+            {
+                autoExposureBuffer = builder.ReadBuffer(autoExposureBuffer, RenderBackendResourceState::ShaderResource);
+                exposureTexture = builder.WriteTexture(exposureTexture, RenderBackendResourceState::UnorderedAccess);
+
+                return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
+                {
+                    RenderBackendShaderArguments shaderArguments = {};
+                    shaderArguments.BindBuffer(0, registry.GetRenderBackendBufferHandle(autoExposureBuffer));
+                    shaderArguments.BindTextureUAV(1, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(exposureTexture)));
+
+                    RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::CopyExposure);
+
+                    commandList.Dispatch(
+                        computeShader,
+                        shaderArguments,
+                        1,
+                        1,
+                        1);
+                };
+            });
+
+        return exposureTexture;
+    }
 }

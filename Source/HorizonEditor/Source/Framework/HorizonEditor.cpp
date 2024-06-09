@@ -125,7 +125,7 @@ namespace Horizon
                 lightComponent.type = LightComponent::LightType::Distant;
                 lightComponent.forwardVec = DefaultLightDirection; //
                 lightComponent.color = Vector3(1.0f, 1.0f, 1.0f);
-                lightComponent.luminousIntensity = 120.0f;
+                lightComponent.luminousIntensity = 120000.0f;
                 lightComponent.apexAngleInDegrees = 0.5357f;
                 lightComponent.castShadows = true;
                 lightComponent.useColorTemperature = true;
@@ -154,7 +154,7 @@ namespace Horizon
         //editorCamera.aspectRatio = (float)swapChainWidth / (float)swapChainHeight;
         editorCamera.aspectRatio = 16.0f/9.0f;
         editorCamera.nearClippingPlane = 0.1f;
-        editorCamera.farClippingPlane = 100.0f;
+        editorCamera.farClippingPlane = std::numeric_limits<float>::max();//100.0f;
         editorCamera.cameraSpeed = 1.0f;
         editorCamera.overrideAspectRatio = false;
 //

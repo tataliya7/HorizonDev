@@ -40,6 +40,7 @@ namespace Horizon
         RenderGraphTextureHandle colorTexture;
         RenderGraphTextureHandle depthTexture;
         RenderGraphTextureHandle motionVectorTexture;
+        RenderGraphTextureHandle exposureTexture;
     };
 
     class TemporalSuperSamplingInterface

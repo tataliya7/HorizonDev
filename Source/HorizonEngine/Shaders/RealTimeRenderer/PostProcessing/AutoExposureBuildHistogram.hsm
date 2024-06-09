@@ -1,5 +1,6 @@
 #include "../../ShaderCommon.hsh"
 #include "../RealTimeRendererCommon.hsh"
+#include "PostProcessingCommon.hsh"
 #include "AutoExposureCommon.hsh"
 
 BIND_BYTE_ADDRESS_BUFFER_SRV(0, PerFrameDataBuffer);

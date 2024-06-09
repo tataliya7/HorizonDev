@@ -61,7 +61,14 @@ namespace Horizon
             worldToViewMatrix = glm::transpose(glm::mat4_cast(glm::normalize(cameraOrientation * zUpQuat))) * glm::translate(glm::mat4(1), -position);
             //viewToWorldMatrix = Math::InverseMatrix(worldToViewMatrix);
 
-            viewToClipMatrix = Math::PerspectiveReverseZ_RH_ZO(Math::DegreesToRadians(fieldOfView), aspectRatio, nearClippingPlane, farClippingPlane);
+            if (farClippingPlane == std::numeric_limits<float>::max())
+            {
+                viewToClipMatrix = glm::infinitePerspectiveRH_ZO(Math::DegreesToRadians(fieldOfView), aspectRatio, nearClippingPlane);
+            }
+            else
+            {
+                viewToClipMatrix = glm::perspectiveRH_ZO(Math::DegreesToRadians(fieldOfView), aspectRatio, nearClippingPlane, farClippingPlane);
+            }
             //clipToViewMatrix = Math::InverseMatrix(viewToClipMatrix);
 
             //worldToClipMatrix = viewToClipMatrix * worldToViewMatrix;

@@ -324,6 +324,10 @@ namespace Horizon
             shaderLibrary->LoadShader(ShaderID::AutoExposureComputeExposure, shaderDesc);
         }
         {
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/PostProcessing/CopyExposure.hsm", "CopyExposureCS");
+            shaderLibrary->LoadShader(ShaderID::CopyExposure, shaderDesc);
+        }
+        {
             ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/PostProcessing/DownsampleSceneColor.hsm", "DownsampleSceneColorCS");
             shaderLibrary->LoadShader(ShaderID::ColorPyramidGeneration, shaderDesc);
         }

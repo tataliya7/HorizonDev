@@ -165,6 +165,7 @@ namespace Horizon
                 RenderGraphTextureHandle colorTexture = builder.ReadTexture(dispatchDescription.colorTexture, RenderBackendResourceState::ShaderResource);
                 RenderGraphTextureHandle depthTexture = builder.ReadTexture(dispatchDescription.depthTexture, RenderBackendResourceState::ShaderResource);
                 RenderGraphTextureHandle motionVectorTexture = builder.ReadTexture(dispatchDescription.motionVectorTexture, RenderBackendResourceState::ShaderResource);
+                RenderGraphTextureHandle exposureTexture = builder.ReadTexture(dispatchDescription.exposureTexture, RenderBackendResourceState::ShaderResource);
                 outputTexture = builder.WriteTexture(outputTexture, RenderBackendResourceState::UnorderedAccess);
 
                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
@@ -176,7 +177,7 @@ namespace Horizon
                         registry.GetRenderBackendTextureHandle(colorTexture),
                         registry.GetRenderBackendTextureHandle(depthTexture),
                         registry.GetRenderBackendTextureHandle(motionVectorTexture),
-                        RenderBackendTextureHandle::Null);
+                        registry.GetRenderBackendTextureHandle(exposureTexture));
                 };
             });
 

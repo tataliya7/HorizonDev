@@ -300,6 +300,11 @@ namespace Horizon
             RenderGraphTextureHandle autoExposureHistogramTexture,
             RenderGraphBufferHandle previousAutoExposureBuffer);
 
+        RenderGraphTextureHandle AddCopyExposurePass(
+            RenderGraph& renderGraph,
+            const SceneView& view,
+            RenderGraphBufferHandle autoExposureBuffer);
+
         RenderGraphTextureHandle AddLocalExposurePass(
             RenderGraph& renderGraph,
             const SceneView& view,

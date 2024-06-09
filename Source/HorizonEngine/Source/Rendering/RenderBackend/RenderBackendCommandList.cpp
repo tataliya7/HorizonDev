@@ -413,5 +413,6 @@ namespace Horizon
         command->color = color;
         command->depth = depth;
         command->motionVectors = motionVectors;
+        command->exposure = exposure;
     }
 }

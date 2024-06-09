@@ -38,11 +38,14 @@ namespace Horizon
 
         if (IsSuperResolutionEnabled())
         {
+            RenderGraphTextureHandle exposureTexture = AddCopyExposurePass(renderGraph, view, autoExposureBuffer);
+
             // Currently, only third-party temporal super sampling methods are supported.
             TemporalSuperSamplingDispatchDescription tssDispatchDescription;
             tssDispatchDescription.colorTexture = sceneColorTexture;
             tssDispatchDescription.depthTexture = sceneDepthTexture;
             tssDispatchDescription.motionVectorTexture = motionVectorTexture;
+            tssDispatchDescription.exposureTexture = exposureTexture;
             sceneColorTexture = DispatchCustomTemporalSuperSampling(temporalSuperSamplingInterface, renderGraph, view, tssDispatchDescription);
         }
 

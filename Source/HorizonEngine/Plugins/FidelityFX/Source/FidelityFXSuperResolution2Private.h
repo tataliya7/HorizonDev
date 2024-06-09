@@ -22,7 +22,8 @@ namespace Horizon
         const RenderBackendTextureResource& output,
         const RenderBackendTextureResource& color,
         const RenderBackendTextureResource& depth,
-        const RenderBackendTextureResource& motionVectors);
+        const RenderBackendTextureResource& motionVectors,
+        const RenderBackendTextureResource& exposure);
 
     bool FidelityFXSuperResolution2DispatchVulkan(
         void* commandList,
@@ -30,5 +31,6 @@ namespace Horizon
         const RenderBackendTextureResource& output,
         const RenderBackendTextureResource& color,
         const RenderBackendTextureResource& depth,
-        const RenderBackendTextureResource& motionVectors);
+        const RenderBackendTextureResource& motionVectors,
+        const RenderBackendTextureResource& exposure);
 }

@@ -90,6 +90,7 @@ namespace Horizon
         DepthOfFieldRecombine,
         AutoExposureBuildHistogram,
         AutoExposureComputeExposure,
+        CopyExposure,
         ColorPyramidGeneration,
         GaussianBloomDownsample,
         GaussianBloomUpsample,

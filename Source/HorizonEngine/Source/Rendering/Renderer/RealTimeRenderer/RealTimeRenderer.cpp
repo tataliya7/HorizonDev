@@ -112,10 +112,12 @@ namespace Horizon
             perFrameDataBuffers[index] = renderBackend->CreateBuffer(&perFrameDataBufferDesc, nullptr, "PerFrameDataBuffer");
         }
 
+        AutoExposureData defaultAutoExposureData;
         RenderBackendBufferDesc autoExposureReadbackBufferDesc = RenderBackendBufferDesc::CreateReadback(sizeof(AutoExposureData));
         for (uint32 index = 0; index < NumAutoExposureReadbackBuffers; index++)
         {
-            autoExposureReadbackBuffers[index] = resourcePool->AllocateBuffer(autoExposureReadbackBufferDesc, "AutoExposureReadBackBuffer");
+            RenderBackendBufferHandle autoExposureReadbackBuffer = renderBackend->CreateBuffer(&autoExposureReadbackBufferDesc, &defaultAutoExposureData, "AutoExposureReadBackBuffer");
+            autoExposureReadbackBuffers[index] = resourcePool->CacheBuffer(autoExposureReadbackBuffer, autoExposureReadbackBufferDesc, "AutoExposureReadBackBuffer");
         }
 
         ResetHistoryFrame();
@@ -156,8 +158,10 @@ namespace Horizon
         historyFrame.transformations.Reset();
         historyFrame.preExposure = 1.0f;
 
+        AutoExposureData defaultAutoExposureData;
         RenderBackendBufferDesc autoExposureBufferDesc = RenderBackendBufferDesc::Create(sizeof(AutoExposureData), 1, RenderBackendBufferCreateFlags::ShaderResource | RenderBackendBufferCreateFlags::UnorderedAccess);
-        historyFrame.autoExposureBuffer = resourcePool->AllocateBuffer(autoExposureBufferDesc, "AutoExposureBuffer");
+        RenderBackendBufferHandle autoExposureBuffer = renderBackend->CreateBuffer(&autoExposureBufferDesc, &defaultAutoExposureData, "AutoExposureBuffer");
+        historyFrame.autoExposureBuffer = resourcePool->CacheBuffer(autoExposureBuffer, autoExposureBufferDesc, "AutoExposureBuffer");
     }
 
     bool RealTimeRenderer::IsBloomEnabled() const
