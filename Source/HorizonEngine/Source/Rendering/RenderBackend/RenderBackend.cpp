@@ -15,7 +15,7 @@ namespace Horizon
     const RenderBackendTextureClearValue RenderBackendTextureClearValue::DepthOne  = RenderBackendTextureClearValue(1.0f, 0);
     const RenderBackendTextureClearValue RenderBackendTextureClearValue::DepthZero = RenderBackendTextureClearValue(0.0f, 0);
 
-    const RenderBackendColorBlendAttachmentState AdditveRGB = {
+    const RenderBackendColorBlendAttachmentState RenderBackendColorBlendAttachmentState::AdditiveRGB = {
         .blendEnable = true,
         .srcColorBlendFactor = RenderBackendBlendFactor::One,
         .dstColorBlendFactor = RenderBackendBlendFactor::One,
@@ -26,7 +26,7 @@ namespace Horizon
         .writeMask = RenderBackendColorComponentFlags::RGB,
     };
 
-    const RenderBackendColorBlendAttachmentState AdditveRGBA = {
+    const RenderBackendColorBlendAttachmentState RenderBackendColorBlendAttachmentState::AdditiveRGBA = {
         .blendEnable = true,
         .srcColorBlendFactor = RenderBackendBlendFactor::One,
         .dstColorBlendFactor = RenderBackendBlendFactor::One,
