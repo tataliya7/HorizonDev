@@ -28,8 +28,8 @@ namespace Horizon
     {
         float translationMultiplier               = 1.0f;
         float rotationMultiplier                  = 1.0f;
-        float translationAccelerationRate         = 20000.0f;
-        float rotationAccelerationRate            = 16000.0f;
+        float translationAccelerationRate         = 20.0f;
+        float rotationAccelerationRate            = 16.0f;
         float maxTranslationVelocity              = std::numeric_limits<float>::max();
         float maxRotationVelocity                 = std::numeric_limits<float>::max();
         float minPitchRotation                    = -90.0f;

@@ -194,7 +194,7 @@ namespace Horizon
             return;
         }
 
-        deltaTimeInSeconds = CalculateDeltaTime() / 1000.0f;
+        deltaTimeInSeconds = CalculateDeltaTime();
 
         //
         //            //if (!window->IsFocused())
