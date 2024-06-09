@@ -27,7 +27,6 @@ project "HorizonEngine"
         "Source/Input/**.cpp",
         "Source/Input/**.cppm",
         "Source/Input/**.inl",
-        "Source/Input/**.lua",
 
         "Source/Rendering/**.h",
         "Source/Rendering/**.c",
@@ -42,11 +41,18 @@ project "HorizonEngine"
         "Source/Engine/**.cpp",
         "Source/Engine/**.cppm",
         "Source/Engine/**.inl",
-        "Source/Engine/**.lua",
+
+        "Plugins/FidelityFX/Source/**.h",
+        "Plugins/FidelityFX/Source/**.c",
+        "Plugins/FidelityFX/Source/**.hpp",
+        "Plugins/FidelityFX/Source/**.cpp",
+        "Plugins/FidelityFX/Source/**.cppm",
+        "Plugins/FidelityFX/Source/**.inl",
     }
 
     includedirs {
         enginepath("Source"),
+        enginepath("Plugins/FidelityFX/Source"),
         thirdpartypath("entt/include"),
         thirdpartypath("dxc/dxc_2024_03_22/inc"),
         thirdpartypath("glfw/glfw-3.3.9.bin.WIN64/include"),
@@ -70,3 +76,7 @@ project "HorizonEngine"
     links {
         --thirdpartypath("glfw/glfw-3.3.9.bin.WIN64/lib-vc2022/glfw3.lib"),
     }
+
+-- group "EnginePlugins"
+--     include "Plugins/FidelityFX"
+-- group ""

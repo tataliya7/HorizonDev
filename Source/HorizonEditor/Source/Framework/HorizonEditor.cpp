@@ -72,7 +72,6 @@ namespace Horizon
         RenderDocPluginInit();
 //
 
-
         InitializeEngine();
 
         engine = HorizonEngine::GetInstance();
@@ -126,7 +125,7 @@ namespace Horizon
                 lightComponent.type = LightComponent::LightType::Distant;
                 lightComponent.forwardVec = DefaultLightDirection; //
                 lightComponent.color = Vector3(1.0f, 1.0f, 1.0f);
-                lightComponent.luminousIntensity = 120000.0f;
+                lightComponent.luminousIntensity = 120.0f;
                 lightComponent.apexAngleInDegrees = 0.5357f;
                 lightComponent.castShadows = true;
                 lightComponent.useColorTemperature = true;
@@ -264,6 +263,7 @@ namespace Horizon
         Vector3 cameraUpVector      = Math::Normalize(cameraOrientation * Vector3(0.0f, 0.0f, 1.0f));
 
         SceneView sceneView;
+        sceneView.frameIndex = frameIndex;
         sceneView.deltaTimeInSeconds = deltaTimeInSeconds;
         sceneView.scene = editorSceneManager->GetActiveScene()->GetRenderScene();
         sceneView.renderSettings = renderSettings;
@@ -349,6 +349,8 @@ namespace Horizon
         //            GArena->Reset();
         //
         //            frameCounter++;
+
+        frameIndex++;
     }
 
     int HorizonEditor::Run()

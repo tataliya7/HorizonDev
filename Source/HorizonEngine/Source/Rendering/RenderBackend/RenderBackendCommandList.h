@@ -95,24 +95,12 @@ namespace Horizon
         void DispatchRays(RenderBackendRayTracingPipelineStateHandle pipelineState, RenderBackendBufferHandle shaderBindingTable, const RenderBackendShaderArguments& shaderArguments, uint32 width, uint32 height, uint32 depth);
 
         void DispatchSuperSampling(
+            void* context,
+            RenderBackendDispatchSuperSamplingCallback callback,
             RenderBackendTextureHandle output,
             RenderBackendTextureHandle color,
             RenderBackendTextureHandle depth,
             RenderBackendTextureHandle motionVectors,
-            uint32 renderWidth,
-            uint32 renderHeight,
-            uint32 targetWidth,
-            uint32 targetHeight,
-            float jitterOffsetX,
-            float jitterOffsetY,
-            float motionVectorScaleX,
-            float motionVectorScaleY,
-            bool reset,
-            float deltaTime,
-            bool enableSharpening,
-            float sharpeness,
-            float cameraFarPlane,
-            float cameraNearPlane,
-            float cameraFovAngleVertical);
+            RenderBackendTextureHandle exposure);
     };
 }

@@ -3,30 +3,72 @@
 #include "Foundation/FoundationModule.h"
 #include "Rendering/RenderingModule.h"
 
-namespace FidelityFX
+namespace Horizon
 {
-    enum class FSR2QualityMode
+    struct FidelityFxSuperResolution2State;
+
+    enum class FidelityFXSuperResolution2API
     {
-        Custom = 0,
-        Quality = 1,
-        Balanced = 2,
-        Performance = 3,
-        UltraPerformance = 4,
+        Unknown,
+        D3D12,
+        Vulkan,
     };
 
-    struct FSR2Settings
+    enum class FidelityFXSuperResolution2QualityMode
     {
-        bool useRCAS = false;
-        float sharpeness = 1.0f;
-        FSR2QualityMode qualityMode = FSR2QualityMode::Custom;
-        float customUpscaleRatio = 1.0f;
+        Quality,
+        Balanced,
+        Performance,
+        UltraPerformance,
+    };
+
+    struct FidelityFXSuperResolution2Settings
+    {
+        bool enabled = false;
+        bool enableSharpening = false;
+        bool overrideRenderResolutionPercentage = false;
+        float sharpness = 1.0f;
+        float renderResolutionPercentage = 1.0f;
+        FidelityFXSuperResolution2QualityMode qualityMode = FidelityFXSuperResolution2QualityMode::Quality;
     };
 
     class FidelityFXSuperResolution2 : public TemporalSuperSamplingInterface
     {
     public:
-        AddPass() override;
+        FidelityFXSuperResolution2(RenderBackend* renderBackend);
+        ~FidelityFXSuperResolution2();
+        TemporalSuperSamplingConstants GetConstants() const
+        {
+            return constants;
+        }
+        void SetOptions(const TemporalSuperSamplingOptions& options) override;
+        void SetConstants(const TemporalSuperSamplingConstants& constants) override;
+        TemporalSuperSamplingOptimalSettings GetOptimalSettings() const override;
+        uint32 GetJitterPhaseCount(uint32 renderWidth, uint32 targetWidth) const override;
+        Vector2 GetJitterOffset(uint32 index, uint32 phaseCount) const override;
+        RenderGraphTextureHandle Dispatch(RenderGraph& renderGraph, const SceneView& view, const TemporalSuperSamplingDispatchDescription& dispatchDescription) override;
     private:
 
+        friend bool FidelityFXSuperResolution2DispatchD3D12(
+            void* commandList,
+            void* context,
+            const RenderBackendTextureResource& output,
+            const RenderBackendTextureResource& color,
+            const RenderBackendTextureResource& depth,
+            const RenderBackendTextureResource& motionVectors);
+
+        friend bool FidelityFXSuperResolution2DispatchVulkan(
+            void* commandList,
+            void* context,
+            const RenderBackendTextureResource& output,
+            const RenderBackendTextureResource& color,
+            const RenderBackendTextureResource& depth,
+            const RenderBackendTextureResource& motionVectors);
+
+        RenderBackend* renderBackend;
+        FidelityFXSuperResolution2API api;
+        FidelityFxSuperResolution2State* state;
+        TemporalSuperSamplingOptions options;
+        TemporalSuperSamplingConstants constants;
     };
 }

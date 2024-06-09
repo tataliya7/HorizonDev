@@ -38,14 +38,12 @@ namespace Horizon
 
         if (IsSuperResolutionEnabled())
         {
-            if (true) // Currently, only third party temporal super sampling methods are supported.
-            {
-                TemporalSuperSamplingDispatchParameters tssDispatchParameters;
-                tssDispatchParameters.colorTexture = sceneColorTexture;
-                tssDispatchParameters.depthTexture = sceneDepthTexture;
-                tssDispatchParameters.motionVectorTexture = motionVectorTexture;
-                sceneColorTexture = DispatchCustomTemporalSuperSampling(renderGraph, view, tssDispatchParameters);
-            }
+            // Currently, only third-party temporal super sampling methods are supported.
+            TemporalSuperSamplingDispatchDescription tssDispatchDescription;
+            tssDispatchDescription.colorTexture = sceneColorTexture;
+            tssDispatchDescription.depthTexture = sceneDepthTexture;
+            tssDispatchDescription.motionVectorTexture = motionVectorTexture;
+            sceneColorTexture = DispatchCustomTemporalSuperSampling(temporalSuperSamplingInterface, renderGraph, view, tssDispatchDescription);
         }
 
         if (IsMotionBlurEnabled())

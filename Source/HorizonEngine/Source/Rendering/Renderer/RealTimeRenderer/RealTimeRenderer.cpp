@@ -3,6 +3,8 @@
 #include "PerFrameShaderParameters.h"
 #include "SkyAtmosphereRendering.h"
 
+#include "FidelityFXSuperResolution2Module.h"
+
 #include <optick.h>
 
 namespace Horizon
@@ -102,6 +104,7 @@ namespace Horizon
         , resourcePool(resourcePool)
         , shaderLibrary(shaderLibrary)
         , defaultResources(defaultResources)
+        , temporalSuperSamplingInterface(nullptr)
     {
         RenderBackendBufferDesc perFrameDataBufferDesc = RenderBackendBufferDesc::CreateByteAddress(sizeof(PerFrameShaderParameters), true);
         for (uint32 index = 0; index < MaxNumFramesInFlight; index++)
@@ -203,13 +206,40 @@ namespace Horizon
         //    }
         //}
 
-        const SceneView& view = *sceneView;
+        SceneView& view = *sceneView;
 
-        upscaleRatio = 1.0f;
+        renderResolutionPercentage = 1.0f;
+
+        if (temporalSuperSamplingInterface == nullptr)
+        {
+            temporalSuperSamplingInterface = new FidelityFXSuperResolution2(renderBackend);
+        }
 
         renderResolution = Extent2D(view.targetWidth, view.targetHeight);
         targetResolution = Extent2D(view.targetWidth, view.targetHeight);
         displayResolution = Extent2D(view.targetWidth, view.targetHeight);
+
+        cameraJitterOffset = Vector2(0.0f, 0.0f);
+
+        if (temporalSuperSamplingInterface != nullptr)
+        {
+            TemporalSuperSamplingOptions tssOptions = {};
+            tssOptions.targetWidth = targetResolution.width;
+            tssOptions.targetHeight = targetResolution.height;
+            temporalSuperSamplingInterface->SetOptions(tssOptions);
+
+            TemporalSuperSamplingOptimalSettings optimalSettings = temporalSuperSamplingInterface->GetOptimalSettings();
+            renderResolution.width = optimalSettings.optimalRenderWidth;
+            renderResolution.height = optimalSettings.optimalRenderHeight;
+            renderResolutionPercentage = optimalSettings.optimalRenderResolutionPercentage;
+
+            uint32 jitterPhaseCount = temporalSuperSamplingInterface->GetJitterPhaseCount(renderResolution.width, targetResolution.width);
+            cameraJitterOffset = temporalSuperSamplingInterface->GetJitterOffset(view.frameIndex, jitterPhaseCount);
+
+            view.transformations.ApplyJitterOffset(cameraJitterOffset, renderResolution.width, renderResolution.height);
+        }
+
+        view.transformations.Finalize();
 
         materialTextureMipLodBias = 0.0f;
 
@@ -224,31 +254,7 @@ namespace Horizon
         //
         //}
 
-        Vector2 cameraJitterOffset = { 0.0f, 0.0f };
-        /*if (ShouldApplyCameraJittering())
-        {
-            if (IsFSR2Enabled())
-            {
-                float jitterX = 0;
-                float jitterY = 0;
-                const int32 jitterPhaseCount = ffxFsr2GetJitterPhaseCount(renderResolution.width, targetResolution.width);
-                FfxErrorCode errorCode = ffxFsr2GetJitterOffset(&jitterX, &jitterY, perFrameShaderParameters.frameIndex, jitterPhaseCount);
-                FFX_ASSERT(errorCode == FFX_OK);
-
-                Vector2 jitterOffset = { jitterX * 2.0f / (float)renderResolution.width, -jitterY * 2.0f / (float)renderResolution.height };
-
-                jitteredProjectionMatrix[2][0] += -jitterOffset.x;
-                jitteredProjectionMatrix[2][1] += -jitterOffset.y;
-
-                cameraJitterOffset.x = jitterX;
-                cameraJitterOffset.y = jitterY;
-            }
-            else
-            {
-                JitterProjectionMatrix(jitteredProjectionMatrix, cameraJitterOffset, renderResolution, upscaleRatio);
-            }
-        }
-        auto jitteredInvProjectionMatrix = Math::InverseMatrix(jitteredProjectionMatrix);
+        /*
 
         Vector2 previousCameraJitterOffset = perFrameShaderParameters.cameraJitterOffset;
         if (view.frameIndex == 0)
@@ -285,7 +291,7 @@ namespace Horizon
 
         const RenderScene* scene = view.GetRenderScene();
 
-        features.enableSuperResolution = false;
+        features.enableSuperResolution = temporalSuperSamplingInterface != nullptr;
 
         features.enableSkyAtmosphereRendering =
             scene != nullptr &&
@@ -311,6 +317,26 @@ namespace Horizon
         }
 
         UpdatePerFrameDataBuffer();
+
+        if (temporalSuperSamplingInterface != nullptr)
+        {
+            TemporalSuperSamplingConstants tssConstants = {};
+            tssConstants.reset = false;
+            tssConstants.sharpness = 0.0f;
+            tssConstants.deltaTime = view.deltaTimeInSeconds * 1000.0f;
+            tssConstants.preExposure = preExposure;
+            tssConstants.renderWidth = renderResolution.width;
+            tssConstants.renderHeight = renderResolution.height;
+            tssConstants.jitterOffsetX = cameraJitterOffset.x;
+            tssConstants.jitterOffsetY = cameraJitterOffset.y;
+            tssConstants.motionVectorScaleX = float(renderResolution.width);
+            tssConstants.motionVectorScaleY = float(renderResolution.height);
+            tssConstants.cameraNearClippingPlane = view.nearClippingPlane;
+            tssConstants.cameraFarClippingPlane = view.farClippingPlane;
+            tssConstants.cameraFieldOfView = Math::DegreesToRadians(view.fieldOfView);
+
+            temporalSuperSamplingInterface->SetConstants(tssConstants);
+        }
     }
 
     void RealTimeRenderer::UpdatePerFrameDataBuffer()
@@ -338,7 +364,6 @@ namespace Horizon
             perFrameShaderParameters.displayResolution = Vector4(1.0f * displayResolution.width, 1.0f * displayResolution.height, 1.0f / displayResolution.width, 1.0f / displayResolution.height);
 
             perFrameShaderParameters.cameraPosition = view.cameraPosition;
-            perFrameShaderParameters.cameraJitterOffset = view.cameraJitterOffset;
             perFrameShaderParameters.cameraUpVector = view.cameraUpVector;
             perFrameShaderParameters.cameraRightVector = view.cameraRightVector;
             perFrameShaderParameters.cameraForwardVector = view.cameraForwardVector;
@@ -346,6 +371,8 @@ namespace Horizon
             perFrameShaderParameters.aspectRatio = view.aspectRatio;
             perFrameShaderParameters.nearClippingPlane = view.nearClippingPlane;
             perFrameShaderParameters.farClippingPlane = view.farClippingPlane;
+
+            perFrameShaderParameters.cameraJitterOffset = cameraJitterOffset;
 
             perFrameShaderParameters.previousCameraPosition = historyFrame.cameraPosition;
             perFrameShaderParameters.previousCameraJitterOffset = historyFrame.cameraJitterOffset;
@@ -656,7 +683,7 @@ namespace Horizon
 
         //RenderGBuffer(renderGraph, view);
 
-        //RenderMotionVectors(renderGraph, view);
+        RenderMotionVectors(renderGraph, view);
 
         // Hierarchical z-buffer must be aligned quad tree
         uint32 hzbWidth = Math::Max(Math::RoundUpToPowerOfTwo(renderResolution.width) >> 1, 1u);
@@ -906,5 +933,10 @@ namespace Horizon
                         RenderBackendPrimitiveTopology::TriangleList);
                 };
             });
+
+        historyFrame.cameraJitterOffset = cameraJitterOffset;
+        historyFrame.cameraPosition = view.cameraPosition;
+        historyFrame.preExposure = preExposure;
+        historyFrame.transformations = view.transformations;
     }
 }

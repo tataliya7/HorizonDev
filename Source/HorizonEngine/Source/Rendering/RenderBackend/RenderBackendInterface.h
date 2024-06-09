@@ -10,72 +10,6 @@ namespace Horizon
 
     using PhysicalDeviceID = uint32;
 
-    struct RenderBackendSuperSamplingTextureResource
-    {
-        /** VkImage or ID3D12Resource */
-        void* texture;
-
-        /** vkDeviceMemory or nullptr */
-        void* memory;
-
-        /** VkImageView or nullptr */
-        void* view;
-
-        /** Width in pixels */
-        uint32 width;
-
-        /** Height in pixels */
-        uint32 height;
-
-        /** Number of mip-map levels */
-        uint32 mipLevels;
-
-        /** Number of arrays */
-        uint32 arrayLayers;
-
-        /** Native format */
-        uint32 format;
-
-        /** VkImageLayout or D3D12_RESOURCE_STATES */
-        uint32 state;
-
-        /** VkImageCreateFlags */
-        uint32 flags;
-
-        /** VkImageUsageFlags */
-        uint32 usage;
-    };
-
-    struct RenderBackendSuperSamplingDescription
-    {
-        uint32 viewportHandle;
-        void* device;
-        void* physicalDevice;
-        void* commandList;
-
-        RenderBackendSuperSamplingTextureResource output;
-        RenderBackendSuperSamplingTextureResource color;
-        RenderBackendSuperSamplingTextureResource depth;
-        RenderBackendSuperSamplingTextureResource motionVectors;
-
-        bool reset;
-        uint32 renderWidth;
-        uint32 renderHeight;
-        uint32 targetWidth;
-        uint32 targetHeight;
-        float jitterOffsetX;
-        float jitterOffsetY;
-        float motionVectorScaleX;
-        float motionVectorScaleY;
-        float deltaTime;
-        float preExposure;
-        float cameraFarClippingPlane;
-        float cameraNearClippingPlane;
-        float cameraFovAngleVertical;
-        bool enableSharpening;
-        float sharpeness;
-    };
-
     enum class RenderBackendType
     {
         Unknown,
@@ -114,6 +48,11 @@ namespace Horizon
          * TBD.
          */
         virtual void FlushRenderDevices() = 0;
+
+        /**
+         * TBD.
+         */
+        virtual RenderBackendDevice GetNativeDevice() = 0;
 
         /**
          * TBD.

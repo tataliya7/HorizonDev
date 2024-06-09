@@ -398,45 +398,20 @@ namespace Horizon
     }
 
     void RenderBackendCommandList::DispatchSuperSampling(
+        void* context,
+        RenderBackendDispatchSuperSamplingCallback callback,
         RenderBackendTextureHandle output,
         RenderBackendTextureHandle color,
         RenderBackendTextureHandle depth,
         RenderBackendTextureHandle motionVectors,
-        uint32 renderWidth,
-        uint32 renderHeight,
-        uint32 targetWidth,
-        uint32 targetHeight,
-        float jitterOffsetX,
-        float jitterOffsetY,
-        float motionVectorScaleX,
-        float motionVectorScaleY,
-        bool reset,
-        float deltaTime,
-        bool enableSharpening,
-        float sharpeness,
-        float cameraFarPlane,
-        float cameraNearPlane,
-        float cameraFovAngleVertical)
+        RenderBackendTextureHandle exposure)
     {
-        auto* command = AllocateCommand<RenderBackendCommandDispatchSuperSampling>(RenderBackendCommandDispatchSuperSampling::Type);
+        RenderBackendCommandDispatchSuperSampling* command = AllocateCommand<RenderBackendCommandDispatchSuperSampling>(RenderBackendCommandDispatchSuperSampling::Type);
+        command->context = context;
+        command->callback = callback;
         command->output = output;
         command->color = color;
         command->depth = depth;
         command->motionVectors = motionVectors;
-        command->renderWidth = renderWidth;
-        command->renderHeight = renderHeight;
-        command->targetWidth = targetWidth;
-        command->targetHeight = targetHeight;
-        command->jitterOffsetX = jitterOffsetX;
-        command->jitterOffsetY = jitterOffsetY;
-        command->motionVectorScaleX = motionVectorScaleX;
-        command->motionVectorScaleY = motionVectorScaleY;
-        command->reset = reset;
-        command->deltaTime = deltaTime;
-        command->enableSharpening = enableSharpening;
-        command->sharpeness = sharpeness;
-        command->cameraFarPlane = cameraFarPlane;
-        command->cameraNearPlane = cameraNearPlane;
-        command->cameraFovAngleVertical = cameraFovAngleVertical;
     }
 }

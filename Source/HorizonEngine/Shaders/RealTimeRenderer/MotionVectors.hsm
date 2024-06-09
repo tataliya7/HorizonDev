@@ -40,10 +40,10 @@ void MotionVectorsCS(uint3 DispatchThreadID : SV_DispatchThreadID)
         return;
     }
 
+    uint2 pixelCoord = DispatchThreadID.xy;
     float2 invSize = perFrameParameters.renderResolution.zw;
-    uint2 coord = DispatchThreadID.xy;
-    float2 uv = (coord.xy + 0.5) * invSize;
-    float2 jitteredUV = (coord + 0.5 + perFrameParameters.cameraJitterOffset) * invSize;
+    float2 uv = (pixelCoord + 0.5f) * invSize;
+    float2 jitteredUV = (pixelCoord + 0.5f + perFrameParameters.cameraJitterOffset) * invSize;
 
     float2 motionVectorJitterCancellation = perFrameParameters.previousCameraJitterOffset - perFrameParameters.cameraJitterOffset;
     // Transform to screen UV space
@@ -51,7 +51,7 @@ void MotionVectorsCS(uint3 DispatchThreadID : SV_DispatchThreadID)
 
     Texture2D<uint2> visibilityBuffer = GetVisibilityBufferSRV();
 
-    uint2 visibilityID = visibilityBuffer[coord];
+    uint2 visibilityID = visibilityBuffer[pixelCoord];
     uint geometryID = visibilityID.r;
     uint primitiveID = visibilityID.g;
 
@@ -61,6 +61,8 @@ void MotionVectorsCS(uint3 DispatchThreadID : SV_DispatchThreadID)
     float3 cameraRayDirection = normalize(unprojected.xyz - cameraRayOrigin);
 
     float3 hitPointPrevWorldPosition;
+
+#if 0
     [branch]
     if (visibilityID.x != INVALID_VISIBILIY_ID)
     {
@@ -104,7 +106,7 @@ void MotionVectorsCS(uint3 DispatchThreadID : SV_DispatchThreadID)
 
         // RWTexture2D<float4> motionVectors = GetMotionVectorsUAV();
         // float3 curw = cameraRayOrigin + t * cameraRayDirection;
-        // motionVectors[coord] = float4(curw, t);
+        // motionVectors[pixelCoord] = float4(curw, t);
         // return;
 
         RWTexture2D<float2> motionVectors = GetMotionVectorsUAV();
@@ -118,16 +120,17 @@ void MotionVectorsCS(uint3 DispatchThreadID : SV_DispatchThreadID)
             // motionVector = float2(1.0, 1.0);
             motionVector = 0;
         }
-        motionVectors[coord] = motionVector;
+        motionVectors[pixelCoord] = motionVector;
     }
     else
+#endif
     {
         // -0.01 to prevent division by zero in perspective division
-        hitPointPrevWorldPosition = cameraRayOrigin + cameraRayDirection * (perFrameParameters.farClippingPlane - 0.0001);
+        hitPointPrevWorldPosition = cameraRayOrigin + cameraRayDirection * (perFrameParameters.farClippingPlane - 0.0001f);
         hitPointPrevWorldPosition = hitPointPrevWorldPosition - perFrameParameters.cameraPosition + perFrameParameters.previousCameraPosition;
         RWTexture2D<float2> motionVectors = GetMotionVectorsUAV();
         float2 currPosition = uv;
-        float4 prevClipPosition = mul(perFrameParameters.previousWorldToClipMatrix, float4(hitPointPrevWorldPosition, 1.0));
+        float4 prevClipPosition = mul(perFrameParameters.previousWorldToClipMatrix, float4(hitPointPrevWorldPosition, 1.0f));
         float2 prevPosition = clipspace_to_uv(prevClipPosition.xy / prevClipPosition.w);
         float2 motionVector = prevPosition - currPosition;
         motionVector -= motionVectorJitterCancellation;
@@ -135,9 +138,9 @@ void MotionVectorsCS(uint3 DispatchThreadID : SV_DispatchThreadID)
         {
             motionVector = 0;
         }
-        motionVectors[coord] = motionVector;
+        motionVectors[pixelCoord] = motionVector;
 
         // RWTexture2D<float2> motionVectors = GetMotionVectorsUAV();
-        // motionVectors[coord] = float2(0.0, 0.0);
+        // motionVectors[pixelCoord] = float2(0.0, 0.0);
     }
 }

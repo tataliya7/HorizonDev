@@ -103,5 +103,5 @@ void AutoExposureComputeExposureCS(uint3 DispatchThreadID : SV_DispatchThreadID)
         adaptedExposure = clamp(adaptedExposure, minExposure, maxExposure);
     }
 
-    currentAutoExposureBuffer.Store<float4>(0, float4(exposureCompensation / max(0.0001f, adaptedExposure), exposureCompensation *  max(0.0001f, targetExposure), exposureCompensation, averageSceneLuminance));
+    currentAutoExposureBuffer.Store<float4>(0, float4(exposureCompensation / max(0.0001f, adaptedExposure), exposureCompensation / max(0.0001f, targetExposure), exposureCompensation, averageSceneLuminance));
 }

@@ -247,6 +247,7 @@ namespace Horizon
         // RenderScene* renderScene;
 
         // Begin Scene View Window
+        uint32 frameIndex = 0;
         SceneView* sceneView;
         std::string currentDebugVisualizationMode;
         EditorCamera editorCamera;

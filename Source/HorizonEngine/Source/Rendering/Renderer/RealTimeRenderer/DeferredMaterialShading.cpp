@@ -173,37 +173,37 @@ namespace Horizon
         RenderGraph& renderGraph,
         const SceneView& view)
     {
-        // RealTimeRendererSceneTextures& sceneTextures = renderGraph.blackboard.Get<RealTimeRendererSceneTextures>();
-        //
-        // renderGraph.AddPass(
-        //     std::format("MotionVectors (Compute, {}x{})", renderResolution.width, renderResolution.height),
-        //     RenderGraphPassFlags::Compute,
-        //     [&](RenderGraphBuilder& builder)
-        //     {
-        //         RenderGraphTextureHandle vbuffer0 = builder.ReadTexture(sceneTextures.vbuffer0, RenderBackendResourceState::ShaderResource);
-        //         RenderGraphTextureHandle motionVectorTexture = sceneTextures.motionVectorTexture = builder.WriteTexture(sceneTextures.motionVectorTexture, RenderBackendResourceState::UnorderedAccess);
-        //
-        //         return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
-        //         {
-        //             uint32 threadGroupCountX = ComputeWorkGroupCount(renderResolution.width, 8);
-        //             uint32 threadGroupCountY = ComputeWorkGroupCount(renderResolution.height, 8);
-        //             uint32 threadGroupCountZ = 1;
-        //
-        //             RenderBackendShaderArguments shaderArguments = {};
-        //             shaderArguments.BindBuffer(0, this->GetCurrentPerFrameDataBuffer());
-        //             shaderArguments.BindBuffer(1, renderEngine->geometryBuffer, 0);
-        //             shaderArguments.BindTextureSRV(2, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(vbuffer0)));
-        //             shaderArguments.BindTextureUAV(3, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(motionVectorTexture), 0));
-        //
-        //             RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::MotionVectors);
-        //             commandList.Dispatch(
-        //                 computeShader,
-        //                 shaderArguments,
-        //                 threadGroupCountX,
-        //                 threadGroupCountY,
-        //                 threadGroupCountZ);
-        //         };
-        //     });
+         RealTimeRendererSceneTextures& sceneTextures = renderGraph.blackboard.Get<RealTimeRendererSceneTextures>();
+        
+         renderGraph.AddPass(
+             std::format("MotionVectors (Compute, {}x{})", renderResolution.width, renderResolution.height),
+             RenderGraphPassFlags::Compute,
+             [&](RenderGraphBuilder& builder)
+             {
+                 RenderGraphTextureHandle vbuffer0 = builder.ReadTexture(sceneTextures.vbuffer0, RenderBackendResourceState::ShaderResource);
+                 RenderGraphTextureHandle motionVectorTexture = sceneTextures.motionVectorTexture = builder.WriteTexture(sceneTextures.motionVectorTexture, RenderBackendResourceState::UnorderedAccess);
+        
+                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
+                 {
+                     uint32 threadGroupCountX = ComputeThreadGroupCount(renderResolution.width, 8);
+                     uint32 threadGroupCountY = ComputeThreadGroupCount(renderResolution.height, 8);
+                     uint32 threadGroupCountZ = 1;
+        
+                     RenderBackendShaderArguments shaderArguments = {};
+                     shaderArguments.BindBuffer(0, this->GetCurrentPerFrameDataBuffer());
+                     //shaderArguments.BindBuffer(1, renderEngine->geometryBuffer, 0);
+                     shaderArguments.BindTextureSRV(2, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(vbuffer0)));
+                     shaderArguments.BindTextureUAV(3, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(motionVectorTexture), 0));
+        
+                     RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::MotionVectors);
+                     commandList.Dispatch(
+                         computeShader,
+                         shaderArguments,
+                         threadGroupCountX,
+                         threadGroupCountY,
+                         threadGroupCountZ);
+                 };
+             });
     }
 
     void RealTimeRenderer::AddDirectLightingPass(

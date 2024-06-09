@@ -56,12 +56,38 @@ namespace Horizon
             Quaternion cameraOrientation = Math::QuaternionFromEulerAngles(Math::DegreesToRadians(rotation));
 
             // TODO: calculate worldToViewMatrix first
-            viewToWorldMatrix = Math::ComposeTransformMatrix(position, cameraOrientation * zUpQuat, Vector3(1.0f, 1.0f, 1.0f));
-            worldToViewMatrix = Math::InverseMatrix(viewToWorldMatrix);
+            // viewToWorldMatrix = Math::ComposeTransformMatrix(position, cameraOrientation * zUpQuat, Vector3(1.0f, 1.0f, 1.0f));
+            // worldToViewMatrix = Math::InverseMatrix(viewToWorldMatrix);
+            worldToViewMatrix = glm::transpose(glm::mat4_cast(glm::normalize(cameraOrientation * zUpQuat))) * glm::translate(glm::mat4(1), -position);
+            //viewToWorldMatrix = Math::InverseMatrix(worldToViewMatrix);
 
             viewToClipMatrix = Math::PerspectiveReverseZ_RH_ZO(Math::DegreesToRadians(fieldOfView), aspectRatio, nearClippingPlane, farClippingPlane);
-            clipToViewMatrix = Math::InverseMatrix(viewToClipMatrix);
+            //clipToViewMatrix = Math::InverseMatrix(viewToClipMatrix);
 
+            //worldToClipMatrix = viewToClipMatrix * worldToViewMatrix;
+            //clipToWorldMatrix = viewToWorldMatrix * clipToViewMatrix;
+
+            nonJitteredViewToClipMatrix = viewToClipMatrix;
+        }
+
+        void ApplyJitterOffset(const Vector2& jitterOffset, uint32 renderWidth, uint32 renderHeight)
+        {
+            // -y for clip space to uv space
+            Vector2 offset = { jitterOffset.x * 2.0f / float(renderWidth), -jitterOffset.y * 2.0f / float(renderHeight) };
+
+            /*
+             * Horizon Engine uses righted-handed coordinate system,
+             * the w component of clip space position is -Zc instead of Zc,
+             * so it should be multiplied by -1.
+             */
+            viewToClipMatrix[2][0] += -offset.x;
+            viewToClipMatrix[2][1] += -offset.y;
+        }
+
+        void Finalize()
+        {
+            viewToWorldMatrix = Math::InverseMatrix(worldToViewMatrix);
+            clipToViewMatrix = Math::InverseMatrix(viewToClipMatrix);
             worldToClipMatrix = viewToClipMatrix * worldToViewMatrix;
             clipToWorldMatrix = viewToWorldMatrix * clipToViewMatrix;
         }

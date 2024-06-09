@@ -1515,4 +1515,54 @@ namespace Horizon
         uint32 threadGroupCountY;
         uint32 threadGroupCountZ;
     };
+
+    struct RenderBackendDevice
+    {
+        void* device;
+        void* physicalDevice;
+    };
+
+    struct RenderBackendTextureResource
+    {
+        /** VkImage or ID3D12Resource */
+        void* texture;
+
+        /** vkDeviceMemory or nullptr */
+        void* memory;
+
+        /** VkImageView or nullptr */
+        void* view;
+
+        /** Width in pixels */
+        uint32 width;
+
+        /** Height in pixels */
+        uint32 height;
+
+        /** Number of mip-map levels */
+        uint32 mipLevels;
+
+        /** Number of arrays */
+        uint32 arrayLayers;
+
+        /** Native format */
+        uint32 format;
+
+        /** VkImageLayout or D3D12_RESOURCE_STATES */
+        uint32 state;
+
+        /** VkImageCreateFlags */
+        uint32 flags;
+
+        /** VkImageUsageFlags */
+        uint32 usage;
+    };
+
+    typedef bool(*RenderBackendDispatchSuperSamplingCallback)(
+        void* commandList,
+        void* interface,
+        const RenderBackendTextureResource& output,
+        const RenderBackendTextureResource& color,
+        const RenderBackendTextureResource& depth,
+        const RenderBackendTextureResource& motionVectors);
 }

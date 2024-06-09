@@ -5,6 +5,8 @@
 
 namespace Horizon
 {
+    class TemporalSuperSamplingInterface;
+
     static inline uint8 GetStencilBitMask(uint32 bit)
     {
         return uint8(uint8(0x01) << bit);
@@ -399,12 +401,13 @@ namespace Horizon
         ShaderLibrary* shaderLibrary;
         RendererDefaultResources* defaultResources;
         SceneView* sceneView;
+        TemporalSuperSamplingInterface* temporalSuperSamplingInterface;
 
         struct RenderFeatures
         {
             uint32 enableFrameRateUpConversion : 1;
-            uint32 enableSuperSamplingAntiAliasing : 1;
             uint32 enableSuperResolution : 1;
+            uint32 enableSuperSamplingAntiAliasing : 1;
             uint32 enableSkyAtmosphereRendering : 1;
             uint32 enableSubsurfaceScattering : 1;
             uint32 enableScreenSpaceShadows : 1;
@@ -424,11 +427,13 @@ namespace Horizon
             uint32 enableConvolutionBloom : 1;
         } features;
 
-        float upscaleRatio = 1.0f;
+        float renderResolutionPercentage = 1.0f;
 
         Extent2D renderResolution;
         Extent2D targetResolution;
         Extent2D displayResolution;
+
+        Vector2 cameraJitterOffset;
 
         PostProcessingSettings finalPostProcessingSettings;
 

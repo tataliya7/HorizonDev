@@ -272,25 +272,11 @@ namespace Horizon
 
     struct RenderBackendCommandDispatchSuperSampling : RenderBackendCommand<RenderBackendCommandType::DispatchSuperSampling, RenderBackendCommandQueueType::Compute>
     {
+        void* context;
+        RenderBackendDispatchSuperSamplingCallback callback;
         RenderBackendTextureHandle output;
         RenderBackendTextureHandle color;
         RenderBackendTextureHandle depth;
         RenderBackendTextureHandle motionVectors;
-        uint32 renderWidth;
-        uint32 renderHeight;
-        uint32 targetWidth;
-        uint32 targetHeight;
-        uint32 viewID;
-        float jitterOffsetX;
-        float jitterOffsetY;
-        float motionVectorScaleX;
-        float motionVectorScaleY;
-        bool reset;
-        float deltaTime;
-        bool enableSharpening;
-        float sharpeness;
-        float cameraFarPlane;
-        float cameraNearPlane;
-        float cameraFovAngleVertical;
     };
 }

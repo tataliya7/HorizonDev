@@ -837,6 +837,7 @@ namespace Horizon
         void CreateRenderDevices(PhysicalDeviceID* physicalDeviceIDs, uint32 numDevices, uint32* outDeviceMasks) override;
         void DestroyRenderDevices() override;
         void FlushRenderDevices() override;
+        RenderBackendDevice GetNativeDevice() override;
         RenderBackendSwapChainHandle CreateSwapChain(const RenderBackendSwapChainDesc* desc) override;
         void DestroySwapChain(RenderBackendSwapChainHandle swapChain) override;
         void ResizeSwapChain(RenderBackendSwapChainHandle swapChain, uint32* width, uint32* height) override;
@@ -5343,15 +5344,38 @@ namespace Horizon
 
     bool VulkanRenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandDispatchSuperSampling& command)
     {
-        //TODO
+        VulkanTexture* outputTexture = device->GetTexture(command.output);
+        VulkanTexture* colorTexture = device->GetTexture(command.color);
+        VulkanTexture* depthTexture = device->GetTexture(command.depth);
+        VulkanTexture* motionVectorTexture = device->GetTexture(command.motionVectors);
 
-        if (true)
+        auto GetRenderBackendTextureResourceVulkan = [](VulkanTexture* texture, bool uav)
         {
-            // Resotre bindless global descriptor set
-            device->BindBindlessDescriptorSets(commandBuffer);
-        }
+            RenderBackendTextureResource textureResource = {};
+            textureResource.texture = texture->handle;
+            textureResource.memory = texture->allocation->GetMemory();
+            textureResource.view = uav ? texture->uavs[0].uav : texture->srv;
+            textureResource.width = texture->width;
+            textureResource.height = texture->height;
+            textureResource.mipLevels = texture->mipLevels;
+            textureResource.arrayLayers = texture->arrayLayers;
+            textureResource.format = texture->format;
+            textureResource.state = uav ? VK_IMAGE_LAYOUT_GENERAL : VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+            textureResource.flags = texture->info.flags;
+            textureResource.usage = texture->info.usage;
+            return textureResource;
+        };
+        RenderBackendTextureResource output = GetRenderBackendTextureResourceVulkan(outputTexture, true);
+        RenderBackendTextureResource color = GetRenderBackendTextureResourceVulkan(colorTexture, false);
+        RenderBackendTextureResource depth = GetRenderBackendTextureResourceVulkan(depthTexture, false);
+        RenderBackendTextureResource motionVectors = GetRenderBackendTextureResourceVulkan(motionVectorTexture, false);
 
-        return true;
+        bool succeed = command.callback(static_cast<void*>(commandBuffer), command.context, output, color, depth, motionVectors);
+
+        // Restore bindless global descriptor set
+        device->BindBindlessDescriptorSets(commandBuffer);
+
+        return succeed;
     }
 
     struct BuildCommandBufferJobData
@@ -5484,6 +5508,14 @@ namespace Horizon
     void VulkanRenderBackend::FlushRenderDevices()
     {
         device.WaitIdle();
+    }
+
+    RenderBackendDevice VulkanRenderBackend::GetNativeDevice()
+    {
+        RenderBackendDevice d = {};
+        d.device = device.handle;
+        d.physicalDevice = device.physicalDevice->handle;
+        return d;
     }
 
     void VulkanRenderBackend::Tick()

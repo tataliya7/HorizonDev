@@ -1900,6 +1900,7 @@ namespace Horizon
         void CreateRenderDevices(PhysicalDeviceID* physicalDeviceIDs, uint32 numDevices, uint32* outDeviceMasks) override;
         void DestroyRenderDevices() override;
         void FlushRenderDevices() override;
+        RenderBackendDevice GetNativeDevice() override;
         RenderBackendSwapChainHandle CreateSwapChain(const RenderBackendSwapChainDesc* desc) override;
         void DestroySwapChain(RenderBackendSwapChainHandle swapChain) override;
         void ResizeSwapChain(RenderBackendSwapChainHandle swapChain, uint32* width, uint32* height) override;
@@ -2888,6 +2889,14 @@ namespace Horizon
         D3D12Device* device = devices[0];
 
         device->WaitIdle();
+    }
+
+    RenderBackendDevice D3D12RenderBackend::GetNativeDevice()
+    {
+        RenderBackendDevice d = {};
+        d.device = devices[0]->device.Get();
+        d.physicalDevice = nullptr;
+        return d;
     }
 
     uint32 D3D12Device::CreateD3D12SwapChain(const RenderBackendSwapChainDesc* desc)

@@ -15,14 +15,12 @@ project "FidelityFX"
         "**.inl",
     }
 
-    links {
-        "HorizonEngine",
-    }
-
     includedirs {
         enginepath("Source"),
         thirdpartypath("glm/include"),
         thirdpartypath("entt/include"),
         thirdpartypath("imgui/imgui-1.89.9-docking"),
         thirdpartypath("python/310/include"),
+        thirdpartypath("ffx-fsr2/include"),
+        thirdpartypath("vulkan/1.3.280.0/include"),
     }

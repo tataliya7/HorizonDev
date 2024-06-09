@@ -29,6 +29,7 @@ project "HorizonEditorLauncher"
         "HorizonEditor",
         "imgui",
         "ImGuizmo",
+        --"FidelityFX",
         --"USD",
         --"RenderDoc",
         thirdpartypath("glfw/glfw-3.3.9.bin.WIN64/lib-vc2022/glfw3.lib"),
@@ -36,7 +37,6 @@ project "HorizonEditorLauncher"
         thirdpartypath("vulkan/1.3.280.0/lib/vulkan-1.lib"),
         thirdpartypath("optick/Optick_1.4.0/lib/x64/release/OptickCore.lib"),
         thirdpartypath("python/310/libs/python310.lib"),
-
         thirdpartypath("streamline/lib/x64/sl.interposer.lib"),
     }
 

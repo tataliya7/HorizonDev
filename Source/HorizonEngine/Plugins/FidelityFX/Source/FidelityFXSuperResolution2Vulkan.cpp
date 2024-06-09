@@ -1,127 +1,123 @@
 #include "FidelityFXSuperResolution2.h"
+#include "FidelityFXSuperResolution2Private.h"
 
 #include <ffx_fsr2.h>
 #include <vk/ffx_fsr2_vk.h>
 
-namespace FidelityFX
+namespace Horizon
 {
-    static void FSR2MessageCallBack(FfxFsr2MsgType type, const wchar_t* message)
+    bool FidelityFXSuperResolution2DispatchVulkan(
+        void* commandList,
+        void* context,
+        const RenderBackendTextureResource& output,
+        const RenderBackendTextureResource& color,
+        const RenderBackendTextureResource& depth,
+        const RenderBackendTextureResource& motionVectors)
     {
-        if (type == FFX_FSR2_MESSAGE_TYPE_ERROR)
-        {
-            Horizon::LogError(Horizon::GLogger, std::format(L"FSR2_API_DEBUG_ERROR: {}", message));
-        }
-        else if (type == FFX_FSR2_MESSAGE_TYPE_WARNING)
-        {
-            Horizon::LogWarning(Horizon::GLogger, std::format(L"FSR2_API_DEBUG_WARNING: {}", message));
-        }
-    }
+        FidelityFXSuperResolution2* fsr2 = static_cast<FidelityFXSuperResolution2*>(context);
+        FidelityFxSuperResolution2State& fsr2State = *fsr2->state;
 
-    bool FSR2Execute(const Horizon::RenderBackendSuperSamplingDescription& description)
-    {
-        static FfxFsr2ContextDescription fsr2InitializationParameters = {};
-        static FfxFsr2Context fsr2Context = {};
-        static uint32_t previousRenderWidth  = 0;
-        static uint32_t previousRenderHeight = 0;
-        static uint32_t previousTargetWidth  = 0;
-        static uint32_t previousTargetHeight = 0;
+        FfxFsr2ContextDescription& fsr2ContextDescription = fsr2State.fsr2ContextDescription;
+        FfxFsr2Context& fsr2Context = fsr2State.fsr2Context;
 
-        bool enableAutoExposure = ;
+        bool isContextValid =
+            fsr2State.initialized &&
+            fsr2State.fsr2ContextDescription.displaySize.width == fsr2->options.targetWidth &&
+            fsr2State.fsr2ContextDescription.displaySize.height == fsr2->options.targetHeight;
 
-        // TODO: Handle multiple viewports
-        if (previousRenderWidth != description.renderWidth ||
-            previousRenderHeight != description.renderHeight ||
-            previousTargetWidth != description.targetWidth ||
-            previousTargetHeight != description.targetHeight)
+        if (!isContextValid)
         {
+            RenderBackendDevice device = fsr2->renderBackend->GetNativeDevice();
+
+            VkDevice vkDevice = static_cast<VkDevice>(device.device);
+            VkPhysicalDevice vkPhysicalDevice = static_cast<VkPhysicalDevice>(device.physicalDevice);
+
+            uint32 targetWidth = fsr2->options.targetWidth;
+            uint32 targetHeight = fsr2->options.targetHeight;
+
             // Only destroy contexts which are live
-            if (fsr2InitializationParameters.callbacks.scratchBuffer != nullptr)
+            if (fsr2ContextDescription.callbacks.scratchBuffer != nullptr)
             {
                 ffxFsr2ContextDestroy(&fsr2Context);
-                free(fsr2InitializationParameters.callbacks.scratchBuffer);
-                fsr2InitializationParameters.callbacks.scratchBuffer = nullptr;
+                free(fsr2ContextDescription.callbacks.scratchBuffer);
+                fsr2ContextDescription.callbacks.scratchBuffer = nullptr;
             }
 
-            const size_t scratchBufferSize = ffxFsr2GetScratchMemorySizeVK((VkPhysicalDevice)description.physicalDevice);
+            size_t scratchBufferSize = ffxFsr2GetScratchMemorySizeVK(vkPhysicalDevice);
             void* scratchBuffer = malloc(scratchBufferSize);
-            FfxErrorCode errorCode = ffxFsr2GetInterfaceVK(&fsr2InitializationParameters.callbacks, scratchBuffer, scratchBufferSize, (VkPhysicalDevice)description.physicalDevice, vkGetDeviceProcAddr);
+            FfxErrorCode errorCode = ffxFsr2GetInterfaceVK(&fsr2ContextDescription.callbacks, scratchBuffer, scratchBufferSize, vkPhysicalDevice, vkGetDeviceProcAddr);
             FFX_ASSERT(errorCode == FFX_OK);
 
-            fsr2InitializationParameters.device = ffxGetDeviceVK((VkDevice)description.device);
-            fsr2InitializationParameters.maxRenderSize.width = description.renderWidth;
-            fsr2InitializationParameters.maxRenderSize.height = description.renderHeight;
-            fsr2InitializationParameters.displaySize.width = description.targetWidth;
-            fsr2InitializationParameters.displaySize.height = description.targetHeight;
+            fsr2ContextDescription.device = ffxGetDeviceVK(vkDevice);
+            fsr2ContextDescription.maxRenderSize.width = targetWidth;
+            fsr2ContextDescription.maxRenderSize.height = targetHeight;
+            fsr2ContextDescription.displaySize.width = targetWidth;
+            fsr2ContextDescription.displaySize.height = targetHeight;
 
-            fsr2InitializationParameters.flags = FFX_FSR2_ENABLE_HIGH_DYNAMIC_RANGE | FFX_FSR2_ENABLE_DEPTH_INVERTED | FFX_FSR2_ENABLE_DEPTH_INFINITE;
-            fsr2InitializationParameters.flags |= enableAutoExposure ? FFX_FSR2_ENABLE_AUTO_EXPOSURE : 0;
+            fsr2ContextDescription.flags = FFX_FSR2_ENABLE_HIGH_DYNAMIC_RANGE | FFX_FSR2_ENABLE_DEPTH_INVERTED;// | FFX_FSR2_ENABLE_DEPTH_INFINITE;
+            //fsr2ContextDescription.flags |= enableAutoExposure ? FFX_FSR2_ENABLE_AUTO_EXPOSURE : 0;
 
 #if !HORIZON_CONFIGURATION_RELEASE
             // if (device->fsr2EnableDebugCheck)
             {
-                fsr2InitializationParameters.flags |= FFX_FSR2_ENABLE_DEBUG_CHECKING;
-                fsr2InitializationParameters.fpMessage = &FSR2MessageCallBack;
+                fsr2ContextDescription.flags |= FFX_FSR2_ENABLE_DEBUG_CHECKING;
+                fsr2ContextDescription.fpMessage = FidelityFXSuperResolution2Message;
             }
 #endif
 
             // Input data is HDR
-            fsr2InitializationParameters.flags |= FFX_FSR2_ENABLE_HIGH_DYNAMIC_RANGE;
+            fsr2ContextDescription.flags |= FFX_FSR2_ENABLE_HIGH_DYNAMIC_RANGE;
 
             //const uint64_t memoryUsageBefore = getMemoryUsageSnapshot(device->GetPhysicalDeviceHandle());
-            errorCode = ffxFsr2ContextCreate(&fsr2Context, &fsr2InitializationParameters);
+            errorCode = ffxFsr2ContextCreate(&fsr2Context, &fsr2ContextDescription);
             FFX_ASSERT(errorCode == FFX_OK);
-            //const uint64_t memoryUsageAfter = getMemoryUsageSnapshot(device->GetPhysicalDeviceHandle());
-            //memoryUsageInMegabytes = (memoryUsageAfter - memoryUsageBefore) * 0.000001f;
 
-            previousRenderWidth = description.renderWidth;
-            previousRenderHeight = description.renderHeight;
-            previousTargetWidth = description.targetWidth;
-            previousTargetHeight = description.targetHeight;
+            fsr2State.initialized = true;
         }
 
         FfxFsr2DispatchDescription fsr2DispatchDescription = {};
 
+        fsr2DispatchDescription.output = ffxGetTextureResourceVK(
+            &fsr2Context,
+            static_cast<VkImage>(output.texture),
+            static_cast<VkImageView>(output.view),
+            static_cast<uint32_t>(output.width),
+            static_cast<uint32_t>(output.height),
+            static_cast<VkFormat>(output.format),
+            L"FSR2_OutputUpscaledColor",
+            FFX_RESOURCE_STATE_UNORDERED_ACCESS);
+
         fsr2DispatchDescription.color = ffxGetTextureResourceVK(
             &fsr2Context,
-            (VkImage)description.color.texture,
-            (VkImageView)description.color.view,
-            description.color.width,
-            description.color.height,
-            (VkFormat)description.color.format,
+            static_cast<VkImage>(color.texture),
+            static_cast<VkImageView>(color.view),
+            static_cast<uint32_t>(color.width),
+            static_cast<uint32_t>(color.height),
+            static_cast<VkFormat>(color.format),
             L"FSR2_InputColor",
             FFX_RESOURCE_STATE_COMPUTE_READ);
 
         fsr2DispatchDescription.depth = ffxGetTextureResourceVK(
             &fsr2Context,
-            (VkImage)description.depth.texture,
-            (VkImageView)description.depth.view,
-            description.depth.width,
-            description.depth.height,
-            (VkFormat)description.depth.format,
+            static_cast<VkImage>(depth.texture),
+            static_cast<VkImageView>(depth.view),
+            static_cast<uint32_t>(depth.width),
+            static_cast<uint32_t>(depth.height),
+            static_cast<VkFormat>(depth.format),
             L"FSR2_InputDepth",
             FFX_RESOURCE_STATE_COMPUTE_READ);
 
         fsr2DispatchDescription.motionVectors = ffxGetTextureResourceVK(
             &fsr2Context,
-            (VkImage)description.motionVectors.texture,
-            (VkImageView)description.motionVectors.view,
-            description.motionVectors.width,
-            description.motionVectors.height,
-            (VkFormat)description.motionVectors.format,
+            static_cast<VkImage>(motionVectors.texture),
+            static_cast<VkImageView>(motionVectors.view),
+            static_cast<uint32_t>(motionVectors.width),
+            static_cast<uint32_t>(motionVectors.height),
+            static_cast<VkFormat>(motionVectors.format),
             L"FSR2_InputMotionVectors",
             FFX_RESOURCE_STATE_COMPUTE_READ);
 
-        fsr2DispatchDescription.output = ffxGetTextureResourceVK(
-            &fsr2Context,
-            (VkImage)description.output.texture,
-            (VkImageView)description.output.view,
-            description.output.width,
-            description.output.height,
-            (VkFormat)description.output.format,
-            L"FSR2_OutputUpscaledColor",
-            FFX_RESOURCE_STATE_UNORDERED_ACCESS);
-
-        if (enableAutoExposure)
+        if (true)
         {
             fsr2DispatchDescription.exposure = ffxGetTextureResourceVK(
                 &fsr2Context,
@@ -169,24 +165,25 @@ namespace FidelityFX
             // TODO
         }
 
-        fsr2DispatchDescription.commandList = ffxGetCommandListVK((VkCommandBuffer)description.commandList);
-        fsr2DispatchDescription.jitterOffset.x = description.jitterOffsetX;
-        fsr2DispatchDescription.jitterOffset.y = description.jitterOffsetY;
-        fsr2DispatchDescription.motionVectorScale.x = (float)description.renderWidth;
-        fsr2DispatchDescription.motionVectorScale.y = (float)description.renderHeight;
-        fsr2DispatchDescription.reset = description.reset;
-        fsr2DispatchDescription.enableSharpening = description.enableSharpening;
-        fsr2DispatchDescription.sharpness = description.sharpeness;
-        fsr2DispatchDescription.frameTimeDelta = description.deltaTime * 1000.0f; // 'frameTimeDelta' is expressed in milliseconds
-        fsr2DispatchDescription.preExposure = description.preExposure;
-        fsr2DispatchDescription.renderSize.width = description.renderWidth;
-        fsr2DispatchDescription.renderSize.height = description.renderHeight;
-        fsr2DispatchDescription.cameraFar = description.cameraFarClippingPlane;
-        fsr2DispatchDescription.cameraNear = description.cameraNearClippingPlane;
-        fsr2DispatchDescription.cameraFovAngleVertical = description.cameraFovAngleVertical;
+        const TemporalSuperSamplingConstants& constants = fsr2->constants;
+        fsr2DispatchDescription.commandList = ffxGetCommandListVK(static_cast<VkCommandBuffer>(commandList));
+        fsr2DispatchDescription.jitterOffset.x = constants.jitterOffsetX;
+        fsr2DispatchDescription.jitterOffset.y = constants.jitterOffsetY;
+        fsr2DispatchDescription.motionVectorScale.x = constants.motionVectorScaleX;
+        fsr2DispatchDescription.motionVectorScale.y = constants.motionVectorScaleY;
+        fsr2DispatchDescription.reset = constants.reset;
+        fsr2DispatchDescription.enableSharpening = constants.sharpness > 0.0f;
+        fsr2DispatchDescription.sharpness = constants.sharpness;
+        fsr2DispatchDescription.frameTimeDelta = constants.deltaTime; // 'frameTimeDelta' is expressed in milliseconds
+        fsr2DispatchDescription.preExposure = constants.preExposure;
+        fsr2DispatchDescription.renderSize.width = constants.renderWidth;
+        fsr2DispatchDescription.renderSize.height = constants.renderHeight;
+        fsr2DispatchDescription.cameraFar = constants.cameraFarClippingPlane;
+        fsr2DispatchDescription.cameraNear = constants.cameraNearClippingPlane;
+        fsr2DispatchDescription.cameraFovAngleVertical = constants.cameraFieldOfView;
         fsr2DispatchDescription.viewSpaceToMetersFactor = 1.0f;
 
-        if (fsr2InitializationParameters.flags & FFX_FSR2_ENABLE_DEPTH_INVERTED)
+        if (fsr2ContextDescription.flags & FFX_FSR2_ENABLE_DEPTH_INVERTED)
         {
             std::swap(fsr2DispatchDescription.cameraFar, fsr2DispatchDescription.cameraNear);
         }
