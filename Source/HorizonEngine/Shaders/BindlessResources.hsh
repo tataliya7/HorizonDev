@@ -468,5 +468,4 @@ PUSH_CONSTANT(ShaderArguments, SHADER_ARGUMENTS);
 #endif
 
 // TODO:
-// Bindless CBV using ConstantBuffer<>
 // HLSL 2021 add support for template!
