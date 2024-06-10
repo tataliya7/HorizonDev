@@ -397,10 +397,6 @@ namespace Horizon
             const SceneView& view,
             RenderGraphTextureHandle sceneColorTexture);
 
-        RenderGraphTextureHandle RenderUserInterface(
-            RenderGraph& renderGraph,
-            const SceneView& view);
-
         RenderBackend* renderBackend;
         RenderGraphResourcePool* resourcePool;
         ShaderLibrary* shaderLibrary;

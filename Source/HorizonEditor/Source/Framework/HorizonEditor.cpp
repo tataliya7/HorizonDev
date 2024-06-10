@@ -79,6 +79,8 @@ namespace Horizon
         renderBackend = renderSystem->GetRenderBackend();
         RenderGraphResourcePool* renderGraphResourcePool = renderSystem->GetRenderGraphResourcePool();
 
+        InitializeImGuiContext();
+
         RenderBackendSwapChainDesc swapChainDesc = {
             .width = window->GetWidth(),
             .height = window->GetHeight(),
@@ -216,9 +218,6 @@ namespace Horizon
             }
         }
 
-//
-//        deltaTime = CalculateDeltaTime();
-//
 //#if HE_ENBALE_STREAMLINE_SUPPORT
 //        streamlineContext->ReflexSetMarkerSimulationStart();
 //#endif
@@ -233,7 +232,11 @@ namespace Horizon
 //
 //        renderEngine->BeginDrawUI();
 //
-        //OnDrawUI();
+        engine->GetSubsystem<RenderSystem>()->BeginDrawUI(imguiContext);
+
+        OnDrawUI();
+
+        engine->GetSubsystem<RenderSystem>()->EndDrawUI();
 
         editorCamera.Update(deltaTimeInSeconds);
 
@@ -282,6 +285,8 @@ namespace Horizon
         sceneView.targetWidth = swapChainWidth;
         sceneView.targetHeight = swapChainHeight;
         sceneView.targetTexture = targetTexture;
+        sceneView.displayWidth = swapChainWidth;
+        sceneView.displayHeight = swapChainHeight;
 
         sceneView.transformations.Update(sceneView.cameraPosition, sceneView.cameraRotation, sceneView.fieldOfView, sceneView.aspectRatio, sceneView.nearClippingPlane, sceneView.farClippingPlane);
 

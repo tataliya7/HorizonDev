@@ -536,35 +536,6 @@ namespace Horizon
     }
 #endif
 
-    RenderGraphTextureHandle RealTimeRenderer::RenderUserInterface(
-        RenderGraph& renderGraph,
-        const SceneView& view)
-    {
-        RenderGraphTextureDesc uiColorAndAlphaTextureDesc = RenderGraphTextureDesc::Create2D(
-            targetResolution.width,
-            targetResolution.height,
-            RenderBackendTextureFormat::RGB10A2Unorm,
-            RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::RenderTarget);
-        RenderGraphTextureHandle uiColorAndAlphaTexture = renderGraph.CreateTexture(uiColorAndAlphaTextureDesc, "UIColorAndAlphaTexture");
-
-        renderGraph.AddPass(
-            std::format("UIColorAndAlpha (Graphics, {}x{})", targetResolution.width, targetResolution.height),
-            RenderGraphPassFlags::Graphics, // | RenderGraphPassFlags::SkipRenderPass,
-            [&](RenderGraphBuilder& builder)
-            {
-                uiColorAndAlphaTexture = builder.WriteTexture(uiColorAndAlphaTexture, RenderBackendResourceState::RenderTarget);
-
-                builder.BindRenderTarget(0, uiColorAndAlphaTexture, RenderBackendRenderPassBeginningAccessType::Clear, RenderBackendRenderPassEndingAccessType::Preserve);
-
-                return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
-                {
-                    //renderEngine->DrawUI(commandList, registry.GetRenderBackendTextureHandle(uiColorAndAlphaTexture));
-                };
-            });
-
-        return uiColorAndAlphaTexture;
-    }
-
 #define NearClipPlaneDepthValue 1.0f
 #define FarClipPlaneDepthValue 0.0f
 
@@ -888,55 +859,6 @@ namespace Horizon
         }
 
         RenderPostProcessingEffects(renderGraph, view);
-
-        RenderGraphTextureHandle uiColorAndAlphaTexture = RenderUserInterface(renderGraph, view);
-
-        renderGraph.AddPass(
-            std::format("GUIComposition (Graphics, {}x{})", targetResolution.width, targetResolution.height),
-            RenderGraphPassFlags::Graphics,
-            [&](RenderGraphBuilder& builder)
-            {
-                uiColorAndAlphaTexture = builder.ReadTexture(uiColorAndAlphaTexture, RenderBackendResourceState::ShaderResource);
-                RenderGraphTextureHandle targetTexture = sceneTextures.hudLessColorTexture = builder.WriteTexture(sceneTextures.hudLessColorTexture, RenderBackendResourceState::RenderTarget);
-
-                builder.BindRenderTarget(0, targetTexture, RenderBackendRenderPassBeginningAccessType::Preserve, RenderBackendRenderPassEndingAccessType::Preserve);
-
-                return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
-                {
-                    RenderBackendViewport viewport(0.0f, 0.0f, float(targetResolution.width), float(targetResolution.height));
-                    commandList.SetViewports(&viewport, 1);
-
-                    RenderBackendScissor scissor(0, 0, targetResolution.width, targetResolution.height);
-                    commandList.SetScissors(&scissor, 1);
-
-                    RenderBackendGraphicsPipelineState graphicsPipelineState = {};
-                    graphicsPipelineState.rasterizationState.cullMode = RenderBackendRasterizationCullMode::None;
-                    graphicsPipelineState.depthStencilState.depthTestEnable = false;
-                    graphicsPipelineState.depthStencilState.depthWriteEnable = false;
-                    graphicsPipelineState.colorBlendState.targetBlends[0].blendEnable = true;
-                    graphicsPipelineState.colorBlendState.targetBlends[0].srcColorBlendFactor = RenderBackendBlendFactor::SrcAlpha;
-                    graphicsPipelineState.colorBlendState.targetBlends[0].dstColorBlendFactor = RenderBackendBlendFactor::OneMinusSrcAlpha;
-                    graphicsPipelineState.colorBlendState.targetBlends[0].colorBlendOp = RenderBackendBlendOp::Add;
-                    graphicsPipelineState.colorBlendState.targetBlends[0].srcAlphaBlendFactor = RenderBackendBlendFactor::One;
-                    graphicsPipelineState.colorBlendState.targetBlends[0].dstAlphaBlendFactor = RenderBackendBlendFactor::OneMinusSrcAlpha;
-                    graphicsPipelineState.colorBlendState.targetBlends[0].alphaBlendOp = RenderBackendBlendOp::Add;
-                    graphicsPipelineState.colorBlendState.targetBlends[0].writeMask = RenderBackendColorComponentFlags::RGBA;
-
-                    RenderBackendShaderArguments shaderArguments = {};
-                    shaderArguments.BindTextureSRV(0, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(uiColorAndAlphaTexture)));
-
-                    RenderBackendShaderHandle vertexShader = shaderLibrary->GetShader(ShaderID::FullScreenQuadVS);
-                    RenderBackendShaderHandle pixelShader = shaderLibrary->GetShader(ShaderID::GUICompositionPS);
-
-                    commandList.Draw(
-                        vertexShader,
-                        pixelShader,
-                        graphicsPipelineState,
-                        shaderArguments,
-                        3, 1, 0, 0,
-                        RenderBackendPrimitiveTopology::TriangleList);
-                };
-            });
 
         historyFrame.cameraJitterOffset = cameraJitterOffset;
         historyFrame.cameraPosition = view.cameraPosition;

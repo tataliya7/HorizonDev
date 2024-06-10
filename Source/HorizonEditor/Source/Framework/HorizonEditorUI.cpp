@@ -91,6 +91,8 @@ namespace Horizon
     void HorizonEditor::SetColorTheme(HorizonEditorColorTheme theme) const
     {
         ImGui::SetCurrentContext(imguiContext);
+        
+        ImGui::StyleColorsDark();
         ImGuiStyle& style = ImGui::GetStyle();
 
         switch (theme)
@@ -156,7 +158,6 @@ namespace Horizon
         }
 
         // Set color theme
-        ImGuiStyle& style = ImGui::GetStyle();
         SetColorTheme(colorTheme);
         
         assert(window);
@@ -842,6 +843,21 @@ namespace Horizon
     //    }
     //}
 
+    void HorizonEditor::DrawSceneViewWindow()
+    {
+        static bool open = true;
+
+        //ImGui::SetNextWindowBgAlpha(0.0f);
+        //ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{ 0, 0 });
+
+        //ImGuiWindowFlags flags = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_MenuBar;
+
+        ImGui::Begin("SceneView", &open);
+
+        ImGui::End();
+        //ImGui::PopStyleVar();
+    }
+
     void HorizonEditor::OnDrawUI()
     {
         OPTICK_EVENT();
@@ -884,6 +900,12 @@ namespace Horizon
         //{
         //    DrawRenderSettingsWindow(&showRenderSettingsWindow);
         //}
+
+        DrawSceneViewWindow();
+
+        static bool open = true;
+        ImGui::Begin("22", &open);
+        ImGui::End();
 
         //bool showSceneViewportWindow = true;
         //if (true)

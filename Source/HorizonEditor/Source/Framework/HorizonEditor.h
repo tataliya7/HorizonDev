@@ -101,6 +101,8 @@ namespace Horizon
 
         void SetColorTheme(HorizonEditorColorTheme theme) const;
 
+        void DrawSceneViewWindow();
+
         //void OnUpdate(float deltaTime);
         //void OnRender(float deltaTime);
         void OnDrawUI();

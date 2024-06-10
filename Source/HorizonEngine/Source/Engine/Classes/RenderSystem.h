@@ -3,6 +3,8 @@
 #include "Subsystem.h"
 #include "Rendering/RenderingModule.h"
 
+struct ImGuiContext;
+
 namespace Horizon
 {
     class RenderSystem final : public Subsystem
@@ -33,6 +35,16 @@ namespace Horizon
         RealTimeRenderer* CreateRenderer();
 
         void RenderSceneView(RealTimeRenderer* renderer, SceneView* sceneView);
+
+        void BeginDrawUI(ImGuiContext* context);
+
+        void EndDrawUI();
+
+        void UpdateImGuiData(RenderBackendCommandList* commandList);
+
+        void DrawUI(RenderBackendCommandList& commandList, RenderBackendTextureHandle output);
+
+        void RenderUserInterface(RenderGraph& renderGraph, const SceneView& view);
 
         // RenderScene* CreateRenderScene();
         //
@@ -159,15 +171,17 @@ namespace Horizon
         // ImGuiContext* context;
         // RenderBackendTextureHandle defaultFontTexture;
         //
-        // uint64 vertexBufferSize[3];
-        // uint64 currentVertexBufferDataSize[3];
-        // RenderBackendBufferHandle vertexBuffer[3];
-        // RenderBackendBufferHandle vertexBufferUpload[3];
-        //
-        // uint64 indexBufferSize[3];
-        // uint64 currentIndexBufferDataSize[3];
-        // RenderBackendBufferHandle indexBuffer[3];
-        // RenderBackendBufferHandle indexBufferUpload[3];
+        uint32 frameInFlightCounter = 0;
+
+        uint64 vertexBufferSize[3];
+        uint64 currentVertexBufferDataSize[3];
+        RenderBackendBufferHandle vertexBuffer[3];
+        RenderBackendBufferHandle vertexBufferUpload[3];
+        
+        uint64 indexBufferSize[3];
+        uint64 currentIndexBufferDataSize[3];
+        RenderBackendBufferHandle indexBuffer[3];
+        RenderBackendBufferHandle indexBufferUpload[3];
         //
         // bool shouldUpdateRayTracingScene = false;
         //
