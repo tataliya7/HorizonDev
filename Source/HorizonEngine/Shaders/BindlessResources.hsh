@@ -115,8 +115,19 @@
 [[vk::binding(3, 0)]] RWByteAddressBuffer      BindlessResource_RWByteAddressBuffer[];
 // Acceleration Structure
 #if RAY_TRACING_ENABLED
-[[vk::binding(4, 0)]] RaytracingAccelerationStructure BindlessResource_RaytracingAccelerationStructure[];
+[[vk::binding(5, 0)]] RaytracingAccelerationStructure BindlessResource_RaytracingAccelerationStructure[];
 #endif
+
+#define DECLARE_CONSTANT_BUFFER_TYPE(type) \
+[[vk::binding(4, 0)]] ConstantBuffer<type> BindlessResource_ConstantBuffer_##type[];
+
+#define BIND_BUFFER_CBV(slot, type) \
+ConstantBuffer<type> Get##type##CBV() \
+{ \
+    uint bufferIndex = SHADER_ARGUMENTS_INDEX(slot); \
+    ConstantBuffer<type> buffer = BindlessResource_ConstantBuffer_##type[bufferIndex]; \
+    return buffer; \
+}
 
 ByteAddressBuffer GetByteAddressBuffer(uint index)
 {
@@ -280,6 +291,14 @@ Texture2D GetTexture2D(uint index)
 Texture2D GetTexture2DNonUniform(uint index)
 {
     return ResourceDescriptorHeap[NonUniformResourceIndex(index)];
+}
+
+#define BIND_BUFFER_CBV(slot, type) \
+ConstantBuffer<type> Get##type##CBV() \
+{ \
+    uint bufferIndex = SHADER_ARGUMENTS_INDEX(slot); \
+    ConstantBuffer<type> buffer = ResourceDescriptorHeap[bufferIndex]; \
+    return buffer; \
 }
 
 #define BIND_BYTE_ADDRESS_BUFFER_SRV(slot, name) \

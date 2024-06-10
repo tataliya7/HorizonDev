@@ -14,7 +14,7 @@
 #include "../RealTimeRendererCommon.hsh"
 #include "PostProcessingCommon.hsh"
 
-BIND_BYTE_ADDRESS_BUFFER_SRV(0, PerFrameDataBuffer);
+BIND_BUFFER_CBV(0, PerFrameShaderParameters);
 BIND_TEXTURE_2D_SRV(1, DownsampledInputTexture);
 BIND_TEXTURE_2D_SRV(2, LowResolutionInputTexture);
 BIND_TEXTURE_2D_UAV(3, float3, OutputTexture);
@@ -35,13 +35,12 @@ static const float GaussianBloomUpsampleWeights[9] = {
 [numthreads(POST_PROCESSING_THREAD_GROUP_SIZE_X, POST_PROCESSING_THREAD_GROUP_SIZE_Y, 1)]
 void GaussianBloomUpsampleCS(uint3 DispatchThreadID : SV_DispatchThreadID)
 {
-    ByteAddressBuffer perFrameDataBuffer = GetPerFrameDataBufferSRV();
-    PerFrameShaderParameters perFrameParameters = perFrameDataBuffer.Load<PerFrameShaderParameters>(0);
+    ConstantBuffer<PerFrameShaderParameters> perFrameConstants = GetPerFrameShaderParametersCBV();
     Texture2D downsampledInputTexture = GetDownsampledInputTextureSRV();
     Texture2D lowResolutionInputTexture = GetLowResolutionInputTextureSRV();
     RWTexture2D<float3> outputTexture = GetOutputTextureUAV();
 
-    float radius = perFrameParameters.bloomRadius;
+    float radius = perFrameConstants.bloomRadius;
     float outputTextureInvWidth = SHADER_ARGUMENTS_DATA(0);
     float outputTextureInvHeight = SHADER_ARGUMENTS_DATA(1);
 
@@ -51,8 +50,8 @@ void GaussianBloomUpsampleCS(uint3 DispatchThreadID : SV_DispatchThreadID)
     float2 uv = (pixelCoord + 0.5f) * outputTextureInvSize;
 
     // There is no need to apply pre-exposure because the result color is the same as when we don't use it.
-    // float preExposure = perFrameParameters.preExposure;
-    // float oneOverPreExposure = perFrameParameters.oneOverPreExposure;
+    // float preExposure = perFrameConstants.preExposure;
+    // float oneOverPreExposure = perFrameConstants.oneOverPreExposure;
 
     float3 downsampledColor = downsampledInputTexture.SampleLevel(GlobalSamplerLinearClamp, uv, 0).rgb;
     float3 upsampledColor = 0.0f;

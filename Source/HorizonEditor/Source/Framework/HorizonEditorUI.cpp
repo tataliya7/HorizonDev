@@ -12,6 +12,9 @@
 
 #include <optick.h>
 
+#include "TextureImporter.h"
+#include "RenderDocPlugin.h"
+
 namespace Horizon
 {
     static void SetColorTheme_Dark(ImGuiStyle& style)
@@ -847,15 +850,33 @@ namespace Horizon
     {
         static bool open = true;
 
-        //ImGui::SetNextWindowBgAlpha(0.0f);
-        //ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{ 0, 0 });
+        ImGuiIO& io = ImGui::GetIO();
 
-        //ImGuiWindowFlags flags = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_MenuBar;
+        ImGui::SetNextWindowBgAlpha(0.0f);
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{ 0, 0 });
 
-        ImGui::Begin("SceneView", &open);
+        ImGuiWindowFlags flags = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse;
+
+        ImGui::Begin("SceneView", &open, flags);
+
+        static RenderBackendTextureHandle renderDocLogoTexture = RenderBackendTextureHandle::Null;
+        if (renderDocLogoTexture == RenderBackendTextureHandle::Null)
+        {
+            renderDocLogoTexture = LoadTextureFromFile(renderBackend, nullptr, "../../../Source/HorizonEditor/Plugins/RenderDoc/Resources/renderdoc_logo.png", false, false);
+        }
+        if (ImGui::ImageButtonEx(ImGui::GetID("##RenderDocCapture"), renderDocLogoTexture.ToUnit64(), ImVec2(25, 25), ImVec2(0, 0), ImVec2(1, 1), ImVec4(0, 0, 0, 0), ImVec4(1, 1, 1, 1)))
+        {
+            RenderDocPluginTriggerCapture();
+        }
+
+        ImVec2 contentRegionAvail = ImGui::GetContentRegionAvail();
+        viewportSize = Vector2(contentRegionAvail.x, contentRegionAvail.y);
+
+        ImGui::Image(targetTexture->GetHandle().ToUnit64(), ImVec2(viewportSize.x, viewportSize.y), ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f));
 
         ImGui::End();
-        //ImGui::PopStyleVar();
+
+        ImGui::PopStyleVar();
     }
 
     void HorizonEditor::OnDrawUI()

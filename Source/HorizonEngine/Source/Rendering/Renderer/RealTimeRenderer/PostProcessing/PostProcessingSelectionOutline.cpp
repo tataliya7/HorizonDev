@@ -50,7 +50,7 @@ namespace Horizon
                         /*for (const auto& drawCallInfo : renderEngine->drawList)
                         {
                             RenderBackendShaderArguments shaderArguments = {};
-                            shaderArguments.BindBuffer(0, this->GetCurrentPerFrameDataBuffer());
+                            shaderArguments.BindBufferCBV(0, this->GetCurrentPerFrameConstantBuffer());
                             shaderArguments.BindBuffer(1, renderEngine->geometryBuffer, drawCallInfo.geometryIndex * sizeof(GeometryShaderParameters));
                             shaderArguments.BindBuffer(2, drawCallInfo.vertexBuffers[0], 0);
 
@@ -94,7 +94,7 @@ namespace Horizon
                     uint32 threadGroupCountZ = 1;
 
                     RenderBackendShaderArguments shaderArguments = {};
-                    shaderArguments.BindBuffer(0, this->GetCurrentPerFrameDataBuffer());
+                    shaderArguments.BindBufferCBV(0, this->GetCurrentPerFrameConstantBuffer());
                     shaderArguments.BindTextureSRV(1, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(maskTexture)));
                     shaderArguments.BindTextureUAV(2, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(jumpFloodTexture0), 0));
 
@@ -137,7 +137,7 @@ namespace Horizon
                         uint32 threadGroupCountZ = 1;
 
                         RenderBackendShaderArguments shaderArguments = {};
-                        shaderArguments.BindBuffer(0, this->GetCurrentPerFrameDataBuffer());
+                        shaderArguments.BindBufferCBV(0, this->GetCurrentPerFrameConstantBuffer());
                         shaderArguments.BindTextureSRV(1, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(jumpFloodPassInputTexture)));
                         shaderArguments.BindTextureUAV(2, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(jumpFloodPassOutputTexture), 0));
                         shaderArguments.PushConstants(0, (float)stepWidth);
@@ -174,7 +174,7 @@ namespace Horizon
                     uint32 threadGroupCountZ = 1;
 
                     RenderBackendShaderArguments shaderArguments = {};
-                    shaderArguments.BindBuffer(0, this->GetCurrentPerFrameDataBuffer());
+                    shaderArguments.BindBufferCBV(0, this->GetCurrentPerFrameConstantBuffer());
                     shaderArguments.BindTextureSRV(1, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(jumpFloodTexture)));
                     shaderArguments.BindTextureUAV(2, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(outputTexture), 0));
 

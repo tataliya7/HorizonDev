@@ -49,7 +49,7 @@ namespace Horizon
                     commandList.SetScissors(&scissor, 1);
 
                     RenderBackendShaderArguments shaderArguments = {};
-                    shaderArguments.BindBuffer(0, this->GetCurrentPerFrameDataBuffer());
+                    shaderArguments.BindBufferCBV(0, this->GetCurrentPerFrameConstantBuffer());
                     shaderArguments.BindTextureSRV(1, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(halfResolutionSceneColorTexture)));
                     shaderArguments.PushConstants(0, (float)lensFlaresTextureWidth);
                     shaderArguments.PushConstants(1, (float)lensFlaresTextureHeight);
@@ -164,7 +164,7 @@ namespace Horizon
                     commandList.SetScissors(&scissor, 1);
 
                     RenderBackendShaderArguments shaderArguments = {};
-                    shaderArguments.BindBuffer(0, this->GetCurrentPerFrameDataBuffer());
+                    shaderArguments.BindBufferCBV(0, this->GetCurrentPerFrameConstantBuffer());
                     shaderArguments.BindTextureSRV(1, RenderBackendTextureSRVDesc::Create(lensFlaresGradiantLUTTexture));
                     shaderArguments.BindTextureSRV(2, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(lensFlaresGhostTexture)));
                     shaderArguments.BindTextureSRV(3, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(lensFlaresGlareTexture)));

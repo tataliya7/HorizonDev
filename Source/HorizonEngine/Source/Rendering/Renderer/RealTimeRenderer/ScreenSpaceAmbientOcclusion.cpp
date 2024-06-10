@@ -56,7 +56,7 @@ namespace Horizon
 //                     uint32 threadGroupCountY = ComputeWorkGroupCount(gtaoTextureHeight, 8);
 //
 //                     RenderBackendShaderArguments shaderArguments = {};
-//                     shaderArguments.BindBuffer(0, this->GetCurrentPerFrameDataBuffer());
+//                     shaderArguments.BindBufferCBV(0, this->GetCurrentPerFrameConstantBuffer());
 //                     shaderArguments.BindTextureSRV(1, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(sceneDepthTexture)));
 //                     shaderArguments.BindTextureSRV(2, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(gbuffer0)));
 //                     shaderArguments.BindTextureUAV(3, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(gtaoHorizonSearchAndIntegralTexture), 0));
@@ -92,7 +92,7 @@ namespace Horizon
 //                     uint32 threadGroupCountY = ComputeWorkGroupCount(gtaoTextureHeight, 8);
 //
 //                     RenderBackendShaderArguments shaderArguments = {};
-//                     shaderArguments.BindBuffer(0, this->GetCurrentPerFrameDataBuffer());
+//                     shaderArguments.BindBufferCBV(0, this->GetCurrentPerFrameConstantBuffer());
 //                     shaderArguments.BindTextureSRV(1, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(sceneDepthTexture)));
 //                     shaderArguments.BindTextureSRV(2, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(gtaoHorizonSearchAndIntegralTexture)));
 //                     shaderArguments.BindTextureUAV(3, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(gtaoSpatialFilteringTexture), 0));
@@ -138,7 +138,7 @@ namespace Horizon
 //                     uint32 threadGroupCountY = ComputeWorkGroupCount(ambientOcclusionTextureHeight, 8);
 //
 //                     RenderBackendShaderArguments shaderArguments = {};
-//                     shaderArguments.BindBuffer(0, this->GetCurrentPerFrameDataBuffer());
+//                     shaderArguments.BindBufferCBV(0, this->GetCurrentPerFrameConstantBuffer());
 //                     shaderArguments.BindTextureSRV(1, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(sceneDepthTexture)));
 //                     shaderArguments.BindTextureSRV(7, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(motionVectorTexture)));
 //                     shaderArguments.BindTextureSRV(8, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(historySceneDepthTexture)));

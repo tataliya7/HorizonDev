@@ -1,7 +1,7 @@
 #include "../../ShaderCommon.hsh"
 #include "../RealTimeRendererCommon.hsh"
 
-BIND_BYTE_ADDRESS_BUFFER_SRV(0, PerFrameDataBuffer);
+BIND_BUFFER_CBV(0, PerFrameShaderParameters);
 BIND_TEXTURE_2D_SRV(1, GBuffer0);
 BIND_TEXTURE_2D_UAV(2, float4, OutputTexture);
 
@@ -9,8 +9,7 @@ BIND_TEXTURE_2D_UAV(2, float4, OutputTexture);
 [numthreads(8, 8, 1)]
 void VisualizeWorldSpaceNormalCS(uint3 DispatchThreadID : SV_DispatchThreadID)
 {
-    ByteAddressBuffer perFrameDataBuffer = GetPerFrameDataBufferSRV();
-    PerFrameShaderParameters perFrameParameters = perFrameDataBuffer.Load<PerFrameShaderParameters>(0);
+    ConstantBuffer<PerFrameShaderParameters> perFrameConstants = GetPerFrameShaderParametersCBV();
     Texture2D gbuffer0 = GetGBuffer0SRV();
     RWTexture2D<float4> outputTexture = GetOutputTextureUAV();
 

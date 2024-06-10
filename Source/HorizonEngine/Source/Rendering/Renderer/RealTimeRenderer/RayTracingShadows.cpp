@@ -37,7 +37,7 @@ namespace Horizon
         //             RenderBackendRayTracingAccelerationStructureHandle rayTracingScene = view.GetRayTracingScene();
         //
         //             RenderBackendShaderArguments shaderArguments = {};
-        //             shaderArguments.BindBuffer(0, this->GetCurrentPerFrameDataBuffer());
+        //             shaderArguments.BindBufferCBV(0, this->GetCurrentPerFrameConstantBuffer());
         //             shaderArguments.BindAS(1, rayTracingScene);
         //             shaderArguments.BindTextureSRV(2, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(sceneDepthTexture)));
         //             shaderArguments.BindTextureUAV(3, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(screenSpaceShadowMaskTexture), 0));

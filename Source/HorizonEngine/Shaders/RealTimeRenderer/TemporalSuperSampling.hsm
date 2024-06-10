@@ -1,7 +1,7 @@
 #include "../ShaderCommon.hsh"
 #include "RealTimeRendererCommon.hsh"
 
-BIND_BYTE_ADDRESS_BUFFER_SRV(0, PerFrameDataBuffer);
+BIND_BUFFER_CBV(0, PerFrameShaderParameters);
 BIND_TEXTURE_2D_SRV(1, SceneColor);
 BIND_TEXTURE_2D_SRV(2, SceneDepth);
 BIND_TEXTURE_2D_SRV(3, VelocityBuffer);
@@ -279,8 +279,7 @@ float3 InverseTonemap(float3 color)
 [numthreads(8, 8, 1)]
 void TemporalSuperSamplingCS(uint3 DispatchThreadID : SV_DispatchThreadID)
 {
-    ByteAddressBuffer perFrameDataBuffer = GetPerFrameDataBufferSRV();
-    PerFrameShaderParameters perFrameParameters = perFrameDataBuffer.Load<PerFrameShaderParameters>(0);
+    ConstantBuffer<PerFrameShaderParameters> perFrameConstants = GetPerFrameShaderParametersCBV();
     Texture2D sceneDepth = GetSceneDepthSRV();
     Texture2D sceneColor = GetSceneColorSRV();
     Texture2D velocityBuffer = GetVelocityBufferSRV();
@@ -288,8 +287,8 @@ void TemporalSuperSamplingCS(uint3 DispatchThreadID : SV_DispatchThreadID)
     Texture2D historyTemporalAATexture = GetHistoryTemporalAATextureSRV();
     RWTexture2D<float4> outputTexture = GetOutputTextureUAV();
 
-    uint width = perFrameParameters.renderWidth;
-    uint height = perFrameParameters.renderHeight;
+    uint width = perFrameConstants.renderWidth;
+    uint height = perFrameConstants.renderHeight;
     if (DispatchThreadID.x >= width || DispatchThreadID.y >= height)
     {
         return;
@@ -300,11 +299,11 @@ void TemporalSuperSamplingCS(uint3 DispatchThreadID : SV_DispatchThreadID)
     int2 inputMinPixelCoord = int2(0, 0);
     int2 inputMaxPixelCoord = int2(width - 1, height - 1);
     const float2 uv = (centerPixel + 0.5f) * float2(1.0 / resolution.x, 1.0 / resolution.y);
-    float2 jitterOffset = perFrameParameters.cameraJitterOffset * float2(1.0 / resolution.x, 1.0 / resolution.y);
+    float2 jitterOffset = perFrameConstants.cameraJitterOffset * float2(1.0 / resolution.x, 1.0 / resolution.y);
     float2 jitteredUV = uv + jitterOffset;
 
 #if 0
-    float exposureScale = AutoExposure * perFrameParameters.oneOverExposure;
+    float exposureScale = AutoExposure * perFrameConstants.oneOverExposure;
 #else
     float exposureScale = 1.0f;
 #endif
@@ -337,7 +336,7 @@ void TemporalSuperSamplingCS(uint3 DispatchThreadID : SV_DispatchThreadID)
         {
             int2 curPixel = centerPixel + int2(x, y);
             curPixel = clamp(curPixel, inputMinPixelCoord, inputMaxPixelCoord);
-            float depth = LinearDepth01(sceneDepth[curPixel].r, perFrameParameters.nearClippingPlane, perFrameParameters.farClippingPlane);
+            float depth = LinearDepth01(sceneDepth[curPixel].r, perFrameConstants.nearClippingPlane, perFrameConstants.farClippingPlane);
             if (depth < nearestDepth)
             {
                 nearestDepth = depth;
@@ -351,11 +350,11 @@ void TemporalSuperSamplingCS(uint3 DispatchThreadID : SV_DispatchThreadID)
 
     // Sample history
     float2 historySampleUV = uv + motionVector;
-    float4 historyColor = SampleHistory(historyTemporalAATexture, historySampleUV, perFrameParameters.preExposureCorrection);
+    float4 historyColor = SampleHistory(historyTemporalAATexture, historySampleUV, perFrameConstants.preExposureCorrection);
 
     // Disocclusion fallback
-    float currentDepth = LinearDepthNearFar(sceneDepth[centerPixel].r, perFrameParameters.nearClippingPlane, perFrameParameters.farClippingPlane);
-    float historyDepth = LinearDepthNearFar(historyDepthBuffer.SampleLevel(GlobalSamplerPointClamp, historySampleUV, 0).r, perFrameParameters.nearClippingPlane, perFrameParameters.farClippingPlane);
+    float currentDepth = LinearDepthNearFar(sceneDepth[centerPixel].r, perFrameConstants.nearClippingPlane, perFrameConstants.farClippingPlane);
+    float historyDepth = LinearDepthNearFar(historyDepthBuffer.SampleLevel(GlobalSamplerPointClamp, historySampleUV, 0).r, perFrameConstants.nearClippingPlane, perFrameConstants.farClippingPlane);
     if (motionVectorLength > 2.0 && abs(currentDepth - historyDepth) > 0.5) // disocclusion
     {
         filteredColor.rgb = YCoCgToRGB(filteredColor.rgb);

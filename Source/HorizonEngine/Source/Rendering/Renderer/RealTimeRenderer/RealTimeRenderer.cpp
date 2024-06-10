@@ -106,10 +106,10 @@ namespace Horizon
         , defaultResources(defaultResources)
         , temporalSuperSamplingInterface(nullptr)
     {
-        RenderBackendBufferDesc perFrameDataBufferDesc = RenderBackendBufferDesc::CreateByteAddress(sizeof(PerFrameShaderParameters), true);
+        RenderBackendBufferDesc perFrameConstantBufferDesc = RenderBackendBufferDesc::CreateUniform(sizeof(PerFrameShaderParameters));
         for (uint32 index = 0; index < MaxNumFramesInFlight; index++)
         {
-            perFrameDataBuffers[index] = renderBackend->CreateBuffer(&perFrameDataBufferDesc, nullptr, "PerFrameDataBuffer");
+            perFrameConstantBuffers[index] = renderBackend->CreateBuffer(&perFrameConstantBufferDesc, nullptr, "PerFrameConstantBuffer");
         }
 
         AutoExposureData defaultAutoExposureData;
@@ -128,9 +128,9 @@ namespace Horizon
 
     }
 
-    RenderBackendBufferHandle RealTimeRenderer::GetCurrentPerFrameDataBuffer() const
+    RenderBackendBufferHandle RealTimeRenderer::GetCurrentPerFrameConstantBuffer() const
     {
-        return perFrameDataBuffers[currentPerFrameDataBufferIndex];
+        return perFrameConstantBuffers[currentPerFrameDataBufferIndex];
     }
 
     void RealTimeRenderer::UpdateAutoExposureDataFromReadbackBuffer()
@@ -510,12 +510,14 @@ namespace Horizon
             }
         }
 
-        RenderBackendBufferHandle perFrameDataBuffer = GetCurrentPerFrameDataBuffer();
+        {
+            RenderBackendBufferHandle perFrameConstantBuffer = GetCurrentPerFrameConstantBuffer();
 
-        void* data = nullptr;
-        renderBackend->MapBuffer(perFrameDataBuffer, &data);
-        memcpy(data, &perFrameShaderParameters, sizeof(PerFrameShaderParameters));
-        renderBackend->UnmapBuffer(perFrameDataBuffer);
+            void* data = nullptr;
+            renderBackend->MapBuffer(perFrameConstantBuffer, &data);
+            memcpy(data, &perFrameShaderParameters, sizeof(PerFrameShaderParameters));
+            renderBackend->UnmapBuffer(perFrameConstantBuffer);
+        }
     }
 
 #if 0

@@ -171,7 +171,7 @@ namespace Horizon
                         graphicsPipelineState.depthStencilState.depthCompareFunction = RenderBackendCompareOp::GreaterOrEqual;
 
                         RenderBackendShaderArguments shaderArguments = {};
-                        shaderArguments.BindBuffer(0, this->GetCurrentPerFrameDataBuffer());
+                        shaderArguments.BindBufferCBV(0, this->GetCurrentPerFrameConstantBuffer());
                         shaderArguments.BindBuffer(1, renderEngine->debugDrawLinesVertexBuffer, 0);
 
                         RenderBackendShaderHandle graphicsShader = shaderLibrary->GetShader(ShaderID::DebugDraw);

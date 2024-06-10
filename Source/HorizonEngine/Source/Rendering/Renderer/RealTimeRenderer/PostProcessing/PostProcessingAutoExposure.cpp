@@ -41,7 +41,7 @@ namespace Horizon
                     uint32 threadGroupCountZ = 1;
 
                     RenderBackendShaderArguments shaderArguments = {};
-                    shaderArguments.BindBuffer(0, this->GetCurrentPerFrameDataBuffer());
+                    shaderArguments.BindBufferCBV(0, this->GetCurrentPerFrameConstantBuffer());
                     shaderArguments.BindTextureSRV(1, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(sceneColorTexture)));
                     shaderArguments.BindTextureUAV(2, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(histogramTexture), 0));
 
@@ -82,7 +82,7 @@ namespace Horizon
                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
                 {
                     RenderBackendShaderArguments shaderArguments = {};
-                    shaderArguments.BindBuffer(0, this->GetCurrentPerFrameDataBuffer());
+                    shaderArguments.BindBufferCBV(0, this->GetCurrentPerFrameConstantBuffer());
                     shaderArguments.BindTextureSRV(1, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(autoExposureHistogramTexture)));
                     shaderArguments.BindBuffer(2, registry.GetRenderBackendBufferHandle(previousAutoExposureBuffer));
                     shaderArguments.BindBuffer(3, registry.GetRenderBackendBufferHandle(autoExposureBuffer));

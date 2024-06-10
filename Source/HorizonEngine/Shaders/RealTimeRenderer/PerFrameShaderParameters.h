@@ -122,6 +122,10 @@ struct PerFrameShaderParameters
     float4x4 previousNonJitteredWorldToClipMatrix;
 };
 
+#ifndef __cplusplus
+DECLARE_CONSTANT_BUFFER_TYPE(PerFrameShaderParameters);
+#endif
+
 #ifdef __cplusplus
 #undef uint
 #undef float2

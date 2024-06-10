@@ -5,7 +5,7 @@
 #include "ToneMappingCommon.hsh"
 #include "ColorLUTCommon.hsh"
 
-BIND_BYTE_ADDRESS_BUFFER_SRV(0, PerFrameDataBuffer);
+BIND_BUFFER_CBV(0, PerFrameShaderParameters);
 BIND_TEXTURE_2D_SRV(1, LensDirtTexture);
 BIND_TEXTURE_2D_SRV(2, SceneColorTexture);
 BIND_TEXTURE_2D_SRV(3, BloomTexture);
@@ -29,20 +29,19 @@ float3 Lookup3DColorLUT(Texture3D colorLUT, float3 linearColor)
 [numthreads(POST_PROCESSING_THREAD_GROUP_SIZE_X, POST_PROCESSING_THREAD_GROUP_SIZE_Y, 1)]
 void ToneMappingCS(uint3 DispatchThreadID : SV_DispatchThreadID)
 {
-    ByteAddressBuffer perFrameDataBuffer = GetPerFrameDataBufferSRV();
-    PerFrameShaderParameters perFrameParameters = perFrameDataBuffer.Load<PerFrameShaderParameters>(0);
+    ConstantBuffer<PerFrameShaderParameters> perFrameConstants = GetPerFrameShaderParametersCBV();
     Texture2D sceneColorTexture = GetSceneColorTextureSRV();
     RWTexture2D<float4> outputTexture = GetOutputTextureUAV();
 
-    uint width = perFrameParameters.targetWidth;
-    uint height = perFrameParameters.targetHeight;
+    uint width = perFrameConstants.targetWidth;
+    uint height = perFrameConstants.targetHeight;
     if (DispatchThreadID.x >= width || DispatchThreadID.y >= height)
     {
         return;
     }
 
     uint2 pixelCoord = DispatchThreadID.xy;
-    float2 uv = (pixelCoord + 0.5f) * perFrameParameters.targetResolution.zw;
+    float2 uv = (pixelCoord + 0.5f) * perFrameConstants.targetResolution.zw;
 
     ByteAddressBuffer autoExposureBuffer = GetAutoExposureBufferSRV();
     float exposure = autoExposureBuffer.Load<float>(0);
@@ -52,7 +51,7 @@ void ToneMappingCS(uint3 DispatchThreadID : SV_DispatchThreadID)
     float2 chromaticAberrationScale = float2(SHADER_ARGUMENTS_DATA(1), SHADER_ARGUMENTS_DATA(2));
     if (any(chromaticAberrationScale) > 0)
     {
-        float chromaticAberrationOffset = perFrameParameters.chromaticAberrationOffset;
+        float chromaticAberrationOffset = perFrameConstants.chromaticAberrationOffset;
 
         float2 lensUV = UVToClipSpace(uv);
 
@@ -70,7 +69,7 @@ void ToneMappingCS(uint3 DispatchThreadID : SV_DispatchThreadID)
         sceneColor = sceneColorTexture[pixelCoord];
     }
 
-    float oneOverPreExposure = perFrameParameters.oneOverPreExposure;
+    float oneOverPreExposure = perFrameConstants.oneOverPreExposure;
     float4 hdrColor = sceneColor;
 
     // Apply local toneMapping
@@ -84,15 +83,15 @@ void ToneMappingCS(uint3 DispatchThreadID : SV_DispatchThreadID)
     Texture2D bloomTexture = GetBloomTextureSRV();
     float3 bloomColor = bloomTexture.SampleLevel(GlobalSamplerLinearClamp, uv, 0).rgb;
     //bloomColor /= 7;
-    // if (perFrameParameters.lensDirtIntensity > 0 && perFrameParameters.bloomIntensity)
+    // if (perFrameConstants.lensDirtIntensity > 0 && perFrameConstants.bloomIntensity)
     // {
     //     Texture2D lensDirtTexture = GetLensDirtTextureSRV();
-    //     //float4 lensDirtTint = perFrameParameters.lensDirtTint * perFrameParameters.lensDirtIntensity / perFrameParameters.bloomIntensity;
-    //     float4 lensDirtTint = perFrameParameters.lensDirtTint * perFrameParameters.lensDirtIntensity;
+    //     //float4 lensDirtTint = perFrameConstants.lensDirtTint * perFrameConstants.lensDirtIntensity / perFrameConstants.bloomIntensity;
+    //     float4 lensDirtTint = perFrameConstants.lensDirtTint * perFrameConstants.lensDirtIntensity;
     //     float3 lensDirtColor = lensDirtTexture.SampleLevel(GlobalSamplerLinearClamp, uv, 0).rgb * lensDirtTint.rgb;
     //     bloomColor.rgb = bloomColor.rgb * (1.0f + lensDirtColor);
     // }
-    float bloomMask = perFrameParameters.bloomIntensity * 0.1f;
+    float bloomMask = perFrameConstants.bloomIntensity * 0.1f;
     hdrColor.rgb = lerp(hdrColor.rgb, bloomColor.rgb, bloomMask);
     hdrColor.rgb = hdrColor.rgb * (oneOverPreExposure * exposure);
 
@@ -117,5 +116,5 @@ void ToneMappingCS(uint3 DispatchThreadID : SV_DispatchThreadID)
     float3 outColor = Lookup3DColorLUT(colorLUTTexture, hdrColor.rgb);
 #endif
 
-    outputTexture[pixelCoord] = float4(outColor, RelativeLuminance(outColor));
+    outputTexture[pixelCoord] = float4(outColor, 1.0f);
 }

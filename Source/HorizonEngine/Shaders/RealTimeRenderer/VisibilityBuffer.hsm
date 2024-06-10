@@ -1,7 +1,7 @@
 #include "../ShaderCommon.hsh"
 #include "RealTimeRendererCommon.hsh"
 
-BIND_BYTE_ADDRESS_BUFFER_SRV(0, PerFrameDataBuffer);
+BIND_BUFFER_CBV(0, PerFrameShaderParameters);
 BIND_BYTE_ADDRESS_BUFFER_SRV(1, Geometry, Geometry);
 BIND_BYTE_ADDRESS_BUFFER_SRV(2, MaterialBuffer);
 BIND_BYTE_ADDRESS_BUFFER_SRV(3, VertexBuffer0);
@@ -42,8 +42,7 @@ struct VisibilityBufferVSToPS
 [shader("vertex")]
 void VisibilityBufferVS(uint vertexIndex : SV_VertexID, out VisibilityBufferVSToPS output)
 {
-    ByteAddressBuffer perFrameDataBuffer = GetPerFrameDataBufferSRV();
-    PerFrameShaderParameters perFrameParameters = perFrameDataBuffer.Load<PerFrameShaderParameters>(0);
+    ConstantBuffer<PerFrameShaderParameters> perFrameConstants = GetPerFrameShaderParametersCBV();
     Geometry geometry = GetGeometry();
 
     float3 vertexPosition = GetVertexPosition(vertexIndex);
@@ -52,7 +51,7 @@ void VisibilityBufferVS(uint vertexIndex : SV_VertexID, out VisibilityBufferVSTo
     RWByteAddressBuffer transformBuffer = GetRWByteAddressBuffer(geometry.transformBuffer);
     float4x4 worldMatrix = transformBuffer.Load<float4x4>(geometry.transformIndex * sizeof(float4x4));
     float3 worldPosition = mul(worldMatrix, float4(vertexPosition, 1.0)).xyz;
-    float4 clipPosition = mul(perFrameParameters.worldToClipMatrix, float4(worldPosition, 1.0));
+    float4 clipPosition = mul(perFrameConstants.worldToClipMatrix, float4(worldPosition, 1.0));
 
     output.svPosition = clipPosition;
     output.texCoord0 = vertexTexCoord0;
@@ -72,12 +71,11 @@ void VisibilityBufferPS(
     out uint2 vbuffer0 : SV_Target0,
     out float4 vbuffer1 : SV_Target1)
 {
-    ByteAddressBuffer perFrameDataBuffer = GetPerFrameDataBufferSRV();
-    PerFrameShaderParameters perFrameParameters = perFrameDataBuffer.Load<PerFrameShaderParameters>(0);
+    ConstantBuffer<PerFrameShaderParameters> perFrameConstants = GetPerFrameShaderParametersCBV();
     Geometry geometry = GetGeometry();
 
     float2 texCoord0 = input.texCoord0;
-    float materialTextureMipLodBias = perFrameParameters.materialTextureMipLodBias;
+    float materialTextureMipLodBias = perFrameConstants.materialTextureMipLodBias;
 
     uint geometryID = uint(SHADER_ARGUMENTS_DATA(0));
     uint2 visibilityID = uint2(geometryID, primitiveID);
@@ -100,11 +98,11 @@ void VisibilityBufferPS(
     float3 worldPosition1 = mul(worldTransform, float4(vertex1, 1.0)).xyz;
     float3 worldPosition2 = mul(worldTransform, float4(vertex2, 1.0)).xyz;
 
-    float4 clipPosition0 = mul(perFrameParameters.worldToClipMatrix, float4(worldPosition0, 1.0));
-    float4 clipPosition1 = mul(perFrameParameters.worldToClipMatrix, float4(worldPosition1, 1.0));
-    float4 clipPosition2 = mul(perFrameParameters.worldToClipMatrix, float4(worldPosition2, 1.0));
+    float4 clipPosition0 = mul(perFrameConstants.worldToClipMatrix, float4(worldPosition0, 1.0));
+    float4 clipPosition1 = mul(perFrameConstants.worldToClipMatrix, float4(worldPosition1, 1.0));
+    float4 clipPosition2 = mul(perFrameConstants.worldToClipMatrix, float4(worldPosition2, 1.0));
 
-    float2 uv = input.svPosition.xy / float2(perFrameParameters.renderWidth, perFrameParameters.renderHeight);
+    float2 uv = input.svPosition.xy / float2(perFrameConstants.renderWidth, perFrameConstants.renderHeight);
     float3 perspectiveCorrectBarycentrics = CalculatePerspectiveCorrectBarycentric(clipPosition0, clipPosition1, clipPosition2, uv_to_clipspace(uv));
 #endif
 #endif

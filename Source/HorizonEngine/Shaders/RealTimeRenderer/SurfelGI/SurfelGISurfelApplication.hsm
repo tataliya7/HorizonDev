@@ -2,7 +2,7 @@
 #include "../RealTimeRendererCommon.hsh"
 #include "SurfelGICommon.hsh"
 
-BIND_BYTE_ADDRESS_BUFFER_SRV(0, PerFrameDataBuffer);
+BIND_BUFFER_CBV(0, PerFrameShaderParameters);
 BIND_TEXTURE_2D_SRV(1, VisibilityBuffer0);
 BIND_TEXTURE_2D_SRV(2, VisibilityBuffer1);
 BIND_TEXTURE_2D_SRV(3, SceneDepth);
@@ -37,8 +37,7 @@ void SurfelGISurfelApplicationCS(
 
     GroupMemoryBarrierWithGroupSync();
 
-    ByteAddressBuffer perFrameDataBuffer = GetPerFrameDataBufferSRV();
-    PerFrameShaderParameters perFrameParameters = perFrameDataBuffer.Load<PerFrameShaderParameters>(0);
+    ConstantBuffer<PerFrameShaderParameters> perFrameConstants = GetPerFrameShaderParametersCBV();
 
     Texture2D visibilityBuffer0 = GetVisibilityBuffer0RV();
     Texture2D visibilityBuffer1 = GetVisibilityBuffer1RV();
@@ -64,12 +63,12 @@ void SurfelGISurfelApplicationCS(
         return;
     }
 
-    float4 renderSizeAndInvSize = float4(perFrameParameters.renderWidth, perFrameParameters.renderHeight, 1.0 / perFrameParameters.renderWidth, 1.0 / perFrameParameters.renderHeight);
+    float4 renderSizeAndInvSize = float4(perFrameConstants.renderWidth, perFrameConstants.renderHeight, 1.0 / perFrameConstants.renderWidth, 1.0 / perFrameConstants.renderHeight);
     float2 uv = (pixelCoord + 0.5) * renderSizeAndInvSize.zw;
 
     // Once a certain amount of coverage is achieved, no more surfels are spawned in that tile.
     float coverage = 0;
-    float3 worldSpacePosition = ReconstructWorldSpacePositionFromDepth(uv, depth, perFrameParameters.clipToWorldMatrix);
+    float3 worldSpacePosition = ReconstructWorldSpacePositionFromDepth(uv, depth, perFrameConstants.clipToWorldMatrix);
 
     // Find surfel grid cell.
     int3 cellID = CalculateUniformGridCellID(worldSpacePosition);
@@ -138,7 +137,7 @@ void SurfelGISurfelApplicationCS(
         if (numSurfelsCanSpawn > 0)
         {
             // GIBS's stratagy: make the spawn chance proportional to the pixel’s projected area in world space.
-            float linearDepth = LinearDepthNearFar(depth, perFrameParameters.nearClippingPlane, perFrameParameters.farClippingPlane);
+            float linearDepth = LinearDepthNearFar(depth, perFrameConstants.nearClippingPlane, perFrameConstants.farClippingPlane);
             float spawnChance = 1 - pow(1 - linearDepth, 4);
 
             // Spawn surfels probabilistically

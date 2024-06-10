@@ -53,7 +53,7 @@ namespace Horizon
 //                     uint32 threadGroupCountY = ComputeWorkGroupCount(surfelGIRenderHeight, SurfelGIScreenTileSize);
 //
 //                     RenderBackendShaderArguments shaderArguments = {};
-//                     shaderArguments.BindBuffer(0, this->GetCurrentPerFrameDataBuffer());
+//                     shaderArguments.BindBufferCBV(0, this->GetCurrentPerFrameConstantBuffer());
 //                     shaderArguments.BindTextureSRV(1, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(sceneDepthTexture)));
 //                     shaderArguments.BindTextureSRV(2, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(gbuffer0)));
 //                     shaderArguments.BindBuffer(3, surfelGIInfoBuffer, 0);
@@ -99,7 +99,7 @@ namespace Horizon
 //                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
 //                 {
 //                     RenderBackendShaderArguments shaderArguments = {};
-//                     shaderArguments.BindBuffer(0, this->GetCurrentPerFrameDataBuffer());
+//                     shaderArguments.BindBufferCBV(0, this->GetCurrentPerFrameConstantBuffer());
 //                     shaderArguments.BindBuffer(1, surfelGIInfoBuffer, 0);
 //                     shaderArguments.BindBuffer(2, surfelGIAliveSurfelIndirectionBuffer, 0);
 //                     shaderArguments.BindBuffer(3, surfelGISurfelHotDataBuffer, 0);
@@ -176,7 +176,7 @@ namespace Horizon
 //                     uint32 threadGroupCountY = ComputeWorkGroupCount(targetResolution.height, PostProcessingThreadGroupSizeY);
 //
 //                     RenderBackendShaderArguments shaderArguments = {};
-//                     shaderArguments.BindBuffer(0, this->GetCurrentPerFrameDataBuffer());
+//                     shaderArguments.BindBufferCBV(0, this->GetCurrentPerFrameConstantBuffer());
 //                     shaderArguments.BindTextureSRV(1, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(sceneColorTexture)));
 //                     shaderArguments.BindTextureSRV(2, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(sceneDepthTexture)));
 //                     shaderArguments.BindBuffer(3, surfelGIInfoBuffer, 0);

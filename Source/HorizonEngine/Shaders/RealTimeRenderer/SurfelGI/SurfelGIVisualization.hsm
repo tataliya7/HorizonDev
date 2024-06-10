@@ -3,7 +3,7 @@
 #include "../RealTimeRendererCommon.hsh"
 #include "SurfelGICommon.hsh"
 
-BIND_BYTE_ADDRESS_BUFFER_SRV(0, PerFrameDataBuffer);
+BIND_BUFFER_CBV(0, PerFrameShaderParameters);
 BIND_TEXTURE_2D_SRV(1, SceneColorTexture);
 BIND_TEXTURE_2D_SRV(2, SceneDepthTexture);
 BIND_BYTE_ADDRESS_BUFFER_UAV(3, SurfelGIInfoBuffer);
@@ -20,11 +20,10 @@ void SurfelGIVisualizationCS(
     uint3 GroupThreadID : SV_GroupThreadID,
     uint GroupIndex : SV_GroupIndex)
 {
-    ByteAddressBuffer perFrameDataBuffer = GetPerFrameDataBufferSRV();
-    PerFrameShaderParameters perFrameParameters = perFrameDataBuffer.Load<PerFrameShaderParameters>(0);
+    ConstantBuffer<PerFrameShaderParameters> perFrameConstants = GetPerFrameShaderParametersCBV();
 
-    uint width = perFrameParameters.renderWidth;
-    uint height = perFrameParameters.renderHeight;
+    uint width = perFrameConstants.renderWidth;
+    uint height = perFrameConstants.renderHeight;
     uint2 pixelCoord = DispatchThreadID.xy;
     float2 uv = (pixelCoord + 0.5) / float2(width, height);
     if (pixelCoord.x >= width || pixelCoord.y >= height)
@@ -48,9 +47,9 @@ void SurfelGIVisualizationCS(
         return;
     }
 
-    float3 worldSpacePosition = ReconstructWorldSpacePositionFromDepth(uv, sceneDepth, perFrameParameters.clipToWorldMatrix);
+    float3 worldSpacePosition = ReconstructWorldSpacePositionFromDepth(uv, sceneDepth, perFrameConstants.clipToWorldMatrix);
 
-    int cellIndex = GetUniformGridCellIndex(worldSpacePosition, perFrameParameters.cameraPosition);
+    int cellIndex = GetUniformGridCellIndex(worldSpacePosition, perFrameConstants.cameraPosition);
     if (cellIndex < 0)
     {
         outputTexture[pixelCoord] = sceneColor;

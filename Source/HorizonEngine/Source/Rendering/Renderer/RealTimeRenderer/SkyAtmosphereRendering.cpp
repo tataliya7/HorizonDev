@@ -148,7 +148,7 @@ namespace Horizon
                     uint32 threadGroupCountZ = 1;
 
                     RenderBackendShaderArguments shaderArguments = {};
-                    shaderArguments.BindBufferSRV(0, this->GetCurrentPerFrameDataBuffer());
+                    shaderArguments.BindBufferCBV(0, this->GetCurrentPerFrameConstantBuffer());
                     shaderArguments.BindTextureUAV(1, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(transmittanceLut)));
 
                     RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::SkyAtmosphereTransmittanceLut);
@@ -177,7 +177,7 @@ namespace Horizon
                     uint32 threadGroupCountZ = 1;
 
                     RenderBackendShaderArguments shaderArguments = {};
-                    shaderArguments.BindBufferSRV(0, this->GetCurrentPerFrameDataBuffer());
+                    shaderArguments.BindBufferCBV(0, this->GetCurrentPerFrameConstantBuffer());
                     shaderArguments.BindTextureSRV(1, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(transmittanceLut)));
                     shaderArguments.BindTextureUAV(2, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(multipleScatteringLut)));
 
@@ -208,7 +208,7 @@ namespace Horizon
                     uint32 threadGroupCountZ = 1;
 
                     RenderBackendShaderArguments shaderArguments = {};
-                    shaderArguments.BindBufferSRV(0, this->GetCurrentPerFrameDataBuffer());
+                    shaderArguments.BindBufferCBV(0, this->GetCurrentPerFrameConstantBuffer());
                     shaderArguments.BindTextureSRV(1, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(transmittanceLut)));
                     shaderArguments.BindTextureSRV(2, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(multipleScatteringLut)));
                     shaderArguments.BindTextureUAV(3, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(skyViewLut)));
@@ -242,7 +242,7 @@ namespace Horizon
                     uint32 threadGroupCountZ = aerialPerspectiveVolumeSize / 4;
 
                     RenderBackendShaderArguments shaderArguments = {};
-                    shaderArguments.BindBufferSRV(0, this->GetCurrentPerFrameDataBuffer());
+                    shaderArguments.BindBufferCBV(0, this->GetCurrentPerFrameConstantBuffer());
                     shaderArguments.BindTextureSRV(1, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(transmittanceLut)));
                     shaderArguments.BindTextureSRV(2, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(multipleScatteringLut)));
                     shaderArguments.BindTextureUAV(3, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(aerialPerspectiveVolume)));
@@ -300,7 +300,7 @@ namespace Horizon
                     graphicsPipelineState.colorBlendState.targetBlends[0].writeMask = RenderBackendColorComponentFlags::RGB;
 
                     RenderBackendShaderArguments shaderArguments = {};
-                    shaderArguments.BindBufferSRV(0, this->GetCurrentPerFrameDataBuffer());
+                    shaderArguments.BindBufferCBV(0, this->GetCurrentPerFrameConstantBuffer());
                     shaderArguments.BindTextureSRV(1, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(transmittanceLut)));
                     shaderArguments.BindTextureSRV(2, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(skyViewLut)));
                     shaderArguments.BindTextureSRV(3, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(aerialPerspectiveVolume)));

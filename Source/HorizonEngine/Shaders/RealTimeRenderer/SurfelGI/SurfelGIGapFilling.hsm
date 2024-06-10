@@ -3,7 +3,7 @@
 #include "../RealTimeRendererCommon.hsh"
 #include "SurfelGICommon.hsh"
 
-BIND_BYTE_ADDRESS_BUFFER_SRV(0, PerFrameDataBuffer);
+BIND_BUFFER_CBV(0, PerFrameShaderParameters);
 BIND_TEXTURE_2D_SRV(1, SceneDepthTexture);
 BIND_TEXTURE_2D_SRV(2, GBuffer0);
 BIND_BYTE_ADDRESS_BUFFER_UAV(3, SurfelGIInfoBuffer);
@@ -32,11 +32,10 @@ void SurfelGIGapFillingCS(
 
     GroupMemoryBarrierWithGroupSync();
 
-    ByteAddressBuffer perFrameDataBuffer = GetPerFrameDataBufferSRV();
-    PerFrameShaderParameters perFrameParameters = perFrameDataBuffer.Load<PerFrameShaderParameters>(0);
+    ConstantBuffer<PerFrameShaderParameters> perFrameConstants = GetPerFrameShaderParametersCBV();
 
-    uint width = perFrameParameters.renderWidth;
-    uint height = perFrameParameters.renderHeight;
+    uint width = perFrameConstants.renderWidth;
+    uint height = perFrameConstants.renderHeight;
     uint2 pixelCoord = DispatchThreadID.xy;
     float2 uv = (pixelCoord + 0.5) / float2(width, height);
     if (pixelCoord.x >= width || pixelCoord.y >= height)
@@ -60,13 +59,13 @@ void SurfelGIGapFillingCS(
         return;
     }
 
-    float3 worldSpacePosition = ReconstructWorldSpacePositionFromDepth(uv, sceneDepth, perFrameParameters.clipToWorldMatrix);
+    float3 worldSpacePosition = ReconstructWorldSpacePositionFromDepth(uv, sceneDepth, perFrameConstants.clipToWorldMatrix);
 
     float4 gbuffer0Data = gbuffer0.SampleLevel(GlobalSamplerPointClamp, uv, 0);
     float3 worldSpaceNormal = DecodeNormalFromONV(gbuffer0Data.xy);
 
     // Find surfel grid cell.
-    int cellIndex = GetUniformGridCellIndex(worldSpacePosition, perFrameParameters.cameraPosition);
+    int cellIndex = GetUniformGridCellIndex(worldSpacePosition, perFrameConstants.cameraPosition);
     if (cellIndex < 0)
     {
         return;
@@ -127,10 +126,10 @@ void SurfelGIGapFillingCS(
         if (numSurfelsCanSpawn > 0)
         {
             // GIBS's stratagy: make the spawn chance proportional to the pixel’s projected area in world space.
-            float linearDepth = LinearDepthNearFar(sceneDepth, perFrameParameters.nearClippingPlane, perFrameParameters.farClippingPlane);
+            float linearDepth = LinearDepthNearFar(sceneDepth, perFrameConstants.nearClippingPlane, perFrameConstants.farClippingPlane);
             float spawnChance = 1 - pow(1 - linearDepth, 4);
 
-            uint randSeed = RandInit(DispatchThreadID.x + DispatchThreadID.y * SurfelGIScreenTileSize, perFrameParameters.frameIndex);
+            uint randSeed = RandInit(DispatchThreadID.x + DispatchThreadID.y * SurfelGIScreenTileSize, perFrameConstants.frameIndex);
             float rand = Rand(randSeed);
 
             // Spawn surfels probabilistically

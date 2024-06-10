@@ -1,7 +1,7 @@
 #include "../ShaderCommon.hsh"
 #include "RealTimeRendererCommon.hsh"
 
-BIND_BYTE_ADDRESS_BUFFER_SRV(0, PerFrameDataBuffer);
+BIND_BUFFER_CBV(0, PerFrameShaderParameters);
 BIND_TEXTURE_CUBE_SRV(1, EnvironmentMap);
 
 struct SkyBoxVSToPS
@@ -13,15 +13,14 @@ struct SkyBoxVSToPS
 [shader("vertex")]
 void SkyBoxVS(uint vertexIndex : SV_VertexID, out SkyBoxVSToPS output)
 {
-    ByteAddressBuffer perFrameDataBuffer = GetPerFrameDataBufferSRV();
-    PerFrameShaderParameters perFrameParameters = perFrameDataBuffer.Load<PerFrameShaderParameters>(0);
+    ConstantBuffer<PerFrameShaderParameters> perFrameConstants = GetPerFrameShaderParametersCBV();
 
     // @see https://www.saschawillems.de/blog/2016/08/13/vulkan-tutorial-on-rendering-a-fullscreen-quad-without-buffers/
     float2 uv = float2((vertexIndex << 1) & 2, vertexIndex & 2);
     float4 clipPosition = float4(uv * 2.0f - 1.0f, 1.0f, 1.0f);
 
     // If A is a rotation matrix, then inverse(A) is equal to transpose(A).
-    output.uvw = mul(transpose(ConvertFloat3x3To4x4(ConvertFloat4x4To3x3(perFrameParameters.viewToClipMatrix))), mul(perFrameParameters.clipToViewMatrix, clipPosition)).xyz;
+    output.uvw = mul(transpose(ConvertFloat3x3To4x4(ConvertFloat4x4To3x3(perFrameConstants.viewToClipMatrix))), mul(perFrameConstants.clipToViewMatrix, clipPosition)).xyz;
     output.position = clipPosition;
     output.position.z = 0.0f; // Let the depth value always be 0.
 }

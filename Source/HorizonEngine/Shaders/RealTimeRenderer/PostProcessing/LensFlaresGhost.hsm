@@ -2,7 +2,7 @@
 #include "../RealTimeRendererCommon.hsh"
 #include "PostProcessingCommon.hsh"
 
-BIND_BYTE_ADDRESS_BUFFER_SRV(0, PerFrameDataBuffer);
+BIND_BUFFER_CBV(0, PerFrameShaderParameters);
 BIND_TEXTURE_2D_SRV(1, SceneColorTexture);
 
 static const float GhostIntensity = 1.0f;
@@ -21,8 +21,7 @@ static const float4 GhostColorAndScale[8] = {
 [shader("pixel")]
 void LensFlaresGhostPS(float4 position : SV_Position, out float3 outColor : SV_Target)
 {
-    ByteAddressBuffer perFrameDataBuffer = GetPerFrameDataBufferSRV();
-    PerFrameShaderParameters perFrameParameters = perFrameDataBuffer.Load<PerFrameShaderParameters>(0);
+    ConstantBuffer<PerFrameShaderParameters> perFrameConstants = GetPerFrameShaderParametersCBV();
     Texture2D SceneColorTexture = GetSceneColorTextureSRV();
     float outputTextureWidth = SHADER_ARGUMENTS_DATA(0);
     float outputTextureHeight = SHADER_ARGUMENTS_DATA(1);

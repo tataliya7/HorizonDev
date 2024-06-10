@@ -1,3 +1,6 @@
+#include "TextureImporter.h"
+
+#include <stb/stb_image.h>
 
 namespace Horizon
 {

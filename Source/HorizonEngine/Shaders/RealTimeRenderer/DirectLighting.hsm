@@ -6,7 +6,7 @@
 #include "ShadowMapCommon.hsh"
 #include "SkyAtmosphereCommon.hsh"
 
-BIND_BYTE_ADDRESS_BUFFER_SRV(0, PerFrameDataBuffer);
+BIND_BUFFER_CBV(0, PerFrameShaderParameters);
 BIND_BYTE_ADDRESS_BUFFER_SRV(11, GeometryBuffer);
 BIND_BYTE_ADDRESS_BUFFER_SRV(12, MaterialBuffer);
 BIND_BYTE_ADDRESS_BUFFER_SRV(13, LightBuffer);
@@ -108,7 +108,7 @@ float3 WorldSpaceDirectionToCubemapUvAndFaceIndex(float3 d)
     return float3(uv, faceIndex);
 }
 
-float3 ComputeDirectLightingContribution(PerFrameShaderParameters perFrameParameters, Surface surface)
+float3 ComputeDirectLightingContribution(PerFrameShaderParameters perFrameConstants, Surface surface)
 {
     uint lightCount = (uint)SHADER_ARGUMENTS_DATA(0);
     ByteAddressBuffer lightBuffer = GetLightBufferSRV();
@@ -144,8 +144,8 @@ float3 ComputeDirectLightingContribution(PerFrameShaderParameters perFrameParame
             float3 atmosphereTransmittance = atmosphereTransmittanceFactor * ComputeAtmosphereTransmittance(
                 surface.P,
                 L,
-                perFrameParameters.skyAtmosphereBottomRadiusInKilometers,
-                perFrameParameters.skyAtmosphereTopRadiusInKilometers);
+                perFrameConstants.skyAtmosphereBottomRadiusInKilometers,
+                perFrameConstants.skyAtmosphereTopRadiusInKilometers);
 
             float NdotV = max(0.0, dot(N, V));
             float NdotL = max(0.0, dot(N, L));
@@ -329,8 +329,7 @@ float3 F_Schlick(float3 f0, float f90, float VoH)
 [shader("pixel")]
 void DirectLightingPS(float4 svPosition : SV_Position, out float4 outSceneColor : SV_Target0)
 {
-    ByteAddressBuffer perFrameDataBuffer = GetPerFrameDataBufferSRV();
-    PerFrameShaderParameters perFrameParameters = perFrameDataBuffer.Load<PerFrameShaderParameters>(0);
+    ConstantBuffer<PerFrameShaderParameters> perFrameConstants = GetPerFrameShaderParametersCBV();
     Texture2D<uint2> vbuffer0 = GetVBuffer0SRV();
     Texture2D vbuffer1 = GetVBuffer1SRV();
     Texture2D gbuffer0 = GetGBuffer0SRV();
@@ -339,7 +338,7 @@ void DirectLightingPS(float4 svPosition : SV_Position, out float4 outSceneColor 
     Texture2D sceneDepthTexture = GetSceneDepthTextureSRV();
 
     const uint2 pixelCoord = uint2(svPosition.xy);
-    const float2 uv = (float2(pixelCoord) + 0.5f) / float2(perFrameParameters.renderWidth, perFrameParameters.renderHeight);
+    const float2 uv = (float2(pixelCoord) + 0.5f) / float2(perFrameConstants.renderWidth, perFrameConstants.renderHeight);
 
     float4 gbuffer0Data = gbuffer0[pixelCoord];
     float4 gbuffer1Data =  gbuffer1[pixelCoord];
@@ -365,7 +364,7 @@ void DirectLightingPS(float4 svPosition : SV_Position, out float4 outSceneColor 
     ByteAddressBuffer materialBuffer = GetMaterialBufferSRV();
     Material material = materialBuffer.Load<Material>(geometry.materialBufferOffset + (materialIndex * sizeof(Material)));
 
-    float3 position = ReconstructWorldSpacePositionFromDepth(uv, sceneDepth, perFrameParameters.clipToWorldMatrix);
+    float3 position = ReconstructWorldSpacePositionFromDepth(uv, sceneDepth, perFrameConstants.clipToWorldMatrix);
     float3 normal = DecodeNormalFromGBuffer(gbuffer0Data.xyz);
     float metallic = gbuffer1Data.x;
     float specular = gbuffer1Data.y;
@@ -378,7 +377,7 @@ void DirectLightingPS(float4 svPosition : SV_Position, out float4 outSceneColor 
     surface.uv = uv;
     surface.P = position;
     surface.N = normal;
-    surface.V = normalize(perFrameParameters.cameraPosition - position);
+    surface.V = normalize(perFrameConstants.cameraPosition - position);
     surface.R = normalize(reflect(-surface.V, surface.N));
     surface.baseColor = baseColor;
     surface.subsurface = 0.0;
@@ -411,7 +410,7 @@ void DirectLightingPS(float4 svPosition : SV_Position, out float4 outSceneColor 
 
     finalColor += surface.emission * surface.emissionStrength;
 
-    finalColor += ComputeDirectLightingContribution(perFrameParameters, surface) * perFrameParameters.preExposure;
+    finalColor += ComputeDirectLightingContribution(perFrameConstants, surface) * perFrameConstants.preExposure;
 
     outSceneColor = float4(finalColor, 1.0);
 }

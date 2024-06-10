@@ -30,7 +30,7 @@ namespace Horizon
         //             uint32 threadGroupCountZ = 1;
         //
         //             RenderBackendShaderArguments shaderArguments = {};
-        //             shaderArguments.BindBuffer(0, this->GetCurrentPerFrameDataBuffer());
+        //             shaderArguments.BindBufferCBV(0, this->GetCurrentPerFrameConstantBuffer());
         //             shaderArguments.BindTextureSRV(1, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(vbuffer0)));
         //             shaderArguments.BindTextureUAV(2, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(outputTexture), 0));
         //
@@ -74,7 +74,7 @@ namespace Horizon
         //             uint32 threadGroupCountZ = 1;
         //
         //             RenderBackendShaderArguments shaderArguments = {};
-        //             shaderArguments.BindBuffer(0, this->GetCurrentPerFrameDataBuffer());
+        //             shaderArguments.BindBufferCBV(0, this->GetCurrentPerFrameConstantBuffer());
         //             shaderArguments.BindBuffer(1, renderEngine->geometryBuffer);
         //             shaderArguments.BindTextureSRV(2, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(vbuffer0)));
         //             shaderArguments.BindTextureUAV(3, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(outputTexture), 0));
@@ -126,7 +126,7 @@ namespace Horizon
         //             uint32 threadGroupCountZ = 1;
         //
         //             RenderBackendShaderArguments shaderArguments = {};
-        //             shaderArguments.BindBuffer(0, this->GetCurrentPerFrameDataBuffer());
+        //             shaderArguments.BindBufferCBV(0, this->GetCurrentPerFrameConstantBuffer());
         //             shaderArguments.BindTextureSRV(1, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(motionVectorTexture)));
         //             shaderArguments.BindTextureUAV(2, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(outputTexture), 0));
         //
@@ -167,7 +167,7 @@ namespace Horizon
         //             uint32 threadGroupCountZ = 1;
         //
         //             RenderBackendShaderArguments shaderArguments = {};
-        //             shaderArguments.BindBuffer(0, this->GetCurrentPerFrameDataBuffer());
+        //             shaderArguments.BindBufferCBV(0, this->GetCurrentPerFrameConstantBuffer());
         //             shaderArguments.BindTextureSRV(1, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(ambientOcclusionTexture)));
         //             shaderArguments.BindTextureUAV(2, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(outputTexture), 0));
         //
@@ -220,7 +220,7 @@ namespace Horizon
         //             uint32 threadGroupCountZ = 1;
         //
         //             RenderBackendShaderArguments shaderArguments = {};
-        //             shaderArguments.BindBuffer(0, this->GetCurrentPerFrameDataBuffer());
+        //             shaderArguments.BindBufferCBV(0, this->GetCurrentPerFrameConstantBuffer());
         //             shaderArguments.BindTextureSRV(1, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(screenSpaceShadowMaskTexture)));
         //             shaderArguments.BindTextureUAV(2, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(outputTexture), 0));
         //

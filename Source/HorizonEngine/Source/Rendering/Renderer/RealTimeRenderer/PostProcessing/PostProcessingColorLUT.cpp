@@ -19,7 +19,7 @@ namespace Horizon
             GColorLUTTextureSize,
             RenderBackendTextureFormat::RGBA16Float,
             RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::UnorderedAccess);
-        RenderGraphTextureHandle colorLUTTexture = renderGraph.CreateTexture(colorLUTTextureDesc, "colorLUTTexture");
+        RenderGraphTextureHandle colorLUTTexture = renderGraph.CreateTexture(colorLUTTextureDesc, "ColorLUTTexture");
 
         //ToneMappingOperatorType toneMappingOperator = settings.toneMappingOperator;
 
@@ -38,7 +38,7 @@ namespace Horizon
                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
                 {
                     RenderBackendShaderArguments shaderArguments = {};
-                    shaderArguments.BindBuffer(0, this->GetCurrentPerFrameDataBuffer());
+                    shaderArguments.BindBufferCBV(0, this->GetCurrentPerFrameConstantBuffer());
                     shaderArguments.BindTextureUAV(1, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(colorLUTTexture), 0));
                     //shaderArguments.PushConstants(0, (float)toneMappingOperator);
 

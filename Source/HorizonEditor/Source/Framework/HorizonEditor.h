@@ -236,6 +236,7 @@ namespace Horizon
         HorizonEditorColorTheme colorTheme = HorizonEditorColorTheme::Light;
         RenderBackendTextureHandle fontTexture;
 
+        Vector2 viewportSize = Vector2(0.0f, 0.0f);
         ImGuiContext* imguiContext = nullptr;
         RenderSettings renderSettings;
         // RenderBackendType renderBackendType = RenderBackendType::Vulkan;

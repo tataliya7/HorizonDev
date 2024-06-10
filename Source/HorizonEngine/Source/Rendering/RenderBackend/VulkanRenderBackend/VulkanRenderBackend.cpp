@@ -79,7 +79,8 @@ namespace Horizon
         BindlessBindingSampledImages          = 1,
         BindlessBindingStorageImages          = 2,
         BindlessBindingStorageBuffers         = 3,
-        BindlessBindingAccelerationStructures = 4,
+        BindlessBindingUniformBuffers         = 4,
+        BindlessBindingAccelerationStructures = 5,
     };
 
     struct VulkanBindlessConfig
@@ -88,6 +89,7 @@ namespace Horizon
         uint32 numSampledImages;
         uint32 numStorageImages;
         uint32 numStorageBuffers;
+        uint32 numUniformBuffers;
         uint32 numAccelerationStructures;
     };
 
@@ -109,6 +111,7 @@ namespace Horizon
         std::vector<uint32> freeSamplers;
         std::vector<uint32> freeStorageImages;
         std::vector<uint32> freeStorageBuffers;
+        std::vector<uint32> freeUniformBuffers;
         std::vector<uint32> freeAccelerationStructures;
 
         uint32 AllocateSampledImageIndex()
@@ -136,6 +139,13 @@ namespace Horizon
         {
             uint32 index = freeStorageBuffers.back();
             freeStorageBuffers.pop_back();
+            return index;
+        }
+
+        uint32 AllocateUniformBufferIndex()
+        {
+            uint32 index = freeUniformBuffers.back();
+            freeUniformBuffers.pop_back();
             return index;
         }
 
@@ -1827,6 +1837,26 @@ namespace Horizon
             };
             vkUpdateDescriptorSets(handle, 1, &write, 0, nullptr);
             buffer.bindlessDescriptorIndexSRV = buffer.bindlessDescriptorIndexUAV = index;
+        }
+        else if (EnumClassHasFlags(desc->flags, RenderBackendBufferCreateFlags::UniformBuffer))
+        {
+            uint32 index = bindlessDescriptorManager.AllocateUniformBufferIndex();
+            VkDescriptorBufferInfo descriptorBufferInfo = {
+                .buffer = buffer.handle,
+                .offset = 0,
+                .range = VK_WHOLE_SIZE
+            };
+            VkWriteDescriptorSet write = {
+                .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+                .dstSet = bindlessDescriptorManager.set,
+                .dstBinding = BindlessBindingUniformBuffers,
+                .dstArrayElement = index,
+                .descriptorCount = 1,
+                .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                .pBufferInfo = &descriptorBufferInfo,
+            };
+            vkUpdateDescriptorSets(handle, 1, &write, 0, nullptr);
+            buffer.bindlessDescriptorIndexCBV = index;
         }
 
         uint32 bufferIndex = 0;
@@ -4275,12 +4305,14 @@ namespace Horizon
         const uint32 maxNumSamplers = physicalDevice->descriptorIndexingProperties.maxDescriptorSetUpdateAfterBindSamplers;
         const uint32 maxNumStorageImage = physicalDevice->descriptorIndexingProperties.maxDescriptorSetUpdateAfterBindStorageImages;
         const uint32 maxNumStorageBuffers = physicalDevice->descriptorIndexingProperties.maxDescriptorSetUpdateAfterBindStorageBuffers;
+        const uint32 maxNumUniformBuffers = physicalDevice->descriptorIndexingProperties.maxDescriptorSetUpdateAfterBindUniformBuffers;
         const uint32 maxNumAccellerationStructures = physicalDevice->accelerationStructureProperties.maxDescriptorSetAccelerationStructures;
 
         uint32 numSampledImages = Math::Min(bindlessConfig.numSampledImages, maxNumSampledImages);
         uint32 numSamplers = Math::Min(bindlessConfig.numSamplers, maxNumSamplers);
         uint32 numStorageImages = Math::Min(bindlessConfig.numStorageImages, maxNumStorageImage);
         uint32 numStorageBuffers = Math::Min(bindlessConfig.numStorageBuffers, maxNumStorageBuffers);
+        uint32 numUniformBuffers = Math::Min(bindlessConfig.numUniformBuffers, maxNumUniformBuffers);
         uint32 numAccelerationStructures = Math::Min(bindlessConfig.numAccelerationStructures, maxNumAccellerationStructures);
 
         std::vector<VkDescriptorPoolSize> bindlessPoolSizes;
@@ -4293,6 +4325,7 @@ namespace Horizon
                 { VK_DESCRIPTOR_TYPE_SAMPLER,                    numSamplers               },
                 { VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,              numStorageImages          },
                 { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,             numStorageBuffers         },
+                { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,             numUniformBuffers         },
                 { VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, numAccelerationStructures },
             };
             bindlessDescriptorSetLayoutBindings = {
@@ -4300,9 +4333,11 @@ namespace Horizon
                 { .binding = BindlessBindingSampledImages,          .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,              .descriptorCount = numSampledImages,          .stageFlags = VK_SHADER_STAGE_ALL },
                 { .binding = BindlessBindingStorageImages,          .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,              .descriptorCount = numStorageImages,          .stageFlags = VK_SHADER_STAGE_ALL },
                 { .binding = BindlessBindingStorageBuffers,         .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,             .descriptorCount = numStorageBuffers,         .stageFlags = VK_SHADER_STAGE_ALL },
+                { .binding = BindlessBindingUniformBuffers,         .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,             .descriptorCount = numUniformBuffers,         .stageFlags = VK_SHADER_STAGE_ALL },
                 { .binding = BindlessBindingAccelerationStructures, .descriptorType = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, .descriptorCount = numAccelerationStructures, .stageFlags = VK_SHADER_STAGE_ALL },
             };
             bindlessDescriptorBindingFlags = {
+                VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT | VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT | VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT,
                 VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT | VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT | VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT,
                 VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT | VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT | VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT,
                 VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT | VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT | VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT,
@@ -4317,14 +4352,17 @@ namespace Horizon
                 { VK_DESCRIPTOR_TYPE_SAMPLER,                    numSamplers               },
                 { VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,              numStorageImages          },
                 { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,             numStorageBuffers         },
+                { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,             numUniformBuffers         },
             };
             bindlessDescriptorSetLayoutBindings = {
                 { .binding = BindlessBindingSamplers,               .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER,                    .descriptorCount = numSamplers,               .stageFlags = VK_SHADER_STAGE_ALL },
                 { .binding = BindlessBindingSampledImages,          .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,              .descriptorCount = numSampledImages,          .stageFlags = VK_SHADER_STAGE_ALL },
                 { .binding = BindlessBindingStorageImages,          .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,              .descriptorCount = numStorageImages,          .stageFlags = VK_SHADER_STAGE_ALL },
                 { .binding = BindlessBindingStorageBuffers,         .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,             .descriptorCount = numStorageBuffers,         .stageFlags = VK_SHADER_STAGE_ALL },
+                { .binding = BindlessBindingUniformBuffers,         .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,             .descriptorCount = numUniformBuffers,         .stageFlags = VK_SHADER_STAGE_ALL },
             };
             bindlessDescriptorBindingFlags = {
+                VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT | VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT | VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT,
                 VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT | VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT | VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT,
                 VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT | VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT | VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT,
                 VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT | VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT | VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT,
@@ -4397,6 +4435,7 @@ namespace Horizon
             .numSampledImages = numSampledImages,
             .numStorageImages = numStorageImages,
             .numStorageBuffers = numStorageBuffers,
+            .numUniformBuffers = numUniformBuffers,
             .numAccelerationStructures = numAccelerationStructures,
         };
 
@@ -4415,6 +4454,10 @@ namespace Horizon
         for (int32 i = numStorageBuffers - 1; i >= 0; i--)
         {
             bindlessDescriptorManager.freeStorageBuffers.push_back(i);
+        }
+        for (int32 i = numUniformBuffers - 1; i >= 0; i--)
+        {
+            bindlessDescriptorManager.freeUniformBuffers.push_back(i);
         }
         for (int32 i = numAccelerationStructures - 1; i >= 0; i--)
         {
@@ -4888,15 +4931,20 @@ namespace Horizon
                     pushConstants.indices[i] = texture->srvIndex;
                 }
             }
-            else if (shaderArguments.slots[i].type == 2)
+            else if (shaderArguments.slots[i].type == RenderBackendShaderArguments::TypeTextureUAV && shaderArguments.slots[i].uavSlot.uav.texture)
             {
                 VulkanTexture* texture = device->GetTexture(shaderArguments.slots[i].uavSlot.uav.texture);
                 pushConstants.indices[i] = texture->uavs[shaderArguments.slots[i].uavSlot.uav.mipLevel].uavIndex;
             }
-            else if (shaderArguments.slots[i].type == 3)
+            else if (shaderArguments.slots[i].type == RenderBackendShaderArguments::TypeBuffer && shaderArguments.slots[i].bufferSlot.handle)
             {
                 VulkanBuffer* buffer = device->GetBuffer(shaderArguments.slots[i].bufferSlot.handle);
                 pushConstants.indices[i] = buffer->bindlessDescriptorIndexUAV;
+            }
+            else if (shaderArguments.slots[i].type == RenderBackendShaderArguments::TypeBufferCBV && shaderArguments.slots[i].bufferCBV.handle)
+            {
+                VulkanBuffer* buffer = device->GetBuffer(shaderArguments.slots[i].bufferCBV.handle);
+                pushConstants.indices[i] = buffer->bindlessDescriptorIndexCBV;
             }
         }
         for (uint32 i = 0; i < 16; i++)
@@ -5117,20 +5165,25 @@ namespace Horizon
         {
             for (uint32 i = 0; i < 16; i++)
             {
-                if (shaderArguments.slots[i].type == 1 && shaderArguments.slots[i].srvSlot.srv.texture)
+                if (shaderArguments.slots[i].type == RenderBackendShaderArguments::TypeTextureSRV && shaderArguments.slots[i].srvSlot.srv.texture)
                 {
                     VulkanTexture* texture = device->GetTexture(shaderArguments.slots[i].srvSlot.srv.texture);
                     pushConstantsTest.indices[i] = texture->srvIndex;
                 }
-                else if (shaderArguments.slots[i].type == 2 && shaderArguments.slots[i].uavSlot.uav.texture)
+                else if (shaderArguments.slots[i].type == RenderBackendShaderArguments::TypeTextureUAV && shaderArguments.slots[i].uavSlot.uav.texture)
                 {
                     VulkanTexture* texture = device->GetTexture(shaderArguments.slots[i].uavSlot.uav.texture);
                     pushConstantsTest.indices[i] = texture->uavs[shaderArguments.slots[i].uavSlot.uav.mipLevel].uavIndex;
                 }
-                else if (shaderArguments.slots[i].type == 3 && shaderArguments.slots[i].bufferSlot.handle)
+                else if (shaderArguments.slots[i].type == RenderBackendShaderArguments::TypeBuffer && shaderArguments.slots[i].bufferSlot.handle)
                 {
                     VulkanBuffer* buffer = device->GetBuffer(shaderArguments.slots[i].bufferSlot.handle);
                     pushConstantsTest.indices[i] = buffer->bindlessDescriptorIndexUAV;
+                }
+                else if (shaderArguments.slots[i].type == RenderBackendShaderArguments::TypeBufferCBV && shaderArguments.slots[i].bufferCBV.handle)
+                {
+                    VulkanBuffer* buffer = device->GetBuffer(shaderArguments.slots[i].bufferCBV.handle);
+                    pushConstantsTest.indices[i] = buffer->bindlessDescriptorIndexCBV;
                 }
             }
             memcpy(pushConstantsTest.data, shaderArguments.testData, 64);
@@ -5140,20 +5193,25 @@ namespace Horizon
         {
             for (uint32 i = 0; i < 16; i++)
             {
-                if (shaderArguments.slots[i].type == 1 && shaderArguments.slots[i].srvSlot.srv.texture)
+                if (shaderArguments.slots[i].type == RenderBackendShaderArguments::TypeTextureSRV && shaderArguments.slots[i].srvSlot.srv.texture)
                 {
                     VulkanTexture* texture = device->GetTexture(shaderArguments.slots[i].srvSlot.srv.texture);
                     pushConstants.indices[i] = texture->srvIndex;
                 }
-                else if (shaderArguments.slots[i].type == 2 && shaderArguments.slots[i].uavSlot.uav.texture)
+                else if (shaderArguments.slots[i].type == RenderBackendShaderArguments::TypeTextureUAV && shaderArguments.slots[i].uavSlot.uav.texture)
                 {
                     VulkanTexture* texture = device->GetTexture(shaderArguments.slots[i].uavSlot.uav.texture);
                     pushConstants.indices[i] = texture->uavs[shaderArguments.slots[i].uavSlot.uav.mipLevel].uavIndex;
                 }
-                else if (shaderArguments.slots[i].type == 3 && shaderArguments.slots[i].bufferSlot.handle)
+                else if (shaderArguments.slots[i].type == RenderBackendShaderArguments::TypeBuffer && shaderArguments.slots[i].bufferSlot.handle)
                 {
                     VulkanBuffer* buffer = device->GetBuffer(shaderArguments.slots[i].bufferSlot.handle);
                     pushConstants.indices[i] = buffer->bindlessDescriptorIndexUAV;
+                }
+                else if (shaderArguments.slots[i].type == RenderBackendShaderArguments::TypeBufferCBV && shaderArguments.slots[i].bufferCBV.handle)
+                {
+                    VulkanBuffer* buffer = device->GetBuffer(shaderArguments.slots[i].bufferCBV.handle);
+                    pushConstants.indices[i] = buffer->bindlessDescriptorIndexCBV;
                 }
             }
             memcpy(pushConstants.data, shaderArguments.data, sizeof(shaderArguments.data));
@@ -5485,6 +5543,7 @@ namespace Horizon
             .numSampledImages = 16 * 1024,
             .numStorageImages = 16 * 1024,
             .numStorageBuffers = 8 * 1024,
+            .numUniformBuffers = 1 * 1024,
             .numAccelerationStructures = 8 * 1024
         };
 

@@ -2,7 +2,7 @@
 #include "../Random.hsh"
 #include "RealTimeRendererCommon.hsh"
 
-BIND_BYTE_ADDRESS_BUFFER_SRV(0, PerFrameDataBuffer);
+BIND_BUFFER_CBV(0, PerFrameShaderParameters);
 BIND_TEXTURE_2D_SRV(1, SceneDepthTexture);
 BIND_TEXTURE_2D_SRV(2, GBuffer0);
 BIND_TEXTURE_2D_UAV(3, float4, GTAOHorizonSearchAndIntegralTexture);
@@ -64,7 +64,7 @@ float2 GTAORandomVector(float jitter)
 }
 
 float2 GTAOSearchForHorizons(
-    PerFrameShaderParameters perFrameParameters,
+    PerFrameShaderParameters perFrameConstants,
     Texture2D sceneDepthTexutre,
     uint numSteps,
     float2 baseUV,
@@ -105,7 +105,7 @@ float2 GTAOSearchForHorizons(
 #if 1
         if (pixelCoord.x == 800 && pixelCoord.y == 500)
         {
-            uint2 coord = uint2(sampleUV.x * perFrameParameters.renderWidth, sampleUV.y * perFrameParameters.renderHeight);
+            uint2 coord = uint2(sampleUV.x * perFrameConstants.renderWidth, sampleUV.y * perFrameConstants.renderHeight);
             debugOutputTexture[coord + uint2(0, -1)] = float4(1, 0, 0, 1);
             debugOutputTexture[coord + uint2(0, 0)] = float4(1, 0, 0, 1);
             debugOutputTexture[coord + uint2(0, 1)] = float4(1, 0, 0, 1);
@@ -115,7 +115,7 @@ float2 GTAOSearchForHorizons(
             debugOutputTexture[coord + uint2(-1, -1)] = float4(1, 0, 0, 1);
             debugOutputTexture[coord + uint2(-1, 0)] = float4(1, 0, 0, 1);
             debugOutputTexture[coord + uint2(-1, 1)] = float4(1, 0, 0, 1);
-            coord = uint2(sampleUV.z * perFrameParameters.renderWidth, sampleUV.w * perFrameParameters.renderHeight);
+            coord = uint2(sampleUV.z * perFrameConstants.renderWidth, sampleUV.w * perFrameConstants.renderHeight);
             debugOutputTexture[coord + uint2(0, -1)] = float4(1, 0, 0, 1);
             debugOutputTexture[coord + uint2(0, 0)] = float4(1, 0, 0, 1);
             debugOutputTexture[coord + uint2(0, 1)] = float4(1, 0, 0, 1);
@@ -130,7 +130,7 @@ float2 GTAOSearchForHorizons(
 
         // Positive Direction
         depth = sceneDepthTexutre.SampleLevel(GlobalSamplerPointClamp, sampleUV.xy, 0).r;
-        depthVector = ReconstructViewSpacePositionFromDepth(sampleUV.xy, depth, perFrameParameters.clipToViewMatrix) - viewSpacePosition;
+        depthVector = ReconstructViewSpacePositionFromDepth(sampleUV.xy, depth, perFrameConstants.clipToViewMatrix) - viewSpacePosition;
         depthVectorLengthSquare = dot(depthVector, depthVector);
         depthVectorLengthInv = rsqrt(depthVectorLengthSquare + 0.0001);
         fallOff = saturate(depthVectorLengthSquare * attenuation);
@@ -141,14 +141,14 @@ float2 GTAOSearchForHorizons(
             cosAngle = lerp(cosAngle, horizons.x, fallOff);
             if (cosAngle > horizons.x)
             {
-                coord1 = uint2(sampleUV.x * perFrameParameters.renderWidth, sampleUV.y * perFrameParameters.renderHeight);
+                coord1 = uint2(sampleUV.x * perFrameConstants.renderWidth, sampleUV.y * perFrameConstants.renderHeight);
             }
             horizons.x = (cosAngle > horizons.x) ? cosAngle : lerp(cosAngle, horizons.x, thickness); // Thickness Heuristic
         }
 
         // Negative Direction
         depth = sceneDepthTexutre.SampleLevel(GlobalSamplerPointClamp, sampleUV.zw, 0).r;
-        depthVector = ReconstructViewSpacePositionFromDepth(sampleUV.zw, depth, perFrameParameters.clipToViewMatrix) - viewSpacePosition;
+        depthVector = ReconstructViewSpacePositionFromDepth(sampleUV.zw, depth, perFrameConstants.clipToViewMatrix) - viewSpacePosition;
         depthVectorLengthSquare = dot(depthVector, depthVector);
         depthVectorLengthInv = rsqrt(depthVectorLengthSquare + 0.0001);
         fallOff = saturate(depthVectorLengthSquare * attenuation);
@@ -159,7 +159,7 @@ float2 GTAOSearchForHorizons(
             cosAngle = lerp(cosAngle, horizons.y, fallOff);
             if (cosAngle > horizons.y)
             {
-                coord2 = uint2(sampleUV.z * perFrameParameters.renderWidth, sampleUV.w * perFrameParameters.renderHeight);
+                coord2 = uint2(sampleUV.z * perFrameConstants.renderWidth, sampleUV.w * perFrameConstants.renderHeight);
             }
             horizons.y = (cosAngle > horizons.y) ? cosAngle : lerp(cosAngle, horizons.y, thickness); // Thickness Heuristic
         }
@@ -254,8 +254,7 @@ float GTAOComputeInnerIntegral(float2 horizons, float2 searchDirection, float3 v
 [numthreads(8, 8, 1)]
 void GTAOHorizonSearchAndIntegralCS(uint3 DispatchThreadID : SV_DispatchThreadID, uint2 GroupThreadID : SV_GroupThreadID, uint2 GroupID : SV_GroupID)
 {
-    ByteAddressBuffer perFrameDataBuffer = GetPerFrameDataBufferSRV();
-    PerFrameShaderParameters perFrameParameters = perFrameDataBuffer.Load<PerFrameShaderParameters>(0);
+    ConstantBuffer<PerFrameShaderParameters> perFrameConstants = GetPerFrameShaderParametersCBV();
     Texture2D sceneDepthTexture = GetSceneDepthTextureSRV();
     Texture2D gbuffer0 = GetGBuffer0SRV();
     RWTexture2D<float4> outputTexture = GetGTAOHorizonSearchAndIntegralTextureUAV();
@@ -274,7 +273,7 @@ void GTAOHorizonSearchAndIntegralCS(uint3 DispatchThreadID : SV_DispatchThreadID
     float2 uv = (pixelCoord + 0.5f) * float2(invWidth, invHeight);
 
     float sceneDepth = sceneDepthTexture.SampleLevel(GlobalSamplerPointClamp, uv, 0).r;
-    float linearDepth = LinearDepth01(sceneDepth, perFrameParameters.nearClippingPlane, perFrameParameters.farClippingPlane);
+    float linearDepth = LinearDepth01(sceneDepth, perFrameConstants.nearClippingPlane, perFrameConstants.farClippingPlane);
     if (linearDepth > maxDepth)
     {
         outputTexture[pixelCoord] = 1.0f;
@@ -284,13 +283,13 @@ void GTAOHorizonSearchAndIntegralCS(uint3 DispatchThreadID : SV_DispatchThreadID
     float4 gbuffer0Data = gbuffer0[pixelCoord];
     float3 worldSpaceNormal = DecodeNormalFromGBuffer(gbuffer0Data.xyz);
 
-    float3 viewSpacePosition = ReconstructViewSpacePositionFromDepth(uv, sceneDepth, perFrameParameters.clipToViewMatrix);
-    float3 viewSpaceNormal = normalize(mul((float3x3)perFrameParameters.viewToClipMatrix, worldSpaceNormal));
+    float3 viewSpacePosition = ReconstructViewSpacePositionFromDepth(uv, sceneDepth, perFrameConstants.clipToViewMatrix);
+    float3 viewSpaceNormal = normalize(mul((float3x3)perFrameConstants.viewToClipMatrix, worldSpaceNormal));
     float3 viewVector = normalize(-viewSpacePosition);
 
-    float2 depthBufferTexelSize = perFrameParameters.renderResolution.zw;
+    float2 depthBufferTexelSize = perFrameConstants.renderResolution.zw;
 
-    float2 noise = GTAONoise(pixelCoord.x + pixelCoord.y * width, perFrameParameters.frameIndex);
+    float2 noise = GTAONoise(pixelCoord.x + pixelCoord.y * width, perFrameConstants.frameIndex);
     float2 searchDirection = GTAORandomVector(noise.x);
 
     float stepNoise = noise.y;
@@ -304,8 +303,8 @@ void GTAOHorizonSearchAndIntegralCS(uint3 DispatchThreadID : SV_DispatchThreadID
     {
         float3 rayStartView = viewSpacePosition;
         float3 rayEndView = viewSpacePosition + seachRadius * float3(searchDirection.xy, 0.0);
-        float3 rayStartClip = ViewSpaceToClipSpacePosition(rayStartView, perFrameParameters.viewToClipMatrix);
-        float3 rayEndClip = ViewSpaceToClipSpacePosition(rayEndView, perFrameParameters.viewToClipMatrix);
+        float3 rayStartClip = ViewSpaceToClipSpacePosition(rayStartView, perFrameConstants.viewToClipMatrix);
+        float3 rayEndClip = ViewSpaceToClipSpacePosition(rayEndView, perFrameConstants.viewToClipMatrix);
         rayEndClip.z = rayStartClip.z;
 
         float2 rayStartScreen = ClipSpaceToUV(rayStartClip.xy);
@@ -319,7 +318,7 @@ void GTAOHorizonSearchAndIntegralCS(uint3 DispatchThreadID : SV_DispatchThreadID
         float stepRadius = GTAOFastSqrt(rayLengthSquare / rayStepLengthSquare);
 
         float2 horizons = GTAOSearchForHorizons(
-            perFrameParameters,
+            perFrameConstants,
             sceneDepthTexture,
             GTAOHorizonSearchNumSteps,
             uv,

@@ -20,6 +20,8 @@ project "HorizonEditor"
         "Source/Framework/EditorCamera.cpp",
         "Source/Framework/EditorSceneManager.h",
         "Source/Framework/EditorSceneManager.cpp",
+        "Source/Framework/TextureImporter.h",
+        "Source/Framework/TextureImporter.cpp",
 
         "Source/Editor/**.h",
         "Source/Editor/**.c",

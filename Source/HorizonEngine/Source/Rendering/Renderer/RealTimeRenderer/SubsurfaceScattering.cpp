@@ -73,7 +73,7 @@ namespace Horizon
                     uint32 threadGroupCountY = ComputeThreadGroupCount(sceneColorTextureDesc.height, 16);
 
                     RenderBackendShaderArguments shaderArguments = {};
-                    shaderArguments.BindBuffer(0, this->GetCurrentPerFrameDataBuffer());
+                    shaderArguments.BindBufferCBV(0, this->GetCurrentPerFrameConstantBuffer());
                     shaderArguments.BindTextureSRV(1, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(sceneColorTexture)));
                     shaderArguments.BindTextureSRV(2, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(sceneDepthTexture)));
                     shaderArguments.BindBuffer(3, registry.GetRenderBackendBufferHandle(tileCountBuffer));
@@ -199,7 +199,7 @@ namespace Horizon
                     graphicsPipelineState.depthStencilState.depthWriteEnable = false;
 
                     RenderBackendShaderArguments shaderArguments = {};
-                    shaderArguments.BindBuffer(0, this->GetCurrentPerFrameDataBuffer());
+                    shaderArguments.BindBufferCBV(0, this->GetCurrentPerFrameConstantBuffer());
                     shaderArguments.BindBuffer(1, registry.GetRenderBackendBufferHandle(tileDataBuffer));
                     shaderArguments.BindTextureSRV(2, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(subsurfaceScatteringTexture)));
 
@@ -240,7 +240,7 @@ namespace Horizon
                     graphicsPipelineState.depthStencilState.depthWriteEnable = false;
 
                     RenderBackendShaderArguments shaderArguments = {};
-                    shaderArguments.BindBuffer(0, this->GetCurrentPerFrameDataBuffer());
+                    shaderArguments.BindBufferCBV(0, this->GetCurrentPerFrameConstantBuffer());
                     shaderArguments.BindBuffer(1, registry.GetRenderBackendBufferHandle(tileDataBuffer));
                     shaderArguments.BindTextureSRV(2, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(subsurfaceScatteringTexture)));
 

@@ -2,7 +2,7 @@
 #include "../RealTimeRendererCommon.hsh"
 #include "PostProcessingCommon.hsh"
 
-BIND_BYTE_ADDRESS_BUFFER_SRV(0, PerFrameDataBuffer);
+BIND_BUFFER_CBV(0, PerFrameShaderParameters);
 BIND_TEXTURE_2D_SRV(1, DOFGatherTexture);
 BIND_TEXTURE_2D_SRV(2, DOFCoCTexture);
 BIND_TEXTURE_2D_UAV(3, float4, DOFPostfilterTexture);
@@ -59,10 +59,9 @@ float4 MedianFilter3x3(
 [numthreads(POST_PROCESSING_THREAD_GROUP_SIZE_X, POST_PROCESSING_THREAD_GROUP_SIZE_Y, 1)]
 void DepthOfFieldPostfilterCS(uint3 DispatchThreadID : SV_DispatchThreadID)
 {
-    ByteAddressBuffer perFrameDataBuffer = GetPerFrameDataBufferSRV();
-    PerFrameShaderParameters perFrameParameters = perFrameDataBuffer.Load<PerFrameShaderParameters>(0);
-    uint width = perFrameParameters.targetWidth / 2;
-    uint height = perFrameParameters.targetHeight / 2;
+    ConstantBuffer<PerFrameShaderParameters> perFrameConstants = GetPerFrameShaderParametersCBV();
+    uint width = perFrameConstants.targetWidth / 2;
+    uint height = perFrameConstants.targetHeight / 2;
     if (DispatchThreadID.x >= width || DispatchThreadID.y >= height)
     {
         return;

@@ -5,7 +5,7 @@
 #include "RealTimeRendererCommon.hsh"
 #include "LightingCommon.hsh"
 
-BIND_BYTE_ADDRESS_BUFFER_SRV(0, PerFrameDataBuffer);
+BIND_BUFFER_CBV(0, PerFrameShaderParameters);
 BIND_TEXTURE_2D_SRV(1, GBuffer0);
 BIND_TEXTURE_2D_SRV(2, GBuffer1);
 BIND_TEXTURE_2D_SRV(3, SceneDepthTexture);
@@ -58,8 +58,7 @@ float3 ComputeImageBasedLightingSpecular(Surface surface)
 [shader("pixel")]
 void IndirectLightingSpecularPS(float4 svPosition : SV_Position, out float4 outSceneColor : SV_Target0)
 {
-    ByteAddressBuffer perFrameDataBuffer = GetPerFrameDataBufferSRV();
-    PerFrameShaderParameters perFrameParameters = perFrameDataBuffer.Load<PerFrameShaderParameters>(0);
+    ConstantBuffer<PerFrameShaderParameters> perFrameConstants = GetPerFrameShaderParametersCBV();
     Texture2D gbuffer0 = GetGBuffer0SRV();
     Texture2D gbuffer1 = GetGBuffer1SRV();
     Texture2D gbuffer2 = GetGBuffer2SRV();
@@ -67,7 +66,7 @@ void IndirectLightingSpecularPS(float4 svPosition : SV_Position, out float4 outS
     Texture2D ambientOcclusionTexture = GetAmbientOcclusionTextureSRV();
 
     const uint2 pixelCoord = uint2(svPosition.xy);
-    const float2 uv = (float2(pixelCoord) + 0.5f) / float2(perFrameParameters.renderWidth, perFrameParameters.renderHeight);
+    const float2 uv = (float2(pixelCoord) + 0.5f) / float2(perFrameConstants.renderWidth, perFrameConstants.renderHeight);
 
     float4 gbuffer0Data = gbuffer0[pixelCoord];
     float4 gbuffer1Data = gbuffer1[pixelCoord];
@@ -75,7 +74,7 @@ void IndirectLightingSpecularPS(float4 svPosition : SV_Position, out float4 outS
     float sceneDepth = sceneDepthTexture[pixelCoord].r;
     float ambientOcclusion = ambientOcclusionTexture[pixelCoord].r;
 
-    float3 position = ReconstructWorldSpacePositionFromDepth(uv, sceneDepth, perFrameParameters.clipToWorldMatrix);
+    float3 position = ReconstructWorldSpacePositionFromDepth(uv, sceneDepth, perFrameConstants.clipToWorldMatrix);
     float3 normal = DecodeNormalFromGBuffer(gbuffer0Data.xyz);
     float metallic = gbuffer1Data.x;
     float specular = gbuffer1Data.y;
@@ -87,7 +86,7 @@ void IndirectLightingSpecularPS(float4 svPosition : SV_Position, out float4 outS
     surface.uv = uv;
     surface.P = position;
     surface.N = normal;
-    surface.V = normalize(perFrameParameters.cameraPosition - position);
+    surface.V = normalize(perFrameConstants.cameraPosition - position);
     surface.R = normalize(reflect(-surface.V, surface.N));
     surface.baseColor = baseColor;
     surface.subsurface = 0.0;
@@ -106,8 +105,8 @@ void IndirectLightingSpecularPS(float4 svPosition : SV_Position, out float4 outS
     surface.specularOcclusion = 1.0;
 
     float3 indirectSpecular = ComputeImageBasedLightingSpecular(surface);
-    indirectSpecular *= perFrameParameters.indirectLightingMultiplier;
-    indirectSpecular *= perFrameParameters.preExposure;
+    indirectSpecular *= perFrameConstants.indirectLightingMultiplier;
+    indirectSpecular *= perFrameConstants.preExposure;
 
     outSceneColor = 0;
     outSceneColor.rgb += indirectSpecular;

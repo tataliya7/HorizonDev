@@ -2,7 +2,7 @@
 #include "RealTimeRendererCommon.hsh"
 #include "ScreenSpaceReflectionsCommon.hsh"
 
-BIND_BYTE_ADDRESS_BUFFER_SRV(0, PerFrameDataBuffer);
+BIND_BUFFER_CBV(0, PerFrameShaderParameters);
 BIND_TEXTURE_2D_SRV(1, SceneDepth);
 BIND_TEXTURE_2D_SRV(2, GBuffer1);
 BIND_TEXTURE_2D_SRV(3, ResolveVarianceTexture);
@@ -20,20 +20,19 @@ static const uint2 bilateralMinMaxRadius = uint2(0, 2); // Chosen by variance
 [numthreads(SSR_THREAD_GROUP_SIZE, SSR_THREAD_GROUP_SIZE, 1)]
 void SSRSpatialFilteringCS(uint3 DispatchThreadID : SV_DispatchThreadID)
 {
-    ByteAddressBuffer perFrameDataBuffer = GetPerFrameDataBufferSRV();
-    PerFrameShaderParameters perFrameParameters = perFrameDataBuffer.Load<PerFrameShaderParameters>(0);
+    ConstantBuffer<PerFrameShaderParameters> perFrameConstants = GetPerFrameShaderParametersCBV();
     Texture2D sceneDepth = GetSceneDepthSRV();
     Texture2D gbuffer1 = GetGBuffer1SRV();
     Texture2D inputTexture = GetInputTextureSRV();
     Texture2D resolveVariance = GetResolveVarianceTextureSRV();
     RWTexture2D<float4> outputTexture = GetOutputTextureUAV();
 
-    const float2 resolution = float2(perFrameParameters.renderWidth, perFrameParameters.renderHeight);
+    const float2 resolution = float2(perFrameConstants.renderWidth, perFrameConstants.renderHeight);
     const uint2 coord = DispatchThreadID.xy;
     const float2 uv = (coord + 0.5f) * (1.0 / resolution.x, 1.0 / resolution.y);
     const float depth = sceneDepth[coord].r;
     const float roughness = gbuffer1[coord].w;
-    const float linearDepth = LinearDepthNearFar(depth, perFrameParameters.nearClippingPlane, perFrameParameters.farClippingPlane);
+    const float linearDepth = LinearDepthNearFar(depth, perFrameConstants.nearClippingPlane, perFrameConstants.farClippingPlane);
     const float variance = resolveVariance[coord].r;
 
     if (!NeedReflection(roughness, depth, SSRRoughnessCutoff))
@@ -54,7 +53,7 @@ void SSRSpatialFilteringCS(uint3 DispatchThreadID : SV_DispatchThreadID)
     float4 result = inputTexture[coord];
     if (variance > varianceExitThreshold && effectiveRadius > 0)
     {
-        float3 P = ReconstructWorldSpacePositionFromDepth(uv, depth, perFrameParameters.clipToWorldMatrix);
+        float3 P = ReconstructWorldSpacePositionFromDepth(uv, depth, perFrameConstants.clipToWorldMatrix);
         float3 N = gbuffer1[coord].xyz;
 
         float4 sum = 0;
@@ -72,7 +71,7 @@ void SSRSpatialFilteringCS(uint3 DispatchThreadID : SV_DispatchThreadID)
                 const float sampleRoughness = gbuffer1[sampleCoord].w;
 
                 float2 sampleUV = (sampleCoord + 0.5) * (1.0 / resolution.x, 1.0 / resolution.y);
-                float3 sampleP = ReconstructWorldSpacePositionFromDepth(sampleUV, sampleDepth, perFrameParameters.clipToWorldMatrix);
+                float3 sampleP = ReconstructWorldSpacePositionFromDepth(sampleUV, sampleDepth, perFrameConstants.clipToWorldMatrix);
 
                 // Don't let invalid roughness samples interfere
                 if (NeedReflection(sampleRoughness, sampleDepth, SSRRoughnessCutoff))

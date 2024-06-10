@@ -440,9 +440,9 @@ namespace Horizon
 
         static const int32 MaxNumFramesInFlight = 3;
         int32 currentPerFrameDataBufferIndex = 0;
-        RenderBackendBufferHandle perFrameDataBuffers[MaxNumFramesInFlight];
+        RenderBackendBufferHandle perFrameConstantBuffers[MaxNumFramesInFlight];
 
-        RenderBackendBufferHandle GetCurrentPerFrameDataBuffer() const;
+        RenderBackendBufferHandle GetCurrentPerFrameConstantBuffer() const;
 
         float materialTextureMipLodBias;
 

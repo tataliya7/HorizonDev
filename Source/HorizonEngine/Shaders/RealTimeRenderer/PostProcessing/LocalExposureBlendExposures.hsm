@@ -2,7 +2,7 @@
 #include "../RealTimeRendererCommon.hsh"
 #include "PostProcessingCommon.hsh"
 
-BIND_BYTE_ADDRESS_BUFFER_SRV(0, PerFrameDataBuffer);
+BIND_BUFFER_CBV(0, PerFrameShaderParameters);
 BIND_TEXTURE_2D_SRV(1, ExposureTexture);
 BIND_TEXTURE_2D_SRV(2, WeightTexture);
 BIND_TEXTURE_2D_UAV(3, float4, OutputTexture);

@@ -186,9 +186,14 @@ namespace Horizon
             flags |= RenderBackendBufferCreateFlags::UnorderedAccess;
             return RenderBackendBufferDesc(indexStride, indexCount, flags);
         }
+        static RenderBackendBufferDesc CreateUniform(uint64 bytes)
+        {
+            RenderBackendBufferCreateFlags flags = RenderBackendBufferCreateFlags::UniformBuffer | RenderBackendBufferCreateFlags::CpuToGpu;
+            return RenderBackendBufferDesc(4, (uint32)(bytes >> 2), flags);
+        }
         static RenderBackendBufferDesc CreateByteAddress(uint64 bytes, bool dynamic = false)
         {
-            auto flags = RenderBackendBufferCreateFlags::UnorderedAccess | RenderBackendBufferCreateFlags::ShaderResource;
+            RenderBackendBufferCreateFlags flags = RenderBackendBufferCreateFlags::UnorderedAccess | RenderBackendBufferCreateFlags::ShaderResource;
             if (dynamic)
             {
                 flags |= RenderBackendBufferCreateFlags::CpuToGpu;
@@ -1135,6 +1140,11 @@ namespace Horizon
     {
         std::string debugName;
 
+        static const int32 TypeTextureSRV = 1;
+        static const int32 TypeTextureUAV = 2;
+        static const int32 TypeBuffer = 3;
+        static const int32 TypeBufferCBV = 4;
+
         struct TextureSRV
         {
             uint32 slot;
@@ -1148,6 +1158,12 @@ namespace Horizon
         };
 
         struct Buffer
+        {
+            uint32 slot;
+            RenderBackendBufferHandle handle;
+        };
+
+        struct BufferCBV
         {
             uint32 slot;
             RenderBackendBufferHandle handle;
@@ -1167,6 +1183,7 @@ namespace Horizon
                 TextureSRV srvSlot;
                 TextureUAV uavSlot;
                 Buffer bufferSlot;
+                BufferCBV bufferCBV;
                 AS asSlot;
             };
         };
@@ -1175,7 +1192,7 @@ namespace Horizon
         {
             if (srv.IsValid())
             {
-                slots[slot] = { .type = 1, .srvSlot = { slot, srv } };
+                slots[slot] = { .type = TypeTextureSRV, .srvSlot = { slot, srv } };
             }
         }
 
@@ -1183,7 +1200,7 @@ namespace Horizon
         {
             if (uav.IsValid())
             {
-                slots[slot] = { .type = 2, .uavSlot = { slot, uav } };
+                slots[slot] = { .type = TypeTextureUAV, .uavSlot = { slot, uav } };
             }
         }
 
@@ -1191,7 +1208,7 @@ namespace Horizon
         {
             if (buffer.IsValid())
             {
-                slots[slot] = { .type = 3, .bufferSlot = { slot, buffer } };
+                slots[slot] = { .type = TypeBuffer, .bufferSlot = { slot, buffer } };
             }
         }
 
@@ -1199,7 +1216,15 @@ namespace Horizon
         {
             if (buffer.IsValid())
             {
-                slots[slot] = { .type = 3, .bufferSlot = { slot, buffer } };
+                slots[slot] = { .type = TypeBuffer, .bufferSlot = { slot, buffer } };
+            }
+        }
+
+        void BindBufferCBV(uint32 slot, RenderBackendBufferHandle buffer)
+        {
+            if (buffer.IsValid())
+            {
+                slots[slot] = { .type = TypeBufferCBV, .bufferCBV = { slot, buffer } };
             }
         }
 
@@ -1207,7 +1232,7 @@ namespace Horizon
         {
             if (as.IsValid())
             {
-                slots[slot] = { .type = 4, .asSlot = { slot, as } };
+                slots[slot] = { .type = 5, .asSlot = { slot, as } };
             }
         }
 

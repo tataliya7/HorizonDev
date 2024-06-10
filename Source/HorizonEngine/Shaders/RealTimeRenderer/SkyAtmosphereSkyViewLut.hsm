@@ -32,7 +32,7 @@
 #include "RealTimeRendererCommon.hsh"
 #include "SkyAtmosphereCommon.hsh"
 
-BIND_BYTE_ADDRESS_BUFFER_SRV(0, PerFrameDataBuffer);
+BIND_BUFFER_CBV(0, PerFrameShaderParameters);
 BIND_TEXTURE_2D_SRV(1, TransmittanceLutTexture);
 BIND_TEXTURE_2D_SRV(2, MultipleScatteringLutTexture);
 BIND_TEXTURE_2D_UAV(3, float3, SkyViewLutTexture);
@@ -84,9 +84,8 @@ float3 UvToSkyViewLutParams(in float4 skyViewLutSize, in float bottomRadius, in 
 [numthreads(8, 8, 1)]
 void SkyAtmosphereSkyViewLutCS(uint3 DispatchThreadID : SV_DispatchThreadID)
 {
-    ByteAddressBuffer perFrameDataBuffer = GetPerFrameDataBufferSRV();
-    PerFrameShaderParameters perFrameParameters = perFrameDataBuffer.Load<PerFrameShaderParameters>(0);
-    SkyAtmosphereShaderParameters skyAtmosphereParameters = GetSkyAtmosphereShaderParameters(perFrameParameters);
+    ConstantBuffer<PerFrameShaderParameters> perFrameConstants = GetPerFrameShaderParametersCBV();
+    SkyAtmosphereShaderParameters skyAtmosphereParameters = GetSkyAtmosphereShaderParameters(perFrameConstants);
     Texture2D transmittanceLutTexture = GetTransmittanceLutTextureSRV();
     Texture2D multipleScatteringLutTexture = GetMultipleScatteringLutTextureSRV();
     RWTexture2D<float3> skyViewLutTexture = GetSkyViewLutTextureUAV();
@@ -96,7 +95,7 @@ void SkyAtmosphereSkyViewLutCS(uint3 DispatchThreadID : SV_DispatchThreadID)
     uint2 pixelCoord = DispatchThreadID.xy;
     float2 uv = (float2(pixelCoord) + 0.5f) * skyViewLutSize.zw;
 
-    float3 worldPos = (perFrameParameters.cameraPosition * M_TO_KM) - float3(0.0f, 0.0f, -skyAtmosphereParameters.bottomRadius);
+    float3 worldPos = (perFrameConstants.cameraPosition * M_TO_KM) - float3(0.0f, 0.0f, -skyAtmosphereParameters.bottomRadius);
 
     // This is the LUT camera height and position in the local referential
     float viewHeight = length(worldPos);
@@ -110,8 +109,8 @@ void SkyAtmosphereSkyViewLutCS(uint3 DispatchThreadID : SV_DispatchThreadID)
         return;
     }
 
-    float3x3 localReferencial = perFrameParameters.skyAtmosphereSkyViewLutReferential;
-    float3 atmosphericLightDirection = perFrameParameters.atmosphericLightDirection;
+    float3x3 localReferencial = perFrameConstants.skyAtmosphereSkyViewLutReferential;
+    float3 atmosphericLightDirection = perFrameConstants.atmosphericLightDirection;
 
     float3 lightDirection = mul(localReferencial, atmosphericLightDirection);
 
@@ -122,10 +121,10 @@ void SkyAtmosphereSkyViewLutCS(uint3 DispatchThreadID : SV_DispatchThreadID)
     const float maxSampleCount = skyAtmosphereParameters.rayMarchingMaxSampleCount;
     const float depthBufferValue = FarClipPlaneDepthValue;
     const bool mieRayPhase = true;
-    const float3 lightIlluminance = perFrameParameters.atmosphericLightOuterSpaceIlluminance;
+    const float3 lightIlluminance = perFrameConstants.atmosphericLightOuterSpaceIlluminance;
 
     SingleScatteringResult result = IntegrateSingleScatteredLuminance(
-        perFrameParameters,
+        perFrameConstants,
         skyAtmosphereParameters,
         transmittanceLutTexture,
         multipleScatteringLutTexture,
