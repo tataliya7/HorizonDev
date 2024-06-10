@@ -14,15 +14,16 @@ PUSH_CONSTANT(ImGuiShaderArguments, ShaderArguments);
 #define SHADER_ARGUMENTS_INDEX(slot) ShaderArguments.indices[slot]
 #endif
 
-BIND_TEXTURE_2D_SRV(0, ImGuiTexture);
-BIND_BYTE_ADDRESS_BUFFER_SRV(1, VertexBuffer);
-
 struct ImGuiVertex
 {
     float2 position;
     float2 uv;
     uint color;
 };
+DECLARE_STRUCTURED_BUFFER_TYPE(ImGuiVertex);
+
+BIND_TEXTURE_2D_SRV(0, ImGuiTexture);
+BIND_STRUCTURED_BUFFER_SRV(1, ImGuiVertex, VertexBuffer);
 
 struct ImGuiVSOutput
 {
@@ -38,8 +39,8 @@ void ImGuiVS(uint vertexID : SV_VertexID, out ImGuiVSOutput output)
     float2 scale = ShaderArguments.scale;
     float2 translate = ShaderArguments.translate;
 
-    ByteAddressBuffer vertexBuffer = GetVertexBufferSRV();
-    ImGuiVertex vertex = vertexBuffer.Load<ImGuiVertex>((vertexOffset + vertexID) * sizeof(ImGuiVertex));
+    StructuredBuffer<ImGuiVertex> vertexBuffer = GetVertexBufferSRV();
+    ImGuiVertex vertex = vertexBuffer.Load(vertexOffset + vertexID);
 
     uint4 packedColor = uint4(vertex.color & 0xff, (vertex.color >> 8) & 0xff, (vertex.color >> 16) & 0xff, (vertex.color >> 24) & 0xff);
 

@@ -73,6 +73,7 @@ namespace Horizon
         }
     };
 
+    // Must match the layout in "Shaders/BindlessResources.hsh"
     enum
     {
         BindlessBindingSamplers               = 0,
