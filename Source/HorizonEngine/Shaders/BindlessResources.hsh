@@ -142,6 +142,7 @@ ConstantBuffer<type> Get##type##CBV() \
 [[vk::binding(BindlessBindingStorageBuffers, 0)]] StructuredBuffer<type> BindlessResource_StructuredBuffer_##type[];
 
 #define BIND_STRUCTURED_BUFFER_SRV(slot, type, name) \
+DECLARE_STRUCTURED_BUFFER_TYPE(type); \
 StructuredBuffer<type> Get##name##SRV() \
 { \
     uint bufferIndex = SHADER_ARGUMENTS_INDEX(slot); \

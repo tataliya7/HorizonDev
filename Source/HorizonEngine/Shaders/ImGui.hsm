@@ -20,7 +20,6 @@ struct ImGuiVertex
     float2 uv;
     uint color;
 };
-DECLARE_STRUCTURED_BUFFER_TYPE(ImGuiVertex);
 
 BIND_TEXTURE_2D_SRV(0, ImGuiTexture);
 BIND_STRUCTURED_BUFFER_SRV(1, ImGuiVertex, VertexBuffer);
