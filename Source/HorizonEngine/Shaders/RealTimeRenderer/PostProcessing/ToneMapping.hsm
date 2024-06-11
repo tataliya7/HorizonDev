@@ -93,7 +93,9 @@ void ToneMappingCS(uint3 DispatchThreadID : SV_DispatchThreadID)
     // }
     float bloomMask = perFrameConstants.bloomIntensity * 0.1f;
     hdrColor.rgb = lerp(hdrColor.rgb, bloomColor.rgb, bloomMask);
-    hdrColor.rgb = hdrColor.rgb * (oneOverPreExposure * exposure);
+
+    float vignetting = NaturalVignetting(uv, perFrameConstants.aspectRatio, perFrameConstants.vignetteIntensity);
+    hdrColor.rgb = hdrColor.rgb * (oneOverPreExposure * exposure) * vignetting;
 
 // #if 1
 //     Texture2D testTexture = GetTestTextureSRV();

@@ -14,16 +14,17 @@
 
 /**
  * Natural Vignetting Based on Cosine-Fourth-Power Law
+ *
  * @see https://en.wikipedia.org/wiki/Vignetting
  */
 float NaturalVignetting(float2 uv, float aspect, float intensity)
 {
-    float2 vignetteSpacePosition = (uv - 0.5f) * 2.0f * float2(1.0, aspect);
+    float2 vignetteSpacePosition = (uv - 0.5f) * 2.0f * float2(aspect, 1.0f);
     float2 v = vignetteSpacePosition * intensity;
     // tan^2(x) = (|v|/1)^2
     float tan_2_x = dot(v, v);
     // cos^2(x) = (1 / (1 + tan^2(x)))
-    float cos_2_x = 1.0 / (1.0f + tan_2_x);
+    float cos_2_x = 1.0f / (1.0f + tan_2_x);
     float cos_4_x = cos_2_x * cos_2_x;
     return cos_4_x;
 }

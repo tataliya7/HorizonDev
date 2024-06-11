@@ -500,6 +500,8 @@ namespace Horizon
 
                 perFrameShaderParameters.whiteBalance = finalPostProcessingSettings.whiteBalance;
 
+                perFrameShaderParameters.vignetteIntensity = finalPostProcessingSettings.vignetteIntensity;
+
                 //perFrameShaderParameters.toneMappingOperator = finalPostProcessingSettings.toneMappingOperator;
 
                 //perFrameShaderParameters.colorCorrectionSaturation = finalPostProcessingSettings.colorCorrectionSaturation;

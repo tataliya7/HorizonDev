@@ -67,6 +67,7 @@ struct PerFrameShaderParameters
     //float4 colorCorrectionGamma;
     //float4 colorCorrectionGain;
     //float4 colorCorrectionOffset;
+    float vignetteIntensity;
 
     float3 indirectLightingMultiplier;
 

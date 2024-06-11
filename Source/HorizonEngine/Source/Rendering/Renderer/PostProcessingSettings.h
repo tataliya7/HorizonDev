@@ -71,7 +71,7 @@ namespace Horizon
         /** The color temperature at which white objects on film actually look white. This property is expressed in Kelvin (K). */
         float whiteBalance = 6500.0f;
 
-        float vignetteIntensity = 0.0f;
+        float vignetteIntensity = 0.2f;
 
         ToneMappingOperatorType toneMappingOperator;
     };
