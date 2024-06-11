@@ -1,59 +1,12 @@
 #include "InspectorUI_DEPRECATED.h"
 #include "HorizonEditor.h"
+#include "EditorSceneManager.h"
 
 #include <imgui.h>
 #include <imgui_internal.h>
 
 namespace Horizon
 {
-    void DrawEntityNodeUI(EntityHandle entity)
-    {
-        EntityHandle selectedEntity = HorizonEditor::GetInstance()->GetSelectedEntity();
-
-        EntityManager* entityManager = SceneManager::GetActiveScene()->GetEntityManager();
-        const SceneHierarchyComponent& hierarchy = entityManager->GetComponent<SceneHierarchyComponent>(entity);
-        ImGuiTreeNodeFlags flags = ((selectedEntity != EntityHandle::Null && selectedEntity == entity) ? ImGuiTreeNodeFlags_Selected : 0) | ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth;
-        if (hierarchy.numChildren == 0)
-        {
-            flags |= ImGuiTreeNodeFlags_Leaf;
-        }
-        bool opened = ImGui::TreeNodeEx((void*)(uint64)entity, flags, entityManager->GetComponent<NameComponent>(entity).name.c_str());
-        if (ImGui::IsItemClicked())
-        {
-            HorizonEditor::GetInstance()->SetSelectedEntity(entity);
-        }
-
-        if (opened)
-        {
-            EntityHandle currentEntity = hierarchy.firstChild;
-            for (uint32 i = 0; i < hierarchy.numChildren; i++)
-            {
-                DrawEntityNodeUI(currentEntity);
-                currentEntity = entityManager->GetComponent<SceneHierarchyComponent>(currentEntity).next;
-            }
-            ImGui::TreePop();
-        }
-
-        bool deleted = false;
-        if (ImGui::BeginPopupContextItem())
-        {
-            if (ImGui::MenuItem("Delete Entity"))
-            {
-                deleted = true;
-            }
-            ImGui::EndPopup();
-        }
-
-        if (deleted)
-        {
-            entityManager->DestroyEntity(entity);
-            if (selectedEntity == entity)
-            {
-                selectedEntity = EntityHandle::Null;
-            }
-        }
-    }
-
     void HorizonEditor::DrawInspectorWindow(bool* open)
     {
         if (ImGui::Begin("Inspector", open))
@@ -63,34 +16,34 @@ namespace Horizon
             {
                 ImGui::PushID((int)uint64(selectedEntity));
 
-                auto& transformComponent = SceneManager::GetActiveScene()->GetEntityManager()->GetComponent<TransformComponent>(selectedEntity);
+                auto& transformComponent = editorSceneManager->GetActiveScene()->GetEntityManager()->GetComponent<TransformComponent>(selectedEntity);
                 bool dirty = DrawComponentUI_TransformComponent("Transform Component", transformComponent);
                 if (dirty)
                 {
-                    SceneManager::GetActiveScene()->GetEntityManager()->ReplaceComponent<TransformComponent>(selectedEntity, transformComponent);
+                    editorSceneManager->GetActiveScene()->GetEntityManager()->ReplaceComponent<TransformComponent>(selectedEntity, transformComponent);
                 }
 
-                if (SceneManager::GetActiveScene()->GetEntityManager()->HasComponent<CameraComponent>(selectedEntity))
+                if (editorSceneManager->GetActiveScene()->GetEntityManager()->HasComponent<CameraComponent>(selectedEntity))
                 {
-                    auto& cameraComponent = SceneManager::GetActiveScene()->GetEntityManager()->GetComponent<CameraComponent>(selectedEntity);
+                    auto& cameraComponent = editorSceneManager->GetActiveScene()->GetEntityManager()->GetComponent<CameraComponent>(selectedEntity);
                     bool dirty = DrawComponentUI_CameraComponent("Camera Component", cameraComponent);
                 }
 
-                if (SceneManager::GetActiveScene()->GetEntityManager()->HasComponent<LightComponent>(selectedEntity))
+                if (editorSceneManager->GetActiveScene()->GetEntityManager()->HasComponent<LightComponent>(selectedEntity))
                 {
-                    auto& lightComponent = SceneManager::GetActiveScene()->GetEntityManager()->GetComponent<LightComponent>(selectedEntity);
+                    auto& lightComponent = editorSceneManager->GetActiveScene()->GetEntityManager()->GetComponent<LightComponent>(selectedEntity);
                     bool dirty = DrawComponentUI_LightComponent("Light Component", lightComponent);
                 }
 
-                if (SceneManager::GetActiveScene()->GetEntityManager()->HasComponent<SkyAtmosphereComponent>(selectedEntity))
+                if (editorSceneManager->GetActiveScene()->GetEntityManager()->HasComponent<SkyAtmosphereComponent>(selectedEntity))
                 {
-                    auto& skyAtmosphereComponent = SceneManager::GetActiveScene()->GetEntityManager()->GetComponent<SkyAtmosphereComponent>(selectedEntity);
+                    auto& skyAtmosphereComponent = editorSceneManager->GetActiveScene()->GetEntityManager()->GetComponent<SkyAtmosphereComponent>(selectedEntity);
                     bool dirty = DrawComponentUI_SkyAtmosphereComponent("Sky Atmosphere Component", skyAtmosphereComponent);
                 }
 
-                //if (SceneManager::GetActiveScene()->GetEntityManager()->HasComponent<ArmatureComponent>(selectedEntity))
+                //if (editorSceneManager->GetActiveScene()->GetEntityManager()->HasComponent<ArmatureComponent>(selectedEntity))
                 //{
-                //    auto& armatureComponent = SceneManager::GetActiveScene()->GetEntityManager()->GetComponent<ArmatureComponent>(selectedEntity);
+                //    auto& armatureComponent = editorSceneManager->GetActiveScene()->GetEntityManager()->GetComponent<ArmatureComponent>(selectedEntity);
                 //    bool dirty = DrawComponentUI_ArmatureComponent("Armature Component", armatureComponent);
                 //}
 
@@ -299,7 +252,7 @@ namespace Horizon
             ImGui::TextUnformatted("Apex Angle");
             ImGui::NextColumn();
             ImGui::PushItemWidth(-1);
-            if (ImGui::DragFloat("##ApexAngle", &component.apexAngle))
+            if (ImGui::DragFloat("##ApexAngle", &component.apexAngleInDegrees))
             {
                 dirty = true;
             }
@@ -354,7 +307,7 @@ namespace Horizon
             ImGui::TextUnformatted("Shadow Cascade Count");
             ImGui::NextColumn();
             ImGui::PushItemWidth(-1);
-            if (ImGui::DragInt("##NumShadowCascades", &component.numShadowCascades, 1, 0, RendererMaxCascadedShadowMapCount))
+            if (ImGui::DragInt("##NumShadowCascades", &component.numShadowCascades, 1, 0, 4))
             {
 
             }
@@ -394,7 +347,7 @@ namespace Horizon
             ImGui::PopItemWidth();
             ImGui::NextColumn();
 
-            if (component.type == LightComponent::LightType::Directional)
+            if (component.type == LightComponent::LightType::Distant)
             {
                 ImGui::AlignTextToFramePadding();
                 ImGui::TextUnformatted("Atmospheric Light Disk Color Factor");
@@ -538,7 +491,7 @@ namespace Horizon
             ImGui::TextUnformatted("Mie Anisotropy");
             ImGui::NextColumn();
             ImGui::PushItemWidth(-1);
-            if (ImGui::DragFloat("##SkyAtmosphereComponent_mieAnisotropy", &component.mieAnisotropy))
+            if (ImGui::DragFloat("##SkyAtmosphereComponent_mieAsymmetry", &component.mieAsymmetry))
             {
                 dirty = true;
             }

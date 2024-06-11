@@ -116,15 +116,15 @@ namespace Horizon
         //    return frameCounter;
         //}
 
-        //EntityHandle GetSelectedEntity() const
-        //{
-        //    return selectedEntity;
-        //}
+        EntityHandle GetSelectedEntity() const
+        {
+            return selectedEntity;
+        }
 
-        //void SetSelectedEntity(EntityHandle entity)
-        //{
-        //    selectedEntity = entity;
-        //}
+        void SetSelectedEntity(EntityHandle entity)
+        {
+            selectedEntity = entity;
+        }
 
         bool IsExitRequested() const
         {
@@ -186,6 +186,12 @@ namespace Horizon
         //SceneViewportState sceneViewportState = SceneViewportState::Edit;
 
         //Vector4 viewportPos;
+
+        EditorSceneManager* GetEditorSceneManager() const
+        {
+            return editorSceneManager;
+        }
+
     private:
 
         void InitializeImGuiContext();
@@ -197,7 +203,7 @@ namespace Horizon
         //uint32 initialWidth = 2048;
         //uint32 initialHeight = 1024;
 
-        //EntityHandle selectedEntity = EntityHandle::Null;
+        EntityHandle selectedEntity = EntityHandle::Null;
 
         //EngineSubsystem* renderEngine = nullptr;
         //SelectionManager* selectionManager;
@@ -208,14 +214,14 @@ namespace Horizon
 
         //bool showOverlay = true;
         //bool showConsoleWindow = true;
-        //bool showProfilerWindow = true;
-        //bool showSceneHierarchyWindow = true;
-        //bool showInspectorWindow = true;
+        bool showSceneHierarchyWindow = true;
+        bool showProfilerWindow = true;
+        bool showInspectorWindow = true;
         //bool showRenderSettingsWindow = true;
 
-        //void DrawSceneHierarchyWindow(bool* open);
-        //void DrawInspectorWindow(bool* open);
-        //void DrawProfilerWindow(bool* open);
+        void DrawSceneHierarchyWindow(bool* open);
+        void DrawInspectorWindow(bool* open);
+        void DrawProfilerWindow(bool* open);
         //void DrawConsoleWindow(bool* open);
         //void DrawRenderSettingsWindow(bool* open);
         //void DrawOverlay();

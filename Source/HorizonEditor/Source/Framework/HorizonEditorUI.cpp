@@ -15,6 +15,8 @@
 #include "TextureImporter.h"
 #include "RenderDocPlugin.h"
 
+#include "InspectorUI_DEPRECATED.h"
+
 namespace Horizon
 {
     static void SetColorTheme_Dark(ImGuiStyle& style)
@@ -727,67 +729,115 @@ namespace Horizon
     //    viewMode = (DebugViewMode)currentViewModeIndex;
     //}
 
-    //void HorizonEditor::DrawProfilerWindow(bool* open)
-    //{
-    //    RenderBackendGPUProfiler* gpuProfiler = ((RenderSystem*)renderEngine)->gpuProfiler;
-    //    if (ImGui::Begin("Profiler", open))
-    //    {
-    //        ImGui::Text("FPS: %.1f (%.4f ms/frame)", ImGui::GetIO().Framerate, (1000.0f / ImGui::GetIO().Framerate));
+    void HorizonEditor::DrawProfilerWindow(bool* open)
+    {
+        RenderBackendGPUProfiler* gpuProfiler = engine->GetSubsystem<RenderSystem>()->gpuProfiler;
+        if (ImGui::Begin("Profiler", open))
+        {
+            ImGui::Text("FPS: %.1f (%.4f ms/frame)", ImGui::GetIO().Framerate, (1000.0f / ImGui::GetIO().Framerate));
 
-    //        if (ImGui::CollapsingHeader("CPU Profiler", ImGuiTreeNodeFlags_DefaultOpen))
-    //        {
-    //            ImGui::Text("CPU Frametime: %.4f ms", 1000.0f * deltaTime);
-    //        }
+            if (ImGui::CollapsingHeader("CPU Profiler", ImGuiTreeNodeFlags_DefaultOpen))
+            {
+                ImGui::Text("CPU Frametime: %.4f ms", 1000.0f * deltaTimeInSeconds);
+            }
 
-    //        if (ImGui::CollapsingHeader("GPU Profiler", ImGuiTreeNodeFlags_DefaultOpen))
-    //        {
-    //            for (uint32 regionIndex = 0; regionIndex < gpuProfiler->GetRegionCount(); regionIndex++)
-    //            {
-    //                ImGui::Text("%s: %.4f ms", gpuProfiler->GetRegionName(regionIndex), gpuProfiler->GetRegionTime(regionIndex));
-    //            }
-    //        }
-    //    }
-    //    ImGui::End();
-    //}
+            if (ImGui::CollapsingHeader("GPU Profiler", ImGuiTreeNodeFlags_DefaultOpen))
+            {
+                for (uint32 regionIndex = 0; regionIndex < gpuProfiler->GetRegionCount(); regionIndex++)
+                {
+                    ImGui::Text("%s: %.4f ms", gpuProfiler->GetRegionName(regionIndex), gpuProfiler->GetRegionTime(regionIndex));
+                }
+            }
+        }
+        ImGui::End();
+    }
 
-    //void HorizonEditor::DrawSceneHierarchyWindow(bool* open)
-    //{
-    //    if (ImGui::Begin("Scene Hierarchy", open))
-    //    {
-    //        ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_DefaultOpen;
-    //        if (ImGui::TreeNodeEx((void*)(uint64)564788, flags, SceneManager::GetActiveScene()->GetName().c_str()))
-    //        {
-    //            EntityHandle selectedEntity = HorizonEditor::GetInstance()->GetSelectedEntity();
-    //            auto entityManager = SceneManager::GetActiveScene()->GetEntityManager();
-    //            entityManager->Get()->each([&](EntityHandle entity)
-    //                {
-    //                    if (entityManager->GetComponent<SceneHierarchyComponent>(entity).parent == EntityHandle::Null)
-    //                    {
-    //                        DrawEntityNodeUI(entity);
-    //                    }
-    //                });
-    //            ImGui::TreePop();
-    //        }
+    void DrawEntityNodeUI(EntityHandle entity)
+    {
+        EntityHandle selectedEntity = HorizonEditor::GetInstance()->GetSelectedEntity();
 
-    //        if (ImGui::IsMouseDown(0) && ImGui::IsWindowHovered())
-    //        {
-    //            HorizonEditor::GetInstance()->SetSelectedEntity(EntityHandle::Null);
-    //        }
+        EntityManager* entityManager = HorizonEditor::GetInstance()->GetEditorSceneManager()->GetActiveScene()->GetEntityManager();
+        const SceneHierarchyComponent& hierarchy = entityManager->GetComponent<SceneHierarchyComponent>(entity);
+        ImGuiTreeNodeFlags flags = ((selectedEntity != EntityHandle::Null && selectedEntity == entity) ? ImGuiTreeNodeFlags_Selected : 0) | ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth;
+        if (hierarchy.numChildren == 0)
+        {
+            flags |= ImGuiTreeNodeFlags_Leaf;
+        }
+        bool opened = ImGui::TreeNodeEx((void*)(uint64)entity, flags, entityManager->GetComponent<NameComponent>(entity).GetName());
+        if (ImGui::IsItemClicked())
+        {
+            HorizonEditor::GetInstance()->SetSelectedEntity(entity);
+        }
 
-    //        // Right-click on blank space
-    //        if (ImGui::BeginPopupContextWindow())
-    //        {
-    //            if (ImGui::MenuItem("Create Empty Entity"))
-    //            {
-    //                auto newEntity = SceneManager::GetActiveScene()->CreateEntity("Empty Entity");
-    //                SceneManager::GetActiveScene()->GetEntityManager()->AddComponent<TransformComponent>(newEntity);
-    //                SceneManager::GetActiveScene()->GetEntityManager()->AddComponent<SceneHierarchyComponent>(newEntity);
-    //            }
-    //            ImGui::EndPopup();
-    //        }
-    //    }
-    //    ImGui::End();
-    //}
+        if (opened)
+        {
+            EntityHandle currentEntity = hierarchy.firstChild;
+            for (uint32 i = 0; i < hierarchy.numChildren; i++)
+            {
+                DrawEntityNodeUI(currentEntity);
+                currentEntity = entityManager->GetComponent<SceneHierarchyComponent>(currentEntity).next;
+            }
+            ImGui::TreePop();
+        }
+
+        bool deleted = false;
+        if (ImGui::BeginPopupContextItem())
+        {
+            if (ImGui::MenuItem("Delete Entity"))
+            {
+                deleted = true;
+            }
+            ImGui::EndPopup();
+        }
+
+        if (deleted)
+        {
+            entityManager->DestroyEntity(entity);
+            if (selectedEntity == entity)
+            {
+                selectedEntity = EntityHandle::Null;
+            }
+        }
+    }
+
+    void HorizonEditor::DrawSceneHierarchyWindow(bool* open)
+    {
+        if (ImGui::Begin("Scene Hierarchy", open))
+        {
+            ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_DefaultOpen;
+            if (ImGui::TreeNodeEx((void*)(uint64)564788, flags, editorSceneManager->GetActiveScene()->GetName().c_str()))
+            {
+                EntityHandle selectedEntity = HorizonEditor::GetInstance()->GetSelectedEntity();
+                auto entityManager = editorSceneManager->GetActiveScene()->GetEntityManager();
+                entityManager->Get()->each([&](EntityHandle entity)
+                    {
+                        if (entityManager->GetComponent<SceneHierarchyComponent>(entity).parent == EntityHandle::Null)
+                        {
+                            DrawEntityNodeUI(entity);
+                        }
+                    });
+                ImGui::TreePop();
+            }
+
+            if (ImGui::IsMouseDown(0) && ImGui::IsWindowHovered())
+            {
+                HorizonEditor::GetInstance()->SetSelectedEntity(EntityHandle::Null);
+            }
+
+            // Right-click on blank space
+            if (ImGui::BeginPopupContextWindow())
+            {
+                if (ImGui::MenuItem("Create Empty Entity"))
+                {
+                    auto newEntity = editorSceneManager->GetActiveScene()->CreateEntity("Empty Entity");
+                    editorSceneManager->GetActiveScene()->GetEntityManager()->AddComponent<TransformComponent>(newEntity);
+                    editorSceneManager->GetActiveScene()->GetEntityManager()->AddComponent<SceneHierarchyComponent>(newEntity);
+                }
+                ImGui::EndPopup();
+            }
+        }
+        ImGui::End();
+    }
 
     //void HorizonEditor::OnDrawUIEx()
     //{
@@ -897,20 +947,20 @@ namespace Horizon
         //ImVec2 windowSize = ImGui::GetWindowSize();
         //viewportPos = Vector4(cursorPos.x + windowPos.x, cursorPos.y + windowPos.y, cursorPos.x + windowPos.x + windowSize.x, cursorPos.y + windowPos.y + windowSize.y);
 
-        //if (showSceneHierarchyWindow)
-        //{
-        //    DrawSceneHierarchyWindow(&showSceneHierarchyWindow);
-        //}
+        if (showSceneHierarchyWindow)
+        {
+            DrawSceneHierarchyWindow(&showSceneHierarchyWindow);
+        }
 
-        //if (showInspectorWindow)
-        //{
-        //    DrawInspectorWindow(&showInspectorWindow);
-        //}
+        if (showInspectorWindow)
+        {
+            DrawInspectorWindow(&showInspectorWindow);
+        }
 
-        //if (showProfilerWindow)
-        //{
-        //    DrawProfilerWindow(&showProfilerWindow);
-        //}
+        if (showProfilerWindow)
+        {
+            DrawProfilerWindow(&showProfilerWindow);
+        }
 
         //if (showConsoleWindow)
         //{

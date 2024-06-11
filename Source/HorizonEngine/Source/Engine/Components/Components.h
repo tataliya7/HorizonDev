@@ -5,3 +5,4 @@
 #include "Engine/Components/SceneHierarchyComponent.h"
 #include "Engine/Components/TransformComponent.h"
 #include "Engine/Components/NameComponent.h"
+#include "Engine/Components/CameraComponent.h"

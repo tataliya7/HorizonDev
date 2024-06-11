@@ -22,6 +22,8 @@ project "HorizonEditor"
         "Source/Framework/EditorSceneManager.cpp",
         "Source/Framework/TextureImporter.h",
         "Source/Framework/TextureImporter.cpp",
+        "Source/Framework/InspectorUI_DEPRECATED.h",
+        "Source/Framework/InspectorUI_DEPRECATED.cpp",
 
         "Source/Editor/**.h",
         "Source/Editor/**.c",

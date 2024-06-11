@@ -138,6 +138,9 @@ namespace Horizon
         //     debugDrawLinesVertices.push_back(End);
         // }
 
+        // TODO: refactor
+        RenderBackendGPUProfiler* gpuProfiler;
+
     private:
 
         RenderBackend* renderBackend;
@@ -147,8 +150,6 @@ namespace Horizon
         // TODO: rename
         RendererDefaultResources* rendererDefaultResources;
 
-        // TODO: refactor
-        RenderBackendGPUProfiler* gpuProfiler;
 
         //
         // void CompileShaders_Deprecated();
