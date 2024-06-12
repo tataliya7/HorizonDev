@@ -42,13 +42,17 @@ uint RandInit(uint positionSeed, uint timeSeed)
     return seed;
 }
 
-// @see: "Next Generation Post Processing in Call of Duty: Advanced Warfare"
+// "Next Generation Post Processing in Call of Duty: Advanced Warfare"
 // http://advances.realtimerendering.com/s2014/index.html
-float InterleavedGradientNoise(float2 uv, uint frameIndex)
+float InterleavedGradientNoise(float2 pixelPosition)
 {
-    const float2 magicFrameScale = float2(47, 17) * 0.695;
-    uv += frameIndex * magicFrameScale;
+    const float3 magic = float3(0.06711056f, 0.00583715f, 52.9829189f);
+    return frac(magic.z * frac(dot(pixelPosition, magic.xy)));
+}
 
-    const float3 magic = float3(0.06711056, 0.00583715, 52.9829189);
-    return frac(magic.z * frac(dot(uv, magic.xy)));
+float InterleavedGradientNoiseEx(float2 pixelPosition, uint frameIndex)
+{
+    const float2 magic = float2(7.639f, 2.764f);
+	float2 position = pixelPosition + frameIndex * magic;
+    return InterleavedGradientNoise(position);
 }

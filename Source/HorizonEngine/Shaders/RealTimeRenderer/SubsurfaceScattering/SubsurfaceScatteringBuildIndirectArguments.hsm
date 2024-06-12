@@ -16,9 +16,9 @@ void SubsurfaceScatteringBuildIndirectArgumentsCS(uint3 DispatchThreadID : SV_Di
 
     const uint tileCount = tileCountBuffer.Load<uint>(0);
 
-    // DrawIndirectCommand(verticeCount, instanceCount, firstVertex, firstInstance)
+    // DrawIndirectArgumens(verticeCount, instanceCount, firstVertex, firstInstance)
     drawIndirectArgumentBuffer.Store<uint4>(0, uint4(6, tileCount, 0, 0));
 
-    // DispatchIndirectCommand(threadGroupCountX, threadGroupCountY, threadGroupCountZ)
+    // DispatchIndirectArgumens(threadGroupCountX, threadGroupCountY, threadGroupCountZ)
     dispatchIndirectArgumentBuffer.Store<uint3>(0, uint3(tileCount, 1, 1));
 }

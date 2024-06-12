@@ -29,27 +29,30 @@ void SubsurfaceScatteringClassifyTilesCS(uint3 DispatchThreadID : SV_DispatchThr
     }
 
     uint2 pixelCoord = DispatchThreadID.xy;
-    float2 uv = (pixelCoord + 0.5) * float2(1.0 / width, 1.0 / height);
+    float2 pixelPosition = float2(pixelCoord) + 0.5f;
+    float2 uv = pixelPosition * perFrameConstants.renderResolution.zw;
 
-    float4 outColor = 0;
+    float4 outputColor = 0;
+
     bool hasSubsurfaceProfile = true;
-    [branch] if (hasSubsurfaceProfile)
+    if (hasSubsurfaceProfile)
     {
         float4 sceneColor = sceneColorTexture.SampleLevel(GlobalSamplerPointClamp, uv, 0);
+        float sceneDepth = sceneDepthTexture.SampleLevel(GlobalSamplerPointClamp, uv, 0).r;
+
         float diffuseLuminance = sceneColor.a;
         float luminance = RelativeLuminance(sceneColor.rgb);
         float ratioOfDiffuse = saturate(diffuseLuminance / luminance);
         float3 diffuse = sceneColor.rgb * ratioOfDiffuse;
 
-        float sceneDepth = sceneDepthTexture.SampleLevel(GlobalSamplerPointClamp, uv, 0).r;
-        float noise = InterleavedGradientNoise(uv, perFrameConstants.frameIndex % 8);
         float linearSceneDepth = LinearDepth01(sceneDepth, perFrameConstants.nearClippingPlane, perFrameConstants.farClippingPlane);
-        float depth = linearSceneDepth + noise * (linearSceneDepth / 1024.0f);
+        //float noise = InterleavedGradientNoiseEx(pixelPosition, perFrameConstants.frameIndexMod8);
+        //float depth = linearSceneDepth + noise * (linearSceneDepth / 1024.0f);
 
-        outColor = float4(diffuse, depth);
+        outputColor = float4(diffuse, linearSceneDepth);
     }
 
-    outputTexture[pixelCoord] = outColor;
+    outputTexture[pixelCoord] = outputColor;
 
     if (GroupIndex == 0)
     {

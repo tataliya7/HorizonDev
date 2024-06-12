@@ -201,7 +201,7 @@ void ScreenSpaceReflectionsCS(uint3 GroupID : SV_GroupID, uint3 GroupThreadID : 
 
     bool debug = all(pixelCoord == uint2(perFrameConstants.renderWidth, perFrameConstants.renderHeight) / 2);
     // The ray marching benefits from jittering to create a smoother transition between samples and LOD
-    float jitter = InterleavedGradientNoise(pixelCoord, perFrameConstants.frameIndex % 8); // Temporally stabilize
+    float jitter = InterleavedGradientNoiseEx(pixelCoord, perFrameConstants.frameIndex % 8); // Temporally stabilize
 
     float3 hit;
     bool foundHit = false;
@@ -249,7 +249,7 @@ void ScreenSpaceReflectionsCS(uint3 GroupID : SV_GroupID, uint3 GroupThreadID : 
         foundHit,
         uncertain);
 #else
-    float rayStepOffset = InterleavedGradientNoise(pixelCoord, perFrameConstants.frameIndex % 8);
+    float rayStepOffset = InterleavedGradientNoiseEx(pixelCoord, perFrameConstants.frameIndex % 8);
     //rayStepOffset = 1;
     CastScreenSpaceRayLinear(
         sceneDepth,

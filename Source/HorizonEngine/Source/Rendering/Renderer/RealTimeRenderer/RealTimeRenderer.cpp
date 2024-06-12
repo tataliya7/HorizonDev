@@ -353,6 +353,7 @@ namespace Horizon
         PerFrameShaderParameters perFrameShaderParameters = {};
         {
             perFrameShaderParameters.frameIndex = view.frameIndex;
+            perFrameShaderParameters.frameIndexMod8 = view.frameIndex % 8;
 
             perFrameShaderParameters.deltaTimeInSeconds = view.deltaTimeInSeconds;
 

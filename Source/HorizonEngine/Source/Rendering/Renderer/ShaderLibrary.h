@@ -66,7 +66,7 @@ namespace Horizon
         DirectLighting,
         SkyBoxVS,
         SkyBoxPS,
-        SubsurfaceScatteringSetup,
+        SubsurfaceScatteringInitialize,
         SubsurfaceScatteringClassifyTiles,
         SubsurfaceScatteringBuildIndirectArguments,
         SubsurfaceScatteringSampleDiffusionProfile,

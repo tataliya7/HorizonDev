@@ -1,6 +1,7 @@
 #pragma once
 
-#define SUBSURFACE_SCATTERING_TILE_SIZE 16
+// TODO: move to .cpp file
+#define SUBSURFACE_SCATTERING_TILE_SIZE 8
 
 struct BurleyNormalizedDiffusionParameters
 {

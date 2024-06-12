@@ -2,7 +2,7 @@
 
 namespace Horizon
 {
-    static constexpr uint32 GSubsurfaceScatteringTileSize = 16;
+    static constexpr uint32 GSubsurfaceScatteringTileSize = 8;
 
     bool RealTimeRenderer::IsSubsurfaceScatteringEnabled() const
     {
@@ -23,19 +23,15 @@ namespace Horizon
         const uint32 tileCount = tileCountX * tileCountY;
 
         RenderGraphTextureHandle subsurfaceScatteringTexture = renderGraph.CreateTexture(sceneColorTextureDesc, "SubsurfaceScatteringTexture");
-        RenderGraphTextureHandle subsurfaceScatteringColorTexture = renderGraph.CreateTexture(sceneColorTextureDesc, "SubsurfaceScatteringColorTexture");
 
         RenderGraphBufferHandle tileCountBuffer = renderGraph.CreateBuffer(RenderGraphBufferDesc::CreateByteAddress(sizeof(uint32)), "SubsurfaceScatteringTileCountBuffer");
         RenderGraphBufferHandle tileDataBuffer = renderGraph.CreateBuffer(RenderGraphBufferDesc::CreateByteAddress(sizeof(uint32) * 2 * tileCount), "SubsurfaceScatteringTileDataBuffer");
 
-        RenderGraphBufferHandle dispatchIndirectArgumentBuffer = renderGraph.CreateBuffer(RenderGraphBufferDesc::CreateIndirectArguments(sizeof(RenderBackendDispatchIndirectArguments), 1), "SubsurfaceScatteringDispatchIndirectArgumentBuffer");
-        uint64 dispatchIndirectArgumentBufferOffset = 0;
-
         RenderGraphBufferHandle drawIndirectArgumentBuffer = renderGraph.CreateBuffer(RenderGraphBufferDesc::CreateIndirectArguments(sizeof(RenderBackendDrawIndirectArguments), 1), "SubsurfaceScatteringDrawIndirectArgumentBuffer");
-        uint64 drawIndirectArgumentBufferOffset = 0;
+        RenderGraphBufferHandle dispatchIndirectArgumentBuffer = renderGraph.CreateBuffer(RenderGraphBufferDesc::CreateIndirectArguments(sizeof(RenderBackendDispatchIndirectArguments), 1), "SubsurfaceScatteringDispatchIndirectArgumentBuffer");
 
         renderGraph.AddPass(
-            std::format("SubsurfaceScatteringSetup (Compute, {}x{})", 0, 0),
+            std::format("SubsurfaceScatteringInitialize (Compute, {}x{})", 0, 0),
             RenderGraphPassFlags::Compute,
             [&](RenderGraphBuilder& builder)
             {
@@ -46,7 +42,8 @@ namespace Horizon
                     RenderBackendShaderArguments shaderArguments = {};
                     shaderArguments.BindBuffer(0, registry.GetRenderBackendBufferHandle(tileCountBuffer));
 
-                    RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::SubsurfaceScatteringSetup);
+                    RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::SubsurfaceScatteringInitialize);
+
                     commandList.Dispatch(
                         computeShader,
                         shaderArguments,
@@ -61,16 +58,16 @@ namespace Horizon
             RenderGraphPassFlags::Compute,
             [&](RenderGraphBuilder& builder)
             {
-                auto sceneColorTexture = builder.ReadTexture(sceneTextures.sceneColorTexture, RenderBackendResourceState::ShaderResource);
-                auto sceneDepthTexture = builder.ReadTexture(sceneTextures.sceneDepthTexture, RenderBackendResourceState::ShaderResource);
-
+                RenderGraphTextureHandle sceneColorTexture = builder.ReadTexture(sceneTextures.sceneColorTexture, RenderBackendResourceState::ShaderResource);
+                RenderGraphTextureHandle sceneDepthTexture = builder.ReadTexture(sceneTextures.sceneDepthTexture, RenderBackendResourceState::ShaderResource);
                 tileCountBuffer = builder.WriteBuffer(tileCountBuffer, RenderBackendResourceState::UnorderedAccess);
                 tileDataBuffer = builder.WriteBuffer(tileDataBuffer, RenderBackendResourceState::UnorderedAccess);
 
                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
                 {
-                    uint32 threadGroupCountX = ComputeThreadGroupCount(sceneColorTextureDesc.width, 16);
-                    uint32 threadGroupCountY = ComputeThreadGroupCount(sceneColorTextureDesc.height, 16);
+                    uint32 threadGroupCountX = ComputeThreadGroupCount(sceneColorTextureDesc.width, GSubsurfaceScatteringTileSize);
+                    uint32 threadGroupCountY = ComputeThreadGroupCount(sceneColorTextureDesc.height, GSubsurfaceScatteringTileSize);
+                    uint32 threadGroupCountZ = 1;
 
                     RenderBackendShaderArguments shaderArguments = {};
                     shaderArguments.BindBufferCBV(0, this->GetCurrentPerFrameConstantBuffer());
@@ -86,7 +83,7 @@ namespace Horizon
                         shaderArguments,
                         threadGroupCountX,
                         threadGroupCountY,
-                        1);
+                        threadGroupCountZ);
                 };
             });
 
@@ -114,19 +111,6 @@ namespace Horizon
                         1,
                         1,
                         1);
-                };
-            });
-
-        renderGraph.AddPass(
-            std::format("SubsurfaceScatteringClearTextureUAV (Compute)"),
-            RenderGraphPassFlags::Compute,
-            [&](RenderGraphBuilder& builder)
-            {
-                subsurfaceScatteringColorTexture = builder.WriteTexture(subsurfaceScatteringColorTexture, RenderBackendResourceState::UnorderedAccess);
-
-                return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
-                {
-                    commandList.ClearTextureUAV(RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(subsurfaceScatteringColorTexture)), RenderBackendTextureClearValue::Black);
                 };
             });
 
@@ -189,7 +173,7 @@ namespace Horizon
 
                 auto sceneColorTexture = builder.WriteTexture(sceneTextures.sceneColorTexture, RenderBackendResourceState::RenderTarget);
 
-                builder.BindRenderTarget(0, sceneColorTexture, RenderBackendRenderPassBeginningAccessType::Preserve, RenderBackendRenderPassEndingAccessType::Preserve);
+                builder.BindRenderTarget(0, sceneColorTexture, RenderBackendRenderPassBeginningAccessType::Discard, RenderBackendRenderPassEndingAccessType::Preserve);
 
                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
                 {
@@ -213,14 +197,14 @@ namespace Horizon
                         shaderArguments,
                         RenderBackendBufferHandle::Null,
                         registry.GetRenderBackendBufferHandle(drawIndirectArgumentBuffer),
-                        drawIndirectArgumentBufferOffset,
+                        0,
                         1,
                         RenderBackendPrimitiveTopology::TriangleList);
                 };
             });
 
         renderGraph.AddPass(
-            std::format("SubsurfaceScatteringCopyResults (Graphics, Tiled, {}x{})", renderResolution.width, renderResolution.height),
+            std::format("SubsurfaceScatteringCopyResults (Graphics, Tiled, {}x{})", sceneColorTextureDesc.width, sceneColorTextureDesc.height),
             RenderGraphPassFlags::Graphics,
             [&](RenderGraphBuilder& builder)
             {
@@ -253,7 +237,7 @@ namespace Horizon
                         shaderArguments,
                         RenderBackendBufferHandle::Null,
                         registry.GetRenderBackendBufferHandle(drawIndirectArgumentBuffer),
-                        drawIndirectArgumentBufferOffset,
+                        0,
                         1,
                         RenderBackendPrimitiveTopology::TriangleList);
                 };

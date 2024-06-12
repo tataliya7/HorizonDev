@@ -219,8 +219,8 @@ namespace Horizon
             shaderLibrary->LoadShader(ShaderID::SkyBoxPS, shaderDesc);
         }
         {
-            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/SubsurfaceScattering/SubsurfaceScatteringSetup.hsm", "SubsurfaceScatteringSetupCS");
-            shaderLibrary->LoadShader(ShaderID::SubsurfaceScatteringSetup, shaderDesc);
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/SubsurfaceScattering/SubsurfaceScatteringInitialize.hsm", "SubsurfaceScatteringInitializeCS");
+            shaderLibrary->LoadShader(ShaderID::SubsurfaceScatteringInitialize, shaderDesc);
         }
         {
             ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/SubsurfaceScattering/SubsurfaceScatteringClassifyTiles.hsm", "SubsurfaceScatteringClassifyTilesCS");
