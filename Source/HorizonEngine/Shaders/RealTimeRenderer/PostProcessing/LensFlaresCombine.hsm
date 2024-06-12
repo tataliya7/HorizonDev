@@ -63,7 +63,7 @@ void LensFlaresCombinePS(float4 position : SV_Position, out float3 outColor : SV
     haloMask = saturate(2.0f * haloMask);
     haloMask = smoothstep(0.5f, 1.0f, haloMask);
 
-    float2 ndcPos = UVToClipSpace(uv);
+    float2 ndcPos = UVSpaceToClipSpace(uv);
     float vignette = Vignette(ndcPos);
     vignette *= Vignette(ndcPos * 0.8f);
     vignette = vignette * 0.95 + 0.05;

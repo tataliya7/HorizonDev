@@ -113,12 +113,6 @@ float3 GetLightDiskLuminance(
     return 0.0f;
 }
 
-[shader("vertex")]
-void SkyAtmosphereRayMarchingVS(uint vertexID : SV_VertexID, out float4 outPosition : SV_Position)
-{
-    outPosition = float4(float2((vertexID << 1) & 2, vertexID & 2) * 2.0f - 1.0f, 0.0f, 1.0f);
-}
-
 [shader("pixel")]
 void SkyAtmosphereRayMarchingPS(float4 position : SV_Position, out float4 outLuminance : SV_Target0)
 {

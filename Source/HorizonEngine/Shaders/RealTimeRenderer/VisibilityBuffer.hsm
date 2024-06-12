@@ -103,7 +103,7 @@ void VisibilityBufferPS(
     float4 clipPosition2 = mul(perFrameConstants.worldToClipMatrix, float4(worldPosition2, 1.0));
 
     float2 uv = input.svPosition.xy / float2(perFrameConstants.renderWidth, perFrameConstants.renderHeight);
-    float3 perspectiveCorrectBarycentrics = CalculatePerspectiveCorrectBarycentric(clipPosition0, clipPosition1, clipPosition2, uv_to_clipspace(uv));
+    float3 perspectiveCorrectBarycentrics = CalculatePerspectiveCorrectBarycentric(clipPosition0, clipPosition1, clipPosition2, UVSpaceToClipSpace(uv));
 #endif
 #endif
 

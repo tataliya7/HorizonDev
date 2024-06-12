@@ -58,13 +58,13 @@ float3 TangentToWorld(const float3 vec, const float3 T, const float3 B, const fl
     return normalize(T * vec.x + B * vec.y + N * vec.z);
 }
 
-float2 UVToClipSpace(float2 uv)
+float2 UVSpaceToClipSpace(float2 uv)
 {
     float2 xy = uv * float2(2.0f, -2.0f) + float2(-1.0f, 1.0f);
     return xy;
 }
 
-float2 ClipSpaceToUV(float2 xy)
+float2 ClipSpaceToUVSpace(float2 xy)
 {
     float2 uv = xy * float2(0.5f, -0.5f) + float2(0.5f, 0.5f);
     return uv;

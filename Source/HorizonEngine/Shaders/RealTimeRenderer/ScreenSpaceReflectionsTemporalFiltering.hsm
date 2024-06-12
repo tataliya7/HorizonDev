@@ -28,12 +28,12 @@ inline bool is_saturated(float4 a) { return all(a == saturate(a)); }
 
 float2 CalculateReprojectionBuffer(float2 uv, float depth, float4x4 clipToWorldMatrix, float4x4 previousWorldToClipMatrix)
 {
-    float2 screenPosition = uv_to_clipspace(uv);
+    float2 screenPosition = UVSpaceToClipSpace(uv);
     float4 currClipPosition = float4(screenPosition, depth, 1);
     float4 worldPosition = mul(currClipPosition, clipToWorldMatrix);
     float4 prevClipPosition = mul(worldPosition, previousWorldToClipMatrix);
     float2 prevScreenPosition = prevClipPosition.xy / prevClipPosition.w;
-    return clipspace_to_uv(prevScreenPosition);
+    return ClipSpaceToUVSpace(prevScreenPosition);
 }
 
 float GetDisocclusion(float depth, float depthHistory, float near, float far)

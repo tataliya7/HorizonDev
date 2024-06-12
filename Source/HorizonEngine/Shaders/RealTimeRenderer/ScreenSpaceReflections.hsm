@@ -276,7 +276,7 @@ void ScreenSpaceReflectionsCS(uint3 GroupID : SV_GroupID, uint3 GroupThreadID : 
 
     float4 worldSpaceHitPointClip = mul(perFrameConstants.worldToClipMatrix, float4(worldSpaceHitPoint, 1.0));
     float3 worldSpaceHitPointScreen = worldSpaceHitPointClip.xyz / worldSpaceHitPointClip.w;
-    float2 worldSpaceHitPointUV = clipspace_to_uv(worldSpaceHitPointScreen.xy);
+    float2 worldSpaceHitPointUV = ClipSpaceToUVSpace(worldSpaceHitPointScreen.xy);
 
     float3 hitNormal = gbuffer1.SampleLevel(GlobalSamplerPointClamp, hit.xy, 0).xyz;
     float surfaceDepth = depthPyramid.SampleLevel(GlobalSamplerPointClamp, hit.xy, 0).r;

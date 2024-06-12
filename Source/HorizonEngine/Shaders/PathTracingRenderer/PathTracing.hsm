@@ -140,7 +140,7 @@ void PathTracingRG()
 
     uint2 pixelCoord = dispatchRaysIndex.xy;
     float2 uv = (float2(pixelCoord) + subpixelJitter) * perFrameConstants.outputSizeAndInvOutputSize.zw;
-    float2 position = UVToClipSpace(uv);
+    float2 position = UVSpaceToClipSpace(uv);
 
     uint maxBounces = perFrameConstants.maxBounces;
 

@@ -307,8 +307,8 @@ void GTAOHorizonSearchAndIntegralCS(uint3 DispatchThreadID : SV_DispatchThreadID
         float3 rayEndClip = ViewSpaceToClipSpacePosition(rayEndView, perFrameConstants.viewToClipMatrix);
         rayEndClip.z = rayStartClip.z;
 
-        float2 rayStartScreen = ClipSpaceToUV(rayStartClip.xy);
-        float2 rayEndScreen = ClipSpaceToUV(rayEndClip.xy);
+        float2 rayStartScreen = ClipSpaceToUVSpace(rayStartClip.xy);
+        float2 rayEndScreen = ClipSpaceToUVSpace(rayEndClip.xy);
         float2 rayStepScreen = rayEndScreen - rayStartScreen;
         bool is_more_vertical = abs(rayStepScreen.x) < abs(rayStepScreen.y);
         rayStepScreen /= is_more_vertical ? abs(rayStepScreen.y) : abs(rayStepScreen.x);

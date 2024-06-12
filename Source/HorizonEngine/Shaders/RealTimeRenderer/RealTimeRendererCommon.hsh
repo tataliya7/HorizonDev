@@ -321,26 +321,9 @@ float3 ReconstructViewSpacePositionFromDepth(float2 uv, float depth, float4x4 cl
     return position.xyz / position.w;
 }
 
-float2 uv_to_clipspace(in float2 uv)
-{
-    float2 clipspace = uv * 2 - 1;
-    clipspace.y *= -1;
-    return clipspace;
-}
-
-float2 clipspace_to_uv(in float2 clipspace)
-{
-    return clipspace * float2(0.5, -0.5) + 0.5;
-}
-
-float3 clipspace_to_uv(in float3 clipspace)
-{
-    return clipspace * float3(0.5, -0.5, 0.5) + 0.5;
-}
-
 float CalculateScreenEdgeVignette(float2 uv, float fadeFactor)
 {
-    float2 ndc = uv_to_clipspace(uv);
+    float2 ndc = UVSpaceToClipSpace(uv);
     float2 attenuation = saturate(abs(ndc) * fadeFactor - (fadeFactor - 1.0f));
     float vignette = saturate(1.0 - dot(attenuation, attenuation));
     return vignette;

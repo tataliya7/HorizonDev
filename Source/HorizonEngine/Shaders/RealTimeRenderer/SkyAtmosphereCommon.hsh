@@ -121,7 +121,7 @@ float3 GetWorldSpacePositionFromUvAndDepth(float2 uv, float depth, float4x4 inve
 #if 1
     depth = max(0.000000000001, depth);
 #endif
-    float4 position = float4(uv * float2(2.0, -2.0) - float2(1.0, -1.0), depth, 1.0);
+    float4 position = float4(UVSpaceToClipSpace(uv), depth, 1.0);
     position = mul(inverseViewProjectionMatrix, position);
     return position.xyz / position.w;
 }

@@ -35,7 +35,7 @@ namespace Horizon
         uint64 drawIndirectArgumentBufferOffset = 0;
 
         renderGraph.AddPass(
-            std::format("SubsurfaceScatteringSetup (Compute)"),
+            std::format("SubsurfaceScatteringSetup (Compute, {}x{})", 0, 0),
             RenderGraphPassFlags::Compute,
             [&](RenderGraphBuilder& builder)
             {
@@ -91,23 +91,23 @@ namespace Horizon
             });
 
         renderGraph.AddPass(
-            std::format("SubsurfaceScatteringBuildIndirectArguments (Compute)"),
+            std::format("SubsurfaceScatteringBuildIndirectArguments (Compute, 1x1x1)"),
             RenderGraphPassFlags::Compute,
             [&](RenderGraphBuilder& builder)
             {
-                builder.ReadBuffer(tileCountBuffer, RenderBackendResourceState::ShaderResource);
-
-                dispatchIndirectArgumentBuffer = builder.WriteBuffer(dispatchIndirectArgumentBuffer, RenderBackendResourceState::UnorderedAccess);
+                tileCountBuffer = builder.ReadBuffer(tileCountBuffer, RenderBackendResourceState::ShaderResource);
                 drawIndirectArgumentBuffer = builder.WriteBuffer(drawIndirectArgumentBuffer, RenderBackendResourceState::UnorderedAccess);
+                dispatchIndirectArgumentBuffer = builder.WriteBuffer(dispatchIndirectArgumentBuffer, RenderBackendResourceState::UnorderedAccess);
 
                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
                 {
                     RenderBackendShaderArguments shaderArguments = {};
                     shaderArguments.BindBuffer(0, registry.GetRenderBackendBufferHandle(tileCountBuffer));
-                    shaderArguments.BindBuffer(1, registry.GetRenderBackendBufferHandle(dispatchIndirectArgumentBuffer));
-                    shaderArguments.BindBuffer(2, registry.GetRenderBackendBufferHandle(drawIndirectArgumentBuffer));
+                    shaderArguments.BindBuffer(1, registry.GetRenderBackendBufferHandle(drawIndirectArgumentBuffer));
+                    shaderArguments.BindBuffer(2, registry.GetRenderBackendBufferHandle(dispatchIndirectArgumentBuffer));
 
                     RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::SubsurfaceScatteringBuildIndirectArguments);
+
                     commandList.Dispatch(
                         computeShader,
                         shaderArguments,
@@ -220,15 +220,14 @@ namespace Horizon
             });
 
         renderGraph.AddPass(
-            std::format("SubsurfaceScatteringCopyResults (Graphics, Tiled)"),
+            std::format("SubsurfaceScatteringCopyResults (Graphics, Tiled, {}x{})", renderResolution.width, renderResolution.height),
             RenderGraphPassFlags::Graphics,
             [&](RenderGraphBuilder& builder)
             {
-                builder.ReadBuffer(drawIndirectArgumentBuffer, RenderBackendResourceState::IndirectArgument);
-                builder.ReadBuffer(tileDataBuffer, RenderBackendResourceState::ShaderResource);
-                builder.ReadTexture(subsurfaceScatteringTexture, RenderBackendResourceState::ShaderResource);
-
-                auto sceneColorTexture = builder.WriteTexture(sceneTextures.sceneColorTexture, RenderBackendResourceState::RenderTarget);
+                drawIndirectArgumentBuffer = builder.ReadBuffer(drawIndirectArgumentBuffer, RenderBackendResourceState::IndirectArgument);
+                tileDataBuffer = builder.ReadBuffer(tileDataBuffer, RenderBackendResourceState::ShaderResource);
+                subsurfaceScatteringTexture = builder.ReadTexture(subsurfaceScatteringTexture, RenderBackendResourceState::ShaderResource);
+                RenderGraphTextureHandle sceneColorTexture = builder.WriteTexture(sceneTextures.sceneColorTexture, RenderBackendResourceState::RenderTarget);
 
                 builder.BindRenderTarget(0, sceneColorTexture, RenderBackendRenderPassBeginningAccessType::Preserve, RenderBackendRenderPassEndingAccessType::Preserve);
 
