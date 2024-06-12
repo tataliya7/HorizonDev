@@ -31,7 +31,7 @@ namespace Horizon
         RenderGraphBufferHandle dispatchIndirectArgumentBuffer = renderGraph.CreateBuffer(RenderGraphBufferDesc::CreateIndirectArguments(sizeof(RenderBackendDispatchIndirectArguments), 1), "SubsurfaceScatteringDispatchIndirectArgumentBuffer");
 
         renderGraph.AddPass(
-            std::format("SubsurfaceScatteringInitialize (Compute, {}x{})", 0, 0),
+            std::format("SubsurfaceScatteringInitialize (Compute, 1x1x1)"),
             RenderGraphPassFlags::Compute,
             [&](RenderGraphBuilder& builder)
             {
