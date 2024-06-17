@@ -1,1 +1,3 @@
 #pragma once
+
+#define MOTION_BLUR_TILE_SIZE 16

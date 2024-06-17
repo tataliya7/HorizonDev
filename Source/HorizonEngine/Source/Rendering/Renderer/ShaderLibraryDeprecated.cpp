@@ -296,6 +296,22 @@ namespace Horizon
             shaderLibrary->LoadShader(ShaderID::LightShaftsApply, shaderDesc);
         }
         {
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/PostProcessing/MotionBlurSetup.hsm", "MotionBlurSetupCS");
+            shaderLibrary->LoadShader(ShaderID::MotionBlurSetupCS, shaderDesc);
+        }
+        {
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Vertex, "Shaders/RealTimeRenderer/PostProcessing/MotionBlurVelocityDilation.hsm", "MotionBlurVelocityDilationScatterVS");
+            shaderLibrary->LoadShader(ShaderID::MotionBlurVelocityDilationScatterVS, shaderDesc);
+        }
+        {
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Pixel, "Shaders/RealTimeRenderer/PostProcessing/MotionBlurVelocityDilation.hsm", "MotionBlurVelocityDilationScatterPS");
+            shaderLibrary->LoadShader(ShaderID::MotionBlurVelocityDilationScatterPS, shaderDesc);
+        }
+        {
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/PostProcessing/MotionBlurReconstructionFilter.hsm", "MotionBlurReconstructionFilterCS");
+            shaderLibrary->LoadShader(ShaderID::MotionBlurReconstructionFilterCS, shaderDesc);
+        }
+        {
             //ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/TemporalSuperSampling.hsm", "TemporalSuperSamplingCS");
             //shaderLibrary->LoadShader(ShaderID::TemporalSuperSampling, shaderDesc);
         }

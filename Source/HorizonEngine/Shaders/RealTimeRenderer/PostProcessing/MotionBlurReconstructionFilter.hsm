@@ -1,0 +1,21 @@
+#include "../../ShaderCommon.hsh"
+#include "../RealTimeRendererCommon.hsh"
+#include "PostProcessingCommon.hsh"
+#include "MotionBlurCommon.hsh"
+
+BIND_BUFFER_CBV(0, PerFrameShaderParameters);
+BIND_TEXTURE_2D_SRV(1, VelocityTileTexture);
+BIND_TEXTURE_2D_TYPED_SRV(2, float3, VelocityAndDepthTexture);
+BIND_TEXTURE_2D_TYPED_SRV(3, float4, DilatedVelocityTileTexture);
+BIND_TEXTURE_2D_UAV(4, float3, OutputTexture);
+
+[shader("compute")]
+[numthreads(MOTION_BLUR_TILE_SIZE, MOTION_BLUR_TILE_SIZE, 1)]
+void MotionBlurReconstructionFilterCS(uint3 DispatchThreadID : SV_DispatchThreadID, uint3 GroupID : SV_GroupID, uint GroupIndex : SV_GroupIndex)
+{
+    RWTexture2D<float3> outputTexture = GetOutputTextureUAV();
+
+    uint2 pixelCoord = DispatchThreadID.xy;
+
+    outputTexture[pixelCoord] = ;
+}
