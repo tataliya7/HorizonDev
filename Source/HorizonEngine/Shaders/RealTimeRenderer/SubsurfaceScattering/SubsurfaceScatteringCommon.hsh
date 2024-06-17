@@ -3,38 +3,91 @@
 // TODO: move to .cpp file
 #define SUBSURFACE_SCATTERING_TILE_SIZE 8
 
-struct BurleyNormalizedDiffusionParameters
+#define SUBSURFACE_SCATTERING_USE_LDS_CACHE 1
+#define SUBSURFACE_SCATTERING_MAX_SAMPLE_COUNT 64
+
+struct BurleyDiffusionParameters
 {
     float4 surfaceAlbedo;
-    float4 diffuseMeanFreePath;
+    float4 meanFreePath;
 };
 
-// R(d, r) = (e^(-r / d) + e^(-r / (3 * d))) / (8 * pi * d * r)
-float3 ComputeDiffuseReflectanceProfile(float3 d, float r)
+float3 ComputeBurleyDiffusionProfileScalingFactor(float3 A)
 {
-    return (exp(-r / d) + exp(-r / (3.0 * d))) / (8.0 * PI * d * r);
-}
-
-float3 ComputeScalingFactor(float3 A)
-{
-#if 0
-    return (1.85 - A + 7.0 * (A - 0.8) * (A - 0.8) * (A - 0.8));
-#elif 0
-    return (1.9 - A + 3.5 * (A - 0.8) * (A - 0.8));
-#else
-    return (3.5 + 100 * (A - 0.33) * (A - 0.33) * (A - 0.33) * (A - 0.33));
+#if 0 // Searchlight configuration (assume that the light enters straight into the volume in a direction perpendicular to the surface)
+    return (1.85f - A + 7.0f * (A - 0.8f) * (A - 0.8f) * (A - 0.8f));
+#elif 1 // Diffuse surface transmission (ignore or do not know the direction of the incoming light)
+    return (1.9f - A + 3.5f * (A - 0.8f) * (A - 0.8f));
+#else // Searchlight configuration, dmfp as parameter
+    return (3.5f + 100.0f * (A - 0.33f) * (A - 0.33f) * (A - 0.33f) * (A - 0.33f));
 #endif
 }
 
-float3 ComputeDiffuseReflectanceProfile(float3 l, float3 s, float r)
+// A: surface albedo
+// l: mean free path (mfp)
+float3 ComputeBurleyDiffusionProfileShapeParamter(float3 A, float3 l)
 {
+    float3 s = ComputeBurleyDiffusionProfileScalingFactor(A);
     float3 d = l / s;
-    return ComputeDiffuseReflectanceProfile(d, r);
+    return d;
 }
 
-float3 ComputeBurleyNormalizedDiffusionCDF(float r, float3 d)
+// TODO: Should we mupltiply the result by the surface albedo?
+
+// r * R(r) = A * (e^(-r / d) + e^(-r / (3 * d))) / (8 * π * d)
+// The r parameter is the radial distance between entry point and exit point.
+// The d parameter shapes the height and width of the curve and can
+// be set based on artistic preference or determined based on physical
+// parameters.
+float3 ComputeBurleyDiffusionProfile(float r, float3 d, float A)
 {
-    return 1.0 - 0.25 * exp(-r / d) - 0.75 * exp(-r / (3.0 * d));
+#if 0
+    return A * (exp(-r / d) + exp(-r / (3.0f * d))) / (8.0f * PI * d);
+#else
+    float t = exp(-r / (3.0f * d));
+    return A * (((t * t) + 1.0f) * t) / (8.0f * PI * d);
+#endif
+}
+
+// CDF (cumulative distribution function).
+float3 ComputeBurleyDiffusionProfileCDF(float r, float3 d)
+{
+#if 0
+    return 1.0f - 0.25f * exp(-r / d) - 0.75f * exp(-r / (3.0f * d));
+#else
+    float t = exp(-r / (3.0f * d));
+    return 1.0f - 0.25f * t * t * t - 0.75f * t;
+#endif
+}
+
+#define LOG2_E      1.44269504088896340736
+
+// https://zero-radiance.github.io/post/sampling-diffusion/
+// Performs sampling of a  Burley diffusion profile in polar coordinates.
+// 'u' is the random number (the value of the CDF): [0, 1).
+// rcp(s) = 1 / ShapeParam = ScatteringDistance.
+// 'r' is the sampled radial distance, s.t. (u = 0 -> r = 0) and (u = 1 -> r = Inf).
+// rcp(Pdf) is the reciprocal of the corresponding PDF value.
+void SampleBurleyDiffusionProfile(float u, float rcpS, out float r, out float rcpPdf)
+{
+    u = 1 - u; // Convert CDF to CCDF; the resulting value of (u != 0)
+
+    float g = 1 + (4 * u) * (2 * u + sqrt(1 + (4 * u) * u));
+    float n = exp2(log2(g) * (-1.0/3.0));                    // g^(-1/3)
+    float p = (g * n) * n;                                   // g^(+1/3)
+    float c = 1 + p + n;                                     // 1 + g^(+1/3) + g^(-1/3)
+    float x = (3 / LOG2_E) * log2(c * rcp(4 * u));           // 3 * Log[c / (4 * u)]
+
+    // x      = s * r
+    // exp_13 = Exp[-x/3] = Exp[-1/3 * 3 * Log[c / (4 * u)]]
+    // exp_13 = Exp[-Log[c / (4 * u)]] = (4 * u) / c
+    // exp_1  = Exp[-x] = exp_13 * exp_13 * exp_13
+    // expSum = exp_1 + exp_13 = exp_13 * (1 + exp_13 * exp_13)
+    // rcpExp = rcp(expSum) = c^3 / ((4 * u) * (c^2 + 16 * u^2))
+    float rcpExp = ((c * c) * c) * rcp((4 * u) * ((c * c) + (4 * u) * (4 * u)));
+
+    r      = x * rcpS;
+    rcpPdf = (8 * PI * rcpS) * rcpExp; // (8 * Pi) / s / (Exp[-s * r / 3] + Exp[-s * r])
 }
 
 struct SubsurfaceScatteringDiffuseAndSpecluar
@@ -55,7 +108,15 @@ SubsurfaceScatteringDiffuseAndSpecluar ReconstructDiffuseAndSpecluar(float3 colo
     return result;
 }
 
-static uint2 SubsurfaceScatteringTileVertexPositionOffets[6] =
+/**
+ * 0/3++++1
+ *  +     +
+ *  + +   +
+ *  +   + +
+ *  +     +
+ *  5++++2/4
+ */
+static uint2 SubsurfaceScatteringTileVertexPositionOffsets[6] =
 {
     uint2(0,                               0                              ),
     uint2(SUBSURFACE_SCATTERING_TILE_SIZE, 0                              ),

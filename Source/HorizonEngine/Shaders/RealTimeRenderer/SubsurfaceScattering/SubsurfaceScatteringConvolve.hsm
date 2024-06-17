@@ -11,11 +11,18 @@ BIND_BYTE_ADDRESS_BUFFER_UAV(3, SubsurfaceScatteringTileCountBuffer);
 BIND_BYTE_ADDRESS_BUFFER_SRV(1, SubsurfaceScatteringTileDataBuffer);
 BIND_TEXTURE_2D_UAV(5, float4, OutputTexture);
 
+struct SubsurfaceScatteringSample
+{
+	float radius; // expressed in millimeters
+	float pdf;
+	float cosTheta;
+	float sinTheta;
+};
+
 [shader("compute")]
 [numthreads(SUBSURFACE_SCATTERING_TILE_SIZE * SUBSURFACE_SCATTERING_TILE_SIZE, 1, 1)]
-void SubsurfaceScatteringSampleDiffusionProfileCS(uint3 GroupID : SV_GroupID, uint GroupIndex : SV_GroupIndex)
+void SubsurfaceScatteringConvolveCS(uint3 GroupID : SV_GroupID, uint GroupIndex : SV_GroupIndex)
 {
-    // ByteAddressBuffer perFrameDataBuffer = GetPerFrameDataBufferSRV();
     // PerFrameShaderParameters perFrameConstants = perFrameDataBuffer.Load<PerFrameShaderParameters>(0);
     // Texture2D gbuffer0 = GetGBuffer0SRV();
     // ByteAddressBuffer tileDataBuffer = GetSubsurfaceScatteringTileDataBufferSRV();
@@ -25,8 +32,8 @@ void SubsurfaceScatteringSampleDiffusionProfileCS(uint3 GroupID : SV_GroupID, ui
     // outputTexture.GetDimensions(width, height);
 
     // uint2 tileIndex = tileDataBuffer.Load<uint2>(GroupID * sizeof(uint2));
-    // uint2 pixelCoord = tileIndex * uint2(SUBSURFACE_SCATTERING_TILE_SIZE, SUBSURFACE_SCATTERING_TILE_SIZE) + uint2(GroupIndex / 8, GroupIndex % 8);
-    // float2 uv = (pixelCoord + 0.5) * float2(1.0 / width, 1.0 / height);
+    uint2 pixelCoord = tileIndex * uint2(SUBSURFACE_SCATTERING_TILE_SIZE, SUBSURFACE_SCATTERING_TILE_SIZE) + uint2(GroupIndex / 8, GroupIndex % 8);
+    float2 centerUV = (pixelCoord + 0.5f) * perFrameConstants.renderResolution.zw;
 
     // if (pixelCoord.x >= width || pixelCoord.y >= height)
     // {
@@ -35,16 +42,24 @@ void SubsurfaceScatteringSampleDiffusionProfileCS(uint3 GroupID : SV_GroupID, ui
 
     // float3 worldSpaceNormal = DecodeNormalFromONV(gbuffer0.SampleLevel(GlobalSamplerPointClamp, uv, 0).xy);
 
-    // uint numSamples = 32; // TODO
-    // float invNumSamples = 1.0f / numSamples;
+    uint sampleCount = 32; // TODO
+    // sampleCount = clamp(sampleCount, 8, SUBSURFACE_SCATTERING_MAX_SAMPLE_COUNT);
+    float oneOverSampleCount = 1.0f / float(sampleCount);
 
-    // float3 radiance = 0;
-    // float weightSum = 0;
+    float3 totalWeight = 0.0f;
+    float3 totalIrradiance = 0.0f;
 
-    // [loop]
-    // for (uint sampleIndex = 0; sampleIndex < numSamples; sampleIndex++)
-    // {
-    //     float2 sampleUV = uv + uvOffset;
+    // Monte carlo integration
+    // Perform disk sampling in the screen space (the disk is parallel to the screen plane).
+    for (uint sampleIndex = 0; sampleIndex < numSamples; sampleIndex++)
+    {
+        float2 uvOffset =  * float2(cosTheta, sinTheta);
+
+        float2 sampleUV = centerUV + uvOffset;
+
+        float4 irradianceAndDepth = ;
+
+        float3 irradiance = irradianceAndDepth.rgb;
 
     //     float mipLevel = 0;
 
@@ -53,13 +68,15 @@ void SubsurfaceScatteringSampleDiffusionProfileCS(uint3 GroupID : SV_GroupID, ui
     //     float3 sampleWorldSpaceNormal = DecodeNormalFromONV(gbuffer0.SampleLevel(GlobalSamplerPointClamp, sampleUV, 0).xy);
     //     float normalWeight = sqrt(saturate(dot(sampleWorldSpaceNormal, worldSpaceNormal) * 0.5 + 0.5));
 
-    //     float3 diffusionProfile = GetDiffuseReflectProfileWithDiffuseMeanFreePath(BurleyParameter.DiffuseMeanFreePath.xyz, S3D.xyz, RadiusSampledInMM);
-    //     float sampleWeight = (diffusionProfile / pdf) * normalWeight;
+        float3 rR = ComputeBurleyNormalizedDiffusionProfile(BurleyParameter.DiffuseMeanFreePath.xyz, S3D.xyz, RadiusSampledInMM);
+        float3 weight = rR / pdf;
 
-    //     radiance += sampleWeight * sampleDiffuseLighting;
-    //     //weightSum += sampleWeight;
-    // }
+        totalWeight += weight;
+        totalIrradiance += weight * irradiance;
+    }
 
+    // TODO: energy conservation
+    float3 irradiance = totalIrradiance * select(totalWeight == 0.0f, 0.0f, 1.0f / totalWeight);
     // //radiance = select(weightSum == 0, 0, radiance / weightSum);
     // radiance *= invNumSamples;
 

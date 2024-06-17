@@ -19,7 +19,7 @@ void SubsurfaceScatteringCopyResultsVS(uint VertexID : SV_VertexID, uint Instanc
     ByteAddressBuffer tileDataBuffer = GetSubsurfaceScatteringTileDataBufferSRV();
 
     uint2 tileIndex = tileDataBuffer.Load<uint2>(InstanceID * sizeof(uint2));
-    uint2 vertexPosition = tileIndex * SUBSURFACE_SCATTERING_TILE_SIZE + SubsurfaceScatteringTileVertexPositionOffets[VertexID];
+    uint2 vertexPosition = tileIndex * SUBSURFACE_SCATTERING_TILE_SIZE + SubsurfaceScatteringTileVertexPositionOffsets[VertexID];
 
     vsOutput.uv = float2(vertexPosition) * perFrameConstants.renderResolution.zw;
     vsOutput.position = float4(UVSpaceToClipSpace(vsOutput.uv), 0.0f, 1.0f);
