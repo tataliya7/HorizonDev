@@ -75,7 +75,7 @@ namespace Horizon
     private:
     };
 
-    class LocalFogVolumeRenderObject
+    class LocalVolumetricFogRenderObject
     {
     public:
 
@@ -196,11 +196,11 @@ namespace Horizon
 
         virtual void RemoveSkyAtmosphere(SkyAtmosphereRenderObject* skyAtmosphere);
 
-        virtual bool HasAnyLocalFogVolume() const;
+        virtual bool HasAnyLocalVolumetricFog() const;
 
-        virtual void AddLocalFogVolume(LocalFogVolumeRenderObject* localFogVolume);
+        virtual void AddLocalVolumetricFog(LocalVolumetricFogRenderObject* localVolumetricFog);
 
-        virtual void RemoveLocalFogVolume(LocalFogVolumeRenderObject* localFogVolume);
+        virtual void RemoveLocalVolumetricFog(LocalVolumetricFogRenderObject* localVolumetricFog);
 
         void GetRenderStatistics(RenderStatistics& statistics) const;
 
@@ -214,7 +214,7 @@ namespace Horizon
 
         std::vector<SkyAtmosphereRenderObject*> skyAtmospheres;
 
-        std::vector<LocalFogVolumeRenderObject*> localFogVolumes;
+        std::vector<LocalVolumetricFogRenderObject*> localVolumetricFogs;
 
         GPUScene gpuScene;
 

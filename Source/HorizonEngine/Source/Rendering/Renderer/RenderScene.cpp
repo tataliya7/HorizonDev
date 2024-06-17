@@ -114,30 +114,30 @@ namespace Horizon
         activeSkyAtmosphere = skyAtmospheres.empty() ? nullptr : skyAtmospheres.back();
     }
 
-    bool RenderScene::HasAnyLocalFogVolume() const
+    bool RenderScene::HasAnyLocalVolumetricFog() const
     {
-        return !localFogVolumes.empty();
+        return !localVolumetricFogs.empty();
     }
 
-    void RenderScene::AddLocalFogVolume(LocalFogVolumeRenderObject* localFogVolume)
+    void RenderScene::AddLocalVolumetricFog(LocalVolumetricFogRenderObject* localVolumetricFog)
     {
         assert(localFogVolume != nullptr);
         assert(std::ranges::find(localFogVolumes, localFogVolume) == localFogVolumes.end());
 
-        localFogVolumes.push_back(localFogVolume);
+        localVolumetricFogs.push_back(localVolumetricFog);
     }
 
-    void RenderScene::RemoveLocalFogVolume(LocalFogVolumeRenderObject* localFogVolume)
+    void RenderScene::RemoveLocalVolumetricFog(LocalVolumetricFogRenderObject* localVolumetricFog)
     {
         assert(localFogVolume != nullptr);
         assert(std::ranges::find(localFogVolumes, localFogVolume) != localFogVolumes.end());
 
         // Avoid the overhead of moving the items as the order does not matter.
-        auto iter = std::ranges::find(localFogVolumes, localFogVolume);
+        auto iter = std::ranges::find(localVolumetricFogs, localVolumetricFog);
         //if (iter != localFogVolumes.end())
         {
-            std::swap(*iter, localFogVolumes.back());
-            localFogVolumes.pop_back();
+            std::swap(*iter, localVolumetricFogs.back());
+            localVolumetricFogs.pop_back();
         }
     }
 
