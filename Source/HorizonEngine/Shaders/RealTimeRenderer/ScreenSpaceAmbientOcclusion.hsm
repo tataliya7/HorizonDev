@@ -480,8 +480,8 @@ void GTAOTemporalFilteringCS(uint3 DispatchThreadID : SV_DispatchThreadID)
     motionVectorLength = 0;
 
     // Reject history
-    float currentDepth = LinearDepthNearFar(sceneDepth.SampleLevel(GlobalSamplerPointClamp, uv, 0).r, perFrameConstants.nearClippingPlane, perFrameConstants.farClippingPlane);
-    float historyDepth = LinearDepthNearFar(historySceneDepth.SampleLevel(GlobalSamplerPointClamp, historySampleUV, 0).r, perFrameConstants.nearClippingPlane, perFrameConstants.farClippingPlane);
+    float currentDepth = ComputeCameraSpaceDepth(sceneDepth.SampleLevel(GlobalSamplerPointClamp, uv, 0).r, perFrameConstants.nearClippingPlane, perFrameConstants.farClippingPlane);
+    float historyDepth = ComputeCameraSpaceDepth(historySceneDepth.SampleLevel(GlobalSamplerPointClamp, historySampleUV, 0).r, perFrameConstants.nearClippingPlane, perFrameConstants.farClippingPlane);
     if (motionVectorLength > 2.0 || abs(currentDepth - historyDepth) > 0.5)
     {
         outputTexture[pixelCoord] = currentAO;

@@ -164,8 +164,8 @@ void ScreenSpaceReflectionsResolveCS(uint3 DispatchThreadID : SV_DispatchThreadI
     float resolveVariance = S / weightSum;
 
     // Convert to post-projection depth so we can construct dual source reprojection buffers later
-    float linearDepth = LinearDepthNearFar(depth, perFrameConstants.nearClippingPlane, perFrameConstants.farClippingPlane);
-    float reprojectionDepth = ComputeDepthFromLinearDepthNearFar(linearDepth + closestRayLength, perFrameConstants.nearClippingPlane, perFrameConstants.farClippingPlane);
+    float linearDepth = ComputeCameraSpaceDepth(depth, perFrameConstants.nearClippingPlane, perFrameConstants.farClippingPlane);
+    float reprojectionDepth = ComputeDepthFromComputeCameraSpaceDepth(linearDepth + closestRayLength, perFrameConstants.nearClippingPlane, perFrameConstants.farClippingPlane);
 
     resolveTexture[coord] = max(result, 0.00001f);
     resolveVarianceTexture[coord] = resolveVariance;

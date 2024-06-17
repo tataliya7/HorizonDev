@@ -353,8 +353,8 @@ void TemporalSuperSamplingCS(uint3 DispatchThreadID : SV_DispatchThreadID)
     float4 historyColor = SampleHistory(historyTemporalAATexture, historySampleUV, perFrameConstants.preExposureCorrection);
 
     // Disocclusion fallback
-    float currentDepth = LinearDepthNearFar(sceneDepth[centerPixel].r, perFrameConstants.nearClippingPlane, perFrameConstants.farClippingPlane);
-    float historyDepth = LinearDepthNearFar(historyDepthBuffer.SampleLevel(GlobalSamplerPointClamp, historySampleUV, 0).r, perFrameConstants.nearClippingPlane, perFrameConstants.farClippingPlane);
+    float currentDepth = ComputeCameraSpaceDepth(sceneDepth[centerPixel].r, perFrameConstants.nearClippingPlane, perFrameConstants.farClippingPlane);
+    float historyDepth = ComputeCameraSpaceDepth(historyDepthBuffer.SampleLevel(GlobalSamplerPointClamp, historySampleUV, 0).r, perFrameConstants.nearClippingPlane, perFrameConstants.farClippingPlane);
     if (motionVectorLength > 2.0 && abs(currentDepth - historyDepth) > 0.5) // disocclusion
     {
         filteredColor.rgb = YCoCgToRGB(filteredColor.rgb);

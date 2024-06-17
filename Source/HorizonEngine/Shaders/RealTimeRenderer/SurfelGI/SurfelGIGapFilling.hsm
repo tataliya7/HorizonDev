@@ -126,7 +126,7 @@ void SurfelGIGapFillingCS(
         if (numSurfelsCanSpawn > 0)
         {
             // GIBS's stratagy: make the spawn chance proportional to the pixel’s projected area in world space.
-            float linearDepth = LinearDepthNearFar(sceneDepth, perFrameConstants.nearClippingPlane, perFrameConstants.farClippingPlane);
+            float linearDepth = ComputeCameraSpaceDepth(sceneDepth, perFrameConstants.nearClippingPlane, perFrameConstants.farClippingPlane);
             float spawnChance = 1 - pow(1 - linearDepth, 4);
 
             uint randSeed = RandInit(DispatchThreadID.x + DispatchThreadID.y * SurfelGIScreenTileSize, perFrameConstants.frameIndex);

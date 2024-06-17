@@ -32,7 +32,7 @@ void SSRSpatialFilteringCS(uint3 DispatchThreadID : SV_DispatchThreadID)
     const float2 uv = (coord + 0.5f) * (1.0 / resolution.x, 1.0 / resolution.y);
     const float depth = sceneDepth[coord].r;
     const float roughness = gbuffer1[coord].w;
-    const float linearDepth = LinearDepthNearFar(depth, perFrameConstants.nearClippingPlane, perFrameConstants.farClippingPlane);
+    const float linearDepth = ComputeCameraSpaceDepth(depth, perFrameConstants.nearClippingPlane, perFrameConstants.farClippingPlane);
     const float variance = resolveVariance[coord].r;
 
     if (!NeedReflection(roughness, depth, SSRRoughnessCutoff))

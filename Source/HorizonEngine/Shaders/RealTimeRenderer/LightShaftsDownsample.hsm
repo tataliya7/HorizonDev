@@ -42,7 +42,7 @@ void LightShaftsDownsampleCS(uint3 DispatchThreadID : SV_DispatchThreadID)
     float3 sceneColor = sceneColorTexture.SampleLevel(GlobalSamplerLinearClamp, uv, 0).rgb;
     float sceneDepth = sceneDepthTexture.SampleLevel(GlobalSamplerPointClamp, uv, 0).r;
 
-    sceneDepth = LinearDepthNearFar(sceneDepth, perFrameConstants.nearClippingPlane, perFrameConstants.farClippingPlane);
+    sceneDepth = ComputeCameraSpaceDepth(sceneDepth, perFrameConstants.nearClippingPlane, perFrameConstants.farClippingPlane);
 
     float2 TextureSpaceBlurOrigin;
     TextureSpaceBlurOrigin.x = SHADER_ARGUMENTS_DATA(2);

@@ -57,7 +57,7 @@ void DepthOfFieldSetupCS(uint3 DispatchThreadID : SV_DispatchThreadID)
 
     float4 color = sceneColor.SampleLevel(GlobalSamplerLinearClamp, uv, 0);
     float depth = sceneDepth.SampleLevel(GlobalSamplerPointClamp, uv, 0).r;
-    float linearDepth = LinearDepthNearFar(depth, perFrameConstants.nearClippingPlane, perFrameConstants.farClippingPlane);
+    float linearDepth = ComputeCameraSpaceDepth(depth, perFrameConstants.nearClippingPlane, perFrameConstants.farClippingPlane);
 
     float nearRegionMask = ComputeNearRegionMask(linearDepth, focalDistance, focalRegion, nearTransitionRegion);
     float farRegionMask = ComputeFarRegionMask(linearDepth, focalDistance, focalRegion, farTransitionRegion);
