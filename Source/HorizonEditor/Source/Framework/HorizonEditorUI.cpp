@@ -147,7 +147,7 @@ namespace Horizon
             unsigned char* fontTextureData = nullptr;
             int fontTextureWidth = 0;
             int fontTextureHeight = 0;
-            RenderBackendTextureFormat fontTextureFormat = RenderBackendTextureFormat::RGBA8Unorm;
+            RenderBackendTextureFormat fontTextureFormat = RenderBackendTextureFormat::R8G8B8A8Unorm;
 
             io.Fonts->GetTexDataAsRGBA32(&fontTextureData, &fontTextureWidth, &fontTextureHeight);
 

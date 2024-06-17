@@ -73,7 +73,7 @@ namespace Horizon
         RenderGraphTextureDesc jumpFloodTextureDesc = RenderGraphTextureDesc::Create2D(
             targetResolution.width,
             targetResolution.height,
-            RenderBackendTextureFormat::RGBA16Float,
+            RenderBackendTextureFormat::R16G16B16A16Float,
             RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::UnorderedAccess);
         RenderGraphTextureHandle jumpFloodTexture0 = renderGraph.CreateTexture(jumpFloodTextureDesc, "EditorSelectionOutlineJumpFloodTexture0");
         RenderGraphTextureHandle jumpFloodTexture1 = renderGraph.CreateTexture(jumpFloodTextureDesc, "EditorSelectionOutlineJumpFloodTexture1");

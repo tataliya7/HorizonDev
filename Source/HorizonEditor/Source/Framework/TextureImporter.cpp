@@ -23,7 +23,7 @@ namespace Horizon
 
         uint64 bufferSize = uint64(iw) * uint64(ih) * 4 * sizeof(float);
 
-        RenderBackendTextureDesc desc = RenderBackendTextureDesc::CreateTexture2D(iw, ih, 1, RenderBackendTextureFormat::RGBA32Float);
+        RenderBackendTextureDesc desc = RenderBackendTextureDesc::CreateTexture2D(iw, ih, 1, RenderBackendTextureFormat::R32G32B32A32Float);
         RenderBackendTextureHandle texture = renderBackend->CreateTexture(&desc, data, filename);
 
         stbi_image_free(data);

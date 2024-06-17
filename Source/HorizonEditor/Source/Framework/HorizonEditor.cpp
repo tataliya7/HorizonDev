@@ -87,14 +87,14 @@ namespace Horizon
             .windowHandle = (uint64)window->GetNativeHandle(),
             .numBuffers = 3,
             .vsync = false,
-            .format = RenderBackendTextureFormat::RGB10A2Unorm,
+            .format = RenderBackendTextureFormat::R10G10B10A2Unorm,
             .presentMode = RenderBackendSwapChainPresentMode::Immediate,
         };
         swapChain = renderBackend->CreateSwapChain(&swapChainDesc);
         swapChainWidth = window->GetWidth();
         swapChainHeight = window->GetHeight();
 
-        RenderBackendTextureFormat targetTextureFormat = RenderBackendTextureFormat::RGB10A2Unorm;
+        RenderBackendTextureFormat targetTextureFormat = RenderBackendTextureFormat::R10G10B10A2Unorm;
         RenderGraphTextureDesc targetTextureDesc = RenderGraphTextureDesc::Create2D(
             swapChainWidth,
             swapChainHeight,

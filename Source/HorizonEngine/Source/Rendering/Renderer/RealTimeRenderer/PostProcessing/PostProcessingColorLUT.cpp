@@ -17,7 +17,7 @@ namespace Horizon
             GColorLUTTextureSize,
             GColorLUTTextureSize,
             GColorLUTTextureSize,
-            RenderBackendTextureFormat::RGBA16Float,
+            RenderBackendTextureFormat::R16G16B16A16Float,
             RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::UnorderedAccess);
         RenderGraphTextureHandle colorLUTTexture = renderGraph.CreateTexture(colorLUTTextureDesc, "ColorLUTTexture");
 

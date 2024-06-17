@@ -153,7 +153,7 @@ namespace Horizon
         RenderGraphTextureDesc outputTextureDesc = RenderGraphTextureDesc::Create2D(
                 view.targetWidth,
                 view.targetHeight,
-                RenderBackendTextureFormat::RGBA16Float,
+                RenderBackendTextureFormat::R16G16B16A16Float,
                 RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::UnorderedAccess);
         RenderGraphTextureHandle outputTexture = renderGraph.CreateTexture(outputTextureDesc, "FSR2OutputTexture");
 

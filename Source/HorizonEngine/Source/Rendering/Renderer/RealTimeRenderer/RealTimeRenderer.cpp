@@ -560,7 +560,7 @@ namespace Horizon
         RenderGraphTextureDesc vbuffer0Desc = RenderGraphTextureDesc::Create2D(
             renderResolution.width,
             renderResolution.height,
-            RenderBackendTextureFormat::RG32Uint,
+            RenderBackendTextureFormat::R32G32Uint,
             RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::RenderTarget,
             clearVisibilityBufferColor);
         sceneTextures.vbuffer0 = renderGraph.CreateTexture(vbuffer0Desc, "VBuffer0");
@@ -568,7 +568,7 @@ namespace Horizon
         RenderGraphTextureDesc vbuffer1Desc = RenderGraphTextureDesc::Create2D(
             renderResolution.width,
             renderResolution.height,
-            RenderBackendTextureFormat::RGBA32Float,
+            RenderBackendTextureFormat::R32G32B32A32Float,
             RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::RenderTarget,
             clearVisibilityBufferColor);
         sceneTextures.vbuffer1 = renderGraph.CreateTexture(vbuffer1Desc, "VBuffer1");
@@ -576,7 +576,7 @@ namespace Horizon
         RenderGraphTextureDesc gbuffer0Desc = RenderGraphTextureDesc::Create2D(
             renderResolution.width,
             renderResolution.height,
-            RenderBackendTextureFormat::RGB10A2Unorm,
+            RenderBackendTextureFormat::R10G10B10A2Unorm,
             RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::UnorderedAccess,
             clearColor);
         sceneTextures.gbuffer0 = renderGraph.CreateTexture(gbuffer0Desc, "GBuffer0");
@@ -584,7 +584,7 @@ namespace Horizon
         RenderGraphTextureDesc gbuffer1Desc = RenderGraphTextureDesc::Create2D(
             renderResolution.width,
             renderResolution.height,
-            RenderBackendTextureFormat::RGBA8Unorm,
+            RenderBackendTextureFormat::R8G8B8A8Unorm,
             RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::UnorderedAccess,
             clearColor);
         sceneTextures.gbuffer1 = renderGraph.CreateTexture(gbuffer1Desc, "GBuffer1");
@@ -592,7 +592,7 @@ namespace Horizon
         RenderGraphTextureDesc gbuffer2Desc = RenderGraphTextureDesc::Create2D(
             renderResolution.width,
             renderResolution.height,
-            RenderBackendTextureFormat::RGBA8Unorm,
+            RenderBackendTextureFormat::R8G8B8A8Unorm,
             RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::UnorderedAccess,
             clearColor);
         sceneTextures.gbuffer2 = renderGraph.CreateTexture(gbuffer2Desc, "GBuffer2");
@@ -600,7 +600,7 @@ namespace Horizon
         RenderGraphTextureDesc sceneColorTextureDesc = RenderGraphTextureDesc::Create2D(
             renderResolution.width,
             renderResolution.height,
-            RenderBackendTextureFormat::RGBA16Float,
+            RenderBackendTextureFormat::R16G16B16A16Float,
             RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::UnorderedAccess | RenderBackendTextureCreateFlags::RenderTarget,
             clearColor,
             1,
@@ -622,7 +622,7 @@ namespace Horizon
         RenderGraphTextureDesc motionVectorTextureDesc = RenderGraphTextureDesc::Create2D(
             renderResolution.width,
             renderResolution.height,
-            RenderBackendTextureFormat::RG16Float,
+            RenderBackendTextureFormat::R16G16Float,
             RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::UnorderedAccess);
         sceneTextures.motionVectorTexture = renderGraph.CreateTexture(motionVectorTextureDesc, "MotionVectorTexture");
 

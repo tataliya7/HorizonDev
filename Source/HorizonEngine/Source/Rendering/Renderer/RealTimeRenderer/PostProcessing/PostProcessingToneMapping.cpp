@@ -57,7 +57,7 @@ namespace Horizon
         //     }
         // }
 
-        RenderBackendTextureFormat outputTextureFormat = RenderBackendTextureFormat::RGB10A2Unorm;
+        RenderBackendTextureFormat outputTextureFormat = RenderBackendTextureFormat::R10G10B10A2Unorm;
         RenderGraphTextureDesc outputTextureDesc = RenderGraphTextureDesc::Create2D(
             targetResolution.width,
             targetResolution.height,

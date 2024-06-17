@@ -130,7 +130,7 @@ namespace Horizon
             aerialPerspectiveVolumeSize,
             aerialPerspectiveVolumeSize,
             aerialPerspectiveVolumeSize,
-            RenderBackendTextureFormat::RGBA16Float,
+            RenderBackendTextureFormat::R16G16B16A16Float,
             RenderBackendTextureCreateFlags::UnorderedAccess | RenderBackendTextureCreateFlags::ShaderResource);
         RenderGraphTextureHandle aerialPerspectiveVolume = renderGraph.CreateTexture(aerialPerspectiveVolumeDesc, "SkyAtmosphereAerialPerspectiveVolume");
 

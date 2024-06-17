@@ -26,7 +26,7 @@ namespace Horizon
         RenderGraphTextureDesc dummyTextureDesc = RenderGraphTextureDesc::Create2D(
             1,
             1,
-            RenderBackendTextureFormat::BGRA8Unorm,
+            RenderBackendTextureFormat::B8G8R8A8Unorm,
             RenderBackendTextureCreateFlags::ShaderResource);
 
         const uint8 blackColor[4] = { 0, 0, 0, 0 };
@@ -40,7 +40,7 @@ namespace Horizon
         RenderBackendTextureDesc preIntegratedBrdfLutDesc = RenderBackendTextureDesc::Create2D(
             GPreIntegratedBrdfLutSize,
             GPreIntegratedBrdfLutSize,
-            RenderBackendTextureFormat::RG16Float,
+            RenderBackendTextureFormat::R16G16Float,
             RenderBackendTextureCreateFlags::UnorderedAccess | RenderBackendTextureCreateFlags::ShaderResource);
         preIntegratedBrdfLut = renderBackend->CreateTexture(&preIntegratedBrdfLutDesc, nullptr, "PreIntegratedBrdfLut");
 
