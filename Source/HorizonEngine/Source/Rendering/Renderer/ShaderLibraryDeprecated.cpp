@@ -218,42 +218,42 @@ namespace Horizon
             ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Pixel, "Shaders/RealTimeRenderer/SkyBox.hsm", "SkyBoxPS");
             shaderLibrary->LoadShader(ShaderID::SkyBoxPS, shaderDesc);
         }
-        {
-            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/SubsurfaceScattering/SubsurfaceScatteringInitialize.hsm", "SubsurfaceScatteringInitializeCS");
-            shaderLibrary->LoadShader(ShaderID::SubsurfaceScatteringInitialize, shaderDesc);
-        }
-        {
-            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/SubsurfaceScattering/SubsurfaceScatteringClassifyTiles.hsm", "SubsurfaceScatteringClassifyTilesCS");
-            shaderLibrary->LoadShader(ShaderID::SubsurfaceScatteringClassifyTiles, shaderDesc);
-        }
-        {
-            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/SubsurfaceScattering/SubsurfaceScatteringBuildIndirectArguments.hsm", "SubsurfaceScatteringBuildIndirectArgumentsCS");
-            shaderLibrary->LoadShader(ShaderID::SubsurfaceScatteringBuildIndirectArguments, shaderDesc);
-        }
-        {
-            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/SubsurfaceScattering/SubsurfaceScatteringSampleDiffusionProfile.hsm", "SubsurfaceScatteringSampleDiffusionProfileCS");
-            shaderLibrary->LoadShader(ShaderID::SubsurfaceScatteringSampleDiffusionProfile, shaderDesc);
-        }
-        {
-            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/SubsurfaceScattering/SubsurfaceScatteringComputeVariance.hsm", "SubsurfaceScatteringComputeVarianceCS");
-            shaderLibrary->LoadShader(ShaderID::SubsurfaceScatteringComputeVariance, shaderDesc);
-        }
-        {
-            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Vertex, "Shaders/RealTimeRenderer/SubsurfaceScattering/SubsurfaceScatteringCopyResults.hsm", "SubsurfaceScatteringCopyResultsVS");
-            shaderLibrary->LoadShader(ShaderID::SubsurfaceScatteringCopyResultsVS, shaderDesc);
-        }
-        {
-            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Pixel, "Shaders/RealTimeRenderer/SubsurfaceScattering/SubsurfaceScatteringCopyResults.hsm", "SubsurfaceScatteringCopyResultsPS");
-            shaderLibrary->LoadShader(ShaderID::SubsurfaceScatteringCopyResultsPS, shaderDesc);
-        }
-        {
-            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Vertex, "Shaders/RealTimeRenderer/SubsurfaceScattering/SubsurfaceScatteringRecombine.hsm", "SubsurfaceScatteringRecombineVS");
-            shaderLibrary->LoadShader(ShaderID::SubsurfaceScatteringRecombineVS, shaderDesc);
-        }
-        {
-            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Pixel, "Shaders/RealTimeRenderer/SubsurfaceScattering/SubsurfaceScatteringRecombine.hsm", "SubsurfaceScatteringRecombinePS");
-            shaderLibrary->LoadShader(ShaderID::SubsurfaceScatteringRecombinePS, shaderDesc);
-        }
+        //{
+        //    ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/SubsurfaceScattering/SubsurfaceScatteringInitialize.hsm", "SubsurfaceScatteringInitializeCS");
+        //    shaderLibrary->LoadShader(ShaderID::SubsurfaceScatteringInitialize, shaderDesc);
+        //}
+        //{
+        //    ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/SubsurfaceScattering/SubsurfaceScatteringClassifyTiles.hsm", "SubsurfaceScatteringClassifyTilesCS");
+        //    shaderLibrary->LoadShader(ShaderID::SubsurfaceScatteringClassifyTiles, shaderDesc);
+        //}
+        //{
+        //    ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/SubsurfaceScattering/SubsurfaceScatteringBuildIndirectArguments.hsm", "SubsurfaceScatteringBuildIndirectArgumentsCS");
+        //    shaderLibrary->LoadShader(ShaderID::SubsurfaceScatteringBuildIndirectArguments, shaderDesc);
+        //}
+        //{
+        //    ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/SubsurfaceScattering/SubsurfaceScatteringSampleDiffusionProfile.hsm", "SubsurfaceScatteringSampleDiffusionProfileCS");
+        //    shaderLibrary->LoadShader(ShaderID::SubsurfaceScatteringSampleDiffusionProfile, shaderDesc);
+        //}
+        //{
+        //    ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/SubsurfaceScattering/SubsurfaceScatteringComputeVariance.hsm", "SubsurfaceScatteringComputeVarianceCS");
+        //    shaderLibrary->LoadShader(ShaderID::SubsurfaceScatteringComputeVariance, shaderDesc);
+        //}
+        //{
+        //    ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Vertex, "Shaders/RealTimeRenderer/SubsurfaceScattering/SubsurfaceScatteringCopyResults.hsm", "SubsurfaceScatteringCopyResultsVS");
+        //    shaderLibrary->LoadShader(ShaderID::SubsurfaceScatteringCopyResultsVS, shaderDesc);
+        //}
+        //{
+        //    ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Pixel, "Shaders/RealTimeRenderer/SubsurfaceScattering/SubsurfaceScatteringCopyResults.hsm", "SubsurfaceScatteringCopyResultsPS");
+        //    shaderLibrary->LoadShader(ShaderID::SubsurfaceScatteringCopyResultsPS, shaderDesc);
+        //}
+        //{
+        //    ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Vertex, "Shaders/RealTimeRenderer/SubsurfaceScattering/SubsurfaceScatteringRecombine.hsm", "SubsurfaceScatteringRecombineVS");
+        //    shaderLibrary->LoadShader(ShaderID::SubsurfaceScatteringRecombineVS, shaderDesc);
+        //}
+        //{
+        //    ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Pixel, "Shaders/RealTimeRenderer/SubsurfaceScattering/SubsurfaceScatteringRecombine.hsm", "SubsurfaceScatteringRecombinePS");
+        //    shaderLibrary->LoadShader(ShaderID::SubsurfaceScatteringRecombinePS, shaderDesc);
+        //}
         {
             ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/SurfelGI/SurfelGIFreeSurfels.hsm", "SurfelGIFreeSurfelsCS");
             shaderLibrary->LoadShader(ShaderID::SurfelGIFreeSurfels, shaderDesc);

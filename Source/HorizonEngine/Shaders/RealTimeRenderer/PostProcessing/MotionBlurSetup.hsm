@@ -6,7 +6,7 @@
 BIND_BUFFER_CBV(0, PerFrameShaderParameters);
 BIND_TEXTURE_2D_SRV(1, VelocityTexture);
 BIND_TEXTURE_2D_SRV(2, DepthTexture);
-BIND_TEXTURE_2D_UAV(3, float4, VelocityTileTexture);
+BIND_TEXTURE_2D_UAV(3, float4, VelocityRangeTexture);
 BIND_TEXTURE_2D_UAV(4, float3, VelocityAndDepthTexture);
 
 float4 CombineVelocityRange(float4 r0, float4 r1)
@@ -33,7 +33,7 @@ void MotionBlurSetupCS(uint3 DispatchThreadID : SV_DispatchThreadID, uint3 Group
     ConstantBuffer<PerFrameShaderParameters> perFrameConstants = GetPerFrameShaderParametersCBV();
     Texture2D velocityTexture = GetVelocityTextureSRV();
     Texture2D depthTexture = GetDepthTextureSRV();
-    RWTexture2D<float4> velocityTileTexture = GetVelocityTileTextureUAV();
+    RWTexture2D<float4> velocityRangeTexture = GetVelocityRangeTextureUAV();
     RWTexture2D<float3> velocityAndDepthTexture = GetVelocityAndDepthTextureUAV();
 
     uint2 pixelCoord = DispatchThreadID.xy;
@@ -99,7 +99,7 @@ void MotionBlurSetupCS(uint3 DispatchThreadID : SV_DispatchThreadID, uint3 Group
     if (GroupIndex == 0)
     {
         uint2 tileID = GroupID.xy;
-        velocityTileTexture[tileID] = float4(PolarToCartesian(velocityRange.xy), PolarToCartesian(velocityRange.zw));
+        velocityRangeTexture[tileID] = float4(PolarToCartesian(velocityRange.xy), PolarToCartesian(velocityRange.zw));
     }
 
     velocityAndDepthTexture[pixelCoord] = EncodeVelocityAndDepth(velocity, ComputeCameraSpaceDepth(depth, perFrameConstants.nearClippingPlane, perFrameConstants.farClippingPlane));

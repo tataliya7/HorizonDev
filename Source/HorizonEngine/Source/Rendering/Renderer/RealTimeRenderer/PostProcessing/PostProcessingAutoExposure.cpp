@@ -36,8 +36,8 @@ namespace Horizon
                 {
                     // Quarter resolution
                     // TODO: change to 1/2 resolution
-                    uint32 threadGroupCountX = ComputeThreadGroupCount(sceneColorTextureDesc.width, 16);
-                    uint32 threadGroupCountY = ComputeThreadGroupCount(sceneColorTextureDesc.height, 16);
+                    uint32 threadGroupCountX = CeilDiv(sceneColorTextureDesc.width, 16);
+                    uint32 threadGroupCountY = CeilDiv(sceneColorTextureDesc.height, 16);
                     uint32 threadGroupCountZ = 1;
 
                     RenderBackendShaderArguments shaderArguments = {};

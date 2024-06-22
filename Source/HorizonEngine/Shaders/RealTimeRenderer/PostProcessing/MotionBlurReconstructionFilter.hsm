@@ -4,9 +4,9 @@
 #include "MotionBlurCommon.hsh"
 
 BIND_BUFFER_CBV(0, PerFrameShaderParameters);
-BIND_TEXTURE_2D_SRV(1, VelocityTileTexture);
-BIND_TEXTURE_2D_TYPED_SRV(2, float3, VelocityAndDepthTexture);
-BIND_TEXTURE_2D_TYPED_SRV(3, float4, DilatedVelocityTileTexture);
+BIND_TEXTURE_2D_SRV(1, SceneColorTexture);
+BIND_TEXTURE_2D_SRV(2, VelocityAndDepthTexture);
+BIND_TEXTURE_2D_SRV(3, DilatedVelocityRangeTexture);
 BIND_TEXTURE_2D_UAV(4, float3, OutputTexture);
 
 [shader("compute")]
@@ -14,11 +14,15 @@ BIND_TEXTURE_2D_UAV(4, float3, OutputTexture);
 void MotionBlurReconstructionFilterCS(uint3 DispatchThreadID : SV_DispatchThreadID, uint3 GroupID : SV_GroupID, uint GroupIndex : SV_GroupIndex)
 {
     Texture2D sceneColorTexture = GetSceneColorTextureSRV();
+    Texture2D velocityAndDepthTexture = GetVelocityAndDepthTextureSRV();
+    Texture2D dilatedVelocityRangeTexture = GetDilatedVelocityRangeTextureSRV();
     RWTexture2D<float3> outputTexture = GetOutputTextureUAV();
 
     uint2 pixelCoord = DispatchThreadID.xy;
 
-    float DeviceZ = DepthTexture.SampleLevel( VelocitySampler , UV, 0).r;
+    float4 sceneColor = sceneColorTexture[pixelCoord];
+    float3 encodedVelocityAndDepth = velocityAndDepthTexture[pixelCoord].xyz;
+    float4 velocityRange = dilatedVelocityRangeTexture[pixelCoord];
 
-    outputTexture[pixelCoord] = ;
+    outputTexture[pixelCoord] = sceneColor.rgb;
 }

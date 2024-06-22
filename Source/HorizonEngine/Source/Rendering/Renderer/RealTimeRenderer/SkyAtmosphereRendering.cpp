@@ -143,8 +143,8 @@ namespace Horizon
 
                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
                 {
-                    uint32 threadGroupCountX = ComputeThreadGroupCount(transmittanceLutWidth, 8);
-                    uint32 threadGroupCountY = ComputeThreadGroupCount(transmittanceLutHeight, 8);
+                    uint32 threadGroupCountX = CeilDiv(transmittanceLutWidth, 8);
+                    uint32 threadGroupCountY = CeilDiv(transmittanceLutHeight, 8);
                     uint32 threadGroupCountZ = 1;
 
                     RenderBackendShaderArguments shaderArguments = {};
@@ -203,8 +203,8 @@ namespace Horizon
 
                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
                 {
-                    uint32 threadGroupCountX = ComputeThreadGroupCount(skyViewLutWidth, 8);
-                    uint32 threadGroupCountY = ComputeThreadGroupCount(skyViewLutHeight, 8);
+                    uint32 threadGroupCountX = CeilDiv(skyViewLutWidth, 8);
+                    uint32 threadGroupCountY = CeilDiv(skyViewLutHeight, 8);
                     uint32 threadGroupCountZ = 1;
 
                     RenderBackendShaderArguments shaderArguments = {};

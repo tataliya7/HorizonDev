@@ -42,8 +42,8 @@ namespace Horizon
                         shaderArguments.PushConstants(0, invSrcSize.x);
                         shaderArguments.PushConstants(1, invSrcSize.y);
 
-                        uint32 threadGroupCountX = ComputeThreadGroupCount(dstSize.x, 8);
-                        uint32 threadGroupCountY = ComputeThreadGroupCount(dstSize.y, 8);
+                        uint32 threadGroupCountX = CeilDiv(dstSize.x, 8);
+                        uint32 threadGroupCountY = CeilDiv(dstSize.y, 8);
                         uint32 threadGroupCountZ = 1;
 
                         commandList.Dispatch(
@@ -76,8 +76,8 @@ namespace Horizon
                         shaderArguments.PushConstants(0, invSrcSize.x);
                         shaderArguments.PushConstants(1, invSrcSize.y);
 
-                        uint32 threadGroupCountX = ComputeThreadGroupCount(dstSize.x, 8);
-                        uint32 threadGroupCountY = ComputeThreadGroupCount(dstSize.y, 8);
+                        uint32 threadGroupCountX = CeilDiv(dstSize.x, 8);
+                        uint32 threadGroupCountY = CeilDiv(dstSize.y, 8);
                         uint32 threadGroupCountZ = 1;
 
                         commandList.Dispatch(

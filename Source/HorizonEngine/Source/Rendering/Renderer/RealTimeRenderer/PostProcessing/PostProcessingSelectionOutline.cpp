@@ -89,8 +89,8 @@ namespace Horizon
 
                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
                 {
-                    uint32 threadGroupCountX = ComputeThreadGroupCount(targetResolution.width, PostProcessingThreadGroupSizeX);
-                    uint32 threadGroupCountY = ComputeThreadGroupCount(targetResolution.height, PostProcessingThreadGroupSizeY);
+                    uint32 threadGroupCountX = CeilDiv(targetResolution.width, PostProcessingThreadGroupSizeX);
+                    uint32 threadGroupCountY = CeilDiv(targetResolution.height, PostProcessingThreadGroupSizeY);
                     uint32 threadGroupCountZ = 1;
 
                     RenderBackendShaderArguments shaderArguments = {};
@@ -132,8 +132,8 @@ namespace Horizon
 
                     return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
                     {
-                        uint32 threadGroupCountX = ComputeThreadGroupCount(targetResolution.width, PostProcessingThreadGroupSizeX);
-                        uint32 threadGroupCountY = ComputeThreadGroupCount(targetResolution.height, PostProcessingThreadGroupSizeY);
+                        uint32 threadGroupCountX = CeilDiv(targetResolution.width, PostProcessingThreadGroupSizeX);
+                        uint32 threadGroupCountY = CeilDiv(targetResolution.height, PostProcessingThreadGroupSizeY);
                         uint32 threadGroupCountZ = 1;
 
                         RenderBackendShaderArguments shaderArguments = {};
@@ -169,8 +169,8 @@ namespace Horizon
 
                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
                 {
-                    uint32 threadGroupCountX = ComputeThreadGroupCount(targetResolution.width, PostProcessingThreadGroupSizeX);
-                    uint32 threadGroupCountY = ComputeThreadGroupCount(targetResolution.height, PostProcessingThreadGroupSizeY);
+                    uint32 threadGroupCountX = CeilDiv(targetResolution.width, PostProcessingThreadGroupSizeX);
+                    uint32 threadGroupCountY = CeilDiv(targetResolution.height, PostProcessingThreadGroupSizeY);
                     uint32 threadGroupCountZ = 1;
 
                     RenderBackendShaderArguments shaderArguments = {};

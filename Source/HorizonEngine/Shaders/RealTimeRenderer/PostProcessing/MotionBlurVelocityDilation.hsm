@@ -3,18 +3,21 @@
 #include "PostProcessingCommon.hsh"
 #include "MotionBlurCommon.hsh"
 
-BIND_TEXTURE_2D_TYPED_SRV(0, float2, VelocityTileTexture);
+BIND_BUFFER_CBV(0, PerFrameShaderParameters);
+BIND_TEXTURE_2D_SRV(1, VelocityRangeTexture);
+
+static const uint VertexCountPerQuad = 6;
 
 /**
- *  0/3+ + + + + 1
- *   + +         +
- *   +   +       +
- *   +     C     +
- *   +       +   +
- *   +         + +
- *   5 + + + + +2/4
+ *  0/3X X X X X 1
+ *   X X         X
+ *   X   X       X
+ *   X     O     X
+ *   X       X   X
+ *   X         X X
+ *   5 X X X X X2/4
  */
-static float2 PixelQuadCornerPositionOffsets[6] =
+static float2 QuadCornerOffsets[6] =
 {
     float2(-1.0f, -1.0f),
     float2( 1.0f, -1.0f),
@@ -28,57 +31,64 @@ static float2 PixelQuadCornerPositionOffsets[6] =
 void MotionBlurVelocityDilationScatterVS(
     uint vertexID : SV_VertexID,
     uint instanceID : SV_InstanceID,
-    out nointerpolation float2 velocity : TEXCOORD0,
+    out nointerpolation float4 velocity : TEXCOORD0,
     out float4 position : SV_Position)
 {
-    Texture2D<float2> velocityTileTexture = GetVelocityTileTextureSRV();
-    // float3 vertexPosition = GetVertexPosition(vertexIndex);
-    // float4x4 worldMatrix = GetRWByteAddressBuffer(geometry.transformBuffer).Load<float4x4>(geometry.transformIndex * sizeof(float4x4));
-    // float3 worldPosition = mul(worldMatrix, float4(vertexPosition, 1.0)).xyz;
-    // float4 clipPosition = mul(perFrameConstants.nonJitteredWorldToClipMatrix, float4(worldPosition, 1.0));
-    // svPosition = clipPosition;
-    uint2 pixelCoord = ;
-    float2 vertexPositionOffset = PixelQuadCornerPositionOffsets[];
+    Texture2D velocityRangeTexture = GetVelocityRangeTextureSRV();
 
-	float2 tileMax = velocityTileTexture[pixelCoord].xy;
-    velocity = tileMax;
+    uint width, height;
+    velocityRangeTexture.GetDimensions(width, height);
+    uint totalTileCount = width * height;
 
-    // Perform early-exit when the length of velocity is less than or equal to 0.5 pixels.
-    bool earlyExit = dot(VelocityPixels, VelocityPixels) * 16 * 16 <= 0.25f;
-	if (earlyExit)
-	{
-		position = float4(vertexPositionOffset * 0.5f, 1.0f);
-		return;
-	}
+    uint quadIndex = instanceID * MOTION_BLUR_VELOCITY_DILATION_QUAD_COUNT_PER_INSTANCE + vertexID / VertexCountPerQuad;
+    uint vertexIndex = vertexID % VertexCountPerQuad;
 
-	float  VelocityLengthPixelsSqr = dot(VelocityPixels, VelocityPixels);
-	float  VelocityLengthPixelsInv = rsqrtFast(VelocityLengthPixelsSqr);
-	float  VelocityLengthPixels = VelocityLengthPixelsSqr * VelocityLengthPixelsInv;
-	float2 VelocityDir = VelocityPixels * VelocityLengthPixelsInv;
+    uint2 pixelCoord = uint2(quadIndex % width, quadIndex / width);
+    float2 pixelPosition = float2(pixelCoord) + 0.5f;
+    float2 vertexPosition = pixelPosition + QuadCornerOffsets[vertexIndex] * 0.5f;
 
-	// Project pixel corner on to dir. This is the oriented extent of a pixel.
-	// 1/2 pixel because shape is swept tile
-	// +1/2 pixel for conservative rasterization
-	// 99% to give epsilon before neighbor is filled. Otherwise all neighbors lie on edges of quad when no velocity in their direction.
-	// dot(abs(VelocityDir), float2(1, 1))
-	float Extent = abs(VelocityDir.x) + abs(VelocityDir.y);
-	CornerOffset *= float2(VelocityLengthPixels, 0) + Extent.xx * 0.99;
+	float4 velocityRange = velocityRangeTexture[pixelCoord];
+    velocity = velocityRange;
 
-	// Orient along velocity direction
-	float2 AxisX = VelocityDir;
-	float2 AxisY = float2(-VelocityDir.y, VelocityDir.x);
-	CornerOffset = AxisX * CornerOffset.x + AxisY * CornerOffset.y;
+    position = float4(vertexPosition.xy / float2(width, height) * 2.0f - 1.0f, 0.0f, 1.0f);
+    position.y = -position.y;
 
-	OutPosition.xy = (SvPosition + CornerOffset - VelocityTile_ScreenPosToViewportBias) / VelocityTile_ScreenPosToViewportScale;
-	// Depth ordered by velocity length
-	OutPosition.z = (ScatterPass == VELOCITY_SCATTER_PASS_MAX) ? VelocityLengthPixels : length(MinMaxVelocityPixels.xy);
-	OutPosition.z = clamp(OutPosition.z / VelocityTile_ScreenPosToViewportScale.x * 0.5, 0.0002, 0.999);
+    // // Perform early-exit when the length of velocity is less than or equal to 0.5 pixels.
+    // bool earlyExit = dot(VelocityPixels, VelocityPixels) * 16 * 16 <= 0.25f;
+	// if (earlyExit)
+	// {
+	// 	position = float4(vertexPositionOffset * 0.5f, 1.0f);
+	// 	return;
+	// }
+
+	// float  VelocityLengthPixelsSqr = dot(VelocityPixels, VelocityPixels);
+	// float  VelocityLengthPixelsInv = rsqrtFast(VelocityLengthPixelsSqr);
+	// float  VelocityLengthPixels = VelocityLengthPixelsSqr * VelocityLengthPixelsInv;
+	// float2 VelocityDir = VelocityPixels * VelocityLengthPixelsInv;
+
+	// // Project pixel corner on to dir. This is the oriented extent of a pixel.
+	// // 1/2 pixel because shape is swept tile
+	// // +1/2 pixel for conservative rasterization
+	// // 99% to give epsilon before neighbor is filled. Otherwise all neighbors lie on edges of quad when no velocity in their direction.
+	// // dot(abs(VelocityDir), float2(1, 1))
+	// float Extent = abs(VelocityDir.x) + abs(VelocityDir.y);
+	// CornerOffset *= float2(VelocityLengthPixels, 0) + Extent.xx * 0.99;
+
+	// // Orient along velocity direction
+	// float2 AxisX = VelocityDir;
+	// float2 AxisY = float2(-VelocityDir.y, VelocityDir.x);
+	// CornerOffset = AxisX * CornerOffset.x + AxisY * CornerOffset.y;
+
+	// OutPosition.xy = (SvPosition + CornerOffset - VelocityTile_ScreenPosToViewportBias) / VelocityTile_ScreenPosToViewportScale;
+	// // Depth ordered by velocity length
+	// OutPosition.z = (ScatterPass == VELOCITY_SCATTER_PASS_MAX) ? VelocityLengthPixels : length(MinMaxVelocityPixels.xy);
+	// OutPosition.z = clamp(OutPosition.z / VelocityTile_ScreenPosToViewportScale.x * 0.5, 0.0002, 0.999);
 }
 
 [shader("pixel")]
 void MotionBlurVelocityDilationScatterPS(
-    nointerpolation float2 input : TEXCOORD0,
-    out float2 output : SV_Target0)
+    nointerpolation float4 input : TEXCOORD0,
+    out float4 output : SV_Target0)
 {
     output = input;
 }

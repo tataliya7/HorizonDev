@@ -51,8 +51,7 @@ namespace Horizon
 
         if (IsMotionBlurEnabled())
         {
-            AddMotionBlurPass(renderGraph, view);
-            //sceneColorTexture = AddMotionBlurPass(renderGraph, view);
+            sceneColorTexture = DispatchMotionBlur(renderGraph, view, sceneColorTexture, sceneDepthTexture, motionVectorTexture);
         }
 
         //sceneColorTexture = renderGraph.ImportExternalTexture(localExposureTestTexture, localExposureTestTextureDesc, RenderBackendResourceState::ShaderResource, "Test");

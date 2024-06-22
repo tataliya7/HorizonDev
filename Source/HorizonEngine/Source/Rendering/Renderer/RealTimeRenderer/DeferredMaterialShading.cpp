@@ -186,8 +186,8 @@ namespace Horizon
 
                  return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
                  {
-                     uint32 threadGroupCountX = ComputeThreadGroupCount(renderResolution.width, 8);
-                     uint32 threadGroupCountY = ComputeThreadGroupCount(renderResolution.height, 8);
+                     uint32 threadGroupCountX = CeilDiv(renderResolution.width, 8);
+                     uint32 threadGroupCountY = CeilDiv(renderResolution.height, 8);
                      uint32 threadGroupCountZ = 1;
 
                      RenderBackendShaderArguments shaderArguments = {};

@@ -51,9 +51,9 @@ namespace Horizon
         RenderGraphPersistentTexture* whiteDummyTexture2D;
     };
 
-    static inline uint32 ComputeThreadGroupCount(uint32 threadCount, uint32 threadGroupSize)
+    static inline uint32 CeilDiv(uint32 x, uint32 d)
     {
-        return ((threadCount + threadGroupSize - 1) / threadGroupSize);
+        return ((x + d - 1) / d);
     }
 
     static inline Extent2D ComputeDownsampledExtent2D(Extent2D srcExtent, uint32 downsampleFactor)

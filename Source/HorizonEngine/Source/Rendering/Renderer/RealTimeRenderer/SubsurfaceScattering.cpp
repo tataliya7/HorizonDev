@@ -18,8 +18,8 @@ namespace Horizon
 
         assert((renderResolution.width == sceneColorTextureDesc.width) && (renderResolution.height == sceneColorTextureDesc.height));
 
-        const uint32 tileCountX = ComputeThreadGroupCount(sceneColorTextureDesc.width, GSubsurfaceScatteringTileSize);
-        const uint32 tileCountY = ComputeThreadGroupCount(sceneColorTextureDesc.height, GSubsurfaceScatteringTileSize);
+        const uint32 tileCountX = CeilDiv(sceneColorTextureDesc.width, GSubsurfaceScatteringTileSize);
+        const uint32 tileCountY = CeilDiv(sceneColorTextureDesc.height, GSubsurfaceScatteringTileSize);
         const uint32 tileCount = tileCountX * tileCountY;
 
         RenderGraphTextureHandle subsurfaceScatteringTexture = renderGraph.CreateTexture(sceneColorTextureDesc, "SubsurfaceScatteringTexture");
@@ -65,8 +65,8 @@ namespace Horizon
 
                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
                 {
-                    uint32 threadGroupCountX = ComputeThreadGroupCount(sceneColorTextureDesc.width, GSubsurfaceScatteringTileSize);
-                    uint32 threadGroupCountY = ComputeThreadGroupCount(sceneColorTextureDesc.height, GSubsurfaceScatteringTileSize);
+                    uint32 threadGroupCountX = CeilDiv(sceneColorTextureDesc.width, GSubsurfaceScatteringTileSize);
+                    uint32 threadGroupCountY = CeilDiv(sceneColorTextureDesc.height, GSubsurfaceScatteringTileSize);
                     uint32 threadGroupCountZ = 1;
 
                     RenderBackendShaderArguments shaderArguments = {};
@@ -177,6 +177,12 @@ namespace Horizon
 
                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
                 {
+                    RenderBackendViewport viewport(0.0f, 0.0f, (float)renderResolution.width, (float)renderResolution.height);
+                    commandList.SetViewports(&viewport, 1);
+
+                    RenderBackendScissor scissor(0, 0, renderResolution.width, renderResolution.height);
+                    commandList.SetScissors(&scissor, 1);
+
                     RenderBackendGraphicsPipelineState graphicsPipelineState = {};
                     graphicsPipelineState.rasterizationState.cullMode = RenderBackendRasterizationCullMode::None;
                     graphicsPipelineState.depthStencilState.depthTestEnable = false;

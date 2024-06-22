@@ -331,9 +331,12 @@ namespace Horizon
         //    RenderGraphTextureHandle& filteredShadowMask,
         //    RenderGraphTextureHandle& shadowMask);
 
-        RenderGraphTextureHandle AddMotionBlurPass(
+        RenderGraphTextureHandle DispatchMotionBlur(
             RenderGraph& renderGraph,
-            const SceneView& view);
+            const SceneView& view,
+            RenderGraphTextureHandle sceneColorTexture,
+            RenderGraphTextureHandle sceneDepthTexture,
+            RenderGraphTextureHandle motionVectorTexture);
 
         RenderGraphTextureHandle AddLensFlaresPass(
             RenderGraph& renderGraph,

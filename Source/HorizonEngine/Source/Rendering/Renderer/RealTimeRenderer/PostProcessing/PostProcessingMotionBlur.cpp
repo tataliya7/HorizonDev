@@ -3,21 +3,24 @@
 
 namespace Horizon
 {
-    static constexpr uint32 GMotionBlurTileCount = 16;
+    static constexpr uint32 GMotionBlurTileSize = 16;
+    static constexpr uint32 GMotionBlurVelocityDilationQuadCountPerInstance = 8;
 
     bool RealTimeRenderer::IsMotionBlurEnabled() const
     {
         return features.enableMotionBlur;
     }
 
-    RenderGraphTextureHandle RealTimeRenderer::AddMotionBlurPass(
+    RenderGraphTextureHandle RealTimeRenderer::DispatchMotionBlur(
         RenderGraph& renderGraph,
-        const SceneView& view)
+        const SceneView& view,
+        RenderGraphTextureHandle sceneColorTexture,
+        RenderGraphTextureHandle sceneDepthTexture,
+        RenderGraphTextureHandle motionVectorTexture)
     {
-        const RealTimeRendererSceneTextures& sceneTextures = renderGraph.blackboard.Get<RealTimeRendererSceneTextures>();
-
-        uint32 velocityTileCountX = ComputeThreadGroupCount(renderResolution.width, GMotionBlurTileCount);
-        uint32 velocityTileCountY = ComputeThreadGroupCount(renderResolution.height, GMotionBlurTileCount);
+        const uint32 tileCountX = CeilDiv(renderResolution.width, GMotionBlurTileSize);
+        const uint32 tileCountY = CeilDiv(renderResolution.height, GMotionBlurTileSize);
+        const uint32 tileCount = tileCountX * tileCountY;
 
         RenderGraphTextureDesc velocityAndDepthTextureDesc = RenderGraphTextureDesc::Create2D(
             renderResolution.width,
@@ -26,42 +29,35 @@ namespace Horizon
             RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::UnorderedAccess);
         RenderGraphTextureHandle velocityAndDepthTexture = renderGraph.CreateTexture(velocityAndDepthTextureDesc, "MotionBlurVelocityAndDepthTexture");
 
-        RenderGraphTextureDesc velocityTileTextureDesc = RenderGraphTextureDesc::Create2D(
-            velocityTileCountX,
-            velocityTileCountY,
+        RenderGraphTextureDesc velocityRangeTextureDesc = RenderGraphTextureDesc::Create2D(
+            tileCountX,
+            tileCountY,
             RenderBackendTextureFormat::R16G16B16A16Float,
             RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::UnorderedAccess | RenderBackendTextureCreateFlags::RenderTarget);
-        RenderGraphTextureHandle velocityTileTexture = renderGraph.CreateTexture(velocityTileTextureDesc, "MotionBlurVelocityTileTexture");
-        RenderGraphTextureHandle dilatedVelocityTileTexture = renderGraph.CreateTexture(velocityTileTextureDesc, "MotionBlurDilatedVelocityTileTexture");
-
-        RenderGraphTextureDesc outputTextureDesc = RenderGraphTextureDesc::Create2D(
-            renderResolution.width,
-            renderResolution.height,
-            RenderBackendTextureFormat::R11G11B10Float,
-            RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::UnorderedAccess | RenderBackendTextureCreateFlags::RenderTarget);
-        RenderGraphTextureHandle outputTexture = renderGraph.CreateTexture(outputTextureDesc, "MotionBlurSceneColorTexture");
+        RenderGraphTextureHandle velocityRangeTexture = renderGraph.CreateTexture(velocityRangeTextureDesc, "MotionBlurVelocityRangeTexture");
+        RenderGraphTextureHandle dilatedVelocityRangeTexture = renderGraph.CreateTexture(velocityRangeTextureDesc, "MotionBlurDilatedVelocityRangeTexture");
 
         renderGraph.AddPass(
             std::format("MotionBlurSetup (Compute, {}x{})", renderResolution.width, renderResolution.height),
             RenderGraphPassFlags::Compute,
             [&](RenderGraphBuilder& builder)
             {
-                RenderGraphTextureHandle motionVectorTexture = builder.ReadTexture(sceneTextures.motionVectorTexture, RenderBackendResourceState::ShaderResource);
-                RenderGraphTextureHandle sceneDepthTexture = builder.ReadTexture(sceneTextures.sceneDepthTexture, RenderBackendResourceState::ShaderResource);
-                velocityTileTexture = builder.WriteTexture(velocityTileTexture, RenderBackendResourceState::UnorderedAccess);
-                velocityAndDepthTexture = builder.ReadTexture(velocityAndDepthTexture, RenderBackendResourceState::UnorderedAccess);
+                motionVectorTexture = builder.ReadTexture(motionVectorTexture, RenderBackendResourceState::ShaderResource);
+                sceneDepthTexture = builder.ReadTexture(sceneDepthTexture, RenderBackendResourceState::ShaderResource);
+                velocityRangeTexture = builder.WriteTexture(velocityRangeTexture, RenderBackendResourceState::UnorderedAccess);
+                velocityAndDepthTexture = builder.WriteTexture(velocityAndDepthTexture, RenderBackendResourceState::UnorderedAccess);
 
                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
                 {
-                    uint32 threadGroupCountX = velocityTileCountX;
-                    uint32 threadGroupCountY = velocityTileCountY;
+                    uint32 threadGroupCountX = tileCountX;
+                    uint32 threadGroupCountY = tileCountY;
                     uint32 threadGroupCountZ = 1;
 
                     RenderBackendShaderArguments shaderArguments = {};
                     shaderArguments.BindBufferCBV(0, this->GetCurrentPerFrameConstantBuffer());
                     shaderArguments.BindTextureSRV(1, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(motionVectorTexture)));
                     shaderArguments.BindTextureSRV(2, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(sceneDepthTexture)));
-                    shaderArguments.BindTextureUAV(3, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(velocityTileTexture)));
+                    shaderArguments.BindTextureUAV(3, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(velocityRangeTexture)));
                     shaderArguments.BindTextureUAV(4, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(velocityAndDepthTexture)));
 
                     RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::MotionBlurSetupCS);
@@ -75,6 +71,104 @@ namespace Horizon
                 };
             });
 
-        return outputTexture;
+        RenderGraphTextureDesc velocityDilationDepthTextureDesc = RenderGraphTextureDesc::Create2D(
+            tileCountX,
+            tileCountY,
+            RenderBackendTextureFormat::D16Unorm,
+            RenderBackendTextureCreateFlags::DepthStencil,
+            RenderBackendTextureClearValue::CreateDepthValue(1.0f));
+        RenderGraphTextureHandle velocityDilationDepthTexture = renderGraph.CreateTexture(velocityDilationDepthTextureDesc, "MotionBlurVelocityDilationDepthTexture");
+
+        renderGraph.AddPass(
+            std::format("MotionBlurVelocityDilation (Graphics, {}x{})", tileCountX, tileCountY),
+            RenderGraphPassFlags::Graphics,
+            [&](RenderGraphBuilder& builder)
+            {
+                velocityRangeTexture = builder.ReadTexture(velocityRangeTexture, RenderBackendResourceState::ShaderResource);
+                dilatedVelocityRangeTexture = builder.WriteTexture(dilatedVelocityRangeTexture, RenderBackendResourceState::RenderTarget);
+                velocityDilationDepthTexture = builder.WriteTexture(velocityDilationDepthTexture, RenderBackendResourceState::DepthStencil);
+
+                builder.BindRenderTarget(0, dilatedVelocityRangeTexture, RenderBackendRenderPassBeginningAccessType::Discard, RenderBackendRenderPassEndingAccessType::Preserve);
+                builder.BindDepthStencil(velocityDilationDepthTexture, RenderBackendRenderPassBeginningAccessType::Clear, RenderBackendRenderPassEndingAccessType::Discard);
+
+                return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
+                {
+                    RenderBackendViewport viewport(0.0f, 0.0f, float(tileCountX), float(tileCountY));
+                    commandList.SetViewports(&viewport, 1);
+
+                    RenderBackendScissor scissor(0, 0, tileCountX, tileCountY);
+                    commandList.SetScissors(&scissor, 1);
+
+                    RenderBackendGraphicsPipelineState graphicsPipelineState = {};
+                    graphicsPipelineState.rasterizationState.cullMode = RenderBackendRasterizationCullMode::None;
+                    graphicsPipelineState.depthStencilState.depthTestEnable = true;
+                    graphicsPipelineState.depthStencilState.depthWriteEnable = true;
+                    graphicsPipelineState.depthStencilState.depthCompareFunction = RenderBackendCompareOp::LessOrEqual;
+
+                    RenderBackendShaderArguments shaderArguments = {};
+                    shaderArguments.BindBufferCBV(0, this->GetCurrentPerFrameConstantBuffer());
+                    shaderArguments.BindTextureSRV(1, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(velocityRangeTexture)));
+
+                    RenderBackendShaderHandle vertexShader = shaderLibrary->GetShader(ShaderID::MotionBlurVelocityDilationScatterVS);
+                    RenderBackendShaderHandle pixelShader = shaderLibrary->GetShader(ShaderID::MotionBlurVelocityDilationScatterPS);
+
+                    uint32 vertexCount = 6 * GMotionBlurVelocityDilationQuadCountPerInstance;
+                    uint32 instanceCount = CeilDiv(tileCount, GMotionBlurVelocityDilationQuadCountPerInstance);
+
+                    commandList.Draw(
+                       vertexShader,
+                       pixelShader,
+                       graphicsPipelineState,
+                       shaderArguments,
+                       vertexCount,
+                       instanceCount,
+                       0,
+                       0,
+                       RenderBackendPrimitiveTopology::TriangleList);
+                };
+            });
+
+        RenderGraphTextureDesc motionBlurColorTextureDesc = RenderGraphTextureDesc::Create2D(
+            targetResolution.width,
+            targetResolution.height,
+            RenderBackendTextureFormat::R11G11B10Float,
+            RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::UnorderedAccess | RenderBackendTextureCreateFlags::RenderTarget);
+        RenderGraphTextureHandle motionBlurColorTexture = renderGraph.CreateTexture(motionBlurColorTextureDesc, "MotionBlurColorTexture");
+
+        renderGraph.AddPass(
+            std::format("MotionBlurReconstructionFilter (Compute, {}x{})", motionBlurColorTextureDesc.width, motionBlurColorTextureDesc.height),
+            RenderGraphPassFlags::Compute,
+            [&](RenderGraphBuilder& builder)
+            {
+                sceneColorTexture = builder.ReadTexture(sceneColorTexture, RenderBackendResourceState::ShaderResource);
+                velocityAndDepthTexture = builder.ReadTexture(velocityAndDepthTexture, RenderBackendResourceState::ShaderResource);
+                dilatedVelocityRangeTexture = builder.ReadTexture(dilatedVelocityRangeTexture, RenderBackendResourceState::ShaderResource);
+                motionBlurColorTexture = builder.WriteTexture(motionBlurColorTexture, RenderBackendResourceState::UnorderedAccess);
+
+                return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
+                {
+                    uint32 threadGroupCountX = CeilDiv(motionBlurColorTextureDesc.width, GMotionBlurTileSize);
+                    uint32 threadGroupCountY = CeilDiv(motionBlurColorTextureDesc.height, GMotionBlurTileSize);
+                    uint32 threadGroupCountZ = 1;
+
+                    RenderBackendShaderArguments shaderArguments = {};
+                    shaderArguments.BindBufferCBV(0, this->GetCurrentPerFrameConstantBuffer());
+                    shaderArguments.BindTextureSRV(1, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(sceneColorTexture)));
+                    shaderArguments.BindTextureSRV(2, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(velocityAndDepthTexture)));
+                    shaderArguments.BindTextureSRV(3, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(dilatedVelocityRangeTexture)));
+                    shaderArguments.BindTextureUAV(4, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(motionBlurColorTexture)));
+
+                    RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::MotionBlurReconstructionFilterCS);
+
+                    commandList.Dispatch(
+                        computeShader,
+                        shaderArguments,
+                        threadGroupCountX,
+                        threadGroupCountY,
+                        threadGroupCountZ);
+                };
+            });
+
+        return motionBlurColorTexture;
     }
 }
