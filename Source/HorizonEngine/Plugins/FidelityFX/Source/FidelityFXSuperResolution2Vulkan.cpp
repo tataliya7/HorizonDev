@@ -56,7 +56,8 @@ namespace Horizon
             fsr2ContextDescription.displaySize.height = targetHeight;
 
             fsr2ContextDescription.flags |= FFX_FSR2_ENABLE_HIGH_DYNAMIC_RANGE;
-            fsr2ContextDescription.flags |= FFX_FSR2_ENABLE_DEPTH_INVERTED | FFX_FSR2_ENABLE_DEPTH_INFINITE;
+            fsr2ContextDescription.flags |= FFX_FSR2_ENABLE_DEPTH_INVERTED;
+            //fsr2ContextDescription.flags |= FFX_FSR2_ENABLE_DEPTH_INFINITE;
 
             //We never use FSR2's own auto-exposure.
             //fsr2ContextDescription.flags |= enableAutoExposure ? FFX_FSR2_ENABLE_AUTO_EXPOSURE : 0;

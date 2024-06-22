@@ -46,29 +46,26 @@ struct PerFrameShaderParameters
     float oneOverPreExposure;
     float preExposureCorrection;
 
-    // TODO: move post processing settings to a separate struct
-    float autoExposureExposureCompensation;
-    float autoExposureMinExposureValue;
-    float autoExposureMaxExposureValue;
-    float autoExposureSpeedDarkToBright;
-    float autoExposureSpeedBrightToDark;
-    float autoExposureHistogramLowerPercentage;
-    float autoExposureHistogramHigherPercentage;
-    float autoExposureHistogramMinEV100;
-    float autoExposureHistogramMaxEV100;
-    int autoExposureUseTargetExposure;
-    float bloomIntensity;
-    float bloomRadius;
-    float chromaticAberrationIntensity;
-    float chromaticAberrationOffset;
-    float whiteBalance;
-    //float3 lensDirtScaleFactor;
-    //float4 colorCorrectionSaturation;
-    //float4 colorCorrectionContrast;
-    //float4 colorCorrectionGamma;
-    //float4 colorCorrectionGain;
-    //float4 colorCorrectionOffset;
-    float vignetteIntensity;
+    float2 motionVectorScale;
+
+    float4x4 worldToViewMatrix;
+    float4x4 viewToWorldMatrix;
+    float4x4 viewToClipMatrix;
+    float4x4 clipToViewMatrix;
+    float4x4 worldToClipMatrix;
+    float4x4 clipToWorldMatrix;
+    float4x4 nonJitteredWorldToClipMatrix;
+
+    float4x4 previousWorldToViewMatrix;
+    float4x4 previousViewToWorldMatrix;
+    float4x4 previousViewToClipMatrix;
+    float4x4 previousClipToViewMatrix;
+    float4x4 previousWorldToClipMatrix;
+    float4x4 previousClipToWorldMatrix;
+    float4x4 previousNonJitteredWorldToClipMatrix;
+
+    float4x4 currentClipToPreviousClipMatrix;
+    float4x4 previousClipToCurrentClipMatrix;
 
     float3 indirectLightingMultiplier;
 
@@ -107,21 +104,31 @@ struct PerFrameShaderParameters
     float3 skyAtmosphereSkyLuminanceFactor;
     float3x3 skyAtmosphereSkyViewLutReferential;
 
-    float4x4 worldToViewMatrix;
-    float4x4 viewToWorldMatrix;
-    float4x4 viewToClipMatrix;
-    float4x4 clipToViewMatrix;
-    float4x4 worldToClipMatrix;
-    float4x4 clipToWorldMatrix;
-    float4x4 nonJitteredWorldToClipMatrix;
-
-    float4x4 previousWorldToViewMatrix;
-    float4x4 previousViewToWorldMatrix;
-    float4x4 previousViewToClipMatrix;
-    float4x4 previousClipToViewMatrix;
-    float4x4 previousWorldToClipMatrix;
-    float4x4 previousClipToWorldMatrix;
-    float4x4 previousNonJitteredWorldToClipMatrix;
+    // TODO: move post processing settings to a separate struct
+    float motionBlurIntensity;
+    float motionBlurMaxVelocityLengthInPixels;
+    float autoExposureExposureCompensation;
+    float autoExposureMinExposureValue;
+    float autoExposureMaxExposureValue;
+    float autoExposureSpeedDarkToBright;
+    float autoExposureSpeedBrightToDark;
+    float autoExposureHistogramLowerPercentage;
+    float autoExposureHistogramHigherPercentage;
+    float autoExposureHistogramMinEV100;
+    float autoExposureHistogramMaxEV100;
+    int autoExposureUseTargetExposure;
+    float bloomIntensity;
+    float bloomRadius;
+    float chromaticAberrationIntensity;
+    float chromaticAberrationOffset;
+    float whiteBalance;
+    //float3 lensDirtScaleFactor;
+    //float4 colorCorrectionSaturation;
+    //float4 colorCorrectionContrast;
+    //float4 colorCorrectionGamma;
+    //float4 colorCorrectionGain;
+    //float4 colorCorrectionOffset;
+    float vignetteIntensity;
 };
 
 #ifndef __cplusplus

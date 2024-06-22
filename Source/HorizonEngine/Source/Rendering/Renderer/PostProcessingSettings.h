@@ -23,6 +23,12 @@ namespace Horizon
      */
     struct PostProcessingSettings
     {
+        /** The strength of the motion blur effect. */
+        float motionBlurIntensity = 1.0f;
+
+        /** The maximum length of velocity in screen percentage. */
+        float motionBlurMaxVelocityLength = 100.0f;
+
         /** Exposure computation method. */
         ExposureMethod exposureMethod = ExposureMethod::AutoExposure;
 
@@ -48,7 +54,7 @@ namespace Horizon
         float autoExposureHistogramLowerPercentage = 0.0f;
 
         /** The upper percentage of the histogram. Values beyond this threshold will be discarded and won't contribute to the scene average luminance. */
-        float autoExposureHistogramHigherPercentage = 1.0f;
+        float autoExposureHistogramHigherPercentage = 100.0f;
 
         /** Histogram minimum exposure value. This property is expressed in EV100. */
         float autoExposureHistogramMinEV100 = -10.0f;
@@ -62,7 +68,7 @@ namespace Horizon
         /** The radius of the bloom effect, controls how far the bloom extends out from the highlight. */
         float bloomRadius = 0.5f;
 
-        /** The strength of the Chromatic Aberration effect. */
+        /** The strength of the chromatic aberration effect. */
         float chromaticAberrationIntensity = 0.0f;
 
         /** TBD. */

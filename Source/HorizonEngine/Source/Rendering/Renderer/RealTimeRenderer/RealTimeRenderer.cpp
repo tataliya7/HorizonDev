@@ -306,7 +306,7 @@ namespace Horizon
         features.enableScreenSpaceLightShafts = false;
 
         features.enableDepthOfField = false;// finalPostProcessingSettings.depthOfFieldScale > 0.0f;
-        features.enableMotionBlur = false;
+        features.enableMotionBlur = finalPostProcessingSettings.motionBlurIntensity > 0.0f;
 
         features.enableAutoExposure = (finalPostProcessingSettings.exposureMethod == ExposureMethod::AutoExposure);
 
@@ -398,6 +398,13 @@ namespace Horizon
             perFrameShaderParameters.previousClipToWorldMatrix = historyFrame.transformations.clipToWorldMatrix;
             perFrameShaderParameters.previousNonJitteredWorldToClipMatrix = historyFrame.transformations.nonJitteredViewToClipMatrix;
 
+            Matrix4x4 reprojectionMatrix = glm::inverse(perFrameShaderParameters.nonJitteredWorldToClipMatrix) * perFrameShaderParameters.previousNonJitteredWorldToClipMatrix;
+            Matrix4x4 inverseReprojectionMatrix = glm::inverse(reprojectionMatrix);
+            //Matrix4x4 reprojectionMatrix = perFrameShaderParameters.clipToWorldMatrix * perFrameShaderParameters.previousWorldToClipMatrix;
+            //Matrix4x4 inverseReprojectionMatrix = glm::inverse(reprojectionMatrix);
+            perFrameShaderParameters.currentClipToPreviousClipMatrix = reprojectionMatrix;
+            perFrameShaderParameters.previousClipToCurrentClipMatrix = inverseReprojectionMatrix;
+
             perFrameShaderParameters.materialTextureMipLodBias = materialTextureMipLodBias;
 
             UpdateAutoExposureDataFromReadbackBuffer();
@@ -407,6 +414,8 @@ namespace Horizon
             perFrameShaderParameters.preExposure = preExposure;
             perFrameShaderParameters.oneOverPreExposure = 1.0f / preExposure;
             perFrameShaderParameters.preExposureCorrection = preExposure / historyFrame.preExposure;
+
+            perFrameShaderParameters.motionVectorScale = Vector2(float(renderResolution.width), float(renderResolution.height));
 
             // TODO: move this to other place?
             historyFrame.preExposure = preExposure;
@@ -482,13 +491,16 @@ namespace Horizon
 
             // TODO: Move post processing settings form PerFrameShaderParameters to other place
             {
+                perFrameShaderParameters.motionBlurIntensity = finalPostProcessingSettings.motionBlurIntensity;
+                perFrameShaderParameters.motionBlurMaxVelocityLengthInPixels = finalPostProcessingSettings.motionBlurMaxVelocityLength / 100.0f * 0.5f * std::max(targetResolution.width, targetResolution.height);
+
                 perFrameShaderParameters.autoExposureExposureCompensation = finalPostProcessingSettings.autoExposureExposureCompensation;
                 perFrameShaderParameters.autoExposureMinExposureValue = finalPostProcessingSettings.autoExposureMinExposureValue;
                 perFrameShaderParameters.autoExposureMaxExposureValue = finalPostProcessingSettings.autoExposureMaxExposureValue;
                 perFrameShaderParameters.autoExposureSpeedDarkToBright = finalPostProcessingSettings.autoExposureSpeedDarkToBright;
                 perFrameShaderParameters.autoExposureSpeedBrightToDark = finalPostProcessingSettings.autoExposureSpeedBrightToDark;
                 perFrameShaderParameters.autoExposureHistogramLowerPercentage = finalPostProcessingSettings.autoExposureHistogramLowerPercentage;
-                perFrameShaderParameters.autoExposureHistogramHigherPercentage = finalPostProcessingSettings.autoExposureHistogramHigherPercentage;
+                perFrameShaderParameters.autoExposureHistogramHigherPercentage = finalPostProcessingSettings.autoExposureHistogramHigherPercentage / 100.0f;
                 perFrameShaderParameters.autoExposureHistogramMinEV100 = finalPostProcessingSettings.autoExposureHistogramMinEV100;
                 perFrameShaderParameters.autoExposureHistogramMaxEV100 = finalPostProcessingSettings.autoExposureHistogramMaxEV100;
                 perFrameShaderParameters.autoExposureUseTargetExposure = (view.NeedToBeReset() || !IsAutoExposureEnabled()) ? 1 : 0; // TODO: forceUseTargetExposure;

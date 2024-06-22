@@ -63,6 +63,10 @@ namespace Horizon
 
             if (farClippingPlane == std::numeric_limits<float>::max())
             {
+                // Infinite far plane
+                // TODO:
+                // 1. ComputeCameraSpaceDepth 
+                // 2. Motion vector caculation
                 viewToClipMatrix = glm::infinitePerspectiveRH_ZO(Math::DegreesToRadians(fieldOfView), aspectRatio, nearClippingPlane);
             }
             else

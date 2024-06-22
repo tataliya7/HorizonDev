@@ -13,9 +13,12 @@ BIND_TEXTURE_2D_UAV(4, float3, OutputTexture);
 [numthreads(MOTION_BLUR_TILE_SIZE, MOTION_BLUR_TILE_SIZE, 1)]
 void MotionBlurReconstructionFilterCS(uint3 DispatchThreadID : SV_DispatchThreadID, uint3 GroupID : SV_GroupID, uint GroupIndex : SV_GroupIndex)
 {
+    Texture2D sceneColorTexture = GetSceneColorTextureSRV();
     RWTexture2D<float3> outputTexture = GetOutputTextureUAV();
 
     uint2 pixelCoord = DispatchThreadID.xy;
+
+    float DeviceZ = DepthTexture.SampleLevel( VelocitySampler , UV, 0).r;
 
     outputTexture[pixelCoord] = ;
 }

@@ -180,6 +180,7 @@ namespace Horizon
              RenderGraphPassFlags::Compute,
              [&](RenderGraphBuilder& builder)
              {
+                 RenderGraphTextureHandle sceneDepthTexture = builder.ReadTexture(sceneTextures.sceneDepthTexture, RenderBackendResourceState::ShaderResource);
                  RenderGraphTextureHandle vbuffer0 = builder.ReadTexture(sceneTextures.vbuffer0, RenderBackendResourceState::ShaderResource);
                  RenderGraphTextureHandle motionVectorTexture = sceneTextures.motionVectorTexture = builder.WriteTexture(sceneTextures.motionVectorTexture, RenderBackendResourceState::UnorderedAccess);
 
@@ -192,8 +193,9 @@ namespace Horizon
                      RenderBackendShaderArguments shaderArguments = {};
                      shaderArguments.BindBufferCBV(0, this->GetCurrentPerFrameConstantBuffer());
                      //shaderArguments.BindBuffer(1, renderEngine->geometryBuffer, 0);
-                     shaderArguments.BindTextureSRV(2, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(vbuffer0)));
-                     shaderArguments.BindTextureUAV(3, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(motionVectorTexture), 0));
+                     shaderArguments.BindTextureSRV(2, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(sceneDepthTexture)));
+                     shaderArguments.BindTextureSRV(3, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(vbuffer0)));
+                     shaderArguments.BindTextureUAV(4, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(motionVectorTexture), 0));
 
                      RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::MotionVectors);
                      commandList.Dispatch(

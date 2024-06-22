@@ -3,8 +3,9 @@
 
 BIND_BUFFER_CBV(0, PerFrameShaderParameters);
 BIND_BYTE_ADDRESS_BUFFER_SRV(1, GeometryBuffer);
-BIND_TEXTURE_2D_TYPED_SRV(2, uint2, VisibilityBuffer);
-BIND_TEXTURE_2D_UAV(3, float2, MotionVectors);
+BIND_TEXTURE_2D_SRV(2, SceneDepthTexture);
+BIND_TEXTURE_2D_TYPED_SRV(3, uint2, VisibilityBuffer);
+BIND_TEXTURE_2D_UAV(4, float2, MotionVectorTexture);
 
 inline float3 BarycentricInterpolation(in float3 a0, in float3 a1, in float3 a2, in float3 bary)
 {
@@ -49,8 +50,11 @@ void MotionVectorsCS(uint3 DispatchThreadID : SV_DispatchThreadID)
     // Transform to screen UV space
     motionVectorJitterCancellation = motionVectorJitterCancellation * invSize;
 
+    Texture2D sceneDepthTexture = GetSceneDepthTextureSRV();
     Texture2D<uint2> visibilityBuffer = GetVisibilityBufferSRV();
+    RWTexture2D<float2> motionVectorTexture = GetMotionVectorTextureUAV();
 
+    float sceneDepth = sceneDepthTexture[pixelCoord].r;
     uint2 visibilityID = visibilityBuffer[pixelCoord];
     uint geometryID = visibilityID.r;
     uint primitiveID = visibilityID.g;
@@ -104,12 +108,10 @@ void MotionVectorsCS(uint3 DispatchThreadID : SV_DispatchThreadID)
 
         hitPointPrevWorldPosition = BarycentricInterpolation(prevWorldPosition0, prevWorldPosition1, prevWorldPosition2, bary);
 
-        // RWTexture2D<float4> motionVectors = GetMotionVectorsUAV();
         // float3 curw = cameraRayOrigin + t * cameraRayDirection;
-        // motionVectors[pixelCoord] = float4(curw, t);
+        // motionVectorTexture[pixelCoord] = float4(curw, t);
         // return;
 
-        RWTexture2D<float2> motionVectors = GetMotionVectorsUAV();
         float2 currPosition = uv;
         float4 prevClipPosition = mul(perFrameConstants.previousWorldToClipMatrix, float4(hitPointPrevWorldPosition, 1.0));
         float2 prevPosition = ClipSpaceToUVSpace(prevClipPosition.xy / prevClipPosition.w);
@@ -120,15 +122,23 @@ void MotionVectorsCS(uint3 DispatchThreadID : SV_DispatchThreadID)
             // motionVector = float2(1.0, 1.0);
             motionVector = 0;
         }
-        motionVectors[pixelCoord] = motionVector;
+        motionVectorTexture[pixelCoord] = motionVector;
     }
     else
 #endif
     {
+        // depth must be 0.
+        float4 clipSpacePosition = float4(UVSpaceToClipSpace(uv), 0.0f, 1.0f);
+        float4 previousClipSpacePosition = mul(perFrameConstants.currentClipToPreviousClipMatrix, clipSpacePosition);
+        float2 prevPosition = ClipSpaceToUVSpace(previousClipSpacePosition.xy / previousClipSpacePosition.w);
+        float2 currPosition = uv;
+        float2 motionVector = prevPosition - currPosition;
+        //motionVector -= motionVectorJitterCancellation;
+
+#if 0
         // -0.01 to prevent division by zero in perspective division
         hitPointPrevWorldPosition = cameraRayOrigin + cameraRayDirection * (perFrameConstants.farClippingPlane - 0.0001f);
         hitPointPrevWorldPosition = hitPointPrevWorldPosition - perFrameConstants.cameraPosition + perFrameConstants.previousCameraPosition;
-        RWTexture2D<float2> motionVectors = GetMotionVectorsUAV();
         float2 currPosition = uv;
         float4 prevClipPosition = mul(perFrameConstants.previousWorldToClipMatrix, float4(hitPointPrevWorldPosition, 1.0f));
         float2 prevPosition = ClipSpaceToUVSpace(prevClipPosition.xy / prevClipPosition.w);
@@ -138,9 +148,9 @@ void MotionVectorsCS(uint3 DispatchThreadID : SV_DispatchThreadID)
         {
             motionVector = 0;
         }
-        motionVectors[pixelCoord] = motionVector;
+#endif
 
-        // RWTexture2D<float2> motionVectors = GetMotionVectorsUAV();
-        // motionVectors[pixelCoord] = float2(0.0, 0.0);
+        motionVectorTexture[pixelCoord] = motionVector;
+        // motionVectorTexture[pixelCoord] = float2(0.0, 0.0);
     }
 }

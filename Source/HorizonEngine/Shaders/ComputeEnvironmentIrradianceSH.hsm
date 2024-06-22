@@ -34,11 +34,8 @@ void ComputeEnvironmentIrradianceSHCS(uint3 DispatchThreadID : SV_DispatchThread
     {
         SharedSHCoefficients[threadIndex] = SHCoefficientsAdd(SharedSHCoefficients[threadIndex], SharedSHCoefficients[threadIndex + 32]);
     }
-
-    GroupMemoryBarrierWithGroupSync();
-
-    // The wave size in NVIDIA GPUs is 32 threads.
-
+    // It is safe to omit group synchronization when the wave size is greater than or equal to 32.
+    // AMD and NVIDIA GPUs have a wave size of 32 or at least.
     if (threadIndex < 16)
     {
         SharedSHCoefficients[threadIndex] = SHCoefficientsAdd(SharedSHCoefficients[threadIndex], SharedSHCoefficients[threadIndex + 16]);
@@ -58,7 +55,6 @@ void ComputeEnvironmentIrradianceSHCS(uint3 DispatchThreadID : SV_DispatchThread
     if (threadIndex < 1)
     {
         SharedSHCoefficients[threadIndex] = SHCoefficientsAdd(SharedSHCoefficients[threadIndex], SharedSHCoefficients[threadIndex + 1]);
-
         irradianceEnvironmentMapSH.Store<ThreeBandSHCoefficientsRGB>(0, SharedSHCoefficients[threadIndex]);
     }
 }
