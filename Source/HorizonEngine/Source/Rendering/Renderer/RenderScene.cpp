@@ -121,16 +121,16 @@ namespace Horizon
 
     void RenderScene::AddLocalVolumetricFog(LocalVolumetricFogRenderObject* localVolumetricFog)
     {
-        assert(localFogVolume != nullptr);
-        assert(std::ranges::find(localFogVolumes, localFogVolume) == localFogVolumes.end());
+        assert(localVolumetricFog != nullptr);
+        assert(std::ranges::find(localVolumetricFogs, localVolumetricFog) == localVolumetricFogs.end());
 
         localVolumetricFogs.push_back(localVolumetricFog);
     }
 
     void RenderScene::RemoveLocalVolumetricFog(LocalVolumetricFogRenderObject* localVolumetricFog)
     {
-        assert(localFogVolume != nullptr);
-        assert(std::ranges::find(localFogVolumes, localFogVolume) != localFogVolumes.end());
+        assert(localVolumetricFog != nullptr);
+        assert(std::ranges::find(localVolumetricFogs, localVolumetricFog) != localVolumetricFogs.end());
 
         // Avoid the overhead of moving the items as the order does not matter.
         auto iter = std::ranges::find(localVolumetricFogs, localVolumetricFog);
