@@ -305,7 +305,7 @@ namespace Horizon
             const SceneView& view,
             RenderGraphBufferHandle autoExposureBuffer);
 
-        RenderGraphTextureHandle AddLocalExposurePass(
+        RenderGraphTextureHandle DipatchLocalExposure(
             RenderGraph& renderGraph,
             const SceneView& view,
             RenderGraphTextureHandle sceneColorTexture,

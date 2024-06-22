@@ -9,7 +9,7 @@ namespace Horizon
     }
 
 
-    RenderGraphTextureHandle RealTimeRenderer::AddLocalExposurePass(
+    RenderGraphTextureHandle RealTimeRenderer::DipatchLocalExposure(
         RenderGraph& renderGraph,
         const SceneView& view,
         RenderGraphTextureHandle sceneColorTexture,
