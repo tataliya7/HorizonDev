@@ -284,7 +284,7 @@ namespace Horizon
             RenderGraph& renderGraph,
             const SceneView& view);
 
-        RenderGraphTextureHandle AddDepthOfFieldPass(
+        RenderGraphTextureHandle DispatchDepthOfField(
             RenderGraph& renderGraph,
             const SceneView& view,
             RenderGraphTextureHandle sceneColor);

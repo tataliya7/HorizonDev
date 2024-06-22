@@ -48,7 +48,7 @@ namespace Horizon
     }
 
 
-    RenderGraphTextureHandle RealTimeRenderer::AddDepthOfFieldPass(
+    RenderGraphTextureHandle RealTimeRenderer::DispatchDepthOfField(
         RenderGraph& renderGraph,
         const SceneView& view,
         RenderGraphTextureHandle sceneColorTexture)

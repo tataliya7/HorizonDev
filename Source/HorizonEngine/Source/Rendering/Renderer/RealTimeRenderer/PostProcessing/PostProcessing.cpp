@@ -33,7 +33,7 @@ namespace Horizon
 
         if (IsDepthOfFieldEnabled())
         {
-            sceneColorTexture = AddDepthOfFieldPass(renderGraph, view, sceneColorTexture);
+            sceneColorTexture = DispatchDepthOfField(renderGraph, view, sceneColorTexture);
         }
 
         if (IsSuperResolutionEnabled())
