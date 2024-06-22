@@ -64,9 +64,7 @@ namespace Horizon
         // The auto exposure pass is always executed.
         // When fixed exposure is enabled, the auto exposure pass will force output the specified exposure.
         {
-            RenderGraphTextureHandle autoExposureHistogramTexture = AddAutoExposureBuildHistogramPass(renderGraph, view, sceneColorTexture);
-
-            autoExposureBuffer = AddAutoExposureComputeExposurePass(renderGraph, view, autoExposureHistogramTexture, previousAutoExposureBuffer);
+            autoExposureBuffer = DispatchHistogramBasedAutoExposure(renderGraph, view, sceneColorTexture, previousAutoExposureBuffer);
         }
 
         RenderGraphTextureHandle localExposureTexture = RenderGraphTextureHandle::Null;
@@ -96,7 +94,7 @@ namespace Horizon
 
         if (true) // Tone mapping is always enabled.
         {
-            RenderGraphTextureHandle colorLUTTexture = AddColorLUTPass(renderGraph, view);
+            RenderGraphTextureHandle colorLUTTexture = RenderColorLUT(renderGraph, view);
 
             bool outputInHDR = false;
 

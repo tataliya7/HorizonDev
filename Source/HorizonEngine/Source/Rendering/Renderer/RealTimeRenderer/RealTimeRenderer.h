@@ -289,12 +289,7 @@ namespace Horizon
             const SceneView& view,
             RenderGraphTextureHandle sceneColor);
 
-        RenderGraphTextureHandle AddAutoExposureBuildHistogramPass(
-            RenderGraph& renderGraph,
-            const SceneView& view,
-            RenderGraphTextureHandle sceneColorTexture);
-
-        RenderGraphBufferHandle AddAutoExposureComputeExposurePass(
+        RenderGraphBufferHandle DispatchHistogramBasedAutoExposure(
             RenderGraph& renderGraph,
             const SceneView& view,
             RenderGraphTextureHandle autoExposureHistogramTexture,
@@ -311,7 +306,7 @@ namespace Horizon
             RenderGraphTextureHandle sceneColorTexture,
             RenderGraphTextureHandle autoExposureTexture);
 
-        RenderGraphTextureHandle AddColorLUTPass(
+        RenderGraphTextureHandle RenderColorLUT(
             RenderGraph& renderGraph,
             const SceneView& view);
 

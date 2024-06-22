@@ -11,10 +11,11 @@ namespace Horizon
         return features.enableAutoExposure;
     }
 
-    RenderGraphTextureHandle RealTimeRenderer::AddAutoExposureBuildHistogramPass(
+    RenderGraphBufferHandle RealTimeRenderer::DispatchHistogramBasedAutoExposure(
         RenderGraph& renderGraph,
         const SceneView& view,
-        RenderGraphTextureHandle sceneColorTexture)
+        RenderGraphTextureHandle sceneColorTexture,
+        RenderGraphBufferHandle previousAutoExposureBuffer)
     {
         const RenderGraphTextureDesc& sceneColorTextureDesc = renderGraph.GetTextureDesc(sceneColorTexture);
 
@@ -58,15 +59,6 @@ namespace Horizon
                 };
             });
 
-        return histogramTexture;
-    }
-
-    RenderGraphBufferHandle RealTimeRenderer::AddAutoExposureComputeExposurePass(
-        RenderGraph& renderGraph,
-        const SceneView& view,
-        RenderGraphTextureHandle autoExposureHistogramTexture,
-        RenderGraphBufferHandle previousAutoExposureBuffer)
-    {
         RenderGraphBufferDesc autoExposureBufferDesc = RenderGraphBufferDesc::CreateByteAddress(sizeof(AutoExposureData));
         RenderGraphBufferHandle autoExposureBuffer = renderGraph.CreateBuffer(autoExposureBufferDesc, "AutoExposureBuffer");
 
@@ -75,7 +67,7 @@ namespace Horizon
             RenderGraphPassFlags::Compute,
             [&](RenderGraphBuilder& builder)
             {
-                autoExposureHistogramTexture = builder.ReadTexture(autoExposureHistogramTexture, RenderBackendResourceState::ShaderResource);
+                histogramTexture = builder.ReadTexture(histogramTexture, RenderBackendResourceState::ShaderResource);
                 previousAutoExposureBuffer = builder.ReadBuffer(previousAutoExposureBuffer, RenderBackendResourceState::ShaderResource);
                 autoExposureBuffer = builder.WriteBuffer(autoExposureBuffer, RenderBackendResourceState::UnorderedAccess);
 
@@ -83,7 +75,7 @@ namespace Horizon
                 {
                     RenderBackendShaderArguments shaderArguments = {};
                     shaderArguments.BindBufferCBV(0, this->GetCurrentPerFrameConstantBuffer());
-                    shaderArguments.BindTextureSRV(1, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(autoExposureHistogramTexture)));
+                    shaderArguments.BindTextureSRV(1, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(histogramTexture)));
                     shaderArguments.BindBuffer(2, registry.GetRenderBackendBufferHandle(previousAutoExposureBuffer));
                     shaderArguments.BindBuffer(3, registry.GetRenderBackendBufferHandle(autoExposureBuffer));
 

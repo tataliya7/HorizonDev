@@ -5,7 +5,7 @@ namespace Horizon
 {
     static constexpr uint32 GColorLUTTextureSize = 32;
 
-    RenderGraphTextureHandle RealTimeRenderer::AddColorLUTPass(
+    RenderGraphTextureHandle RealTimeRenderer::RenderColorLUT(
         RenderGraph& renderGraph,
         const SceneView& view)
     {
