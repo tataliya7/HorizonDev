@@ -53,7 +53,7 @@ void ShadowMapPS(in ShadowMapVSToPS input, in uint primitiveID : SV_PrimitiveID)
     float4 baseColor = material.baseColor;
     if (material.GetBaseColorMapIndex() > 0)
     {
-        Texture2D baseColorMap = GetTexture2D(material.GetBaseColorMapIndex());
+        Texture2D baseColorMap = GetBindlessResourceTexture2D(material.GetBaseColorMapIndex());
         baseColor = baseColorMap.Sample(GlobalSamplerLinearWarp, texCoord0);
     }
 

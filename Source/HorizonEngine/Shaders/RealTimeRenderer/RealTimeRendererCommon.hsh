@@ -220,7 +220,7 @@ void SurfaceInit(inout Surface surface, PerFrameShaderParameters perFrameConstan
 
         if (material.GetNormalMapIndex() >= 0) // In some cases, using normal mapping will result in some pixels having a normal value of NaN. Needs to be fixed!
         {
-            Texture2D normalMap = GetTexture2D(material.GetNormalMapIndex());
+            Texture2D normalMap = GetBindlessResourceTexture2D(material.GetNormalMapIndex());
             uint textureWidth, textureHeight;
             normalMap.GetDimensions(textureWidth, textureHeight);
             float mipLod = ComputeTextureLODRayCones(baseTriangleLOD, textureWidth, textureHeight, rayConeWidth, surface.V, surfaceNormal);

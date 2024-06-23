@@ -170,7 +170,7 @@ RWByteAddressBuffer GetRWByteAddressBufferNonUniform(uint index)
     return BindlessResource_RWByteAddressBuffer[NonUniformResourceIndex(index)];
 }
 
-Texture2D GetTexture2D(uint index)
+Texture2D GetBindlessResourceTexture2D(uint index)
 {
     return BindlessResource_Texture2D[index];
 }
@@ -304,7 +304,7 @@ RWByteAddressBuffer GetRWByteAddressBufferNonUniform(uint index)
     return ResourceDescriptorHeap[NonUniformResourceIndex(index)];
 }
 
-Texture2D GetTexture2D(uint index)
+Texture2D GetBindlessResourceTexture2D(uint index)
 {
     return ResourceDescriptorHeap[index];
 }
