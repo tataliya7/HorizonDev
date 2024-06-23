@@ -1,0 +1,30 @@
+#pragma once
+
+/*-------------------------------------------------------------------------------------
+ * IES Profile
+ * Reference: Moving Frostbite to Physically Based Rendering 3.0
+ *-------------------------------------------------------------------------------------*/
+
+// Sample IES Profile
+float ComputeNormalizedIESProfileMultiplier(int bindlessResourceIndex, float3 wi, float3x3 worldToLight)
+{
+	float multiplier = 1.0f;
+	if (bindlessResourceIndex >= 0)
+	{
+        Texture2D iesTexture = GetBindlessResourceTexture2D(bindlessResourceIndex);
+
+		// Transform the negative direction of the incoming light from world space to light space
+        float3 iesTextureSampleDirection = mul(worldToLight, wi);
+
+        // Cartesian to spherical: https://en.wikipedia.org/wiki/Spherical_coordinate_system
+        // IES texture is encoded with a spherical parametrization (theta, cos(phi))
+        float theta = atan2(iesTextureSampleDirection.y, iesTextureSampleDirection.x); // https://en.wikipedia.org/wiki/Atan2
+        float coordX = theta * INV_PI * 0.5f + 0.5f; // scale from -π->π to 0->1
+        float coordY = (iesTextureSampleDirection.z * 0.5f) + 0.5f; // scale from -1->1 to 0->1
+        float3 iesTextureCoord = float3(coordX, coordY);
+
+        // TODO: use texture array?
+		multiplier = iesTexture.SampleLevel(GlobalSamplerLinearClamp, iesTextureCoord, 0).r;
+	}
+	return multiplier;
+}
