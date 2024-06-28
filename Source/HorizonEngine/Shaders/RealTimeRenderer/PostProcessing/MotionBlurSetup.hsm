@@ -95,13 +95,15 @@ void MotionBlurSetupCS(uint3 DispatchThreadID : SV_DispatchThreadID, uint3 Group
 
     velocityRange = SharedTileData[GroupIndex];
 
+    // Tile not only the maximum velocity, but also the minimum.
     if (GroupIndex == 0)
     {
         uint2 tileID = GroupID.xy;
         velocityRangeTexture[tileID] = float4(PolarToCartesian(velocityRange.xy), PolarToCartesian(velocityRange.zw));
     }
 
-    // Encode velocity and depth to render target with R11G11B10Float format.
+    // Pack velocity and depth to a R11G11B10 texture.
+    // Reduces taps per sample from 3 (color, velocity, depth) to 2 (color, velocity/depth).
     float3 encodedVelocityAndDepth = float3(EncodeVelocity(velocity), ComputeCameraSpaceDepth(depth, perFrameConstants.nearClippingPlane, perFrameConstants.farClippingPlane));
 
     velocityAndDepthTexture[pixelCoord] = encodedVelocityAndDepth;
