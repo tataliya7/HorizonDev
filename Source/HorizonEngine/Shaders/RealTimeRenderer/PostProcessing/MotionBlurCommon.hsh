@@ -1,5 +1,7 @@
 #pragma once
 
+#define MOTION_BLUR_MIRROR_FILTER 1
+
 // Must match c++ side
 #define MOTION_BLUR_TILE_SIZE 16
 #define MOTION_BLUR_VELOCITY_DILATION_QUAD_COUNT_PER_INSTANCE 8
