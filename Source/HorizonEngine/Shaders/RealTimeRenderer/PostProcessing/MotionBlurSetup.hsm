@@ -16,12 +16,11 @@ float4 CombineVelocityRange(float4 r0, float4 r1)
 	return float4(minLengthVelocityVector, maxLengthVelocityVector);
 }
 
-// Encode velocity and depth to render target with R11G11B10Float format.
-float3 EncodeVelocityAndDepth(float2 velocity, float depth)
+float2 EncodeVelocity(float2 velocity)
 {
     // Normalize the polar angle from (-π, π] to (0, 1].
 	float2 encodedVelocity = float2(velocity.x, velocity.y * INV_PI * 0.5f + 0.5f);
-	return float3(encodedVelocity.x, encodedVelocity.y, depth);
+	return encodedVelocity;
 }
 
 groupshared float4 SharedTileData[MOTION_BLUR_TILE_SIZE * MOTION_BLUR_TILE_SIZE];
@@ -102,5 +101,8 @@ void MotionBlurSetupCS(uint3 DispatchThreadID : SV_DispatchThreadID, uint3 Group
         velocityRangeTexture[tileID] = float4(PolarToCartesian(velocityRange.xy), PolarToCartesian(velocityRange.zw));
     }
 
-    velocityAndDepthTexture[pixelCoord] = EncodeVelocityAndDepth(velocity, ComputeCameraSpaceDepth(depth, perFrameConstants.nearClippingPlane, perFrameConstants.farClippingPlane));
+    // Encode velocity and depth to render target with R11G11B10Float format.
+    float3 encodedVelocityAndDepth = float3(EncodeVelocity(velocity), ComputeCameraSpaceDepth(depth, perFrameConstants.nearClippingPlane, perFrameConstants.farClippingPlane));
+
+    velocityAndDepthTexture[pixelCoord] = encodedVelocityAndDepth;
 }
