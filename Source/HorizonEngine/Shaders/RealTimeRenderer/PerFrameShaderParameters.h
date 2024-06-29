@@ -105,6 +105,7 @@ struct PerFrameShaderParameters
     float3x3 skyAtmosphereSkyViewLutReferential;
 
     // TODO: move post processing settings to a separate struct
+    uint motionBlurMaxSampleCount;
     float motionBlurIntensity;
     float motionBlurMaxVelocityLengthInPixels;
     float autoExposureExposureCompensation;
