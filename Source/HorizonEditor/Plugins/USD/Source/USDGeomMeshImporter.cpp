@@ -219,7 +219,8 @@ namespace Horizon::USDImporter
             mesh.tangents[i] = Vector4(0, 0, 0, 0);
         }
 
-        RenderBackend* renderBackend = HorizonEditor::GetInstance();
+        RenderSystem* renderSystem = HorizonEngine::GetInstance()->GetSubsystem<RenderSystem>();
+        RenderBackend* renderBackend = renderSystem->GetRenderBackend();
 
         RenderBackendBufferDesc vertexBuffer0Desc = RenderBackendBufferDesc::CreateByteAddress(mesh.numVertices * sizeof(Vector3));
         mesh.vertexBuffers[0] = renderBackend->CreateBuffer(&vertexBuffer0Desc, mesh.positions.data(), "VertexPosition");

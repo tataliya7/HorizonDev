@@ -40,4 +40,3 @@ project "USD"
             "TBB_USE_DEBUG=0",
             --"__TBB_NO_IMPLICIT_LINKAGE=1",
         }
-

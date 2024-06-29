@@ -32,6 +32,13 @@ project "HorizonEditor"
         "Source/Editor/**.cppm",
         "Source/Editor/**.inl",
 
+        "Plugins/USD/**.h",
+        "Plugins/USD/**.c",
+        "Plugins/USD/**.hpp",
+        "Plugins/USD/**.cpp",
+        "Plugins/USD/**.cppm",
+        "Plugins/USD/**.inl",
+
         -- "MaterialGraph/**.h",
         -- "MaterialGraph/**.c",
         -- "MaterialGraph/**.hpp",
@@ -48,6 +55,7 @@ project "HorizonEditor"
 
     includedirs {
         editorpath("Source"),
+        editorpath("Plugins/USD/Source"),
         editorpath("Plugins/RenderDoc/Source"),
         enginepath("Source"),
         thirdpartypath("glm/include"),
@@ -59,6 +67,10 @@ project "HorizonEditor"
         thirdpartypath("streamline/include"),
         thirdpartypath("spdlog/include"),
         thirdpartypath("stb/include"),
+
+        thirdpartypath("usd/include"),
+        thirdpartypath("usd/include/boost-1_78"),
+        thirdpartypath("usd/include/tbb"),
     }
 
     defines {
@@ -76,7 +88,7 @@ project "HorizonEditor"
 
 group "EditorPlugins"
     include "Plugins/RenderDoc"
-    include "Plugins/USD"
+    -- include "Plugins/USD"
     -- include "Plugins/TimeOfDay"
     -- include "Plugins/LookDevStudio"
 group ""

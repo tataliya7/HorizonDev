@@ -27,6 +27,11 @@ namespace Horizon
             return renderBackend;
         }
 
+        ShaderLibrary* GetShaderLibrary() const
+        {
+            return shaderLibrary;
+        }
+
         RenderGraphResourcePool* GetRenderGraphResourcePool() const
         {
             return renderGraphResourcePool;
@@ -178,7 +183,7 @@ namespace Horizon
         uint64 currentVertexBufferDataSize[3];
         RenderBackendBufferHandle vertexBuffer[3];
         RenderBackendBufferHandle vertexBufferUpload[3];
-        
+
         uint64 indexBufferSize[3];
         uint64 currentIndexBufferDataSize[3];
         RenderBackendBufferHandle indexBuffer[3];

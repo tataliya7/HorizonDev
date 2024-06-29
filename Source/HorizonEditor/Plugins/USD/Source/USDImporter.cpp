@@ -161,7 +161,7 @@ namespace Horizon::USDImporter
     }
 }
 
-bool USDImport(const char* filename, const USDImportSettings* settings, bool asyncTask)
+bool USDImport(Horizon::Scene* scene, const char* filename, const USDImportSettings* settings, bool asyncTask)
 {
     using namespace Horizon;
     using namespace Horizon::USDImporter;
@@ -171,7 +171,7 @@ bool USDImport(const char* filename, const USDImportSettings* settings, bool asy
     data->filename = filename;
     data->canceled = false;
     data->result = USDImportResult::Succeed;
-    data->scene = SceneManager::GetActiveScene();
+    data->scene = scene;
 
     bool succeed = true;
     if (asyncTask)

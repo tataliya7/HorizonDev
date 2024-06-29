@@ -1,5 +1,6 @@
 #include "HorizonEditor.h"
 
+#include "USDModule.h"
 #include "RenderDocPlugin.h"
 
 #include <optick.h>

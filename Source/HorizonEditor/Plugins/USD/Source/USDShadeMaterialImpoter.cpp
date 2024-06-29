@@ -1,6 +1,8 @@
 #include "USDShadeMaterialImpoter.h"
 #include "USDUtils.h"
 
+#include "Framework/TextureImporter.h"
+
 namespace Horizon::USDImporter
 {
     USDImporter::USDShadeMaterialImpoter::USDShadeMaterialImpoter(USDImportContext& context)
@@ -15,6 +17,10 @@ namespace Horizon::USDImporter
         {
             return {};
         }
+
+        RenderSystem* renderSystem = HorizonEngine::GetInstance()->GetSubsystem<RenderSystem>();
+        RenderBackend* renderBackend = renderSystem->GetRenderBackend();
+        ShaderLibrary* shaderLibrary = renderSystem->GetShaderLibrary();
 
         std::string materialName = usdShadeMaterial.GetPrim().GetName().GetString();
 
@@ -73,7 +79,7 @@ namespace Horizon::USDImporter
                                                 }
                                                 else
                                                 {
-                                                    gpuTexture = LoadTextureFromFile(GRenderBackend, path.c_str(), true, true, RenderBackendTextureFormat::RGBA8UnormSrgb);
+                                                    gpuTexture = LoadTextureFromFile(renderBackend, shaderLibrary, path.c_str(), true, true, RenderBackendTextureFormat::R8G8B8A8UnormSrgb);
                                                     context->textureMap.emplace(path, gpuTexture);
                                                 }
 
@@ -140,7 +146,7 @@ namespace Horizon::USDImporter
                                                 }
                                                 else
                                                 {
-                                                    gpuTexture = LoadTextureFromFile(GRenderBackend, path.c_str());
+                                                    gpuTexture = LoadTextureFromFile(renderBackend, shaderLibrary, path.c_str());
                                                     context->textureMap.emplace(path, gpuTexture);
                                                 }
 
@@ -206,7 +212,7 @@ namespace Horizon::USDImporter
                                                 }
                                                 else
                                                 {
-                                                    gpuTexture = LoadTextureFromFile(GRenderBackend, path.c_str());
+                                                    gpuTexture = LoadTextureFromFile(renderBackend, shaderLibrary, path.c_str());
                                                     context->textureMap.emplace(path, gpuTexture);
                                                 }
 
