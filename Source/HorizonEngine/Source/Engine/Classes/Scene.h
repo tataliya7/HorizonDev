@@ -40,27 +40,7 @@ namespace Horizon
             return entityManager;
         }
 
-        // void SetParent(EntityHandle child, EntityHandle parent)
-        // {
-        //     if (parent != EntityHandle::Null)
-        //     {
-        //         SceneHierarchyComponent& childHierarchyComponent = entityManager->GetComponent<SceneHierarchyComponent>(child);
-        //         SceneHierarchyComponent& parentHierarchyComponent = entityManager->GetComponent<SceneHierarchyComponent>(parent);
-        //
-        //         childHierarchyComponent.depth = parentHierarchyComponent.depth + 1;
-        //         childHierarchyComponent.parent = parent;
-        //         childHierarchyComponent.next = parentHierarchyComponent.firstChild;
-        //
-        //         if (parentHierarchyComponent.firstChild != EntityHandle::Null)
-        //         {
-        //             SceneHierarchyComponent& siblingHierarchyComponent = entityManager->GetComponent<SceneHierarchyComponent>(parentHierarchyComponent.firstChild);
-        //             siblingHierarchyComponent.prev = child;
-        //         }
-        //
-        //         parentHierarchyComponent.firstChild = child;
-        //         parentHierarchyComponent.numChildren += 1;
-        //     }
-        // }
+        void SetParent(EntityHandle child, EntityHandle parent);
 
         bool enablePhysicsSimulation;
 
