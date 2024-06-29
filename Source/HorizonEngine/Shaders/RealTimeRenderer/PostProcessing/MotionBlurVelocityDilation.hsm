@@ -35,6 +35,7 @@ void MotionBlurVelocityDilationScatterVS(
     out float4 position : SV_Position)
 {
     Texture2D velocityRangeTexture = GetVelocityRangeTextureSRV();
+    uint scatterPassIndex = uint(SHADER_ARGUMENTS_DATA(0));
 
     uint width, height;
     velocityRangeTexture.GetDimensions(width, height);
@@ -45,44 +46,41 @@ void MotionBlurVelocityDilationScatterVS(
 
     uint2 pixelCoord = uint2(quadIndex % width, quadIndex / width);
     float2 pixelPosition = float2(pixelCoord) + 0.5f;
-    float2 vertexPosition = pixelPosition + QuadCornerOffsets[vertexIndex] * 0.5f;
 
 	float4 velocityRange = velocityRangeTexture[pixelCoord];
+    float2 maxVelocity = velocityRange.zw;
+
     velocity = velocityRange;
 
-    position = float4(vertexPosition.xy / float2(width, height) * 2.0f - 1.0f, 0.0f, 1.0f);
+    float maxVelocityLengthSqaure = dot(maxVelocity, maxVelocity);
+
+    // Perform early-exit when the length of velocity is less than or equal to 0.5 tiles.
+    bool earlyExit = maxVelocityLengthSqaure <= ((MOTION_BLUR_TILE_SIZE * 0.5f) * (MOTION_BLUR_TILE_SIZE * 0.5f));
+	if (earlyExit)
+	{
+        float2 vertexPosition = pixelPosition + QuadCornerOffsets[vertexIndex] * 0.5f;
+        position = float4(vertexPosition.xy / float2(width, height) * 2.0f - 1.0f, 0.0f, 1.0f);
+	}
+    else
+    {
+        float maxVelocityLength = sqrt(maxVelocityLengthSqaure);
+        float minVelocityLength = length(velocityRange.xy);
+        float2 velocityDirection = maxVelocity * rcp(maxVelocityLength);
+
+        float quadBaseExtent = abs(velocityDirection.x) + abs(velocityDirection.y); // dot(abs(velocityDirection), float2(1.0f, 1.0f))
+        float2 quadScale = float2(maxVelocityLength, 0.0f) + float2(quadBaseExtent, quadBaseExtent) * 0.99f;
+        float2 quadCornerOffset = QuadCornerOffsets[vertexIndex] * quadScale;
+
+        float2 axisX = velocityDirection;
+        float2 axisY = float2(-velocityDirection.y, velocityDirection.x);
+        quadCornerOffset = axisX * quadCornerOffset.x + axisY * quadCornerOffset.y;
+
+        float2 vertexPosition = pixelPosition + quadCornerOffset;
+        position.xy = vertexPosition.xy / float2(width, height) * 2.0f - 1.0f;
+        position.z = scatterPassIndex == 0 ? minVelocityLength : maxVelocityLength;
+        position.w = 1.0f;
+    }
     position.y = -position.y;
-
-    // // Perform early-exit when the length of velocity is less than or equal to 0.5 pixels.
-    // bool earlyExit = dot(VelocityPixels, VelocityPixels) * 16 * 16 <= 0.25f;
-	// if (earlyExit)
-	// {
-	// 	position = float4(vertexPositionOffset * 0.5f, 1.0f);
-	// 	return;
-	// }
-
-	// float  VelocityLengthPixelsSqr = dot(VelocityPixels, VelocityPixels);
-	// float  VelocityLengthPixelsInv = rsqrtFast(VelocityLengthPixelsSqr);
-	// float  VelocityLengthPixels = VelocityLengthPixelsSqr * VelocityLengthPixelsInv;
-	// float2 VelocityDir = VelocityPixels * VelocityLengthPixelsInv;
-
-	// // Project pixel corner on to dir. This is the oriented extent of a pixel.
-	// // 1/2 pixel because shape is swept tile
-	// // +1/2 pixel for conservative rasterization
-	// // 99% to give epsilon before neighbor is filled. Otherwise all neighbors lie on edges of quad when no velocity in their direction.
-	// // dot(abs(VelocityDir), float2(1, 1))
-	// float Extent = abs(VelocityDir.x) + abs(VelocityDir.y);
-	// CornerOffset *= float2(VelocityLengthPixels, 0) + Extent.xx * 0.99;
-
-	// // Orient along velocity direction
-	// float2 AxisX = VelocityDir;
-	// float2 AxisY = float2(-VelocityDir.y, VelocityDir.x);
-	// CornerOffset = AxisX * CornerOffset.x + AxisY * CornerOffset.y;
-
-	// OutPosition.xy = (SvPosition + CornerOffset - VelocityTile_ScreenPosToViewportBias) / VelocityTile_ScreenPosToViewportScale;
-	// // Depth ordered by velocity length
-	// OutPosition.z = (ScatterPass == VELOCITY_SCATTER_PASS_MAX) ? VelocityLengthPixels : length(MinMaxVelocityPixels.xy);
-	// OutPosition.z = clamp(OutPosition.z / VelocityTile_ScreenPosToViewportScale.x * 0.5, 0.0002, 0.999);
 }
 
 [shader("pixel")]

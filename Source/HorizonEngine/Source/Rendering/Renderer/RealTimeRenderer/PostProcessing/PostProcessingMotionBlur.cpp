@@ -103,11 +103,6 @@ namespace Horizon
                     graphicsPipelineState.rasterizationState.cullMode = RenderBackendRasterizationCullMode::None;
                     graphicsPipelineState.depthStencilState.depthTestEnable = true;
                     graphicsPipelineState.depthStencilState.depthWriteEnable = true;
-                    graphicsPipelineState.depthStencilState.depthCompareFunction = RenderBackendCompareOp::LessOrEqual;
-
-                    RenderBackendShaderArguments shaderArguments = {};
-                    shaderArguments.BindBufferCBV(0, this->GetCurrentPerFrameConstantBuffer());
-                    shaderArguments.BindTextureSRV(1, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(velocityRangeTexture)));
 
                     RenderBackendShaderHandle vertexShader = shaderLibrary->GetShader(ShaderID::MotionBlurVelocityDilationScatterVS);
                     RenderBackendShaderHandle pixelShader = shaderLibrary->GetShader(ShaderID::MotionBlurVelocityDilationScatterPS);
@@ -115,16 +110,35 @@ namespace Horizon
                     uint32 vertexCount = 6 * GMotionBlurVelocityDilationQuadCountPerInstance;
                     uint32 instanceCount = CeilDiv(tileCount, GMotionBlurVelocityDilationQuadCountPerInstance);
 
-                    commandList.Draw(
-                       vertexShader,
-                       pixelShader,
-                       graphicsPipelineState,
-                       shaderArguments,
-                       vertexCount,
-                       instanceCount,
-                       0,
-                       0,
-                       RenderBackendPrimitiveTopology::TriangleList);
+                    for (uint32 scatterPassIndex = 0; scatterPassIndex < 2; scatterPassIndex++)
+                    {
+                        if (scatterPassIndex == 0) // Min
+                        {
+                            graphicsPipelineState.colorBlendState.targetBlends[0].writeMask = RenderBackendColorComponentFlags::RGBA;
+                            graphicsPipelineState.depthStencilState.depthCompareFunction = RenderBackendCompareOp::Less;
+                        }
+                        else // Max
+                        {
+                            graphicsPipelineState.colorBlendState.targetBlends[0].writeMask = RenderBackendColorComponentFlags::B | RenderBackendColorComponentFlags::A;
+                            graphicsPipelineState.depthStencilState.depthCompareFunction = RenderBackendCompareOp::Greater;
+                        }
+
+                        RenderBackendShaderArguments shaderArguments = {};
+                        shaderArguments.BindBufferCBV(0, this->GetCurrentPerFrameConstantBuffer());
+                        shaderArguments.BindTextureSRV(1, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(velocityRangeTexture)));
+                        shaderArguments.PushConstants(0, float(scatterPassIndex));
+
+                        commandList.Draw(
+                            vertexShader,
+                            pixelShader,
+                            graphicsPipelineState,
+                            shaderArguments,
+                            vertexCount,
+                            instanceCount,
+                            0,
+                            0,
+                            RenderBackendPrimitiveTopology::TriangleList);
+                    }
                 };
             });
 
