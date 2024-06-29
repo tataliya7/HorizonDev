@@ -365,7 +365,7 @@ float3 DecodeNormalFromGBuffer(float3 n)
 
 float3 CalculatePerspectiveCorrectBarycentric(float4 clip0, float4 clip1, float4 clip2, float2 pixelNDC)
 {
-    float3 invW = 1.0 / (float3(clip0.w, clip1.w, clip2.w));
+    float3 invW = 1.0f / (float3(clip0.w, clip1.w, clip2.w));
 
     float2 ndc0 = clip0.xy * invW.x;
     float2 ndc1 = clip1.xy * invW.y;
@@ -376,7 +376,7 @@ float3 CalculatePerspectiveCorrectBarycentric(float4 clip0, float4 clip1, float4
     float3 ddy = float3(ndc2.x - ndc1.x, ndc0.x - ndc2.x, ndc1.x - ndc0.x) * invDet * invW;
 
     float2 deltaVec = pixelNDC - ndc0;
-    float interpolatedInvW = invW.x + deltaVec.x * dot(ddx, float3(1, 1, 1)) + deltaVec.y * dot(ddy, float3(1, 1, 1));
+    float interpolatedInvW = invW.x + deltaVec.x * dot(ddx, float3(1.0f, 1.0f, 1.0f)) + deltaVec.y * dot(ddy, float3(1.0f, 1.0f, 1.0f));
     float interpolatedW = rcp(interpolatedInvW);
 
     float3 bary;
