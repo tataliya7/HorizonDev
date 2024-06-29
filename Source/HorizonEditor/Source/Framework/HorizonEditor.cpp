@@ -81,6 +81,9 @@ namespace Horizon
         RenderGraphResourcePool* renderGraphResourcePool = renderSystem->GetRenderGraphResourcePool();
 
         InitializeImGuiContext();
+        
+        std::string usdPluginsPath = executablePath.append("usd").string();
+        USDInit(usdPluginsPath);
 
         RenderBackendSwapChainDesc swapChainDesc = {
             .width = window->GetWidth(),
@@ -114,8 +117,8 @@ namespace Horizon
         renderer = renderSystem->CreateRenderer();
 
         editorSceneManager = new EditorSceneManager();
+        Scene* scene = editorSceneManager->CreateScene("DefaultScene");
         {
-            Scene* scene = editorSceneManager->CreateScene("DefaultScene");
             editorSceneManager->SetActiveScene(scene);
 
             EntityHandle sunLight = scene->CreateEntity("SunLight");
@@ -150,6 +153,13 @@ namespace Horizon
             // SkyAtmosphereRenderObject* skyAtmosphere = new SkyAtmosphereRenderObject();
             // renderScene->AddSkyAtmosphere(skyAtmosphere);
         }
+
+        // TODO: Test New Sponaza
+        USDImportSettings settings = {};
+        settings.importMeshes = true;
+        settings.importMaterials = true;
+        //USDImport("../../../Assets/Test/NewSponza/NewSponza.usdc", &settings, false);
+        USDImport(scene, "../../../Assets/Test/Sponza/sponza.usdc", &settings, false);
 
         editorCamera.position = Vector3(0.0f, 0.0f, 5.0f);
         editorCamera.rotation = Vector3(0.0f, 0.0f, 0.0f);

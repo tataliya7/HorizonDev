@@ -197,7 +197,7 @@ int USDGetVersion()
     return PXR_VERSION;
 }
 
-void USDInit_DEPRECATED(const std::string& path)
+void USDInit(const std::string& path)
 {
     std::vector<std::string> pluginPaths = {};
     pluginPaths.push_back(path);

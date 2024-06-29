@@ -21,9 +21,9 @@ extern "C"
 
     int USDGetVersion();
 
-    [[deprecated]]
+    // [[deprecated]]
     void USDInit(const std::string& path);
 
-    bool USDImport(const char* filename, const struct USDImportSettings* settings, bool asyncTask);
-    bool USDExport(const char* filename, const struct USDImportSettings* settings, bool asyncTask);
+    bool USDImport(Horizon::Scene* scene, const char* filename, const struct USDImportSettings* settings, bool asyncTask);
+    bool USDExport(Horizon::Scene* scene, const char* filename, const struct USDImportSettings* settings, bool asyncTask);
 }
