@@ -219,28 +219,27 @@ namespace Horizon::USDImporter
             mesh.tangents[i] = Vector4(0, 0, 0, 0);
         }
 
-        uint32 deviceMask = ~0u;
-        RenderBackendInterface* renderBackend = GRenderBackend;
+        RenderBackend* renderBackend = HorizonEditor::GetInstance();
 
         RenderBackendBufferDesc vertexBuffer0Desc = RenderBackendBufferDesc::CreateByteAddress(mesh.numVertices * sizeof(Vector3));
-        mesh.vertexBuffers[0] = renderBackend->CreateBuffer(deviceMask, &vertexBuffer0Desc, mesh.positions.data(), "VertexPosition");
+        mesh.vertexBuffers[0] = renderBackend->CreateBuffer(&vertexBuffer0Desc, mesh.positions.data(), "VertexPosition");
 
         RenderBackendBufferDesc vertexBuffer1Desc = RenderBackendBufferDesc::CreateByteAddress(mesh.normals.size() * sizeof(Vector3));
-        mesh.vertexBuffers[1] = renderBackend->CreateBuffer(deviceMask, &vertexBuffer1Desc, mesh.normals.data(), "VertexNormal");
+        mesh.vertexBuffers[1] = renderBackend->CreateBuffer(&vertexBuffer1Desc, mesh.normals.data(), "VertexNormal");
 
         RenderBackendBufferDesc vertexBuffer2Desc = RenderBackendBufferDesc::CreateByteAddress(mesh.tangents.size() * sizeof(Vector4));
-        mesh.vertexBuffers[2] = renderBackend->CreateBuffer(deviceMask, &vertexBuffer2Desc, mesh.tangents.data(), "VertexTangent");
+        mesh.vertexBuffers[2] = renderBackend->CreateBuffer(&vertexBuffer2Desc, mesh.tangents.data(), "VertexTangent");
 
         if (!mesh.texCoords.empty())
         {
             RenderBackendBufferDesc vertexBuffer3Desc = RenderBackendBufferDesc::CreateByteAddress(mesh.texCoords.size() * sizeof(Vector2));
-            mesh.vertexBuffers[3] = renderBackend->CreateBuffer(deviceMask, &vertexBuffer3Desc, mesh.texCoords.data(), "VertexTexcoord");
+            mesh.vertexBuffers[3] = renderBackend->CreateBuffer(&vertexBuffer3Desc, mesh.texCoords.data(), "VertexTexcoord");
         }
 
         if (mesh.numIndices > 0)
         {
             RenderBackendBufferDesc indexBufferDesc = RenderBackendBufferDesc::CreateIndex(sizeof(uint32), mesh.numIndices);
-            mesh.indexBuffer = renderBackend->CreateBuffer(deviceMask, &indexBufferDesc, mesh.indices.data(), "IndexBuffer");
+            mesh.indexBuffer = renderBackend->CreateBuffer(&indexBufferDesc, mesh.indices.data(), "IndexBuffer");
         }
 
         MeshComponent::MeshSubset& subset = mesh.subsets.emplace_back();
@@ -300,7 +299,7 @@ namespace Horizon::USDImporter
         }
 
         RenderBackendBufferDesc materialIndexBufferDesc = RenderBackendBufferDesc::CreateByteAddress((mesh.numIndices / 3) * sizeof(uint32));
-        mesh.materialIndexBuffer = renderBackend->CreateBuffer(deviceMask, &materialIndexBufferDesc, mesh.materialIndices.data(), "MaterialIndexBuffer");
+        mesh.materialIndexBuffer = renderBackend->CreateBuffer(&materialIndexBufferDesc, mesh.materialIndices.data(), "MaterialIndexBuffer");
 
         ImportSkeletonBinding(prim);
     }
