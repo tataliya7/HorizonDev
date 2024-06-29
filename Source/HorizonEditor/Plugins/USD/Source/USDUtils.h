@@ -24,5 +24,5 @@ namespace UsdTokens
 
 namespace UsdToHorizon
 {
-    HE::Matrix4x4 ConvertMatrix(const pxr::GfMatrix4f& pxrMat4f);
+    Horizon::Matrix4x4 ConvertMatrix(const pxr::GfMatrix4f& pxrMat4f);
 }

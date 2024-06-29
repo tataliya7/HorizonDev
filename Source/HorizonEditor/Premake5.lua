@@ -76,7 +76,7 @@ project "HorizonEditor"
 
 group "EditorPlugins"
     include "Plugins/RenderDoc"
-    -- include "Plugins/USD"
+    include "Plugins/USD"
     -- include "Plugins/TimeOfDay"
     -- include "Plugins/LookDevStudio"
 group ""

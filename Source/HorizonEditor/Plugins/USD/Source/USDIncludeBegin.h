@@ -1,4 +1,3 @@
-
 #ifndef NOMINMAX
     #define NOMINMAX
 #endif
