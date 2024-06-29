@@ -3,6 +3,8 @@
 #include "RendererCommon.h"
 #include "RenderStatistics.h"
 
+#include "RendererPrivate.h" // TODO
+
 namespace Horizon
 {
     struct Material
@@ -187,7 +189,24 @@ namespace Horizon
 
     class GPUScene
     {
+    public:
+        // Geometries
+        uint32 numGeometries = 0;
+        uint64 geometryBufferSize = 0;
+        std::vector<GeometryShaderParameters> geometries;
 
+        RenderBackendBufferHandle geometryUploadBuffer;
+        RenderBackendBufferHandle geometryBuffer;
+
+        RenderBackendBufferHandle geometryInstanceUploadBuffer;
+        RenderBackendBufferHandle geometryInstanceBuffer;
+
+        // Materials
+        uint32 numMaterials = 0;
+        uint64 materialBufferSize = 0;
+        std::vector<MaterialShaderParameters> materials;
+        RenderBackendBufferHandle materialUploadBuffer;
+        RenderBackendBufferHandle materialBuffer;
     };
 
     enum class MeshType : uint8
@@ -256,6 +275,11 @@ namespace Horizon
 
         void GetRenderStatistics(RenderStatistics& statistics) const;
 
+        GPUScene* GetGPUScene() const
+        {
+            return gpuScene;
+        }
+
     private:
 
         std::vector<LightRenderObject*> lights;
@@ -268,7 +292,7 @@ namespace Horizon
 
         std::vector<LocalVolumetricFogRenderObject*> localVolumetricFogs;
 
-        GPUScene gpuScene;
+        GPUScene* gpuScene;
 
         //RayTracingScene rayTracingScene;
 
@@ -301,20 +325,6 @@ namespace Horizon
         RenderBackendBufferHandle transformUploadBuffer;
         RenderBackendBufferHandle previousTransformBuffer;
         RenderBackendBufferHandle transformBufferRowMajor;
-
-        // Geometries
-        // uint32 numGeometries = 0;
-        // uint64 geometryBufferSize = 0;
-        // std::vector<GeometryShaderParameters> geometries;
-        // RenderBackendBufferHandle geometryUploadBuffer;
-        // RenderBackendBufferHandle geometryBuffer;
-
-        // Materials
-        // uint32 numMaterials = 0;
-        // uint64 materialBufferSize = 0;
-        // std::vector<MaterialShaderParameters> materials;
-        // RenderBackendBufferHandle materialUploadBuffer;
-        // RenderBackendBufferHandle materialBuffer;
 
         // Lights
         // uint32 numLights;

@@ -2140,7 +2140,7 @@ namespace Horizon
         std::vector<D3D12DiscardResourceDesc> resourcesToDiscard;
 
         std::vector<D3D12_RESOURCE_BARRIER> barriers;
-        for (uint32 i = 0; i < command.numTransitions; i++)
+        for (uint32 i = 0; i < command.transitionCount; i++)
         {
             const auto& transition = command.transitions[i];
             assert(transition.stateBefore != transition.stateAfter);
@@ -2433,7 +2433,7 @@ namespace Horizon
     bool D3D12RenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandSetViewport& command)
     {
         D3D12_VIEWPORT viewports[RenderBackendMaxViewportCount];
-        for (uint32 i = 0; i < command.numViewports; i++)
+        for (uint32 i = 0; i < command.viewportCount; i++)
         {
             viewports[i] = {
                 .TopLeftX = command.viewports[i].x,
@@ -2445,14 +2445,14 @@ namespace Horizon
             };
         }
 
-        commandList->GetID3D12GraphicsCommandList6()->RSSetViewports(command.numViewports, viewports);
+        commandList->GetID3D12GraphicsCommandList6()->RSSetViewports(command.viewportCount, viewports);
         return true;
     }
 
     bool D3D12RenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandSetScissor& command)
     {
         D3D12_RECT scissors[RenderBackendMaxViewportCount];
-        for (uint32 i = 0; i < command.numScissors; i++)
+        for (uint32 i = 0; i < command.scissorCount; i++)
         {
             scissors[i] = {
                 .left   = command.scissors[i].left,
@@ -2462,7 +2462,7 @@ namespace Horizon
             };
         }
 
-        commandList->GetID3D12GraphicsCommandList6()->RSSetScissorRects(command.numScissors, scissors);
+        commandList->GetID3D12GraphicsCommandList6()->RSSetScissorRects(command.scissorCount, scissors);
         return true;
     }
 
@@ -2659,7 +2659,7 @@ namespace Horizon
         {
             commandList->GetID3D12GraphicsCommandList6()->ExecuteIndirect(
                 device->GetDrawIndirectCommandSignature(),
-                command.numDraws,
+                command.drawCount,
                 device->GetBuffer(command.argumentBuffer)->GetID3D12Resource(),
                 command.argumentBufferOffset,
                 nullptr,
@@ -2669,7 +2669,7 @@ namespace Horizon
         {
             commandList->GetID3D12GraphicsCommandList6()->ExecuteIndirect(
                 device->GetDrawIndexedIndirectCommandSignature(),
-                command.numDraws,
+                command.drawCount,
                 device->GetBuffer(command.argumentBuffer)->GetID3D12Resource(),
                 command.argumentBufferOffset,
                 nullptr,

@@ -1,5 +1,5 @@
 #include "RealTimeRenderer.h"
-#include "RealTimeRendererPrivate.h"
+//#include "RealTimeRendererPrivate.h"
 #include "PerFrameShaderParameters.h"
 #include "SkyAtmosphereRendering.h"
 

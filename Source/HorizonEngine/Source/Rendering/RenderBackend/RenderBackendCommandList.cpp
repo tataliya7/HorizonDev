@@ -80,12 +80,12 @@ namespace Horizon
 
     void RenderBackendCommandList::Transitions(
         const RenderBackendBarrier* transitions,
-        uint32 numTransitions)
+        uint32 transitionCount)
     {
-        RenderBackendCommandTransitions* command = AllocateCommand<RenderBackendCommandTransitions>(RenderBackendCommandTransitions::Type, sizeof(RenderBackendCommandTransitions) + numTransitions * sizeof(RenderBackendBarrier));
-        command->numTransitions = numTransitions;
+        RenderBackendCommandTransitions* command = AllocateCommand<RenderBackendCommandTransitions>(RenderBackendCommandTransitions::Type, sizeof(RenderBackendCommandTransitions) + transitionCount * sizeof(RenderBackendBarrier));
+        command->transitionCount = transitionCount;
         command->transitions = (RenderBackendBarrier*)(((uint8*)command) + sizeof(RenderBackendCommandTransitions));
-        memcpy(command->transitions, transitions, numTransitions * sizeof(RenderBackendBarrier));
+        memcpy(command->transitions, transitions, transitionCount * sizeof(RenderBackendBarrier));
     }
 
     void RenderBackendCommandList::BeginTimingQuery(
@@ -168,20 +168,20 @@ namespace Horizon
 
     void RenderBackendCommandList::SetViewports(
         const RenderBackendViewport* viewports,
-        uint32 numViewports)
+        uint32 viewportCount)
     {
         RenderBackendCommandSetViewport* command = AllocateCommand<RenderBackendCommandSetViewport>(RenderBackendCommandSetViewport::Type);
-        command->numViewports = numViewports;
-        memcpy(command->viewports, viewports, numViewports * sizeof(RenderBackendViewport));
+        command->viewportCount = viewportCount;
+        memcpy(command->viewports, viewports, viewportCount * sizeof(RenderBackendViewport));
     }
 
     void RenderBackendCommandList::SetScissors(
         const RenderBackendScissor* scissors,
-        uint32 numScissors)
+        uint32 scissorCount)
     {
         RenderBackendCommandSetScissor* command = AllocateCommand<RenderBackendCommandSetScissor>(RenderBackendCommandSetScissor::Type);
-        command->numScissors = numScissors;
-        memcpy(command->scissors, scissors, numScissors * sizeof(RenderBackendScissor));
+        command->scissorCount = scissorCount;
+        memcpy(command->scissors, scissors, scissorCount * sizeof(RenderBackendScissor));
     }
 
     void RenderBackendCommandList::SetStencilReference(
@@ -208,8 +208,8 @@ namespace Horizon
         RenderBackendShaderHandle pixelShader,
         const RenderBackendGraphicsPipelineState& graphicsPipelineState,
         const RenderBackendShaderArguments& shaderArguments,
-        uint32 numVertices,
-        uint32 numInstances,
+        uint32 vertexCount,
+        uint32 instanceCount,
         uint32 firstVertex,
         uint32 firstInstance,
         RenderBackendPrimitiveTopology topology)
@@ -218,8 +218,8 @@ namespace Horizon
         command->vertexShader = vertexShader;
         command->pixelShader = pixelShader;
         command->pipelineState = graphicsPipelineState;
-        command->draw.vertexCount = numVertices;
-        command->draw.instanceCount = numInstances;
+        command->draw.vertexCount = vertexCount;
+        command->draw.instanceCount = instanceCount;
         command->draw.firstVertex = firstVertex;
         command->draw.firstInstance = firstInstance;
         command->topology = topology;
@@ -233,8 +233,8 @@ namespace Horizon
         const RenderBackendGraphicsPipelineState& graphicsPipelineState,
         const RenderBackendShaderArguments& shaderArguments,
         RenderBackendBufferHandle indexBuffer,
-        uint32 numIndices,
-        uint32 numInstances,
+        uint32 indexCount,
+        uint32 instanceCount,
         uint32 firstIndex,
         int32 vertexOffset,
         uint32 firstInstance,
@@ -245,8 +245,8 @@ namespace Horizon
         command->pixelShader = pixelShader;
         command->pipelineState = graphicsPipelineState;
         command->indexBuffer = indexBuffer;
-        command->drawIndexed.indexCount = numIndices;
-        command->drawIndexed.instanceCount = numInstances;
+        command->drawIndexed.indexCount = indexCount;
+        command->drawIndexed.instanceCount = instanceCount;
         command->drawIndexed.firstIndex = firstIndex;
         command->drawIndexed.vertexOffset = vertexOffset;
         command->drawIndexed.firstInstance = firstInstance;
@@ -262,7 +262,7 @@ namespace Horizon
         RenderBackendBufferHandle indexBuffer,
         RenderBackendBufferHandle argumentBuffer,
         uint64 argumentBufferOffset,
-        uint32 numDraws,
+        uint32 drawCount,
         RenderBackendPrimitiveTopology topology)
     {
         RenderBackendCommandDrawIndirect* command = AllocateCommand<RenderBackendCommandDrawIndirect>(RenderBackendCommandDrawIndirect::Type);
@@ -272,7 +272,7 @@ namespace Horizon
         command->indexBuffer = indexBuffer;
         command->argumentBuffer = argumentBuffer;
         command->argumentBufferOffset = argumentBufferOffset;
-        command->numDraws = numDraws;
+        command->drawCount = drawCount;
         command->topology = topology;
         memcpy(&command->shaderArguments, &shaderArguments, sizeof(RenderBackendShaderArguments));
     }
@@ -285,7 +285,7 @@ namespace Horizon
         RenderBackendBufferHandle indexBuffer,
         RenderBackendBufferHandle argumentBuffer,
         uint64 argumentBufferOffset,
-        uint32 numDraws,
+        uint32 drawCount,
         RenderBackendPrimitiveTopology topology)
     {
         RenderBackendCommandDrawIndirect* command = AllocateCommand<RenderBackendCommandDrawIndirect>(RenderBackendCommandDrawIndirect::Type);
@@ -295,7 +295,7 @@ namespace Horizon
         command->indexBuffer = indexBuffer;
         command->argumentBuffer = argumentBuffer;
         command->argumentBufferOffset = argumentBufferOffset;
-        command->numDraws = numDraws;
+        command->drawCount = drawCount;
         command->topology = topology;
         memcpy(&command->shaderArguments, &shaderArguments, sizeof(RenderBackendShaderArguments));
     }
@@ -331,7 +331,7 @@ namespace Horizon
         const RenderBackendShaderArguments& shaderArguments,
         RenderBackendBufferHandle argumentBuffer,
         uint64 argumentBufferOffset,
-        uint32 numDraws,
+        uint32 drawCount,
         RenderBackendPrimitiveTopology topology)
     {
         RenderBackendCommandDispatchMeshIndirect* command = AllocateCommand<RenderBackendCommandDispatchMeshIndirect>(RenderBackendCommandDispatchMeshIndirect::Type);
@@ -342,7 +342,7 @@ namespace Horizon
         command->topology = topology;
         command->argumentBuffer = argumentBuffer;
         command->argumentBufferOffset = argumentBufferOffset;
-        command->numDraws = numDraws;
+        command->drawCount = drawCount;
         memcpy(&command->shaderArguments, &shaderArguments, sizeof(RenderBackendShaderArguments));
     }
 

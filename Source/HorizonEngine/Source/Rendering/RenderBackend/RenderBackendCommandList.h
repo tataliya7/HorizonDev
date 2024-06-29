@@ -57,7 +57,7 @@ namespace Horizon
 
         void ClearTextureUAV(const RenderBackendTextureUAVDesc& uav, const RenderBackendTextureClearValue& clearColor);
 
-        void Transitions(const RenderBackendBarrier* transitions, uint32 numTransitions);
+        void Transitions(const RenderBackendBarrier* transitions, uint32 transitionCount);
 
         void BeginDebugLabel(const char* name, const Vector4& color);
 
@@ -69,19 +69,19 @@ namespace Horizon
         void DispatchIndirect(RenderBackendShaderHandle computeShader, const RenderBackendShaderArguments& shaderArguments, RenderBackendBufferHandle argumentBuffer, uint64 argumentBufferOffset);
 
         // Graphics commands
-        void SetViewports(const RenderBackendViewport* viewports, uint32 numViewports);
-        void SetScissors(const RenderBackendScissor* scissors, uint32 numScissors);
+        void SetViewports(const RenderBackendViewport* viewports, uint32 viewportCount);
+        void SetScissors(const RenderBackendScissor* scissors, uint32 scissorCount);
         void SetStencilReference(uint32 stencilReference);
         void BeginRenderPass(const RenderBackendRenderPassInfo& renderPassInfo);
         void EndRenderPass();
-        void Draw(RenderBackendShaderHandle vertexShader, RenderBackendShaderHandle pixelShader, const RenderBackendGraphicsPipelineState& graphicsPipelineState, const RenderBackendShaderArguments& shaderArguments, uint32 numVertices, uint32 numInstances, uint32 firstVertex, uint32 firstInstance, RenderBackendPrimitiveTopology topology);
-        void DrawIndexed(RenderBackendShaderHandle vertexShader, RenderBackendShaderHandle pixelShader, const RenderBackendGraphicsPipelineState& graphicsPipelineState, const RenderBackendShaderArguments& shaderArguments, RenderBackendBufferHandle indexBuffer, uint32 numIndices, uint32 numInstances, uint32 firstIndex, int32 vertexOffset, uint32 firstInstance, RenderBackendPrimitiveTopology topology);
-        void DrawIndirect(RenderBackendShaderHandle vertexShader, RenderBackendShaderHandle pixelShader, const RenderBackendGraphicsPipelineState& graphicsPipelineState, const RenderBackendShaderArguments& shaderArguments, RenderBackendBufferHandle indexBuffer, RenderBackendBufferHandle argumentBuffer, uint64 argumentBufferOffset, uint32 numDraws, RenderBackendPrimitiveTopology topology);
-        void DrawIndexedIndirect(RenderBackendShaderHandle vertexShader, RenderBackendShaderHandle pixelShader, const RenderBackendGraphicsPipelineState& graphicsPipelineState, const RenderBackendShaderArguments& shaderArguments, RenderBackendBufferHandle indexBuffer, RenderBackendBufferHandle argumentBuffer, uint64 argumentBufferOffset, uint32 numDraws, RenderBackendPrimitiveTopology topology);
+        void Draw(RenderBackendShaderHandle vertexShader, RenderBackendShaderHandle pixelShader, const RenderBackendGraphicsPipelineState& graphicsPipelineState, const RenderBackendShaderArguments& shaderArguments, uint32 vertexCount, uint32 instanceCount, uint32 firstVertex, uint32 firstInstance, RenderBackendPrimitiveTopology topology);
+        void DrawIndexed(RenderBackendShaderHandle vertexShader, RenderBackendShaderHandle pixelShader, const RenderBackendGraphicsPipelineState& graphicsPipelineState, const RenderBackendShaderArguments& shaderArguments, RenderBackendBufferHandle indexBuffer, uint32 indexCount, uint32 instanceCount, uint32 firstIndex, int32 vertexOffset, uint32 firstInstance, RenderBackendPrimitiveTopology topology);
+        void DrawIndirect(RenderBackendShaderHandle vertexShader, RenderBackendShaderHandle pixelShader, const RenderBackendGraphicsPipelineState& graphicsPipelineState, const RenderBackendShaderArguments& shaderArguments, RenderBackendBufferHandle indexBuffer, RenderBackendBufferHandle argumentBuffer, uint64 argumentBufferOffset, uint32 drawCount, RenderBackendPrimitiveTopology topology);
+        void DrawIndexedIndirect(RenderBackendShaderHandle vertexShader, RenderBackendShaderHandle pixelShader, const RenderBackendGraphicsPipelineState& graphicsPipelineState, const RenderBackendShaderArguments& shaderArguments, RenderBackendBufferHandle indexBuffer, RenderBackendBufferHandle argumentBuffer, uint64 argumentBufferOffset, uint32 drawCount, RenderBackendPrimitiveTopology topology);
 
         // Mesh shading commands
         void DispatchMesh(RenderBackendShaderHandle amplificationShader, RenderBackendShaderHandle meshShader, RenderBackendShaderHandle pixelShader, const RenderBackendGraphicsPipelineState& graphicsPipelineState, const RenderBackendShaderArguments& shaderArguments, uint32 threadGroupCountX, uint32 threadGroupCountY, uint32 threadGroupCountZ, RenderBackendPrimitiveTopology topology);
-        void DispatchMeshIndirect(RenderBackendShaderHandle amplificationShader, RenderBackendShaderHandle meshShader, RenderBackendShaderHandle pixelShader, const RenderBackendGraphicsPipelineState& graphicsPipelineState, const RenderBackendShaderArguments& shaderArguments, RenderBackendBufferHandle argumentBuffer, uint64 argumentBufferOffset, uint32 numDraws, RenderBackendPrimitiveTopology topology);
+        void DispatchMeshIndirect(RenderBackendShaderHandle amplificationShader, RenderBackendShaderHandle meshShader, RenderBackendShaderHandle pixelShader, const RenderBackendGraphicsPipelineState& graphicsPipelineState, const RenderBackendShaderArguments& shaderArguments, RenderBackendBufferHandle argumentBuffer, uint64 argumentBufferOffset, uint32 drawCount, RenderBackendPrimitiveTopology topology);
 
         void BeginTimingQuery(RenderBackendTimingQueryHeapHandle timingQueryHeap, uint32 region);
         void EndTimingQuery(RenderBackendTimingQueryHeapHandle timingQueryHeap, uint32 region);

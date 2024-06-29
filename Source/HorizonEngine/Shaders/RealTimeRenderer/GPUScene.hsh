@@ -8,18 +8,18 @@ struct GPUSceneGeometryData
     int vertexBuffer3;
     int previousVertexBuffer0;
     int indexBuffer;
-    uint vertexCount;
-    uint indexCount;
     int materialBuffer;
     int materialIndexBuffer;
+    uint vertexCount;
+    uint indexCount;
 };
 
-GPUSceneGeometryData GetGPUSceneGeometryData(ByteAddressBuffer geometryDataBuffer, uint geometryID)
+GPUSceneGeometryData GetGPUSceneGeometryData(ByteAddressBuffer geometryBuffer, uint geometryID)
 {
     GPUSceneGeometryData geometryData = (GPUSceneGeometryData)0;
 
     uint offset = geometryID * sizeof(GPUSceneGeometryData);
-    geometryData = geometryDataBuffer.Load<GPUSceneGeometryData>(offset);
+    geometryData = geometryBuffer.Load<GPUSceneGeometryData>(offset);
 
     return geometryData;
 }
@@ -33,12 +33,12 @@ struct GPUSceneGeometryInstanceData
     uint geometryID;
 };
 
-GPUSceneGeometryInstanceData GetGPUSceneGeometryInstanceData(ByteAddressBuffer geometryInstanceDataBuffer, uint instanceID)
+GPUSceneGeometryInstanceData GetGPUSceneGeometryInstanceData(ByteAddressBuffer geometryInstanceBuffer, uint instanceID)
 {
     GPUSceneGeometryInstanceData instanceData = (GPUSceneGeometryInstanceData)0;
 
     uint offset = instanceID * sizeof(GPUSceneGeometryInstanceData);
-    instanceData = geometryInstanceDataBuffer.Load<GPUSceneGeometryInstanceData>(offset);
+    instanceData = geometryInstanceBuffer.Load<GPUSceneGeometryInstanceData>(offset);
 
     return instanceData;
 }

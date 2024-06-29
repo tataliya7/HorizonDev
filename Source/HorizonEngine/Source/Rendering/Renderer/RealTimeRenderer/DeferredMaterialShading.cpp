@@ -6,122 +6,120 @@ namespace Horizon
         RenderGraph& renderGraph,
         const SceneView& view)
     {
+        const GPUScene* gpuScene = view.scene->GetGPUScene();
+
+        renderGraph.AddPass("VisibilityBuffer", RenderGraphPassFlags::Graphics,
+            [&](RenderGraphBuilder& builder)
+            {
+                RealTimeRendererSceneTextures& sceneTextures = renderGraph.blackboard.Get<RealTimeRendererSceneTextures>();
+
+                RenderGraphTextureHandle vbuffer0 = sceneTextures.vbuffer0 = builder.WriteTexture(sceneTextures.vbuffer0, RenderBackendResourceState::RenderTarget);
+                RenderGraphTextureHandle vbuffer1 = sceneTextures.vbuffer1 = builder.WriteTexture(sceneTextures.vbuffer1, RenderBackendResourceState::RenderTarget);
+                RenderGraphTextureHandle sceneDepthTexture = sceneTextures.sceneDepthTexture = builder.WriteTexture(sceneTextures.sceneDepthTexture, RenderBackendResourceState::DepthStencil);
+
+                builder.BindRenderTarget(0, vbuffer0, RenderBackendRenderPassBeginningAccessType::Clear, RenderBackendRenderPassEndingAccessType::Preserve);
+                builder.BindRenderTarget(1, vbuffer1, RenderBackendRenderPassBeginningAccessType::Clear, RenderBackendRenderPassEndingAccessType::Preserve);
+                builder.BindDepthStencil(sceneDepthTexture, RenderBackendRenderPassBeginningAccessType::Clear, RenderBackendRenderPassEndingAccessType::Preserve);
+
+                return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
+                {
+                    RenderBackendViewport viewport(0.0f, 0.0f, float(renderResolution.width), float(renderResolution.height));
+                    commandList.SetViewports(&viewport, 1);
+
+                    RenderBackendScissor scissor(0, 0, renderResolution.width, renderResolution.height);
+                    commandList.SetScissors(&scissor, 1);
+
+                    RenderBackendShaderHandle vertexShader = shaderLibrary->GetShader(ShaderID::VisibilityBufferVS);
+                    RenderBackendShaderHandle pixelShader = shaderLibrary->GetShader(ShaderID::VisibilityBufferPS);
+
+                    RenderBackendGraphicsPipelineState graphicsPipelineState = {};
+                    graphicsPipelineState.rasterizationState.cullMode = RenderBackendRasterizationCullMode::Back;
+                    graphicsPipelineState.rasterizationState.fillMode = RenderBackendRasterizationFillMode::Solid;
+                    graphicsPipelineState.depthStencilState.depthTestEnable = true;
+                    graphicsPipelineState.depthStencilState.depthWriteEnable = true;
+                    graphicsPipelineState.depthStencilState.depthCompareFunction = RenderBackendCompareOp::GreaterOrEqual;
+
+                    // for (const auto& drawCallInfo : renderEngine->drawList)
+                    // {
+                    //     RenderBackendShaderArguments shaderArguments = {};
+                    //     shaderArguments.debugName = "VisibilityBuffer";
+                    //     shaderArguments.BindBufferCBV(0, this->GetCurrentPerFrameConstantBuffer());
+                    //     shaderArguments.BindBuffer(1, gpuScene->geometryBuffer);
+                    //     shaderArguments.BindBuffer(2, gpuScene->geometryInstanceBuffer);
+                    //     shaderArguments.PushConstants(0, (float)drawCallInfo.geometryIndex);
+                    //
+                    //     commandList.DrawIndexed(
+                    //         vertexShader,
+                    //         pixelShader,
+                    //         graphicsPipelineState,
+                    //         shaderArguments,
+                    //         drawCallInfo.indexBuffer,
+                    //         drawCallInfo.numIndices,
+                    //         1,
+                    //         drawCallInfo.firstIndex,
+                    //         0,
+                    //         0,
+                    //         RenderBackendPrimitiveTopology::TriangleList);
+                    // }
+                };
+            });
+    }
+
+    void RealTimeRenderer::RenderVisibilityBufferMeshShading(
+        RenderGraph& renderGraph,
+        const SceneView& view)
+    {
 #if 0
-        if (true)
-        {
-            renderGraph.AddPass("VisibilityBuffer", RenderGraphPassFlags::Graphics,
-                [&](RenderGraphBuilder& builder)
+        renderGraph.AddPass(std::format("VisibilityBuffer"), RenderGraphPassFlags::MeshShading,
+            [&](RenderGraphBuilder& builder)
+            {
+                auto& sceneTextures = renderGraph.blackboard.Get<RealTimeRendererSceneTextures>();
+
+                auto vbuffer0 = sceneTextures.vbuffer0 = builder.WriteTexture(sceneTextures.vbuffer0, RenderBackendResourceState::RenderTarget);
+                auto vbuffer1 = sceneTextures.vbuffer1 = builder.WriteTexture(sceneTextures.vbuffer1, RenderBackendResourceState::RenderTarget);
+                auto sceneDepthTexture = sceneTextures.sceneDepthTexture = builder.WriteTexture(sceneTextures.sceneDepthTexture, RenderBackendResourceState::DepthStencil);
+
+                builder.BindRenderTarget(0, vbuffer0, RenderBackendRenderPassBeginningAccessType::Clear, RenderBackendRenderPassEndingAccessType::Preserve);
+                builder.BindRenderTarget(1, vbuffer1, RenderBackendRenderPassBeginningAccessType::Clear, RenderBackendRenderPassEndingAccessType::Preserve);
+                builder.BindDepthStencil(sceneDepthTexture, RenderBackendRenderPassBeginningAccessType::Clear, RenderBackendRenderPassEndingAccessType::Preserve);
+
+                return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
                 {
-                    auto& sceneTextures = renderGraph.blackboard.Get<RealTimeRendererSceneTextures>();
+                    RenderBackendViewport viewport(0.0f, 0.0f, (float)renderResolution.width, (float)renderResolution.height);
+                    commandList.SetViewports(&viewport, 1);
 
-                    auto vbuffer0 = sceneTextures.vbuffer0 = builder.WriteTexture(sceneTextures.vbuffer0, RenderBackendResourceState::RenderTarget);
-                    auto vbuffer1 = sceneTextures.vbuffer1 = builder.WriteTexture(sceneTextures.vbuffer1, RenderBackendResourceState::RenderTarget);
-                    auto sceneDepthTexture = sceneTextures.sceneDepthTexture = builder.WriteTexture(sceneTextures.sceneDepthTexture, RenderBackendResourceState::DepthStencil);
+                    RenderBackendScissor scissor(0, 0, renderResolution.width, renderResolution.height);
+                    commandList.SetScissors(&scissor, 1);
 
-                    builder.BindColorTarget(0, vbuffer0, RenderBackendRenderPassBeginningAccessType::Clear, RenderBackendRenderPassEndingAccessType::Preserve);
-                    builder.BindColorTarget(1, vbuffer1, RenderBackendRenderPassBeginningAccessType::Clear, RenderBackendRenderPassEndingAccessType::Preserve);
-                    builder.BindDepthTarget(sceneDepthTexture, RenderBackendRenderPassBeginningAccessType::Clear, RenderBackendRenderPassEndingAccessType::Preserve);
+                    RenderBackendShaderHandle graphicsShader = shaderLibrary->GetShader(ShaderID::VBufferMeshlet);
 
-                    return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
+                    RenderBackendGraphicsPipelineState graphicsPipelineState = {};
+                    graphicsPipelineState.rasterizationState.cullMode = RenderBackendRasterizationCullMode::Back;
+                    graphicsPipelineState.rasterizationState.fillMode = RenderBackendRasterizationFillMode::Solid;
+                    graphicsPipelineState.depthStencilState.depthTestEnable = true;
+                    graphicsPipelineState.depthStencilState.depthWriteEnable = true;
+                    graphicsPipelineState.depthStencilState.depthCompareFunction = RenderBackendCompareOp::GreaterOrEqual;
+
+                    for (const auto& drawCallInfo : renderEngine->drawList)
                     {
-                        RenderBackendViewport viewport(0.0f, 0.0f, (float)renderResolution.width, (float)renderResolution.height);
-                        commandList.SetViewports(&viewport, 1);
+                        RenderBackendShaderArguments shaderArguments = {};
+                        shaderArguments.BindBufferCBV(0, this->GetCurrentPerFrameConstantBuffer());
+                        shaderArguments.BindBuffer(1, renderEngine->geometryBuffer, drawCallInfo.geometryIndex * sizeof(GeometryShaderParameters));
+                        shaderArguments.BindBuffer(2, renderEngine->materialBuffer, 0);
+                        shaderArguments.PushConstants(0, (float)drawCallInfo.geometryIndex);
 
-                        RenderBackendScissor scissor(0, 0, renderResolution.width, renderResolution.height);
-                        commandList.SetScissors(&scissor, 1);
-
-                        RenderBackendShaderHandle vertexShader = shaderLibrary->GetShader(ShaderID::VisibilityBufferVS);
-                        RenderBackendShaderHandle pixelShader = shaderLibrary->GetShader(ShaderID::VisibilityBufferPS);
-
-                        RenderBackendGraphicsPipelineState graphicsPipelineState = {};
-                        graphicsPipelineState.rasterizationState.cullMode = RenderBackendRasterizationCullMode::Back;
-                        graphicsPipelineState.rasterizationState.fillMode = RenderBackendRasterizationFillMode::Solid;
-                        graphicsPipelineState.depthStencilState.depthTestEnable = true;
-                        graphicsPipelineState.depthStencilState.depthWriteEnable = true;
-                        graphicsPipelineState.depthStencilState.depthCompareFunction = RenderBackendCompareOp::GreaterOrEqual;
-
-                        for (const auto& drawCallInfo : renderEngine->drawList)
-                        {
-                            RenderBackendShaderArguments shaderArguments = {};
-                            shaderArguments.debugName = "VisibilityBuffer";
-                            shaderArguments.BindBufferCBV(0, this->GetCurrentPerFrameConstantBuffer());
-                            shaderArguments.BindBuffer(1, renderEngine->geometryBuffer, drawCallInfo.geometryIndex * sizeof(GeometryShaderParameters));
-                            shaderArguments.BindBuffer(2, renderEngine->materialBuffer, 0);
-                            shaderArguments.BindBuffer(3, drawCallInfo.vertexBuffers[0], 0);
-                            shaderArguments.BindBuffer(4, drawCallInfo.vertexBuffers[1], 0);
-                            shaderArguments.BindBuffer(5, drawCallInfo.vertexBuffers[2], 0);
-                            shaderArguments.BindBuffer(6, drawCallInfo.vertexBuffers[3], 0);
-                            shaderArguments.PushConstants(0, (float)drawCallInfo.geometryIndex);
-
-                            commandList.DrawIndexed(
-                                vertexShader,
-                                pixelShader,
-                                graphicsPipelineState,
-                                shaderArguments,
-                                drawCallInfo.indexBuffer,
-                                drawCallInfo.numIndices,
-                                1,
-                                drawCallInfo.firstIndex,
-                                0,
-                                0,
-                                RenderBackendPrimitiveTopology::TriangleList);
-                        }
-                    };
-                });
-        }
-        else
-        {
-            renderGraph.AddPass(std::format("VisibilityBuffer"), RenderGraphPassFlags::MeshShading,
-                [&](RenderGraphBuilder& builder)
-                {
-                    auto& sceneTextures = renderGraph.blackboard.Get<RealTimeRendererSceneTextures>();
-
-                    auto vbuffer0 = sceneTextures.vbuffer0 = builder.WriteTexture(sceneTextures.vbuffer0, RenderBackendResourceState::RenderTarget);
-                    auto vbuffer1 = sceneTextures.vbuffer1 = builder.WriteTexture(sceneTextures.vbuffer1, RenderBackendResourceState::RenderTarget);
-                    auto sceneDepthTexture = sceneTextures.sceneDepthTexture = builder.WriteTexture(sceneTextures.sceneDepthTexture, RenderBackendResourceState::DepthStencil);
-
-                    builder.BindColorTarget(0, vbuffer0, RenderBackendRenderPassBeginningAccessType::Clear, RenderBackendRenderPassEndingAccessType::Preserve);
-                    builder.BindColorTarget(1, vbuffer1, RenderBackendRenderPassBeginningAccessType::Clear, RenderBackendRenderPassEndingAccessType::Preserve);
-                    builder.BindDepthTarget(sceneDepthTexture, RenderBackendRenderPassBeginningAccessType::Clear, RenderBackendRenderPassEndingAccessType::Preserve);
-
-                    return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
-                    {
-                        RenderBackendViewport viewport(0.0f, 0.0f, (float)renderResolution.width, (float)renderResolution.height);
-                        commandList.SetViewports(&viewport, 1);
-
-                        RenderBackendScissor scissor(0, 0, renderResolution.width, renderResolution.height);
-                        commandList.SetScissors(&scissor, 1);
-
-                        RenderBackendShaderHandle graphicsShader = shaderLibrary->GetShader(ShaderID::VBufferMeshlet);
-
-                        RenderBackendGraphicsPipelineState graphicsPipelineState = {};
-                        graphicsPipelineState.rasterizationState.cullMode = RenderBackendRasterizationCullMode::Back;
-                        graphicsPipelineState.rasterizationState.fillMode = RenderBackendRasterizationFillMode::Solid;
-                        graphicsPipelineState.depthStencilState.depthTestEnable = true;
-                        graphicsPipelineState.depthStencilState.depthWriteEnable = true;
-                        graphicsPipelineState.depthStencilState.depthCompareFunction = RenderBackendCompareOp::GreaterOrEqual;
-
-                        for (const auto& drawCallInfo : renderEngine->drawList)
-                        {
-                            RenderBackendShaderArguments shaderArguments = {};
-                            shaderArguments.BindBufferCBV(0, this->GetCurrentPerFrameConstantBuffer());
-                            shaderArguments.BindBuffer(1, renderEngine->geometryBuffer, drawCallInfo.geometryIndex * sizeof(GeometryShaderParameters));
-                            shaderArguments.BindBuffer(2, renderEngine->materialBuffer, 0);
-                            shaderArguments.PushConstants(0, (float)drawCallInfo.geometryIndex);
-
-                            uint32 meshletCount = 1;
-                            commandList.DisptachMesh(
-                                graphicsShader,
-                                graphicsPipelineState,
-                                shaderArguments,
-                                meshletCount,
-                                1,
-                                1,
-                                RenderBackendPrimitiveTopology::TriangleList);
-                        }
-                    };
-                });
-        }
+                        uint32 meshletCount = 1;
+                        commandList.DisptachMesh(
+                            graphicsShader,
+                            graphicsPipelineState,
+                            shaderArguments,
+                            meshletCount,
+                            1,
+                            1,
+                            RenderBackendPrimitiveTopology::TriangleList);
+                    }
+                };
+            });
 #endif
     }
 

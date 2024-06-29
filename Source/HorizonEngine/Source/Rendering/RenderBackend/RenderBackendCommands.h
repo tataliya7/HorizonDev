@@ -101,7 +101,7 @@ namespace Horizon
 
     struct RenderBackendCommandTransitions : RenderBackendCommand<RenderBackendCommandType::Transitions, RenderBackendCommandQueueType::All>
     {
-        uint32 numTransitions;
+        uint32 transitionCount;
         RenderBackendBarrier* transitions;
     };
 
@@ -145,13 +145,13 @@ namespace Horizon
 
     struct RenderBackendCommandSetViewport : RenderBackendCommand<RenderBackendCommandType::SetViewport, RenderBackendCommandQueueType::Graphics>
     {
-        uint32 numViewports;
+        uint32 viewportCount;
         RenderBackendViewport viewports[RenderBackendMaxViewportCount];
     };
 
     struct RenderBackendCommandSetScissor : RenderBackendCommand<RenderBackendCommandType::SetScissor, RenderBackendCommandQueueType::Graphics>
     {
-        uint32 numScissors;
+        uint32 scissorCount;
         RenderBackendScissor scissors[RenderBackendMaxViewportCount];
     };
 
@@ -207,7 +207,7 @@ namespace Horizon
         RenderBackendBufferHandle indexBuffer;
         RenderBackendBufferHandle argumentBuffer;
         uint64 argumentBufferOffset;
-        uint32 numDraws;
+        uint32 drawCount;
         RenderBackendPrimitiveTopology topology;
     };
 
@@ -234,7 +234,7 @@ namespace Horizon
         RenderBackendPrimitiveTopology topology;
         RenderBackendBufferHandle argumentBuffer;
         uint64 argumentBufferOffset;
-        uint32 numDraws;
+        uint32 drawCount;
     };
 
     struct RenderBackendCommandBeginDebugLabel: RenderBackendCommand<RenderBackendCommandType::BeginDebugLabel, RenderBackendCommandQueueType::All>

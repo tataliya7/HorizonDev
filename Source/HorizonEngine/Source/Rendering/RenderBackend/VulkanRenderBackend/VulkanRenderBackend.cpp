@@ -4757,7 +4757,7 @@ namespace Horizon
 
     bool VulkanRenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandTransitions& command)
     {
-        for (uint32 i = 0; i < command.numTransitions; i++)
+        for (uint32 i = 0; i < command.transitionCount; i++)
         {
             const auto& transition = command.transitions[i];
             assert(transition.stateBefore != transition.stateAfter);
@@ -5296,7 +5296,7 @@ namespace Horizon
                 commandBuffer,
                 device->GetBuffer(command.argumentBuffer)->handle,
                 command.argumentBufferOffset,
-                command.numDraws,
+                command.drawCount,
                 sizeof(VkDrawIndirectCommand));
         }
         else
@@ -5305,7 +5305,7 @@ namespace Horizon
                 commandBuffer,
                 device->GetBuffer(command.argumentBuffer)->handle,
                 command.argumentBufferOffset,
-                command.numDraws,
+                command.drawCount,
                 sizeof(VkDrawIndexedIndirectCommand));
         }
         return true;
@@ -5351,21 +5351,21 @@ namespace Horizon
     bool VulkanRenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandSetScissor& command)
     {
         VkRect2D scissors[RenderBackendMaxViewportCount];
-        for (uint32 i = 0; i < command.numScissors; i++)
+        for (uint32 i = 0; i < command.scissorCount; i++)
         {
             scissors[i] = {
                 .offset = {.x = command.scissors[i].left, .y = command.scissors[i].top },
                 .extent = {.width = command.scissors[i].width, .height = command.scissors[i].height }
             };
         }
-        vkCmdSetScissor(commandBuffer, 0, command.numScissors, scissors);
+        vkCmdSetScissor(commandBuffer, 0, command.scissorCount, scissors);
         return true;
     }
 
     bool VulkanRenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandSetViewport& command)
     {
         VkViewport viewports[RenderBackendMaxViewportCount];
-        for (uint32 i = 0; i < command.numViewports; i++)
+        for (uint32 i = 0; i < command.viewportCount; i++)
         {
             viewports[i] = {
                 .x = command.viewports[i].x,
@@ -5376,7 +5376,7 @@ namespace Horizon
                 .maxDepth = command.viewports[i].maxDepth
             };
         }
-        vkCmdSetViewport(commandBuffer, 0, command.numViewports, viewports);
+        vkCmdSetViewport(commandBuffer, 0, command.viewportCount, viewports);
         return true;
     }
 

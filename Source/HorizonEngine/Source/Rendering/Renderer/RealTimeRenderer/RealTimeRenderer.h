@@ -198,6 +198,10 @@ namespace Horizon
             RenderGraph& renderGraph,
             const SceneView& view);
 
+        void RenderVisibilityBufferMeshShading(
+            RenderGraph& renderGraph,
+            const SceneView& view);
+
         void RenderGBuffer(
             RenderGraph& renderGraph,
             const SceneView& view);
