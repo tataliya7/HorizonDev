@@ -146,6 +146,14 @@ namespace Horizon
 
     };
 
+    enum class MeshType : uint8
+    {
+        Opaque,
+        Translucency,
+        EditorSelection,
+        EditorPickingProxy,
+    };
+
     class RenderScene
     {
     public:
@@ -232,14 +240,6 @@ namespace Horizon
             uint32 numIndices;
             uint32 firstIndex;
             uint32 geometryIndex;
-        };
-
-        enum class MeshType
-        {
-            Opaque,
-            Translucency,
-            EditorSelection,
-            EditorPickingProxy,
         };
 
         std::vector<DrawCallInfo> drawList;
