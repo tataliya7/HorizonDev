@@ -1236,7 +1236,12 @@ namespace Horizon
             }
         }
 
-        void PushConstants(uint32 slot, float value)
+        void BindScalar(uint32 slot, uint32 value)
+        {
+            data[slot] = float(value);
+        }
+
+        void BindScalar(uint32 slot, float value)
         {
             data[slot] = value;
         }

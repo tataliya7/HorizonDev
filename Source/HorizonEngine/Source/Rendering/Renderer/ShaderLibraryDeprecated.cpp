@@ -125,7 +125,7 @@ namespace Horizon
         }
         {
             ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/BuildHZB.hsm", "BuildHZBCS");
-            shaderLibrary->LoadShader(ShaderID::BuildHZB, shaderDesc);
+            shaderLibrary->LoadShader(ShaderID::BuildDepthPyramid, shaderDesc);
         }
         {
             ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/GBuffer.hsm", "GBufferCS");

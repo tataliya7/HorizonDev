@@ -152,9 +152,9 @@ namespace Horizon
 
             RenderBackendShaderArguments shaderArguments = {};
             shaderArguments.BindTextureSRV(0, RenderBackendTextureSRVDesc::Create(textureHandle));
-            shaderArguments.PushConstants(0, float(mipLevel - 1));
-            shaderArguments.PushConstants(1, float(width));
-            shaderArguments.PushConstants(2, float(height));
+            shaderArguments.BindScalar(0, float(mipLevel - 1));
+            shaderArguments.BindScalar(1, float(width));
+            shaderArguments.BindScalar(2, float(height));
 
             RenderBackendGraphicsPipelineState graphicsPipelineState = {};
 

@@ -26,12 +26,11 @@ namespace Horizon
         Instance = nullptr;
     }
 
-    bool HorizonEditor::Init()
+    bool HorizonEditor::Init(int argc, char** argv)
     {
-//        // Initialize path to executable
-//        executablePath = argv[0];
-//        executableDirectory = executablePath.parent_path();
-//
+        // Initialize path to executable
+        executablePath = argv[0];
+
         // Initialize logging system
         CreateConsoleLogger_Deprecated();
 //
@@ -81,7 +80,7 @@ namespace Horizon
         RenderGraphResourcePool* renderGraphResourcePool = renderSystem->GetRenderGraphResourcePool();
 
         InitializeImGuiContext();
-        
+
         std::string usdPluginsPath = executablePath.append("usd").string();
         USDInit(usdPluginsPath);
 
@@ -395,11 +394,11 @@ namespace Horizon
     }
 }
 
-int HorizonEditorMain()
+int HorizonEditorMain(int argc, char** argv)
 {
     int exitCode = EXIT_SUCCESS;
     Horizon::HorizonEditor* editor = new Horizon::HorizonEditor();
-    bool result = editor->Init();
+    bool result = editor->Init(argc, argv);
     if (result)
     {
         exitCode = editor->Run();

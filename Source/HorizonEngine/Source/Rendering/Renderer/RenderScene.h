@@ -53,6 +53,20 @@ namespace Horizon
 
     class MeshRenderObject
     {
+    public:
+
+        bool castDynamicShadow : 1;
+
+        Matrix4x4 localToWorldMatrix;
+
+        RenderBackendBufferHandle vertexBuffers[4];
+        RenderBackendBufferHandle indexBuffer;
+        RenderBackendBufferHandle materialBuffer;
+        RenderBackendBufferHandle materialIndexBuffer;
+
+        std::string name;
+        float cullDistance;
+    private:
 
     };
 
@@ -207,14 +221,6 @@ namespace Horizon
         std::vector<MaterialShaderParameters> materials;
         RenderBackendBufferHandle materialUploadBuffer;
         RenderBackendBufferHandle materialBuffer;
-    };
-
-    enum class MeshType : uint8
-    {
-        Opaque,
-        Translucency,
-        EditorSelection,
-        EditorPickingProxy,
     };
 
     class RenderScene

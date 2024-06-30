@@ -52,7 +52,7 @@ namespace Horizon
             RenderBackendShaderArguments shaderArguments = {};
             shaderArguments.BindTextureSRV(0, RenderBackendTextureSRVDesc::Create(cubemap));
             shaderArguments.BindTextureUAV(1, RenderBackendTextureUAVDesc::Create(cubemap, mipLevel));
-            shaderArguments.PushConstants(0, (float)(mipLevel - 1));
+            shaderArguments.BindScalar(0, (float)(mipLevel - 1));
 
             commandList.Dispatch(
                 downsampleCubemapCS,
@@ -80,7 +80,7 @@ namespace Horizon
         RenderBackendShaderArguments shaderArguments = {};
         shaderArguments.BindTextureSRV(0, RenderBackendTextureSRVDesc::Create(environmentMap));
         shaderArguments.BindTextureUAV(1, RenderBackendTextureUAVDesc::Create(irradianceEnvironmentMap, 0));
-        shaderArguments.PushConstants(0, (float)mipLevel);
+        shaderArguments.BindScalar(0, (float)mipLevel);
 
         commandList.Dispatch(
             computeEnvironmentIrradianceCS,
@@ -103,7 +103,7 @@ namespace Horizon
         RenderBackendShaderArguments shaderArguments = {};
         shaderArguments.BindTextureSRV(0, RenderBackendTextureSRVDesc::Create(environmentMap));
         shaderArguments.BindBuffer(1, irradianceEnvironmentMapSH);
-        shaderArguments.PushConstants(0, (float)sourceMipLevel);
+        shaderArguments.BindScalar(0, (float)sourceMipLevel);
 
         commandList.Dispatch(
             computeEnvironmentIrradianceCS,
@@ -131,7 +131,7 @@ namespace Horizon
             RenderBackendShaderArguments shaderArguments = {};
             shaderArguments.BindTextureSRV(0, RenderBackendTextureSRVDesc::Create(environmentMap));
             shaderArguments.BindTextureUAV(1, RenderBackendTextureUAVDesc::Create(filteredEnvironmentMap, mipLevel));
-            shaderArguments.PushConstants(0, roughness);
+            shaderArguments.BindScalar(0, roughness);
 
             commandList.Dispatch(
                 filterEnvironmentMapCS,

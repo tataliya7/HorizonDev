@@ -64,6 +64,7 @@
          RenderBackendBufferHandle vertexBuffers[4];
          RenderBackendBufferHandle indexBuffer;
          RenderBackendBufferHandle materialIndexBuffer;
+         int previousTransformIndex = -1;
 
          int materialBufferOffset = 0;
 
@@ -71,14 +72,13 @@
          //RenderBackendBufferHandle transformTransposeBuffer;
          //RenderBackendBufferHandle previousTransformBuffer;
 
-         RenderBackendBufferHandle boneIndexBuffer;
-         RenderBackendBufferHandle boneWeightBuffer;
-         RenderBackendBufferHandle boneTransformBuffer;
+         //RenderBackendBufferHandle boneIndexBuffer;
+         //RenderBackendBufferHandle boneWeightBuffer;
+         //RenderBackendBufferHandle boneTransformBuffer;
 
          //RayTracingGeometry rayTracingGeometry;
 
          int64 updateCounter = -100;
-         int previousTransformIndex = -1;
 
          bool doubleSided = true;
 

@@ -12,12 +12,14 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
 
     LocalFree(argv);
 
-    int exit = HorizonEditorMain();
-    return exit;
+    //int exit = HorizonEditorMain();
+    //return exit;
+
+    return 0;
 }
 
-int main()
+int main(int argc, char** argv)
 {
-    int exit = HorizonEditorMain();
+    int exit = HorizonEditorMain(argc, argv);
     return exit;
 }

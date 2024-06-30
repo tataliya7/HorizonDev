@@ -126,7 +126,7 @@ namespace Horizon
                         RenderBackendShaderArguments shaderArguments = {};
                         shaderArguments.BindBufferCBV(0, this->GetCurrentPerFrameConstantBuffer());
                         shaderArguments.BindTextureSRV(1, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(velocityRangeTexture)));
-                        shaderArguments.PushConstants(0, float(scatterPassIndex));
+                        shaderArguments.BindScalar(0, float(scatterPassIndex));
 
                         commandList.Draw(
                             vertexShader,

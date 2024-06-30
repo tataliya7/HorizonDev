@@ -96,9 +96,9 @@ namespace Horizon
 
                     //shaderArguments.BindTextureSRV(10, RenderBackendTextureSRVDesc::Create(testTexture));
 
-                    shaderArguments.PushConstants(0, (float)flags);
-                    shaderArguments.PushConstants(1, chromaticAberrationScale.x);
-                    shaderArguments.PushConstants(2, chromaticAberrationScale.y);
+                    shaderArguments.BindScalar(0, (float)flags);
+                    shaderArguments.BindScalar(1, chromaticAberrationScale.x);
+                    shaderArguments.BindScalar(2, chromaticAberrationScale.y);
 
                     RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::ToneMapping);
 

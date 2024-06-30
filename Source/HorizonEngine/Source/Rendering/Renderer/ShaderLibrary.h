@@ -34,7 +34,7 @@ namespace Horizon
         VisibilityBufferMeshShadingMS,
         VisibilityBufferMeshShadingPS,
         GBuffer,
-        BuildHZB,
+        BuildDepthPyramid,
         CascadedShadowMapVS,
         CascadedShadowMapPS,
         LocalLightShadowsVS,

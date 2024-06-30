@@ -89,7 +89,7 @@ namespace Horizon
         HorizonEditor& operator=(HorizonEditor&&) = delete;
         HorizonEditor& operator=(const HorizonEditor&) = delete;
 
-        bool Init();
+        bool Init(int argc, char** argv);
         void Exit();
         int Run();
         void Tick();
@@ -285,4 +285,4 @@ namespace Horizon::UI
     extern void PopID();
 }
 
-extern int HorizonEditorMain();
+extern int HorizonEditorMain(int argc, char** argv);

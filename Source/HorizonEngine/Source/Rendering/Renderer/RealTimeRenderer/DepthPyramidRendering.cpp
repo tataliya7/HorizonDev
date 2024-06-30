@@ -11,20 +11,20 @@ namespace Horizon
         RenderGraphTextureHandle& closestHZBTexture,
         RenderGraphTextureHandle& furthestHZBTexture)
     {
-        auto& sceneTextures = renderGraph.blackboard.Get<RealTimeRendererSceneTextures>();
+        RealTimeRendererSceneTextures& sceneTextures = renderGraph.blackboard.Get<RealTimeRendererSceneTextures>();
 
         renderGraph.AddPass(
-            std::format("BuildHZB-Closets&Furthest (Compute, {}x{})", hzbWidth, hzbHeight),
+            std::format("BuildDepthPyramid-Closets&Furthest (Compute, {}x{})", hzbWidth, hzbHeight),
             RenderGraphPassFlags::Compute,
             [&](RenderGraphBuilder& builder)
             {
-                auto sceneDepthTexture = builder.ReadTexture(sceneTextures.sceneDepthTexture, RenderBackendResourceState::ShaderResource);
+                RenderGraphTextureHandle sceneDepthTexture = builder.ReadTexture(sceneTextures.sceneDepthTexture, RenderBackendResourceState::ShaderResource);
                 closestHZBTexture = builder.WriteTexture(closestHZBTexture, RenderBackendResourceState::UnorderedAccess);
                 furthestHZBTexture = builder.WriteTexture(furthestHZBTexture, RenderBackendResourceState::UnorderedAccess);
 
                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
                 {
-                    RenderBackendShaderHandle buildHZBCS = shaderLibrary->GetShader(ShaderID::BuildHZB);
+                    RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::BuildDepthPyramid);
 
                     // Build first mip
                     {
@@ -39,15 +39,15 @@ namespace Horizon
                         shaderArguments.BindTextureSRV(0, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(sceneDepthTexture)));
                         shaderArguments.BindTextureUAV(1, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(closestHZBTexture), dstMip));
                         shaderArguments.BindTextureUAV(2, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(furthestHZBTexture), dstMip));
-                        shaderArguments.PushConstants(0, invSrcSize.x);
-                        shaderArguments.PushConstants(1, invSrcSize.y);
+                        shaderArguments.BindScalar(0, invSrcSize.x);
+                        shaderArguments.BindScalar(1, invSrcSize.y);
 
                         uint32 threadGroupCountX = CeilDiv(dstSize.x, 8);
                         uint32 threadGroupCountY = CeilDiv(dstSize.y, 8);
                         uint32 threadGroupCountZ = 1;
 
                         commandList.Dispatch(
-                            buildHZBCS,
+                            computeShader,
                             shaderArguments,
                             threadGroupCountX,
                             threadGroupCountY,
@@ -73,15 +73,15 @@ namespace Horizon
                         shaderArguments.BindTextureSRV(0, RenderBackendTextureSRVDesc::CreateForMipLevel(registry.GetRenderBackendTextureHandle(furthestHZBTexture), mipLevel - 1));
                         shaderArguments.BindTextureUAV(1, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(closestHZBTexture), dstMip));
                         shaderArguments.BindTextureUAV(2, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(furthestHZBTexture), dstMip));
-                        shaderArguments.PushConstants(0, invSrcSize.x);
-                        shaderArguments.PushConstants(1, invSrcSize.y);
+                        shaderArguments.BindScalar(0, invSrcSize.x);
+                        shaderArguments.BindScalar(1, invSrcSize.y);
 
                         uint32 threadGroupCountX = CeilDiv(dstSize.x, 8);
                         uint32 threadGroupCountY = CeilDiv(dstSize.y, 8);
                         uint32 threadGroupCountZ = 1;
 
                         commandList.Dispatch(
-                            buildHZBCS,
+                            computeShader,
                             shaderArguments,
                             threadGroupCountX,
                             threadGroupCountY,

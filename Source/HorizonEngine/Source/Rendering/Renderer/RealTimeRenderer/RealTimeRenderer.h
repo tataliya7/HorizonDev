@@ -1,6 +1,7 @@
 #pragma once
 
 #include "RealTimeRendererCommon.h"
+#include "GeometryRendering.h"
 #include "PostProcessing/PostProcessing.h"
 
 namespace Horizon
@@ -449,6 +450,9 @@ namespace Horizon
         float materialTextureMipLodBias;
 
         float preExposure = 1.0f;
+
+        std::array<GeometryPassDrawCallList, GeometryPassType::Count> geometryPassDrawCallLists;
+        void DispatchGeometryOpaquePassDrawCalls(RenderBackendCommandList& commandList);
 
         struct AutoExposureData
         {

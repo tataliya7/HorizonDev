@@ -6,8 +6,6 @@ namespace Horizon
         RenderGraph& renderGraph,
         const SceneView& view)
     {
-        const GPUScene* gpuScene = view.scene->GetGPUScene();
-
         renderGraph.AddPass("VisibilityBuffer", RenderGraphPassFlags::Graphics,
             [&](RenderGraphBuilder& builder)
             {
@@ -29,38 +27,7 @@ namespace Horizon
                     RenderBackendScissor scissor(0, 0, renderResolution.width, renderResolution.height);
                     commandList.SetScissors(&scissor, 1);
 
-                    RenderBackendShaderHandle vertexShader = shaderLibrary->GetShader(ShaderID::VisibilityBufferVS);
-                    RenderBackendShaderHandle pixelShader = shaderLibrary->GetShader(ShaderID::VisibilityBufferPS);
-
-                    RenderBackendGraphicsPipelineState graphicsPipelineState = {};
-                    graphicsPipelineState.rasterizationState.cullMode = RenderBackendRasterizationCullMode::Back;
-                    graphicsPipelineState.rasterizationState.fillMode = RenderBackendRasterizationFillMode::Solid;
-                    graphicsPipelineState.depthStencilState.depthTestEnable = true;
-                    graphicsPipelineState.depthStencilState.depthWriteEnable = true;
-                    graphicsPipelineState.depthStencilState.depthCompareFunction = RenderBackendCompareOp::GreaterOrEqual;
-
-                    // for (const auto& drawCallInfo : renderEngine->drawList)
-                    // {
-                    //     RenderBackendShaderArguments shaderArguments = {};
-                    //     shaderArguments.debugName = "VisibilityBuffer";
-                    //     shaderArguments.BindBufferCBV(0, this->GetCurrentPerFrameConstantBuffer());
-                    //     shaderArguments.BindBuffer(1, gpuScene->geometryBuffer);
-                    //     shaderArguments.BindBuffer(2, gpuScene->geometryInstanceBuffer);
-                    //     shaderArguments.PushConstants(0, (float)drawCallInfo.geometryIndex);
-                    //
-                    //     commandList.DrawIndexed(
-                    //         vertexShader,
-                    //         pixelShader,
-                    //         graphicsPipelineState,
-                    //         shaderArguments,
-                    //         drawCallInfo.indexBuffer,
-                    //         drawCallInfo.numIndices,
-                    //         1,
-                    //         drawCallInfo.firstIndex,
-                    //         0,
-                    //         0,
-                    //         RenderBackendPrimitiveTopology::TriangleList);
-                    // }
+                    DispatchGeometryOpaquePassDrawCalls(commandList);
                 };
             });
     }
