@@ -112,21 +112,21 @@ namespace Horizon
                     uint32 threadGroupCountX = ComputeWorkGroupCount(view.targetWidth, PostProcessingThreadGroupSizeX);
                     uint32 threadGroupCountY = ComputeWorkGroupCount(view.targetHeight, PostProcessingThreadGroupSizeY);
 
-                    RenderBackendShaderArguments shaderArguments = {};
-                    shaderArguments.BindBufferCBV(0, this->GetCurrentPerFrameConstantBuffer());
-                    shaderArguments.BindTextureSRV(1, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(sceneColorTexture)));
-                    shaderArguments.BindTextureSRV(2, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(sceneDepthTexture)));
-                    shaderArguments.BindTextureUAV(3, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(depthOfFieldCoCTexture), 0));
+                    RenderBackendShaderConstants shaderConstants = {};
+                    shaderConstants.BindBufferCBV(0, renderBackend->GetBufferCBVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
+                    shaderConstants.BindTextureSRV(1, registry.GetTextureSRVBindlessResourceDescriptorIndex(sceneColorTexture)));
+                    shaderConstants.BindTextureSRV(2, registry.GetTextureSRVBindlessResourceDescriptorIndex(sceneDepthTexture)));
+                    shaderConstants.BindTextureUAV(3, registry.GetTextureUAVBindlessResourceDescriptorIndexdepthOfFieldCoCTexture), 0));
 
-                    shaderArguments.PushConstants(0, settings.postProcessingSettings.dofFocalDistance);
-                    shaderArguments.PushConstants(1, settings.postProcessingSettings.dofFocalRegion);
-                    shaderArguments.PushConstants(2, settings.postProcessingSettings.dofNearTransitionRegion);
-                    shaderArguments.PushConstants(3, settings.postProcessingSettings.dofFarTransitionRegion);
+                    shaderConstants.PushConstants(0, settings.postProcessingSettings.dofFocalDistance);
+                    shaderConstants.PushConstants(1, settings.postProcessingSettings.dofFocalRegion);
+                    shaderConstants.PushConstants(2, settings.postProcessingSettings.dofNearTransitionRegion);
+                    shaderConstants.PushConstants(3, settings.postProcessingSettings.dofFarTransitionRegion);
 
                     RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::DepthOfFieldSetup);
                     commandList.Dispatch2D(
                         computeShader,
-                        shaderArguments,
+                        shaderConstants,
                         threadGroupCountX,
                         groupCountY);
                 };
@@ -145,18 +145,18 @@ namespace Horizon
                     uint32 threadGroupCountX = ComputeWorkGroupCount(dofWidth, PostProcessingThreadGroupSizeX);
                     uint32 threadGroupCountY = ComputeWorkGroupCount(dofHeight, PostProcessingThreadGroupSizeY);
 
-                    RenderBackendShaderArguments shaderArguments = {};
-                    shaderArguments.BindBufferCBV(0, this->GetCurrentPerFrameConstantBuffer());
-                    shaderArguments.BindTextureSRV(1, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(sceneColorInputTexture)));
-                    shaderArguments.BindTextureSRV(2, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(depthOfFieldCoCTexture)));
-                    shaderArguments.BindTextureUAV(3, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(depthOfFieldGatherTexture), 0));
+                    RenderBackendShaderConstants shaderConstants = {};
+                    shaderConstants.BindBufferCBV(0, renderBackend->GetBufferCBVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
+                    shaderConstants.BindTextureSRV(1, registry.GetTextureSRVBindlessResourceDescriptorIndex(sceneColorInputTexture)));
+                    shaderConstants.BindTextureSRV(2, registry.GetTextureSRVBindlessResourceDescriptorIndex(depthOfFieldCoCTexture)));
+                    shaderConstants.BindTextureUAV(3, registry.GetTextureUAVBindlessResourceDescriptorIndexdepthOfFieldGatherTexture), 0));
 
-                    shaderArguments.PushConstants(0, settings.postProcessingSettings.dofFarRegionBlurSize);
+                    shaderConstants.PushConstants(0, settings.postProcessingSettings.dofFarRegionBlurSize);
 
                     RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::DepthOfFieldGather);
                     commandList.Dispatch2D(
                         computeShader,
-                        shaderArguments,
+                        shaderConstants,
                         threadGroupCountX,
                         groupCountY);
                 };
@@ -175,18 +175,18 @@ namespace Horizon
                     uint32 threadGroupCountX = ComputeWorkGroupCount(dofWidth, PostProcessingThreadGroupSizeX);
                     uint32 threadGroupCountY = ComputeWorkGroupCount(dofHeight, PostProcessingThreadGroupSizeY);
 
-                    RenderBackendShaderArguments shaderArguments = {};
-                    shaderArguments.BindBufferCBV(0, this->GetCurrentPerFrameConstantBuffer());
-                    shaderArguments.BindTextureSRV(1, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(depthOfFieldGatherTexture)));
-                    shaderArguments.BindTextureSRV(2, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(depthOfFieldCoCTexture)));
-                    shaderArguments.BindTextureUAV(3, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(depthOfFieldPostfilterTexture), 0));
+                    RenderBackendShaderConstants shaderConstants = {};
+                    shaderConstants.BindBufferCBV(0, renderBackend->GetBufferCBVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
+                    shaderConstants.BindTextureSRV(1, registry.GetTextureSRVBindlessResourceDescriptorIndex(depthOfFieldGatherTexture)));
+                    shaderConstants.BindTextureSRV(2, registry.GetTextureSRVBindlessResourceDescriptorIndex(depthOfFieldCoCTexture)));
+                    shaderConstants.BindTextureUAV(3, registry.GetTextureUAVBindlessResourceDescriptorIndexdepthOfFieldPostfilterTexture), 0));
 
-                    shaderArguments.PushConstants(0, settings.postProcessingSettings.dofFarRegionBlurSize);
+                    shaderConstants.PushConstants(0, settings.postProcessingSettings.dofFarRegionBlurSize);
 
                     RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::DepthOfFieldPostfilter);
                     commandList.Dispatch2D(
                         computeShader,
-                        shaderArguments,
+                        shaderConstants,
                         threadGroupCountX,
                         groupCountY);
                 };
@@ -206,17 +206,17 @@ namespace Horizon
                     uint32 threadGroupCountX = ComputeWorkGroupCount(view.targetWidth, PostProcessingThreadGroupSizeX);
                     uint32 threadGroupCountY = ComputeWorkGroupCount(view.targetHeight, PostProcessingThreadGroupSizeY);
 
-                    RenderBackendShaderArguments shaderArguments = {};
-                    shaderArguments.BindBufferCBV(0, this->GetCurrentPerFrameConstantBuffer());
-                    shaderArguments.BindTextureSRV(1, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(sceneColorTexture)));
-                    shaderArguments.BindTextureSRV(2, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(depthOfFieldPostfilterTexture)));
-                    shaderArguments.BindTextureSRV(3, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(depthOfFieldCoCTexture)));
-                    shaderArguments.BindTextureUAV(4, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(depthOfFieldOutputTexture), 0));
+                    RenderBackendShaderConstants shaderConstants = {};
+                    shaderConstants.BindBufferCBV(0, renderBackend->GetBufferCBVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
+                    shaderConstants.BindTextureSRV(1, registry.GetTextureSRVBindlessResourceDescriptorIndex(sceneColorTexture)));
+                    shaderConstants.BindTextureSRV(2, registry.GetTextureSRVBindlessResourceDescriptorIndex(depthOfFieldPostfilterTexture)));
+                    shaderConstants.BindTextureSRV(3, registry.GetTextureSRVBindlessResourceDescriptorIndex(depthOfFieldCoCTexture)));
+                    shaderConstants.BindTextureUAV(4, registry.GetTextureUAVBindlessResourceDescriptorIndexdepthOfFieldOutputTexture), 0));
 
                     RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::DepthOfFieldRecombine);
                     commandList.Dispatch2D(
                         computeShader,
-                        shaderArguments,
+                        shaderConstants,
                         threadGroupCountX,
                         groupCountY);
                 };

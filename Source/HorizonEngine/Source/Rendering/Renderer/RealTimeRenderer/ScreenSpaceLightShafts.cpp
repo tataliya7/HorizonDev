@@ -59,21 +59,21 @@ namespace Horizon
         //             uint32 threadGroupCountY = ComputeWorkGroupCount(lightShaftsTextureSize.height, 8);
         //             uint32 threadGroupCountZ = 1;
         //
-        //             RenderBackendShaderArguments shaderArguments = {};
-        //             shaderArguments.BindBufferCBV(0, this->GetCurrentPerFrameConstantBuffer());
-        //             shaderArguments.BindTextureSRV(1, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(sceneColorTexture)));
-        //             shaderArguments.BindTextureSRV(2, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(sceneDepthTexture)));
-        //             shaderArguments.BindTextureUAV(3, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(lightShaftsDownsampleOutputTexture), 0));
+        //             RenderBackendShaderConstants shaderConstants = {};
+        //             shaderConstants.BindBufferCBV(0, renderBackend->GetBufferCBVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
+        //             shaderConstants.BindTextureSRV(1, registry.GetTextureSRVBindlessResourceDescriptorIndex(sceneColorTexture)));
+        //             shaderConstants.BindTextureSRV(2, registry.GetTextureSRVBindlessResourceDescriptorIndex(sceneDepthTexture)));
+        //             shaderConstants.BindTextureUAV(3, registry.GetTextureUAVBindlessResourceDescriptorIndexlightShaftsDownsampleOutputTexture), 0));
         //
-        //             shaderArguments.PushConstants(0, lightShaftsCenter.x);
-        //             shaderArguments.PushConstants(1, lightShaftsCenter.y);
-        //             shaderArguments.PushConstants(2, aspectRatio.x);
-        //             shaderArguments.PushConstants(3, aspectRatio.y);
+        //             shaderConstants.PushConstants(0, lightShaftsCenter.x);
+        //             shaderConstants.PushConstants(1, lightShaftsCenter.y);
+        //             shaderConstants.PushConstants(2, aspectRatio.x);
+        //             shaderConstants.PushConstants(3, aspectRatio.y);
         //
         //             RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::LightShaftsDownsample);
         //             commandList.Dispatch(
         //                 computeShader,
-        //                 shaderArguments,
+        //                 shaderConstants,
         //                 threadGroupCountX,
         //                 threadGroupCountY,
         //                 threadGroupCountZ);
@@ -105,19 +105,19 @@ namespace Horizon
         //                     uint32 threadGroupCountY = ComputeWorkGroupCount(lightShaftsTextureSize.height, 8);
         //                     uint32 threadGroupCountZ = 1;
         //
-        //                     RenderBackendShaderArguments shaderArguments = {};
-        //                     shaderArguments.BindBufferCBV(0, this->GetCurrentPerFrameConstantBuffer());
-        //                     shaderArguments.BindTextureSRV(1, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(radialBlurInputTexture)));
-        //                     shaderArguments.BindTextureUAV(2, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(radialBlurOutputTexture), 0));
-        //                     shaderArguments.PushConstants(2, lightShaftsCenter.width);
-        //                     shaderArguments.PushConstants(3, lightShaftsCenter.height);
-        //                     shaderArguments.PushConstants(4, (float)blurPassIndex);
+        //                     RenderBackendShaderConstants shaderConstants = {};
+        //                     shaderConstants.BindBufferCBV(0, renderBackend->GetBufferCBVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
+        //                     shaderConstants.BindTextureSRV(1, registry.GetTextureSRVBindlessResourceDescriptorIndex(radialBlurInputTexture)));
+        //                     shaderConstants.BindTextureUAV(2, registry.GetTextureUAVBindlessResourceDescriptorIndexradialBlurOutputTexture), 0));
+        //                     shaderConstants.PushConstants(2, lightShaftsCenter.width);
+        //                     shaderConstants.PushConstants(3, lightShaftsCenter.height);
+        //                     shaderConstants.PushConstants(4, (float)blurPassIndex);
         //
         //                     RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::LightShaftsRadialBlur);
         //
         //                     commandList.Dispatch(
         //                         computeShader,
-        //                         shaderArguments,
+        //                         shaderConstants,
         //                         threadGroupCountX,
         //                         threadGroupCountY,
         //                         threadGroupCountZ);
@@ -146,16 +146,16 @@ namespace Horizon
         //                 graphicsPipelineState.colorBlendState.targetBlends[0].colorBlendOp = RenderBackendBlendOp::Add;
         //                 graphicsPipelineState.colorBlendState.targetBlends[0].writeMask = RenderBackendColorComponentFlags::RGB;
         //
-        //                 RenderBackendShaderArguments shaderArguments = {};
-        //                 shaderArguments.BindBufferCBV(0, this->GetCurrentPerFrameConstantBuffer());
-        //                 shaderArguments.BindTextureSRV(1, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(lightShaftsTexture)));
+        //                 RenderBackendShaderConstants shaderConstants = {};
+        //                 shaderConstants.BindBufferCBV(0, renderBackend->GetBufferCBVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
+        //                 shaderConstants.BindTextureSRV(1, registry.GetTextureSRVBindlessResourceDescriptorIndex(lightShaftsTexture)));
         //
         //                 RenderBackendShaderHandle graphicsShader = shaderLibrary->GetShader(ShaderID::LightShaftsApply);
         //
         //                 commandList.Draw(
         //                     graphicsShader,
         //                     graphicsPipelineState,
-        //                     shaderArguments,
+        //                     shaderConstants,
         //                     3, 1, 0, 0,
         //                     RenderBackendPrimitiveTopology::TriangleList);
         //             };

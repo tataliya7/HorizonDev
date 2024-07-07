@@ -66,7 +66,7 @@ namespace Horizon
             globalSamplerComparisonLessLinearClamp = renderBackend->CreateSampler(&globalSamplerComparisonLessLinearClampDesc, "GlobalSamplerComparisonLessLinearClamp");
         }
 
-        RenderPreIntegratedBrdfLut(shaderLibrary, commandList, preIntegratedBrdfLut);
+        RenderPreIntegratedBrdfLut(renderBackend, shaderLibrary, commandList, preIntegratedBrdfLut);
 
         initialized = true;
     }
@@ -106,7 +106,7 @@ namespace Horizon
         return renderGraph.ImportExternalTexture(blackDummyTexture2D, "BlackDummyTexture2D");
     }
 
-    void Texture2DGenerateMips(ShaderLibrary* shaderLibrary, RenderBackendCommandList& commandList, RenderBackendTextureHandle textureHandle, uint32 width, uint32 height, uint32 numMipLevels)
+    void Texture2DGenerateMips(RenderBackend* renderBackend, ShaderLibrary* shaderLibrary, RenderBackendCommandList& commandList, RenderBackendTextureHandle textureHandle, uint32 width, uint32 height, uint32 numMipLevels)
     {
         if (numMipLevels < 2)
         {
@@ -150,11 +150,11 @@ namespace Horizon
             };
             commandList.BeginRenderPass(renderPass);
 
-            RenderBackendShaderArguments shaderArguments = {};
-            shaderArguments.BindTextureSRV(0, RenderBackendTextureSRVDesc::Create(textureHandle));
-            shaderArguments.BindScalar(0, float(mipLevel - 1));
-            shaderArguments.BindScalar(1, float(width));
-            shaderArguments.BindScalar(2, float(height));
+            RenderBackendShaderConstants shaderConstants = {};
+            shaderConstants.BindTextureSRV(0, renderBackend->GetTextureSRVBindlessResourceDescriptorIndex(textureHandle));
+            shaderConstants.BindScalar(2, mipLevel - 1u);
+            shaderConstants.BindScalar(3, float(width));
+            shaderConstants.BindScalar(4, float(height));
 
             RenderBackendGraphicsPipelineState graphicsPipelineState = {};
 
@@ -162,7 +162,7 @@ namespace Horizon
                 vertexShader,
                 pixelShader,
                 graphicsPipelineState,
-                shaderArguments,
+                shaderConstants,
                 3, 1, 0, 0,
                 RenderBackendPrimitiveTopology::TriangleList);
 
@@ -174,7 +174,7 @@ namespace Horizon
 
             //commandList.Dispatch(
             //    downsampleTexture2DCS,
-            //    shaderArguments,
+            //    shaderConstants,
             //    threadGroupCountX,
             //    threadGroupCountY,
             //    threadGroupCountZ);

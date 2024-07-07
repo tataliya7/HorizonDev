@@ -63,7 +63,7 @@ float2 Hammersley2D_Random(uint index, uint samples, uint2 random)
 [numthreads(SSR_THREAD_GROUP_SIZE, SSR_THREAD_GROUP_SIZE, 1)]
 void ScreenSpaceReflectionsResolveCS(uint3 DispatchThreadID : SV_DispatchThreadID)
 {
-    ConstantBuffer<PerFrameShaderParameters> perFrameConstants = GetPerFrameShaderParametersCBV();
+    ConstantBuffer<PerFrameShaderParameters> frameShaderParameters = GetPerFrameShaderParameterBufferCBV();
     Texture2D sceneDepth = GetSceneDepthSRV();
     Texture2D gbuffer1 = GetGBuffer1SRV();
     Texture2D rayIndirectSpecular = GetRayIndirectSpecularSRV();
@@ -75,7 +75,7 @@ void ScreenSpaceReflectionsResolveCS(uint3 DispatchThreadID : SV_DispatchThreadI
     RWTexture2D<float> reprojectionDepthTexture = GetReprojectionDepthUAV();
 
     const uint2 coord = DispatchThreadID.xy;
-    const float2 uv = (coord + 0.5f) * (1.0 / perFrameConstants.renderWidth, 1.0 / perFrameConstants.renderHeight); // Full resolution
+    const float2 uv = (coord + 0.5f) * (1.0 / frameShaderParameters.renderWidth, 1.0 / frameShaderParameters.renderHeight); // Full resolution
     const uint2 tracingCoord = coord / SSR_DOWN_SAMPLE_FACTOR;
 
     const float depth = sceneDepth[coord].r;
@@ -89,9 +89,9 @@ void ScreenSpaceReflectionsResolveCS(uint3 DispatchThreadID : SV_DispatchThreadI
         return;
     }
 
-    const float3 P = ReconstructWorldSpacePositionFromDepth(uv, depth, perFrameConstants.clipToWorldMatrix);
+    const float3 P = ReconstructWorldSpacePositionFromDepth(uv, depth, frameShaderParameters.clipToWorldMatrix);
     const float3 N = gbuffer1[coord].rgb;
-    const float3 V = normalize(perFrameConstants.cameraPosition - P);
+    const float3 V = normalize(frameShaderParameters.cameraPosition - P);
     const float NdotV = saturate(dot(N, V));
 
     const float resolveSpatialScale = saturate(roughness * 5.0); // roughness 0.2 is destination
@@ -100,7 +100,7 @@ void ScreenSpaceReflectionsResolveCS(uint3 DispatchThreadID : SV_DispatchThreadI
     float closestRayLength = 0.0;
 
     const uint sampleCount = ResolveSpatialReconstructionCount;
-    const uint2 random = hash33(uint3(coord, perFrameConstants.frameIndex)).xy;
+    const uint2 random = hash33(uint3(coord, frameShaderParameters.frameIndex)).xy;
 
     float mean = 0.0;
     float S = 0.0;
@@ -164,8 +164,8 @@ void ScreenSpaceReflectionsResolveCS(uint3 DispatchThreadID : SV_DispatchThreadI
     float resolveVariance = S / weightSum;
 
     // Convert to post-projection depth so we can construct dual source reprojection buffers later
-    float linearDepth = ComputeCameraSpaceDepth(depth, perFrameConstants.nearClippingPlane, perFrameConstants.farClippingPlane);
-    float reprojectionDepth = ComputeDepthFromComputeCameraSpaceDepth(linearDepth + closestRayLength, perFrameConstants.nearClippingPlane, perFrameConstants.farClippingPlane);
+    float linearDepth = ComputeCameraSpaceDepth(depth, frameShaderParameters.nearClippingPlane, frameShaderParameters.farClippingPlane);
+    float reprojectionDepth = ComputeDepthFromComputeCameraSpaceDepth(linearDepth + closestRayLength, frameShaderParameters.nearClippingPlane, frameShaderParameters.farClippingPlane);
 
     resolveTexture[coord] = max(result, 0.00001f);
     resolveVarianceTexture[coord] = resolveVariance;

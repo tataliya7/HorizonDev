@@ -740,7 +740,7 @@ namespace Horizon
         RenderBackendTextureSRVDesc() = default;
 
         RenderBackendTextureSRVDesc(RenderBackendTextureHandle texture, uint32 baseMipLevel, uint32 mipLevelCount, uint32 baseArrayLayer, uint32 arrayLayerCount)
-            : texture(texture) , subresouceRange(baseMipLevel, mipLevelCount, baseArrayLayer, arrayLayerCount) {}
+            : texture(texture) , subresourceRange(baseMipLevel, mipLevelCount, baseArrayLayer, arrayLayerCount) {}
 
         bool IsValid() const
         {
@@ -748,7 +748,7 @@ namespace Horizon
         }
 
         RenderBackendTextureHandle texture;
-        RenderBackendTextureSubresourceRange subresouceRange;
+        RenderBackendTextureSubresourceRange subresourceRange;
     };
 
     struct RenderBackendTextureUAVDesc
@@ -1136,129 +1136,95 @@ namespace Horizon
         RenderBackendColorBlendState colorBlendState;
     };
 
-    struct RenderBackendShaderArguments
+    struct RenderBackendShaderConstants
     {
-        std::string debugName;
-
-        static const int32 TypeTextureSRV = 1;
-        static const int32 TypeTextureUAV = 2;
-        static const int32 TypeBuffer = 3;
-        static const int32 TypeBufferCBV = 4;
-
-        struct TextureSRV
+        enum class Type : int8
         {
-            uint32 slot;
-            RenderBackendTextureSRVDesc srv;
+            SamplerState          = 0,
+            TextureSRV            = 1,
+            TextureUAV            = 2,
+            BufferCBV             = 3,
+            BufferSRV             = 4,
+            BufferUAV             = 5,
+            AccelerationStructure = 6,
+            Scalar                = 7,
+            Count                 = 8
         };
 
-        struct TextureUAV
+        struct SlotData
         {
-            uint32 slot;
-            RenderBackendTextureUAVDesc uav;
-        };
-
-        struct Buffer
-        {
-            uint32 slot;
-            RenderBackendBufferHandle handle;
-        };
-
-        struct BufferCBV
-        {
-            uint32 slot;
-            RenderBackendBufferHandle handle;
-        };
-
-        struct AS
-        {
-            uint32 slot;
-            RenderBackendRayTracingAccelerationStructureHandle handle;
-        };
-
-        struct Slot
-        {
-            int32 type = 0;
             union
             {
-                TextureSRV srvSlot;
-                TextureUAV uavSlot;
-                Buffer bufferSlot;
-                BufferCBV bufferCBV;
-                AS asSlot;
+                int             descriptorIndex;
+                int             scalarTypeInt;
+                unsigned int    scalarTypeUint;
+                float           scalarTypeFloat;
             };
         };
+        static_assert(sizeof(SlotData) == 4);
 
-        void BindTextureSRV(uint32 slot, const RenderBackendTextureSRVDesc& srv)
+        void BindSamplerState(uint8 slot, int descriptorIndex)
         {
-            if (srv.IsValid())
-            {
-                slots[slot] = { .type = TypeTextureSRV, .srvSlot = { slot, srv } };
-            }
+            //types[slot] = int8(Type::SamplerState);
+            data[slot].descriptorIndex = descriptorIndex;
         }
 
-        void BindTextureUAV(uint32 slot, const RenderBackendTextureUAVDesc& uav)
+        void BindTextureSRV(uint8 slot, int descriptorIndex)
         {
-            if (uav.IsValid())
-            {
-                slots[slot] = { .type = TypeTextureUAV, .uavSlot = { slot, uav } };
-            }
+            //types[slot] = int8(Type::TextureSRV);
+            data[slot].descriptorIndex = descriptorIndex;
         }
 
-        void BindBufferSRV(uint32 slot, RenderBackendBufferHandle buffer)
+        void BindTextureUAV(uint8 slot, int descriptorIndex)
         {
-            if (buffer.IsValid())
-            {
-                slots[slot] = { .type = TypeBuffer, .bufferSlot = { slot, buffer } };
-            }
+            //types[slot] = int8(Type::TextureUAV);
+            data[slot].descriptorIndex = descriptorIndex;
         }
 
-        void BindBuffer(uint32 slot, RenderBackendBufferHandle buffer)
+        void BindBufferCBV(uint8 slot, int descriptorIndex)
         {
-            if (buffer.IsValid())
-            {
-                slots[slot] = { .type = TypeBuffer, .bufferSlot = { slot, buffer } };
-            }
+            //types[slot] = int8(Type::BufferCBV);
+            data[slot].descriptorIndex = descriptorIndex;
         }
 
-        void BindBufferCBV(uint32 slot, RenderBackendBufferHandle buffer)
+        void BindBufferSRV(uint8 slot, int descriptorIndex)
         {
-            if (buffer.IsValid())
-            {
-                slots[slot] = { .type = TypeBufferCBV, .bufferCBV = { slot, buffer } };
-            }
+            //types[slot] = int8(Type::BufferSRV);
+            data[slot].descriptorIndex = descriptorIndex;
         }
 
-        void BindAS(uint32 slot, RenderBackendRayTracingAccelerationStructureHandle as)
+        void BindBufferUAV(uint8 slot, int descriptorIndex)
         {
-            if (as.IsValid())
-            {
-                slots[slot] = { .type = 5, .asSlot = { slot, as } };
-            }
+            //types[slot] = int8(Type::BufferUAV);
+            data[slot].descriptorIndex = descriptorIndex;
         }
 
-        void BindScalar(uint32 slot, uint32 value)
+        void BindAccelerationStructure(uint8 slot, int descriptorIndex)
         {
-            data[slot] = float(value);
+            //types[slot] = int8(Type::AccelerationStructure);
+            data[slot].descriptorIndex = descriptorIndex;
         }
 
-        void BindScalar(uint32 slot, float value)
+        void BindScalar(uint8 slot, int32 value)
         {
-            data[slot] = value;
+            //types[slot] = int8(Type::Scalar);
+            data[slot].scalarTypeInt = value;
         }
 
-        // 128 bytes
-        Slot slots[16];
-        float data[16];
-
-        // test
-        void PushConstantsTest(void* p, uint32 s)
+        void BindScalar(uint8 slot, uint32 value)
         {
-            memset(testData, 0, 64);
-            test = true;
-            memcpy(testData, p, s);
+            //types[slot] = int8(Type::Scalar);
+            data[slot].scalarTypeUint = value;
         }
-        bool test = false;
-        uint8 testData[64];
+
+        void BindScalar(uint8 slot, float value)
+        {
+            //types[slot] = int8(Type::Scalar);
+            data[slot].scalarTypeFloat = value;
+        }
+
+        //int8 types[RenderBackendPushConstantsSlotCount];
+        SlotData data[RenderBackendPushConstantsSlotCount];
     };
 
     struct RenderBackendRenderPassInfo

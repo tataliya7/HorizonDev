@@ -3,9 +3,11 @@
 #include "PostProcessingCommon.hsh"
 #include "AutoExposureCommon.hsh"
 
-BIND_BUFFER_CBV(0, PerFrameShaderParameters);
-BIND_TEXTURE_2D_SRV(1, SceneColorTexture);
-BIND_TEXTURE_2D_UAV(2, uint, AutoExposureHistogramTexture);
+SHADER_CONSTANTS_STRUCT_BEGIN();
+SHADER_CONSTANTS_CONSTANT_BUFFER_CBV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferCBV);
+SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(1, SceneColorTextureSRV);
+SHADER_CONSTANTS_TEXTURE_2D_UAV(2, uint, AutoExposureHistogramTextureUAV);
+SHADER_CONSTANTS_STRUCT_END();
 
 // https://bruop.github.io/exposure/
 // https://en.wikipedia.org/wiki/Exposure_value
@@ -21,16 +23,17 @@ float ComputeSceneColorLuminance(float3 sceneColor)
 [numthreads(AUTO_EXPOSURE_BUILD_HISTOGRAM_CS_NUM_THREADS_X, AUTO_EXPOSURE_BUILD_HISTOGRAM_CS_NUM_THREADS_Y, 1)]
 void AutoExposureBuildHistogramCS(uint3 DispatchThreadID : SV_DispatchThreadID, uint GroupIndex : SV_GroupIndex)
 {
-    ConstantBuffer<PerFrameShaderParameters> perFrameConstants = GetPerFrameShaderParametersCBV();
-    uint width = perFrameConstants.renderWidth;
-    uint height = perFrameConstants.renderHeight;
+    ConstantBuffer<PerFrameShaderParameters> frameShaderParameters = ShaderConstants.GetPerFrameShaderParameterBufferCBV();
+
+    uint width = frameShaderParameters.renderWidth;
+    uint height = frameShaderParameters.renderHeight;
     if ((DispatchThreadID.x) >= width || (DispatchThreadID.y) >= height)
     {
         return;
     }
 
-    Texture2D sceneColorTexture = GetSceneColorTextureSRV();
-    RWTexture2D<uint> histogramTexture = GetAutoExposureHistogramTextureUAV();
+    Texture2D sceneColorTexture = ShaderConstants.GetSceneColorTextureSRV();
+    RWTexture2D<uint> histogramTexture = ShaderConstants.GetAutoExposureHistogramTextureUAV();
 
     // Clears the shared memory
     SharedHistogram[GroupIndex] = 0;
@@ -39,14 +42,14 @@ void AutoExposureBuildHistogramCS(uint3 DispatchThreadID : SV_DispatchThreadID, 
 
     // Accumulate histogram
     {
-        float histogramMinEV100 = perFrameConstants.autoExposureHistogramMinEV100;
-        float histogramMaxEV100 = perFrameConstants.autoExposureHistogramMaxEV100;
+        float histogramMinEV100 = frameShaderParameters.autoExposureHistogramMinEV100;
+        float histogramMaxEV100 = frameShaderParameters.autoExposureHistogramMaxEV100;
 
         uint2 pixelCoord = DispatchThreadID.xy;
-        float2 uv = (pixelCoord + 0.5) / float2(width, height);
+        float2 uv = (float2(pixelCoord) + 0.5f) / float2(width, height);
 
-        float3 sceneColor = sceneColorTexture.SampleLevel(GlobalSamplerLinearClamp, uv, 0.0).rgb;
-        sceneColor.rgb *= perFrameConstants.oneOverPreExposure;
+        float3 sceneColor = sceneColorTexture.SampleLevel(GlobalSamplerLinearClamp, uv, 0).rgb;
+        sceneColor.rgb *= frameShaderParameters.oneOverPreExposure;
 
         float sceneColorLuminance = ComputeSceneColorLuminance(sceneColor);
 
@@ -54,7 +57,7 @@ void AutoExposureBuildHistogramCS(uint3 DispatchThreadID : SV_DispatchThreadID, 
 
         float inverseLogLuminanceRange = 1.0f / (histogramMaxEV100 - histogramMinEV100);
 
-        // Calculate the log_2 luminance and express it as a value in [0.0, 1.0]
+        // Calculate the log_2 luminance and express it as a value in [0, 1]
         float histogramPosition = (logSceneColorLuminance - histogramMinEV100) * inverseLogLuminanceRange;
         histogramPosition = saturate(histogramPosition);
 

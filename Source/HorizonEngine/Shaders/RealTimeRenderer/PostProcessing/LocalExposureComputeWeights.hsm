@@ -23,7 +23,7 @@ void LocalExposureComputeWeightsCS(uint3 DispatchThreadID : SV_DispatchThreadID)
 
     Texture2D inputTexture = GetInputTextureSRV();
 
-    float sigmaSquare = SHADER_ARGUMENTS_DATA(0);
+    float sigmaSquare = (0);
 
     float3 diff = inputTexture.SampleLevel(GlobalSamplerLinearClamp, uv, 0).rgb - 0.5;
     float3 weights = exp(-0.5 * diff * diff * sigmaSquare);

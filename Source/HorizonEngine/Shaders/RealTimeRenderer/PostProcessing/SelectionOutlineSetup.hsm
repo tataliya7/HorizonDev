@@ -11,10 +11,10 @@ BIND_TEXTURE_2D_UAV(2, float4, OutputTexture);
 [numthreads(POST_PROCESSING_THREAD_GROUP_SIZE_X, POST_PROCESSING_THREAD_GROUP_SIZE_Y, 1)]
 void SelectionOutlineSetupCS(uint3 DispatchThreadID : SV_DispatchThreadID)
 {
-    ConstantBuffer<PerFrameShaderParameters> perFrameConstants = GetPerFrameShaderParametersCBV();
+    ConstantBuffer<PerFrameShaderParameters> frameShaderParameters = GetPerFrameShaderParameterBufferCBV();
     uint2 pixelCoord = DispatchThreadID.xy;
-    uint width = perFrameConstants.targetWidth;
-    uint height = perFrameConstants.targetHeight;
+    uint width = frameShaderParameters.targetWidth;
+    uint height = frameShaderParameters.targetHeight;
     if (pixelCoord.x >= width || pixelCoord.y >= height)
     {
         return;
@@ -25,7 +25,7 @@ void SelectionOutlineSetupCS(uint3 DispatchThreadID : SV_DispatchThreadID)
 
     float mask = inputTexture[pixelCoord].r;
 
-    if (mask < 0.99) // exterior
+    if (mask < 0.99f) // exterior
     {
         outputTexture[pixelCoord] = float4(
             SELECTION_OUTLINE_JUMP_FLOOD_INVALID_VALUE,
@@ -35,7 +35,7 @@ void SelectionOutlineSetupCS(uint3 DispatchThreadID : SV_DispatchThreadID)
         return;
     }
 
-    float2 invSize = perFrameConstants.targetResolution.zw;
+    float2 invSize = frameShaderParameters.targetResolution.zw;
     float2 uv = (pixelCoord + 0.5f) * invSize;
-    outputTexture[pixelCoord] = float4(uv, 0, mask);
+    outputTexture[pixelCoord] = float4(uv, 0.0f, mask);
 }

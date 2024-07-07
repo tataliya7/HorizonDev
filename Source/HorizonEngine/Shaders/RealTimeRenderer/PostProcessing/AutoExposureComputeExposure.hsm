@@ -3,10 +3,12 @@
 #include "PostProcessingCommon.hsh"
 #include "AutoExposureCommon.hsh"
 
-BIND_BUFFER_CBV(0, PerFrameShaderParameters);
-BIND_TEXTURE_2D_TYPED_SRV(1, uint, AutoExposureHistogramTexture);
-BIND_BYTE_ADDRESS_BUFFER_SRV(2, PreviousAutoExposureBuffer);
-BIND_BYTE_ADDRESS_BUFFER_UAV(3, CurrentAutoExposureBuffer);
+SHADER_CONSTANTS_STRUCT_BEGIN();
+SHADER_CONSTANTS_CONSTANT_BUFFER_CBV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferCBV);
+SHADER_CONSTANTS_TEXTURE_2D_SRV(1, uint, AutoExposureHistogramTextureSRV);
+SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_SRV(2, PreviousAutoExposureBufferSRV);
+SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_UAV(3, CurrentAutoExposureBufferUAV);
+SHADER_CONSTANTS_STRUCT_END();
 
 float ComputeAverageSceneLuminance(Texture2D<uint> histogramTexture, float lowPercent, float highPercent, float histogramMinEV100, float histogramMaxEV100)
 {
@@ -66,27 +68,27 @@ float InterpolateExposure(float srcExposure, float dstExposure, float deltaTimeI
 [numthreads(1, 1, 1)]
 void AutoExposureComputeExposureCS(uint3 DispatchThreadID : SV_DispatchThreadID)
 {
-    ConstantBuffer<PerFrameShaderParameters> perFrameConstants = GetPerFrameShaderParametersCBV();
+    ConstantBuffer<PerFrameShaderParameters> frameShaderParameters = ShaderConstants.GetPerFrameShaderParameterBufferCBV();
 
-    float deltaTimeInSeconds = perFrameConstants.deltaTimeInSeconds;
-    float exposureCompensation = perFrameConstants.autoExposureExposureCompensation;
-    float minExposureValue = perFrameConstants.autoExposureMinExposureValue;
-    float maxExposureValue = perFrameConstants.autoExposureMaxExposureValue;
-    float histogramLowPercent = perFrameConstants.autoExposureHistogramLowerPercentage;
-    float histogramHighPercent = perFrameConstants.autoExposureHistogramHigherPercentage;
-    float speedDarkToBright = perFrameConstants.autoExposureSpeedDarkToBright;
-    float speedBrightToDark = perFrameConstants.autoExposureSpeedBrightToDark;
-    float histogramMinEV100 = perFrameConstants.autoExposureHistogramMinEV100;
-    float histogramMaxEV100 = perFrameConstants.autoExposureHistogramMaxEV100;
-    bool useTargetExposure = perFrameConstants.autoExposureUseTargetExposure > 0;
+    float deltaTimeInSeconds = frameShaderParameters.deltaTimeInSeconds;
+    float exposureCompensation = frameShaderParameters.autoExposureExposureCompensation;
+    float minExposureValue = frameShaderParameters.autoExposureMinExposureValue;
+    float maxExposureValue = frameShaderParameters.autoExposureMaxExposureValue;
+    float histogramLowPercent = frameShaderParameters.autoExposureHistogramLowerPercentage;
+    float histogramHighPercent = frameShaderParameters.autoExposureHistogramHigherPercentage;
+    float speedDarkToBright = frameShaderParameters.autoExposureSpeedDarkToBright;
+    float speedBrightToDark = frameShaderParameters.autoExposureSpeedBrightToDark;
+    float histogramMinEV100 = frameShaderParameters.autoExposureHistogramMinEV100;
+    float histogramMaxEV100 = frameShaderParameters.autoExposureHistogramMaxEV100;
+    bool useTargetExposure = frameShaderParameters.autoExposureUseTargetExposure > 0;
 
     float minExposure = (EV100ToLuminance(minExposureValue) / MiddleGray);
     float maxExposure = (EV100ToLuminance(maxExposureValue) / MiddleGray);
     exposureCompensation = pow(2, exposureCompensation);
 
-    Texture2D<uint> histogramTexture = GetAutoExposureHistogramTextureSRV();
-    ByteAddressBuffer previousAutoExposureBuffer = GetPreviousAutoExposureBufferSRV();
-    RWByteAddressBuffer currentAutoExposureBuffer = GetCurrentAutoExposureBufferUAV();
+    Texture2D<uint> histogramTexture = ShaderConstants.GetAutoExposureHistogramTextureSRV();
+    ByteAddressBuffer previousAutoExposureBuffer = ShaderConstants.GetPreviousAutoExposureBufferSRV();
+    RWByteAddressBuffer currentAutoExposureBuffer = ShaderConstants.GetCurrentAutoExposureBufferUAV();
 
     float averageSceneLuminance = ComputeAverageSceneLuminance(histogramTexture, histogramLowPercent, histogramHighPercent, histogramMinEV100, histogramMaxEV100);
 

@@ -8,8 +8,8 @@ namespace Horizon
         const SceneView& view,
         RenderGraphTextureHandle sceneColorTexture,
         RenderGraphTextureHandle bloomTexture,
-        RenderGraphTextureHandle colorLUTTexture,
         RenderGraphTextureHandle localExposureTexture,
+        RenderGraphTextureHandle colorLUTTexture,
         RenderGraphBufferHandle autoExposureBuffer,
         bool outputInHDR)
     {
@@ -73,8 +73,8 @@ namespace Horizon
             {
                 sceneColorTexture = builder.ReadTexture(sceneColorTexture, RenderBackendResourceState::ShaderResource);
                 bloomTexture = builder.ReadTexture(bloomTexture, RenderBackendResourceState::ShaderResource);
-                colorLUTTexture = builder.ReadTexture(colorLUTTexture, RenderBackendResourceState::ShaderResource);
                 localExposureTexture = builder.ReadTexture(localExposureTexture, RenderBackendResourceState::ShaderResource);
+                colorLUTTexture = builder.ReadTexture(colorLUTTexture, RenderBackendResourceState::ShaderResource);
                 autoExposureBuffer = builder.ReadBuffer(autoExposureBuffer, RenderBackendResourceState::ShaderResource);
                 outputTexture = builder.WriteTexture(outputTexture, RenderBackendResourceState::UnorderedAccess);
 
@@ -84,27 +84,27 @@ namespace Horizon
                     uint32 threadGroupCountY = CeilDiv(outputTextureDesc.height, PostProcessingThreadGroupSizeY);
                     uint32 threadGroupCountZ = 1;
 
-                    RenderBackendShaderArguments shaderArguments = {};
-                    shaderArguments.BindBufferCBV(0, this->GetCurrentPerFrameConstantBuffer());
-                    shaderArguments.BindTextureSRV(1, RenderBackendTextureSRVDesc::Create(lensDirtTexture));
-                    shaderArguments.BindTextureSRV(2, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(sceneColorTexture)));
-                    shaderArguments.BindTextureSRV(3, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(bloomTexture)));
-                    shaderArguments.BindTextureSRV(4, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(colorLUTTexture)));
-                    shaderArguments.BindTextureSRV(5, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(localExposureTexture)));
-                    shaderArguments.BindBuffer(6, registry.GetRenderBackendBufferHandle(autoExposureBuffer));
-                    shaderArguments.BindTextureUAV(7, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(outputTexture), 0));
+                    RenderBackendShaderConstants shaderConstants = {};
+                    shaderConstants.BindBufferCBV(0, renderBackend->GetBufferCBVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
+                    shaderConstants.BindTextureSRV(1, registry.GetTextureSRVBindlessResourceDescriptorIndex(sceneColorTexture));
+                    shaderConstants.BindTextureSRV(2, renderBackend->GetTextureSRVBindlessResourceDescriptorIndex(lensDirtTexture));
+                    shaderConstants.BindTextureSRV(3, registry.GetTextureSRVBindlessResourceDescriptorIndex(bloomTexture));
+                    shaderConstants.BindTextureSRV(4, registry.GetTextureSRVBindlessResourceDescriptorIndex(localExposureTexture));
+                    shaderConstants.BindTextureSRV(5, registry.GetTextureSRVBindlessResourceDescriptorIndex(colorLUTTexture));
+                    shaderConstants.BindBufferSRV(6, registry.GetBufferSRVBindlessResourceDescriptorIndex(autoExposureBuffer));
+                    shaderConstants.BindTextureUAV(7, registry.GetTextureUAVBindlessResourceDescriptorIndex(outputTexture, 0));
 
-                    //shaderArguments.BindTextureSRV(10, RenderBackendTextureSRVDesc::Create(testTexture));
+                    //shaderConstants.BindTextureSRV(10, registry.GetTextureSRVBindlessResourceDescriptorIndex(testTexture));
 
-                    shaderArguments.BindScalar(0, (float)flags);
-                    shaderArguments.BindScalar(1, chromaticAberrationScale.x);
-                    shaderArguments.BindScalar(2, chromaticAberrationScale.y);
+                    //shaderConstants.BindScalar(0, (float)flags);
+                    //shaderConstants.BindScalar(1, chromaticAberrationScale.x);
+                    //shaderConstants.BindScalar(2, chromaticAberrationScale.y);
 
                     RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::ToneMapping);
 
                     commandList.Dispatch(
                         computeShader,
-                        shaderArguments,
+                        shaderConstants,
                         threadGroupCountX,
                         threadGroupCountY,
                         threadGroupCountZ);

@@ -32,34 +32,36 @@
 #include "RealTimeRendererCommon.hsh"
 #include "SkyAtmosphereCommon.hsh"
 
-BIND_BUFFER_CBV(0, PerFrameShaderParameters);
-BIND_TEXTURE_2D_SRV(1, TransmittanceLutTexture);
-BIND_TEXTURE_2D_SRV(2, MultipleScatteringLutTexture);
-BIND_TEXTURE_3D_UAV(3, float4, AerialPerspectiveVolumeTexture);
+SHADER_CONSTANTS_STRUCT_BEGIN();
+SHADER_CONSTANTS_CONSTANT_BUFFER_CBV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferCBV);
+SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(1, TransmittanceLutTextureSRV);
+SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(2, MultipleScatteringLutTextureSRV);
+SHADER_CONSTANTS_TEXTURE_3D_UAV(3, float4, AerialPerspectiveVolumeTextureUAV);
+SHADER_CONSTANTS_STRUCT_END();
 
 [shader("compute")]
 [numthreads(4, 4, 4)]
 void SkyAtmosphereAerialPerspectiveVolumeCS(uint3 DispatchThreadID : SV_DispatchThreadID)
 {
-    ConstantBuffer<PerFrameShaderParameters> perFrameConstants = GetPerFrameShaderParametersCBV();
-    SkyAtmosphereShaderParameters skyAtmosphereParameters = GetSkyAtmosphereShaderParameters(perFrameConstants);
-    Texture2D transmittanceLutTexture = GetTransmittanceLutTextureSRV();
-    Texture2D multipleScatteringLutTexture = GetMultipleScatteringLutTextureSRV();
-    RWTexture3D<float4> aerialPerspectiveVolumeTexture = GetAerialPerspectiveVolumeTextureUAV();
+    ConstantBuffer<PerFrameShaderParameters> frameShaderParameters = ShaderConstants.GetPerFrameShaderParameterBufferCBV();
+    Texture2D transmittanceLutTexture = ShaderConstants.GetTransmittanceLutTextureSRV();
+    Texture2D multipleScatteringLutTexture = ShaderConstants.GetMultipleScatteringLutTextureSRV();
+    RWTexture3D<float4> aerialPerspectiveVolumeTexture = ShaderConstants.GetAerialPerspectiveVolumeTextureUAV();
 
+    SkyAtmosphereShaderParameters skyAtmosphereParameters = GetSkyAtmosphereShaderParameters(frameShaderParameters);
     float2 aerialPerspectiveVolumeSize = skyAtmosphereParameters.aerialPerspectiveVolumeSize;
     float aerialPerspectiveVolumeSliceCount = aerialPerspectiveVolumeSize.x;
 
     uint3 pixelCoord = DispatchThreadID;
     float2 uv = (float2(pixelCoord.xy) + 0.5f) * aerialPerspectiveVolumeSize.y;
 
-    float3 worldSpaceCameraPosition = perFrameConstants.cameraPosition;
+    float3 worldSpaceCameraPosition = frameShaderParameters.cameraPosition;
     float3 worldSpaceCameraPositionKm = worldSpaceCameraPosition * M_TO_KM;
     float3 planetCenterWorldSpacePositionKm = float3(0.0f, 0.0f, -skyAtmosphereParameters.bottomRadius);
     float3 planetCenterToCameraKm = worldSpaceCameraPositionKm - planetCenterWorldSpacePositionKm;
 
     float3 worldPos = planetCenterToCameraKm;
-    float3 worldSpacePixelPosition = GetWorldSpacePositionFromUvAndDepth(uv, 0.5f, perFrameConstants.clipToWorldMatrix);
+    float3 worldSpacePixelPosition = GetWorldSpacePositionFromUvAndDepth(uv, 0.5f, frameShaderParameters.clipToWorldMatrix);
     float3 worldDir = normalize(worldSpacePixelPosition - worldSpaceCameraPosition);
 
     float slice = ((float(pixelCoord.z) + 0.5f) / aerialPerspectiveVolumeSliceCount);
@@ -110,11 +112,11 @@ void SkyAtmosphereAerialPerspectiveVolumeCS(uint3 DispatchThreadID : SV_Dispatch
     const float maxSampleCount = 0.0f;
     const float depthBufferValue = FarClipPlaneDepthValue;
     const bool mieRayPhase = true;
-    const float3 lightDirection = perFrameConstants.atmosphericLightDirection;
-    const float3 lightIlluminance = perFrameConstants.atmosphericLightOuterSpaceIlluminance;
+    const float3 lightDirection = frameShaderParameters.atmosphericLightDirection;
+    const float3 lightIlluminance = frameShaderParameters.atmosphericLightOuterSpaceIlluminance;
 
     SingleScatteringResult result = IntegrateSingleScatteredLuminance(
-        perFrameConstants,
+        frameShaderParameters,
         skyAtmosphereParameters,
         transmittanceLutTexture,
         multipleScatteringLutTexture,

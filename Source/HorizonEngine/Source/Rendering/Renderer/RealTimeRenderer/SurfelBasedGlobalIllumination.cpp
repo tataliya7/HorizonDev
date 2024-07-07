@@ -26,14 +26,14 @@ namespace Horizon
 //                     {
 //                         uint32 threadGroupCountX = ComputeWorkGroupCount(SurfelGIMaxSurfelCount, SurfelGIIndirectDispatchGroupThreadCount);
 //
-//                         RenderBackendShaderArguments shaderArguments = {};
-//                         shaderArguments.BindBuffer(0, surfelGIInfoBuffer, 0);
-//                         shaderArguments.BindBuffer(1, surfelGIFreeSurfelBuffer, 0);
+//                         RenderBackendShaderConstants shaderConstants = {};
+//                         shaderConstants.BindBuffer(0, surfelGIInfoBuffer, 0);
+//                         shaderConstants.BindBuffer(1, surfelGIFreeSurfelBuffer, 0);
 //
 //                         RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::SurfelGIFreeSurfels);
 //                         commandList.Dispatch(
 //                             computeShader,
-//                             shaderArguments,
+//                             shaderConstants,
 //                             threadGroupCountX,
 //                             1,
 //                             1);
@@ -52,21 +52,21 @@ namespace Horizon
 //                     uint32 threadGroupCountX = ComputeWorkGroupCount(surfelGIRenderWidth, SurfelGIScreenTileSize);
 //                     uint32 threadGroupCountY = ComputeWorkGroupCount(surfelGIRenderHeight, SurfelGIScreenTileSize);
 //
-//                     RenderBackendShaderArguments shaderArguments = {};
-//                     shaderArguments.BindBufferCBV(0, this->GetCurrentPerFrameConstantBuffer());
-//                     shaderArguments.BindTextureSRV(1, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(sceneDepthTexture)));
-//                     shaderArguments.BindTextureSRV(2, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(gbuffer0)));
-//                     shaderArguments.BindBuffer(3, surfelGIInfoBuffer, 0);
-//                     shaderArguments.BindBuffer(4, surfelGICellHeaderBuffer, 0);
-//                     shaderArguments.BindBuffer(5, surfelGICellDataBuffer, 0);
-//                     shaderArguments.BindBuffer(6, surfelGIAliveSurfelIndirectionBuffer, 0);
-//                     shaderArguments.BindBuffer(7, surfelGIFreeSurfelBuffer, 0);
-//                     shaderArguments.BindBuffer(8, surfelGISurfelHotDataBuffer, 0);
+//                     RenderBackendShaderConstants shaderConstants = {};
+//                     shaderConstants.BindBufferCBV(0, renderBackend->GetBufferCBVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
+//                     shaderConstants.BindTextureSRV(1, registry.GetTextureSRVBindlessResourceDescriptorIndex(sceneDepthTexture)));
+//                     shaderConstants.BindTextureSRV(2, registry.GetTextureSRVBindlessResourceDescriptorIndex(gbuffer0)));
+//                     shaderConstants.BindBuffer(3, surfelGIInfoBuffer, 0);
+//                     shaderConstants.BindBuffer(4, surfelGICellHeaderBuffer, 0);
+//                     shaderConstants.BindBuffer(5, surfelGICellDataBuffer, 0);
+//                     shaderConstants.BindBuffer(6, surfelGIAliveSurfelIndirectionBuffer, 0);
+//                     shaderConstants.BindBuffer(7, surfelGIFreeSurfelBuffer, 0);
+//                     shaderConstants.BindBuffer(8, surfelGISurfelHotDataBuffer, 0);
 //
 //                     RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::SurfelGIGapFilling);
 //                     commandList.Dispatch(
 //                         computeShader,
-//                         shaderArguments,
+//                         shaderConstants,
 //                         threadGroupCountX,
 //                         threadGroupCountY,
 //                         1);
@@ -80,13 +80,13 @@ namespace Horizon
 //                 {
 //                     uint32 threadGroupCountX = ComputeWorkGroupCount(SurfelGIUniformGridCellCount, SurfelGIIndirectDispatchGroupThreadCount);
 //
-//                     RenderBackendShaderArguments shaderArguments = {};
-//                     shaderArguments.BindBuffer(0, surfelGICellHeaderBuffer, 0);
+//                     RenderBackendShaderConstants shaderConstants = {};
+//                     shaderConstants.BindBuffer(0, surfelGICellHeaderBuffer, 0);
 //
 //                     RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::SurfelGIGridReset);
 //                     commandList.Dispatch(
 //                         computeShader,
-//                         shaderArguments,
+//                         shaderConstants,
 //                         threadGroupCountX,
 //                         1,
 //                         1);
@@ -98,17 +98,17 @@ namespace Horizon
 //             {
 //                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
 //                 {
-//                     RenderBackendShaderArguments shaderArguments = {};
-//                     shaderArguments.BindBufferCBV(0, this->GetCurrentPerFrameConstantBuffer());
-//                     shaderArguments.BindBuffer(1, surfelGIInfoBuffer, 0);
-//                     shaderArguments.BindBuffer(2, surfelGIAliveSurfelIndirectionBuffer, 0);
-//                     shaderArguments.BindBuffer(3, surfelGISurfelHotDataBuffer, 0);
-//                     shaderArguments.BindBuffer(4, surfelGICellHeaderBuffer, 0);
+//                     RenderBackendShaderConstants shaderConstants = {};
+//                     shaderConstants.BindBufferCBV(0, renderBackend->GetBufferCBVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
+//                     shaderConstants.BindBuffer(1, surfelGIInfoBuffer, 0);
+//                     shaderConstants.BindBuffer(2, surfelGIAliveSurfelIndirectionBuffer, 0);
+//                     shaderConstants.BindBuffer(3, surfelGISurfelHotDataBuffer, 0);
+//                     shaderConstants.BindBuffer(4, surfelGICellHeaderBuffer, 0);
 //
 //                     RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::SurfelGIComputeCellCapacity);
 //                     commandList.DispatchIndirect(
 //                         computeShader,
-//                         shaderArguments,
+//                         shaderConstants,
 //                         surfelGIArgumentBuffer,
 //                         0);
 //                 };
@@ -121,13 +121,13 @@ namespace Horizon
 //         //            {
 //         //                uint32 threadGroupCountX = ComputeWorkGroupCount(SurfelGIUniformGridCellCount, 64);
 //
-//         //                RenderBackendShaderArguments shaderArguments = {};
-//         //                shaderArguments.BindBuffer(0, surfelGICellHeaderBuffer, 0);
+//         //                RenderBackendShaderConstants shaderConstants = {};
+//         //                shaderConstants.BindBuffer(0, surfelGICellHeaderBuffer, 0);
 //
 //         //                RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::SurfelGIComputeCellOffset);
 //         //                commandList.Dispatch(
 //         //                    computeShader,
-//         //                    shaderArguments,
+//         //                    shaderConstants,
 //         //                    threadGroupCountX,
 //         //                    1,
 //         //                    1);
@@ -139,14 +139,14 @@ namespace Horizon
 //             {
 //                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
 //                 {
-//                     RenderBackendShaderArguments shaderArguments = {};
-//                     shaderArguments.BindBuffer(0, surfelGIConstantsBuffer, 0);
-//                     shaderArguments.BindBuffer(1, surfelGIIndirectArguments, 0);
+//                     RenderBackendShaderConstants shaderConstants = {};
+//                     shaderConstants.BindBuffer(0, surfelGIConstantsBuffer, 0);
+//                     shaderConstants.BindBuffer(1, surfelGIIndirectArguments, 0);
 //
 //                     RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::SurfelGIIndirectAruguments);
 //                     commandList.Dispatch(
 //                         computeShader,
-//                         shaderArguments,
+//                         shaderConstants,
 //                         1,
 //                         1,
 //                         1);
@@ -175,20 +175,20 @@ namespace Horizon
 //                     uint32 threadGroupCountX = ComputeWorkGroupCount(targetResolution.width, PostProcessingThreadGroupSizeX);
 //                     uint32 threadGroupCountY = ComputeWorkGroupCount(targetResolution.height, PostProcessingThreadGroupSizeY);
 //
-//                     RenderBackendShaderArguments shaderArguments = {};
-//                     shaderArguments.BindBufferCBV(0, this->GetCurrentPerFrameConstantBuffer());
-//                     shaderArguments.BindTextureSRV(1, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(sceneColorTexture)));
-//                     shaderArguments.BindTextureSRV(2, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(sceneDepthTexture)));
-//                     shaderArguments.BindBuffer(3, surfelGIInfoBuffer, 0);
-//                     shaderArguments.BindBuffer(4, surfelGICellHeaderBuffer, 0);
-//                     shaderArguments.BindBuffer(5, surfelGICellDataBuffer, 0);
-//                     shaderArguments.BindBuffer(6, surfelGISurfelHotDataBuffer, 0);
-//                     shaderArguments.BindTextureUAV(7, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(outputTexture), 0));
+//                     RenderBackendShaderConstants shaderConstants = {};
+//                     shaderConstants.BindBufferCBV(0, renderBackend->GetBufferCBVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
+//                     shaderConstants.BindTextureSRV(1, registry.GetTextureSRVBindlessResourceDescriptorIndex(sceneColorTexture)));
+//                     shaderConstants.BindTextureSRV(2, registry.GetTextureSRVBindlessResourceDescriptorIndex(sceneDepthTexture)));
+//                     shaderConstants.BindBuffer(3, surfelGIInfoBuffer, 0);
+//                     shaderConstants.BindBuffer(4, surfelGICellHeaderBuffer, 0);
+//                     shaderConstants.BindBuffer(5, surfelGICellDataBuffer, 0);
+//                     shaderConstants.BindBuffer(6, surfelGISurfelHotDataBuffer, 0);
+//                     shaderConstants.BindTextureUAV(7, registry.GetTextureUAVBindlessResourceDescriptorIndexoutputTexture), 0));
 //
 //                     RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::SurfelGIVisualization);
 //                     commandList.Dispatch2D(
 //                         computeShader,
-//                         shaderArguments,
+//                         shaderConstants,
 //                         threadGroupCountX,
 //                         groupCountY);
 //                 };

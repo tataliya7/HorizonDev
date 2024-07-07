@@ -12,13 +12,13 @@ struct DebugDrawLinesVSToPS
 [shader("pixel")]
 void DebugDrawLinesVS(uint vertexIndex : SV_VertexID, out float4 svPosition : SV_Position, out DebugDrawLinesVSToPS output)
 {
-    ConstantBuffer<PerFrameShaderParameters> perFrameConstants = GetPerFrameShaderParametersCBV();
+    ConstantBuffer<PerFrameShaderParameters> frameShaderParameters = GetPerFrameShaderParameterBufferCBV();
 
     ByteAddressBuffer vertexBuffer = GetLineVertexBufferSRV();
-    uint bufferIndex = SHADER_ARGUMENTS_INDEX(1);
+    uint bufferIndex = GetShaderConstantValue(1);
     float3 vertexPosition = vertexBuffer.Load<float3>((bufferIndex & 0xffff) + vertexIndex * sizeof(float3));
 
-    float4 clipPosition = mul(perFrameConstants.nonJitteredWorldToClipMatrix, float4(vertexPosition, 1.0));
+    float4 clipPosition = mul(frameShaderParameters.nonJitteredWorldToClipMatrix, float4(vertexPosition, 1.0));
 
     output.color = float4(1, 0, 0, 1);
     // output.color = color;

@@ -18,13 +18,13 @@ struct LightShaftsDownsapmpleShaderArguments
 [numthreads(8, 8, 1)]
 void LightShaftsDownsampleCS(uint3 DispatchThreadID : SV_DispatchThreadID)
 {
-    ConstantBuffer<PerFrameShaderParameters> perFrameConstants = GetPerFrameShaderParametersCBV();
+    ConstantBuffer<PerFrameShaderParameters> frameShaderParameters = GetPerFrameShaderParameterBufferCBV();
     Texture2D sceneColorTexture = GetSceneColorTextureSRV();
     Texture2D sceneDepthTexture = GetSceneDepthTextureSRV();
     RWTexture2D<float3> outputTexture = GetOutputTextureUAV();
 
     LightShaftsDownsapmpleShaderArguments parameters = (LightShaftsDownsapmpleShaderArguments)0;
-    // parameters.AspectRatioAndInvAspectRatio = SHADER_ARGUMENTS_DATA(2);
+    // parameters.AspectRatioAndInvAspectRatio = (2);
     // parameters.TextureSpaceBlurOrigin;
     // parameters.BloomTintAndThreshold;
     // parameters.LightShaftParameters;
@@ -42,15 +42,15 @@ void LightShaftsDownsampleCS(uint3 DispatchThreadID : SV_DispatchThreadID)
     float3 sceneColor = sceneColorTexture.SampleLevel(GlobalSamplerLinearClamp, uv, 0).rgb;
     float sceneDepth = sceneDepthTexture.SampleLevel(GlobalSamplerPointClamp, uv, 0).r;
 
-    sceneDepth = ComputeCameraSpaceDepth(sceneDepth, perFrameConstants.nearClippingPlane, perFrameConstants.farClippingPlane);
+    sceneDepth = ComputeCameraSpaceDepth(sceneDepth, frameShaderParameters.nearClippingPlane, frameShaderParameters.farClippingPlane);
 
     float2 TextureSpaceBlurOrigin;
-    TextureSpaceBlurOrigin.x = SHADER_ARGUMENTS_DATA(2);
-    TextureSpaceBlurOrigin.y = SHADER_ARGUMENTS_DATA(3);
+    TextureSpaceBlurOrigin.x = (2);
+    TextureSpaceBlurOrigin.y = (3);
 
     float2 aspectRatioAndInvAspectRatio;
-    aspectRatioAndInvAspectRatio.x = SHADER_ARGUMENTS_DATA(4);
-    aspectRatioAndInvAspectRatio.y = SHADER_ARGUMENTS_DATA(5);
+    aspectRatioAndInvAspectRatio.x = (4);
+    aspectRatioAndInvAspectRatio.y = (5);
 
     float BloomMaxBrightness = 4;
     float4 BloomTintAndThreshold = float4(1.0, 0.7991, 0, 0);
@@ -63,7 +63,7 @@ void LightShaftsDownsampleCS(uint3 DispatchThreadID : SV_DispatchThreadID)
 
     // Only bloom colors according if post exposure brightness is over BloomThreshold,
     // and if brightness is greater than BloomMaxBrightness, scale it down to BloomMaxBrightness to avoid saturated artefacts.
-    float luminance = max(RelativeLuminance(sceneColor * perFrameConstants.oneOverPreExposure), 6.10352e-5);
+    float luminance = max(RelativeLuminance(sceneColor * frameShaderParameters.oneOverPreExposure), 6.10352e-5);
     float adjustedLuminance = clamp(luminance - BloomTintAndThreshold.a, 0.0f, BloomMaxBrightness);
     float3 BloomColor = LightShaftParameters.y * sceneColor / luminance * adjustedLuminance * 2.0f;
 

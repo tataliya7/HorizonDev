@@ -122,7 +122,7 @@ namespace Horizon
         RenderBackendCommandList* commandList = new RenderBackendCommandList(GArena);
 
         gpuProfiler->BeginFrame(commandList);
-        
+
         uint32 frameTimingQueryRegion = gpuProfiler->BeginRegion(commandList, "GPU Frametime");
 
         renderer->OnRenderBegin(sceneView);
@@ -281,6 +281,9 @@ namespace Horizon
         ImVec2 clipOffset = drawData->DisplayPos;         // (0,0) unless using multi-viewports
         ImVec2 clipScale = drawData->FramebufferScale;    // (1,1) unless using retina display which are often (2,2)
 
+        RenderBackendShaderHandle vertexShader = shaderLibrary->GetShader(ShaderID::ImGuiVS);
+        RenderBackendShaderHandle pixelShader = shaderLibrary->GetShader(ShaderID::ImGuiPS);
+
         // Render command lists
         // (Because we merged all buffers into a single one, we maintain our own offset into them)
         int globalIndexOffset = 0;
@@ -311,6 +314,7 @@ namespace Horizon
 
                 Vector2 scale = Vector2(2.0f / drawData->DisplaySize.x, -2.0f / drawData->DisplaySize.y);
                 Vector2 translate = Vector2(-1.0f - drawData->DisplayPos.x * scale.x, 1.0f + drawData->DisplayPos.y * scale.y);
+                int vertexOffset = pcmd->VtxOffset + globalVertexOffset;
 
                 RenderBackendGraphicsPipelineState graphicsPipelineState = {};
                 graphicsPipelineState.rasterizationState.cullMode = RenderBackendRasterizationCullMode::None;
@@ -325,32 +329,20 @@ namespace Horizon
                 graphicsPipelineState.colorBlendState.targetBlends[0].alphaBlendOp = RenderBackendBlendOp::Add;
                 graphicsPipelineState.colorBlendState.targetBlends[0].writeMask = RenderBackendColorComponentFlags::RGBA;
 
-                struct ImGuiShaderArguments
-                {
-                    Vector2 scale;
-                    Vector2 translate;
-                    int vertexOffset;
-                };
-
-                RenderBackendShaderArguments shaderArguments = {};
-                shaderArguments.BindTextureSRV(0, RenderBackendTextureSRVDesc::Create(RenderBackendTextureHandle(pcmd->TextureId)));
-                shaderArguments.BindBuffer(1, vertexBuffer[frameInFlightCounter]);
-                {
-                    ImGuiShaderArguments sa = {};
-                    sa.scale = scale;
-                    sa.translate = translate;
-                    sa.vertexOffset = pcmd->VtxOffset + globalVertexOffset;
-                    shaderArguments.PushConstantsTest(&sa, sizeof(sa));
-                }
-
-                RenderBackendShaderHandle vertexShader = shaderLibrary->GetShader(ShaderID::ImGuiVS);
-                RenderBackendShaderHandle pixelShader = shaderLibrary->GetShader(ShaderID::ImGuiPS);
+                RenderBackendShaderConstants shaderConstants = {};
+                shaderConstants.BindTextureSRV(0, renderBackend->GetTextureSRVBindlessResourceDescriptorIndex(RenderBackendTextureHandle(pcmd->TextureId)));
+                shaderConstants.BindBufferSRV(1, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(vertexBuffer[frameInFlightCounter]));
+                shaderConstants.BindScalar(2, scale.x);
+                shaderConstants.BindScalar(3, scale.y);
+                shaderConstants.BindScalar(4, translate.x);
+                shaderConstants.BindScalar(5, translate.y);
+                shaderConstants.BindScalar(6, vertexOffset);
 
                 commandList.DrawIndexed(
                     vertexShader,
                     pixelShader,
                     graphicsPipelineState,
-                    shaderArguments,
+                    shaderConstants,
                     indexBuffer[frameInFlightCounter],
                     pcmd->ElemCount,
                     1,
@@ -424,8 +416,8 @@ namespace Horizon
                     graphicsPipelineState.colorBlendState.targetBlends[0].alphaBlendOp = RenderBackendBlendOp::Add;
                     graphicsPipelineState.colorBlendState.targetBlends[0].writeMask = RenderBackendColorComponentFlags::RGBA;
 
-                    RenderBackendShaderArguments shaderArguments = {};
-                    shaderArguments.BindTextureSRV(0, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(uiColorAndAlphaTexture)));
+                    RenderBackendShaderConstants shaderConstants = {};
+                    shaderConstants.BindTextureSRV(0, registry.GetTextureSRVBindlessResourceDescriptorIndex(uiColorAndAlphaTexture));
 
                     RenderBackendShaderHandle vertexShader = shaderLibrary->GetShader(ShaderID::FullScreenQuadVS);
                     RenderBackendShaderHandle pixelShader = shaderLibrary->GetShader(ShaderID::GUICompositionPS);
@@ -434,87 +426,13 @@ namespace Horizon
                         vertexShader,
                         pixelShader,
                         graphicsPipelineState,
-                        shaderArguments,
+                        shaderConstants,
                         3, 1, 0, 0,
                         RenderBackendPrimitiveTopology::TriangleList);
                 };
             });
     }
 #if 0
-    void Texture2DGenerateMips(ShaderLibrary* shaderLibrary, RenderBackendCommandList& commandList, RenderBackendTextureHandle textureHandle, uint32 width, uint32 height, uint32 numMipLevels)
-    {
-        if (numMipLevels < 2)
-        {
-            return;
-        }
-
-        RenderBackendShaderHandle graphicsShader = shaderLibrary->GetShaderHandle((uint32)ShaderPipelineID::DownsampleTexture2D_PS);
-        for (uint32 mipLevel = 1; mipLevel < numMipLevels; mipLevel++)
-        {
-            width = width >> 1;
-            height = height >> 1;
-
-            RenderBackendViewport viewport(0.0f, 0.0f, (float)width, (float)height);
-            commandList.SetViewports(&viewport, 1);
-
-            RenderBackendScissor scissor(0, 0, width, height);
-            commandList.SetScissors(&scissor, 1);
-
-            if (mipLevel == 1)
-            {
-                RenderBackendBarrier transitions[] =
-                {
-                    RenderBackendBarrier(textureHandle, RenderBackendTextureSubresourceRange(mipLevel, 1, 0, RenderBackendTextureSubresourceRange::RemainingArrayLayers), RenderBackendResourceState::Undefined, RenderBackendResourceState::RenderTarget)
-                };
-                commandList.Transitions(transitions, 1);
-            }
-            else
-            {
-                RenderBackendBarrier transitions[] =
-                {
-                    RenderBackendBarrier(textureHandle, RenderBackendTextureSubresourceRange(mipLevel - 1, 1, 0, RenderBackendTextureSubresourceRange::RemainingArrayLayers), RenderBackendResourceState::RenderTarget, RenderBackendResourceState::ShaderResource),
-                    RenderBackendBarrier(textureHandle, RenderBackendTextureSubresourceRange(mipLevel, 1, 0, RenderBackendTextureSubresourceRange::RemainingArrayLayers), RenderBackendResourceState::Undefined, RenderBackendResourceState::RenderTarget)
-                };
-                commandList.Transitions(transitions, 2);
-            }
-
-            RenderBackendRenderPassInfo renderPass = {
-                .renderTargets = { {.texture = textureHandle, .mipLevel = mipLevel, .arrayLayer = 0, .loadOp = RenderBackendRenderPassBeginningAccessType::Discard, .storeOp = RenderBackendRenderPassEndingAccessType::Preserve } },
-            };
-            commandList.BeginRenderPass(renderPass);
-
-            RenderBackendShaderArguments shaderArguments = {};
-            shaderArguments.BindTextureSRV(0, RenderBackendTextureSRVDesc::Create(textureHandle));
-            shaderArguments.PushConstants(0, (float)(mipLevel - 1));
-            shaderArguments.PushConstants(1, (float)(width));
-            shaderArguments.PushConstants(2, (float)(height));
-
-            RenderBackendGraphicsPipelineState graphicsPipelineState = {};
-
-            commandList.Draw(
-                graphicsShader,
-                graphicsPipelineState,
-                shaderArguments,
-                3, 1, 0, 0,
-                RenderBackendPrimitiveTopology::TriangleList);
-
-            commandList.EndRenderPass();
-
-            //uint32 threadGroupCountX = ComputeWorkGroupCount(width, 8);
-            //uint32 threadGroupCountY = ComputeWorkGroupCount(height, 8);
-            //uint32 threadGroupCountZ = 1;
-
-            //commandList.Dispatch(
-            //    downsampleTexture2DCS,
-            //    shaderArguments,
-            //    threadGroupCountX,
-            //    threadGroupCountY,
-            //    threadGroupCountZ);
-        }
-        RenderBackendBarrier transition = RenderBackendBarrier(textureHandle, RenderBackendTextureSubresourceRange(numMipLevels - 1, RenderBackendTextureSubresourceRange::RemainingMipLevels, 0, RenderBackendTextureSubresourceRange::RemainingArrayLayers), RenderBackendResourceState::RenderTarget, RenderBackendResourceState::ShaderResource);
-        commandList.Transitions(&transition, 1);
-    }
-
     static void SetupCubeShadowMapParameters(const LightComponent& lightComponent, CubeShadowMapShaderParameters& parameters)
     {
         float nearClippingPlane = 0.1f;
@@ -1537,22 +1455,22 @@ namespace Horizon
                     int vertexOffset;
                 };
 
-                RenderBackendShaderArguments shaderArguments = {};
-                shaderArguments.BindTextureSRV(0, RenderBackendTextureSRVDesc::Create(RenderBackendTextureHandle(pcmd->TextureId)));
-                shaderArguments.BindBuffer(1, vertexBuffer[frameInFlightCounter], 0);
+                RenderBackendShaderConstants shaderConstants = {};
+                shaderConstants.BindTextureSRV(0, RenderBackendTextureSRVDesc::Create(RenderBackendTextureHandle(pcmd->TextureId)));
+                shaderConstants.BindBuffer(1, vertexBuffer[frameInFlightCounter], 0);
                 {
                     ImGuiShaderArguments sa = {};
                     sa.vertexOffset = pcmd->VtxOffset + globalVertexOffset;
                     sa.scale = scale;
                     sa.translate = translate;
-                    shaderArguments.PushConstantsTest(&sa, sizeof(sa));
+                    shaderConstants.PushConstantsTest(&sa, sizeof(sa));
                 }
 
                 RenderBackendShaderHandle uiShader = shaderLibrary->GetShaderHandle((uint32)ShaderPipelineID::UIColorAndAlpha);
                 commandList.DrawIndexed(
                     uiShader,
                     graphicsPipelineState,
-                    shaderArguments,
+                    shaderConstants,
                     indexBuffer[frameInFlightCounter],
                     pcmd->ElemCount,
                     1,

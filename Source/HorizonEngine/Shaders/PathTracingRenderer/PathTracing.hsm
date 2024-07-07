@@ -132,23 +132,23 @@ void PathTracingRG()
     uint3 dispatchRaysIndex = DispatchRaysIndex();
     uint3 dispatchRaysDimensions = DispatchRaysDimensions();
 
-    ConstantBuffer<PerFrameShaderParameters> perFrameConstants = GetPerFrameShaderParametersCBV();
+    ConstantBuffer<PerFrameShaderParameters> frameShaderParameters = GetPerFrameShaderParameterBufferCBV();
     RaytracingAccelerationStructure topLevelAS = GetTopLevelAS();
     RWTexture2D<float4> radianceTexture = GetRadianceTextureUAV();
 
     float2 subpixelJitter = 0.5f;//float2(randf(seed), randf(seed));
 
     uint2 pixelCoord = dispatchRaysIndex.xy;
-    float2 uv = (float2(pixelCoord) + subpixelJitter) * perFrameConstants.outputSizeAndInvOutputSize.zw;
+    float2 uv = (float2(pixelCoord) + subpixelJitter) * frameShaderParameters.outputSizeAndInvOutputSize.zw;
     float2 position = UVSpaceToClipSpace(uv);
 
-    uint maxBounces = perFrameConstants.maxBounces;
+    uint maxBounces = frameShaderParameters.maxBounces;
 
     float throughput = 1.0f;
 
     // Create camera ray
-    float4 nearPoint = mul(perFrameConstants.clipToWorldMatrix, float4(position, 1.0f, 1.0f));
-    float4 farPoint = mul(perFrameConstants.clipToWorldMatrix, float4(position, 0.0f, 1.0f));
+    float4 nearPoint = mul(frameShaderParameters.clipToWorldMatrix, float4(position, 1.0f, 1.0f));
+    float4 farPoint = mul(frameShaderParameters.clipToWorldMatrix, float4(position, 0.0f, 1.0f));
     float3 rayOrigin = nearPoint.xyz / nearPoint.w;
     float3 rayDirection = normalize(farPoint.xyz / farPoint.w - nearPoint.xyz / nearPoint.w);
 

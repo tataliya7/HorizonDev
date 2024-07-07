@@ -3,8 +3,11 @@
 #include "PostProcessingCommon.hsh"
 #include "MotionBlurCommon.hsh"
 
-BIND_BUFFER_CBV(0, PerFrameShaderParameters);
-BIND_TEXTURE_2D_SRV(1, VelocityRangeTexture);
+SHADER_CONSTANTS_STRUCT_BEGIN();
+SHADER_CONSTANTS_CONSTANT_BUFFER_CBV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferCBV);
+SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(1, VelocityRangeTextureSRV);
+SHADER_CONSTANTS_SCALAR(4, uint, ScatterPassIndex);
+SHADER_CONSTANTS_STRUCT_END();
 
 static const uint VertexCountPerQuad = 6;
 
@@ -34,8 +37,8 @@ void MotionBlurVelocityDilationScatterVS(
     out nointerpolation float4 velocity : TEXCOORD0,
     out float4 position : SV_Position)
 {
-    Texture2D velocityRangeTexture = GetVelocityRangeTextureSRV();
-    uint scatterPassIndex = uint(SHADER_ARGUMENTS_DATA(0));
+    Texture2D velocityRangeTexture = ShaderConstants.GetVelocityRangeTextureSRV();
+    uint scatterPassIndex = ShaderConstants.GetScatterPassIndex();
 
     uint width, height;
     velocityRangeTexture.GetDimensions(width, height);

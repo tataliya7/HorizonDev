@@ -56,18 +56,18 @@ namespace Horizon
         //
         //             for (const auto& drawCallInfo : renderEngine->drawList)
         //             {
-        //                 RenderBackendShaderArguments shaderArguments = {};
-        //                 shaderArguments.BindBufferCBV(0, this->GetCurrentPerFrameConstantBuffer());
-        //                 shaderArguments.BindBuffer(1, renderEngine->geometryBuffer, drawCallInfo.geometryIndex * sizeof(GeometryShaderParameters));
-        //                 shaderArguments.BindBuffer(2, renderEngine->materialBuffer, 0);
-        //                 shaderArguments.BindBuffer(3, renderEngine->cubeShadowMapBuffer, sizeof(CubeShadowMapShaderParameters));
+        //                 RenderBackendShaderConstants shaderConstants = {};
+        //                 shaderConstants.BindBufferCBV(0, renderBackend->GetBufferCBVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
+        //                 shaderConstants.BindBuffer(1, renderEngine->geometryBuffer, drawCallInfo.geometryIndex * sizeof(GeometryShaderParameters));
+        //                 shaderConstants.BindBuffer(2, renderEngine->materialBuffer, 0);
+        //                 shaderConstants.BindBuffer(3, renderEngine->cubeShadowMapBuffer, sizeof(CubeShadowMapShaderParameters));
         //
         //                 RenderBackendShaderHandle graphicsShader = shaderLibrary->GetShader(ShaderID::LocalLightShadows);
         //
         //                 commandList.DrawIndexed(
         //                     graphicsShader,
         //                     graphicsPipelineState,
-        //                     shaderArguments,
+        //                     shaderConstants,
         //                     drawCallInfo.indexBuffer,
         //                     drawCallInfo.numIndices,
         //                     numViewports,

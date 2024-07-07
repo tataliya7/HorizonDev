@@ -22,17 +22,17 @@ namespace Horizon
             graphicsPipelineState.depthStencilState.depthWriteEnable = true;
             graphicsPipelineState.depthStencilState.depthCompareFunction = RenderBackendCompareOp::GreaterOrEqual;
 
-            RenderBackendShaderArguments shaderArguments = {};
-            shaderArguments.BindBufferCBV(0, this->GetCurrentPerFrameConstantBuffer());
-            shaderArguments.BindBufferSRV(1, gpuScene->geometryBuffer);
-            shaderArguments.BindBufferSRV(2, gpuScene->geometryInstanceBuffer);
-            shaderArguments.BindScalar(3, drawCall.geometryID);
+            RenderBackendShaderConstants shaderConstants = {};
+            shaderConstants.BindBufferCBV(0, renderBackend->GetBufferCBVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
+            //shaderConstants.BindBufferSRV(1, gpuScene->geometryBuffer);
+            //shaderConstants.BindBufferSRV(2, gpuScene->geometryInstanceBuffer);
+            shaderConstants.BindScalar(3, drawCall.geometryID);
 
             commandList.DrawIndexed(
                 vertexShader,
                 pixelShader,
                 graphicsPipelineState,
-                shaderArguments,
+                shaderConstants,
                 drawCall.indexBuffer,
                 drawCall.indexCount,
                 drawCall.instanceCount,

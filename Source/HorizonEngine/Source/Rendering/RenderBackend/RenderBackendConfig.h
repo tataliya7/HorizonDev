@@ -9,4 +9,6 @@ enum
     RenderBackendMaxMipLevelCount = 16,
     RenderBackendQueueFamilyCount = 4,
     RenderBackendShaderStageCount = 10,
+    RenderBackendPushConstantsBytes = 128,
+    RenderBackendPushConstantsSlotCount = 32,
 };

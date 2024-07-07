@@ -9,7 +9,7 @@ BIND_TEXTURE_2D_UAV(2, float4, OutputTexture);
 [numthreads(8, 8, 1)]
 void VisualizeAmbientOcclusionCS(uint3 DispatchThreadID : SV_DispatchThreadID)
 {
-    ConstantBuffer<PerFrameShaderParameters> perFrameConstants = GetPerFrameShaderParametersCBV();
+    ConstantBuffer<PerFrameShaderParameters> frameShaderParameters = GetPerFrameShaderParameterBufferCBV();
     Texture2D ambientOcclusionTexture = GetAmbientOcclusionTextureSRV();
     RWTexture2D<float4> outputTexture = GetOutputTextureUAV();
 

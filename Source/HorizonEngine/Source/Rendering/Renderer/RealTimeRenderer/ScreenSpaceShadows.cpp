@@ -56,17 +56,17 @@ namespace Horizon
         //
         //                     for (const auto& drawCallInfo : renderEngine->drawList)
         //                     {
-        //                         RenderBackendShaderArguments shaderArguments = {};
-        //                         shaderArguments.BindBufferCBV(0, this->GetCurrentPerFrameConstantBuffer());
-        //                         shaderArguments.BindBuffer(1, renderEngine->geometryBuffer, drawCallInfo.geometryIndex * sizeof(GeometryShaderParameters));
-        //                         shaderArguments.BindBuffer(2, renderEngine->materialBuffer, 0);
-        //                         shaderArguments.BindBuffer(3, renderEngine->cascadedShadowMapBuffer, 0);
-        //                         shaderArguments.PushConstants(0, 1.0f * cascadeIndex);
+        //                         RenderBackendShaderConstants shaderConstants = {};
+        //                         shaderConstants.BindBufferCBV(0, renderBackend->GetBufferCBVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
+        //                         shaderConstants.BindBuffer(1, renderEngine->geometryBuffer, drawCallInfo.geometryIndex * sizeof(GeometryShaderParameters));
+        //                         shaderConstants.BindBuffer(2, renderEngine->materialBuffer, 0);
+        //                         shaderConstants.BindBuffer(3, renderEngine->cascadedShadowMapBuffer, 0);
+        //                         shaderConstants.PushConstants(0, 1.0f * cascadeIndex);
         //
         //                         commandList.DrawIndexed(
         //                             graphicsShader,
         //                             graphicsPipelineState,
-        //                             shaderArguments,
+        //                             shaderConstants,
         //                             drawCallInfo.indexBuffer,
         //                             drawCallInfo.numIndices,
         //                             1,
@@ -102,17 +102,17 @@ namespace Horizon
         //             uint32 threadGroupCountY = ComputeWorkGroupCount(renderResolution.height, 8);
         //             uint32 threadGroupCountZ = 1;
         //
-        //             RenderBackendShaderArguments shaderArguments = {};
-        //             shaderArguments.BindBufferCBV(0, this->GetCurrentPerFrameConstantBuffer());
-        //             shaderArguments.BindBuffer(4, renderEngine->cascadedShadowMapBuffer, 0);
-        //             shaderArguments.BindTextureSRV(2, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(sceneDepthTexture)));
-        //             shaderArguments.BindTextureSRV(3, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(shadowMap)));
-        //             shaderArguments.BindTextureUAV(5, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(screenSpaceShadowMaskTexture), 0));
+        //             RenderBackendShaderConstants shaderConstants = {};
+        //             shaderConstants.BindBufferCBV(0, renderBackend->GetBufferCBVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
+        //             shaderConstants.BindBuffer(4, renderEngine->cascadedShadowMapBuffer, 0);
+        //             shaderConstants.BindTextureSRV(2, registry.GetTextureSRVBindlessResourceDescriptorIndex(sceneDepthTexture)));
+        //             shaderConstants.BindTextureSRV(3, registry.GetTextureSRVBindlessResourceDescriptorIndex(shadowMap)));
+        //             shaderConstants.BindTextureUAV(5, registry.GetTextureUAVBindlessResourceDescriptorIndexscreenSpaceShadowMaskTexture), 0));
         //
         //             RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::ScreenSpaceShadowsDirectionalLight);
         //             commandList.Dispatch(
         //                 computeShader,
-        //                 shaderArguments,
+        //                 shaderConstants,
         //                 threadGroupCountX,
         //                 threadGroupCountY,
         //                 threadGroupCountZ);

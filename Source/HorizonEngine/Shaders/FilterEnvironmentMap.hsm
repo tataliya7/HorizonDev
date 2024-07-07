@@ -1,11 +1,14 @@
 #include "ShaderCommon.hsh"
 #include "BRDFCommon.hsh"
 
-BIND_TEXTURE_CUBE_SRV(0, EnvironmentMap);
-BIND_TEXTURE_2D_ARRAY_UAV(1, float4, FilteredEnvironmentMap);
+SHADER_CONSTANTS_STRUCT_BEGIN();
+SHADER_CONSTANTS_TEXTURE_CUBE_DEFAULT_SRV(0, EnvironmentMapTextureSRV);
+SHADER_CONSTANTS_TEXTURE_2D_ARRAY_UAV(1, float4, FilteredEnvironmentMapTextureUAV);
+SHADER_CONSTANTS_SCALAR(2, float, Roughness);
+SHADER_CONSTANTS_STRUCT_END();
 
 // Filtering based on https://placeholderart.wordpress.com/2015/07/28/implementation-notes-runtime-environment-map-filtering-for-image-based-lighting/
-float3 FilterEnvironmentMap(TextureCube environmentMap, float3 N, float roughness, uint numSamples)
+float3 FilterEnvironmentMap(TextureCube environmentMapTexture, float3 N, float roughness, uint numSamples)
 {
     float3 T; float3 B;
     CreateOrthonormalBasis(T, B, N);
@@ -40,7 +43,7 @@ float3 FilterEnvironmentMap(TextureCube environmentMap, float3 N, float roughnes
 
             float mipLevel = 0.5 * log2(omegaS / omegaP);
 
-            float3 color = environmentMap.SampleLevel(GlobalSamplerLinearWarp, L, mipLevel).rgb;
+            float3 color = environmentMapTexture.SampleLevel(GlobalSamplerLinearWarp, L, mipLevel).rgb;
 
             radiance += color * NdotL;
             weight   += NdotL;
@@ -54,31 +57,32 @@ float3 FilterEnvironmentMap(TextureCube environmentMap, float3 N, float roughnes
 [numthreads(8, 8, 6)]
 void FilterEnvironmentMapCS(uint3 DispatchThreadID : SV_DispatchThreadID)
 {
-    RWTexture2DArray<float4> filteredEnvironmentMap = GetFilteredEnvironmentMapUAV();
+    RWTexture2DArray<float4> filteredEnvironmentMapTexture = ShaderConstants.GetFilteredEnvironmentMapTextureUAV();
+
     uint width, height, faces;
-    filteredEnvironmentMap.GetDimensions(width, height, faces);
+    filteredEnvironmentMapTexture.GetDimensions(width, height, faces);
     if (DispatchThreadID.x >= width || DispatchThreadID.y >= height)
     {
         return;
     }
 
     uint3 coord = DispatchThreadID;
-    float2 uv = (coord.xy + 0.5) / float2(width, height);
+    float2 uv = (float2(coord.xy) + 0.5f) / float2(width, height);
     float3 N = CalculateCubemapVector(uv, coord.z);
 
-    TextureCube environmentMap = GetEnvironmentMapSRV();
-    float roughness = SHADER_ARGUMENTS_DATA(0);
+    TextureCube environmentMapTexture = ShaderConstants.GetEnvironmentMapTextureSRV();
+    float roughness = ShaderConstants.GetRoughness();
 
     if (roughness < 0.01)
     {
-        filteredEnvironmentMap[coord] = environmentMap.SampleLevel(GlobalSamplerLinearWarp, N, 0);
+        filteredEnvironmentMapTexture[coord] = environmentMapTexture.SampleLevel(GlobalSamplerLinearWarp, N, 0);
         return;
     }
 
     const uint NumSamples = 1024;
     //const uint NumSamples = roughness < 0.1 ? 32 : 64;
 
-    float3 result = FilterEnvironmentMap(environmentMap, N, roughness, NumSamples);
+    float3 result = FilterEnvironmentMap(environmentMapTexture, N, roughness, NumSamples);
 
-    filteredEnvironmentMap[coord] = float4(result, 1.0);
+    filteredEnvironmentMapTexture[coord] = float4(result, 1.0f);
 }

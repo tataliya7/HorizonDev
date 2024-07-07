@@ -63,18 +63,18 @@ namespace Horizon
                         uint32 threadGroupCountX = ComputeWorkGroupCount(width, PostProcessingThreadGroupSizeX);
                         uint32 threadGroupCountY = ComputeWorkGroupCount(height, PostProcessingThreadGroupSizeY);
 
-                        RenderBackendShaderArguments shaderArguments = {};
-                        shaderArguments.BindBufferCBV(0, this->GetCurrentPerFrameConstantBuffer());
-                        shaderArguments.BindTextureSRV(1, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(sceneColorTexture)));
-                        if (isAutoExposureTextureValid) shaderArguments.BindTextureSRV(2, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(autoExposureTexture)));
-                        shaderArguments.BindTextureUAV(3, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(localExposureLuminances), 0));
-                        shaderArguments.PushConstants(0, highlights);
-                        shaderArguments.PushConstants(1, shadows);
+                        RenderBackendShaderConstants shaderConstants = {};
+                        shaderConstants.BindBufferCBV(0, renderBackend->GetBufferCBVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
+                        shaderConstants.BindTextureSRV(1, registry.GetTextureSRVBindlessResourceDescriptorIndex(sceneColorTexture)));
+                        if (isAutoExposureTextureValid) shaderConstants.BindTextureSRV(2, registry.GetTextureSRVBindlessResourceDescriptorIndex(autoExposureTexture)));
+                        shaderConstants.BindTextureUAV(3, registry.GetTextureUAVBindlessResourceDescriptorIndexlocalExposureLuminances), 0));
+                        shaderConstants.PushConstants(0, highlights);
+                        shaderConstants.PushConstants(1, shadows);
 
                         RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::LocalExposureComputeLuminances);
                         commandList.Dispatch2D(
                             computeShader,
-                            shaderArguments,
+                            shaderConstants,
                             threadGroupCountX,
                             groupCountY);
                     };
@@ -92,16 +92,16 @@ namespace Horizon
                         uint32 threadGroupCountX = ComputeWorkGroupCount(width, PostProcessingThreadGroupSizeX);
                         uint32 threadGroupCountY = ComputeWorkGroupCount(height, PostProcessingThreadGroupSizeY);
 
-                        RenderBackendShaderArguments shaderArguments = {};
-                        shaderArguments.BindBufferCBV(0, this->GetCurrentPerFrameConstantBuffer());
-                        shaderArguments.BindTextureSRV(1, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(localExposureLuminances)));
-                        shaderArguments.BindTextureUAV(2, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(localExposureWeights), 0));
-                        shaderArguments.PushConstants(0, sigma);
+                        RenderBackendShaderConstants shaderConstants = {};
+                        shaderConstants.BindBufferCBV(0, renderBackend->GetBufferCBVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
+                        shaderConstants.BindTextureSRV(1, registry.GetTextureSRVBindlessResourceDescriptorIndex(localExposureLuminances)));
+                        shaderConstants.BindTextureUAV(2, registry.GetTextureUAVBindlessResourceDescriptorIndexlocalExposureWeights), 0));
+                        shaderConstants.PushConstants(0, sigma);
 
                         RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::LocalExposureComputeWeights);
                         commandList.Dispatch2D(
                             computeShader,
-                            shaderArguments,
+                            shaderConstants,
                             threadGroupCountX,
                             groupCountY);
                     };
@@ -144,14 +144,14 @@ namespace Horizon
                             uint32 threadGroupCountX = ComputeWorkGroupCount(w, 8);
                             uint32 threadGroupCountY = ComputeWorkGroupCount(h, 8);
 
-                            RenderBackendShaderArguments shaderArguments = {};
-                            shaderArguments.BindTextureSRV(0, RenderBackendTextureSRVDesc::Create(textureHandle));
-                            shaderArguments.BindTextureUAV(1, RenderBackendTextureUAVDesc::Create(textureHandle, mipLevel));
-                            shaderArguments.PushConstants(0, (float)(mipLevel - 1));
+                            RenderBackendShaderConstants shaderConstants = {};
+                            shaderConstants.BindTextureSRV(0, RenderBackendTextureSRVDesc::Create(textureHandle));
+                            shaderConstants.BindTextureUAV(1, RenderBackendTextureUAVDesc::Create(textureHandle, mipLevel));
+                            shaderConstants.PushConstants(0, (float)(mipLevel - 1));
 
                             commandList.Dispatch2D(
                                 downsampleTexture2DCS,
-                                shaderArguments,
+                                shaderConstants,
                                 threadGroupCountX,
                                 groupCountY);
                         }
@@ -200,14 +200,14 @@ namespace Horizon
                             uint32 threadGroupCountX = ComputeWorkGroupCount(w, 8);
                             uint32 threadGroupCountY = ComputeWorkGroupCount(h, 8);
 
-                            RenderBackendShaderArguments shaderArguments = {};
-                            shaderArguments.BindTextureSRV(0, RenderBackendTextureSRVDesc::Create(textureHandle));
-                            shaderArguments.BindTextureUAV(1, RenderBackendTextureUAVDesc::Create(textureHandle, mipLevel));
-                            shaderArguments.PushConstants(0, (float)(mipLevel - 1));
+                            RenderBackendShaderConstants shaderConstants = {};
+                            shaderConstants.BindTextureSRV(0, RenderBackendTextureSRVDesc::Create(textureHandle));
+                            shaderConstants.BindTextureUAV(1, RenderBackendTextureUAVDesc::Create(textureHandle, mipLevel));
+                            shaderConstants.PushConstants(0, (float)(mipLevel - 1));
 
                             commandList.Dispatch2D(
                                 downsampleTexture2DCS,
-                                shaderArguments,
+                                shaderConstants,
                                 threadGroupCountX,
                                 groupCountY);
                         }
@@ -233,17 +233,17 @@ namespace Horizon
                         uint32 threadGroupCountX = ComputeWorkGroupCount(coarsestMipLevelWidth, PostProcessingThreadGroupSizeX);
                         uint32 threadGroupCountY = ComputeWorkGroupCount(coarsestMipLevelHeight, PostProcessingThreadGroupSizeY);
 
-                        RenderBackendShaderArguments shaderArguments = {};
-                        shaderArguments.BindBufferCBV(0, this->GetCurrentPerFrameConstantBuffer());
-                        shaderArguments.BindTextureSRV(1, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(localExposureLuminances)));
-                        shaderArguments.BindTextureSRV(2, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(localExposureWeights)));
-                        shaderArguments.BindTextureUAV(3, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(localExposureAssemble), coarsestMipLevel));
-                        shaderArguments.PushConstants(0, (float)coarsestMipLevel);
+                        RenderBackendShaderConstants shaderConstants = {};
+                        shaderConstants.BindBufferCBV(0, renderBackend->GetBufferCBVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
+                        shaderConstants.BindTextureSRV(1, registry.GetTextureSRVBindlessResourceDescriptorIndex(localExposureLuminances)));
+                        shaderConstants.BindTextureSRV(2, registry.GetTextureSRVBindlessResourceDescriptorIndex(localExposureWeights)));
+                        shaderConstants.BindTextureUAV(3, registry.GetTextureUAVBindlessResourceDescriptorIndexlocalExposureAssemble), coarsestMipLevel));
+                        shaderConstants.PushConstants(0, (float)coarsestMipLevel);
 
                         RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::LocalExposureBlendExposures);
                         commandList.Dispatch2D(
                             computeShader,
-                            shaderArguments,
+                            shaderConstants,
                             threadGroupCountX,
                             groupCountY);
                     };
@@ -276,18 +276,18 @@ namespace Horizon
                             uint32 threadGroupCountX = ComputeWorkGroupCount(w, PostProcessingThreadGroupSizeX);
                             uint32 threadGroupCountY = ComputeWorkGroupCount(h, PostProcessingThreadGroupSizeY);
 
-                            RenderBackendShaderArguments shaderArguments = {};
-                            shaderArguments.BindBufferCBV(0, this->GetCurrentPerFrameConstantBuffer());
-                            shaderArguments.BindTextureSRV(1, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(localExposureLuminances)));
-                            shaderArguments.BindTextureSRV(2, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(localExposureWeights)));
-                            shaderArguments.BindTextureSRV(3, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(localExposureAssemble)));
-                            shaderArguments.BindTextureUAV(4, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(localExposureAssemble), mipLevel - 1));
-                            shaderArguments.PushConstants(0, (float)mipLevel);
+                            RenderBackendShaderConstants shaderConstants = {};
+                            shaderConstants.BindBufferCBV(0, renderBackend->GetBufferCBVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
+                            shaderConstants.BindTextureSRV(1, registry.GetTextureSRVBindlessResourceDescriptorIndex(localExposureLuminances)));
+                            shaderConstants.BindTextureSRV(2, registry.GetTextureSRVBindlessResourceDescriptorIndex(localExposureWeights)));
+                            shaderConstants.BindTextureSRV(3, registry.GetTextureSRVBindlessResourceDescriptorIndex(localExposureAssemble)));
+                            shaderConstants.BindTextureUAV(4, registry.GetTextureUAVBindlessResourceDescriptorIndexlocalExposureAssemble), mipLevel - 1));
+                            shaderConstants.PushConstants(0, (float)mipLevel);
 
                             RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::LocalExposureBlendLaplacian);
                             commandList.Dispatch2D(
                                 computeShader,
-                                shaderArguments,
+                                shaderConstants,
                                 threadGroupCountX,
                                 groupCountY);
                         }
@@ -320,24 +320,24 @@ namespace Horizon
                         uint32 threadGroupCountX = ComputeWorkGroupCount(targetResolution.width, PostProcessingThreadGroupSizeX);
                         uint32 threadGroupCountY = ComputeWorkGroupCount(targetResolution.height, PostProcessingThreadGroupSizeY);
 
-                        RenderBackendShaderArguments shaderArguments = {};
-                        shaderArguments.BindBufferCBV(0, this->GetCurrentPerFrameConstantBuffer());
-                        shaderArguments.BindTextureSRV(1, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(sceneColorTexture)));
-                        if (isAutoExposureTextureValid) shaderArguments.BindTextureSRV(5, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(autoExposureTexture)));
-                        shaderArguments.BindTextureSRV(2, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(localExposureLuminances)));
-                        shaderArguments.BindTextureSRV(3, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(localExposureAssemble)));
-                        shaderArguments.BindTextureUAV(4, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(localExposureTexture), 0));
-                        shaderArguments.PushConstants(0, (float)displayMipLevel);
+                        RenderBackendShaderConstants shaderConstants = {};
+                        shaderConstants.BindBufferCBV(0, renderBackend->GetBufferCBVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
+                        shaderConstants.BindTextureSRV(1, registry.GetTextureSRVBindlessResourceDescriptorIndex(sceneColorTexture)));
+                        if (isAutoExposureTextureValid) shaderConstants.BindTextureSRV(5, registry.GetTextureSRVBindlessResourceDescriptorIndex(autoExposureTexture)));
+                        shaderConstants.BindTextureSRV(2, registry.GetTextureSRVBindlessResourceDescriptorIndex(localExposureLuminances)));
+                        shaderConstants.BindTextureSRV(3, registry.GetTextureSRVBindlessResourceDescriptorIndex(localExposureAssemble)));
+                        shaderConstants.BindTextureUAV(4, registry.GetTextureUAVBindlessResourceDescriptorIndexlocalExposureTexture), 0));
+                        shaderConstants.PushConstants(0, (float)displayMipLevel);
 
-                        shaderArguments.PushConstants(1, (float)displayMipLevelWidth);
-                        shaderArguments.PushConstants(2, (float)displayMipLevelHeight);
-                        shaderArguments.PushConstants(3, 1.0f / (float)displayMipLevelWidth);
-                        shaderArguments.PushConstants(4, 1.0f / (float)displayMipLevelHeight);
+                        shaderConstants.PushConstants(1, (float)displayMipLevelWidth);
+                        shaderConstants.PushConstants(2, (float)displayMipLevelHeight);
+                        shaderConstants.PushConstants(3, 1.0f / (float)displayMipLevelWidth);
+                        shaderConstants.PushConstants(4, 1.0f / (float)displayMipLevelHeight);
 
                         RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::LocalExposureGuidedUpsampling);
                         commandList.Dispatch2D(
                             computeShader,
-                            shaderArguments,
+                            shaderConstants,
                             threadGroupCountX,
                             groupCountY);
                     };

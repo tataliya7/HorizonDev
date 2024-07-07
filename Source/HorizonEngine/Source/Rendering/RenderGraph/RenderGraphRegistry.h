@@ -21,6 +21,11 @@ namespace Horizon
         const RenderBackendBufferDesc& GetBufferDesc(RenderGraphBufferHandle handle) const;
         RenderBackendTextureHandle GetRenderBackendTextureHandle(RenderGraphTextureHandle handle) const;
         RenderBackendBufferHandle GetRenderBackendBufferHandle(RenderGraphBufferHandle handle) const;
+        int32 GetTextureSRVBindlessResourceDescriptorIndex(RenderGraphTextureHandle handle, const RenderBackendTextureSubresourceRange& subresourceRange = RenderBackendTextureSubresourceRange::All) const;
+        int32 GetTextureUAVBindlessResourceDescriptorIndex(RenderGraphTextureHandle handle, uint32 mipLevel) const;
+        int32 GetBufferCBVBindlessResourceDescriptorIndex(RenderGraphBufferHandle handle) const;
+        int32 GetBufferSRVBindlessResourceDescriptorIndex(RenderGraphBufferHandle handle) const;
+        int32 GetBufferUAVBindlessResourceDescriptorIndex(RenderGraphBufferHandle handle) const;
     private:
         RenderGraph* const renderGraph;
         RenderGraphPass* const pass;

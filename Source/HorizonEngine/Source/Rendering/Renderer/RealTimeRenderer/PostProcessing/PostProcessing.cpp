@@ -98,7 +98,7 @@ namespace Horizon
 
             bool outputInHDR = false;
 
-            sceneColorTexture = AddToneMappingPass(renderGraph, view, sceneColorTexture, bloomTexture, colorLUTTexture, localExposureTexture, autoExposureBuffer, outputInHDR);
+            sceneColorTexture = AddToneMappingPass(renderGraph, view, sceneColorTexture, bloomTexture, localExposureTexture, colorLUTTexture, autoExposureBuffer, outputInHDR);
         }
 
         RenderGraphTextureHandle sceneColorTextureAfterToneMapping = sceneColorTexture;
@@ -168,15 +168,15 @@ namespace Horizon
                         graphicsPipelineState.depthStencilState.depthWriteEnable = true;
                         graphicsPipelineState.depthStencilState.depthCompareFunction = RenderBackendCompareOp::GreaterOrEqual;
 
-                        RenderBackendShaderArguments shaderArguments = {};
-                        shaderArguments.BindBufferCBV(0, this->GetCurrentPerFrameConstantBuffer());
-                        shaderArguments.BindBuffer(1, renderEngine->debugDrawLinesVertexBuffer, 0);
+                        RenderBackendShaderConstants shaderConstants = {};
+                        shaderConstants.BindBufferCBV(0, renderBackend->GetBufferCBVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
+                        shaderConstants.BindBuffer(1, renderEngine->debugDrawLinesVertexBuffer, 0);
 
                         RenderBackendShaderHandle graphicsShader = shaderLibrary->GetShader(ShaderID::DebugDraw);
                         commandList.Draw(
                             graphicsShader,
                             graphicsPipelineState,
-                            shaderArguments,
+                            shaderConstants,
                             (uint32)renderEngine->debugDrawLinesVertices.size(),
                             1,
                             0,

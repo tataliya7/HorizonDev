@@ -139,7 +139,7 @@ struct Surface
     float3 F;
 };
 
-void SurfaceInit(inout Surface surface, PerFrameShaderParameters perFrameConstants, float2 uv, Geometry geometry, uint primitiveID, float3 barycentrics, Material material)
+void SurfaceInit(inout Surface surface, PerFrameShaderParameters frameShaderParameters, float2 uv, Geometry geometry, uint primitiveID, float3 barycentrics, Material material)
 {
     uint index0 = GetRWByteAddressBufferNonUniform(geometry.indexBuffer).Load<uint>((geometry.baseIndex + primitiveID * 3 + 0) * sizeof(uint));
     uint index1 = GetRWByteAddressBufferNonUniform(geometry.indexBuffer).Load<uint>((geometry.baseIndex + primitiveID * 3 + 1) * sizeof(uint));
@@ -188,8 +188,8 @@ void SurfaceInit(inout Surface surface, PerFrameShaderParameters perFrameConstan
 
     surface.P = barycentrics.x * worldPosition0 + barycentrics.y * worldPosition1 + barycentrics.z * worldPosition2;
     surface.N = normalize(barycentrics.x * worldNormal0 + barycentrics.y * worldNormal1 + barycentrics.z * worldNormal2);
-    surface.V = normalize(perFrameConstants.cameraPosition - surface.P);
-    surface.distance = length(perFrameConstants.cameraPosition - surface.P);
+    surface.V = normalize(frameShaderParameters.cameraPosition - surface.P);
+    surface.distance = length(frameShaderParameters.cameraPosition - surface.P);
 
     float3 B = normalize(barycentrics.x * worldBitangent0 + barycentrics.y * worldBitangent1 + barycentrics.z * worldBitangent2);
     float3 T = normalize(barycentrics.x * worldTangent0 + barycentrics.y * worldTangent1 + barycentrics.z * worldTangent2);
@@ -205,7 +205,7 @@ void SurfaceInit(inout Surface surface, PerFrameShaderParameters perFrameConstan
         float2 texCoord01 = vertexBuffer3.Load<float2>((primitiveID * 3 + 1) * sizeof(float2));
         float2 texCoord02 = vertexBuffer3.Load<float2>((primitiveID * 3 + 2) * sizeof(float2));
 
-        const float materialTextureMipLodBias = perFrameConstants.materialTextureMipLodBias;
+        const float materialTextureMipLodBias = frameShaderParameters.materialTextureMipLodBias;
 
         const float2 texCoord0 = barycentrics.x * texCoord00 + barycentrics.y * texCoord01 + barycentrics.z * texCoord02;
 
@@ -214,7 +214,7 @@ void SurfaceInit(inout Surface surface, PerFrameShaderParameters perFrameConstan
         const float baseTriangleLOD = 0.5 * log2(T_a / P_a);
 
         // because it generates good results and we have not seen any discrepancies in the periphery.
-        const float spreadAngle = atan(2.0 * perFrameConstants.clipToViewMatrix[1][1] / perFrameConstants.renderHeight); // Eq. 30
+        const float spreadAngle = atan(2.0 * frameShaderParameters.clipToViewMatrix[1][1] / frameShaderParameters.renderHeight); // Eq. 30
         const float rayConeWidth = surface.distance * spreadAngle;
         const float3 surfaceNormal = normalize(cross(worldPosition2 - worldPosition1, worldPosition1 - worldPosition0));
 

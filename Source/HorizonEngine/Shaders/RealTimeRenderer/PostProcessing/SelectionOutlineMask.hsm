@@ -17,12 +17,12 @@ float3 GetVertexPosition(uint vertexIndex)
 void SelectionOutlineMaskVS(uint vertexIndex : SV_VertexID, out float4 svPosition : SV_Position)
 {
     // ByteAddressBuffer perFrameDataBuffer = GetPerFrameDataBufferSRV();
-    // PerFrameShaderParameters perFrameConstants = perFrameDataBuffer.Load<PerFrameShaderParameters>(0);
+    // PerFrameShaderParameters frameShaderParameters = perFrameDataBuffer.Load<PerFrameShaderParameters>(0);
     // Geometry geometry = GetGeometry();
     // float3 vertexPosition = GetVertexPosition(vertexIndex);
     // float4x4 worldMatrix = GetRWByteAddressBuffer(geometry.transformBuffer).Load<float4x4>(geometry.transformIndex * sizeof(float4x4));
     // float3 worldPosition = mul(worldMatrix, float4(vertexPosition, 1.0)).xyz;
-    // float4 clipPosition = mul(perFrameConstants.nonJitteredWorldToClipMatrix, float4(worldPosition, 1.0));
+    // float4 clipPosition = mul(frameShaderParameters.nonJitteredWorldToClipMatrix, float4(worldPosition, 1.0));
     // svPosition = clipPosition;
     svPosition = 0;
 }

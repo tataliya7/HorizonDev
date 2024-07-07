@@ -16,14 +16,14 @@ struct SubsurfaceScatteringRecombineVSOutput
 [shader("vertex")]
 void SubsurfaceScatteringRecombineVS(uint VertexID : SV_VertexID, uint InstanceID : SV_InstanceID, out SubsurfaceScatteringRecombineVSOutput output)
 {
-    ConstantBuffer<PerFrameShaderParameters> perFrameConstants = GetPerFrameShaderParametersCBV();
+    ConstantBuffer<PerFrameShaderParameters> frameShaderParameters = GetPerFrameShaderParameterBufferCBV();
     ByteAddressBuffer tileDataBuffer = GetSubsurfaceScatteringTileDataBufferSRV();
 
     uint2 tileIndex = tileDataBuffer.Load<uint2>(InstanceID * sizeof(uint2));
     uint2 vertexPosition = tileIndex * SUBSURFACE_SCATTERING_TILE_SIZE + SubsurfaceScatteringTileVertexPositionOffsets[VertexID];
 
     output.position = float4(output.uv * float2(2.0f, -2.0f) + float2(-1.0, 1.0f), 0.0f, 1.0f);
-    output.uv = float2(vertexPosition) * perFrameConstants.renderResolution.zw;
+    output.uv = float2(vertexPosition) * frameShaderParameters.renderResolution.zw;
 }
 
 [shader("pixel")]

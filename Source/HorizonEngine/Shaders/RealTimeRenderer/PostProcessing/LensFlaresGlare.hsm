@@ -59,8 +59,8 @@ struct LensFlaresGlareVSOutput
 void LensFlaresGlareVS(uint instanceID : SV_InstanceID, uint vertexID : SV_VertexID, out LensFlaresGlareVSOutput output)
 {
     Texture2D<float3> tileCullingTexture = GetLensFlaresTileCullingTextureSRV();
-    float lensFlaresTextureWidth = SHADER_ARGUMENTS_DATA(0);
-    float lensFlaresTextureHeight = SHADER_ARGUMENTS_DATA(1);
+    float lensFlaresTextureWidth = (0);
+    float lensFlaresTextureHeight = (1);
     float2 lensFlaresTextureInvSize = float2(1.0f / lensFlaresTextureWidth, 1.0f / lensFlaresTextureHeight);
 
     uint tileCullingTextureWidth, tileCullingTextureHeight;

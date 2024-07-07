@@ -53,18 +53,18 @@ namespace Horizon
                     uint32 threadGroupCountY = tileCountY;
                     uint32 threadGroupCountZ = 1;
 
-                    RenderBackendShaderArguments shaderArguments = {};
-                    shaderArguments.BindBufferCBV(0, this->GetCurrentPerFrameConstantBuffer());
-                    shaderArguments.BindTextureSRV(1, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(motionVectorTexture)));
-                    shaderArguments.BindTextureSRV(2, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(sceneDepthTexture)));
-                    shaderArguments.BindTextureUAV(3, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(velocityRangeTexture)));
-                    shaderArguments.BindTextureUAV(4, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(velocityAndDepthTexture)));
+                    RenderBackendShaderConstants shaderConstants = {};
+                    shaderConstants.BindBufferCBV(0, renderBackend->GetBufferCBVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
+                    shaderConstants.BindTextureSRV(1, registry.GetTextureSRVBindlessResourceDescriptorIndex(motionVectorTexture));
+                    shaderConstants.BindTextureSRV(2, registry.GetTextureSRVBindlessResourceDescriptorIndex(sceneDepthTexture));
+                    shaderConstants.BindTextureUAV(3, registry.GetTextureUAVBindlessResourceDescriptorIndex(velocityRangeTexture, 0));
+                    shaderConstants.BindTextureUAV(4, registry.GetTextureUAVBindlessResourceDescriptorIndex(velocityAndDepthTexture, 0));
 
                     RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::MotionBlurSetupCS);
 
                     commandList.Dispatch(
                         computeShader,
-                        shaderArguments,
+                        shaderConstants,
                         threadGroupCountX,
                         threadGroupCountY,
                         threadGroupCountZ);
@@ -123,16 +123,16 @@ namespace Horizon
                             graphicsPipelineState.depthStencilState.depthCompareFunction = RenderBackendCompareOp::Greater;
                         }
 
-                        RenderBackendShaderArguments shaderArguments = {};
-                        shaderArguments.BindBufferCBV(0, this->GetCurrentPerFrameConstantBuffer());
-                        shaderArguments.BindTextureSRV(1, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(velocityRangeTexture)));
-                        shaderArguments.BindScalar(0, float(scatterPassIndex));
+                        RenderBackendShaderConstants shaderConstants = {};
+                        shaderConstants.BindBufferCBV(0, renderBackend->GetBufferCBVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
+                        shaderConstants.BindTextureSRV(1, registry.GetTextureSRVBindlessResourceDescriptorIndex(velocityRangeTexture));
+                        shaderConstants.BindScalar(2, scatterPassIndex);
 
                         commandList.Draw(
                             vertexShader,
                             pixelShader,
                             graphicsPipelineState,
-                            shaderArguments,
+                            shaderConstants,
                             vertexCount,
                             instanceCount,
                             0,
@@ -165,18 +165,18 @@ namespace Horizon
                     uint32 threadGroupCountY = CeilDiv(motionBlurColorTextureDesc.height, GMotionBlurTileSize);
                     uint32 threadGroupCountZ = 1;
 
-                    RenderBackendShaderArguments shaderArguments = {};
-                    shaderArguments.BindBufferCBV(0, this->GetCurrentPerFrameConstantBuffer());
-                    shaderArguments.BindTextureSRV(1, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(sceneColorTexture)));
-                    shaderArguments.BindTextureSRV(2, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(velocityAndDepthTexture)));
-                    shaderArguments.BindTextureSRV(3, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(dilatedVelocityRangeTexture)));
-                    shaderArguments.BindTextureUAV(4, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(motionBlurColorTexture)));
+                    RenderBackendShaderConstants shaderConstants = {};
+                    shaderConstants.BindBufferCBV(0, renderBackend->GetBufferCBVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
+                    shaderConstants.BindTextureSRV(1, registry.GetTextureSRVBindlessResourceDescriptorIndex(sceneColorTexture));
+                    shaderConstants.BindTextureSRV(2, registry.GetTextureSRVBindlessResourceDescriptorIndex(velocityAndDepthTexture));
+                    shaderConstants.BindTextureSRV(3, registry.GetTextureSRVBindlessResourceDescriptorIndex(dilatedVelocityRangeTexture));
+                    shaderConstants.BindTextureUAV(4, registry.GetTextureUAVBindlessResourceDescriptorIndex(motionBlurColorTexture, 0));
 
                     RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::MotionBlurReconstructionFilterCS);
 
                     commandList.Dispatch(
                         computeShader,
-                        shaderArguments,
+                        shaderConstants,
                         threadGroupCountX,
                         threadGroupCountY,
                         threadGroupCountZ);

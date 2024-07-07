@@ -24,14 +24,14 @@ namespace Horizon::GPUFFT
 
                     return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
                     {
-                        RenderBackendShaderArguments shaderArguments = {};
-                        shaderArguments.BindTextureSRV(0, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(srcTexture)));
-                        shaderArguments.BindTextureUAV(1, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(dstTexture), 0));
+                        RenderBackendShaderConstants shaderConstants = {};
+                        shaderConstants.BindTextureSRV(0, registry.GetTextureSRVBindlessResourceDescriptorIndex(srcTexture));
+                        shaderConstants.BindTextureUAV(1, registry.GetTextureUAVBindlessResourceDescriptorIndex(dstTexture, 0));
 
                         RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::SharedMemoryTwoForOneRealFFT);
                         commandList.Dispatch(
                             computeShader,
-                            shaderArguments,
+                            shaderConstants,
                             1,
                             numGroups,
                             1);
@@ -62,14 +62,14 @@ namespace Horizon::GPUFFT
 
                     return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
                     {
-                        RenderBackendShaderArguments shaderArguments = {};
-                        shaderArguments.BindTextureSRV(0, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(srcTexture)));
-                        shaderArguments.BindTextureUAV(1, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(dstTexture), 0));
+                        RenderBackendShaderConstants shaderConstants = {};
+                        shaderConstants.BindTextureSRV(0, registry.GetTextureSRVBindlessResourceDescriptorIndex(srcTexture));
+                        shaderConstants.BindTextureUAV(1, registry.GetTextureUAVBindlessResourceDescriptorIndex(dstTexture, 0));
 
                         RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::SharedMemoryComplexFFT);
                         commandList.Dispatch(
                             computeShader,
-                            shaderArguments,
+                            shaderConstants,
                             1,
                             numGroups,
                             1);
@@ -100,14 +100,14 @@ namespace Horizon::GPUFFT
 
                     return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
                     {
-                        RenderBackendShaderArguments shaderArguments = {};
-                        shaderArguments.BindTextureSRV(0, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(srcTexture)));
-                        shaderArguments.BindTextureUAV(1, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(dstTexture), 0));
+                        RenderBackendShaderConstants shaderConstants = {};
+                        shaderConstants.BindTextureSRV(0, registry.GetTextureSRVBindlessResourceDescriptorIndex(srcTexture));
+                        shaderConstants.BindTextureUAV(1, registry.GetTextureUAVBindlessResourceDescriptorIndex(dstTexture, 0));
 
                         RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::SharedMemoryComplexIFFT);
                         commandList.Dispatch(
                             computeShader,
-                            shaderArguments,
+                            shaderConstants,
                             1,
                             numGroups,
                             1);
@@ -137,15 +137,15 @@ namespace Horizon::GPUFFT
 
                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
                 {
-                    RenderBackendShaderArguments shaderArguments = {};
-                    shaderArguments.BindTextureSRV(0, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(srcTexture)));
-                    shaderArguments.BindTextureUAV(1, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(dstTexture), 0));
-                    shaderArguments.BindTextureSRV(2, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(kernelTexture)));
+                    RenderBackendShaderConstants shaderConstants = {};
+                    shaderConstants.BindTextureSRV(0, registry.GetTextureSRVBindlessResourceDescriptorIndex(srcTexture));
+                    shaderConstants.BindTextureUAV(1, registry.GetTextureUAVBindlessResourceDescriptorIndex(dstTexture, 0));
+                    shaderConstants.BindTextureSRV(2, registry.GetTextureSRVBindlessResourceDescriptorIndex(kernelTexture));
 
                     RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::SharedMemoryComplexFFTConvolution);
                     commandList.Dispatch(
                         computeShader,
-                        shaderArguments,
+                        shaderConstants,
                         1,
                         numGroups,
                         1);
@@ -175,14 +175,14 @@ namespace Horizon::GPUFFT
 
                     return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
                     {
-                        RenderBackendShaderArguments shaderArguments = {};
-                        shaderArguments.BindTextureSRV(0, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(srcTexture)));
-                        shaderArguments.BindTextureUAV(1, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(dstTexture), 0));
+                        RenderBackendShaderConstants shaderConstants = {};
+                        shaderConstants.BindTextureSRV(0, registry.GetTextureSRVBindlessResourceDescriptorIndex(srcTexture));
+                        shaderConstants.BindTextureUAV(1, registry.GetTextureUAVBindlessResourceDescriptorIndex(dstTexture, 0));
 
                         RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::SharedMemoryTwoForOneRealIFFT);
                         commandList.Dispatch(
                             computeShader,
-                            shaderArguments,
+                            shaderConstants,
                             1,
                             numGroups,
                             1);

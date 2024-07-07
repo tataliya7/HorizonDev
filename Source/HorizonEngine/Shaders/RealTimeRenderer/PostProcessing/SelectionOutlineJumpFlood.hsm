@@ -6,6 +6,7 @@
 BIND_BUFFER_CBV(0, PerFrameShaderParameters);
 BIND_TEXTURE_2D_SRV(1, InputTexture);
 BIND_TEXTURE_2D_UAV(2, float4, OutputTexture);
+BIND_SCALAR(3, float, StepWidth);
 
 static const int2 JumpFloodSampleOffsets3x3[8] =
 {
@@ -23,10 +24,10 @@ static const int2 JumpFloodSampleOffsets3x3[8] =
 [numthreads(POST_PROCESSING_THREAD_GROUP_SIZE_X, POST_PROCESSING_THREAD_GROUP_SIZE_Y, 1)]
 void SelectionOutlineJumpFloodCS(uint3 DispatchThreadID : SV_DispatchThreadID)
 {
-    ConstantBuffer<PerFrameShaderParameters> perFrameConstants = GetPerFrameShaderParametersCBV();
+    ConstantBuffer<PerFrameShaderParameters> frameShaderParameters = GetPerFrameShaderParameterBufferCBV();
     uint2 pixelCoord = DispatchThreadID.xy;
-    uint width = perFrameConstants.targetWidth;
-    uint height = perFrameConstants.targetHeight;
+    uint width = frameShaderParameters.targetWidth;
+    uint height = frameShaderParameters.targetHeight;
     if (pixelCoord.x >= width || pixelCoord.y >= height)
     {
         return;
@@ -35,8 +36,8 @@ void SelectionOutlineJumpFloodCS(uint3 DispatchThreadID : SV_DispatchThreadID)
     Texture2D inputTexture = GetInputTextureSRV();
     RWTexture2D<float4> outputTexture = GetOutputTextureUAV();
 
-    float stepWidth = SHADER_ARGUMENTS_DATA(0);
-    uint2 size = uint2(perFrameConstants.targetWidth, perFrameConstants.targetHeight);
+    float stepWidth = GetStepWidth();
+    uint2 size = uint2(frameShaderParameters.targetWidth, frameShaderParameters.targetHeight);
 
     float4 center = inputTexture[pixelCoord];
     [unroll] for(int sampleIndex = 0; sampleIndex < 8; sampleIndex++)

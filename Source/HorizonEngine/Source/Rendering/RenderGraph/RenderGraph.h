@@ -148,6 +148,7 @@ namespace Horizon
         }
 
         MemoryArena* arena;
+        RenderBackend* renderBackend;
         RenderGraphResourcePool* resourcePool;
         RenderBackendGPUProfiler* gpuProfiler;
 

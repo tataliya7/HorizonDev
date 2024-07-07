@@ -14,36 +14,6 @@ namespace Horizon
     class VulkanRenderBackend;
     class VulkanCommandBufferManager;
 
-    struct VulkanPushConstants
-    {
-        int32 indices[16];
-        float data[16];
-
-        VulkanPushConstants()
-        {
-            for (uint32 i = 0; i < 16; i++)
-            {
-                indices[i] = -1;
-            }
-            memset(data, 0, sizeof(data));
-        }
-    };
-
-    struct VulkanPushConstantsTest
-    {
-        int32 indices[16];
-        uint8 data[64];
-
-        VulkanPushConstantsTest()
-        {
-            for (uint32 i = 0; i < 16; i++)
-            {
-                indices[i] = -1;
-            }
-            memset(data, 0, 64);
-        }
-    };
-
     struct VulkanRenderBackendHandleManager
     {
         std::vector<uint32> freeIndices;
@@ -72,16 +42,16 @@ namespace Horizon
             freeIndices.push_back(index);
         }
     };
-
-    // Must match the layout in "Shaders/BindlessResources.hsh"
+    
+    // It must match the values on the shader side
     enum
     {
-        BindlessBindingSamplers               = 0,
-        BindlessBindingSampledImages          = 1,
-        BindlessBindingStorageImages          = 2,
-        BindlessBindingStorageBuffers         = 3,
-        BindlessBindingUniformBuffers         = 4,
-        BindlessBindingAccelerationStructures = 5,
+        BINDLESS_RESOURCE_BINDING_SAMPLER                   = 0,
+        BINDLESS_RESOURCE_BINDING_TEXTURE_SRV               = 1,
+        BINDLESS_RESOURCE_BINDING_TEXTURE_UAV               = 2,
+        BINDLESS_RESOURCE_BINDING_BUFFER_CBV                = 3,
+        BINDLESS_RESOURCE_BINDING_BUFFER_SRV_AND_UAV        = 4,
+        BINDLESS_RESOURCE_BINDING_ACCELERATION_STRUCTURE    = 5,
     };
 
     struct VulkanBindlessConfig
@@ -102,7 +72,7 @@ namespace Horizon
         VkDescriptorSetLayout layout;
         VkDescriptorSet set;
 
-        uint32 pushConstantSize;
+        uint32 pushConstantsSize;
 
         VkPipelineLayout compatibleComputePipelineLayout;
         VkPipelineLayout compatibleGraphicsPipelineLayout;
@@ -316,9 +286,9 @@ namespace Horizon
         bool createMapped;
         bool mapped;
         void* mappedData;
-        int32 bindlessDescriptorIndexCBV;
-        int32 bindlessDescriptorIndexSRV;
-        int32 bindlessDescriptorIndexUAV;
+        int32 bindlessResourceDescriptorIndexCBV;
+        int32 bindlessResourceDescriptorIndexSRV;
+        int32 bindlessResourceDescriptorIndexUAV;
         std::string name;
         VulkanRayTracingShaderBindingTable* shaderBindingTable;
         VkDeviceAddress deviceAddress;
@@ -495,9 +465,11 @@ namespace Horizon
         void DestroyTexture(uint32 index);
         uint32 CreateTextureSRV(uint32 textureIndex, const RenderBackendTextureSRVDesc* desc, const char* name);
         uint32 CreateTextureUAV(uint32 textureIndex, const RenderBackendTextureUAVDesc* desc, const char* name);
-        int32 GetTextureSRVBindlessDescriptorIndex(uint32 textureIndex);
-        int32 GetTextureUAVBindlessDescriptorIndex(uint32 textureIndex, uint32 mipLevel);
-        int32 GetBufferBindlessDescriptorIndex(uint32 bufferIndex);
+        int32 GetTextureSRVBindlessResourceDescriptorIndex(uint32 textureIndex, const RenderBackendTextureSubresourceRange& subresourceRange);
+        int32 GetTextureUAVBindlessResourceDescriptorIndex(uint32 textureIndex, uint32 mipLevel);
+        int32 GetBufferCBVBindlessResourceDescriptorIndex(uint32 bufferIndex);
+        int32 GetBufferSRVBindlessResourceDescriptorIndex(uint32 bufferIndex);
+        int32 GetBufferUAVBindlessResourceDescriptorIndex(uint32 bufferIndex);
         uint32 CreateSampler(const RenderBackendSamplerDesc* desc, const char* name);
         void DestroySampler(uint32 index);
         uint32 CreateShader(const RenderBackendShaderDesc* desc, const char* name);
@@ -506,21 +478,21 @@ namespace Horizon
         uint32 CreateTopLevelAS(const RenderBackendRayTracingTopLevelAccelerationDesc* desc, const char* name);
         VkRenderPass FindOrCreateRenderPass(const VulkanRenderPassDesc& renderPassDesc);
         VulkanFramebuffer* FindOrCreateFramebuffer(const RenderBackendRenderPassInfo& renderPassInfo, const VulkanRenderPassDesc& renderPassDesc, VkRenderPass renderPass);
-        VkPipelineLayout FindOrCreatePipelineLayout(uint32 pushConstantSize, RenderBackendPipelineType pipelineType);
-        VulkanPipeline* FindOrCreateComputePipeline(VulkanShader* computeShader, uint32 pushConstantSize);
+        VkPipelineLayout FindOrCreatePipelineLayout(uint32 pushConstantsSize, RenderBackendPipelineType pipelineType);
+        VulkanPipeline* FindOrCreateComputePipeline(VulkanShader* computeShader, uint32 pushConstantsSize);
         VulkanPipeline* FindOrCreateGraphicsPipeline(
             VulkanShader* vertexShader,
             VulkanShader* pixelShader,
             VulkanShader* taskShader,
             VulkanShader* meshShader,
             const RenderBackendGraphicsPipelineState& pipelineState,
-            uint32 pushConstantSize,
+            uint32 pushConstantsSize,
             RenderBackendPrimitiveTopology topology,
             bool useDynamicRendering,
             VulkanRenderingInfo* renderingInfo,
             VkRenderPass renderPass,
             uint32 activeColorAttachmentCount);
-        //VulkanPipeline* FindOrCreateRayTracingPipeline(VulkanShader* shader, uint32 pushConstantSize);
+        //VulkanPipeline* FindOrCreateRayTracingPipeline(VulkanShader* shader, uint32 pushConstantsSize);
         void SetDebugUtilsObjectName(VkObjectType type, uint64 handle, const char* name);
 
         VkPhysicalDevice GetPhysicalDeviceHandle() const
@@ -865,9 +837,11 @@ namespace Horizon
         void GetTextureReadbackData(RenderBackendTextureHandle texture, void** data) override;
         //RenderBackendTextureSRVHandle CreateTextureSRV(const RenderBackendTextureSRVDesc* desc, const char* name) override;
         //RenderBackendTextureUAVHandle CreateTextureUAV(const RenderBackendTextureUAVDesc* desc, const char* name) override;
-        int32 GetTextureSRVBindlessDescriptorIndex(RenderBackendTextureHandle handle) override;
-        int32 GetTextureUAVBindlessDescriptorIndex(RenderBackendTextureHandle handle, uint32 mipLevel) override;
-        int32 GetBufferBindlessDescriptorIndex(RenderBackendBufferHandle buffer) override;
+        int32 GetTextureSRVBindlessResourceDescriptorIndex(RenderBackendTextureHandle handle, const RenderBackendTextureSubresourceRange& subresourceRange = RenderBackendTextureSubresourceRange::All) override;
+        int32 GetTextureUAVBindlessResourceDescriptorIndex(RenderBackendTextureHandle handle, uint32 mipLevel) override;
+        int32 GetBufferCBVBindlessResourceDescriptorIndex(RenderBackendBufferHandle handle) override;
+        int32 GetBufferSRVBindlessResourceDescriptorIndex(RenderBackendBufferHandle handle) override;
+        int32 GetBufferUAVBindlessResourceDescriptorIndex(RenderBackendBufferHandle handle) override;
         RenderBackendSamplerHandle CreateSampler(const RenderBackendSamplerDesc* desc, const char* name) override;
         void DestroySampler(RenderBackendSamplerHandle sampler) override;
         RenderBackendShaderHandle CreateShader(const RenderBackendShaderDesc* desc, const char* name) override;
@@ -1816,9 +1790,9 @@ namespace Horizon
             DestroyBuffer(bufferIndex);
         }
 
-        buffer.bindlessDescriptorIndexCBV = -1;
-        buffer.bindlessDescriptorIndexSRV = -1;
-        buffer.bindlessDescriptorIndexUAV = -1;
+        buffer.bindlessResourceDescriptorIndexCBV = -1;
+        buffer.bindlessResourceDescriptorIndexSRV = -1;
+        buffer.bindlessResourceDescriptorIndexUAV = -1;
         if (EnumClassHasFlags(desc->flags, RenderBackendBufferCreateFlags::UnorderedAccess))
         {
             uint32 index = bindlessDescriptorManager.AllocateStorageBufferIndex();
@@ -1830,14 +1804,14 @@ namespace Horizon
             VkWriteDescriptorSet write = {
                 .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
                 .dstSet = bindlessDescriptorManager.set,
-                .dstBinding = BindlessBindingStorageBuffers,
+                .dstBinding = BINDLESS_RESOURCE_BINDING_BUFFER_SRV_AND_UAV,
                 .dstArrayElement = index,
                 .descriptorCount = 1,
                 .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
                 .pBufferInfo = &descriptorBufferInfo,
             };
             vkUpdateDescriptorSets(handle, 1, &write, 0, nullptr);
-            buffer.bindlessDescriptorIndexSRV = buffer.bindlessDescriptorIndexUAV = index;
+            buffer.bindlessResourceDescriptorIndexSRV = buffer.bindlessResourceDescriptorIndexUAV = index;
         }
         else if (EnumClassHasFlags(desc->flags, RenderBackendBufferCreateFlags::UniformBuffer))
         {
@@ -1850,14 +1824,14 @@ namespace Horizon
             VkWriteDescriptorSet write = {
                 .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
                 .dstSet = bindlessDescriptorManager.set,
-                .dstBinding = BindlessBindingUniformBuffers,
+                .dstBinding = BINDLESS_RESOURCE_BINDING_BUFFER_CBV,
                 .dstArrayElement = index,
                 .descriptorCount = 1,
                 .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
                 .pBufferInfo = &descriptorBufferInfo,
             };
             vkUpdateDescriptorSets(handle, 1, &write, 0, nullptr);
-            buffer.bindlessDescriptorIndexCBV = index;
+            buffer.bindlessResourceDescriptorIndexCBV = index;
         }
 
         uint32 bufferIndex = 0;
@@ -1940,8 +1914,8 @@ namespace Horizon
 
             if ((buffer.usageFlags & VK_BUFFER_USAGE_STORAGE_BUFFER_BIT))
             {
-                assert(buffer.bindlessDescriptorIndexSRV == buffer.bindlessDescriptorIndexUAV);
-                if (buffer.bindlessDescriptorIndexUAV >= 0)
+                assert(buffer.bindlessResourceDescriptorIndexSRV == buffer.bindlessResourceDescriptorIndexUAV);
+                if (buffer.bindlessResourceDescriptorIndexUAV >= 0)
                 {
                     VkDescriptorBufferInfo descriptorBufferInfo = {
                        .buffer = buffer.handle,
@@ -1951,8 +1925,8 @@ namespace Horizon
                     VkWriteDescriptorSet write = {
                         .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
                         .dstSet = bindlessDescriptorManager.set,
-                        .dstBinding = BindlessBindingStorageBuffers,
-                        .dstArrayElement = (uint32)buffer.bindlessDescriptorIndexUAV,
+                        .dstBinding = BINDLESS_RESOURCE_BINDING_BUFFER_SRV_AND_UAV,
+                        .dstArrayElement = (uint32)buffer.bindlessResourceDescriptorIndexUAV,
                         .descriptorCount = 1,
                         .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
                         .pBufferInfo = &descriptorBufferInfo,
@@ -2172,7 +2146,7 @@ namespace Horizon
             VkWriteDescriptorSet write = {
                 .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
                 .dstSet = bindlessDescriptorManager.set,
-                .dstBinding = BindlessBindingSampledImages,
+                .dstBinding = BINDLESS_RESOURCE_BINDING_TEXTURE_SRV,
                 .dstArrayElement = index,
                 .descriptorCount = 1,
                 .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
@@ -2202,7 +2176,7 @@ namespace Horizon
                 VkWriteDescriptorSet write = {
                     .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
                     .dstSet = bindlessDescriptorManager.set,
-                    .dstBinding = BindlessBindingSampledImages,
+                    .dstBinding = BINDLESS_RESOURCE_BINDING_TEXTURE_SRV,
                     .dstArrayElement = index,
                     .descriptorCount = 1,
                     .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
@@ -2235,7 +2209,7 @@ namespace Horizon
                 VkWriteDescriptorSet write = {
                     .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
                     .dstSet = bindlessDescriptorManager.set,
-                    .dstBinding = BindlessBindingStorageImages,
+                    .dstBinding = BINDLESS_RESOURCE_BINDING_TEXTURE_UAV,
                     .dstArrayElement = index,
                     .descriptorCount = 1,
                     .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
@@ -2543,10 +2517,10 @@ namespace Horizon
         VkImageViewCreateInfo imageViewInfo = {
             .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
             .image = texture.handle,
-            .viewType = ConvertToVkImageViewType(texture.t, desc->subresouceRange.arrayLayers > 1),
+            .viewType = ConvertToVkImageViewType(texture.t, desc->subresourceRange.arrayLayers > 1),
             .format = texture.format,
             .components = { VK_COMPONENT_SWIZZLE_R, VK_COMPONENT_SWIZZLE_G, VK_COMPONENT_SWIZZLE_B, VK_COMPONENT_SWIZZLE_A },
-            .subresourceRange = { texture.aspectMask, desc->subresouceRange.firstLevel, desc->subresouceRange.mipLevels, desc->subresouceRange.firstLayer, desc->subresouceRange.arrayLayers }
+            .subresourceRange = { texture.aspectMask, desc->subresourceRange.firstLevel, desc->subresourceRange.mipLevels, desc->subresourceRange.firstLayer, desc->subresourceRange.arrayLayers }
         };
         VK_CHECK(vkCreateImageView(handle, &imageViewInfo, VULKAN_ALLOCATION_CALLBACKS, &texture.srv));
 
@@ -2558,7 +2532,7 @@ namespace Horizon
         VkWriteDescriptorSet write = {
             .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
             .dstSet = bindlessDescriptorManager.set,
-            .dstBinding = BindlessBindingSampledImages,
+            .dstBinding = BINDLESS_RESOURCE_BINDING_TEXTURE_SRV,
             .dstArrayElement = index,
             .descriptorCount = 1,
             .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
@@ -2590,7 +2564,7 @@ namespace Horizon
         VkWriteDescriptorSet write = {
             .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
             .dstSet = bindlessDescriptorManager.set,
-            .dstBinding = BindlessBindingSampledImages,
+            .dstBinding = BINDLESS_RESOURCE_BINDING_TEXTURE_SRV,
             .dstArrayElement = index,
             .descriptorCount = 1,
             .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
@@ -2601,23 +2575,34 @@ namespace Horizon
         return index;
     }
 
-    int32 VulkanDevice::GetTextureSRVBindlessDescriptorIndex(uint32 textureIndex)
+    int32 VulkanDevice::GetTextureSRVBindlessResourceDescriptorIndex(uint32 textureIndex, const RenderBackendTextureSubresourceRange& subresourceRange)
     {
         VulkanTexture& texture = textures[textureIndex];
         return texture.srvIndex;
     }
 
-    int32 VulkanDevice::GetTextureUAVBindlessDescriptorIndex(uint32 textureIndex, uint32 mipLevel)
+    int32 VulkanDevice::GetTextureUAVBindlessResourceDescriptorIndex(uint32 textureIndex, uint32 mipLevel)
     {
         VulkanTexture& texture = textures[textureIndex];
         return texture.uavs[mipLevel].uavIndex;
     }
 
-    int32 VulkanDevice::GetBufferBindlessDescriptorIndex(uint32 bufferIndex)
+    int32 VulkanDevice::GetBufferCBVBindlessResourceDescriptorIndex(uint32 bufferIndex)
     {
-        // TODO: SRV/CBV
         VulkanBuffer& buffer = buffers[bufferIndex];
-        return buffer.bindlessDescriptorIndexUAV;
+        return buffer.bindlessResourceDescriptorIndexCBV;
+    }
+
+    int32 VulkanDevice::GetBufferSRVBindlessResourceDescriptorIndex(uint32 bufferIndex)
+    {
+        VulkanBuffer& buffer = buffers[bufferIndex];
+        return buffer.bindlessResourceDescriptorIndexSRV;
+    }
+
+    int32 VulkanDevice::GetBufferUAVBindlessResourceDescriptorIndex(uint32 bufferIndex)
+    {
+        VulkanBuffer& buffer = buffers[bufferIndex];
+        return buffer.bindlessResourceDescriptorIndexUAV;
     }
 
     uint32 VulkanDevice::CreateSampler(const RenderBackendSamplerDesc* desc, const char* name)
@@ -2699,7 +2684,7 @@ namespace Horizon
         VkWriteDescriptorSet write = {
             .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
             .dstSet = bindlessDescriptorManager.set,
-            .dstBinding = BindlessBindingSamplers,
+            .dstBinding = BINDLESS_RESOURCE_BINDING_SAMPLER,
             .dstArrayElement = sampler.bindlessIndex,
             .descriptorCount = 1,
             .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER,
@@ -2915,7 +2900,7 @@ namespace Horizon
                 .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
                 .pNext = &writeAccelerationStructureInfo,
                 .dstSet = bindlessDescriptorManager.set,
-                .dstBinding = BindlessBindingAccelerationStructures,
+                .dstBinding = BINDLESS_RESOURCE_BINDING_ACCELERATION_STRUCTURE,
                 .dstArrayElement = descriptorIndex,
                 .descriptorCount = 1,
                 .descriptorType = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR,
@@ -3306,9 +3291,9 @@ namespace Horizon
         return &framebufferList->framebuffers.back();
     }
 
-    VkPipelineLayout VulkanDevice::FindOrCreatePipelineLayout(uint32 pushConstantSize, RenderBackendPipelineType pipelineType)
+    VkPipelineLayout VulkanDevice::FindOrCreatePipelineLayout(uint32 pushConstantsSize, RenderBackendPipelineType pipelineType)
     {
-        uint64 layoutHash = CRC32(&pushConstantSize, sizeof(uint32), (uint32)pipelineType);
+        uint64 layoutHash = CRC32(&pushConstantsSize, sizeof(uint32), (uint32)pipelineType);
         if (pipelineManager.pipelineLayoutMap.find(layoutHash) != pipelineManager.pipelineLayoutMap.end())
         {
             return pipelineManager.pipelineLayoutMap[layoutHash];
@@ -3333,14 +3318,14 @@ namespace Horizon
         VkPushConstantRange pushConstantRange = {
             .stageFlags = shaderStageFlags,
             .offset = 0,
-            .size = pushConstantSize
+            .size = pushConstantsSize
         };
         VkPipelineLayoutCreateInfo layoutInfo = {
             .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
             .setLayoutCount = 1,
             .pSetLayouts = &bindlessDescriptorManager.layout,
-            .pushConstantRangeCount = pushConstantSize ? 1u : 0u,
-            .pPushConstantRanges = pushConstantSize ? &pushConstantRange : nullptr,
+            .pushConstantRangeCount = pushConstantsSize ? 1u : 0u,
+            .pPushConstantRanges = pushConstantsSize ? &pushConstantRange : nullptr,
         };
         VkPipelineLayout pipelineLayout;
         VK_CHECK(vkCreatePipelineLayout(handle, &layoutInfo, VULKAN_ALLOCATION_CALLBACKS, &pipelineLayout));
@@ -3351,16 +3336,16 @@ namespace Horizon
         return pipelineLayout;
     }
 
-    VulkanPipeline* VulkanDevice::FindOrCreateComputePipeline(VulkanShader* computeShader, uint32 pushConstantSize)
+    VulkanPipeline* VulkanDevice::FindOrCreateComputePipeline(VulkanShader* computeShader, uint32 pushConstantsSize)
     {
-        uint32 pipelineHash = CRC32(&computeShader->stageInfo, sizeof(VkPipelineShaderStageCreateInfo), pushConstantSize);
+        uint32 pipelineHash = CRC32(&computeShader->stageInfo, sizeof(VkPipelineShaderStageCreateInfo), pushConstantsSize);
 
         if (pipelineManager.pipelineMap.find(pipelineHash) != pipelineManager.pipelineMap.end())
         {
             return &pipelineManager.pipelineMap[pipelineHash];
         }
 
-        VkPipelineLayout pipelineLayout = FindOrCreatePipelineLayout(pushConstantSize, RenderBackendPipelineType::Compute);
+        VkPipelineLayout pipelineLayout = FindOrCreatePipelineLayout(pushConstantsSize, RenderBackendPipelineType::Compute);
 
         VkComputePipelineCreateInfo computePipelineInfo = {
             .sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO,
@@ -3444,7 +3429,7 @@ namespace Horizon
         outInfo.blendConstants[3] = 1.0f;
     }
 
-    VulkanPipeline* VulkanDevice::FindOrCreateGraphicsPipeline(VulkanShader* vertexShader, VulkanShader* pixelShader, VulkanShader* taskShader, VulkanShader* meshShader, const RenderBackendGraphicsPipelineState& pipelineState, uint32 pushConstantSize, RenderBackendPrimitiveTopology topology, bool useDynamicRendering, VulkanRenderingInfo* renderingInfo, VkRenderPass renderPass, uint32 activeColorAttachmentCount)
+    VulkanPipeline* VulkanDevice::FindOrCreateGraphicsPipeline(VulkanShader* vertexShader, VulkanShader* pixelShader, VulkanShader* taskShader, VulkanShader* meshShader, const RenderBackendGraphicsPipelineState& pipelineState, uint32 pushConstantsSize, RenderBackendPrimitiveTopology topology, bool useDynamicRendering, VulkanRenderingInfo* renderingInfo, VkRenderPass renderPass, uint32 activeColorAttachmentCount)
     {
         assert(useDynamicRendering ^ (renderPass != VK_NULL_HANDLE));
 
@@ -3462,7 +3447,7 @@ namespace Horizon
         // TODO: Optimize this
         uint64 renderingInfoFullHash = renderingInfo ? CRC32(renderingInfo, sizeof(VulkanRenderingInfo)) : uint64(renderPass);
         uint64 pipelineStateDescHash = CRC32(&pipelineStateDesc, sizeof(VulkanGraphicsPipelineStateDesc));
-        uint64 values[] = { renderingInfoFullHash, pipelineStateDescHash, uint64(vertexShader), uint64(pixelShader), uint64(taskShader), uint64(meshShader), uint64(topology), uint64(pushConstantSize) };
+        uint64 values[] = { renderingInfoFullHash, pipelineStateDescHash, uint64(vertexShader), uint64(pixelShader), uint64(taskShader), uint64(meshShader), uint64(topology), uint64(pushConstantsSize) };
         uint64 pipelineHash = uint64(CRC32(values, ArraySize(values) * sizeof(uint64)));
 
         if (pipelineManager.pipelineMap.find(pipelineHash) != pipelineManager.pipelineMap.end())
@@ -3470,7 +3455,7 @@ namespace Horizon
             return &pipelineManager.pipelineMap[pipelineHash];
         }
 
-        VkPipelineLayout pipelineLayout = FindOrCreatePipelineLayout(pushConstantSize, RenderBackendPipelineType::Graphics);
+        VkPipelineLayout pipelineLayout = FindOrCreatePipelineLayout(pushConstantsSize, RenderBackendPipelineType::Graphics);
 
         std::vector<VkPipelineShaderStageCreateInfo> stages;
         if (useMeshShader)
@@ -4330,12 +4315,12 @@ namespace Horizon
                 { VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, numAccelerationStructures },
             };
             bindlessDescriptorSetLayoutBindings = {
-                { .binding = BindlessBindingSamplers,               .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER,                    .descriptorCount = numSamplers,               .stageFlags = VK_SHADER_STAGE_ALL },
-                { .binding = BindlessBindingSampledImages,          .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,              .descriptorCount = numSampledImages,          .stageFlags = VK_SHADER_STAGE_ALL },
-                { .binding = BindlessBindingStorageImages,          .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,              .descriptorCount = numStorageImages,          .stageFlags = VK_SHADER_STAGE_ALL },
-                { .binding = BindlessBindingStorageBuffers,         .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,             .descriptorCount = numStorageBuffers,         .stageFlags = VK_SHADER_STAGE_ALL },
-                { .binding = BindlessBindingUniformBuffers,         .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,             .descriptorCount = numUniformBuffers,         .stageFlags = VK_SHADER_STAGE_ALL },
-                { .binding = BindlessBindingAccelerationStructures, .descriptorType = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, .descriptorCount = numAccelerationStructures, .stageFlags = VK_SHADER_STAGE_ALL },
+                { .binding = BINDLESS_RESOURCE_BINDING_SAMPLER,               .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER,                    .descriptorCount = numSamplers,               .stageFlags = VK_SHADER_STAGE_ALL },
+                { .binding = BINDLESS_RESOURCE_BINDING_TEXTURE_SRV,          .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,              .descriptorCount = numSampledImages,          .stageFlags = VK_SHADER_STAGE_ALL },
+                { .binding = BINDLESS_RESOURCE_BINDING_TEXTURE_UAV,          .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,              .descriptorCount = numStorageImages,          .stageFlags = VK_SHADER_STAGE_ALL },
+                { .binding = BINDLESS_RESOURCE_BINDING_BUFFER_SRV_AND_UAV,         .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,             .descriptorCount = numStorageBuffers,         .stageFlags = VK_SHADER_STAGE_ALL },
+                { .binding = BINDLESS_RESOURCE_BINDING_BUFFER_CBV,         .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,             .descriptorCount = numUniformBuffers,         .stageFlags = VK_SHADER_STAGE_ALL },
+                { .binding = BINDLESS_RESOURCE_BINDING_ACCELERATION_STRUCTURE, .descriptorType = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, .descriptorCount = numAccelerationStructures, .stageFlags = VK_SHADER_STAGE_ALL },
             };
             bindlessDescriptorBindingFlags = {
                 VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT | VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT | VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT,
@@ -4356,11 +4341,11 @@ namespace Horizon
                 { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,             numUniformBuffers         },
             };
             bindlessDescriptorSetLayoutBindings = {
-                { .binding = BindlessBindingSamplers,               .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER,                    .descriptorCount = numSamplers,               .stageFlags = VK_SHADER_STAGE_ALL },
-                { .binding = BindlessBindingSampledImages,          .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,              .descriptorCount = numSampledImages,          .stageFlags = VK_SHADER_STAGE_ALL },
-                { .binding = BindlessBindingStorageImages,          .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,              .descriptorCount = numStorageImages,          .stageFlags = VK_SHADER_STAGE_ALL },
-                { .binding = BindlessBindingStorageBuffers,         .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,             .descriptorCount = numStorageBuffers,         .stageFlags = VK_SHADER_STAGE_ALL },
-                { .binding = BindlessBindingUniformBuffers,         .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,             .descriptorCount = numUniformBuffers,         .stageFlags = VK_SHADER_STAGE_ALL },
+                { .binding = BINDLESS_RESOURCE_BINDING_SAMPLER,               .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER,                    .descriptorCount = numSamplers,               .stageFlags = VK_SHADER_STAGE_ALL },
+                { .binding = BINDLESS_RESOURCE_BINDING_TEXTURE_SRV,          .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,              .descriptorCount = numSampledImages,          .stageFlags = VK_SHADER_STAGE_ALL },
+                { .binding = BINDLESS_RESOURCE_BINDING_TEXTURE_UAV,          .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,              .descriptorCount = numStorageImages,          .stageFlags = VK_SHADER_STAGE_ALL },
+                { .binding = BINDLESS_RESOURCE_BINDING_BUFFER_SRV_AND_UAV,         .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,             .descriptorCount = numStorageBuffers,         .stageFlags = VK_SHADER_STAGE_ALL },
+                { .binding = BINDLESS_RESOURCE_BINDING_BUFFER_CBV,         .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,             .descriptorCount = numUniformBuffers,         .stageFlags = VK_SHADER_STAGE_ALL },
             };
             bindlessDescriptorBindingFlags = {
                 VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT | VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT | VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT,
@@ -4423,12 +4408,12 @@ namespace Horizon
         }
 
         // To be able to bind a set once in a frame for all shaders, all pipeline layouts have to be compatible
-        bindlessDescriptorManager.pushConstantSize = 128;
-        bindlessDescriptorManager.compatibleGraphicsPipelineLayout = FindOrCreatePipelineLayout(bindlessDescriptorManager.pushConstantSize, RenderBackendPipelineType::Graphics);
-        bindlessDescriptorManager.compatibleComputePipelineLayout = FindOrCreatePipelineLayout(bindlessDescriptorManager.pushConstantSize, RenderBackendPipelineType::Compute);
+        bindlessDescriptorManager.pushConstantsSize = 128;
+        bindlessDescriptorManager.compatibleGraphicsPipelineLayout = FindOrCreatePipelineLayout(bindlessDescriptorManager.pushConstantsSize, RenderBackendPipelineType::Graphics);
+        bindlessDescriptorManager.compatibleComputePipelineLayout = FindOrCreatePipelineLayout(bindlessDescriptorManager.pushConstantsSize, RenderBackendPipelineType::Compute);
         if (backend->enableRayTracingSupport)
         {
-            bindlessDescriptorManager.compatibleRayTracingPipelineLayout = FindOrCreatePipelineLayout(bindlessDescriptorManager.pushConstantSize, RenderBackendPipelineType::RayTracing);
+            bindlessDescriptorManager.compatibleRayTracingPipelineLayout = FindOrCreatePipelineLayout(bindlessDescriptorManager.pushConstantsSize, RenderBackendPipelineType::RayTracing);
         }
 
         bindlessDescriptorManager.config = {
@@ -4611,9 +4596,9 @@ namespace Horizon
         bool CompileRenderBackendCommand(const RenderBackendCommandDispatchSuperSampling& command);
     private:
         void ApplyTransitions();
-        bool PrepareForDispatch(RenderBackendShaderHandle computeShader, const RenderBackendShaderArguments& shaderArguments);
-        bool PrepareForDraw(RenderBackendShaderHandle vertexShader, RenderBackendShaderHandle pixelShader, const RenderBackendGraphicsPipelineState& pipelineState, RenderBackendPrimitiveTopology topology, RenderBackendBufferHandle indexBuffer, const RenderBackendShaderArguments& shaderArguments);
-        bool PrepareForMeshShading(RenderBackendShaderHandle amplificationShader, RenderBackendShaderHandle meshShader, RenderBackendShaderHandle pixelShader, const RenderBackendGraphicsPipelineState& pipelineState, RenderBackendPrimitiveTopology topology, RenderBackendBufferHandle indexBuffer, const RenderBackendShaderArguments& shaderArguments);
+        bool PrepareForDispatch(RenderBackendShaderHandle computeShader, const RenderBackendShaderConstants& shaderConstants);
+        bool PrepareForDraw(RenderBackendShaderHandle vertexShader, RenderBackendShaderHandle pixelShader, const RenderBackendGraphicsPipelineState& pipelineState, RenderBackendPrimitiveTopology topology, RenderBackendBufferHandle indexBuffer, const RenderBackendShaderConstants& shaderConstants);
+        bool PrepareForMeshShading(RenderBackendShaderHandle amplificationShader, RenderBackendShaderHandle meshShader, RenderBackendShaderHandle pixelShader, const RenderBackendGraphicsPipelineState& pipelineState, RenderBackendPrimitiveTopology topology, RenderBackendBufferHandle indexBuffer, const RenderBackendShaderConstants& shaderConstants);
         VulkanDevice* device;
         RenderBackendQueueFamily queueFamily;
         VkCommandBuffer commandBuffer;
@@ -4915,63 +4900,30 @@ namespace Horizon
         }
     }
 
-    bool VulkanRenderBackendCommandListContext::PrepareForDispatch(RenderBackendShaderHandle computeShader, const RenderBackendShaderArguments& shaderArguments)
+    bool VulkanRenderBackendCommandListContext::PrepareForDispatch(RenderBackendShaderHandle computeShader, const RenderBackendShaderConstants& shaderConstants)
     {
-        VulkanPushConstants pushConstants;
-        for (uint32 i = 0; i < 16; i++)
-        {
-            if (shaderArguments.slots[i].type == 1)
-            {
-                VulkanTexture* texture = device->GetTexture(shaderArguments.slots[i].srvSlot.srv.texture);
-                if (shaderArguments.slots[i].srvSlot.srv.subresouceRange.mipLevels == 1)
-                {
-                    pushConstants.indices[i] = texture->srvs[shaderArguments.slots[i].srvSlot.srv.subresouceRange.firstLevel].srvIndex;
-                }
-                else
-                {
-                    pushConstants.indices[i] = texture->srvIndex;
-                }
-            }
-            else if (shaderArguments.slots[i].type == RenderBackendShaderArguments::TypeTextureUAV && shaderArguments.slots[i].uavSlot.uav.texture)
-            {
-                VulkanTexture* texture = device->GetTexture(shaderArguments.slots[i].uavSlot.uav.texture);
-                pushConstants.indices[i] = texture->uavs[shaderArguments.slots[i].uavSlot.uav.mipLevel].uavIndex;
-            }
-            else if (shaderArguments.slots[i].type == RenderBackendShaderArguments::TypeBuffer && shaderArguments.slots[i].bufferSlot.handle)
-            {
-                VulkanBuffer* buffer = device->GetBuffer(shaderArguments.slots[i].bufferSlot.handle);
-                pushConstants.indices[i] = buffer->bindlessDescriptorIndexUAV;
-            }
-            else if (shaderArguments.slots[i].type == RenderBackendShaderArguments::TypeBufferCBV && shaderArguments.slots[i].bufferCBV.handle)
-            {
-                VulkanBuffer* buffer = device->GetBuffer(shaderArguments.slots[i].bufferCBV.handle);
-                pushConstants.indices[i] = buffer->bindlessDescriptorIndexCBV;
-            }
-        }
-        for (uint32 i = 0; i < 16; i++)
-        {
-            pushConstants.data[i] = shaderArguments.data[i];
-        }
-        const void* pushConstantValue = &pushConstants;
-        uint32 pushConstantSize = device->bindlessDescriptorManager.pushConstantSize;
+        uint32 pushConstantsSize = device->bindlessDescriptorManager.pushConstantsSize;
+        VulkanPipeline* pipeline = device->FindOrCreateComputePipeline(device->GetShader(computeShader), pushConstantsSize);
 
-        VulkanPipeline* pipeline = device->FindOrCreateComputePipeline(device->GetShader(computeShader), pushConstantSize);
         if (pipeline->handle != activeComputePipeline)
         {
             VkDescriptorSet set = device->GetBindlessGlobalSet();
             vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline->handle);
             activeComputePipeline = pipeline->handle;
         }
-        if (pushConstantSize > 0)
+
+        if (pushConstantsSize > 0)
         {
-            vkCmdPushConstants(commandBuffer, pipeline->layout, VK_SHADER_STAGE_COMPUTE_BIT, 0, pushConstantSize, pushConstantValue);
+            const void* pushConstantsData = &shaderConstants.data;
+            vkCmdPushConstants(commandBuffer, pipeline->layout, VK_SHADER_STAGE_COMPUTE_BIT, 0, pushConstantsSize, pushConstantsData);
         }
+
         return true;
     }
 
     bool VulkanRenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandDispatch& command)
     {
-        if (!PrepareForDispatch(command.computeShader, command.shaderArguments))
+        if (!PrepareForDispatch(command.computeShader, command.shaderConstants))
         {
             return false;
         }
@@ -4981,7 +4933,7 @@ namespace Horizon
 
     bool VulkanRenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandDispatchIndirect& command)
     {
-        if (!PrepareForDispatch(command.computeShader, command.shaderArguments))
+        if (!PrepareForDispatch(command.computeShader, command.shaderConstants))
         {
             return false;
         }
@@ -5082,37 +5034,7 @@ namespace Horizon
 
     bool VulkanRenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandDispatchRays& command)
     {
-        VulkanPushConstants pushConstants;
-        for (uint32 i = 0; i < 16; i++)
-        {
-            if (command.shaderArguments.slots[i].type == 1)
-            {
-                VulkanTexture* texture = device->GetTexture(command.shaderArguments.slots[i].srvSlot.srv.texture);
-                pushConstants.indices[i] = texture->srvIndex;
-            }
-            else if (command.shaderArguments.slots[i].type == 2)
-            {
-                VulkanTexture* texture = device->GetTexture(command.shaderArguments.slots[i].uavSlot.uav.texture);
-                pushConstants.indices[i] = texture->uavs[command.shaderArguments.slots[i].uavSlot.uav.mipLevel].uavIndex;
-            }
-            else if (command.shaderArguments.slots[i].type == 3)
-            {
-                VulkanBuffer* buffer = device->GetBuffer(command.shaderArguments.slots[i].bufferSlot.handle);
-                pushConstants.indices[i] = buffer->bindlessDescriptorIndexUAV;
-            }
-            else if (command.shaderArguments.slots[i].type == 4)
-            {
-                VulkanRayTracingAccelerationStructure* as = device->GetAccelerationStructure(command.shaderArguments.slots[i].asSlot.handle);
-                pushConstants.indices[i] = as->descriptorIndex;
-            }
-        }
-        for (uint32 i = 0; i < 16; i++)
-        {
-            pushConstants.data[i] = command.shaderArguments.data[i];
-        }
-        const void* pushConstantValue = &pushConstants;
-        uint32 pushConstantSize = device->bindlessDescriptorManager.pushConstantSize;
-
+        uint32 pushConstantsSize = device->bindlessDescriptorManager.pushConstantsSize;
         VulkanRayTracingPipelineState* pipelineState = device->GetRayTracingPipelineState(command.pipelineState);
 
         if (pipelineState->handle != activeRayTracingPipeline)
@@ -5122,9 +5044,10 @@ namespace Horizon
             activeComputePipeline = pipelineState->handle;
         }
 
-        if (pushConstantSize > 0)
+        if (pushConstantsSize > 0)
         {
-            vkCmdPushConstants(commandBuffer, pipelineState->pipelineLayout, VK_SHADER_STAGE_ALL, 0, pushConstantSize, pushConstantValue);
+            const void* pushConstantsData = &command.shaderConstants.data;
+            vkCmdPushConstants(commandBuffer, pipelineState->pipelineLayout, VK_SHADER_STAGE_ALL, 0, pushConstantsSize, pushConstantsData);
         }
 
         VulkanBuffer* sbtBuffer = device->GetBuffer(command.shaderBindingTable);
@@ -5157,69 +5080,9 @@ namespace Horizon
         return true;
     }
 
-    bool VulkanRenderBackendCommandListContext::PrepareForDraw(RenderBackendShaderHandle vertexShader, RenderBackendShaderHandle pixelShader, const RenderBackendGraphicsPipelineState& pipelineState, RenderBackendPrimitiveTopology topology, RenderBackendBufferHandle indexBuffer, const RenderBackendShaderArguments& shaderArguments)
+    bool VulkanRenderBackendCommandListContext::PrepareForDraw(RenderBackendShaderHandle vertexShader, RenderBackendShaderHandle pixelShader, const RenderBackendGraphicsPipelineState& pipelineState, RenderBackendPrimitiveTopology topology, RenderBackendBufferHandle indexBuffer, const RenderBackendShaderConstants& shaderConstants)
     {
-        VulkanPushConstantsTest pushConstantsTest;
-        VulkanPushConstants pushConstants;
-        const void* pushConstantValue = nullptr;
-        if (shaderArguments.test)
-        {
-            for (uint32 i = 0; i < 16; i++)
-            {
-                if (shaderArguments.slots[i].type == RenderBackendShaderArguments::TypeTextureSRV && shaderArguments.slots[i].srvSlot.srv.texture)
-                {
-                    VulkanTexture* texture = device->GetTexture(shaderArguments.slots[i].srvSlot.srv.texture);
-                    pushConstantsTest.indices[i] = texture->srvIndex;
-                }
-                else if (shaderArguments.slots[i].type == RenderBackendShaderArguments::TypeTextureUAV && shaderArguments.slots[i].uavSlot.uav.texture)
-                {
-                    VulkanTexture* texture = device->GetTexture(shaderArguments.slots[i].uavSlot.uav.texture);
-                    pushConstantsTest.indices[i] = texture->uavs[shaderArguments.slots[i].uavSlot.uav.mipLevel].uavIndex;
-                }
-                else if (shaderArguments.slots[i].type == RenderBackendShaderArguments::TypeBuffer && shaderArguments.slots[i].bufferSlot.handle)
-                {
-                    VulkanBuffer* buffer = device->GetBuffer(shaderArguments.slots[i].bufferSlot.handle);
-                    pushConstantsTest.indices[i] = buffer->bindlessDescriptorIndexUAV;
-                }
-                else if (shaderArguments.slots[i].type == RenderBackendShaderArguments::TypeBufferCBV && shaderArguments.slots[i].bufferCBV.handle)
-                {
-                    VulkanBuffer* buffer = device->GetBuffer(shaderArguments.slots[i].bufferCBV.handle);
-                    pushConstantsTest.indices[i] = buffer->bindlessDescriptorIndexCBV;
-                }
-            }
-            memcpy(pushConstantsTest.data, shaderArguments.testData, 64);
-            pushConstantValue = &pushConstantsTest;
-        }
-        else
-        {
-            for (uint32 i = 0; i < 16; i++)
-            {
-                if (shaderArguments.slots[i].type == RenderBackendShaderArguments::TypeTextureSRV && shaderArguments.slots[i].srvSlot.srv.texture)
-                {
-                    VulkanTexture* texture = device->GetTexture(shaderArguments.slots[i].srvSlot.srv.texture);
-                    pushConstants.indices[i] = texture->srvIndex;
-                }
-                else if (shaderArguments.slots[i].type == RenderBackendShaderArguments::TypeTextureUAV && shaderArguments.slots[i].uavSlot.uav.texture)
-                {
-                    VulkanTexture* texture = device->GetTexture(shaderArguments.slots[i].uavSlot.uav.texture);
-                    pushConstants.indices[i] = texture->uavs[shaderArguments.slots[i].uavSlot.uav.mipLevel].uavIndex;
-                }
-                else if (shaderArguments.slots[i].type == RenderBackendShaderArguments::TypeBuffer && shaderArguments.slots[i].bufferSlot.handle)
-                {
-                    VulkanBuffer* buffer = device->GetBuffer(shaderArguments.slots[i].bufferSlot.handle);
-                    pushConstants.indices[i] = buffer->bindlessDescriptorIndexUAV;
-                }
-                else if (shaderArguments.slots[i].type == RenderBackendShaderArguments::TypeBufferCBV && shaderArguments.slots[i].bufferCBV.handle)
-                {
-                    VulkanBuffer* buffer = device->GetBuffer(shaderArguments.slots[i].bufferCBV.handle);
-                    pushConstants.indices[i] = buffer->bindlessDescriptorIndexCBV;
-                }
-            }
-            memcpy(pushConstants.data, shaderArguments.data, sizeof(shaderArguments.data));
-            pushConstantValue = &pushConstants;
-        }
-
-        uint32 pushConstantSize = device->bindlessDescriptorManager.pushConstantSize;
+        uint32 pushConstantsSize = device->bindlessDescriptorManager.pushConstantsSize;
 
         assert(insideRenderPass);
         VulkanPipeline* pipeline = device->FindOrCreateGraphicsPipeline(
@@ -5228,7 +5091,7 @@ namespace Horizon
             nullptr,
             nullptr,
             pipelineState,
-            pushConstantSize,
+            pushConstantsSize,
             topology,
             true,
             &renderingInfo,
@@ -5241,9 +5104,10 @@ namespace Horizon
             vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->handle);
             activeGraphicsPipeline = pipeline->handle;
         }
-        if (pushConstantSize > 0)
+        if (pushConstantsSize > 0)
         {
-            vkCmdPushConstants(commandBuffer, pipeline->layout, VK_SHADER_STAGE_ALL, 0, pushConstantSize, pushConstantValue);
+            const void* pushConstantsData = &shaderConstants.data;
+            vkCmdPushConstants(commandBuffer, pipeline->layout, VK_SHADER_STAGE_ALL, 0, pushConstantsSize, pushConstantsData);
         }
         if (indexBuffer)
         {
@@ -5258,7 +5122,7 @@ namespace Horizon
     {
         OPTICK_EVENT();
 
-        if (!PrepareForDraw(command.vertexShader, command.pixelShader, command.pipelineState, command.topology, command.indexBuffer, command.shaderArguments))
+        if (!PrepareForDraw(command.vertexShader, command.pixelShader, command.pipelineState, command.topology, command.indexBuffer, command.shaderConstants))
         {
             return false;
         }
@@ -5286,7 +5150,7 @@ namespace Horizon
 
     bool VulkanRenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandDrawIndirect& command)
     {
-        if (!PrepareForDraw(command.vertexShader, command.pixelShader, command.pipelineState, command.topology, command.indexBuffer, command.shaderArguments))
+        if (!PrepareForDraw(command.vertexShader, command.pixelShader, command.pipelineState, command.topology, command.indexBuffer, command.shaderConstants))
         {
             return false;
         }
@@ -5313,7 +5177,7 @@ namespace Horizon
 
     bool VulkanRenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandDispatchMesh& command)
     {
-        // if (!PrepareForDraw(nullptr, command.pixelShader, command.pipelineState, command.topology, RenderBackendBufferHandle::Null, command.shaderArguments))
+        // if (!PrepareForDraw(nullptr, command.pixelShader, command.pipelineState, command.topology, RenderBackendBufferHandle::Null, command.shaderConstants))
         // {
         //     return false;
         // }
@@ -5327,7 +5191,7 @@ namespace Horizon
 
     bool VulkanRenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandDispatchMeshIndirect& command)
     {
-        // if (!PrepareForDraw(nullptr, command.pixelShader, command.pipelineState, command.topology, RenderBackendBufferHandle::Null, command.shaderArguments))
+        // if (!PrepareForDraw(nullptr, command.pixelShader, command.pipelineState, command.topology, RenderBackendBufferHandle::Null, command.shaderConstants))
         // {
         //     return false;
         // }
@@ -6086,34 +5950,54 @@ namespace Horizon
     //    return handle;
     //}
 
-    int32 VulkanRenderBackend::GetTextureSRVBindlessDescriptorIndex(RenderBackendTextureHandle handle)
+    int32 VulkanRenderBackend::GetTextureSRVBindlessResourceDescriptorIndex(RenderBackendTextureHandle handle, const RenderBackendTextureSubresourceRange& subresourceRange)
     {
         uint32 textureIndex = 0;
         if (!device.TryGetRenderBackendHandleRepresentation(handle.GetIndex(), &textureIndex))
         {
             return -1;
         }
-        return device.GetTextureSRVBindlessDescriptorIndex(textureIndex);
+        return device.GetTextureSRVBindlessResourceDescriptorIndex(textureIndex, subresourceRange);
     }
 
-    int32 VulkanRenderBackend::GetTextureUAVBindlessDescriptorIndex(RenderBackendTextureHandle handle, uint32 mipLevel)
+    int32 VulkanRenderBackend::GetTextureUAVBindlessResourceDescriptorIndex(RenderBackendTextureHandle handle, uint32 mipLevel)
     {
         uint32 textureIndex = 0;
         if (!device.TryGetRenderBackendHandleRepresentation(handle.GetIndex(), &textureIndex))
         {
             return -1;
         }
-        return device.GetTextureUAVBindlessDescriptorIndex(textureIndex, mipLevel);
+        return device.GetTextureUAVBindlessResourceDescriptorIndex(textureIndex, mipLevel);
     }
 
-    int32 VulkanRenderBackend::GetBufferBindlessDescriptorIndex(RenderBackendBufferHandle handle)
+    int32 VulkanRenderBackend::GetBufferCBVBindlessResourceDescriptorIndex(RenderBackendBufferHandle handle)
     {
         uint32 bufferIndex = 0;
         if (!device.TryGetRenderBackendHandleRepresentation(handle.GetIndex(), &bufferIndex))
         {
             return -1;
         }
-        return device.GetBufferBindlessDescriptorIndex(bufferIndex);
+        return device.GetBufferCBVBindlessResourceDescriptorIndex(bufferIndex);
+    }
+
+    int32 VulkanRenderBackend::GetBufferSRVBindlessResourceDescriptorIndex(RenderBackendBufferHandle handle)
+    {
+        uint32 bufferIndex = 0;
+        if (!device.TryGetRenderBackendHandleRepresentation(handle.GetIndex(), &bufferIndex))
+        {
+            return -1;
+        }
+        return device.GetBufferSRVBindlessResourceDescriptorIndex(bufferIndex);
+    }
+
+    int32 VulkanRenderBackend::GetBufferUAVBindlessResourceDescriptorIndex(RenderBackendBufferHandle handle)
+    {
+        uint32 bufferIndex = 0;
+        if (!device.TryGetRenderBackendHandleRepresentation(handle.GetIndex(), &bufferIndex))
+        {
+            return -1;
+        }
+        return device.GetBufferUAVBindlessResourceDescriptorIndex(bufferIndex);
     }
 
     RenderBackendRayTracingPipelineStateHandle VulkanRenderBackend::CreateRayTracingPipelineState(const RenderBackendRayTracingPipelineStateDesc* desc, const char* name)
@@ -6191,7 +6075,7 @@ namespace Horizon
 
             const VkPhysicalDeviceRayTracingPipelinePropertiesKHR& rayTracingPipelineProperties = device.GetRayTracingPipelineProperties();
 
-            VkPipelineLayout pipelineLayout = device.FindOrCreatePipelineLayout(device.bindlessDescriptorManager.pushConstantSize, RenderBackendPipelineType::RayTracing);
+            VkPipelineLayout pipelineLayout = device.FindOrCreatePipelineLayout(device.bindlessDescriptorManager.pushConstantsSize, RenderBackendPipelineType::RayTracing);
 
             VkRayTracingPipelineCreateInfoKHR rayTracingPipelineCreateInfo = {
                 .sType = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR,

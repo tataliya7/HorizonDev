@@ -36,21 +36,21 @@ namespace Horizon
         //
         //             RenderBackendRayTracingAccelerationStructureHandle rayTracingScene = view.GetRayTracingScene();
         //
-        //             RenderBackendShaderArguments shaderArguments = {};
-        //             shaderArguments.BindBufferCBV(0, this->GetCurrentPerFrameConstantBuffer());
-        //             shaderArguments.BindAS(1, rayTracingScene);
-        //             shaderArguments.BindTextureSRV(2, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(sceneDepthTexture)));
-        //             shaderArguments.BindTextureUAV(3, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(screenSpaceShadowMaskTexture), 0));
-        //             shaderArguments.BindTextureUAV(4, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(rayDistanceTexture), 0));
+        //             RenderBackendShaderConstants shaderConstants = {};
+        //             shaderConstants.BindBufferCBV(0, renderBackend->GetBufferCBVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
+        //             shaderConstants.BindAS(1, rayTracingScene);
+        //             shaderConstants.BindTextureSRV(2, registry.GetTextureSRVBindlessResourceDescriptorIndex(sceneDepthTexture)));
+        //             shaderConstants.BindTextureUAV(3, registry.GetTextureUAVBindlessResourceDescriptorIndexscreenSpaceShadowMaskTexture), 0));
+        //             shaderConstants.BindTextureUAV(4, registry.GetTextureUAVBindlessResourceDescriptorIndexrayDistanceTexture), 0));
         //
-        //             shaderArguments.PushConstants(0, light.GetDirection().x);
-        //             shaderArguments.PushConstants(1, light.GetDirection().y);
-        //             shaderArguments.PushConstants(2, light.GetDirection().z);
+        //             shaderConstants.PushConstants(0, light.GetDirection().x);
+        //             shaderConstants.PushConstants(1, light.GetDirection().y);
+        //             shaderConstants.PushConstants(2, light.GetDirection().z);
         //
         //             commandList.DispatchRays(
         //                 rayTracingShadowsPipelineState,
         //                 rayTracingShadowsSBT,
-        //                 shaderArguments,
+        //                 shaderConstants,
         //                 width,
         //                 height,
         //                 1);

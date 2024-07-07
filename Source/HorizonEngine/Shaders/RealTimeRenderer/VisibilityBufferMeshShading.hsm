@@ -43,7 +43,7 @@ MeshletDesc GetMeshletDesc(ByteAddressBuffer meshletDescBuffer, uint meshletInde
     return meshletDesc;
 }
 
-VertexAttributes GetVertexAttributes(PerFrameShaderParameters perFrameConstants, MeshletDesc meshletDesc, uint vertexIndex)
+VertexAttributes GetVertexAttributes(PerFrameShaderParameters frameShaderParameters, MeshletDesc meshletDesc, uint vertexIndex)
 {
 #if 0
     ByteAddressBuffer geometryBuffer = GetGeometryBufferSRV();
@@ -52,7 +52,7 @@ VertexAttributes GetVertexAttributes(PerFrameShaderParameters perFrameConstants,
     float4x4 worldMatrix = transformBuffer.Load<float4x4>(geometry.transformIndex * sizeof(float4x4));
     float3 vertexPosition = GetRWByteAddressBuffer(geometry.vertexBuffer0).Load<float3>(index0 * sizeof(float3));
     float3 positionWS = mul(worldMatrix, float4(vertexPosition, 1.0f)).xyz;
-    float4 positionHS = mul(perFrameConstants.worldToClipMatrix, float4(positionWS, 1.0f));
+    float4 positionHS = mul(frameShaderParameters.worldToClipMatrix, float4(positionWS, 1.0f));
 #else
     float4 positionHS = 0;
 #endif
@@ -119,7 +119,7 @@ void VisibilityBufferMS(
         return;
     }
 
-    ConstantBuffer<PerFrameShaderParameters> perFrameConstants = GetPerFrameShaderParametersCBV();
+    ConstantBuffer<PerFrameShaderParameters> frameShaderParameters = GetPerFrameShaderParameterBufferCBV();
     //ByteAddressBuffer meshletDescBuffer = GetMeshletDescBufferSRV();
 
     MeshletDesc meshletDesc;// = GetMeshletDesc(meshletDescBuffer, meshletIndex);
@@ -131,13 +131,13 @@ void VisibilityBufferMS(
     uint vertexOutputIndex = GroupThreadID;
     if (vertexOutputIndex < vertexCount)
     {
-        VertexAttributes vertex = GetVertexAttributes(perFrameConstants, meshletDesc, vertexOutputIndex);
+        VertexAttributes vertex = GetVertexAttributes(frameShaderParameters, meshletDesc, vertexOutputIndex);
         outVertices[vertexOutputIndex] = vertex;
     }
     vertexOutputIndex += 128;
     if (vertexOutputIndex < vertexCount)
     {
-        VertexAttributes vertex = GetVertexAttributes(perFrameConstants, meshletDesc, vertexOutputIndex);
+        VertexAttributes vertex = GetVertexAttributes(frameShaderParameters, meshletDesc, vertexOutputIndex);
         outVertices[vertexOutputIndex] = vertex;
     }
 

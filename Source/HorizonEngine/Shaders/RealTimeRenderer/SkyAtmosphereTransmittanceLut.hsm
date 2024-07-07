@@ -32,17 +32,19 @@
 #include "RealTimeRendererCommon.hsh"
 #include "SkyAtmosphereCommon.hsh"
 
-BIND_BUFFER_CBV(0, PerFrameShaderParameters);
-BIND_TEXTURE_2D_UAV(1, float3, TransmittanceLutTexture);
+SHADER_CONSTANTS_STRUCT_BEGIN();
+SHADER_CONSTANTS_CONSTANT_BUFFER_CBV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferCBV);
+SHADER_CONSTANTS_TEXTURE_2D_UAV(1, float3, TransmittanceLutTextureUAV);
+SHADER_CONSTANTS_STRUCT_END();
 
 [shader("compute")]
 [numthreads(8, 8, 1)]
 void SkyAtmosphereTransmittanceLutCS(uint3 DispatchThreadID : SV_DispatchThreadID)
 {
-    ConstantBuffer<PerFrameShaderParameters> perFrameConstants = GetPerFrameShaderParametersCBV();
-    SkyAtmosphereShaderParameters skyAtmosphereParameters = GetSkyAtmosphereShaderParameters(perFrameConstants);
-    RWTexture2D<float3> transmittanceLutTexture = GetTransmittanceLutTextureUAV();
+    ConstantBuffer<PerFrameShaderParameters> frameShaderParameters = ShaderConstants.GetPerFrameShaderParameterBufferCBV();
+    RWTexture2D<float3> transmittanceLutTexture = ShaderConstants.GetTransmittanceLutTextureUAV();
 
+    SkyAtmosphereShaderParameters skyAtmosphereParameters = GetSkyAtmosphereShaderParameters(frameShaderParameters);
     float4 transmittanceLutSize = skyAtmosphereParameters.transmittanceLutSize;
 
     uint2 pixelCoord = DispatchThreadID.xy;
@@ -67,7 +69,7 @@ void SkyAtmosphereTransmittanceLutCS(uint3 DispatchThreadID : SV_DispatchThreadI
     const float3 lightIlluminance = float3(0.0f, 0.0f, 0.0f);
 
     SingleScatteringResult result = IntegrateSingleScatteredLuminance(
-        perFrameConstants,
+        frameShaderParameters,
         skyAtmosphereParameters,
         uv,
         worldPos,

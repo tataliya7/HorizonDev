@@ -7,9 +7,11 @@
 #define SIGNAL_LENGTH 1024
 #define RADIX 8
 
-BIND_TEXTURE_2D_SRV(0, InputTexture);
-BIND_TEXTURE_2D_UAV(1, float4, OutputTexture);
-BIND_TEXTURE_2D_SRV(2, KernelTexture);
+SHADER_CONSTANTS_STRUCT_BEGIN();
+SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(0, InputTextureSRV);
+SHADER_CONSTANTS_TEXTURE_2D_UAV(1, float4, OutputTextureUAV);
+SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(2, KernelTextureSRV);
+SHADER_CONSTANTS_STRUCT_END();
 
 groupshared float2 v[SIGNAL_LENGTH];
 
@@ -184,8 +186,8 @@ void SharedMemoryComplexFFTCS(uint3 GroupID : SV_GroupID, uint3 GroupThreadID : 
     const uint groupIndex = GroupID.y;
     const uint groupThreadIndex = GroupThreadID.x;
 
-    Texture2D inputTexture = GetInputTextureSRV();
-    RWTexture2D<float4> outputTexture = GetOutputTextureUAV();
+    Texture2D inputTexture = ShaderConstants.GetInputTextureSRV();
+    RWTexture2D<float4> outputTexture = ShaderConstants.GetOutputTextureUAV();
 
     uint2 pixelCoord = uint2(groupIndex, groupThreadIndex);
     uint2 pixelCoordRG = pixelCoord;
@@ -214,8 +216,8 @@ void SharedMemoryComplexFFTCS(uint3 GroupID : SV_GroupID, uint3 GroupThreadID : 
     const uint groupIndex = GroupID.y;
     const uint groupThreadIndex = GroupThreadID.x;
 
-    Texture2D inputTexture = GetInputTextureSRV();
-    RWTexture2D<float4> outputTexture = GetOutputTextureUAV();
+    Texture2D inputTexture = ShaderConstants.GetInputTextureSRV();
+    RWTexture2D<float4> outputTexture = ShaderConstants.GetOutputTextureUAV();
 
     uint2 pixelCoord = uint2(groupIndex, groupThreadIndex);
     float4 srcValue = inputTexture[pixelCoord];
@@ -246,8 +248,8 @@ void SharedMemoryComplexIFFTCS(uint3 GroupID : SV_GroupID, uint3 GroupThreadID :
     const uint groupIndex = GroupID.y;
     const uint groupThreadIndex = GroupThreadID.x;
 
-    Texture2D inputTexture = GetInputTextureSRV();
-    RWTexture2D<float4> outputTexture = GetOutputTextureUAV();
+    Texture2D inputTexture = ShaderConstants.GetInputTextureSRV();
+    RWTexture2D<float4> outputTexture = ShaderConstants.GetOutputTextureUAV();
 
     uint2 pixelCoord = uint2(groupIndex, groupThreadIndex);
     uint2 pixelCoordRG = pixelCoord;
@@ -276,8 +278,8 @@ void SharedMemoryComplexIFFTCS(uint3 GroupID : SV_GroupID, uint3 GroupThreadID :
     const uint groupIndex = GroupID.y;
     const uint groupThreadIndex = GroupThreadID.x;
 
-    Texture2D inputTexture = GetInputTextureSRV();
-    RWTexture2D<float4> outputTexture = GetOutputTextureUAV();
+    Texture2D inputTexture = ShaderConstants.GetInputTextureSRV();
+    RWTexture2D<float4> outputTexture = ShaderConstants.GetOutputTextureUAV();
 
     uint2 pixelCoord = uint2(groupIndex, groupThreadIndex);
     float4 srcValue = inputTexture[pixelCoord];
@@ -308,8 +310,8 @@ void SharedMemoryTwoForOneRealFFTCS(uint3 GroupID : SV_GroupID, uint3 GroupThrea
     const uint groupIndex = GroupID.y;
     const uint groupThreadIndex = GroupThreadID.x;
 
-    Texture2D inputTexture = GetInputTextureSRV();
-    RWTexture2D<float4> outputTexture = GetOutputTextureUAV();
+    Texture2D inputTexture = ShaderConstants.GetInputTextureSRV();
+    RWTexture2D<float4> outputTexture = ShaderConstants.GetOutputTextureUAV();
 
     uint2 pixelCoord = uint2(groupThreadIndex, groupIndex);
     uint2 pixelCoordRG = pixelCoord;
@@ -340,8 +342,8 @@ void SharedMemoryTwoForOneRealFFTCS(uint3 GroupID : SV_GroupID, uint3 GroupThrea
     const uint groupIndex = GroupID.y;
     const uint groupThreadIndex = GroupThreadID.x;
 
-    Texture2D inputTexture = GetInputTextureSRV();
-    RWTexture2D<float4> outputTexture = GetOutputTextureUAV();
+    Texture2D inputTexture = ShaderConstants.GetInputTextureSRV();
+    RWTexture2D<float4> outputTexture = ShaderConstants.GetOutputTextureUAV();
 
     uint2 pixelCoord = uint2(groupThreadIndex, groupIndex);
     float4 srcValue = inputTexture[pixelCoord];
@@ -368,8 +370,8 @@ void SharedMemoryTwoForOneRealIFFTCS(uint3 GroupID : SV_GroupID, uint3 GroupThre
     const uint groupIndex = GroupID.y;
     const uint groupThreadIndex = GroupThreadID.x;
 
-    Texture2D inputTexture = GetInputTextureSRV();
-    RWTexture2D<float4> outputTexture = GetOutputTextureUAV();
+    Texture2D inputTexture = ShaderConstants.GetInputTextureSRV();
+    RWTexture2D<float4> outputTexture = ShaderConstants.GetOutputTextureUAV();
 
     uint2 pixelCoord = uint2(groupThreadIndex, groupIndex);
     uint2 pixelCoordRG = pixelCoord;
@@ -402,8 +404,8 @@ void SharedMemoryTwoForOneRealIFFTCS(uint3 GroupID : SV_GroupID, uint3 GroupThre
     const uint groupIndex = GroupID.y;
     const uint groupThreadIndex = GroupThreadID.x;
 
-    Texture2D inputTexture = GetInputTextureSRV();
-    RWTexture2D<float4> outputTexture = GetOutputTextureUAV();
+    Texture2D inputTexture = ShaderConstants.GetInputTextureSRV();
+    RWTexture2D<float4> outputTexture = ShaderConstants.GetOutputTextureUAV();
 
     uint2 pixelCoord = uint2(groupThreadIndex, groupIndex);
     float4 srcValue = inputTexture[pixelCoord];
@@ -432,8 +434,8 @@ void SharedMemoryComplexFFTConvolutionCS(uint3 GroupID : SV_GroupID, uint3 Group
     const uint groupIndex = GroupID.y;
     const uint groupThreadIndex = GroupThreadID.x;
 
-    Texture2D inputTexture = GetInputTextureSRV();
-    RWTexture2D<float4> outputTexture = GetOutputTextureUAV();
+    Texture2D inputTexture = ShaderConstants.GetInputTextureSRV();
+    RWTexture2D<float4> outputTexture = ShaderConstants.GetOutputTextureUAV();
 
     uint2 pixelCoord = uint2(groupIndex, groupThreadIndex);
     uint2 pixelCoordRG = pixelCoord;
@@ -452,7 +454,7 @@ void SharedMemoryComplexFFTConvolutionCS(uint3 GroupID : SV_GroupID, uint3 Group
         outputs[channel] = Fk;
     }
 
-    Texture2D kernelTexure = GetKernelTextureSRV();
+    Texture2D kernelTexure = ShaderConstants.GetKernelTextureSRV();
     float4 kernelValueRG = kernelTexure[pixelCoordRG];
     float4 kernelValueBA = kernelTexure[pixelCoordBA];
     Complex kernels[4]  = { Complex(kernelValueRG.x, kernelValueRG.y), Complex(kernelValueRG.z, kernelValueRG.w), Complex(kernelValueBA.x, kernelValueBA.y), Complex(kernelValueBA.z, kernelValueBA.w) };
@@ -488,8 +490,8 @@ void SharedMemoryComplexFFTConvolutionCS(uint3 GroupID : SV_GroupID, uint3 Group
     const uint groupIndex = GroupID.y;
     const uint groupThreadIndex = GroupThreadID.x;
 
-    Texture2D inputTexture = GetInputTextureSRV();
-    RWTexture2D<float4> outputTexture = GetOutputTextureUAV();
+    Texture2D inputTexture = ShaderConstants.GetInputTextureSRV();
+    RWTexture2D<float4> outputTexture = ShaderConstants.GetOutputTextureUAV();
 
     uint2 pixelCoord = uint2(groupIndex, groupThreadIndex);
     float4 srcValue = inputTexture[pixelCoord];
@@ -504,7 +506,7 @@ void SharedMemoryComplexFFTConvolutionCS(uint3 GroupID : SV_GroupID, uint3 Group
         outputs[channel] = Fk;
     }
 
-    Texture2D kernelTexure = GetKernelTextureSRV();
+    Texture2D kernelTexure = ShaderConstants.GetKernelTextureSRV();
     float4 kernelValue = kernelTexure[pixelCoord];
     Complex kernels[2]  = { Complex(kernelValue.x, kernelValue.y), Complex(kernelValue.z, kernelValue.w) };
 

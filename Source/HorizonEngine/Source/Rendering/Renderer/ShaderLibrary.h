@@ -95,7 +95,7 @@ namespace Horizon
         AutoExposureBuildHistogram,
         AutoExposureComputeExposure,
         CopyExposure,
-        ColorPyramidGeneration,
+        BuildColorPyramid,
         GaussianBloomDownsample,
         GaussianBloomUpsample,
         ConvolutionBloomResizeKernel,

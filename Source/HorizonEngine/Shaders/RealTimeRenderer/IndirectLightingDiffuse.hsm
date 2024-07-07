@@ -16,14 +16,14 @@ BIND_BYTE_ADDRESS_BUFFER_SRV(6, SkyLightIrradianceEnvironmentMapSHBuffer);
 [shader("pixel")]
 void IndirectLightingDiffusePS(float4 position : SV_Position, out float4 outSceneColor : SV_Target0)
 {
-    ConstantBuffer<PerFrameShaderParameters> perFrameConstants = GetPerFrameShaderParametersCBV();
+    ConstantBuffer<PerFrameShaderParameters> frameShaderParameters = GetPerFrameShaderParameterBufferCBV();
     Texture2D gbuffer0 = GetGBuffer0SRV();
     Texture2D gbuffer1 = GetGBuffer1SRV();
     Texture2D gbuffer2 = GetGBuffer2SRV();
     Texture2D ambientOcclusionTexture = GetAmbientOcclusionTextureSRV();
 
     const uint2 pixelCoord = uint2(position.xy);
-    const float2 uv = (float2(pixelCoord) + 0.5f) * perFrameConstants.renderResolution.zw;
+    const float2 uv = (float2(pixelCoord) + 0.5f) * frameShaderParameters.renderResolution.zw;
 
     float4 gbuffer0Data = gbuffer0[pixelCoord];
     float4 gbuffer1Data = gbuffer1[pixelCoord];
@@ -51,8 +51,8 @@ void IndirectLightingDiffusePS(float4 position : SV_Position, out float4 outScen
     float3 irradiance = EvaluateSHCosineWeighted(irradianceEnvironmentMapSH, normal);
 #endif
     float3 indirectDiffuse = diffuseBRDF * irradiance * ambientOcclusion;
-    indirectDiffuse *= perFrameConstants.indirectLightingMultiplier;
-    indirectDiffuse *= perFrameConstants.preExposure;
+    indirectDiffuse *= frameShaderParameters.indirectLightingMultiplier;
+    indirectDiffuse *= frameShaderParameters.preExposure;
 
     outSceneColor = 0;
     outSceneColor.rgb += indirectDiffuse;

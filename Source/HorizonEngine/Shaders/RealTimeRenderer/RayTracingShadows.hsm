@@ -27,7 +27,7 @@ void RayTracingShadowsRayGen()
     uint3 launchIndex = DispatchRaysIndex();
     uint3 launchDimensions = DispatchRaysDimensions();
 
-    ConstantBuffer<PerFrameShaderParameters> perFrameConstants = GetPerFrameShaderParametersCBV();
+    ConstantBuffer<PerFrameShaderParameters> frameShaderParameters = GetPerFrameShaderParameterBufferCBV();
     Texture2D sceneDepth = GetSceneDepthSRV();
     RWTexture2D<float> shadowMask = GetShadowMaskUAV();
     RWTexture2D<float> rayDistance = GetRayDistanceUAV();
@@ -48,17 +48,17 @@ void RayTracingShadowsRayGen()
     // Reconstruct world position from the depth buffer
     float2 pixelCenter = pixelCoord + 0.5;
     float2 uv = pixelCenter / float2(launchDimensions.xy);
-    float3 worldSpacePosition = ReconstructWorldSpacePositionFromDepth(uv, depth, perFrameConstants.clipToWorldMatrix);
+    float3 worldSpacePosition = ReconstructWorldSpacePositionFromDepth(uv, depth, frameShaderParameters.clipToWorldMatrix);
 
-    uint randSeed = RandInit(launchIndex.x + launchIndex.y * launchDimensions.x, perFrameConstants.frameIndex);
+    uint randSeed = RandInit(launchIndex.x + launchIndex.y * launchDimensions.x, frameShaderParameters.frameIndex);
 
     float cosThetaMax = 0.999;
     // Generate a random direction based on the cone angle.
     // @see UniformSampleCone in [pbrt]
     float3 randDirection = UniformSampleCone(float2(Rand(randSeed), Rand(randSeed)), cosThetaMax);
 
-    float3 N = -normalize(float3(SHADER_ARGUMENTS_DATA(0), SHADER_ARGUMENTS_DATA(1), SHADER_ARGUMENTS_DATA(2)));
-    //float3 N = -perFrameConstants.sunDirection;
+    float3 N = -normalize(float3((0), (1), (2)));
+    //float3 N = -frameShaderParameters.sunDirection;
     //float3 B = GetPerpendicularVector(N);
     //float3 T = cross(B, N);
 

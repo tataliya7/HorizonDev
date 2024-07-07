@@ -21,10 +21,10 @@ static const float4 GhostColorAndScale[8] = {
 [shader("pixel")]
 void LensFlaresGhostPS(float4 position : SV_Position, out float3 outColor : SV_Target)
 {
-    ConstantBuffer<PerFrameShaderParameters> perFrameConstants = GetPerFrameShaderParametersCBV();
+    ConstantBuffer<PerFrameShaderParameters> frameShaderParameters = GetPerFrameShaderParameterBufferCBV();
     Texture2D SceneColorTexture = GetSceneColorTextureSRV();
-    float outputTextureWidth = SHADER_ARGUMENTS_DATA(0);
-    float outputTextureHeight = SHADER_ARGUMENTS_DATA(1);
+    float outputTextureWidth = (0);
+    float outputTextureHeight = (1);
     float2 outputTextureInvSize = 1.0f / float2(outputTextureWidth, outputTextureHeight);
 
     float2 uv = position.xy * outputTextureInvSize;

@@ -35,12 +35,12 @@ namespace Horizon
                         Vector2 invSrcSize = Vector2(1.0f / srcSize.x, 1.0f / srcSize.y);
                         Vector2 invDstSize = Vector2(1.0f / dstSize.x, 1.0f / dstSize.y);
 
-                        RenderBackendShaderArguments shaderArguments = {};
-                        shaderArguments.BindTextureSRV(0, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(sceneDepthTexture)));
-                        shaderArguments.BindTextureUAV(1, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(closestHZBTexture), dstMip));
-                        shaderArguments.BindTextureUAV(2, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(furthestHZBTexture), dstMip));
-                        shaderArguments.BindScalar(0, invSrcSize.x);
-                        shaderArguments.BindScalar(1, invSrcSize.y);
+                        RenderBackendShaderConstants shaderConstants = {};
+                        shaderConstants.BindTextureSRV(0, registry.GetTextureSRVBindlessResourceDescriptorIndex(sceneDepthTexture));
+                        shaderConstants.BindTextureUAV(1, registry.GetTextureUAVBindlessResourceDescriptorIndex(closestHZBTexture, dstMip));
+                        shaderConstants.BindTextureUAV(2, registry.GetTextureUAVBindlessResourceDescriptorIndex(furthestHZBTexture, dstMip));
+                        shaderConstants.BindScalar(3, invSrcSize.x);
+                        shaderConstants.BindScalar(4, invSrcSize.y);
 
                         uint32 threadGroupCountX = CeilDiv(dstSize.x, 8);
                         uint32 threadGroupCountY = CeilDiv(dstSize.y, 8);
@@ -48,7 +48,7 @@ namespace Horizon
 
                         commandList.Dispatch(
                             computeShader,
-                            shaderArguments,
+                            shaderConstants,
                             threadGroupCountX,
                             threadGroupCountY,
                             threadGroupCountZ);
@@ -69,12 +69,12 @@ namespace Horizon
                         transitions.emplace_back(RenderBackendBarrier(registry.GetRenderBackendTextureHandle(furthestHZBTexture), RenderBackendTextureSubresourceRange(mipLevel - 1, 1, 0, 1), RenderBackendResourceState::UnorderedAccess, RenderBackendResourceState::ShaderResource));
                         commandList.Transitions(transitions.data(), (uint32)transitions.size());
 
-                        RenderBackendShaderArguments shaderArguments = {};
-                        shaderArguments.BindTextureSRV(0, RenderBackendTextureSRVDesc::CreateForMipLevel(registry.GetRenderBackendTextureHandle(furthestHZBTexture), mipLevel - 1));
-                        shaderArguments.BindTextureUAV(1, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(closestHZBTexture), dstMip));
-                        shaderArguments.BindTextureUAV(2, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(furthestHZBTexture), dstMip));
-                        shaderArguments.BindScalar(0, invSrcSize.x);
-                        shaderArguments.BindScalar(1, invSrcSize.y);
+                        RenderBackendShaderConstants shaderConstants = {};
+                        shaderConstants.BindTextureSRV(0, registry.GetTextureSRVBindlessResourceDescriptorIndex(furthestHZBTexture)); // TODO: specify mip level // mipLevel - 1
+                        shaderConstants.BindTextureUAV(1, registry.GetTextureUAVBindlessResourceDescriptorIndex(closestHZBTexture, dstMip));
+                        shaderConstants.BindTextureUAV(2, registry.GetTextureUAVBindlessResourceDescriptorIndex(furthestHZBTexture, dstMip));
+                        shaderConstants.BindScalar(3, invSrcSize.x);
+                        shaderConstants.BindScalar(4, invSrcSize.y);
 
                         uint32 threadGroupCountX = CeilDiv(dstSize.x, 8);
                         uint32 threadGroupCountY = CeilDiv(dstSize.y, 8);
@@ -82,7 +82,7 @@ namespace Horizon
 
                         commandList.Dispatch(
                             computeShader,
-                            shaderArguments,
+                            shaderConstants,
                             threadGroupCountX,
                             threadGroupCountY,
                             threadGroupCountZ);

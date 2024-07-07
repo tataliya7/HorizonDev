@@ -37,7 +37,7 @@ void SurfelGISurfelApplicationCS(
 
     GroupMemoryBarrierWithGroupSync();
 
-    ConstantBuffer<PerFrameShaderParameters> perFrameConstants = GetPerFrameShaderParametersCBV();
+    ConstantBuffer<PerFrameShaderParameters> frameShaderParameters = GetPerFrameShaderParameterBufferCBV();
 
     Texture2D visibilityBuffer0 = GetVisibilityBuffer0RV();
     Texture2D visibilityBuffer1 = GetVisibilityBuffer1RV();
@@ -63,12 +63,12 @@ void SurfelGISurfelApplicationCS(
         return;
     }
 
-    float4 renderSizeAndInvSize = float4(perFrameConstants.renderWidth, perFrameConstants.renderHeight, 1.0 / perFrameConstants.renderWidth, 1.0 / perFrameConstants.renderHeight);
+    float4 renderSizeAndInvSize = float4(frameShaderParameters.renderWidth, frameShaderParameters.renderHeight, 1.0 / frameShaderParameters.renderWidth, 1.0 / frameShaderParameters.renderHeight);
     float2 uv = (pixelCoord + 0.5) * renderSizeAndInvSize.zw;
 
     // Once a certain amount of coverage is achieved, no more surfels are spawned in that tile.
     float coverage = 0;
-    float3 worldSpacePosition = ReconstructWorldSpacePositionFromDepth(uv, depth, perFrameConstants.clipToWorldMatrix);
+    float3 worldSpacePosition = ReconstructWorldSpacePositionFromDepth(uv, depth, frameShaderParameters.clipToWorldMatrix);
 
     // Find surfel grid cell.
     int3 cellID = CalculateUniformGridCellID(worldSpacePosition);
@@ -137,7 +137,7 @@ void SurfelGISurfelApplicationCS(
         if (numSurfelsCanSpawn > 0)
         {
             // GIBS's stratagy: make the spawn chance proportional to the pixel’s projected area in world space.
-            float linearDepth = ComputeCameraSpaceDepth(depth, perFrameConstants.nearClippingPlane, perFrameConstants.farClippingPlane);
+            float linearDepth = ComputeCameraSpaceDepth(depth, frameShaderParameters.nearClippingPlane, frameShaderParameters.farClippingPlane);
             float spawnChance = 1 - pow(1 - linearDepth, 4);
 
             // Spawn surfels probabilistically

@@ -320,8 +320,8 @@ namespace Horizon
             const SceneView& view,
             RenderGraphTextureHandle sceneColorTexture,
             RenderGraphTextureHandle bloomTexture,
-            RenderGraphTextureHandle colorLUTTexture,
             RenderGraphTextureHandle localExposureTexture,
+            RenderGraphTextureHandle colorLUTTexture,
             RenderGraphBufferHandle autoExposureBuffer,
             bool outputInHDR);
 

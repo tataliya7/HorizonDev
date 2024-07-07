@@ -14,9 +14,14 @@
 #include "../RealTimeRendererCommon.hsh"
 #include "PostProcessingCommon.hsh"
 
-BIND_BUFFER_CBV(0, PerFrameShaderParameters);
-BIND_TEXTURE_2D_SRV(1, InputTexture);
-BIND_TEXTURE_2D_UAV(2, float3, OutputTexture);
+SHADER_CONSTANTS_STRUCT_BEGIN();
+SHADER_CONSTANTS_CONSTANT_BUFFER_CBV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferCBV);
+SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(1, InputTextureSRV);
+SHADER_CONSTANTS_TEXTURE_2D_UAV(2, float3, OutputTextureUAV);
+SHADER_CONSTANTS_SCALAR(3, float, OutputTextureInvSizeX);
+SHADER_CONSTANTS_SCALAR(4, float, OutputTextureInvSizeY);
+SHADER_CONSTANTS_SCALAR(5, int, UseKarisAverage);
+SHADER_CONSTANTS_STRUCT_END();
 
 // 4  x  5  x  6
 // x  0  x  1  x
@@ -86,24 +91,21 @@ float KarisAverage(float3 color)
 [numthreads(POST_PROCESSING_THREAD_GROUP_SIZE_X, POST_PROCESSING_THREAD_GROUP_SIZE_Y, 1)]
 void GaussianBloomDownsampleCS(uint3 DispatchThreadID : SV_DispatchThreadID)
 {
-    ConstantBuffer<PerFrameShaderParameters> perFrameConstants = GetPerFrameShaderParametersCBV();
-    Texture2D inputTexture = GetInputTextureSRV();
-    RWTexture2D<float3> outputTexture = GetOutputTextureUAV();
+    ConstantBuffer<PerFrameShaderParameters> frameShaderParameters = ShaderConstants.GetPerFrameShaderParameterBufferCBV();
+    Texture2D inputTexture = ShaderConstants.GetInputTextureSRV();
+    RWTexture2D<float3> outputTexture = ShaderConstants.GetOutputTextureUAV();
 
-    float outputTextureInvWidth = SHADER_ARGUMENTS_DATA(0);
-    float outputTextureInvHeight = SHADER_ARGUMENTS_DATA(1);
-    float2 outputTextureInvSize = float2(outputTextureInvWidth, outputTextureInvHeight);
-
-    bool useKarisAverage = SHADER_ARGUMENTS_DATA(2) > 0.0f;
+    float2 outputTextureInvSize = float2(ShaderConstants.GetOutputTextureInvSizeX(), ShaderConstants.GetOutputTextureInvSizeY());
+    bool useKarisAverage = ShaderConstants.GetUseKarisAverage() > 0;
 
     uint2 pixelCoord = DispatchThreadID.xy;
-    float2 uv = (pixelCoord + 0.5f) * outputTextureInvSize;
+    float2 uv = (float2(pixelCoord) + 0.5f) * outputTextureInvSize;
 
     float3 color = 0.0f;
 
     // TODO: Apply pre-exposure
-    // float preExposure = perFrameConstants.preExposure;
-    // float oneOverPreExposure = perFrameConstants.oneOverPreExposure;
+    // float preExposure = frameShaderParameters.preExposure;
+    // float oneOverPreExposure = frameShaderParameters.oneOverPreExposure;
 
 #if COD_METHOD == 0
     [unroll]

@@ -41,10 +41,10 @@ namespace Horizon
                     uint32 threadGroupCountY = CeilDiv(sceneColorTextureDesc.height, 16);
                     uint32 threadGroupCountZ = 1;
 
-                    RenderBackendShaderArguments shaderArguments = {};
-                    shaderArguments.BindBufferCBV(0, this->GetCurrentPerFrameConstantBuffer());
-                    shaderArguments.BindTextureSRV(1, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(sceneColorTexture)));
-                    shaderArguments.BindTextureUAV(2, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(histogramTexture), 0));
+                    RenderBackendShaderConstants shaderConstants = {};
+                    shaderConstants.BindBufferCBV(0, renderBackend->GetBufferCBVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
+                    shaderConstants.BindTextureSRV(1, registry.GetTextureSRVBindlessResourceDescriptorIndex(sceneColorTexture));
+                    shaderConstants.BindTextureUAV(2, registry.GetTextureUAVBindlessResourceDescriptorIndex(histogramTexture, 0));
 
                     commandList.ClearTextureUAV(RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(histogramTexture), 0), RenderBackendTextureClearValue::CreateColorValueFloat4(0.0f, 0.0f, 0.0f, 0.0f));
 
@@ -52,7 +52,7 @@ namespace Horizon
 
                     commandList.Dispatch(
                         computeShader,
-                        shaderArguments,
+                        shaderConstants,
                         threadGroupCountX,
                         threadGroupCountY,
                         threadGroupCountZ);
@@ -73,17 +73,17 @@ namespace Horizon
 
                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
                 {
-                    RenderBackendShaderArguments shaderArguments = {};
-                    shaderArguments.BindBufferCBV(0, this->GetCurrentPerFrameConstantBuffer());
-                    shaderArguments.BindTextureSRV(1, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(histogramTexture)));
-                    shaderArguments.BindBuffer(2, registry.GetRenderBackendBufferHandle(previousAutoExposureBuffer));
-                    shaderArguments.BindBuffer(3, registry.GetRenderBackendBufferHandle(autoExposureBuffer));
+                    RenderBackendShaderConstants shaderConstants = {};
+                    shaderConstants.BindBufferCBV(0, renderBackend->GetBufferCBVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
+                    shaderConstants.BindTextureSRV(1, registry.GetTextureSRVBindlessResourceDescriptorIndex(histogramTexture));
+                    shaderConstants.BindBufferSRV(2, registry.GetBufferSRVBindlessResourceDescriptorIndex(previousAutoExposureBuffer));
+                    shaderConstants.BindBufferUAV(3, registry.GetBufferUAVBindlessResourceDescriptorIndex(autoExposureBuffer));
 
                     RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::AutoExposureComputeExposure);
 
                     commandList.Dispatch(
                         computeShader,
-                        shaderArguments,
+                        shaderConstants,
                         1,
                         1,
                         1);
@@ -135,15 +135,15 @@ namespace Horizon
 
                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
                 {
-                    RenderBackendShaderArguments shaderArguments = {};
-                    shaderArguments.BindBuffer(0, registry.GetRenderBackendBufferHandle(autoExposureBuffer));
-                    shaderArguments.BindTextureUAV(1, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(exposureTexture)));
+                    RenderBackendShaderConstants shaderConstants = {};
+                    shaderConstants.BindBufferSRV(0, registry.GetBufferSRVBindlessResourceDescriptorIndex(autoExposureBuffer));
+                    shaderConstants.BindTextureUAV(1, registry.GetTextureUAVBindlessResourceDescriptorIndex(exposureTexture, 0));
 
                     RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::CopyExposure);
 
                     commandList.Dispatch(
                         computeShader,
-                        shaderArguments,
+                        shaderConstants,
                         1,
                         1,
                         1);

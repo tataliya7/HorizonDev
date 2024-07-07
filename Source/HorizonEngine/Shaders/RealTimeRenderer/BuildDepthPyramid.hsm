@@ -1,0 +1,42 @@
+#include "../ShaderCommon.hsh"
+#include "RealTimeRendererCommon.hsh"
+
+SHADER_CONSTANTS_STRUCT_BEGIN();
+SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(0, InputTextureSRV);
+SHADER_CONSTANTS_TEXTURE_2D_UAV(1, float, ClosestDepthTextureUAV);
+SHADER_CONSTANTS_TEXTURE_2D_UAV(2, float, FurthestDepthTextureUAV);
+SHADER_CONSTANTS_SCALAR(3, float, InvSrcSizeX);
+SHADER_CONSTANTS_SCALAR(4, float, InvSrcSizeY);
+SHADER_CONSTANTS_STRUCT_END();
+
+[shader("compute")]
+[numthreads(8, 8, 1)]
+void BuildDepthPyramidCS(uint2 DispatchThreadID : SV_DispatchThreadID, uint GroupIndex : SV_GroupIndex)
+{
+    Texture2D inputTexture = ShaderConstants.GetInputTextureSRV();
+
+#if BUILD_DEPTH_PYRAMID_CLOSETS
+    RWTexture2D<float> closestDepthTexture = ShaderConstants.GetClosestDepthTextureUAV();
+#endif
+#if BUILD_DEPTH_PYRAMID_FUTHEST
+    RWTexture2D<float> furthestDepthTexture = ShaderConstants.GetFurthestDepthTextureUAV();
+#endif
+
+    float2 inputTextureInvSize = float2(ShaderConstants.GetInvSrcSizeX(), ShaderConstants.GetInvSrcSizeY());
+
+    uint2 pixelCoord = DispatchThreadID.xy;
+    float2 inputTextureUV = (pixelCoord + 0.5f) * 2.0f * inputTextureInvSize - 0.25f * inputTextureInvSize;
+
+    float4 deviceDepth4 = inputTexture.GatherRed(GlobalSamplerPointClamp, inputTextureUV);
+
+    float minDeviceDepth = min(min(deviceDepth4.x, deviceDepth4.y), min(deviceDepth4.z, deviceDepth4.w));
+    float maxDeviceDepth = max(max(deviceDepth4.x, deviceDepth4.y), max(deviceDepth4.z, deviceDepth4.w));
+
+#if BUILD_DEPTH_PYRAMID_CLOSETS
+    closestDepthTexture[pixelCoord] = maxDeviceDepth;
+#endif
+
+#if BUILD_DEPTH_PYRAMID_FUTHEST
+    furthestDepthTexture[pixelCoord] = minDeviceDepth;
+#endif
+}

@@ -131,17 +131,27 @@ namespace Horizon
         /**
          * TBD.
          */
-        virtual int32 GetTextureSRVBindlessDescriptorIndex(RenderBackendTextureHandle handle) = 0;
+        virtual int32 GetTextureSRVBindlessResourceDescriptorIndex(RenderBackendTextureHandle handle, const RenderBackendTextureSubresourceRange& subresourceRange = RenderBackendTextureSubresourceRange::All) = 0;
 
         /**
          * TBD.
          */
-        virtual int32 GetTextureUAVBindlessDescriptorIndex(RenderBackendTextureHandle handle, uint32 mipLevel) = 0;
+        virtual int32 GetTextureUAVBindlessResourceDescriptorIndex(RenderBackendTextureHandle handle, uint32 mipLevel) = 0;
 
         /**
          * TBD.
          */
-        virtual int32 GetBufferBindlessDescriptorIndex(RenderBackendBufferHandle buffer) = 0;
+        virtual int32 GetBufferCBVBindlessResourceDescriptorIndex(RenderBackendBufferHandle buffer) = 0;
+
+        /**
+         * TBD.
+         */
+        virtual int32 GetBufferSRVBindlessResourceDescriptorIndex(RenderBackendBufferHandle buffer) = 0;
+
+        /**
+         * TBD.
+         */
+        virtual int32 GetBufferUAVBindlessResourceDescriptorIndex(RenderBackendBufferHandle buffer) = 0;
 
         /**
          * TBD.

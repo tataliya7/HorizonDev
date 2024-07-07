@@ -10,7 +10,7 @@ BIND_TEXTURE_2D_UAV(3, float4, OutputTexture);
 [numthreads(8, 8, 1)]
 void VisualizeMaterialIDCS(uint3 DispatchThreadID : SV_DispatchThreadID)
 {
-    ConstantBuffer<PerFrameShaderParameters> perFrameConstants = GetPerFrameShaderParametersCBV();
+    ConstantBuffer<PerFrameShaderParameters> frameShaderParameters = GetPerFrameShaderParameterBufferCBV();
     Texture2D<uint2> vbuffer0 = GetVBuffer0SRV();
     RWTexture2D<float4> outputTexture = GetOutputTextureUAV();
 

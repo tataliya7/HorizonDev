@@ -25,22 +25,22 @@ void LocalExposureGuidedUpsamplingCS(uint3 DispatchThreadID : SV_DispatchThreadI
     uint2 pixelCoord = DispatchThreadID.xy;
     float2 uv = (pixelCoord + 0.5) / float2(width, height);
 
-    ConstantBuffer<PerFrameShaderParameters> perFrameConstants = GetPerFrameShaderParametersCBV();
+    ConstantBuffer<PerFrameShaderParameters> frameShaderParameters = GetPerFrameShaderParameterBufferCBV();
     Texture2D sceneColorTexture = GetSceneColorTextureSRV();
     Texture2D luminanceTexture = GetLuminanceTextureSRV();
     Texture2D assembleTexture = GetAssembleTextureSRV();
 
     //Texture2D<float> autoExposureTexture = GetAutoExposureTextureSRV();
     //float exposure = autoExposureTexture[uint2(1, 0)];
-    float exposure = 1;//perFrameConstants.exposure;
+    float exposure = 1;//frameShaderParameters.exposure;
 
-    float displayMipLevel = SHADER_ARGUMENTS_DATA(0);
+    float displayMipLevel = (0);
 
     float4 mipPixelSize;
-    mipPixelSize.x = SHADER_ARGUMENTS_DATA(1);
-    mipPixelSize.y = SHADER_ARGUMENTS_DATA(2);
-    mipPixelSize.z = SHADER_ARGUMENTS_DATA(3);
-    mipPixelSize.w = SHADER_ARGUMENTS_DATA(4);
+    mipPixelSize.x = (1);
+    mipPixelSize.y = (2);
+    mipPixelSize.z = (3);
+    mipPixelSize.w = (4);
 
     // See https://bartwronski.com/2019/09/22/local-linear-models-guided-filter/
     float momentX = 0.0;

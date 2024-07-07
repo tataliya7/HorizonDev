@@ -37,15 +37,15 @@ namespace Horizon
 
                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
                 {
-                    RenderBackendShaderArguments shaderArguments = {};
-                    shaderArguments.BindBufferCBV(0, this->GetCurrentPerFrameConstantBuffer());
-                    shaderArguments.BindTextureUAV(1, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(colorLUTTexture), 0));
-                    //shaderArguments.PushConstants(0, (float)toneMappingOperator);
+                    RenderBackendShaderConstants shaderConstants = {};
+                    shaderConstants.BindBufferCBV(0, renderBackend->GetBufferCBVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
+                    shaderConstants.BindTextureUAV(1, registry.GetTextureUAVBindlessResourceDescriptorIndex(colorLUTTexture, 0));
+                    //shaderConstants.PushConstants(0, (float)toneMappingOperator);
 
                     RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::ColorLUT);
                     commandList.Dispatch(
                         computeShader,
-                        shaderArguments,
+                        shaderConstants,
                         threadGroupCountX,
                         threadGroupCountY,
                         threadGroupCountZ);

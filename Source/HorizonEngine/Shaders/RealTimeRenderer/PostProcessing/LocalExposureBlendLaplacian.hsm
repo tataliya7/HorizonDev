@@ -27,7 +27,7 @@ void LocalExposureBlendLaplacianCS(uint3 DispatchThreadID : SV_DispatchThreadID)
     Texture2D inputTexture2 = GetInputTexture2SRV();
     Texture2D inputTexture3 = GetInputTexture3SRV();
 
-    float srcMip = SHADER_ARGUMENTS_DATA(0);
+    float srcMip = (0);
 
     float boostLocalContrast = 1;
 

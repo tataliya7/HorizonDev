@@ -124,13 +124,13 @@ namespace Horizon
             //shaderLibrary->LoadShader(ShaderID::VisibilityBufferMeshShadingPS, shaderDesc);
         }
         {
-            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/BuildHZB.hsm", "BuildHZBCS");
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/BuildDepthPyramid.hsm", "BuildDepthPyramidCS");
             shaderLibrary->LoadShader(ShaderID::BuildDepthPyramid, shaderDesc);
         }
-        {
-            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/GBuffer.hsm", "GBufferCS");
-            shaderLibrary->LoadShader(ShaderID::GBuffer, shaderDesc);
-        }
+        // {
+        //     ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/GBuffer.hsm", "GBufferCS");
+        //     shaderLibrary->LoadShader(ShaderID::GBuffer, shaderDesc);
+        // }
         // {
         //     ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Vertex, "Shaders/RealTimeRenderer/ShadowMap.hsm", "ShadowMapVS");
         //     shaderLibrary->LoadShader(ShaderID::CascadedShadowMapVS, shaderDesc);
@@ -182,42 +182,42 @@ namespace Horizon
         //    {ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/ScreenSpaceReflectionsSpatialFiltering.hsm", "SSRSpatialFilteringCS");
         //    shaderLibrary->LoadShader(ShaderID::SSRSpatialFiltering, shaderDesc);
         //}
-        {
-            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/GTAOHorizonSearchAndIntegral.hsm", "GTAOHorizonSearchAndIntegralCS");
-            shaderLibrary->LoadShader(ShaderID::GTAOHorizonSearchAndIntegral, shaderDesc);
-        }
-        {
-            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/GTAOSpatialFiltering.hsm", "GTAOSpatialFilteringCS");
-            shaderLibrary->LoadShader(ShaderID::GTAOSpatialFiltering, shaderDesc);
-        }
-        {
-            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/ScreenSpaceAmbientOcclusion.hsm", "GTAOTemporalFilteringCS");
-            shaderLibrary->LoadShader(ShaderID::GTAOTemporalFiltering, shaderDesc);
-        }
-        {
-            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Pixel, "Shaders/RealTimeRenderer/IndirectLightingDiffuse.hsm", "IndirectLightingDiffusePS");
-            shaderLibrary->LoadShader(ShaderID::IndirectLightingDiffuse, shaderDesc);
-        }
-        {
-            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Pixel, "Shaders/RealTimeRenderer/IndirectLightingSpecular.hsm", "IndirectLightingSpecularPS");
-            shaderLibrary->LoadShader(ShaderID::IndirectLightingSpecular, shaderDesc);
-        }
+        // {
+        //     ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/GTAOHorizonSearchAndIntegral.hsm", "GTAOHorizonSearchAndIntegralCS");
+        //     shaderLibrary->LoadShader(ShaderID::GTAOHorizonSearchAndIntegral, shaderDesc);
+        // }
+        // {
+        //     ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/GTAOSpatialFiltering.hsm", "GTAOSpatialFilteringCS");
+        //     shaderLibrary->LoadShader(ShaderID::GTAOSpatialFiltering, shaderDesc);
+        // }
+        // {
+        //     ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/ScreenSpaceAmbientOcclusion.hsm", "GTAOTemporalFilteringCS");
+        //     shaderLibrary->LoadShader(ShaderID::GTAOTemporalFiltering, shaderDesc);
+        // }
+        // {
+        //     ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Pixel, "Shaders/RealTimeRenderer/IndirectLightingDiffuse.hsm", "IndirectLightingDiffusePS");
+        //     shaderLibrary->LoadShader(ShaderID::IndirectLightingDiffuse, shaderDesc);
+        // }
+        // {
+        //     ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Pixel, "Shaders/RealTimeRenderer/IndirectLightingSpecular.hsm", "IndirectLightingSpecularPS");
+        //     shaderLibrary->LoadShader(ShaderID::IndirectLightingSpecular, shaderDesc);
+        // }
         {
             ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/MotionVectors.hsm", "MotionVectorsCS");
             shaderLibrary->LoadShader(ShaderID::MotionVectors, shaderDesc);
         }
-        {
-            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Pixel, "Shaders/RealTimeRenderer/DirectLighting.hsm", "DirectLightingPS");
-            shaderLibrary->LoadShader(ShaderID::DirectLighting, shaderDesc);
-        }
-        {
-            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Vertex, "Shaders/RealTimeRenderer/SkyBox.hsm", "SkyBoxVS");
-            shaderLibrary->LoadShader(ShaderID::SkyBoxVS, shaderDesc);
-        }
-        {
-            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Pixel, "Shaders/RealTimeRenderer/SkyBox.hsm", "SkyBoxPS");
-            shaderLibrary->LoadShader(ShaderID::SkyBoxPS, shaderDesc);
-        }
+        // {
+        //     ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Pixel, "Shaders/RealTimeRenderer/DirectLighting.hsm", "DirectLightingPS");
+        //     shaderLibrary->LoadShader(ShaderID::DirectLighting, shaderDesc);
+        // }
+        // {
+        //     ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Vertex, "Shaders/RealTimeRenderer/SkyBox.hsm", "SkyBoxVS");
+        //     shaderLibrary->LoadShader(ShaderID::SkyBoxVS, shaderDesc);
+        // }
+        // {
+        //     ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Pixel, "Shaders/RealTimeRenderer/SkyBox.hsm", "SkyBoxPS");
+        //     shaderLibrary->LoadShader(ShaderID::SkyBoxPS, shaderDesc);
+        // }
         //{
         //    ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/SubsurfaceScattering/SubsurfaceScatteringInitialize.hsm", "SubsurfaceScatteringInitializeCS");
         //    shaderLibrary->LoadShader(ShaderID::SubsurfaceScatteringInitialize, shaderDesc);
@@ -254,47 +254,47 @@ namespace Horizon
         //    ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Pixel, "Shaders/RealTimeRenderer/SubsurfaceScattering/SubsurfaceScatteringRecombine.hsm", "SubsurfaceScatteringRecombinePS");
         //    shaderLibrary->LoadShader(ShaderID::SubsurfaceScatteringRecombinePS, shaderDesc);
         //}
-        {
-            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/SurfelGI/SurfelGIFreeSurfels.hsm", "SurfelGIFreeSurfelsCS");
-            shaderLibrary->LoadShader(ShaderID::SurfelGIFreeSurfels, shaderDesc);
-        }
-        {
-            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/SurfelGI/SurfelGIGapFilling.hsm", "SurfelGIGapFillingCS");
-            shaderLibrary->LoadShader(ShaderID::SurfelGIGapFilling, shaderDesc);
-        }
-        {
-            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/SurfelGI/SurfelGIIndirectArguments.hsm", "SurfelGIIndirectArgumentsCS");
-            shaderLibrary->LoadShader(ShaderID::SurfelGIIndirectArguments, shaderDesc);
-        }
-        {
-            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/SurfelGI/SurfelGIGridReset.hsm", "SurfelGIGridResetCS");
-            shaderLibrary->LoadShader(ShaderID::SurfelGIGridReset, shaderDesc);
-        }
-        {
-            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/SurfelGI/SurfelGIComputeCellCapacity.hsm", "SurfelGIComputeCellCapacityCS");
-            shaderLibrary->LoadShader(ShaderID::SurfelGIComputeCellCapacity, shaderDesc);
-        }
-        {
-            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/SurfelGI/SurfelGIComputeCellOffset.hsm", "SurfelGIComputeCellOffsetCS");
-            shaderLibrary->LoadShader(ShaderID::SurfelGIComputeCellOffset, shaderDesc);
-        }
-        {
-            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/SurfelGI/SurfelGIVisualization.hsm", "SurfelGIVisualizationCS");
-            shaderLibrary->LoadShader(ShaderID::SurfelGIVisualization, shaderDesc);
-        }
+        // {
+        //     ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/SurfelGI/SurfelGIFreeSurfels.hsm", "SurfelGIFreeSurfelsCS");
+        //     shaderLibrary->LoadShader(ShaderID::SurfelGIFreeSurfels, shaderDesc);
+        // }
+        // {
+        //     ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/SurfelGI/SurfelGIGapFilling.hsm", "SurfelGIGapFillingCS");
+        //     shaderLibrary->LoadShader(ShaderID::SurfelGIGapFilling, shaderDesc);
+        // }
+        // {
+        //     ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/SurfelGI/SurfelGIIndirectArguments.hsm", "SurfelGIIndirectArgumentsCS");
+        //     shaderLibrary->LoadShader(ShaderID::SurfelGIIndirectArguments, shaderDesc);
+        // }
+        // {
+        //     ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/SurfelGI/SurfelGIGridReset.hsm", "SurfelGIGridResetCS");
+        //     shaderLibrary->LoadShader(ShaderID::SurfelGIGridReset, shaderDesc);
+        // }
+        // {
+        //     ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/SurfelGI/SurfelGIComputeCellCapacity.hsm", "SurfelGIComputeCellCapacityCS");
+        //     shaderLibrary->LoadShader(ShaderID::SurfelGIComputeCellCapacity, shaderDesc);
+        // }
+        // {
+        //     ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/SurfelGI/SurfelGIComputeCellOffset.hsm", "SurfelGIComputeCellOffsetCS");
+        //     shaderLibrary->LoadShader(ShaderID::SurfelGIComputeCellOffset, shaderDesc);
+        // }
+        // {
+        //     ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/SurfelGI/SurfelGIVisualization.hsm", "SurfelGIVisualizationCS");
+        //     shaderLibrary->LoadShader(ShaderID::SurfelGIVisualization, shaderDesc);
+        // }
 
-        {
-            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/LightShaftsDownsample.hsm", "LightShaftsDownsampleCS");
-            shaderLibrary->LoadShader(ShaderID::LightShaftsDownsample, shaderDesc);
-        }
-        {
-            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/LightShaftsRadialBlur.hsm", "LightShaftsRadialBlurCS");
-            shaderLibrary->LoadShader(ShaderID::LightShaftsRadialBlur, shaderDesc);
-        }
-        {
-            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Pixel, "Shaders/RealTimeRenderer/LightShaftsApply.hsm", "LightShaftsApplyPS");
-            shaderLibrary->LoadShader(ShaderID::LightShaftsApply, shaderDesc);
-        }
+        // {
+        //     ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/LightShaftsDownsample.hsm", "LightShaftsDownsampleCS");
+        //     shaderLibrary->LoadShader(ShaderID::LightShaftsDownsample, shaderDesc);
+        // }
+        // {
+        //     ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/LightShaftsRadialBlur.hsm", "LightShaftsRadialBlurCS");
+        //     shaderLibrary->LoadShader(ShaderID::LightShaftsRadialBlur, shaderDesc);
+        // }
+        // {
+        //     ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Pixel, "Shaders/RealTimeRenderer/LightShaftsApply.hsm", "LightShaftsApplyPS");
+        //     shaderLibrary->LoadShader(ShaderID::LightShaftsApply, shaderDesc);
+        // }
         {
             ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/PostProcessing/MotionBlurSetup.hsm", "MotionBlurSetupCS");
             shaderLibrary->LoadShader(ShaderID::MotionBlurSetupCS, shaderDesc);
@@ -344,8 +344,8 @@ namespace Horizon
             shaderLibrary->LoadShader(ShaderID::CopyExposure, shaderDesc);
         }
         {
-            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/PostProcessing/DownsampleSceneColor.hsm", "DownsampleSceneColorCS");
-            shaderLibrary->LoadShader(ShaderID::ColorPyramidGeneration, shaderDesc);
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/PostProcessing/BuildColorPyramid.hsm", "BuildColorPyramidCS");
+            shaderLibrary->LoadShader(ShaderID::BuildColorPyramid, shaderDesc);
         }
         {
             ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/PostProcessing/GaussianBloomDownsample.hsm", "GaussianBloomDownsampleCS");
@@ -379,26 +379,26 @@ namespace Horizon
         //     ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Pixel, "Shaders/RealTimeRenderer/PostProcessing/LensFlaresCombine.hsm", "LensFlaresCombinePS");
         //     shaderLibrary->LoadShader(ShaderID::LensFlaresCombine, shaderDesc);
         // }
-        {
-            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/PostProcessing/LocalExposureComputeLuminance.hsm", "LocalExposureComputeLuminanceCS");
-            shaderLibrary->LoadShader(ShaderID::LocalExposureComputeLuminance, shaderDesc);
-        }
-        {
-            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/PostProcessing/LocalExposureComputeWeights.hsm", "LocalExposureComputeWeightsCS");
-            shaderLibrary->LoadShader(ShaderID::LocalExposureComputeWeights, shaderDesc);
-        }
-        {
-            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/PostProcessing/LocalExposureBlendExposures.hsm", "LocalExposureBlendExposuresCS");
-            shaderLibrary->LoadShader(ShaderID::LocalExposureBlendExposures, shaderDesc);
-        }
-        {
-            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/PostProcessing/LocalExposureBlendLaplacian.hsm", "LocalExposureBlendLaplacianCS");
-            shaderLibrary->LoadShader(ShaderID::LocalExposureBlendLaplacian, shaderDesc);
-        }
-        {
-            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/PostProcessing/LocalExposureGuidedUpsampling.hsm", "LocalExposureGuidedUpsamplingCS");
-            shaderLibrary->LoadShader(ShaderID::LocalExposureGuidedUpsampling, shaderDesc);
-        }
+        // {
+        //     ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/PostProcessing/LocalExposureComputeLuminance.hsm", "LocalExposureComputeLuminanceCS");
+        //     shaderLibrary->LoadShader(ShaderID::LocalExposureComputeLuminance, shaderDesc);
+        // }
+        // {
+        //     ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/PostProcessing/LocalExposureComputeWeights.hsm", "LocalExposureComputeWeightsCS");
+        //     shaderLibrary->LoadShader(ShaderID::LocalExposureComputeWeights, shaderDesc);
+        // }
+        // {
+        //     ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/PostProcessing/LocalExposureBlendExposures.hsm", "LocalExposureBlendExposuresCS");
+        //     shaderLibrary->LoadShader(ShaderID::LocalExposureBlendExposures, shaderDesc);
+        // }
+        // {
+        //     ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/PostProcessing/LocalExposureBlendLaplacian.hsm", "LocalExposureBlendLaplacianCS");
+        //     shaderLibrary->LoadShader(ShaderID::LocalExposureBlendLaplacian, shaderDesc);
+        // }
+        // {
+        //     ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/PostProcessing/LocalExposureGuidedUpsampling.hsm", "LocalExposureGuidedUpsamplingCS");
+        //     shaderLibrary->LoadShader(ShaderID::LocalExposureGuidedUpsampling, shaderDesc);
+        // }
         {
             ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/PostProcessing/ColorLUT.hsm", "ColorLUTCS");
             shaderLibrary->LoadShader(ShaderID::ColorLUT, shaderDesc);
@@ -407,50 +407,50 @@ namespace Horizon
             ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/PostProcessing/ToneMapping.hsm", "ToneMappingCS");
             shaderLibrary->LoadShader(ShaderID::ToneMapping, shaderDesc);
         }
-        {
-            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Vertex, "Shaders/RealTimeRenderer/PostProcessing/SelectionOutlineMask.hsm", "SelectionOutlineMaskVS");
-            shaderLibrary->LoadShader(ShaderID::SelectionOutlineMaskVS, shaderDesc);
-        }
-        {
-            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Pixel, "Shaders/RealTimeRenderer/PostProcessing/SelectionOutlineMask.hsm", "SelectionOutlineMaskPS");
-            shaderLibrary->LoadShader(ShaderID::SelectionOutlineMaskPS, shaderDesc);
-        }
-        {
-            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/PostProcessing/SelectionOutlineSetup.hsm", "SelectionOutlineSetupCS");
-            shaderLibrary->LoadShader(ShaderID::SelectionOutlineSetup, shaderDesc);
-        }
-        {
-            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/PostProcessing/SelectionOutlineJumpFlood.hsm", "SelectionOutlineJumpFloodCS");
-            shaderLibrary->LoadShader(ShaderID::SelectionOutlineJumpFlood, shaderDesc);
-        }
-        {
-            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/PostProcessing/SelectionOutlineComposite.hsm", "SelectionOutlineCompositeCS");
-            shaderLibrary->LoadShader(ShaderID::SelectionOutlineComposite, shaderDesc);
-        }
-        {
-            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/DebugVisualization/VisualizePrimitiveID.hsm", "VisualizePrimitiveIDCS");
-            shaderLibrary->LoadShader(ShaderID::VisualizePrimitiveID, shaderDesc);
-        }
-        {
-            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/DebugVisualization/VisualizeMaterialID.hsm", "VisualizeMaterialIDCS");
-            shaderLibrary->LoadShader(ShaderID::VisualizeMaterialID, shaderDesc);
-        }
-        {
-            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/DebugVisualization/VisualizeWorldSpaceNormal.hsm", "VisualizeWorldSpaceNormalCS");
-            shaderLibrary->LoadShader(ShaderID::VisualizeWorldSpaceNormal, shaderDesc);
-        }
-        {
-            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/DebugVisualization/VisualizeMotionVectors.hsm", "VisualizeMotionVectorsCS");
-            shaderLibrary->LoadShader(ShaderID::VisualizeMotionVectors, shaderDesc);
-        }
-        {
-            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/DebugVisualization/VisualizeAmbientOcclusion.hsm", "VisualizeAmbientOcclusionCS");
-            shaderLibrary->LoadShader(ShaderID::VisualizeAmbientOcclusion, shaderDesc);
-        }
-        {
-            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/DebugVisualization/VisualizeScreenSpaceShadowMask.hsm", "VisualizeScreenSpaceShadowMaskCS");
-            shaderLibrary->LoadShader(ShaderID::VisualizeScreenSpaceShadowMask, shaderDesc);
-        }
+        // {
+        //     ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Vertex, "Shaders/RealTimeRenderer/PostProcessing/SelectionOutlineMask.hsm", "SelectionOutlineMaskVS");
+        //     shaderLibrary->LoadShader(ShaderID::SelectionOutlineMaskVS, shaderDesc);
+        // }
+        // {
+        //     ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Pixel, "Shaders/RealTimeRenderer/PostProcessing/SelectionOutlineMask.hsm", "SelectionOutlineMaskPS");
+        //     shaderLibrary->LoadShader(ShaderID::SelectionOutlineMaskPS, shaderDesc);
+        // }
+        // {
+        //     ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/PostProcessing/SelectionOutlineSetup.hsm", "SelectionOutlineSetupCS");
+        //     shaderLibrary->LoadShader(ShaderID::SelectionOutlineSetup, shaderDesc);
+        // }
+        // {
+        //     ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/PostProcessing/SelectionOutlineJumpFlood.hsm", "SelectionOutlineJumpFloodCS");
+        //     shaderLibrary->LoadShader(ShaderID::SelectionOutlineJumpFlood, shaderDesc);
+        // }
+        // {
+        //     ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/PostProcessing/SelectionOutlineComposite.hsm", "SelectionOutlineCompositeCS");
+        //     shaderLibrary->LoadShader(ShaderID::SelectionOutlineComposite, shaderDesc);
+        // }
+        // {
+        //     ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/DebugVisualization/VisualizePrimitiveID.hsm", "VisualizePrimitiveIDCS");
+        //     shaderLibrary->LoadShader(ShaderID::VisualizePrimitiveID, shaderDesc);
+        // }
+        // {
+        //     ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/DebugVisualization/VisualizeMaterialID.hsm", "VisualizeMaterialIDCS");
+        //     shaderLibrary->LoadShader(ShaderID::VisualizeMaterialID, shaderDesc);
+        // }
+        // {
+        //     ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/DebugVisualization/VisualizeWorldSpaceNormal.hsm", "VisualizeWorldSpaceNormalCS");
+        //     shaderLibrary->LoadShader(ShaderID::VisualizeWorldSpaceNormal, shaderDesc);
+        // }
+        // {
+        //     ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/DebugVisualization/VisualizeMotionVectors.hsm", "VisualizeMotionVectorsCS");
+        //     shaderLibrary->LoadShader(ShaderID::VisualizeMotionVectors, shaderDesc);
+        // }
+        // {
+        //     ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/DebugVisualization/VisualizeAmbientOcclusion.hsm", "VisualizeAmbientOcclusionCS");
+        //     shaderLibrary->LoadShader(ShaderID::VisualizeAmbientOcclusion, shaderDesc);
+        // }
+        // {
+        //     ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/DebugVisualization/VisualizeScreenSpaceShadowMask.hsm", "VisualizeScreenSpaceShadowMaskCS");
+        //     shaderLibrary->LoadShader(ShaderID::VisualizeScreenSpaceShadowMask, shaderDesc);
+        // }
         {
             ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Pixel, "Shaders/RealTimeRenderer/GUIComposition.hsm", "GUICompositionPS");
             shaderLibrary->LoadShader(ShaderID::GUICompositionPS, shaderDesc);

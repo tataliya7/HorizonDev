@@ -11,10 +11,10 @@ BIND_TEXTURE_2D_UAV(2, float4, OutputTexture);
 [numthreads(POST_PROCESSING_THREAD_GROUP_SIZE_X, POST_PROCESSING_THREAD_GROUP_SIZE_Y, 1)]
 void SelectionOutlineCompositeCS(uint3 DispatchThreadID : SV_DispatchThreadID)
 {
-    ConstantBuffer<PerFrameShaderParameters> perFrameConstants = GetPerFrameShaderParametersCBV();
+    ConstantBuffer<PerFrameShaderParameters> frameShaderParameters = GetPerFrameShaderParameterBufferCBV();
     uint2 pixelCoord = DispatchThreadID.xy;
-    uint width = perFrameConstants.targetWidth;
-    uint height = perFrameConstants.targetHeight;
+    uint width = frameShaderParameters.targetWidth;
+    uint height = frameShaderParameters.targetHeight;
     if (pixelCoord.x >= width || pixelCoord.y >= height)
     {
         return;

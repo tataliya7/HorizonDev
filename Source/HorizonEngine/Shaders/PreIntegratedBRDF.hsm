@@ -1,7 +1,9 @@
 #include "ShaderCommon.hsh"
 #include "BRDFCommon.hsh"
 
-BIND_TEXTURE_2D_UAV(0, float2, OutputTexture);
+SHADER_CONSTANTS_STRUCT_BEGIN();
+SHADER_CONSTANTS_TEXTURE_2D_UAV(0, float2, OutputTextureUAV);
+SHADER_CONSTANTS_STRUCT_END();
 
 static const uint SampleCount = 1024;
 
@@ -40,7 +42,7 @@ float2 IntegrateBRDF(float NdotV, float roughness)
 [numthreads(8, 8, 1)]
 void PreIntegratedBRDFCS(uint3 DispatchThreadID : SV_DispatchThreadID)
 {
-    RWTexture2D<float2> outputTexture = GetOutputTextureUAV();
+    RWTexture2D<float2> outputTexture = ShaderConstants.GetOutputTextureUAV();
 
     uint width, height;
     outputTexture.GetDimensions(width, height);
@@ -49,9 +51,9 @@ void PreIntegratedBRDFCS(uint3 DispatchThreadID : SV_DispatchThreadID)
         return;
     }
 
-    uint2 coord = DispatchThreadID.xy;
-    float2 uv = (coord + 0.5f) / float2(width, height);
+    uint2 pixelCoord = DispatchThreadID.xy;
+    float2 uv = (pixelCoord + 0.5f) / float2(width, height);
     float2 brdf = IntegrateBRDF(uv.x, uv.y);
 
-    outputTexture[coord] = brdf;
+    outputTexture[pixelCoord] = brdf;
 }

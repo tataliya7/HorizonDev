@@ -1,18 +1,4 @@
-#define TEST_BINDLESS 1
-
 #include "ShaderCommon.hsh"
-
-#if TEST_BINDLESS
-struct ImGuiShaderArguments
-{
-    int indices[16];
-    float2 scale;
-    float2 translate;
-    int vertexOffset;
-};
-PUSH_CONSTANT(ImGuiShaderArguments, ShaderArguments);
-#define SHADER_ARGUMENTS_INDEX(slot) ShaderArguments.indices[slot]
-#endif
 
 struct ImGuiVertex
 {
@@ -20,9 +6,17 @@ struct ImGuiVertex
     float2 uv;
     uint color;
 };
+DECLARE_ALIASED_STRUCTURED_BUFFER_ARRAYS(ImGuiVertex);
 
-BIND_TEXTURE_2D_SRV(0, ImGuiTexture);
-BIND_STRUCTURED_BUFFER_SRV(1, ImGuiVertex, VertexBuffer);
+SHADER_CONSTANTS_STRUCT_BEGIN();
+SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(0, ImGuiTextureSRV);
+SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(1, ImGuiVertex, VertexBufferSRV);
+SHADER_CONSTANTS_SCALAR(2, float, ScaleX);
+SHADER_CONSTANTS_SCALAR(3, float, ScaleY);
+SHADER_CONSTANTS_SCALAR(4, float, TranslateX);
+SHADER_CONSTANTS_SCALAR(5, float, TranslateY);
+SHADER_CONSTANTS_SCALAR(6, int, VertexOffset);
+SHADER_CONSTANTS_STRUCT_END();
 
 struct ImGuiVSOutput
 {
@@ -34,11 +28,11 @@ struct ImGuiVSOutput
 [shader("vertex")]
 void ImGuiVS(uint vertexID : SV_VertexID, out ImGuiVSOutput output)
 {
-    int vertexOffset = ShaderArguments.vertexOffset;
-    float2 scale = ShaderArguments.scale;
-    float2 translate = ShaderArguments.translate;
+    float2 scale = float2(ShaderConstants.GetScaleX(), ShaderConstants.GetScaleY());
+    float2 translate = float2(ShaderConstants.GetTranslateX(), ShaderConstants.GetTranslateY());
+    int vertexOffset = ShaderConstants.GetVertexOffset();
 
-    StructuredBuffer<ImGuiVertex> vertexBuffer = GetVertexBufferSRV();
+    StructuredBuffer<ImGuiVertex> vertexBuffer = ShaderConstants.GetVertexBufferSRV();
     ImGuiVertex vertex = vertexBuffer.Load(vertexOffset + vertexID);
 
     uint4 packedColor = uint4(vertex.color & 0xff, (vertex.color >> 8) & 0xff, (vertex.color >> 16) & 0xff, (vertex.color >> 24) & 0xff);
@@ -51,6 +45,6 @@ void ImGuiVS(uint vertexID : SV_VertexID, out ImGuiVSOutput output)
 [shader("pixel")]
 void ImGuiPS(ImGuiVSOutput input, out float4 color : SV_Target)
 {
-    Texture2D texture = GetImGuiTextureSRV();
+    Texture2D texture = ShaderConstants.GetImGuiTextureSRV();
     color = input.color * texture.SampleLevel(GlobalSamplerLinearWarp, input.texCoord0, 0);
 }

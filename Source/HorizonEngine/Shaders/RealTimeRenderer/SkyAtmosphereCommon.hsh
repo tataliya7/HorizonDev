@@ -386,7 +386,7 @@ struct SingleScatteringResult
 };
 
 SingleScatteringResult IntegrateSingleScatteredLuminance(
-    in ConstantBuffer<PerFrameShaderParameters> perFrameConstants,
+    in PerFrameShaderParameters frameShaderParameters,
     in SkyAtmosphereShaderParameters Atmosphere,
 #if SAMPLE_TRANSMITTANCE_LUT
     in Texture2D TransmittanceLutTexture,
@@ -471,8 +471,8 @@ SingleScatteringResult IntegrateSingleScatteredLuminance(
     // TODO: review this part
     if (DepthBufferValue != FarClipPlaneDepthValue)
     {
-        const float3 DepthBufferTranslatedWorldPosKm = GetWorldSpacePositionFromUvAndDepth(PixPos, DepthBufferValue, perFrameConstants.clipToWorldMatrix).xyz * M_TO_KM;
-        const float3 TraceStartTranslatedWorldPosKm = WorldPos + float3(0.0f, 0.0f, -Atmosphere.bottomRadius) - perFrameConstants.cameraPosition * M_TO_KM;
+        const float3 DepthBufferTranslatedWorldPosKm = GetWorldSpacePositionFromUvAndDepth(PixPos, DepthBufferValue, frameShaderParameters.clipToWorldMatrix).xyz * M_TO_KM;
+        const float3 TraceStartTranslatedWorldPosKm = WorldPos + float3(0.0f, 0.0f, -Atmosphere.bottomRadius) - frameShaderParameters.cameraPosition * M_TO_KM;
         const float3 TraceStartToSurfaceWorldKm = DepthBufferTranslatedWorldPosKm - TraceStartTranslatedWorldPosKm;
         float tDepth = length(TraceStartToSurfaceWorldKm);
         if (tDepth < tMax)
@@ -511,7 +511,7 @@ SingleScatteringResult IntegrateSingleScatteredLuminance(
     float RayleighPhaseValue = RayleighPhase(cosTheta);
 
 #if USE_PRE_EXPOSURE
-    float3 PreExposedL = LightIlluminance * perFrameConstants.preExposure;
+    float3 PreExposedL = LightIlluminance * frameShaderParameters.preExposure;
 #else
     float3 PreExposedL = LightIlluminance * 1.0f;
 #endif
@@ -731,34 +731,34 @@ float4 GetAerialPerspectiveLuminanceTransmittance(
     return AP;
 }
 
-SkyAtmosphereShaderParameters GetSkyAtmosphereShaderParameters(in ConstantBuffer<PerFrameShaderParameters> perFrameConstants)
+SkyAtmosphereShaderParameters GetSkyAtmosphereShaderParameters(in PerFrameShaderParameters frameShaderParameters)
 {
     SkyAtmosphereShaderParameters parameters = (SkyAtmosphereShaderParameters)0;
 
-    parameters.transmittanceLutSize                    = perFrameConstants.skyAtmosphereTransmittanceLutSize;
-    parameters.multipleScatteringLutSize               = perFrameConstants.skyAtmosphereMultipleScatteringLutSize;
-    parameters.skyViewLutSize                          = perFrameConstants.skyAtmosphereSkyViewLutSize;
-    parameters.aerialPerspectiveVolumeSize             = perFrameConstants.skyAtmosphereAerialPerspectiveVolumeSize;
-    parameters.transmittanceLutSampleCount             = perFrameConstants.skyAtmosphereTransmittanceLutSampleCount;
-    parameters.multipleScatteringLutSampleCount        = perFrameConstants.skyAtmosphereMultipleScatteringLutSampleCount;
-    parameters.rayMarchingMinSampleCount               = perFrameConstants.skyAtmosphereRayMarchingMinSampleCount;
-    parameters.rayMarchingMaxSampleCount               = perFrameConstants.skyAtmosphereRayMarchingMaxSampleCount;
-    parameters.bottomRadius                            = perFrameConstants.skyAtmosphereBottomRadiusInKilometers;
-    parameters.topRadius                               = perFrameConstants.skyAtmosphereTopRadiusInKilometers;
-    parameters.groundAlbedo                            = perFrameConstants.skyAtmosphereGroundAlbedo;
-    parameters.rayleighScattering                      = perFrameConstants.skyAtmosphereRayleighScattering;
-    parameters.rayleighDensityExpScale                 = perFrameConstants.skyAtmosphereRayleighDensityExpScale;
-    parameters.mieScattering                           = perFrameConstants.skyAtmosphereMieScattering;
-    parameters.mieAbsorption                           = perFrameConstants.skyAtmosphereMieAbsorption;
-    parameters.mieExtinction                           = perFrameConstants.skyAtmosphereMieExtinction;
-    parameters.miePhaseG                               = perFrameConstants.skyAtmosphereMiePhaseG;
-    parameters.mieDensityExpScale                      = perFrameConstants.skyAtmosphereMieDensityExpScale;
-    parameters.absorptionDensity0LayerWidth            = perFrameConstants.skyAtmosphereAbsorptionDensity0LayerWidth;
-    parameters.absorptionDensity0ConstantTerm          = perFrameConstants.skyAtmosphereAbsorptionDensity0ConstantTerm;
-    parameters.absorptionDensity0LinearTerm            = perFrameConstants.skyAtmosphereAbsorptionDensity0LinearTerm;
-    parameters.absorptionDensity1ConstantTerm          = perFrameConstants.skyAtmosphereAbsorptionDensity1ConstantTerm;
-    parameters.absorptionDensity1LinearTerm            = perFrameConstants.skyAtmosphereAbsorptionDensity1LinearTerm;
-    parameters.absorptionExtinction                    = perFrameConstants.skyAtmosphereAbsorptionExtinction;
+    parameters.transmittanceLutSize                    = frameShaderParameters.skyAtmosphereTransmittanceLutSize;
+    parameters.multipleScatteringLutSize               = frameShaderParameters.skyAtmosphereMultipleScatteringLutSize;
+    parameters.skyViewLutSize                          = frameShaderParameters.skyAtmosphereSkyViewLutSize;
+    parameters.aerialPerspectiveVolumeSize             = frameShaderParameters.skyAtmosphereAerialPerspectiveVolumeSize;
+    parameters.transmittanceLutSampleCount             = frameShaderParameters.skyAtmosphereTransmittanceLutSampleCount;
+    parameters.multipleScatteringLutSampleCount        = frameShaderParameters.skyAtmosphereMultipleScatteringLutSampleCount;
+    parameters.rayMarchingMinSampleCount               = frameShaderParameters.skyAtmosphereRayMarchingMinSampleCount;
+    parameters.rayMarchingMaxSampleCount               = frameShaderParameters.skyAtmosphereRayMarchingMaxSampleCount;
+    parameters.bottomRadius                            = frameShaderParameters.skyAtmosphereBottomRadiusInKilometers;
+    parameters.topRadius                               = frameShaderParameters.skyAtmosphereTopRadiusInKilometers;
+    parameters.groundAlbedo                            = frameShaderParameters.skyAtmosphereGroundAlbedo;
+    parameters.rayleighScattering                      = frameShaderParameters.skyAtmosphereRayleighScattering;
+    parameters.rayleighDensityExpScale                 = frameShaderParameters.skyAtmosphereRayleighDensityExpScale;
+    parameters.mieScattering                           = frameShaderParameters.skyAtmosphereMieScattering;
+    parameters.mieAbsorption                           = frameShaderParameters.skyAtmosphereMieAbsorption;
+    parameters.mieExtinction                           = frameShaderParameters.skyAtmosphereMieExtinction;
+    parameters.miePhaseG                               = frameShaderParameters.skyAtmosphereMiePhaseG;
+    parameters.mieDensityExpScale                      = frameShaderParameters.skyAtmosphereMieDensityExpScale;
+    parameters.absorptionDensity0LayerWidth            = frameShaderParameters.skyAtmosphereAbsorptionDensity0LayerWidth;
+    parameters.absorptionDensity0ConstantTerm          = frameShaderParameters.skyAtmosphereAbsorptionDensity0ConstantTerm;
+    parameters.absorptionDensity0LinearTerm            = frameShaderParameters.skyAtmosphereAbsorptionDensity0LinearTerm;
+    parameters.absorptionDensity1ConstantTerm          = frameShaderParameters.skyAtmosphereAbsorptionDensity1ConstantTerm;
+    parameters.absorptionDensity1LinearTerm            = frameShaderParameters.skyAtmosphereAbsorptionDensity1LinearTerm;
+    parameters.absorptionExtinction                    = frameShaderParameters.skyAtmosphereAbsorptionExtinction;
 
     return parameters;
 }

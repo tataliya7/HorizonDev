@@ -21,7 +21,7 @@ BIND_TEXTURE_2D_SRV(8, ScreenSpaceShadowMaskTexture);
 BIND_TEXTURE_2D_ARRAY_TYPED_SRV(9, float, LocalLightShadowMapAtlas);
 BIND_TEXTURE_2D_SRV(15, SkyAtmosphereTransmittanceLUT);
 
-// SHADER_ARGUMENTS(ShaderArguments)
+// SHADER_CONSTANTS(ShaderConstants)
 // {
 //    uint32 numLights;
 // };
@@ -108,9 +108,10 @@ float3 WorldSpaceDirectionToCubemapUvAndFaceIndex(float3 d)
     return float3(uv, faceIndex);
 }
 
-float3 ComputeDirectLightingContribution(PerFrameShaderParameters perFrameConstants, Surface surface)
+float3 ComputeDirectLightingContribution(PerFrameShaderParameters frameShaderParameters, Surface surface)
 {
-    uint lightCount = (uint)SHADER_ARGUMENTS_DATA(0);
+    uint lightCount = 0; // TODO
+
     ByteAddressBuffer lightBuffer = GetLightBufferSRV();
 
     float3 result = 0.0;
@@ -144,8 +145,8 @@ float3 ComputeDirectLightingContribution(PerFrameShaderParameters perFrameConsta
             float3 atmosphereTransmittance = atmosphereTransmittanceFactor * ComputeAtmosphereTransmittance(
                 surface.P,
                 L,
-                perFrameConstants.skyAtmosphereBottomRadiusInKilometers,
-                perFrameConstants.skyAtmosphereTopRadiusInKilometers);
+                frameShaderParameters.skyAtmosphereBottomRadiusInKilometers,
+                frameShaderParameters.skyAtmosphereTopRadiusInKilometers);
 
             float NdotV = max(0.0, dot(N, V));
             float NdotL = max(0.0, dot(N, L));
@@ -329,7 +330,7 @@ float3 F_Schlick(float3 f0, float f90, float VoH)
 [shader("pixel")]
 void DirectLightingPS(float4 svPosition : SV_Position, out float4 outSceneColor : SV_Target0)
 {
-    ConstantBuffer<PerFrameShaderParameters> perFrameConstants = GetPerFrameShaderParametersCBV();
+    ConstantBuffer<PerFrameShaderParameters> frameShaderParameters = GetPerFrameShaderParameterBufferCBV();
     Texture2D<uint2> vbuffer0 = GetVBuffer0SRV();
     Texture2D vbuffer1 = GetVBuffer1SRV();
     Texture2D gbuffer0 = GetGBuffer0SRV();
@@ -338,7 +339,7 @@ void DirectLightingPS(float4 svPosition : SV_Position, out float4 outSceneColor 
     Texture2D sceneDepthTexture = GetSceneDepthTextureSRV();
 
     const uint2 pixelCoord = uint2(svPosition.xy);
-    const float2 uv = (float2(pixelCoord) + 0.5f) / float2(perFrameConstants.renderWidth, perFrameConstants.renderHeight);
+    const float2 uv = (float2(pixelCoord) + 0.5f) / float2(frameShaderParameters.renderWidth, frameShaderParameters.renderHeight);
 
     float4 gbuffer0Data = gbuffer0[pixelCoord];
     float4 gbuffer1Data =  gbuffer1[pixelCoord];
@@ -364,7 +365,7 @@ void DirectLightingPS(float4 svPosition : SV_Position, out float4 outSceneColor 
     ByteAddressBuffer materialBuffer = GetMaterialBufferSRV();
     Material material = materialBuffer.Load<Material>(geometry.materialBufferOffset + (materialIndex * sizeof(Material)));
 
-    float3 position = ReconstructWorldSpacePositionFromDepth(uv, sceneDepth, perFrameConstants.clipToWorldMatrix);
+    float3 position = ReconstructWorldSpacePositionFromDepth(uv, sceneDepth, frameShaderParameters.clipToWorldMatrix);
     float3 normal = DecodeNormalFromGBuffer(gbuffer0Data.xyz);
     float metallic = gbuffer1Data.x;
     float specular = gbuffer1Data.y;
@@ -377,7 +378,7 @@ void DirectLightingPS(float4 svPosition : SV_Position, out float4 outSceneColor 
     surface.uv = uv;
     surface.P = position;
     surface.N = normal;
-    surface.V = normalize(perFrameConstants.cameraPosition - position);
+    surface.V = normalize(frameShaderParameters.cameraPosition - position);
     surface.R = normalize(reflect(-surface.V, surface.N));
     surface.baseColor = baseColor;
     surface.subsurface = 0.0;
@@ -410,7 +411,7 @@ void DirectLightingPS(float4 svPosition : SV_Position, out float4 outSceneColor 
 
     finalColor += surface.emission * surface.emissionStrength;
 
-    finalColor += ComputeDirectLightingContribution(perFrameConstants, surface) * perFrameConstants.preExposure;
+    finalColor += ComputeDirectLightingContribution(frameShaderParameters, surface) * frameShaderParameters.preExposure;
 
     outSceneColor = float4(finalColor, 1.0);
 }

@@ -133,7 +133,7 @@ struct PerFrameShaderParameters
 };
 
 #ifndef __cplusplus
-DECLARE_CONSTANT_BUFFER_TYPE(PerFrameShaderParameters);
+DECLARE_ALIASED_CONSTANT_BUFFER_ARRAYS(PerFrameShaderParameters);
 #endif
 
 #ifdef __cplusplus

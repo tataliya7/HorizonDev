@@ -10,5 +10,5 @@ namespace Horizon
 
     extern uint32 GIrradianceEnvironmentMapSize;
 
-    extern void RenderPreIntegratedBrdfLut(ShaderLibrary* shaderLibrary, RenderBackendCommandList& commandList, RenderBackendTextureHandle preIntegratedBrdfLut);
+    extern void RenderPreIntegratedBrdfLut(RenderBackend* renderBackend, ShaderLibrary* shaderLibrary, RenderBackendCommandList& commandList, RenderBackendTextureHandle preIntegratedBrdfLut);
 }

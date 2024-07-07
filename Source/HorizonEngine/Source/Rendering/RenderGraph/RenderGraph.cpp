@@ -7,6 +7,7 @@ namespace Horizon
     RenderGraph::RenderGraph(MemoryArena* arena, RenderGraphResourcePool* pool, RenderBackendGPUProfiler* gpuProfiler)
         : blackboard(arena)
         , arena(arena)
+        , renderBackend(pool->backend)
         , resourcePool(pool)
         , gpuProfiler(gpuProfiler)
     {

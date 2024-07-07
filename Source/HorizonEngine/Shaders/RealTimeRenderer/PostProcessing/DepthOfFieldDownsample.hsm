@@ -33,9 +33,9 @@ float ComputeCoC(float linearDepth, float focalDistance, float focalRegion)
 [numthreads(POST_PROCESSING_THREAD_GROUP_SIZE_X, POST_PROCESSING_THREAD_GROUP_SIZE_Y, 1)]
 void DepthOfFieldSetupCS(uint3 DispatchThreadID : SV_DispatchThreadID)
 {
-    ConstantBuffer<PerFrameShaderParameters> perFrameConstants = GetPerFrameShaderParametersCBV();
-    uint width = perFrameConstants.targetWidth / 2;
-    uint height = perFrameConstants.targetHeight / 2;
+    ConstantBuffer<PerFrameShaderParameters> frameShaderParameters = GetPerFrameShaderParameterBufferCBV();
+    uint width = frameShaderParameters.targetWidth / 2;
+    uint height = frameShaderParameters.targetHeight / 2;
     if (DispatchThreadID.x >= width || DispatchThreadID.y >= height)
     {
         return;
@@ -50,14 +50,14 @@ void DepthOfFieldSetupCS(uint3 DispatchThreadID : SV_DispatchThreadID)
     RWTexture2D<float4> nearRegionTexture = GetDOFNearRegionTextureUAV();
     RWTexture2D<float4> farRegionTexture = GetDOFFarRegionTextureUAV();
 
-    float focalDistance = SHADER_ARGUMENTS_DATA(0);
-    float focalRegion = SHADER_ARGUMENTS_DATA(1);
-    float nearTransitionRegion = SHADER_ARGUMENTS_DATA(2);
-    float farTransitionRegion = SHADER_ARGUMENTS_DATA(3);
+    float focalDistance = (0);
+    float focalRegion = (1);
+    float nearTransitionRegion = (2);
+    float farTransitionRegion = (3);
 
     float4 color = sceneColor.SampleLevel(GlobalSamplerLinearClamp, uv, 0);
     float depth = sceneDepth.SampleLevel(GlobalSamplerPointClamp, uv, 0).r;
-    float linearDepth = ComputeCameraSpaceDepth(depth, perFrameConstants.nearClippingPlane, perFrameConstants.farClippingPlane);
+    float linearDepth = ComputeCameraSpaceDepth(depth, frameShaderParameters.nearClippingPlane, frameShaderParameters.farClippingPlane);
 
     float nearRegionMask = ComputeNearRegionMask(linearDepth, focalDistance, focalRegion, nearTransitionRegion);
     float farRegionMask = ComputeFarRegionMask(linearDepth, focalDistance, focalRegion, farTransitionRegion);

@@ -1,11 +1,15 @@
 #include "../ShaderCommon.hsh"
 
-BIND_TEXTURE_2D_SRV(0, UIColorAndAlphaTexture);
+SHADER_CONSTANTS_STRUCT_BEGIN();
+SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(0, UIColorAndAlphaTextureSRV);
+SHADER_CONSTANTS_STRUCT_END();
 
 [shader("pixel")]
 void GUICompositionPS(float4 position : SV_Position, out float4 outColor : SV_Target0)
 {
-    Texture2D uiColorAndAlphaTexture = GetUIColorAndAlphaTextureSRV();
+    Texture2D uiColorAndAlphaTexture = ShaderConstants.GetUIColorAndAlphaTextureSRV();
+
     const uint2 pixelCoord = uint2(position.xy);
+
     outColor = uiColorAndAlphaTexture[pixelCoord];
 }

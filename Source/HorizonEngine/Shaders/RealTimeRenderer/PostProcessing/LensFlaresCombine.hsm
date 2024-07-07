@@ -24,16 +24,16 @@ float2 ComputeFisheyeUV(float2 uv, float f, float zoom)
 [shader("pixel")]
 void LensFlaresCombinePS(float4 position : SV_Position, out float3 outColor : SV_Target)
 {
-    ConstantBuffer<PerFrameShaderParameters> perFrameConstants = GetPerFrameShaderParametersCBV();
+    ConstantBuffer<PerFrameShaderParameters> frameShaderParameters = GetPerFrameShaderParameterBufferCBV();
     Texture2D ghostTexture = GetLensFlaresGhostTextureSRV();
     Texture2D glareTexture = GetLensFlaresGlareTextureSRV();
     Texture2D gradientLUTTexture = GetLensFlaresGradiantLUTTextureSRV();
     Texture2D SceneColorTexture = GetSceneColorTextureSRV();
-    float outputTextureWidth = SHADER_ARGUMENTS_DATA(0);
-    float outputTextureHeight = SHADER_ARGUMENTS_DATA(1);
+    float outputTextureWidth = (0);
+    float outputTextureHeight = (1);
     float2 outputTextureInvSize = 1.0f / float2(outputTextureWidth, outputTextureHeight);
 
-    float lensFlaresIntensity = perFrameConstants.lensFlaresIntensity;
+    float lensFlaresIntensity = frameShaderParameters.lensFlaresIntensity;
 
     float2 uv = position.xy * outputTextureInvSize;
 

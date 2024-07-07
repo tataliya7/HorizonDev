@@ -15,13 +15,13 @@ struct SubsurfaceScatteringCopyResultsVSOutput
 [shader("vertex")]
 void SubsurfaceScatteringCopyResultsVS(uint VertexID : SV_VertexID, uint InstanceID : SV_InstanceID, out SubsurfaceScatteringCopyResultsVSOutput vsOutput)
 {
-    ConstantBuffer<PerFrameShaderParameters> perFrameConstants = GetPerFrameShaderParametersCBV();
+    ConstantBuffer<PerFrameShaderParameters> frameShaderParameters = GetPerFrameShaderParameterBufferCBV();
     ByteAddressBuffer tileDataBuffer = GetSubsurfaceScatteringTileDataBufferSRV();
 
     uint2 tileIndex = tileDataBuffer.Load<uint2>(InstanceID * sizeof(uint2));
     uint2 vertexPosition = tileIndex * SUBSURFACE_SCATTERING_TILE_SIZE + SubsurfaceScatteringTileVertexPositionOffsets[VertexID];
 
-    vsOutput.uv = float2(vertexPosition) * perFrameConstants.renderResolution.zw;
+    vsOutput.uv = float2(vertexPosition) * frameShaderParameters.renderResolution.zw;
     vsOutput.position = float4(UVSpaceToClipSpace(vsOutput.uv), 0.0f, 1.0f);
 }
 

@@ -20,10 +20,10 @@ void SurfelGIVisualizationCS(
     uint3 GroupThreadID : SV_GroupThreadID,
     uint GroupIndex : SV_GroupIndex)
 {
-    ConstantBuffer<PerFrameShaderParameters> perFrameConstants = GetPerFrameShaderParametersCBV();
+    ConstantBuffer<PerFrameShaderParameters> frameShaderParameters = GetPerFrameShaderParameterBufferCBV();
 
-    uint width = perFrameConstants.renderWidth;
-    uint height = perFrameConstants.renderHeight;
+    uint width = frameShaderParameters.renderWidth;
+    uint height = frameShaderParameters.renderHeight;
     uint2 pixelCoord = DispatchThreadID.xy;
     float2 uv = (pixelCoord + 0.5) / float2(width, height);
     if (pixelCoord.x >= width || pixelCoord.y >= height)
@@ -47,9 +47,9 @@ void SurfelGIVisualizationCS(
         return;
     }
 
-    float3 worldSpacePosition = ReconstructWorldSpacePositionFromDepth(uv, sceneDepth, perFrameConstants.clipToWorldMatrix);
+    float3 worldSpacePosition = ReconstructWorldSpacePositionFromDepth(uv, sceneDepth, frameShaderParameters.clipToWorldMatrix);
 
-    int cellIndex = GetUniformGridCellIndex(worldSpacePosition, perFrameConstants.cameraPosition);
+    int cellIndex = GetUniformGridCellIndex(worldSpacePosition, frameShaderParameters.cameraPosition);
     if (cellIndex < 0)
     {
         outputTexture[pixelCoord] = sceneColor;

@@ -1,19 +1,23 @@
 #include "ShaderCommon.hsh"
 
-BIND_TEXTURE_2D_SRV(0, InputTexture);
-#if __SHADER_TARGET_STAGE == __SHADER_STAGE_COMPUTE
-BIND_TEXTURE_2D_UAV(1, float4, OutputMip);
-#endif
+SHADER_CONSTANTS_STRUCT_BEGIN();
+SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(0, InputTextureSRV);
+SHADER_CONSTANTS_TEXTURE_2D_UAV(1, float4, OutputTextureUAV);
+SHADER_CONSTANTS_SCALAR(2, uint, SourceMipLevel);
+SHADER_CONSTANTS_SCALAR(3, float, DstWidth);
+SHADER_CONSTANTS_SCALAR(4, float, DstHeight);
+SHADER_CONSTANTS_STRUCT_END();
 
 #if __SHADER_TARGET_STAGE == __SHADER_STAGE_COMPUTE
+
 [shader("compute")]
 [numthreads(8, 8, 1)]
 void DownsampleTexture2DCS(uint3 DispatchThreadID : SV_DispatchThreadID)
 {
-    RWTexture2D<float4> outputMip = GetOutputMipUAV();
+    RWTexture2D<float4> outputTexture = ShaderConstants.GetOutputTextureUAV();
 
     uint width, height;
-    outputMip.GetDimensions(width, height);
+    outputTexture.GetDimensions(width, height);
     if (DispatchThreadID.x >= width || DispatchThreadID.y >= height)
     {
         return;
@@ -21,14 +25,14 @@ void DownsampleTexture2DCS(uint3 DispatchThreadID : SV_DispatchThreadID)
 
     uint2 coord = DispatchThreadID.xy;
     float2 uv = (coord.xy + 0.5f) / float2(width, height);
-    uint sourceMipLevel = (uint)SHADER_ARGUMENTS_DATA(0);
+    uint sourceMipLevel = ShaderConstants.GetSourceMipLevel();
 
-    Texture2D inputTexture = GetInputTextureSRV();
+    Texture2D inputTexture = ShaderConstants.GetInputTextureSRV();
     float4 color = inputTexture.SampleLevel(GlobalSamplerLinearWarp, uv, sourceMipLevel);
 
-    outputMip[coord] = color;
+    outputTexture[coord] = color;
 }
-#endif
+#else
 
 [shader("vertex")]
 void DownsampleTexture2DVS(uint vertexID : SV_VertexID, out float4 outPosition : SV_Position)
@@ -39,12 +43,13 @@ void DownsampleTexture2DVS(uint vertexID : SV_VertexID, out float4 outPosition :
 [shader("pixel")]
 void DownsampleTexture2DPS(float4 position : SV_Position, out float4 outColor : SV_Target0)
 {
-    uint sourceMipLevel = (uint)SHADER_ARGUMENTS_DATA(0);
-    float width = SHADER_ARGUMENTS_DATA(1);
-    float height = SHADER_ARGUMENTS_DATA(2);
+    uint sourceMipLevel = ShaderConstants.GetSourceMipLevel();
+    float width = ShaderConstants.GetDstWidth();
+    float height = ShaderConstants.GetDstHeight();
 
     float2 uv = position.xy / float2(width, height);
 
-    Texture2D inputTexture = GetInputTextureSRV();
+    Texture2D inputTexture = ShaderConstants.GetInputTextureSRV();
     outColor = inputTexture.SampleLevel(GlobalSamplerLinearWarp, uv, sourceMipLevel);
 }
+#endif

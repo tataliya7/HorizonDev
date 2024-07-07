@@ -25,7 +25,7 @@ void LocalExposureBlendExposuresCS(uint3 DispatchThreadID : SV_DispatchThreadID)
     Texture2D exposureTexture = GetExposureTextureSRV();
     Texture2D weightTexture = GetWeightTextureSRV();
 
-    float coarsestMipLevel = SHADER_ARGUMENTS_DATA(0);
+    float coarsestMipLevel = (0);
 
     // Blend the exposures based on the blend weights.
     float3 exposures = exposureTexture.SampleLevel(GlobalSamplerLinearClamp, uv, coarsestMipLevel).rgb;

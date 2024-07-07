@@ -25,7 +25,7 @@ bool PointInsidePlane(float3 position, float4 plane)
 [numthreads(64, 1, 1)]
 void InstanceCullingCS(uint3 DispatchThreadID : SV_DispatchThreadID)
 {
-    int instanceCount = (int)SHADER_ARGUMENTS_DATA(0);
+    int instanceCount = (int)(0);
     if (DispatchThreadID.x >= instanceCount)
     {
         return;
@@ -52,7 +52,7 @@ void InstanceCullingCS(uint3 DispatchThreadID : SV_DispatchThreadID)
     boundsCorner[6] = mul(worldTransform, float4(boundsMax.x, boundsMax.y, boundsMin.z, 1.0)).xyz;
     boundsCorner[7] = mul(worldTransform, float4(boundsMax.x, boundsMax.y, boundsMax.z, 1.0)).xyz;
 
-    ConstantBuffer<PerFrameShaderParameters> perFrameConstants = GetPerFrameShaderParametersCBV();
+    ConstantBuffer<PerFrameShaderParameters> frameShaderParameters = GetPerFrameShaderParameterBufferCBV();
     bool visible = true;
     for (int planeIndex = 0; planeIndex < 6; planeIndex++)
     {
@@ -60,7 +60,7 @@ void InstanceCullingCS(uint3 DispatchThreadID : SV_DispatchThreadID)
         [unroll]
         for (int cornerIndex = 0; cornerIndex < 8; cornerIndex++)
         {
-            allBoundsCornerOutsideThisPlane &= PointOutsidePlane(boundsCorner[cornerIndex].xyz, perFrameConstants.frustumPlanes[planeIndex]);
+            allBoundsCornerOutsideThisPlane &= PointOutsidePlane(boundsCorner[cornerIndex].xyz, frameShaderParameters.frustumPlanes[planeIndex]);
         }
         if (allBoundsCornerOutsideThisPlane)
         {

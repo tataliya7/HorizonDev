@@ -48,11 +48,11 @@ namespace Horizon
                     RenderBackendScissor scissor(0, 0, lensFlaresTextureWidth, lensFlaresTextureHeight);
                     commandList.SetScissors(&scissor, 1);
 
-                    RenderBackendShaderArguments shaderArguments = {};
-                    shaderArguments.BindBufferCBV(0, this->GetCurrentPerFrameConstantBuffer());
-                    shaderArguments.BindTextureSRV(1, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(halfResolutionSceneColorTexture)));
-                    shaderArguments.PushConstants(0, (float)lensFlaresTextureWidth);
-                    shaderArguments.PushConstants(1, (float)lensFlaresTextureHeight);
+                    RenderBackendShaderConstants shaderConstants = {};
+                    shaderConstants.BindBufferCBV(0, renderBackend->GetBufferCBVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
+                    shaderConstants.BindTextureSRV(1, registry.GetTextureSRVBindlessResourceDescriptorIndex(halfResolutionSceneColorTexture)));
+                    shaderConstants.PushConstants(0, (float)lensFlaresTextureWidth);
+                    shaderConstants.PushConstants(1, (float)lensFlaresTextureHeight);
 
                     RenderBackendGraphicsPipelineState graphicsPipelineState = {};
                     graphicsPipelineState.colorBlendState.targetBlends[0] = additiveColorBlendAttachmentStateRGB;
@@ -61,7 +61,7 @@ namespace Horizon
                     commandList.Draw(
                         graphicsShader,
                         graphicsPipelineState,
-                        shaderArguments,
+                        shaderConstants,
                         3, 1, 0, 0,
                         RenderBackendPrimitiveTopology::TriangleList);
                 };
@@ -89,14 +89,14 @@ namespace Horizon
                     uint32 threadGroupCountX = ComputeWorkGroupCount(lensFlaresTileCullingTextureDesc.width, PostProcessingThreadGroupSizeX);
                     uint32 threadGroupCountY = ComputeWorkGroupCount(lensFlaresTileCullingTextureDesc.height, PostProcessingThreadGroupSizeY);
 
-                    RenderBackendShaderArguments shaderArguments = {};
-                    shaderArguments.BindTextureSRV(0, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(halfResolutionSceneColorTexture)));
-                    shaderArguments.BindTextureUAV(1, RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(tileCullingTexture), 0));
+                    RenderBackendShaderConstants shaderConstants = {};
+                    shaderConstants.BindTextureSRV(0, registry.GetTextureSRVBindlessResourceDescriptorIndex(halfResolutionSceneColorTexture)));
+                    shaderConstants.BindTextureUAV(1, registry.GetTextureUAVBindlessResourceDescriptorIndextileCullingTexture), 0));
 
                     RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::LensFlaresTileCulling);
                     commandList.Dispatch2D(
                         computeShader,
-                        shaderArguments,
+                        shaderConstants,
                         threadGroupCountX,
                         groupCountY);
                 };
@@ -126,11 +126,11 @@ namespace Horizon
                     RenderBackendScissor scissor(0, 0, lensFlaresTextureWidth, lensFlaresTextureHeight);
                     commandList.SetScissors(&scissor, 1);
 
-                    RenderBackendShaderArguments shaderArguments = {};
-                    shaderArguments.BindTextureSRV(0, RenderBackendTextureSRVDesc::Create(lensFlaresGlareLUTTexture));
-                    shaderArguments.BindTextureSRV(1, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(tileCullingTexture)));
-                    shaderArguments.PushConstants(0, (float)lensFlaresTextureWidth);
-                    shaderArguments.PushConstants(1, (float)lensFlaresTextureHeight);
+                    RenderBackendShaderConstants shaderConstants = {};
+                    shaderConstants.BindTextureSRV(0, RenderBackendTextureSRVDesc::Create(lensFlaresGlareLUTTexture));
+                    shaderConstants.BindTextureSRV(1, registry.GetTextureSRVBindlessResourceDescriptorIndex(tileCullingTexture)));
+                    shaderConstants.PushConstants(0, (float)lensFlaresTextureWidth);
+                    shaderConstants.PushConstants(1, (float)lensFlaresTextureHeight);
 
                     RenderBackendGraphicsPipelineState graphicsPipelineState = {};
                     graphicsPipelineState.colorBlendState.targetBlends[0] = additiveColorBlendAttachmentStateRGB;
@@ -139,7 +139,7 @@ namespace Horizon
                     commandList.Draw(
                         graphicsShader,
                         graphicsPipelineState,
-                        shaderArguments,
+                        shaderConstants,
                         4, tileCount * 3, 0, 0,
                         RenderBackendPrimitiveTopology::TriangleStrip);
                 };
@@ -163,14 +163,14 @@ namespace Horizon
                     RenderBackendScissor scissor(0, 0, bloomTextureWidth, bloomTextureHeight);
                     commandList.SetScissors(&scissor, 1);
 
-                    RenderBackendShaderArguments shaderArguments = {};
-                    shaderArguments.BindBufferCBV(0, this->GetCurrentPerFrameConstantBuffer());
-                    shaderArguments.BindTextureSRV(1, RenderBackendTextureSRVDesc::Create(lensFlaresGradiantLUTTexture));
-                    shaderArguments.BindTextureSRV(2, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(lensFlaresGhostTexture)));
-                    shaderArguments.BindTextureSRV(3, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(lensFlaresGlareTexture)));
-                    shaderArguments.BindTextureSRV(4, RenderBackendTextureSRVDesc::Create(registry.GetRenderBackendTextureHandle(halfResolutionSceneColorTexture)));
-                    shaderArguments.PushConstants(0, (float)bloomTextureWidth);
-                    shaderArguments.PushConstants(1, (float)bloomTextureHeight);
+                    RenderBackendShaderConstants shaderConstants = {};
+                    shaderConstants.BindBufferCBV(0, renderBackend->GetBufferCBVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
+                    shaderConstants.BindTextureSRV(1, RenderBackendTextureSRVDesc::Create(lensFlaresGradiantLUTTexture));
+                    shaderConstants.BindTextureSRV(2, registry.GetTextureSRVBindlessResourceDescriptorIndex(lensFlaresGhostTexture)));
+                    shaderConstants.BindTextureSRV(3, registry.GetTextureSRVBindlessResourceDescriptorIndex(lensFlaresGlareTexture)));
+                    shaderConstants.BindTextureSRV(4, registry.GetTextureSRVBindlessResourceDescriptorIndex(halfResolutionSceneColorTexture)));
+                    shaderConstants.PushConstants(0, (float)bloomTextureWidth);
+                    shaderConstants.PushConstants(1, (float)bloomTextureHeight);
 
                     RenderBackendGraphicsPipelineState graphicsPipelineState = {};
                     graphicsPipelineState.colorBlendState.targetBlends[0] = additiveColorBlendAttachmentStateRGB;
@@ -179,7 +179,7 @@ namespace Horizon
                     commandList.Draw(
                         graphicsShader,
                         graphicsPipelineState,
-                        shaderArguments,
+                        shaderConstants,
                         3, 1, 0, 0,
                         RenderBackendPrimitiveTopology::TriangleList);
                 };

@@ -23,14 +23,14 @@ void LocalExposureComputeLuminanceCS(uint3 DispatchThreadID : SV_DispatchThreadI
     uint2 pixelCoord = DispatchThreadID.xy;
     float2 uv = (pixelCoord + 0.5) / float2(width, height);
 
-    ConstantBuffer<PerFrameShaderParameters> perFrameConstants = GetPerFrameShaderParametersCBV();
+    ConstantBuffer<PerFrameShaderParameters> frameShaderParameters = GetPerFrameShaderParameterBufferCBV();
     Texture2D sceneColorTexture = GetSceneColorTextureSRV();
     //Texture2D<float> autoExposureTexture = GetAutoExposureTextureSRV();
     //float exposure = autoExposureTexture[uint2(1, 0)];
-    float exposure = 1;//perFrameConstants.exposure;
+    float exposure = 1;//frameShaderParameters.exposure;
 
-    float highlights = SHADER_ARGUMENTS_DATA(0);
-    float shadows = SHADER_ARGUMENTS_DATA(1);
+    float highlights = (0);
+    float shadows = (1);
 
     float3 inputColor = sceneColorTexture.SampleLevel(GlobalSamplerLinearClamp, uv, 0).rgb * exposure;
     float highlightLuminance = sqrt(dot(clamp(FastToneMapping(inputColor * highlights), 0.0, 1.0), float3(0.1, 0.7, 0.2)));

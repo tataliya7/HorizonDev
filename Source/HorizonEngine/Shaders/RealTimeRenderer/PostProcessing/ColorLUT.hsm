@@ -5,8 +5,10 @@
 #include "ToneMappingCommon.hsh"
 #include "ColorLUTCommon.hsh"
 
-BIND_BUFFER_CBV(0, PerFrameShaderParameters);
-BIND_TEXTURE_3D_UAV(1, float4, ColorLUTTexture);
+SHADER_CONSTANTS_STRUCT_BEGIN();
+SHADER_CONSTANTS_CONSTANT_BUFFER_CBV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferCBV);
+SHADER_CONSTANTS_TEXTURE_3D_UAV(1, float4, ColorLUTTextureUAV);
+SHADER_CONSTANTS_STRUCT_END();
 
 // Accurate for 4000K < Temp < 25000K
 // Calculates chromaticity from temperature
@@ -113,10 +115,10 @@ float3 PurkinjeShift(float3 linearRGB)
 [numthreads(8, 8, 8)]
 void ColorLUTCS(uint3 DispatchThreadID : SV_DispatchThreadID)
 {
-    ConstantBuffer<PerFrameShaderParameters> perFrameConstants = GetPerFrameShaderParametersCBV();
-    RWTexture3D<float4> colorLUTTexture = GetColorLUTTextureUAV();
+    ConstantBuffer<PerFrameShaderParameters> frameShaderParameters = ShaderConstants.GetPerFrameShaderParameterBufferCBV();
+    RWTexture3D<float4> colorLUTTexture = ShaderConstants.GetColorLUTTextureUAV();
 
-    float whiteBalance = perFrameConstants.whiteBalance;
+    float whiteBalance = frameShaderParameters.whiteBalance;
 
     uint3 pixelCoord = DispatchThreadID;
 
@@ -134,7 +136,7 @@ void ColorLUTCS(uint3 DispatchThreadID : SV_DispatchThreadID)
 
     float3 outputColor = max(0.0f, mul(AP1_2_sRGB_MAT, acescg));
 
-    // uint toneMappingOperator = (uint)SHADER_ARGUMENTS_DATA(0);
+    // uint toneMappingOperator = (uint)(0);
     // if (toneMappingOperator == 0)
     // {
     //     outputColor = saturate(linearColor);

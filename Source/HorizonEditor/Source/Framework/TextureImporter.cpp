@@ -188,7 +188,7 @@ namespace Horizon
                 uint32 deviceMask = ~0u;
 
                 RenderBackendCommandList* commandList = new RenderBackendCommandList(GArena);
-                Texture2DGenerateMips(shaderLibrary, *commandList, texture, iw, ih, mipLeveles);
+                Texture2DGenerateMips(renderBackend, shaderLibrary, *commandList, texture, iw, ih, mipLeveles);
                 renderBackend->SubmitCommandLists(&commandList, 1, RenderBackendSwapChainHandle::Null);
                 renderBackend->FlushRenderDevices();
 

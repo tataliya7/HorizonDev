@@ -50,4 +50,38 @@ namespace Horizon
     {
         return GetBuffer(handle)->GetRenderBackendBufferHandle();
     }
+
+    int32 RenderGraphRegistry::GetTextureSRVBindlessResourceDescriptorIndex(
+        RenderGraphTextureHandle handle,
+        const RenderBackendTextureSubresourceRange& subresourceRange) const
+    {
+        RenderBackendTextureHandle renderBackendTextureHandle = GetRenderBackendTextureHandle(handle);
+        return renderGraph->renderBackend->GetTextureSRVBindlessResourceDescriptorIndex(renderBackendTextureHandle, subresourceRange);
+    }
+
+    int32 RenderGraphRegistry::GetTextureUAVBindlessResourceDescriptorIndex(
+        RenderGraphTextureHandle handle,
+        uint32 mipLevel) const
+    {
+        RenderBackendTextureHandle renderBackendTextureHandle = GetRenderBackendTextureHandle(handle);
+        return renderGraph->renderBackend->GetTextureUAVBindlessResourceDescriptorIndex(renderBackendTextureHandle, mipLevel);
+    }
+
+    int32 RenderGraphRegistry::GetBufferCBVBindlessResourceDescriptorIndex(RenderGraphBufferHandle handle) const
+    {
+        RenderBackendBufferHandle renderBackendBufferHandle = GetRenderBackendBufferHandle(handle);
+        return renderGraph->renderBackend->GetBufferCBVBindlessResourceDescriptorIndex(renderBackendBufferHandle);
+    }
+
+    int32 RenderGraphRegistry::GetBufferSRVBindlessResourceDescriptorIndex(RenderGraphBufferHandle handle) const
+    {
+        RenderBackendBufferHandle renderBackendBufferHandle = GetRenderBackendBufferHandle(handle);
+        return renderGraph->renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(renderBackendBufferHandle);
+    }
+
+    int32 RenderGraphRegistry::GetBufferUAVBindlessResourceDescriptorIndex(RenderGraphBufferHandle handle) const
+    {
+        RenderBackendBufferHandle renderBackendBufferHandle = GetRenderBackendBufferHandle(handle);
+        return renderGraph->renderBackend->GetBufferUAVBindlessResourceDescriptorIndex(renderBackendBufferHandle);
+    }
 }

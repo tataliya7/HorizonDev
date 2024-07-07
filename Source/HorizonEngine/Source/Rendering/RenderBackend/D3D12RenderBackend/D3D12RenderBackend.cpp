@@ -76,22 +76,6 @@ namespace Horizon
 {
     class D3D12RenderBackend;
 
-    // Temp
-    struct D3D12PushConstants
-    {
-        int32 indices[16];
-        float data[16];
-
-        D3D12PushConstants()
-        {
-            for (uint32 i = 0; i < 16; i++)
-            {
-                indices[i] = -1;
-            }
-            memset(data, 0, sizeof(data));
-        }
-    };
-
     enum class D3D12CommandQueueType
     {
         Direct      = 0,
@@ -225,9 +209,9 @@ namespace Horizon
         void* mappedData;
 
         D3D12_CPU_DESCRIPTOR_HANDLE descriptor;
-        int bindlessDesciptorIndexCBV;
-        int bindlessDesciptorIndexSRV;
-        int bindlessDesciptorIndexUAV;
+        int bindlessResourceDescriptorIndexCBV;
+        int bindlessResourceDescriptorIndexSRV;
+        int bindlessResourceDescriptorIndexUAV;
 
         ID3D12Resource* GetID3D12Resource()
         {
@@ -630,9 +614,9 @@ namespace Horizon
             buffer->gpuAddress = buffer->resource->GetGPUVirtualAddress();
             buffer->flags = desc->flags;
             buffer->size = desc->size;
-            buffer->bindlessDesciptorIndexCBV = -1;
-            buffer->bindlessDesciptorIndexSRV = -1;
-            buffer->bindlessDesciptorIndexUAV = -1;
+            buffer->bindlessResourceDescriptorIndexCBV = -1;
+            buffer->bindlessResourceDescriptorIndexSRV = -1;
+            buffer->bindlessResourceDescriptorIndexUAV = -1;
 
             if (EnumClassHasFlags(desc->flags, RenderBackendBufferCreateFlags::Readback))
             {
@@ -696,12 +680,12 @@ namespace Horizon
                 buffer->descriptor = resourceDescriptorAllocator.Allocate();
                 device->CreateUnorderedAccessView(buffer->GetID3D12Resource(), nullptr, &uavDesc, buffer->descriptor);
 
-                buffer->bindlessDesciptorIndexUAV = AllocateResourceDescriptorIndex();
-                if (buffer->bindlessDesciptorIndexUAV >= 0)
+                buffer->bindlessResourceDescriptorIndexUAV = AllocateResourceDescriptorIndex();
+                if (buffer->bindlessResourceDescriptorIndexUAV >= 0)
                 {
-                    assert(buffer->bindlessDesciptorIndexUAV < D3D12_BINDLESS_MAX_NUM_RESOURCE_DESCRIPTOERS);
+                    assert(buffer->bindlessResourceDescriptorIndexUAV < D3D12_BINDLESS_MAX_NUM_RESOURCE_DESCRIPTOERS);
                     D3D12_CPU_DESCRIPTOR_HANDLE rangeStart = resourceDescriptorHeap->cpuDescriptorHandle;
-                    rangeStart.ptr += buffer->bindlessDesciptorIndexUAV * device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+                    rangeStart.ptr += buffer->bindlessResourceDescriptorIndexUAV * device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
                     device->CopyDescriptorsSimple(1, rangeStart, buffer->descriptor, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
                 }
             }
@@ -735,9 +719,9 @@ namespace Horizon
             D3D12_CHECK(buffer->resource->SetName(UTF8ToUTF16(buffer->debugName).c_str()));
             buffer->gpuAddress = buffer->resource->GetGPUVirtualAddress();
             buffer->size = size;
-            buffer->bindlessDesciptorIndexCBV = -1;
-            buffer->bindlessDesciptorIndexSRV = -1;
-            buffer->bindlessDesciptorIndexUAV = -1;
+            buffer->bindlessResourceDescriptorIndexCBV = -1;
+            buffer->bindlessResourceDescriptorIndexSRV = -1;
+            buffer->bindlessResourceDescriptorIndexUAV = -1;
 
             if (EnumClassHasFlags(buffer->flags, RenderBackendBufferCreateFlags::Readback))
             {
@@ -777,12 +761,12 @@ namespace Horizon
                 buffer->descriptor = resourceDescriptorAllocator.Allocate();
                 device->CreateUnorderedAccessView(buffer->GetID3D12Resource(), nullptr, &uavDesc, buffer->descriptor);
 
-                buffer->bindlessDesciptorIndexUAV = AllocateResourceDescriptorIndex();
-                if (buffer->bindlessDesciptorIndexUAV >= 0)
+                buffer->bindlessResourceDescriptorIndexUAV = AllocateResourceDescriptorIndex();
+                if (buffer->bindlessResourceDescriptorIndexUAV >= 0)
                 {
-                    assert(buffer->bindlessDesciptorIndexUAV < D3D12_BINDLESS_MAX_NUM_RESOURCE_DESCRIPTOERS);
+                    assert(buffer->bindlessResourceDescriptorIndexUAV < D3D12_BINDLESS_MAX_NUM_RESOURCE_DESCRIPTOERS);
                     D3D12_CPU_DESCRIPTOR_HANDLE rangeStart = resourceDescriptorHeap->cpuDescriptorHandle;
-                    rangeStart.ptr += buffer->bindlessDesciptorIndexUAV * device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+                    rangeStart.ptr += buffer->bindlessResourceDescriptorIndexUAV * device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
                     device->CopyDescriptorsSimple(1, rangeStart, buffer->descriptor, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
                 }
             }
@@ -1917,9 +1901,11 @@ namespace Horizon
         void GetTextureReadbackData(RenderBackendTextureHandle texture, void** data) override;
         //RenderBackendTextureSRVHandle CreateTextureSRV(const RenderBackendTextureSRVDesc* desc, const char* name) override;
         //RenderBackendTextureUAVHandle CreateTextureUAV(const RenderBackendTextureUAVDesc* desc, const char* name) override;
-        int32 GetTextureSRVBindlessDescriptorIndex(RenderBackendTextureHandle srv) override;
-        int32 GetTextureUAVBindlessDescriptorIndex(RenderBackendTextureHandle uav, uint32 mipLevel) override;
-        int32 GetBufferBindlessDescriptorIndex(RenderBackendBufferHandle uav) override;
+        int32 GetTextureSRVBindlessResourceDescriptorIndex(RenderBackendTextureHandle srv, const RenderBackendTextureSubresourceRange& subresourceRange = RenderBackendTextureSubresourceRange::All) override;
+        int32 GetTextureUAVBindlessResourceDescriptorIndex(RenderBackendTextureHandle uav, uint32 mipLevel) override;
+        int32 GetBufferCBVBindlessResourceDescriptorIndex(RenderBackendBufferHandle uav) override;
+        int32 GetBufferSRVBindlessResourceDescriptorIndex(RenderBackendBufferHandle uav) override;
+        int32 GetBufferUAVBindlessResourceDescriptorIndex(RenderBackendBufferHandle uav) override;
         RenderBackendSamplerHandle CreateSampler(const RenderBackendSamplerDesc* desc, const char* name) override;
         void DestroySampler(RenderBackendSamplerHandle sampler) override;
         RenderBackendShaderHandle CreateShader(const RenderBackendShaderDesc* desc, const char* name) override;
@@ -1995,8 +1981,8 @@ namespace Horizon
         bool CompileRenderBackendCommand(const RenderBackendCommandEndDebugLabel& command);
         bool CompileRenderBackendCommand(const RenderBackendCommandDispatchSuperSampling& command);
     private:
-        bool PrepareForDispatch(RenderBackendShaderHandle computeShader, const RenderBackendShaderArguments& shaderArguments);
-        bool PrepareForDraw(RenderBackendShaderHandle vertexShader, RenderBackendShaderHandle pixelShader, const RenderBackendGraphicsPipelineState& pipelineState, RenderBackendPrimitiveTopology topology, RenderBackendBufferHandle indexBuffer, const RenderBackendShaderArguments& shaderArguments);
+        bool PrepareForDispatch(RenderBackendShaderHandle computeShader, const RenderBackendShaderConstants& shaderConstants);
+        bool PrepareForDraw(RenderBackendShaderHandle vertexShader, RenderBackendShaderHandle pixelShader, const RenderBackendGraphicsPipelineState& pipelineState, RenderBackendPrimitiveTopology topology, RenderBackendBufferHandle indexBuffer, const RenderBackendShaderConstants& shaderConstants);
         D3D12Device* device;
         D3D12CommandQueueType queueType;
         D3D12CommandList* commandList;
@@ -2335,7 +2321,7 @@ namespace Horizon
         return true;
     }
 
-    bool D3D12RenderBackendCommandListContext::PrepareForDispatch(RenderBackendShaderHandle computeShader, const RenderBackendShaderArguments& shaderArguments)
+    bool D3D12RenderBackendCommandListContext::PrepareForDispatch(RenderBackendShaderHandle computeShader, const RenderBackendShaderConstants& shaderConstants)
     {
         D3D12ComputePipelineState* pipelineState = device->FindOrCreateComputePipelineState(device->GetShader(computeShader));
         if (pipelineState->GetID3D12PipelineState() != activeComputePipeline)
@@ -2348,45 +2334,14 @@ namespace Horizon
             activeComputePipeline = pipelineState->GetID3D12PipelineState();
         }
 
-        D3D12PushConstants pushConstants;
-        for (uint32 i = 0; i < 16; i++)
+        uint32 pushConstantsSize = RenderBackendPushConstantsBytes;
+        if (pushConstantsSize > 0)
         {
-            if (shaderArguments.slots[i].type == 1 && shaderArguments.slots[i].srvSlot.srv.texture)
-            {
-                D3D12Texture* texture = device->GetTexture(shaderArguments.slots[i].srvSlot.srv.texture);
-                if (false)
-                {
-                    pushConstants.indices[i] = texture->GetShaderResourceView(shaderArguments.slots[i].uavSlot.uav.mipLevel)->bindlessIndex;
-                }
-                else
-                {
-                    pushConstants.indices[i] = texture->shaderResourceView->bindlessIndex;
-                }
-            }
-            else if (shaderArguments.slots[i].type == 2 && shaderArguments.slots[i].uavSlot.uav.texture)
-            {
-                D3D12Texture* texture = device->GetTexture(shaderArguments.slots[i].uavSlot.uav.texture);
-                pushConstants.indices[i] = texture->GetUnorderedAccessView(shaderArguments.slots[i].uavSlot.uav.mipLevel)->bindlessIndex;
-            }
-            else if (shaderArguments.slots[i].type == 3 && shaderArguments.slots[i].bufferSlot.handle)
-            {
-                D3D12Buffer* buffer = device->GetBuffer(shaderArguments.slots[i].bufferSlot.handle);
-                pushConstants.indices[i] = buffer->bindlessDesciptorIndexUAV;
-            }
-        }
-        for (uint32 i = 0; i < 16; i++)
-        {
-            pushConstants.data[i] = shaderArguments.data[i];
-        }
-        const void* pushConstantsValue = &pushConstants;
-
-        uint32 pushConstantsSize = sizeof(D3D12PushConstants);
-        if (pushConstantsSize)
-        {
+            const void* pushConstantsData = &shaderConstants.data;
             commandList->GetID3D12GraphicsCommandList6()->SetComputeRoot32BitConstants(
                 0, // TODO
-                SIZEOF_32BIT(D3D12PushConstants),
-                pushConstantsValue,
+                pushConstantsSize / 4,
+                pushConstantsData,
                 0);
         }
 
@@ -2395,7 +2350,7 @@ namespace Horizon
 
     bool D3D12RenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandDispatch& command)
     {
-        if (!PrepareForDispatch(command.computeShader, command.shaderArguments))
+        if (!PrepareForDispatch(command.computeShader, command.shaderConstants))
         {
             return false;
         }
@@ -2405,7 +2360,7 @@ namespace Horizon
 
     bool D3D12RenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandDispatchIndirect& command)
     {
-        if (!PrepareForDispatch(command.computeShader, command.shaderArguments))
+        if (!PrepareForDispatch(command.computeShader, command.shaderConstants))
         {
             return false;
         }
@@ -2542,7 +2497,7 @@ namespace Horizon
         return true;
     }
 
-    bool D3D12RenderBackendCommandListContext::PrepareForDraw(RenderBackendShaderHandle vertexShader, RenderBackendShaderHandle pixelShader, const RenderBackendGraphicsPipelineState& pipelineStateDesc, RenderBackendPrimitiveTopology topology, RenderBackendBufferHandle indexBuffer, const RenderBackendShaderArguments& shaderArguments)
+    bool D3D12RenderBackendCommandListContext::PrepareForDraw(RenderBackendShaderHandle vertexShader, RenderBackendShaderHandle pixelShader, const RenderBackendGraphicsPipelineState& pipelineStateDesc, RenderBackendPrimitiveTopology topology, RenderBackendBufferHandle indexBuffer, const RenderBackendShaderConstants& shaderConstants)
     {
         assert(insideRenderPass);
 
@@ -2576,45 +2531,14 @@ namespace Horizon
             commandList->GetID3D12GraphicsCommandList6()->IASetIndexBuffer(&indexBufferView);
         }
 
-        D3D12PushConstants pushConstants;
-        for (uint32 i = 0; i < 16; i++)
+        uint32 pushConstantsSize = RenderBackendPushConstantsBytes;
+        if (pushConstantsSize > 0)
         {
-            if (shaderArguments.slots[i].type == 1 && shaderArguments.slots[i].srvSlot.srv.texture)
-            {
-                D3D12Texture* texture = device->GetTexture(shaderArguments.slots[i].srvSlot.srv.texture);
-                if (false)
-                {
-                    pushConstants.indices[i] = texture->GetShaderResourceView(shaderArguments.slots[i].uavSlot.uav.mipLevel)->bindlessIndex;
-                }
-                else
-                {
-                    pushConstants.indices[i] = texture->shaderResourceView->bindlessIndex;
-                }
-            }
-            else if (shaderArguments.slots[i].type == 2 && shaderArguments.slots[i].uavSlot.uav.texture)
-            {
-                D3D12Texture* texture = device->GetTexture(shaderArguments.slots[i].uavSlot.uav.texture);
-                pushConstants.indices[i] = texture->GetUnorderedAccessView(shaderArguments.slots[i].uavSlot.uav.mipLevel)->bindlessIndex;
-            }
-            else if (shaderArguments.slots[i].type == 3 && shaderArguments.slots[i].bufferSlot.handle)
-            {
-                D3D12Buffer* buffer = device->GetBuffer(shaderArguments.slots[i].bufferSlot.handle);
-                pushConstants.indices[i] = buffer->bindlessDesciptorIndexUAV;
-            }
-        }
-        for (uint32 i = 0; i < 16; i++)
-        {
-            pushConstants.data[i] = shaderArguments.data[i];
-        }
-        const void* pushConstantsValue = &pushConstants;
-
-        uint32 pushConstantsSize = sizeof(D3D12PushConstants);
-        if (pushConstantsSize)
-        {
+            const void* pushConstantsData = &shaderConstants.data;
             commandList->GetID3D12GraphicsCommandList6()->SetGraphicsRoot32BitConstants(
                 0, // TODO
-                SIZEOF_32BIT(D3D12PushConstants),
-                pushConstantsValue,
+                pushConstantsSize / 4,
+                pushConstantsData,
                 0);
         }
 
@@ -2625,7 +2549,7 @@ namespace Horizon
     {
         OPTICK_EVENT();
 
-        if (!PrepareForDraw(command.vertexShader, command.pixelShader, command.pipelineState, command.topology, command.indexBuffer, command.shaderArguments))
+        if (!PrepareForDraw(command.vertexShader, command.pixelShader, command.pipelineState, command.topology, command.indexBuffer, command.shaderConstants))
         {
             return false;
         }
@@ -2651,7 +2575,7 @@ namespace Horizon
 
     bool D3D12RenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandDrawIndirect& command)
     {
-        if (!PrepareForDraw(command.vertexShader, command.pixelShader, command.pipelineState, command.topology, command.indexBuffer, command.shaderArguments))
+        if (!PrepareForDraw(command.vertexShader, command.pixelShader, command.pipelineState, command.topology, command.indexBuffer, command.shaderConstants))
         {
             return false;
         }
@@ -2680,7 +2604,7 @@ namespace Horizon
 
     bool D3D12RenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandDispatchMesh& command)
     {
-        // if (!PrepareForMeshShading(command.amplificationShader, command.meshShader, command.pixelShader, command.pipelineState, command.topology, command.shaderArguments))
+        // if (!PrepareForMeshShading(command.amplificationShader, command.meshShader, command.pixelShader, command.pipelineState, command.topology, command.shaderConstants))
         // {
         //     return false;
         // }
@@ -2693,7 +2617,7 @@ namespace Horizon
 
     bool D3D12RenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandDispatchMeshIndirect& command)
     {
-        // if (!PrepareForMeshShading(command.amplificationShader, command.meshShader, command.pixelShader, command.pipelineState, command.topology, command.shaderArguments))
+        // if (!PrepareForMeshShading(command.amplificationShader, command.meshShader, command.pixelShader, command.pipelineState, command.topology, command.shaderConstants))
         // {
         //     return false;
         // }
@@ -3179,7 +3103,7 @@ namespace Horizon
     //    return RenderBackendTextureUAVHandle::Null;
     //}
 
-    int32 D3D12RenderBackend::GetTextureSRVBindlessDescriptorIndex(RenderBackendTextureHandle handle)
+    int32 D3D12RenderBackend::GetTextureSRVBindlessResourceDescriptorIndex(RenderBackendTextureHandle handle, const RenderBackendTextureSubresourceRange& subresourceRange)
     {
         D3D12Device* device = devices[0];
         uint32 textureIndex = 0;
@@ -3191,7 +3115,7 @@ namespace Horizon
         return texture->shaderResourceView->bindlessIndex;
     }
 
-    int32 D3D12RenderBackend::GetTextureUAVBindlessDescriptorIndex(RenderBackendTextureHandle handle, uint32 mipLevel)
+    int32 D3D12RenderBackend::GetTextureUAVBindlessResourceDescriptorIndex(RenderBackendTextureHandle handle, uint32 mipLevel)
     {
         D3D12Device* device = devices[0];
         uint32 textureIndex = 0;
@@ -3203,7 +3127,7 @@ namespace Horizon
         return texture->GetUnorderedAccessView(mipLevel)->bindlessIndex;
     }
 
-    int32 D3D12RenderBackend::GetBufferBindlessDescriptorIndex(RenderBackendBufferHandle handle)
+    int32 D3D12RenderBackend::GetBufferCBVBindlessResourceDescriptorIndex(RenderBackendBufferHandle handle)
     {
         D3D12Device* device = devices[0];
         uint32 bufferIndex = 0;
@@ -3212,7 +3136,31 @@ namespace Horizon
             return 0;
         }
         D3D12Buffer* buffer = device->buffers[bufferIndex];
-        return buffer->bindlessDesciptorIndexUAV;
+        return buffer->bindlessResourceDescriptorIndexCBV;
+    }
+
+    int32 D3D12RenderBackend::GetBufferSRVBindlessResourceDescriptorIndex(RenderBackendBufferHandle handle)
+    {
+        D3D12Device* device = devices[0];
+        uint32 bufferIndex = 0;
+        if (!device->TryGetRenderBackendHandleRepresentation(handle.GetIndex(), &bufferIndex))
+        {
+            return 0;
+        }
+        D3D12Buffer* buffer = device->buffers[bufferIndex];
+        return buffer->bindlessResourceDescriptorIndexSRV;
+    }
+
+    int32 D3D12RenderBackend::GetBufferUAVBindlessResourceDescriptorIndex(RenderBackendBufferHandle handle)
+    {
+        D3D12Device* device = devices[0];
+        uint32 bufferIndex = 0;
+        if (!device->TryGetRenderBackendHandleRepresentation(handle.GetIndex(), &bufferIndex))
+        {
+            return 0;
+        }
+        D3D12Buffer* buffer = device->buffers[bufferIndex];
+        return buffer->bindlessResourceDescriptorIndexUAV;
     }
 
     RenderBackendSamplerHandle D3D12RenderBackend::CreateSampler(const RenderBackendSamplerDesc* desc, const char* name)
@@ -3684,7 +3632,7 @@ namespace Horizon
         descriptorRanges[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, -1, 0, 2, D3D12_DESCRIPTOR_RANGE_FLAG_DESCRIPTORS_VOLATILE, 0);
 
         CD3DX12_ROOT_PARAMETER1 rootParameters[2] = {};
-        rootParameters[0].InitAsConstants(SIZEOF_32BIT(D3D12PushConstants), 999, 0, D3D12_SHADER_VISIBILITY_ALL);
+        rootParameters[0].InitAsConstants(RenderBackendPushConstantsBytes / 4, 999, 0, D3D12_SHADER_VISIBILITY_ALL);
         rootParameters[1].InitAsDescriptorTable(2, &descriptorRanges[0], D3D12_SHADER_VISIBILITY_ALL);
 
         D3D12_ROOT_SIGNATURE_FLAGS rootSignatureFlags = D3D12_ROOT_SIGNATURE_FLAG_NONE;

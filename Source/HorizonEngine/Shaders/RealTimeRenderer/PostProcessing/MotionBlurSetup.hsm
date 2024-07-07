@@ -3,11 +3,13 @@
 #include "PostProcessingCommon.hsh"
 #include "MotionBlurCommon.hsh"
 
-BIND_BUFFER_CBV(0, PerFrameShaderParameters);
-BIND_TEXTURE_2D_SRV(1, VelocityTexture);
-BIND_TEXTURE_2D_SRV(2, DepthTexture);
-BIND_TEXTURE_2D_UAV(3, float4, VelocityRangeTexture);
-BIND_TEXTURE_2D_UAV(4, float3, VelocityAndDepthTexture);
+SHADER_CONSTANTS_STRUCT_BEGIN();
+SHADER_CONSTANTS_CONSTANT_BUFFER_CBV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferCBV);
+SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(1, VelocityTextureSRV);
+SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(2, DepthTextureSRV);
+SHADER_CONSTANTS_TEXTURE_2D_UAV(3, float4, VelocityRangeTextureUAV);
+SHADER_CONSTANTS_TEXTURE_2D_UAV(4, float3, VelocityAndDepthTextureUAV);
+SHADER_CONSTANTS_STRUCT_END();
 
 float4 CombineVelocityRange(float4 r0, float4 r1)
 {
@@ -29,18 +31,18 @@ groupshared float4 SharedTileData[MOTION_BLUR_TILE_SIZE * MOTION_BLUR_TILE_SIZE]
 [numthreads(MOTION_BLUR_TILE_SIZE, MOTION_BLUR_TILE_SIZE, 1)]
 void MotionBlurSetupCS(uint3 DispatchThreadID : SV_DispatchThreadID, uint3 GroupID : SV_GroupID, uint GroupIndex : SV_GroupIndex)
 {
-    ConstantBuffer<PerFrameShaderParameters> perFrameConstants = GetPerFrameShaderParametersCBV();
-    Texture2D velocityTexture = GetVelocityTextureSRV();
-    Texture2D depthTexture = GetDepthTextureSRV();
-    RWTexture2D<float4> velocityRangeTexture = GetVelocityRangeTextureUAV();
-    RWTexture2D<float3> velocityAndDepthTexture = GetVelocityAndDepthTextureUAV();
+    ConstantBuffer<PerFrameShaderParameters> frameShaderParameters = ShaderConstants.GetPerFrameShaderParameterBufferCBV();
+    Texture2D velocityTexture = ShaderConstants.GetVelocityTextureSRV();
+    Texture2D depthTexture = ShaderConstants.GetDepthTextureSRV();
+    RWTexture2D<float4> velocityRangeTexture = ShaderConstants.GetVelocityRangeTextureUAV();
+    RWTexture2D<float3> velocityAndDepthTexture = ShaderConstants.GetVelocityAndDepthTextureUAV();
 
     uint2 pixelCoord = DispatchThreadID.xy;
 
     float2 velocity = velocityTexture[pixelCoord].xy;
     float depth = depthTexture[pixelCoord].x;
 
-    float2 velocityScale = perFrameConstants.motionVectorScale;
+    float2 velocityScale = frameShaderParameters.motionVectorScale;
 
     velocity *= velocityScale;
 	velocity = CartesianToPolar(velocity);
@@ -48,7 +50,7 @@ void MotionBlurSetupCS(uint3 DispatchThreadID : SV_DispatchThreadID, uint3 Group
 	{
 		velocity = float2(0.0f, 0.0f);
 	}
-	velocity.x = min(velocity.x, perFrameConstants.motionBlurMaxVelocityLengthInPixels);
+	velocity.x = min(velocity.x, frameShaderParameters.motionBlurMaxVelocityLengthInPixels);
 
     float4 velocityRange = float4(velocity, velocity);
 
@@ -104,7 +106,7 @@ void MotionBlurSetupCS(uint3 DispatchThreadID : SV_DispatchThreadID, uint3 Group
 
     // Pack velocity and depth to a R11G11B10 texture.
     // Reduces taps per sample from 3 (color, velocity, depth) to 2 (color, velocity/depth).
-    float3 encodedVelocityAndDepth = float3(EncodeVelocity(velocity), ComputeCameraSpaceDepth(depth, perFrameConstants.nearClippingPlane, perFrameConstants.farClippingPlane));
+    float3 encodedVelocityAndDepth = float3(EncodeVelocity(velocity), ComputeCameraSpaceDepth(depth, frameShaderParameters.nearClippingPlane, frameShaderParameters.farClippingPlane));
 
     velocityAndDepthTexture[pixelCoord] = encodedVelocityAndDepth;
 }

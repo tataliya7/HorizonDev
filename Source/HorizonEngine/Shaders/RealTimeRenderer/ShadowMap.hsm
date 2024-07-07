@@ -17,7 +17,7 @@ struct ShadowMapVSToPS
 [shader("vertex")]
 void ShadowMapVS(uint vertexIndex : SV_VertexID, out ShadowMapVSToPS output)
 {
-    ConstantBuffer<PerFrameShaderParameters> perFrameConstants = GetPerFrameShaderParametersCBV();
+    ConstantBuffer<PerFrameShaderParameters> frameShaderParameters = GetPerFrameShaderParameterBufferCBV();
     Geometry geometry = GetGeometry();
 
     float3 vertexPosition = GetRWByteAddressBuffer(geometry.vertexBuffer0).Load<float3>(vertexIndex * sizeof(float3));
@@ -29,7 +29,7 @@ void ShadowMapVS(uint vertexIndex : SV_VertexID, out ShadowMapVSToPS output)
     float3 worldNormal = normalize(mul((float3x3)worldTransform, vertexNormal));
 
     CascadedShadowMapShaderParameters shadowMapShaderParameters = GetCascadedShadowMapShaderParameters();
-    float cascadeIndex = SHADER_ARGUMENTS_DATA(0);
+    float cascadeIndex = (0);
     float4x4 worldToClipMatrix = shadowMapShaderParameters.worldToClipMatrix[cascadeIndex];
 
     output.svPosition = mul(worldToClipMatrix, float4(worldPosition, 1.0));
@@ -39,7 +39,7 @@ void ShadowMapVS(uint vertexIndex : SV_VertexID, out ShadowMapVSToPS output)
 [shader("pixel")]
 void ShadowMapPS(in ShadowMapVSToPS input, in uint primitiveID : SV_PrimitiveID)
 {
-    ConstantBuffer<PerFrameShaderParameters> perFrameConstants = GetPerFrameShaderParametersCBV();
+    ConstantBuffer<PerFrameShaderParameters> frameShaderParameters = GetPerFrameShaderParameterBufferCBV();
     Geometry geometry = GetGeometry();
 
     float2 texCoord0 = input.texCoord0;

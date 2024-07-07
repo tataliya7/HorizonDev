@@ -753,7 +753,7 @@ namespace Horizon
         //             return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
         //             {
         //                 commandList.ClearTextureUAV(
-        //                     RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(reflectionsTexture), 0),
+        //                     registry.GetTextureUAVBindlessResourceDescriptorIndexreflectionsTexture), 0),
         //                     RenderBackendTextureClearValue::Black);
         //             };
         //         });
