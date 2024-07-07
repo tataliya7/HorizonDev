@@ -57,7 +57,7 @@ namespace HE
         renderDocAPI->SetCaptureFilePathTemplate("RenderDocCaptures/capture");
 
         renderDocAPI->SetFocusToggleKeys(nullptr, 0);
-        renderDocAPI->SetCaptureKeys(nullptr, 0);
+        //renderDocAPI->SetCaptureKeys(nullptr, 0);
         renderDocAPI->MaskOverlayBits(eRENDERDOC_Overlay_None, eRENDERDOC_Overlay_None);
     }
 

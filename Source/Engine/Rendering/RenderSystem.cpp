@@ -394,8 +394,8 @@ namespace HE
         shaderDesc = ShaderDesc::CreateCompute("GPUFFT.hsf", "SharedMemoryComplexFFTConvolutionCS");
         shaderLibrary->LoadShader((uint32)ShaderPipelineID::SharedMemoryComplexFFTConvolution, shaderDesc);
 
-        shaderDesc = ShaderDesc::CreateGraphics("RealTimeRenderer/UIColorAndAlpha.hsf", "UIColorAndAlphaVS", "UIColorAndAlphaPS");
-        shaderLibrary->LoadShader((uint32)ShaderPipelineID::UIColorAndAlpha, shaderDesc);
+        shaderDesc = ShaderDesc::CreateGraphics("ImGui.hsf", "ImGuiVS", "ImGuiPS");
+        shaderLibrary->LoadShader((uint32)ShaderPipelineID::ImGui, shaderDesc);
 
         InitializeDefaultResources();
 
@@ -1312,7 +1312,7 @@ namespace HE
                     shaderArguments.PushConstantsTest(&sa, sizeof(sa));
                 }
 
-                RenderBackendShaderHandle uiShader = shaderLibrary->GetShaderHandle((uint32)ShaderPipelineID::UIColorAndAlpha);
+                RenderBackendShaderHandle uiShader = shaderLibrary->GetShaderHandle((uint32)ShaderPipelineID::ImGui);
                 commandList.DrawIndexed(
                     uiShader,
                     graphicsPipelineState,

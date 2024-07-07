@@ -74,7 +74,7 @@ namespace HE
         SharedMemoryTwoForOneRealFFT,
         SharedMemoryTwoForOneRealIFFT,
         SharedMemoryComplexFFTConvolution,
-        UIColorAndAlpha,
+        ImGui,
         Count,
     };
 
