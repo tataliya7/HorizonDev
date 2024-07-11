@@ -2,12 +2,14 @@
 
 Horizon Engine is an open-source 3D rendering engine, focusing on modern rendering engine architecture and rendering techniques. Serving a different purpose than game engines, this project aims to build a highly scalable rendering framework to improve the productivity of prototype projects and academic research, but also to serve as an educational tool for teaching rendering engine design and implementation from scratch.
 
-Horizon Engine is currently only supported on Windows and only target modern graphics APIs (Direct3D 12, Vulkan, Metal).
+Horizon Engine is currently only supported on Windows and only target modern graphics APIs (Direct3D 12, Vulkan).
 
 <!--
 [![Bilibili]()]()
 -->
+
 [![Discord](https://badgen.net/badge/icon/discord?icon=discord&label)](https://discord.gg/nepzQHf2jv)
+
 <!--
 # [![Patreon](https://badgen.net/badge/icon/patreon?icon=patreon&label)]()
 -->
@@ -15,6 +17,7 @@ Horizon Engine is currently only supported on Windows and only target modern gra
 ## Introduction
 
 Goals:
+
 * Efficent and Flexible Rendering
 * Fast Rendering Techniques Experimentation, eg. Hybrid Rendering with DXR or Vulkan Ray Tracing KHR
 
@@ -33,7 +36,6 @@ Goals:
 `git clone https://github.com/harukumo/HorizonEngine`
 
 2. Run "GenerateProjects.bat"
-
 3. Open "Horizon.sln" and build the solution
 
 ## Documentation
@@ -43,3 +45,4 @@ See [Horizon Documentation](https://harukumo.github.io/HorizonEngine/).
 ## Contribution
 
 Contributions are welcome.
+
