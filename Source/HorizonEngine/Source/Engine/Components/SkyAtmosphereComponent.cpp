@@ -97,8 +97,7 @@ namespace Horizon
     void SkyAtmosphereComponent::CreateRenderObject(RenderScene* scene)
     {
         assert(renderObject == nullptr);
-
-        if (true)
+        if (renderObject == nullptr)
         {
             renderObject = new SkyAtmosphereRenderObject();
             scene->AddSkyAtmosphere(renderObject);

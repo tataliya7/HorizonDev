@@ -16,7 +16,7 @@ namespace Horizon
             {
                 ImGui::PushID((int)uint64(selectedEntity));
 
-                auto& transformComponent = editorSceneManager->GetActiveScene()->GetEntityManager()->GetComponent<TransformComponent>(selectedEntity);
+                TransformComponent& transformComponent = editorSceneManager->GetActiveScene()->GetEntityManager()->GetComponent<TransformComponent>(selectedEntity);
                 bool dirty = DrawComponentUI_TransformComponent("Transform Component", transformComponent);
                 if (dirty)
                 {
@@ -25,20 +25,26 @@ namespace Horizon
 
                 if (editorSceneManager->GetActiveScene()->GetEntityManager()->HasComponent<CameraComponent>(selectedEntity))
                 {
-                    auto& cameraComponent = editorSceneManager->GetActiveScene()->GetEntityManager()->GetComponent<CameraComponent>(selectedEntity);
+                    CameraComponent& cameraComponent = editorSceneManager->GetActiveScene()->GetEntityManager()->GetComponent<CameraComponent>(selectedEntity);
                     bool dirty = DrawComponentUI_CameraComponent("Camera Component", cameraComponent);
                 }
 
                 if (editorSceneManager->GetActiveScene()->GetEntityManager()->HasComponent<LightComponent>(selectedEntity))
                 {
-                    auto& lightComponent = editorSceneManager->GetActiveScene()->GetEntityManager()->GetComponent<LightComponent>(selectedEntity);
+                    LightComponent& lightComponent = editorSceneManager->GetActiveScene()->GetEntityManager()->GetComponent<LightComponent>(selectedEntity);
                     bool dirty = DrawComponentUI_LightComponent("Light Component", lightComponent);
                 }
 
                 if (editorSceneManager->GetActiveScene()->GetEntityManager()->HasComponent<SkyAtmosphereComponent>(selectedEntity))
                 {
-                    auto& skyAtmosphereComponent = editorSceneManager->GetActiveScene()->GetEntityManager()->GetComponent<SkyAtmosphereComponent>(selectedEntity);
+                    SkyAtmosphereComponent& skyAtmosphereComponent = editorSceneManager->GetActiveScene()->GetEntityManager()->GetComponent<SkyAtmosphereComponent>(selectedEntity);
                     bool dirty = DrawComponentUI_SkyAtmosphereComponent("Sky Atmosphere Component", skyAtmosphereComponent);
+                }
+
+                if (editorSceneManager->GetActiveScene()->GetEntityManager()->HasComponent<LocalVolumetricFogComponent>(selectedEntity))
+                {
+                    LocalVolumetricFogComponent& localVolumetricFogComponent = editorSceneManager->GetActiveScene()->GetEntityManager()->GetComponent<LocalVolumetricFogComponent>(selectedEntity);
+                    bool dirty = DrawComponentUI_LocalVolumetricFogComponent("Local Volumetric Fog Component", localVolumetricFogComponent);
                 }
 
                 //if (editorSceneManager->GetActiveScene()->GetEntityManager()->HasComponent<ArmatureComponent>(selectedEntity))
@@ -547,6 +553,33 @@ namespace Horizon
             ImGui::NextColumn();
             ImGui::PushItemWidth(-1);
             if (ImGui::ColorEdit3("##SkyAtmosphereComponent_skyLuminanceColor", &component.skyLuminanceColor.x))
+            {
+                dirty = true;
+            }
+            ImGui::PopItemWidth();
+            ImGui::NextColumn();
+
+            ImGui::Columns(1);
+            ImGui::Separator();
+            ImGui::PopStyleVar();
+        }
+        return dirty;
+    }
+
+    bool DrawComponentUI_LocalVolumetricFogComponent(const char* lable, LocalVolumetricFogComponent& component)
+    {
+        bool dirty = false;
+        if (ImGui::CollapsingHeader(lable, ImGuiTreeNodeFlags_DefaultOpen))
+        {
+            ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(2, 2));
+            ImGui::Columns(2);
+            ImGui::Separator();
+
+            ImGui::AlignTextToFramePadding();
+            ImGui::TextUnformatted("Position");
+            ImGui::NextColumn();
+            ImGui::PushItemWidth(-1);
+            if (ImGui::DragFloat3("##Position", static_cast<float*>(&component.emission.x)))
             {
                 dirty = true;
             }

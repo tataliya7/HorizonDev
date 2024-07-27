@@ -185,6 +185,10 @@ namespace Horizon
     class LocalVolumetricFogRenderObject
     {
     public:
+
+        LocalVolumetricFogRenderObject();
+        ~LocalVolumetricFogRenderObject();
+
         Matrix4x4 transform;
         Vector3 emission;
     };

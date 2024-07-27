@@ -26,6 +26,18 @@ namespace Horizon
 
     }
 
+    LocalVolumetricFogRenderObject::LocalVolumetricFogRenderObject()
+        : transform(IdentityMatrix4x4)
+        , emission(Vector3(0.0f, 0.0f, 0.0f))
+    {
+
+    }
+
+    LocalVolumetricFogRenderObject::~LocalVolumetricFogRenderObject()
+    {
+
+    }
+
     SkyAtmosphereRenderObject::SkyAtmosphereRenderObject()
         : atmosphereParameters()
     {

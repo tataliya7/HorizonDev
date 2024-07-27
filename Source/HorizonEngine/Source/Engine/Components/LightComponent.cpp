@@ -5,7 +5,8 @@ namespace Horizon
 {
     void LightComponent::CreateRenderObject(RenderScene* scene)
     {
-        if (true)
+        assert(renderObject == nullptr);
+        if (renderObject == nullptr)
         {
             LightRenderObjectDescription description;
             description.color = GetPhysicalLightColor();

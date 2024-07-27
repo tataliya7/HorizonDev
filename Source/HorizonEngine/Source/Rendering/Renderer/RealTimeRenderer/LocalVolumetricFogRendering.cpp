@@ -42,6 +42,7 @@ namespace Horizon
         if (!localVolumetricFogInstanceDataBuffer)
         {
             RenderBackendBufferDesc localVolumetricFogInstanceDataBufferDesc = RenderBackendBufferDesc::CreateStructured(sizeof(LocalVolumetricFogInstanceData), localVolumetricFogInstanceCount);
+            localVolumetricFogInstanceDataBufferDesc.flags |= RenderBackendBufferCreateFlags::CpuToGpu; // TODO
             localVolumetricFogInstanceDataBuffer = renderBackend->CreateBuffer(&localVolumetricFogInstanceDataBufferDesc, nullptr, "LocalVolumetricFogInstanceDataBuffer");
             localVolumetricFogInstanceDataBufferSize = sizeof(LocalVolumetricFogInstanceData) * localVolumetricFogInstanceCount;
         }
