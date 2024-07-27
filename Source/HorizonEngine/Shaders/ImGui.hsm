@@ -6,7 +6,7 @@ struct ImGuiVertex
     float2 uv;
     uint color;
 };
-DECLARE_ALIASED_STRUCTURED_BUFFER_ARRAYS(ImGuiVertex);
+DECLARE_ALIASED_ARRAY_STRUCTURED_BUFFER_SRV(ImGuiVertex);
 
 SHADER_CONSTANTS_STRUCT_BEGIN();
 SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(0, ImGuiTextureSRV);
@@ -20,13 +20,12 @@ SHADER_CONSTANTS_STRUCT_END();
 
 struct ImGuiVSOutput
 {
-    float4 position : SV_Position;
     float4 color : COLOR0;
     float2 texCoord0 : TEXCOORD0;
 };
 
 [shader("vertex")]
-void ImGuiVS(uint vertexID : SV_VertexID, out ImGuiVSOutput output)
+void ImGuiVS(uint vertexID : SV_VertexID, out float4 position : SV_POSITION, out ImGuiVSOutput output)
 {
     float2 scale = float2(ShaderConstants.GetScaleX(), ShaderConstants.GetScaleY());
     float2 translate = float2(ShaderConstants.GetTranslateX(), ShaderConstants.GetTranslateY());
@@ -37,9 +36,10 @@ void ImGuiVS(uint vertexID : SV_VertexID, out ImGuiVSOutput output)
 
     uint4 packedColor = uint4(vertex.color & 0xff, (vertex.color >> 8) & 0xff, (vertex.color >> 16) & 0xff, (vertex.color >> 24) & 0xff);
 
+    position = float4(vertex.position * scale + translate, 0.0f, 1.0f);
+
     output.color = float4(packedColor) / 255.0f;
     output.texCoord0 = vertex.uv;
-    output.position = float4(vertex.position * scale + translate, 0.0f, 1.0f);
 }
 
 [shader("pixel")]

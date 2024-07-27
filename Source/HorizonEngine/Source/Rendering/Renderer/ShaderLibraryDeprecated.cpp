@@ -296,6 +296,14 @@ namespace Horizon
         //     shaderLibrary->LoadShader(ShaderID::LightShaftsApply, shaderDesc);
         // }
         {
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Vertex, "Shaders/RealTimeRenderer/LocalVolumetricFog/LocalVolumetricFog.hsm", "LocalVolumetricFogVS");
+            shaderLibrary->LoadShader(ShaderID::LocalVolumetricFogVS, shaderDesc);
+        }
+        {
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Pixel, "Shaders/RealTimeRenderer/LocalVolumetricFog/LocalVolumetricFog.hsm", "LocalVolumetricFogPS");
+            shaderLibrary->LoadShader(ShaderID::LocalVolumetricFogPS, shaderDesc);
+        }
+        {
             ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/PostProcessing/MotionBlurSetup.hsm", "MotionBlurSetupCS");
             shaderLibrary->LoadShader(ShaderID::MotionBlurSetupCS, shaderDesc);
         }

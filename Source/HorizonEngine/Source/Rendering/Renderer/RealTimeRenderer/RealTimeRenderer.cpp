@@ -9,92 +9,6 @@
 
 namespace Horizon
 {
-#if 0
-    RealTimeRenderer::RealTimeRenderer(RenderSystem* renderSystem)
-        : renderBackend(backend)
-        , shaderLibrary(shaderLibrary)
-        , renderEngine(renderEngine)
-    {
-        RenderBackendBufferDesc perFrameDataBufferDesc = RenderBackendBufferDesc::CreateByteAddress(sizeof(PerFrameShaderParameters));
-        for (uint32 index = 0; index < MaxNumFramesInFlight; index++)
-        {
-            perFrameDataBuffers[index] = renderBackend->CreateBuffer(&perFrameDataBufferDesc, nullptr, "PerFrameDataBuffer");
-        }
-
-        RenderBackendBufferDesc autoExposureBufferDesc = RenderBackendBufferDesc::CreateReadback(sizeof(AutoExposureData));
-        autoExposureBufferHistory = resourcePool->AllocateBuffer(autoExposureBufferDesc, "AutoExposureBuffer");
-
-        for (uint32 index = 0; index < NumAutoExposureReadbackBuffers; index++)
-        {
-            autoExposureReadbackBuffers[index] = resourcePool->AllocateBuffer(autoExposureBufferDesc, "AutoExposureReadBackBuffer");
-        }
-
-        //RenderBackendBufferDesc surfelGIInfoBufferDesc = RenderBackendBufferDesc::CreateByteAddress(SurfelGIInfoBufferSize);
-        //surfelGIInfoBuffer = renderBackend->CreateBuffer(deviceMask, &surfelGIInfoBufferDesc, nullptr, "SurfelGIInfoBuffer");
-
-        //RenderBackendBufferDesc surfelGIArgumentBufferDesc = RenderBackendBufferDesc::CreateIndirectArguments(sizeof(uint32) * 12);
-        //surfelGIArgumentBuffer = renderBackend->CreateBuffer(deviceMask, &surfelGIArgumentBufferDesc, nullptr, "SurfelGIArgumentBuffer");
-
-        //RenderBackendBufferDesc surfelGISurfelIndirectionBufferDesc = RenderBackendBufferDesc::CreateByteAddress(SurfelGIMaxSurfelCount * sizeof(uint32));
-        //surfelGIAliveSurfelIndirectionBuffer = renderBackend->CreateBuffer(deviceMask, &surfelGISurfelIndirectionBufferDesc, nullptr, "SurfelGIAliveSurfelIndirectionBuffer");
-        //surfelGIFreeSurfelBuffer = renderBackend->CreateBuffer(deviceMask, &surfelGISurfelIndirectionBufferDesc, nullptr, "SurfelGIFreeSurfelBuffer");
-
-        //RenderBackendBufferDesc surfelGISurfelHotDataBufferDecs = RenderBackendBufferDesc::CreateByteAddress(SurfelGIMaxSurfelCount * sizeof(SurfelHotData));
-        //surfelGISurfelHotDataBuffer = renderBackend->CreateBuffer(deviceMask, &surfelGISurfelHotDataBufferDecs, nullptr, "SurfelGISurfelHotDataBuffer");
-
-        //RenderBackendBufferDesc surfelGICellHeaderBufferDesc = RenderBackendBufferDesc::CreateByteAddress(SurfelGIUniformGridCellCount * sizeof(uint32) * 2);
-        //surfelGICellHeaderBuffer = renderBackend->CreateBuffer(deviceMask, &surfelGICellHeaderBufferDesc, nullptr, "SurfelGICellHeaderBuffer");
-
-        //RenderBackendBufferDesc surfelGICellDataBufferDesc = RenderBackendBufferDesc::CreateByteAddress(SurfelGIMaxSurfelCount * sizeof(uint32));
-        //surfelGICellDataBuffer = renderBackend->CreateBuffer(deviceMask, &surfelGICellDataBufferDesc, nullptr, "SurfelGICellDataBuffer");
-
-        //RenderBackendBufferDesc sceneViewShaderParametersBufferDesc = RenderBackendBufferDesc::CreateByteAddress(sizeof(RealTimeRendererSceneViewShaderParameters));
-        //sceneViewShaderParametersBuffer = renderBackend->CreateBuffer(deviceMask, &sceneViewShaderParametersBufferDesc, nullptr, "SceneViewShaderParametersBuffer");
-
-        //RenderBackendBufferDesc sceneViewShaderParametersUploadBufferDesc = RenderBackendBufferDesc::CreateUpload(sizeof(RealTimeRendererSceneViewShaderParameters));
-        //sceneViewShaderParametersUploadBuffer = renderBackend->CreateBuffer(deviceMask, &sceneViewShaderParametersUploadBufferDesc, nullptr, "SceneViewShaderParametersUploadBuffer");
-
-        //testTexture = LoadTextureFromFile(renderBackend, "../../../Assets/PurkinjeShift.png", false);
-
-        //RenderBackendBufferDesc ssrRayAllocationBufferDesc = RenderBackendBufferDesc::CreateIndirectArguments(sizeof(uint32), 12);
-        //ssrRayAllocationBuffer = renderBackend->CreateBuffer(deviceMask, &ssrRayAllocationBufferDesc, nullptr, "SSRRayAllocationBuffer");
-
-        //defaultBloomKernelTexture = LoadTextureFromHDRFile(renderBackend, "../../../Assets/HDRIs/DefaultBloomKernel.hdr", &defaultBloomKernelTextureDesc);
-
-        //localExposureTestTexture = LoadTextureFromHDRFile(renderBackend, "../../../Assets/HDRIs/veranda_2k.hdr", &localExposureTestTextureDesc);
-
-        //lensDirtTexture = LoadTextureFromFile(GRenderBackend, "../../../Assets/Textures/LensDirtTexture.png", false);
-        //lensFlaresGlareLUTTexture = LoadTextureFromFile(GRenderBackend, "../../../Assets/Textures/LensFlaresGlareLUT.png", false);
-        //lensFlaresGradiantLUTTexture = LoadTextureFromFile(GRenderBackend, "../../../Assets/Textures/LensFlaresGradiantLUT.png", false);
-
-        //blueNoiseTexture = LoadTextureFromFile(GRenderBackend, "../../../Assets/Textures/BlueNoise.png", false);
-        //{
-            //uint8_t blueNoise[128][128][4] = {};
-            //for (int x = 0; x < 128; ++x)
-            //{
-            //    for (int y = 0; y < 128; ++y)
-            //    {
-            //        float const f0 = samplerBlueNoiseErrorDistribution_128x128_OptimizedFor_2d2d2d2d_1spp(x, y, 0, 0);
-            //        float const f1 = samplerBlueNoiseErrorDistribution_128x128_OptimizedFor_2d2d2d2d_1spp(x, y, 0, 1);
-            //        float const f2 = samplerBlueNoiseErrorDistribution_128x128_OptimizedFor_2d2d2d2d_1spp(x, y, 0, 2);
-            //        float const f3 = samplerBlueNoiseErrorDistribution_128x128_OptimizedFor_2d2d2d2d_1spp(x, y, 0, 3);
-            //
-            //        blueNoise[x][y][0] = static_cast<uint8_t>(f0 * 0xFF);
-            //        blueNoise[x][y][1] = static_cast<uint8_t>(f1 * 0xFF);
-            //        blueNoise[x][y][2] = static_cast<uint8_t>(f2 * 0xFF);
-            //        blueNoise[x][y][3] = static_cast<uint8_t>(f3 * 0xFF);
-            //    }
-            //}
-            //
-            //RenderGraphTextureDesc blueNoiseTextureDesc = RenderGraphTextureDesc::Create2D(
-            //    128,
-            //    128,
-            //    RenderBackendTextureFormat::RGBA8Unorm,
-            //    RenderBackendTextureCreateFlags::ShaderResource);
-            //blueNoiseTexture = renderBackend->CreateTexture(deviceMask, &blueNoiseTextureDesc, blueNoise, "BlueNoiseTexture");
-        //}
-    }
-#endif
     RealTimeRenderer::RealTimeRenderer(
         RenderBackend* renderBackend,
         RenderGraphResourcePool* resourcePool,
@@ -169,7 +83,7 @@ namespace Horizon
         return IsGaussianBloomEnabled() || IsConvolutionBloomEnabled();
     }
 
-    void RealTimeRenderer::OnRenderBegin(SceneView* v)
+    void RealTimeRenderer::InitializeSceneView(SceneView* v)
     {
         sceneView = v;
         // Super Resolution
@@ -341,6 +255,8 @@ namespace Horizon
 
             temporalSuperSamplingInterface->SetConstants(tssConstants);
         }
+
+        SetupGeometryPasses();
     }
 
     void RealTimeRenderer::UpdatePerFrameDataBuffer()
@@ -875,6 +791,8 @@ namespace Horizon
         {
             RenderScreenSpaceLightShafts(renderGraph, view);
         }
+
+        RenderLocalVolumetricFogs(renderGraph, view);
 
         RenderPostProcessingEffects(renderGraph, view);
 

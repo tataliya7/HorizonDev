@@ -19,7 +19,7 @@ namespace Horizon
         GeometryPassType passType;
     };
 
-    struct GeometryPassDrawCall
+    struct GeometryPassDrawCommand
     {
         uint32 geometryID;
 
@@ -35,7 +35,7 @@ namespace Horizon
         RenderBackendPrimitiveTopology topology;
     };
 
-    class GeometryPassDrawCallList
+    class GeometryPassDrawCommandList
     {
     public:
 
@@ -44,8 +44,8 @@ namespace Horizon
 //    private:
         GeometryPassSetupJobData setupJobData;
 
-        uint32 drawCallCount;
+        uint32 drawCommandCount;
 
-        std::vector<GeometryPassDrawCall> drawCalls;
+        std::vector<GeometryPassDrawCommand> commands;
     };
 }

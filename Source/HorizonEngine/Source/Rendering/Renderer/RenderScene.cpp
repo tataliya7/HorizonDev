@@ -21,6 +21,11 @@ namespace Horizon
 
     }
 
+    void LightRenderObject::GetLightShaderParameters(LightShaderParameters& parameters) const
+    {
+
+    }
+
     SkyAtmosphereRenderObject::SkyAtmosphereRenderObject()
         : atmosphereParameters()
     {

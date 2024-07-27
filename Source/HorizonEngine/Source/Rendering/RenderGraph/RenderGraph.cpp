@@ -52,13 +52,40 @@ namespace Horizon
 
     RenderGraphBufferHandle RenderGraph::CreateBuffer(const RenderGraphBufferDesc& desc, const char* name)
     {
-        uint32 index = (uint32)buffers.size();
+        uint32 index = uint32(buffers.size());
         RenderGraphBufferHandle handle = RenderGraphBufferHandle(index, 0);
         RenderGraphBuffer* buffer = AllocObject<RenderGraphBuffer>(name, desc);
         buffers.push_back(buffer);
         dag.RegisterNode(buffer);
         return handle;
     }
+
+    void RenderGraph::UploadBufferDeferred(RenderGraphBufferHandle buffer, const void* data, uint64 size)
+    {
+        RenderGraphUploadBuffer uploadBuffer;
+        uploadBuffer.buffer = buffers[buffer.GetIndex()];
+        uploadBuffer.data = data;
+        uploadBuffer.size = size;
+        uploadBuffers.emplace_back(uploadBuffer);
+    }
+
+    // void RenderGraph::ExecuteUploadBuffers(RenderBackendCommandList& commandList)
+    // {
+    //     RenderGraphUploadBuffer uploadBuffer;
+    //     uploadBuffer.buffer = buffers[buffer.GetIndex()];
+    //     uploadBuffer.data = data;
+    //     uploadBuffer.size = size;
+    //     uploadBuffers.emplace_back(uploadBuffer);
+    //
+    //     for (RenderGraphUploadBuffer& uploadBuffer : uploadBuffers)
+    //     {
+    //         if ((uploadBuffer.data != nullptr) && (uploadBuffer.size > 0))
+    //         {
+    //             commandList.
+    //         }
+    //     }
+    //     uploadBuffers.clear();
+    // }
 
     //RenderGraphTextureSRVHandle RenderGraph::CreateSRV(RenderGraphTextureHandle texture, const RenderGraphTextureSRVDesc& desc)
     //{

@@ -27,7 +27,7 @@ namespace Horizon
                     RenderBackendScissor scissor(0, 0, renderResolution.width, renderResolution.height);
                     commandList.SetScissors(&scissor, 1);
 
-                    DispatchGeometryOpaquePassDrawCalls(commandList);
+                    DispatchGeometryOpaquePassDrawCommands(commandList);
                 };
             });
     }

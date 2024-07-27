@@ -156,8 +156,7 @@ float2 RaySphereIntersect(float3 r0, float3 rd, float3 s0, float sR)
 // - rd: normalized ray direction
 // - s0: sphere center
 // - sR: sphere radius
-// - Returns distance from r0 to first intersecion with sphere,
-//   or -1.0f if no intersection.
+// - Returns distance from r0 to the first intersection with sphere, or -1.0f if no intersection.
 float RaySphereIntersectNearest(float3 r0, float3 rd, float3 s0, float sR)
 {
 #if 0

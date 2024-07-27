@@ -83,6 +83,8 @@ namespace Horizon
         LightShaftsDownsample,
         LightShaftsRadialBlur,
         LightShaftsApply,
+        LocalVolumetricFogVS,
+        LocalVolumetricFogPS,
         TemporalSuperSampling,
         MotionBlurSetupCS,
         MotionBlurVelocityDilationScatterVS,

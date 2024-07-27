@@ -70,7 +70,7 @@ namespace Horizon
         RenderGraphTextureHandle localExposureTexture = RenderGraphTextureHandle::Null;
         if (IsLocalExposureEnabled())
         {
-            localExposureTexture = DipatchLocalExposure(renderGraph, view, sceneColorTexture, RenderGraphTextureHandle::Null);
+            localExposureTexture = DispatchLocalExposure(renderGraph, view, sceneColorTexture, RenderGraphTextureHandle::Null);
         }
 
         RenderGraphTextureHandle bloomTexture = RenderGraphTextureHandle::Null;

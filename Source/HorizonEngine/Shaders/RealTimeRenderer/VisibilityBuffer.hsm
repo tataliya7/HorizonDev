@@ -1,60 +1,38 @@
 #include "../ShaderCommon.hsh"
 #include "RealTimeRendererCommon.hsh"
+#include "GPUScene.hsh"
 
-BIND_BUFFER_CBV(0, PerFrameShaderParameters);
-BIND_BYTE_ADDRESS_BUFFER_SRV(1, Geometry, Geometry);
-BIND_BYTE_ADDRESS_BUFFER_SRV(2, MaterialBuffer);
-BIND_BYTE_ADDRESS_BUFFER_SRV(3, VertexBuffer0);
-BIND_BYTE_ADDRESS_BUFFER_SRV(4, VertexBuffer1);
-BIND_BYTE_ADDRESS_BUFFER_SRV(5, VertexBuffer2);
-BIND_BYTE_ADDRESS_BUFFER_SRV(6, VertexBuffer3);
-
-float3 GetVertexPosition(uint vertexIndex)
-{
-    ByteAddressBuffer vertexBuffer0 = GetVertexBuffer0SRV();
-    return vertexBuffer0.Load<float3>(vertexIndex * sizeof(float3));
-}
-
-float3 GetVertexNormal(uint vertexIndex)
-{
-    ByteAddressBuffer vertexBuffer1 = GetVertexBuffer1SRV();
-    return vertexBuffer1.Load<float3>(vertexIndex * sizeof(float3));
-}
-
-float4 GetVertexTangent(uint vertexIndex)
-{
-    ByteAddressBuffer vertexBuffer2 = GetVertexBuffer2SRV();
-    return vertexBuffer2.Load<float4>(vertexIndex * sizeof(float4));
-}
-
-float2 GetVertexTexCoord0(uint vertexIndex)
-{
-    ByteAddressBuffer vertexBuffer3 = GetVertexBuffer3SRV();
-    return vertexBuffer3.Load<float2>(vertexIndex * sizeof(float2));
-}
+SHADER_CONSTANTS_STRUCT_BEGIN();
+SHADER_CONSTANTS_CONSTANT_BUFFER_CBV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferCBV);
+SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_SRV(1, GeometryBuffer);
+SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_SRV(2, GeometryInstanceBuffer);
+SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_SRV(3, MaterialBuffer);
+SHADER_CONSTANTS_STRUCT_END();
 
 struct VisibilityBufferVSToPS
 {
-    float4 svPosition : SV_Position;
-    float2 texCoord0 : TEXCOORD0;
+    float4 position : SV_Position;
+    float2 textureCoordinates0 : TEXCOORD0;
 };
 
 [shader("vertex")]
-void VisibilityBufferVS(uint vertexIndex : SV_VertexID, out VisibilityBufferVSToPS output)
+void VisibilityBufferVS(uint vertexID : SV_VertexID, uint instanceID : SV_InstanceID, out VisibilityBufferVSToPS output)
 {
-    ConstantBuffer<PerFrameShaderParameters> frameShaderParameters = GetPerFrameShaderParameterBufferCBV();
-    Geometry geometry = GetGeometry();
+    ConstantBuffer<PerFrameShaderParameters> frameShaderParameters = ShaderConstants.GetPerFrameShaderParameterBufferCBV();
+    ByteAddressBuffer geometryBuffer = ShaderConstants.GetGeometryBufferSRV();
+    ByteAddressBuffer geometryInstanceBuffer = ShaderConstants.GetGeometryInstanceBufferSRV();
 
-    float3 vertexPosition = GetVertexPosition(vertexIndex);
-    float2 vertexTexCoord0 = GetVertexTexCoord0(vertexIndex);
+    GPUSceneGeometryInstanceData instanceData = GetGPUSceneGeometryInstanceData(geometryInstanceBuffer, instanceID);
+    GPUSceneGeometryData geometryData = GetGPUSceneGeometryData(geometryInstanceBuffer, instanceData.geometryID);
 
-    RWByteAddressBuffer transformBuffer = GetRWByteAddressBuffer(geometry.transformBuffer);
-    float4x4 worldMatrix = transformBuffer.Load<float4x4>(geometry.transformIndex * sizeof(float4x4));
-    float3 worldPosition = mul(worldMatrix, float4(vertexPosition, 1.0)).xyz;
-    float4 clipPosition = mul(frameShaderParameters.worldToClipMatrix, float4(worldPosition, 1.0));
+    float3 vertexPosition = GetVertexPosition(vertexID);
+    float2 textureCoordinates0 = GetTextureCoordinates0(vertexID);
 
-    output.svPosition = clipPosition;
-    output.texCoord0 = vertexTexCoord0;
+    float3 worldSpaceVertexPosition = mul(instanceData.localToWorldMatrix, float4(vertexPosition, 1.0f)).xyz;
+    float4 clipSpaceVertexPosition = mul(frameShaderParameters.worldToClipMatrix, float4(worldSpaceVertexPosition, 1.0f));
+
+    output.position = clipSpaceVertexPosition;
+    output.textureCoordinates0 = textureCoordinates0;
 }
 
 // TODO: Turning on [earlydepthstencil] will cause alpha cutoff to work inproperly

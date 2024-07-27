@@ -188,3 +188,19 @@ float Remap(float value, float srcMin, float srcMax, float dstMin, float dstMax)
 {
     return dstMin + (((value - srcMin) / (srcMax - srcMin)) * (dstMax - dstMin));
 }
+
+float2 RaySphereIntersection(float3 r0, float3 rd, float3 s0, float sR)
+{
+    float a = dot(rd, rd);
+    float3 s0_r0 = r0 - s0;
+    float b = 2.0f * dot(rd, s0_r0);
+    float c = dot(s0_r0, s0_r0) - (sR * sR);
+    float delta = b * b - 4.0f * a * c;
+    float2 sol = -1.0f;
+    [flatten]
+    if (delta >= 0)
+    {
+        sol = (-b + float2(-1.0f, 1.0f) * sqrt(delta)) / (2.0f * a);
+    }
+    return sol;
+}

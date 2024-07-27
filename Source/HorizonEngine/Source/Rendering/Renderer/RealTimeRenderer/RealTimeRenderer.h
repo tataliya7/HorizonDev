@@ -163,7 +163,7 @@ namespace Horizon
 
         bool IsLensFlaresEnabled() const;
 
-        void OnRenderBegin(SceneView* sceneView);
+        void InitializeSceneView(SceneView* sceneView);
 
     private:
 
@@ -285,6 +285,10 @@ namespace Horizon
             RenderGraph& renderGraph,
             const SceneView& view);
 
+        void RenderLocalVolumetricFogs(
+            RenderGraph& renderGraph,
+            const SceneView& view);
+
         void RenderPostProcessingEffects(
             RenderGraph& renderGraph,
             const SceneView& view);
@@ -305,7 +309,7 @@ namespace Horizon
             const SceneView& view,
             RenderGraphBufferHandle autoExposureBuffer);
 
-        RenderGraphTextureHandle DipatchLocalExposure(
+        RenderGraphTextureHandle DispatchLocalExposure(
             RenderGraph& renderGraph,
             const SceneView& view,
             RenderGraphTextureHandle sceneColorTexture,
@@ -400,6 +404,8 @@ namespace Horizon
             const SceneView& view,
             RenderGraphTextureHandle sceneColorTexture);
 
+        void SetupGeometryPasses();
+
         RenderBackend* renderBackend;
         RenderGraphResourcePool* resourcePool;
         ShaderLibrary* shaderLibrary;
@@ -451,8 +457,8 @@ namespace Horizon
 
         float preExposure = 1.0f;
 
-        std::array<GeometryPassDrawCallList, GeometryPassType::Count> geometryPassDrawCallLists;
-        void DispatchGeometryOpaquePassDrawCalls(RenderBackendCommandList& commandList);
+        std::array<GeometryPassDrawCommandList, GeometryPassType::Count> geometryPassDrawCommandLists;
+        void DispatchGeometryOpaquePassDrawCommands(RenderBackendCommandList& commandList);
 
         struct AutoExposureData
         {
@@ -468,6 +474,9 @@ namespace Horizon
         AutoExposureData autoExposureData;
 
         void UpdateAutoExposureDataFromReadbackBuffer();
+
+        RenderBackendBufferHandle localVolumetricFogInstanceDataBuffer;
+        uint64 localVolumetricFogInstanceDataBufferSize = 0;
 
         struct HistoryFrame
         {

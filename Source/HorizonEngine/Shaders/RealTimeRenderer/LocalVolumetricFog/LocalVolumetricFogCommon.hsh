@@ -1,0 +1,46 @@
+#pragma once
+
+struct LocalVolumetricFogInstanceData
+{
+	float4x4 localToWorldMatrix;
+	float3 emission;
+};
+DECLARE_ALIASED_ARRAY_STRUCTURED_BUFFER_SRV(LocalVolumetricFogInstanceData);
+
+float4 EvaluateLocalVolumetricFogContribution(
+    in LocalVolumetricFogInstanceData fogInstanceData,
+    in float3 worldSpacePosition,
+    in float3 worldSpaceCameraRayOrigin,
+    in float3 worldSpaceCameraRayDirection)
+{
+	float3 radiance = float3(0.0f, 0.0f, 0.0f);
+	float transmittance = 1.0f;
+
+	float2 intersections = RaySphereIntersection(worldSpaceCameraRayOrigin, worldSpaceCameraRayDirection, float3(0.0f, 0.0f, 0.0f), 1.0f);
+
+	// Only consider intersection in front of the camera.
+	//intersections = max(intersections, LFVGlobalStartDistance.xx * FogInstance.UniformScaleInv);
+
+    if (any(intersections > 0.0f))
+    {
+        float distance = max(0.0f, abs(intersections.x - intersections.y));
+        if (distance > 0.0f)
+        {
+            // Absorption
+            // Omitted
+
+            // Emission
+            float3 emission = fogInstanceData.emission;
+
+            // In-scattering
+
+            // Out-scattering and Attenuation
+            // Omitted
+
+            radiance = emission;
+        }
+    }
+
+	float4 colorAndTransmittance = float4(radiance.rgb, transmittance);
+    return colorAndTransmittance;
+}

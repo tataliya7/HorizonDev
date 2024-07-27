@@ -127,17 +127,17 @@
 [[vk::binding(BINDLESS_RESOURCE_BINDING_TEXTURE_UAV, 0)]] RWTexture2DArray<uint4>  BindlessResource_RWTexture2DArray_uint4[];
 
 // Buffer CBV
-#define DECLARE_ALIASED_CONSTANT_BUFFER_ARRAYS(type) \
+#define DECLARE_ALIASED_ARRAY_CONSTANT_BUFFER_CBV(type) \
 [[vk::binding(BINDLESS_RESOURCE_BINDING_BUFFER_CBV, 0)]] ConstantBuffer<type> BindlessResource_ConstantBuffer_##type[];
 
 // Buffer SRV
 [[vk::binding(BINDLESS_RESOURCE_BINDING_BUFFER_SRV, 0)]] ByteAddressBuffer BindlessResource_ByteAddressBuffer[];
-#define DECLARE_ALIASED_STRUCTURED_BUFFER_ARRAYS(type) \
+#define DECLARE_ALIASED_ARRAY_STRUCTURED_BUFFER_SRV(type) \
 [[vk::binding(BINDLESS_RESOURCE_BINDING_BUFFER_SRV, 0)]] StructuredBuffer<type> BindlessResource_StructuredBuffer_##type[];
 
 // Buffer UAV
 [[vk::binding(BINDLESS_RESOURCE_BINDING_BUFFER_UAV, 0)]] RWByteAddressBuffer BindlessResource_RWByteAddressBuffer[];
-#define DECLARE_ALIASED_RW_STRUCTURED_BUFFER_ARRAYS(type) \
+#define DECLARE_ALIASED_ARRAY_STRUCTURED_BUFFER_UAV(type) \
 [[vk::binding(BINDLESS_RESOURCE_BINDING_BUFFER_SRV, 0)]] RWStructuredBuffer<type> BindlessResource_RWStructuredBuffer_##type[];
 
 // Acceleration Structure

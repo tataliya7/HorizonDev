@@ -125,7 +125,7 @@ namespace Horizon
 
         uint32 frameTimingQueryRegion = gpuProfiler->BeginRegion(commandList, "GPU Frametime");
 
-        renderer->OnRenderBegin(sceneView);
+        renderer->InitializeSceneView(sceneView);
 
         RenderGraph renderGraph(GArena, renderGraphResourcePool, gpuProfiler);
 

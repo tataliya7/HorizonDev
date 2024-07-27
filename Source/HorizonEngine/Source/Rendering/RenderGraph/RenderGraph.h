@@ -89,6 +89,8 @@ namespace Horizon
         //RenderGraphTextureSRVHandle CreateTextureSRV(RenderGraphTextureHandle texture, const RenderGraphTextureSRVDesc& desc);
         //RenderGraphTextureUAVHandle CreateTextureUAV(RenderGraphTextureHandle texture, uint32 mipLevel);
 
+        void UploadBufferDeferred(RenderGraphBufferHandle buffer, const void* data, uint64 size);
+
         /**
          * Finds a render graph texture associated with the external texture, or returns null if none is found.
          */
@@ -111,12 +113,12 @@ namespace Horizon
          */
         RenderGraphBufferHandle ImportExternalBuffer(RenderGraphPersistentBuffer* externalBuffer, char const* name);
 
-
         void ExportTextureDeferred(RenderGraphTextureHandle handle, RenderGraphPersistentTexture** persistentTexture);
 
         void ExportBufferDeferred(RenderGraphBufferHandle handle, RenderGraphPersistentBuffer** persistentBuffer);
 
         const RenderGraphTextureDesc& GetTextureDesc(RenderGraphTextureHandle handle) const;
+
         const RenderGraphBufferDesc& GetBufferDesc(RenderGraphBufferHandle handle) const;
 
         RenderGraphBlackboard blackboard;
@@ -175,6 +177,14 @@ namespace Horizon
             RenderGraphPersistentBuffer** target;
         };
         std::vector<RenderGraphExportedBuffer> exportedBuffers;
+
+        struct RenderGraphUploadBuffer
+        {
+            RenderGraphBuffer* buffer;
+            const void* data;
+            uint64 size;
+        };
+        std::vector<RenderGraphUploadBuffer> uploadBuffers;
     };
 
     template<typename SetupLambdaType>

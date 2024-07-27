@@ -3,17 +3,24 @@
 
 namespace Horizon
 {
-    void RealTimeRenderer::DispatchGeometryOpaquePassDrawCalls(RenderBackendCommandList& commandList)
+    void RealTimeRenderer::SetupGeometryPasses()
     {
-        const GeometryPassDrawCallList& drawCallList = geometryPassDrawCallLists[GeometryPassType::Opaque];
-        const GPUScene* gpuScene = drawCallList.setupJobData.scene->GetGPUScene();
+        const GeometryPassDrawCommandList& drawCommandList = geometryPassDrawCommandLists[GeometryPassType::Opaque];
+
+        //DynamicMeshCommandBuildRequests
+    }
+
+    void RealTimeRenderer::DispatchGeometryOpaquePassDrawCommands(RenderBackendCommandList& commandList)
+    {
+        const GeometryPassDrawCommandList& drawCommandList = geometryPassDrawCommandLists[GeometryPassType::Opaque];
+        const GPUScene* gpuScene = drawCommandList.setupJobData.scene->GetGPUScene();
 
         RenderBackendShaderHandle vertexShader = shaderLibrary->GetShader(ShaderID::VisibilityBufferVS);
         RenderBackendShaderHandle pixelShader = shaderLibrary->GetShader(ShaderID::VisibilityBufferPS);
 
-        for (uint32 drawCallIndex = 0; drawCallIndex < drawCallList.drawCallCount; drawCallIndex++)
+        for (uint32 drawCommandIndex = 0; drawCommandIndex < drawCommandList.drawCommandCount; drawCommandIndex++)
         {
-            const GeometryPassDrawCall& drawCall = drawCallList.drawCalls[drawCallIndex];
+            const GeometryPassDrawCommand& drawCommand = drawCommandList.commands[drawCommandIndex];
 
             RenderBackendGraphicsPipelineState graphicsPipelineState = {};
             graphicsPipelineState.rasterizationState.cullMode = RenderBackendRasterizationCullMode::Back;
@@ -22,24 +29,26 @@ namespace Horizon
             graphicsPipelineState.depthStencilState.depthWriteEnable = true;
             graphicsPipelineState.depthStencilState.depthCompareFunction = RenderBackendCompareOp::GreaterOrEqual;
 
+            commandList.SetStencilReference(drawCommand.stencilReference);
+
             RenderBackendShaderConstants shaderConstants = {};
             shaderConstants.BindBufferCBV(0, renderBackend->GetBufferCBVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
-            //shaderConstants.BindBufferSRV(1, gpuScene->geometryBuffer);
-            //shaderConstants.BindBufferSRV(2, gpuScene->geometryInstanceBuffer);
-            shaderConstants.BindScalar(3, drawCall.geometryID);
+            shaderConstants.BindBufferSRV(1, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(gpuScene->geometryBuffer));
+            shaderConstants.BindBufferSRV(2, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(gpuScene->geometryInstanceBuffer));
+            shaderConstants.BindBufferSRV(3, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(gpuScene->materialBuffer));
 
             commandList.DrawIndexed(
                 vertexShader,
                 pixelShader,
                 graphicsPipelineState,
                 shaderConstants,
-                drawCall.indexBuffer,
-                drawCall.indexCount,
-                drawCall.instanceCount,
-                drawCall.firstIndex,
+                drawCommand.indexBuffer,
+                drawCommand.indexCount,
+                drawCommand.instanceCount,
+                drawCommand.firstIndex,
                 0, // TODO
-                drawCall.firstInstance,
-                drawCall.topology);
+                drawCommand.firstInstance,
+                drawCommand.topology);
         }
     }
 }
