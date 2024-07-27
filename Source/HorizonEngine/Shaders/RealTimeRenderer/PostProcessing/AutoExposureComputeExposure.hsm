@@ -10,7 +10,7 @@ SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_SRV(2, PreviousAutoExposureBufferSRV);
 SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_UAV(3, CurrentAutoExposureBufferUAV);
 SHADER_CONSTANTS_STRUCT_END();
 
-float ComputeAverageSceneLuminance(Texture2D<uint> histogramTexture, float lowPercent, float highPercent, float histogramMinEV100, float histogramMaxEV100)
+float ComputeAverageSceneLuminance(Texture2D<uint> histogramTexture, float lowerPercentage, float higherPercentage, float histogramMinEV100, float histogramMaxEV100)
 {
     uint i;
 
@@ -22,8 +22,8 @@ float ComputeAverageSceneLuminance(Texture2D<uint> histogramTexture, float lowPe
         totalPixels += AutoExposureHistogramUnpackFloat(histogramTexture[uint2(i, 0)].r);
     }
 
-    float numPixelsBelowLowerBound = totalPixels * lowPercent;
-    float numPexelsBelowUpperBound = totalPixels * highPercent;
+    float numPixelsBelowLowerBound = totalPixels * lowerPercentage;
+    float numPexelsBelowUpperBound = totalPixels * higherPercentage;
 
     float logLuminanceSum = 0.0f;
     float weightSum = 0.0f;
