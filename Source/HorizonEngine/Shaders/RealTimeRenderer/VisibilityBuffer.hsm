@@ -4,35 +4,37 @@
 
 SHADER_CONSTANTS_STRUCT_BEGIN();
 SHADER_CONSTANTS_CONSTANT_BUFFER_CBV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferCBV);
-SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_SRV(1, GeometryBuffer);
-SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_SRV(2, GeometryInstanceBuffer);
-SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_SRV(3, MaterialBuffer);
+SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_SRV(1, GeometryDataBufferSRV);
+SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_SRV(2, GeometryInstanceDataBufferSRV);
 SHADER_CONSTANTS_STRUCT_END();
 
-struct VisibilityBufferVSToPS
+struct VisibilityBufferVextexShaderOutput
 {
-    float4 position : SV_Position;
-    float2 textureCoordinates0 : TEXCOORD0;
+    float2 textureCoord0 : TEXCOORD0;
 };
 
 [shader("vertex")]
-void VisibilityBufferVS(uint vertexID : SV_VertexID, uint instanceID : SV_InstanceID, out VisibilityBufferVSToPS output)
+void VisibilityBufferVS(
+    in uint vertexID : SV_VertexID,
+    in uint instanceID : SV_InstanceID,
+    out float4 position : SV_Position,
+    out VisibilityBufferVextexShaderOutput output)
 {
     ConstantBuffer<PerFrameShaderParameters> frameShaderParameters = ShaderConstants.GetPerFrameShaderParameterBufferCBV();
-    ByteAddressBuffer geometryBuffer = ShaderConstants.GetGeometryBufferSRV();
-    ByteAddressBuffer geometryInstanceBuffer = ShaderConstants.GetGeometryInstanceBufferSRV();
+    ByteAddressBuffer geometryDataBuffer = ShaderConstants.GetGeometryDataBufferSRV();
+    ByteAddressBuffer geometryInstanceDataBuffer = ShaderConstants.GetGeometryInstanceDataBufferSRV();
 
-    GPUSceneGeometryInstanceData instanceData = GetGPUSceneGeometryInstanceData(geometryInstanceBuffer, instanceID);
-    GPUSceneGeometryData geometryData = GetGPUSceneGeometryData(geometryInstanceBuffer, instanceData.geometryID);
+    GPUSceneGeometryInstanceData instanceData = GetGPUSceneGeometryInstanceData(geometryInstanceDataBuffer, instanceID);
+    GPUSceneGeometryData geometryData = GetGPUSceneGeometryData(geometryDataBuffer, instanceData.geometryID);
 
-    float3 vertexPosition = GetVertexPosition(vertexID);
-    float2 textureCoordinates0 = GetTextureCoordinates0(vertexID);
+    VertexAttributes vertexAttributes = GetVertexAttributes(geometryData, vertexID);
 
-    float3 worldSpaceVertexPosition = mul(instanceData.localToWorldMatrix, float4(vertexPosition, 1.0f)).xyz;
+    float3 worldSpaceVertexPosition = mul(instanceData.localToWorldMatrix, float4(vertexAttributes.position, 1.0f)).xyz;
     float4 clipSpaceVertexPosition = mul(frameShaderParameters.worldToClipMatrix, float4(worldSpaceVertexPosition, 1.0f));
 
-    output.position = clipSpaceVertexPosition;
-    output.textureCoordinates0 = textureCoordinates0;
+    position = clipSpaceVertexPosition;
+
+    output.textureCoord0 = vertexAttributes.textureCoord0;
 }
 
 // TODO: Turning on [earlydepthstencil] will cause alpha cutoff to work inproperly
@@ -40,73 +42,78 @@ void VisibilityBufferVS(uint vertexID : SV_VertexID, uint instanceID : SV_Instan
 
 [shader("pixel")]
 void VisibilityBufferPS(
-    in VisibilityBufferVSToPS input,
-    in bool isFrontFace : SV_IsFrontFace,
+    in VisibilityBufferVextexShaderOutput vertexShaderOutput,
+    in float4 position : SV_Position,
+    in uint instanceID : SV_InstanceID,
     in uint primitiveID : SV_PrimitiveID,
+    in bool isFrontFace : SV_IsFrontFace,
 #if !__spirv__
     in float3 perspectiveCorrectBarycentrics : SV_Barycentrics,
 #endif
     out uint2 vbuffer0 : SV_Target0,
     out float4 vbuffer1 : SV_Target1)
 {
-    ConstantBuffer<PerFrameShaderParameters> frameShaderParameters = GetPerFrameShaderParameterBufferCBV();
-    Geometry geometry = GetGeometry();
+    ConstantBuffer<PerFrameShaderParameters> frameShaderParameters = ShaderConstants.GetPerFrameShaderParameterBufferCBV();
+    ByteAddressBuffer geometryDataBuffer = ShaderConstants.GetGeometryDataBufferSRV();
+    ByteAddressBuffer geometryInstanceDataBuffer = ShaderConstants.GetGeometryInstanceDataBufferSRV();
 
-    float2 texCoord0 = input.texCoord0;
+    GPUSceneGeometryInstanceData instanceData = GetGPUSceneGeometryInstanceData(geometryInstanceDataBuffer, instanceID);
+    GPUSceneGeometryData geometryData = GetGPUSceneGeometryData(geometryDataBuffer, instanceData.geometryID);
+
     float materialTextureMipLodBias = frameShaderParameters.materialTextureMipLodBias;
+
+    float2 textureCoord0 = vertexShaderOutput.textureCoord0;
+
+#if __spirv__
+#if 1
+    float3 perspectiveCorrectBarycentrics = 0;
+#else
+    uint vertexIndex0 = GetByteAddressBuffer(geometryData.indexBuffer).Load<uint>((/*geometryData.baseIndex + */primitiveID * 3 + 0) * sizeof(uint));
+    uint vertexIndex1 = GetByteAddressBuffer(geometryData.indexBuffer).Load<uint>((/*geometryData.baseIndex + */primitiveID * 3 + 1) * sizeof(uint));
+    uint vertexIndex2 = GetByteAddressBuffer(geometryData.indexBuffer).Load<uint>((/*geometryData.baseIndex + */primitiveID * 3 + 2) * sizeof(uint));
+
+    float3 vertexPosition0 = GetByteAddressBuffer(geometryData.vertexBuffer0).Load<float3>(vertexIndex0 * sizeof(float3));
+    float3 vertexPosition1 = GetByteAddressBuffer(geometryData.vertexBuffer0).Load<float3>(vertexIndex1 * sizeof(float3));
+    float3 vertexPosition2 = GetByteAddressBuffer(geometryData.vertexBuffer0).Load<float3>(vertexIndex2 * sizeof(float3));
+
+    float3 worldSpaceVertexPosition0 = mul(instanceData.localToWorldMatrix, float4(vertexPosition0, 1.0f)).xyz;
+    float3 worldSpaceVertexPosition1 = mul(instanceData.localToWorldMatrix, float4(vertexPosition1, 1.0f)).xyz;
+    float3 worldSpaceVertexPosition2 = mul(instanceData.localToWorldMatrix, float4(vertexPosition2, 1.0f)).xyz;
+
+    float4 clipSpaceVertexPosition0 = mul(frameShaderParameters.worldToClipMatrix, float4(worldSpaceVertexPosition0, 1.0f));
+    float4 clipSpaceVertexPosition1 = mul(frameShaderParameters.worldToClipMatrix, float4(worldSpaceVertexPosition1, 1.0f));
+    float4 clipSpaceVertexPosition2 = mul(frameShaderParameters.worldToClipMatrix, float4(worldSpaceVertexPosition2, 1.0f));
+
+    float2 uv = position.xy * frameShaderParameters.renderResolution.zw;
+    float3 perspectiveCorrectBarycentrics = CalculatePerspectiveCorrectBarycentric(clipSpaceVertexPosition0, clipSpaceVertexPosition1, clipSpaceVertexPosition2, UVSpaceToClipSpace(uv));
+#endif
+#endif
+
+    // float2 vertexTexCoord0 = GetRWByteAddressBuffer(geometry.vertexBuffer3).Load<float2>((primitiveID * 3 + 0) * sizeof(float2));
+    // float2 vertexTexCoord1 = GetRWByteAddressBuffer(geometry.vertexBuffer3).Load<float2>((primitiveID * 3 + 1) * sizeof(float2));
+    // float2 vertexTexCoord2 = GetRWByteAddressBuffer(geometry.vertexBuffer3).Load<float2>((primitiveID * 3 + 2) * sizeof(float2));
+    // float2 interpolatedTexCoord0 = perspectiveCorrectBarycentrics.x * vertexTexCoord0 + perspectiveCorrectBarycentrics.y * vertexTexCoord1 + perspectiveCorrectBarycentrics.z * vertexTexCoord2;
+
+    // texCoord0 = interpolatedTexCoord0;
+
+    // ByteAddressBuffer materialBuffer = GetMaterialBufferSRV();
+    // Material material = materialBuffer.Load<Material>(geometry.materialBufferOffset + (materialIndex * sizeof(Material)));
+
+    // ByteAddressBuffer materialIndexBuffer = GetByteAddressBuffer(geometry.materialIndexBuffer);
+    // uint materialIndex = materialIndexBuffer.Load<uint>(primitiveID * sizeof(uint));
+
+    // float4 baseColor = material.baseColor;
+    // if (material.GetBaseColorMapIndex() > 0)
+    // {
+    //     Texture2D baseColorMap = GetTexture2DNonUniform(material.GetBaseColorMapIndex());
+    //     baseColor *= baseColorMap.SampleBias(GlobalSamplerLinearWarp, texCoord0, materialTextureMipLodBias);
+    // }
+
+    // float alphaCutoff = 0.2f;
+    // clip(baseColor.a - alphaCutoff);
 
     uint geometryID = uint((0));
     uint2 visibilityID = uint2(geometryID, primitiveID);
-
-#if __spirv__
-#if 0
-    float3 perspectiveCorrectBarycentrics = 0;
-#else
-    uint index0 = GetRWByteAddressBuffer(geometry.indexBuffer).Load<uint>((geometry.baseIndex + primitiveID * 3 + 0) * sizeof(uint));
-    uint index1 = GetRWByteAddressBuffer(geometry.indexBuffer).Load<uint>((geometry.baseIndex + primitiveID * 3 + 1) * sizeof(uint));
-    uint index2 = GetRWByteAddressBuffer(geometry.indexBuffer).Load<uint>((geometry.baseIndex + primitiveID * 3 + 2) * sizeof(uint));
-
-    float3 vertex0 = GetRWByteAddressBuffer(geometry.vertexBuffer0).Load<float3>(index0 * sizeof(float3));
-    float3 vertex1 = GetRWByteAddressBuffer(geometry.vertexBuffer0).Load<float3>(index1 * sizeof(float3));
-    float3 vertex2 = GetRWByteAddressBuffer(geometry.vertexBuffer0).Load<float3>(index2 * sizeof(float3));
-
-    float4x4 worldTransform = GetRWByteAddressBuffer(geometry.transformBuffer).Load<float4x4>(geometry.transformIndex * sizeof(float4x4));
-
-    float3 worldPosition0 = mul(worldTransform, float4(vertex0, 1.0)).xyz;
-    float3 worldPosition1 = mul(worldTransform, float4(vertex1, 1.0)).xyz;
-    float3 worldPosition2 = mul(worldTransform, float4(vertex2, 1.0)).xyz;
-
-    float4 clipPosition0 = mul(frameShaderParameters.worldToClipMatrix, float4(worldPosition0, 1.0));
-    float4 clipPosition1 = mul(frameShaderParameters.worldToClipMatrix, float4(worldPosition1, 1.0));
-    float4 clipPosition2 = mul(frameShaderParameters.worldToClipMatrix, float4(worldPosition2, 1.0));
-
-    float2 uv = input.svPosition.xy / float2(frameShaderParameters.renderWidth, frameShaderParameters.renderHeight);
-    float3 perspectiveCorrectBarycentrics = CalculatePerspectiveCorrectBarycentric(clipPosition0, clipPosition1, clipPosition2, UVSpaceToClipSpace(uv));
-#endif
-#endif
-
-    float2 vertexTexCoord0 = GetRWByteAddressBuffer(geometry.vertexBuffer3).Load<float2>((primitiveID * 3 + 0) * sizeof(float2));
-    float2 vertexTexCoord1 = GetRWByteAddressBuffer(geometry.vertexBuffer3).Load<float2>((primitiveID * 3 + 1) * sizeof(float2));
-    float2 vertexTexCoord2 = GetRWByteAddressBuffer(geometry.vertexBuffer3).Load<float2>((primitiveID * 3 + 2) * sizeof(float2));
-    float2 interpolatedTexCoord0 = perspectiveCorrectBarycentrics.x * vertexTexCoord0 + perspectiveCorrectBarycentrics.y * vertexTexCoord1 + perspectiveCorrectBarycentrics.z * vertexTexCoord2;
-
-    texCoord0 = interpolatedTexCoord0;
-
-    ByteAddressBuffer materialIndexBuffer = GetByteAddressBuffer(geometry.materialIndexBuffer);
-    uint materialIndex = materialIndexBuffer.Load<uint>(primitiveID * sizeof(uint));
-
-    ByteAddressBuffer materialBuffer = GetMaterialBufferSRV();
-    Material material = materialBuffer.Load<Material>(geometry.materialBufferOffset + (materialIndex * sizeof(Material)));
-
-    float4 baseColor = material.baseColor;
-    if (material.GetBaseColorMapIndex() > 0)
-    {
-        Texture2D baseColorMap = GetTexture2DNonUniform(material.GetBaseColorMapIndex());
-        baseColor *= baseColorMap.SampleBias(GlobalSamplerLinearWarp, texCoord0, materialTextureMipLodBias);
-    }
-
-    float alphaCutoff = 0.2;
-    clip(baseColor.a - alphaCutoff);
 
     vbuffer0 = visibilityID;
     vbuffer1 = float4(perspectiveCorrectBarycentrics, isFrontFace ? 1 : -1);

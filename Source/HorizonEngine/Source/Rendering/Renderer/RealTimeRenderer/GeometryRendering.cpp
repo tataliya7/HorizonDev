@@ -5,15 +5,32 @@ namespace Horizon
 {
     void RealTimeRenderer::SetupGeometryPasses()
     {
-        const GeometryPassDrawCommandList& drawCommandList = geometryPassDrawCommandLists[GeometryPassType::Opaque];
+        GeometryPassDrawCommandList& drawCommandList = geometryPassDrawCommandLists[GeometryPassType::Opaque];
+        drawCommandList.Clear();
 
-        //DynamicMeshCommandBuildRequests
+        RenderScene* scene = sceneView->scene;
+        for (uint32 index = 0; index < scene->meshes.size(); index++)
+        {
+            MeshRenderObject* mesh = scene->meshes[index];
+
+            GeometryPassDrawCommand drawCommand;
+            drawCommand.geometryID = index;
+            drawCommand.indexBuffer = mesh->indexBuffer;
+            drawCommand.firstIndex = 0;
+            drawCommand.indexCount = mesh->indexCount;
+            drawCommand.firstInstance = 0;
+            drawCommand.instanceCount = 1;
+            drawCommand.stencilReference = 0x00;
+            drawCommand.topology = RenderBackendPrimitiveTopology::TriangleList;
+
+            drawCommandList.AddDrawCommand(drawCommand);
+        }
     }
 
-    void RealTimeRenderer::DispatchGeometryOpaquePassDrawCommands(RenderBackendCommandList& commandList)
+    void RealTimeRenderer::DispatchOpaqueGeometryPassDrawCommands(RenderBackendCommandList& commandList)
     {
         const GeometryPassDrawCommandList& drawCommandList = geometryPassDrawCommandLists[GeometryPassType::Opaque];
-        const GPUScene* gpuScene = drawCommandList.setupJobData.scene->GetGPUScene();
+        const GPUScene* gpuScene = sceneView->scene->GetGPUScene();//drawCommandList.setupJobData.scene->GetGPUScene();
 
         RenderBackendShaderHandle vertexShader = shaderLibrary->GetShader(ShaderID::VisibilityBufferVS);
         RenderBackendShaderHandle pixelShader = shaderLibrary->GetShader(ShaderID::VisibilityBufferPS);
@@ -33,9 +50,8 @@ namespace Horizon
 
             RenderBackendShaderConstants shaderConstants = {};
             shaderConstants.BindBufferCBV(0, renderBackend->GetBufferCBVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
-            shaderConstants.BindBufferSRV(1, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(gpuScene->geometryBuffer));
-            shaderConstants.BindBufferSRV(2, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(gpuScene->geometryInstanceBuffer));
-            shaderConstants.BindBufferSRV(3, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(gpuScene->materialBuffer));
+            shaderConstants.BindBufferSRV(1, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(gpuScene->geometryDataBuffer));
+            shaderConstants.BindBufferSRV(2, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(gpuScene->geometryInstanceDataBuffer));
 
             commandList.DrawIndexed(
                 vertexShader,
@@ -50,5 +66,17 @@ namespace Horizon
                 drawCommand.firstInstance,
                 drawCommand.topology);
         }
+    }
+
+    void GeometryPassDrawCommandList::AddDrawCommand(const GeometryPassDrawCommand& command)
+    {
+        commands.emplace_back(command);
+        drawCommandCount++;
+    }
+
+    void GeometryPassDrawCommandList::Clear()
+    {
+        drawCommandCount = 0;
+        commands.clear();
     }
 }

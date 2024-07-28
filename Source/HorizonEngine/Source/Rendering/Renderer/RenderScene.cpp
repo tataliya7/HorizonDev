@@ -48,11 +48,12 @@ namespace Horizon
 
     }
 
-    RenderScene::RenderScene()
-        : atmosphericLight(nullptr)
+    RenderScene::RenderScene(RenderBackend* renderBackend)
+        : renderBackend(renderBackend)
+        , atmosphericLight(nullptr)
         , activeSkyAtmosphere(nullptr)
     {
-
+        gpuScene = new GPUScene();
     }
 
     RenderScene::~RenderScene()
@@ -67,6 +68,10 @@ namespace Horizon
 
     void RenderScene::AddMesh(MeshRenderObject* mesh)
     {
+        assert(mesh != nullptr);
+        assert(std::ranges::find(meshes, mesh) == meshes.end());
+
+        meshes.push_back(mesh);
     }
 
     void RenderScene::RemoveMesh(MeshRenderObject* mesh)
@@ -161,6 +166,108 @@ namespace Horizon
     void RenderScene::GetRenderStatistics(RenderStatistics& statistics) const
     {
 
+    }
+
+    void RenderScene::UpdateGPUScene(RenderBackendCommandList* commandList)
+    {
+        gpuScene->geometryData.clear();
+        gpuScene->geometryInstanceData.clear();
+
+        uint32 geometryCount = uint32(meshes.size());
+        for (uint32 index  = 0; index < meshes.size(); index++)
+        {
+            uint32 geometryID = index;
+            MeshRenderObject* mesh = meshes[index];
+
+            GPUSceneGeometryData geometry;
+            geometry.vertexBuffer0 = renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(mesh->vertexBuffers[0]);
+            geometry.vertexBuffer1 = renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(mesh->vertexBuffers[1]);
+            geometry.vertexBuffer2 = renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(mesh->vertexBuffers[2]);
+            geometry.vertexBuffer3 = renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(mesh->vertexBuffers[3]);
+            geometry.previousVertexBuffer0 = -1;
+            geometry.indexBuffer = renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(mesh->indexBuffer);
+            geometry.materialBuffer = renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(mesh->materialBuffer);
+            geometry.materialIndexBuffer = renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(mesh->materialIndexBuffer);
+            geometry.vertexCount = mesh->vertexCount;
+            geometry.indexCount = mesh->indexCount;
+            //geometry.boundsMin = mesh.boundsMin;
+            //geometry.boundsMax = mesh.boundsMax;
+            gpuScene->geometryData.emplace_back(geometry);
+
+            // TODO
+            GPUSceneGeometryInstanceData geometryInstance; 
+            geometryInstance.localToWorldMatrix = IdentityMatrix4x4;
+            geometryInstance.worldToLocalMatrix = IdentityMatrix4x4;
+            geometryInstance.previousLocalToWorldMatrix = geometryInstance.localToWorldMatrix;
+            geometryInstance.previousWorldToLocalMatrix = geometryInstance.worldToLocalMatrix;
+            geometryInstance.geometryID = geometryID;
+            gpuScene->geometryInstanceData.emplace_back(geometryInstance);
+        }
+
+        uint32 newGeometryDataBufferSize = geometryCount * sizeof(GPUSceneGeometryData);
+        if (gpuScene->geometryDataBuffer == RenderBackendBufferHandle::Null && newGeometryDataBufferSize > 0)
+        {
+            RenderBackendBufferDesc geometryUploadBufferDesc = RenderBackendBufferDesc::CreateUpload(newGeometryDataBufferSize);
+            gpuScene->geometryDataUploadBuffer = renderBackend->CreateBuffer(&geometryUploadBufferDesc, nullptr, "GeometryDataUploadBuffer");
+            RenderBackendBufferDesc geometryBufferDesc = RenderBackendBufferDesc::CreateByteAddress(newGeometryDataBufferSize);
+            gpuScene->geometryDataBuffer = renderBackend->CreateBuffer(&geometryBufferDesc, nullptr, "GeometryDataBuffer");
+            gpuScene->geometryDataBufferSize = newGeometryDataBufferSize;
+        }
+        else if (gpuScene->geometryDataBufferSize < newGeometryDataBufferSize)
+        {
+            renderBackend->ResizeBuffer(gpuScene->geometryDataUploadBuffer, newGeometryDataBufferSize);
+            renderBackend->ResizeBuffer(gpuScene->geometryDataBuffer, newGeometryDataBufferSize);
+            gpuScene->geometryDataBufferSize = newGeometryDataBufferSize;
+        }
+
+        if (gpuScene->geometryDataBuffer && geometryCount > 0)
+        {
+            renderBackend->UpdateBuffer(gpuScene->geometryDataUploadBuffer, 0, gpuScene->geometryData.data(), gpuScene->geometryDataBufferSize);
+            commandList->CopyBuffer(
+                gpuScene->geometryDataUploadBuffer,
+                0,
+                gpuScene->geometryDataBuffer,
+                0,
+                gpuScene->geometryDataBufferSize);
+            RenderBackendBarrier barrier[] =
+            {
+                RenderBackendBarrier(gpuScene->geometryDataBuffer, RenderBackendBufferSubresourceRange::Whole, RenderBackendResourceState::CopyDst, RenderBackendResourceState::UnorderedAccess)
+            };
+            commandList->Transitions(barrier, 1);
+        }
+
+        uint32 geometryInstanceCount = geometryCount;
+        uint32 newGeometryInstanceDataBufferSize = geometryInstanceCount * sizeof(GPUSceneGeometryInstanceData);
+        if (gpuScene->geometryInstanceDataBuffer == RenderBackendBufferHandle::Null && newGeometryInstanceDataBufferSize > 0)
+        {
+            RenderBackendBufferDesc geometryInstanceUploadBufferDesc = RenderBackendBufferDesc::CreateUpload(newGeometryInstanceDataBufferSize);
+            gpuScene->geometryInstanceDataUploadBuffer = renderBackend->CreateBuffer(&geometryInstanceUploadBufferDesc, nullptr, "GeometryInstanceDataUploadBuffer");
+            RenderBackendBufferDesc geometryInstanceBufferDesc = RenderBackendBufferDesc::CreateByteAddress(newGeometryInstanceDataBufferSize);
+            gpuScene->geometryInstanceDataBuffer = renderBackend->CreateBuffer(&geometryInstanceBufferDesc, nullptr, "GeometryInstanceDataBuffer");
+            gpuScene->geometryInstanceDataBufferSize = newGeometryInstanceDataBufferSize;
+        }
+        else if (gpuScene->geometryInstanceDataBufferSize < newGeometryInstanceDataBufferSize)
+        {
+            renderBackend->ResizeBuffer(gpuScene->geometryInstanceDataUploadBuffer, newGeometryInstanceDataBufferSize);
+            renderBackend->ResizeBuffer(gpuScene->geometryInstanceDataBuffer, newGeometryInstanceDataBufferSize);
+            gpuScene->geometryInstanceDataBufferSize = newGeometryInstanceDataBufferSize;
+        }
+
+        if (gpuScene->geometryInstanceDataBuffer && geometryInstanceCount > 0)
+        {
+            renderBackend->UpdateBuffer(gpuScene->geometryInstanceDataUploadBuffer, 0, gpuScene->geometryInstanceData.data(), gpuScene->geometryInstanceDataBufferSize);
+            commandList->CopyBuffer(
+                gpuScene->geometryInstanceDataUploadBuffer,
+                0,
+                gpuScene->geometryInstanceDataBuffer,
+                0,
+                gpuScene->geometryInstanceDataBufferSize);
+            RenderBackendBarrier barrier[] =
+            {
+                RenderBackendBarrier(gpuScene->geometryInstanceDataBuffer, RenderBackendBufferSubresourceRange::Whole, RenderBackendResourceState::CopyDst, RenderBackendResourceState::UnorderedAccess)
+            };
+            commandList->Transitions(barrier, 1);
+        }
     }
 
 #if 0

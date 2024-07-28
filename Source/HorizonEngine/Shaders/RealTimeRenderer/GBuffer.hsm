@@ -1,64 +1,61 @@
 #include "../ShaderCommon.hsh"
 #include "RealTimeRendererCommon.hsh"
 
-BIND_BUFFER_CBV(0, PerFrameShaderParameters);
-BIND_BYTE_ADDRESS_BUFFER_SRV(1, GeometryBuffer);
-BIND_BYTE_ADDRESS_BUFFER_SRV(2, MaterialBuffer);
-BIND_TEXTURE_2D_TYPED_SRV(3, uint2, VBuffer0);
-BIND_TEXTURE_2D_TYPED_SRV(4, float3, VBuffer1);
-BIND_TEXTURE_2D_UAV(5, float4, GBuffer0);
-BIND_TEXTURE_2D_UAV(6, float4, GBuffer1);
-BIND_TEXTURE_2D_UAV(7, float4, GBuffer2);
-
 SHADER_CONSTANTS_STRUCT_BEGIN();
-SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(0, InputTextureSRV);
-SHADER_CONSTANTS_TEXTURE_2D_UAV(1, float, ClosestDepthTextureUAV);
-SHADER_CONSTANTS_TEXTURE_2D_UAV(2, float, FurthestDepthTextureUAV);
+SHADER_CONSTANTS_CONSTANT_BUFFER_CBV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferCBV);
+SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_SRV(1, GeometryDataBufferSRV);
+SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_SRV(2, GeometryInstanceDataBufferSRV);
+SHADER_CONSTANTS_TEXTURE_2D_SRV(3, uint2, VBuffer0SRV);
+SHADER_CONSTANTS_TEXTURE_2D_SRV(4, float3, VBuffer1SRV);
+SHADER_CONSTANTS_TEXTURE_2D_UAV(5, float4, GBuffer0UAV);
+SHADER_CONSTANTS_TEXTURE_2D_UAV(6, float4, GBuffer1UAV);
+SHADER_CONSTANTS_TEXTURE_2D_UAV(7, float4, GBuffer2UAV);
 SHADER_CONSTANTS_STRUCT_END();
 
 [shader("compute")]
 [numthreads(8, 8, 1)]
 void GBufferCS(uint3 DispatchThreadID : SV_DispatchThreadID)
 {
-    ConstantBuffer<PerFrameShaderParameters> frameShaderParameters = GetPerFrameShaderParameterBufferCBV();
+    ConstantBuffer<PerFrameShaderParameters> frameShaderParameters = ShaderConstants.GetPerFrameShaderParameterBufferCBV();
+
+    Texture2D<uint2> vbuffer0 = ShaderConstants.GetVBuffer0SRV();
+    Texture2D<float3> vbuffer1 = ShaderConstants.GetVBuffer1SRV();
+    RWTexture2D<float4> gbuffer0 = ShaderConstants.GetGBuffer0UAV();
+    RWTexture2D<float4> gbuffer1 = ShaderConstants.GetGBuffer1UAV();
+    RWTexture2D<float4> gbuffer2 = ShaderConstants.GetGBuffer2UAV();
 
     uint2 pixelCoord = DispatchThreadID.xy;
-    float2 uv = (pixelCoord.xy + 0.5) / float2(frameShaderParameters.renderWidth, frameShaderParameters.renderHeight);
+    float2 uv = (pixelCoord.xy + 0.5f) * frameShaderParameters.renderResolution.zw;
 
-    Texture2D<uint2> vBuffer0 = GetVBuffer0SRV();
-    Texture2D<float3> vBuffer1 = GetVBuffer1SRV();
+    uint2 visibilityID = vbuffer0[pixelCoord];
+    float3 barycentrics = vbuffer1[pixelCoord];
 
-    uint2 visibilityID = vBuffer0[pixelCoord];
-    float3 barycentrics = vBuffer1[pixelCoord];
+    // if (visibilityID.x != INVALID_VISIBILIY_ID)
+    // {
+    //     uint geometryID = visibilityID.r;
+    //     uint primitiveID = visibilityID.g;
 
-    RWTexture2D<float4> gbuffer0 = GetGBuffer0UAV();
-    RWTexture2D<float4> gbuffer1 = GetGBuffer1UAV();
-    RWTexture2D<float4> gbuffer2 = GetGBuffer2UAV();
+    //     ByteAddressBuffer geometryDataBuffer = ShaderConstants.GetGeometryDataBufferSRV();
+    //     ByteAddressBuffer geometryInstanceDataBuffer = ShaderConstants.GetGeometryInstanceDataBufferSRV();
 
-    if (visibilityID.x != INVALID_VISIBILIY_ID)
-    {
-        uint geometryID = visibilityID.r;
-        uint primitiveID = visibilityID.g;
+    //     Geometry geometry = geometryBuffer.Load<Geometry>(geometryID * sizeof(Geometry));
 
-        ByteAddressBuffer geometryBuffer = GetGeometryBufferSRV();
-        Geometry geometry = geometryBuffer.Load<Geometry>(geometryID * sizeof(Geometry));
+    //     ByteAddressBuffer materialIndexBuffer = GetByteAddressBuffer(geometry.materialIndexBuffer);
+    //     uint materialIndex = materialIndexBuffer.Load<uint>(primitiveID * sizeof(uint));
 
-        ByteAddressBuffer materialIndexBuffer = GetByteAddressBuffer(geometry.materialIndexBuffer);
-        uint materialIndex = materialIndexBuffer.Load<uint>(primitiveID * sizeof(uint));
+    //     ByteAddressBuffer materialBuffer = GetMaterialBufferSRV();
+    //     Material material = materialBuffer.Load<Material>(geometry.materialBufferOffset + (materialIndex * sizeof(Material)));
 
-        ByteAddressBuffer materialBuffer = GetMaterialBufferSRV();
-        Material material = materialBuffer.Load<Material>(geometry.materialBufferOffset + (materialIndex * sizeof(Material)));
+    //     Surface surface;
+    //     SurfaceInit(surface, frameShaderParameters, uv, geometry, primitiveID, barycentrics, material);
 
-        Surface surface;
-        SurfaceInit(surface, frameShaderParameters, uv, geometry, primitiveID, barycentrics, material);
+    //     surface.specular = 0.5f;
 
-        surface.specular = 0.5;
-
-        gbuffer0[pixelCoord] = float4(EncodeNormalToGBuffer(surface.N), 0/* unsued */);
-        gbuffer1[pixelCoord] = float4(surface.metallic, surface.specular, surface.roughness, 0/* unsued */);
-        gbuffer2[pixelCoord] = float4(surface.baseColor.rgb, 1/* unsued */);
-    }
-    else
+    //     gbuffer0[pixelCoord] = float4(EncodeNormalToGBuffer(surface.N), 0/* unsued */);
+    //     gbuffer1[pixelCoord] = float4(surface.metallic, surface.specular, surface.roughness, 0/* unsued */);
+    //     gbuffer2[pixelCoord] = float4(surface.baseColor.rgb, 1/* unsued */);
+    // }
+    // else
     {
         gbuffer0[pixelCoord] = 0;
         gbuffer1[pixelCoord] = 0;

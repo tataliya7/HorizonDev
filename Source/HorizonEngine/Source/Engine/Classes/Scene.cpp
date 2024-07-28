@@ -1,5 +1,10 @@
 #include "Scene.h"
+
+#include "RenderSystem.h"
 #include "Engine/Components/Components.h"
+
+// TODO
+#include "HorizonEngine.h"
 
 namespace Horizon
 {
@@ -18,7 +23,10 @@ namespace Horizon
         // entityManager->OnDestroy<RigidBodyComponent>().connect<&Scene::OnRigidBodyComponentDestroy>(this);
 
         //physicsScene = new PhysicsScene();
-        renderScene = new RenderScene();
+
+        RenderBackend* renderBackend = HorizonEngine::GetInstance()->GetSubsystem<RenderSystem>()->GetRenderBackend();
+
+        renderScene = new RenderScene(renderBackend);
     }
 
     Scene::~Scene()
@@ -294,5 +302,7 @@ namespace Horizon
         {
 
         }
+
+        //renderScene->UpdateGPUScene();
     }
 }

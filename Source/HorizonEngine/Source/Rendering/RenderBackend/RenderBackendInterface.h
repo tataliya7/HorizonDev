@@ -220,5 +220,13 @@ namespace Horizon
          * TBD.
          */
         virtual RenderBackendBufferHandle CreateRayTracingShaderBindingTable(const RenderBackendRayTracingShaderBindingTableDesc* desc, const char* name) = 0;
+
+        void UpdateBuffer(RenderBackendBufferHandle handle, uint64 offset, const void* data, uint64 size)
+        {
+            void* bufferAllocation = nullptr;
+            MapBuffer(handle, &bufferAllocation);
+            memcpy(bufferAllocation, data, size); // TODO: offset
+            UnmapBuffer(handle);
+        }
     };
 }

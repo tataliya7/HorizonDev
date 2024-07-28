@@ -103,14 +103,14 @@ namespace Horizon
             ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/GPUFFT.hsm", "SharedMemoryComplexFFTConvolutionCS");
             shaderLibrary->LoadShader(ShaderID::SharedMemoryComplexFFTConvolution, shaderDesc);
         }
-        // {
-        //     ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Vertex, "Shaders/RealTimeRenderer/VisibilityBuffer.hsm", "VisibilityBufferVS");
-        //     shaderLibrary->LoadShader(ShaderID::VisibilityBufferVS, shaderDesc);
-        // }
-        // {
-        //     ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Pixel, "Shaders/RealTimeRenderer/VisibilityBuffer.hsm", "VisibilityBufferPS");
-        //     shaderLibrary->LoadShader(ShaderID::VisibilityBufferPS, shaderDesc);
-        // }
+        {
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Vertex, "Shaders/RealTimeRenderer/VisibilityBuffer.hsm", "VisibilityBufferVS");
+            shaderLibrary->LoadShader(ShaderID::VisibilityBufferVS, shaderDesc);
+        }
+        {
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Pixel, "Shaders/RealTimeRenderer/VisibilityBuffer.hsm", "VisibilityBufferPS");
+            shaderLibrary->LoadShader(ShaderID::VisibilityBufferPS, shaderDesc);
+        }
         {
             //ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Amplification, "Shaders/RealTimeRenderer/VisibilityBufferMeshShading.hsm", "VisibilityBufferAS");
             //shaderLibrary->LoadShader(ShaderID::VisibilityBufferMeshShadingAS, shaderDesc);
@@ -124,13 +124,17 @@ namespace Horizon
             //shaderLibrary->LoadShader(ShaderID::VisibilityBufferMeshShadingPS, shaderDesc);
         }
         {
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/MotionVectors.hsm", "MotionVectorsCS");
+            shaderLibrary->LoadShader(ShaderID::MotionVectors, shaderDesc);
+        }
+        {
             ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/BuildDepthPyramid.hsm", "BuildDepthPyramidCS");
             shaderLibrary->LoadShader(ShaderID::BuildDepthPyramid, shaderDesc);
         }
-        // {
-        //     ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/GBuffer.hsm", "GBufferCS");
-        //     shaderLibrary->LoadShader(ShaderID::GBuffer, shaderDesc);
-        // }
+        {
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/GBuffer.hsm", "GBufferCS");
+            shaderLibrary->LoadShader(ShaderID::GBuffer, shaderDesc);
+        }
         // {
         //     ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Vertex, "Shaders/RealTimeRenderer/ShadowMap.hsm", "ShadowMapVS");
         //     shaderLibrary->LoadShader(ShaderID::CascadedShadowMapVS, shaderDesc);
@@ -202,10 +206,6 @@ namespace Horizon
         //     ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Pixel, "Shaders/RealTimeRenderer/IndirectLightingSpecular.hsm", "IndirectLightingSpecularPS");
         //     shaderLibrary->LoadShader(ShaderID::IndirectLightingSpecular, shaderDesc);
         // }
-        {
-            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/MotionVectors.hsm", "MotionVectorsCS");
-            shaderLibrary->LoadShader(ShaderID::MotionVectors, shaderDesc);
-        }
         // {
         //     ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Pixel, "Shaders/RealTimeRenderer/DirectLighting.hsm", "DirectLightingPS");
         //     shaderLibrary->LoadShader(ShaderID::DirectLighting, shaderDesc);

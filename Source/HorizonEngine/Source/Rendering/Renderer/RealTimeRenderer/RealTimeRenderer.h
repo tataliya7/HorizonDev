@@ -458,7 +458,7 @@ namespace Horizon
         float preExposure = 1.0f;
 
         std::array<GeometryPassDrawCommandList, GeometryPassType::Count> geometryPassDrawCommandLists;
-        void DispatchGeometryOpaquePassDrawCommands(RenderBackendCommandList& commandList);
+        void DispatchOpaqueGeometryPassDrawCommands(RenderBackendCommandList& commandList);
 
         struct AutoExposureData
         {

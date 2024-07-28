@@ -588,7 +588,7 @@ namespace Horizon
         // RenderGraphTextureHandle historySceneColor = renderGraph.ImportExternalTexture(historySceneColorTextureCache.texture, historySceneColorTextureCache.desc, historySceneColorTextureCache.initialState, "HistorySceneColorTexture");
         // renderGraph.ExportTextureDeferred(sceneTextures.sceneColorTexture, &historySceneColorTextureCache);
 
-        //RenderVisibilityBuffer(renderGraph, view);
+        RenderVisibilityBuffer(renderGraph, view);
 
         //RenderGBuffer(renderGraph, view);
 

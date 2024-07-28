@@ -157,8 +157,8 @@ namespace Horizon::USDImporter
         printf("import mesh sdf path: %s, vertex count %d index count %d.\n", geomMesh.GetPath().GetString().c_str(), vertexCount, indexCount);
 
         MeshComponent& mesh = entityManager->AddComponent<MeshComponent>(entity);
-        mesh.numVertices = vertexCount;
-        mesh.numIndices = indexCount;
+        mesh.vertexCount = vertexCount;
+        mesh.indexCount = indexCount;
 
         // Positions
         {
@@ -222,7 +222,7 @@ namespace Horizon::USDImporter
         RenderSystem* renderSystem = HorizonEngine::GetInstance()->GetSubsystem<RenderSystem>();
         RenderBackend* renderBackend = renderSystem->GetRenderBackend();
 
-        RenderBackendBufferDesc vertexBuffer0Desc = RenderBackendBufferDesc::CreateByteAddress(mesh.numVertices * sizeof(Vector3));
+        RenderBackendBufferDesc vertexBuffer0Desc = RenderBackendBufferDesc::CreateByteAddress(mesh.vertexCount * sizeof(Vector3));
         mesh.vertexBuffers[0] = renderBackend->CreateBuffer(&vertexBuffer0Desc, mesh.positions.data(), "VertexPosition");
 
         RenderBackendBufferDesc vertexBuffer1Desc = RenderBackendBufferDesc::CreateByteAddress(mesh.normals.size() * sizeof(Vector3));
@@ -234,20 +234,20 @@ namespace Horizon::USDImporter
         if (!mesh.texCoords.empty())
         {
             RenderBackendBufferDesc vertexBuffer3Desc = RenderBackendBufferDesc::CreateByteAddress(mesh.texCoords.size() * sizeof(Vector2));
-            mesh.vertexBuffers[3] = renderBackend->CreateBuffer(&vertexBuffer3Desc, mesh.texCoords.data(), "VertexTexcoord");
+            mesh.vertexBuffers[3] = renderBackend->CreateBuffer(&vertexBuffer3Desc, mesh.texCoords.data(), "VertexTextureCoord0");
         }
 
-        if (mesh.numIndices > 0)
+        if (mesh.indexCount > 0)
         {
-            RenderBackendBufferDesc indexBufferDesc = RenderBackendBufferDesc::CreateIndex(sizeof(uint32), mesh.numIndices);
+            RenderBackendBufferDesc indexBufferDesc = RenderBackendBufferDesc::CreateIndex(sizeof(uint32), mesh.indexCount);
             mesh.indexBuffer = renderBackend->CreateBuffer(&indexBufferDesc, mesh.indices.data(), "IndexBuffer");
         }
 
         MeshComponent::MeshSubset& subset = mesh.subsets.emplace_back();
         subset.baseVertex = 0;
         subset.baseIndex = 0;
-        subset.numIndices = mesh.numIndices;
-        subset.numVertices = mesh.numVertices;
+        subset.numIndices = mesh.indexCount;
+        subset.numVertices = mesh.vertexCount;
 
         TransformComponent& transformComponent = scene->GetEntityManager()->GetComponent<TransformComponent>(entity);
 
@@ -276,7 +276,7 @@ namespace Horizon::USDImporter
                     continue;
                 }
 
-                printf("Meshsubset %s           MaterialSdfPath: %s\n", subset.GetPath().GetString().c_str(), materialSdfPath.GetString().c_str());
+                printf("Meshsubset %s     MaterialSdfPath: %s\n", subset.GetPath().GetString().c_str(), materialSdfPath.GetString().c_str());
 
                 if (materialIndexMap.find(materialSdfPath) == materialIndexMap.end())
                 {
@@ -299,8 +299,43 @@ namespace Horizon::USDImporter
             }
         }
 
-        RenderBackendBufferDesc materialIndexBufferDesc = RenderBackendBufferDesc::CreateByteAddress((mesh.numIndices / 3) * sizeof(uint32));
+        for (Material& material : mesh.materials)
+        {
+            MaterialShaderParameters materialShaderParameters;
+            materialShaderParameters.baseColor = material.baseColor;
+            materialShaderParameters.metallic = material.metallic;
+            materialShaderParameters.roughness = material.roughness;
+            materialShaderParameters.specular = material.specular;
+            materialShaderParameters.specularTint = material.specularTint;
+            materialShaderParameters.emission = material.emission;
+            materialShaderParameters.emissionStrength = material.emissionStrength;
+            materialShaderParameters.sssSurfaceAlbedo = material.sssSurfaceAlbedo;
+            materialShaderParameters.sssMFP = material.sssSurfaceAlbedo;
+            materialShaderParameters.secondRoughness = material.secondRoughness;
+            materialShaderParameters.lobeMix = material.lobeMix;
+            materialShaderParameters.flags = 0;
+            if (material.useMetallicRoughnessWorkflow)
+            {
+                materialShaderParameters.flags |= MATERIAL_FLAGS_BIT_USE_METALLIC_ROUGHNESS_WORKFLOW;
+            }
+            for (uint32 slot = 0; slot < RendererMaxMaterialTextureSlotCount; slot++)
+            {
+                if (material.textures[slot].used)
+                {
+                    materialShaderParameters.textures[slot].bindlessTextureIndex = renderBackend->GetTextureSRVBindlessResourceDescriptorIndex(material.textures[slot].gpuTexture);
+                }
+            }
+            mesh.materialData.emplace_back(materialShaderParameters);
+        }
+
+        RenderBackendBufferDesc materialBufferDesc = RenderBackendBufferDesc::CreateByteAddress(mesh.materialData.size() * sizeof(MaterialShaderParameters));
+        mesh.materialBuffer = renderBackend->CreateBuffer(&materialBufferDesc, mesh.materialData.data(), "MaterialBuffer");
+
+        RenderBackendBufferDesc materialIndexBufferDesc = RenderBackendBufferDesc::CreateByteAddress((mesh.indexCount / 3) * sizeof(uint32));
         mesh.materialIndexBuffer = renderBackend->CreateBuffer(&materialIndexBufferDesc, mesh.materialIndices.data(), "MaterialIndexBuffer");
+
+        // TODO
+        mesh.CreateRenderObject(scene->GetRenderScene());
 
         ImportSkeletonBinding(prim);
     }

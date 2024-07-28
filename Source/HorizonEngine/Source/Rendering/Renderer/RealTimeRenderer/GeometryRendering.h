@@ -39,7 +39,11 @@ namespace Horizon
     {
     public:
 
+        void Clear();
+
         void DispatchDraw(RenderBackendCommandList& commandList);
+
+        void AddDrawCommand(const GeometryPassDrawCommand& command);
 
 //    private:
         GeometryPassSetupJobData setupJobData;

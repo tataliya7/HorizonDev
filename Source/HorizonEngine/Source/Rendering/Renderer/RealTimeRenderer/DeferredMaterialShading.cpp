@@ -27,7 +27,7 @@ namespace Horizon
                     RenderBackendScissor scissor(0, 0, renderResolution.width, renderResolution.height);
                     commandList.SetScissors(&scissor, 1);
 
-                    DispatchGeometryOpaquePassDrawCommands(commandList);
+                    DispatchOpaqueGeometryPassDrawCommands(commandList);
                 };
             });
     }
@@ -94,44 +94,46 @@ namespace Horizon
         RenderGraph& renderGraph,
         const SceneView& view)
     {
-        // renderGraph.AddPass(std::format("GBuffer (Compute, {}x{})", renderResolution.width, renderResolution.height), RenderGraphPassFlags::Compute,
-        //     [&](RenderGraphBuilder& builder)
-        //     {
-        //         auto& sceneTextures = renderGraph.blackboard.Get<RealTimeRendererSceneTextures>();
-        //
-        //         auto vbuffer0 = builder.ReadTexture(sceneTextures.vbuffer0, RenderBackendResourceState::ShaderResource);
-        //         auto vbuffer1 = builder.ReadTexture(sceneTextures.vbuffer1, RenderBackendResourceState::ShaderResource);
-        //
-        //         auto gbuffer0 = sceneTextures.gbuffer0 = builder.WriteTexture(sceneTextures.gbuffer0, RenderBackendResourceState::UnorderedAccess);
-        //         auto gbuffer1 = sceneTextures.gbuffer1 = builder.WriteTexture(sceneTextures.gbuffer1, RenderBackendResourceState::UnorderedAccess);
-        //         auto gbuffer2 = sceneTextures.gbuffer2 = builder.WriteTexture(sceneTextures.gbuffer2, RenderBackendResourceState::UnorderedAccess);
-        //
-        //         return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
-        //         {
-        //             RenderBackendShaderConstants shaderConstants = {};
-        //             shaderConstants.debugName = "GBuffer";
-        //             shaderConstants.BindBufferCBV(0, renderBackend->GetBufferCBVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
-        //             shaderConstants.BindBuffer(1, renderEngine->geometryBuffer, 0);
-        //             shaderConstants.BindBuffer(2, renderEngine->materialBuffer, 0);
-        //             shaderConstants.BindTextureSRV(3, registry.GetTextureSRVBindlessResourceDescriptorIndex(vbuffer0)));
-        //             shaderConstants.BindTextureSRV(4, registry.GetTextureSRVBindlessResourceDescriptorIndex(vbuffer1)));
-        //             shaderConstants.BindTextureUAV(5, registry.GetTextureUAVBindlessResourceDescriptorIndexgbuffer0)));
-        //             shaderConstants.BindTextureUAV(6, registry.GetTextureUAVBindlessResourceDescriptorIndexgbuffer1)));
-        //             shaderConstants.BindTextureUAV(7, registry.GetTextureUAVBindlessResourceDescriptorIndexgbuffer2)));
-        //
-        //             uint32 threadGroupCountX = ComputeWorkGroupCount(renderResolution.width, 8);
-        //             uint32 threadGroupCountY = ComputeWorkGroupCount(renderResolution.height, 8);
-        //             uint32 threadGroupCountZ = 1;
-        //
-        //             RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::GBuffer);
-        //             commandList.Dispatch(
-        //                 computeShader,
-        //                 shaderConstants,
-        //                 threadGroupCountX,
-        //                 threadGroupCountY,
-        //                 threadGroupCountZ);
-        //         };
-        //     });
+        const GPUScene* gpuScene = sceneView->scene->GetGPUScene();
+
+         renderGraph.AddPass(std::format("GBuffer (Compute, {}x{})", renderResolution.width, renderResolution.height), RenderGraphPassFlags::Compute,
+             [&](RenderGraphBuilder& builder)
+             {
+                 RealTimeRendererSceneTextures& sceneTextures = renderGraph.blackboard.Get<RealTimeRendererSceneTextures>();
+        
+                 RenderGraphTextureHandle vbuffer0 = builder.ReadTexture(sceneTextures.vbuffer0, RenderBackendResourceState::ShaderResource);
+                 RenderGraphTextureHandle vbuffer1 = builder.ReadTexture(sceneTextures.vbuffer1, RenderBackendResourceState::ShaderResource);
+        
+                 RenderGraphTextureHandle gbuffer0 = sceneTextures.gbuffer0 = builder.WriteTexture(sceneTextures.gbuffer0, RenderBackendResourceState::UnorderedAccess);
+                 RenderGraphTextureHandle gbuffer1 = sceneTextures.gbuffer1 = builder.WriteTexture(sceneTextures.gbuffer1, RenderBackendResourceState::UnorderedAccess);
+                 RenderGraphTextureHandle gbuffer2 = sceneTextures.gbuffer2 = builder.WriteTexture(sceneTextures.gbuffer2, RenderBackendResourceState::UnorderedAccess);
+        
+                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
+                 {
+                     RenderBackendShaderConstants shaderConstants = {};
+                     shaderConstants.BindBufferCBV(0, renderBackend->GetBufferCBVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
+                     shaderConstants.BindBufferSRV(1, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(gpuScene->geometryDataBuffer));
+                     shaderConstants.BindBufferSRV(2, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(gpuScene->geometryInstanceDataBuffer));
+                     shaderConstants.BindTextureSRV(3, registry.GetTextureSRVBindlessResourceDescriptorIndex(vbuffer0));
+                     shaderConstants.BindTextureSRV(4, registry.GetTextureSRVBindlessResourceDescriptorIndex(vbuffer1));
+                     shaderConstants.BindTextureUAV(5, registry.GetTextureUAVBindlessResourceDescriptorIndex(gbuffer0, 0));
+                     shaderConstants.BindTextureUAV(6, registry.GetTextureUAVBindlessResourceDescriptorIndex(gbuffer1, 0));
+                     shaderConstants.BindTextureUAV(7, registry.GetTextureUAVBindlessResourceDescriptorIndex(gbuffer2, 0));
+        
+                     uint32 threadGroupCountX = CeilDiv(renderResolution.width, 8);
+                     uint32 threadGroupCountY = CeilDiv(renderResolution.height, 8);
+                     uint32 threadGroupCountZ = 1;
+        
+                     RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::GBuffer);
+
+                     commandList.Dispatch(
+                         computeShader,
+                         shaderConstants,
+                         threadGroupCountX,
+                         threadGroupCountY,
+                         threadGroupCountZ);
+                 };
+             });
     }
 
     void RealTimeRenderer::RenderMotionVectors(

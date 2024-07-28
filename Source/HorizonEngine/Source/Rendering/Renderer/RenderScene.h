@@ -103,6 +103,10 @@ namespace Horizon
         bool castDynamicShadow : 1;
 
         Matrix4x4 localToWorldMatrix;
+        Matrix4x4 worldToLocalMatrix;
+
+        uint32 vertexCount;
+        uint32 indexCount;
 
         RenderBackendBufferHandle vertexBuffers[4];
         RenderBackendBufferHandle indexBuffer;
@@ -110,7 +114,9 @@ namespace Horizon
         RenderBackendBufferHandle materialIndexBuffer;
 
         std::string name;
+
         float cullDistance;
+
     private:
 
     };
@@ -251,19 +257,45 @@ namespace Horizon
         Vector3 skyLuminanceFactor;
     };
 
+    struct GPUSceneGeometryData
+    {
+        int vertexBuffer0;
+        int vertexBuffer1;
+        int vertexBuffer2;
+        int vertexBuffer3;
+        int previousVertexBuffer0;
+        int indexBuffer;
+        int materialBuffer;
+        int materialIndexBuffer;
+        uint32 vertexCount;
+        uint32 indexCount;
+    };
+
+    struct GPUSceneGeometryInstanceData
+    {
+        Matrix4x4 localToWorldMatrix;
+        Matrix4x4 worldToLocalMatrix;
+        Matrix4x4 previousLocalToWorldMatrix;
+        Matrix4x4 previousWorldToLocalMatrix;
+        uint32 geometryID;
+    };
+
     class GPUScene
     {
     public:
         // Geometries
         uint32 numGeometries = 0;
-        uint64 geometryBufferSize = 0;
-        std::vector<GeometryShaderParameters> geometries;
 
-        RenderBackendBufferHandle geometryUploadBuffer;
-        RenderBackendBufferHandle geometryBuffer;
+        std::vector<GPUSceneGeometryData> geometryData;
+        std::vector<GPUSceneGeometryInstanceData> geometryInstanceData;
 
-        RenderBackendBufferHandle geometryInstanceUploadBuffer;
-        RenderBackendBufferHandle geometryInstanceBuffer;
+        uint64 geometryDataBufferSize = 0;
+        RenderBackendBufferHandle geometryDataUploadBuffer;
+        RenderBackendBufferHandle geometryDataBuffer;
+
+        uint64 geometryInstanceDataBufferSize = 0;
+        RenderBackendBufferHandle geometryInstanceDataUploadBuffer;
+        RenderBackendBufferHandle geometryInstanceDataBuffer;
 
         // Materials
         uint32 numMaterials = 0;
@@ -277,7 +309,8 @@ namespace Horizon
     {
     public:
 
-        RenderScene();
+        RenderScene(RenderBackend* renderBackend);
+
         virtual ~RenderScene();
 
         /**
@@ -331,12 +364,18 @@ namespace Horizon
 
         void GetRenderStatistics(RenderStatistics& statistics) const;
 
+        void UpdateGPUScene(RenderBackendCommandList* commandList);
+
         GPUScene* GetGPUScene() const
         {
             return gpuScene;
         }
 
     //private:
+
+        RenderBackend* renderBackend;
+
+        std::vector<MeshRenderObject*> meshes;
 
         std::vector<LightRenderObject*> lights;
 

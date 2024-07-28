@@ -121,6 +121,8 @@ namespace Horizon
 
         RenderBackendCommandList* commandList = new RenderBackendCommandList(GArena);
 
+        sceneView->scene->UpdateGPUScene(commandList);
+
         gpuProfiler->BeginFrame(commandList);
 
         uint32 frameTimingQueryRegion = gpuProfiler->BeginRegion(commandList, "GPU Frametime");

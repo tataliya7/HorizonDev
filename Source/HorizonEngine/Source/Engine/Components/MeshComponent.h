@@ -12,17 +12,24 @@
      class MeshComponent
      {
      public:
+
+         MeshComponent();
+         ~MeshComponent();
+         bool IsRenderObjectValid() const;
+         void CreateRenderObject(RenderScene* scene);
+         void DestroyRenderObject(RenderScene* scene);
+         void UpdateRenderObject();
+
          std::string meshSource;
 
-         uint32 numVertices;
-         uint32 numIndices;
+         uint32 vertexCount;
+         uint32 indexCount;
 
          std::vector<Vector3> positions;
          std::vector<Vector3> normals;
          std::vector<Vector4> tangents;
          std::vector<Vector2> texCoords;
          std::vector<uint32> indices;
-         std::vector<uint32> materialIndices;
          std::vector<uint32> boneIndices;
          std::vector<float> boneWeights;
 
@@ -44,6 +51,9 @@
 
          std::vector<Material> materials;
 
+         std::vector<MaterialShaderParameters> materialData;
+         std::vector<uint32> materialIndices;
+
          //Mesh* GetMesh() const
          //{
          //    return mesh;
@@ -63,7 +73,10 @@
 
          RenderBackendBufferHandle vertexBuffers[4];
          RenderBackendBufferHandle indexBuffer;
+
+         RenderBackendBufferHandle materialBuffer;
          RenderBackendBufferHandle materialIndexBuffer;
+
          int previousTransformIndex = -1;
 
          int materialBufferOffset = 0;
@@ -91,6 +104,6 @@
 
          //TriangleMesh* mesh;
 
-         MeshRenderObject* renderObject;
+         MeshRenderObject* renderObject = nullptr;
      };
  }

@@ -138,39 +138,39 @@
 // Buffer UAV
 [[vk::binding(BINDLESS_RESOURCE_BINDING_BUFFER_UAV, 0)]] RWByteAddressBuffer BindlessResource_RWByteAddressBuffer[];
 #define DECLARE_ALIASED_ARRAY_STRUCTURED_BUFFER_UAV(type) \
-[[vk::binding(BINDLESS_RESOURCE_BINDING_BUFFER_SRV, 0)]] RWStructuredBuffer<type> BindlessResource_RWStructuredBuffer_##type[];
+[[vk::binding(BINDLESS_RESOURCE_BINDING_BUFFER_UAV, 0)]] RWStructuredBuffer<type> BindlessResource_RWStructuredBuffer_##type[];
 
 // Acceleration Structure
 #if RAY_TRACING_ENABLED
 [[vk::binding(BINDLESS_RESOURCE_BINDING_ACCELERATION_STRUCTURE, 0)]] RaytracingAccelerationStructure BindlessResource_RaytracingAccelerationStructure[];
 #endif
 
-ByteAddressBuffer GetByteAddressBuffer(uint index)
+ByteAddressBuffer GetByteAddressBuffer(int index)
 {
     return BindlessResource_ByteAddressBuffer[index];
 }
 
-ByteAddressBuffer GetByteAddressBufferNonUniform(uint index)
+ByteAddressBuffer GetByteAddressBufferNonUniform(int index)
 {
     return BindlessResource_ByteAddressBuffer[NonUniformResourceIndex(index)];
 }
 
-RWByteAddressBuffer GetRWByteAddressBuffer(uint index)
+RWByteAddressBuffer GetRWByteAddressBuffer(int index)
 {
     return BindlessResource_RWByteAddressBuffer[index];
 }
 
-RWByteAddressBuffer GetRWByteAddressBufferNonUniform(uint index)
+RWByteAddressBuffer GetRWByteAddressBufferNonUniform(int index)
 {
     return BindlessResource_RWByteAddressBuffer[NonUniformResourceIndex(index)];
 }
 
-Texture2D GetBindlessResourceTexture2D(uint index)
+Texture2D GetBindlessResourceTexture2D(int index)
 {
     return BindlessResource_Texture2D[index];
 }
 
-Texture2D GetTexture2DNonUniform(uint index)
+Texture2D GetTexture2DNonUniform(int index)
 {
     return BindlessResource_Texture2D[NonUniformResourceIndex(index)];
 }
@@ -280,32 +280,32 @@ RaytracingAccelerationStructure Get##name() \
 SamplerState           BindlessResource_SamplerState[]           : register(s0, space1);
 SamplerComparisonState BindlessResource_SamplerComparisonState[] : register(s0, space2);
 
-ByteAddressBuffer GetByteAddressBuffer(uint index)
+ByteAddressBuffer GetByteAddressBuffer(int index)
 {
     return ResourceDescriptorHeap[index];
 }
 
-ByteAddressBuffer GetByteAddressBufferNonUniform(uint index)
+ByteAddressBuffer GetByteAddressBufferNonUniform(int index)
 {
     return ResourceDescriptorHeap[NonUniformResourceIndex(index)];
 }
 
-RWByteAddressBuffer GetRWByteAddressBuffer(uint index)
+RWByteAddressBuffer GetRWByteAddressBuffer(int index)
 {
     return ResourceDescriptorHeap[index];
 }
 
-RWByteAddressBuffer GetRWByteAddressBufferNonUniform(uint index)
+RWByteAddressBuffer GetRWByteAddressBufferNonUniform(int index)
 {
     return ResourceDescriptorHeap[NonUniformResourceIndex(index)];
 }
 
-Texture2D GetBindlessResourceTexture2D(uint index)
+Texture2D GetBindlessResourceTexture2D(int index)
 {
     return ResourceDescriptorHeap[index];
 }
 
-Texture2D GetTexture2DNonUniform(uint index)
+Texture2D GetTexture2DNonUniform(int index)
 {
     return ResourceDescriptorHeap[NonUniformResourceIndex(index)];
 }

@@ -118,25 +118,25 @@ namespace Horizon
         TextureShaderSlot textures[RendererMaxMaterialTextureSlotCount];
     };
 
-    struct GeometryShaderParameters
-    {
-        int vertexBuffer0;
-        int vertexBuffer1;
-        int vertexBuffer2;
-        int vertexBuffer3;
-        int prevVertexBuffer0;
-        int indexBuffer;
-        int transformBuffer;
-        int previousTransformBuffer;
-        int transformIndex = -1;
-        int previousTransformIndex = -1;
-        int materialIndexBuffer;
-        int materialBufferOffset;
-        uint32 baseVertex;
-        uint32 vertexCount;
-        uint32 baseIndex;
-        uint32 indexCount;
-        Vector3 boundsMin;
-        Vector3 boundsMax;
-    };
+    // struct GeometryShaderParameters
+    // {
+    //     int vertexBuffer0;
+    //     int vertexBuffer1;
+    //     int vertexBuffer2;
+    //     int vertexBuffer3;
+    //     int prevVertexBuffer0;
+    //     int indexBuffer;
+    //     int transformBuffer;
+    //     int previousTransformBuffer;
+    //     int transformIndex = -1;
+    //     int previousTransformIndex = -1;
+    //     int materialIndexBuffer;
+    //     int materialBufferOffset;
+    //     uint32 baseVertex;
+    //     uint32 vertexCount;
+    //     uint32 baseIndex;
+    //     uint32 indexCount;
+    //     Vector3 boundsMin;
+    //     Vector3 boundsMax;
+    // };
 }
