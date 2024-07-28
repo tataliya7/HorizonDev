@@ -65,7 +65,7 @@ void VisibilityBufferPS(
     float2 textureCoord0 = vertexShaderOutput.textureCoord0;
 
 #if __spirv__
-#if 1
+#if 0
     float3 perspectiveCorrectBarycentrics = 0;
 #else
     uint vertexIndex0 = GetByteAddressBuffer(geometryData.indexBuffer).Load<uint>((/*geometryData.baseIndex + */primitiveID * 3 + 0) * sizeof(uint));

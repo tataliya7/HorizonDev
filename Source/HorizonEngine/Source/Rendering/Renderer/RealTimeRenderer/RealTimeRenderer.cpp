@@ -590,7 +590,7 @@ namespace Horizon
 
         RenderVisibilityBuffer(renderGraph, view);
 
-        //RenderGBuffer(renderGraph, view);
+        RenderGBuffer(renderGraph, view);
 
         RenderMotionVectors(renderGraph, view);
 
@@ -609,7 +609,7 @@ namespace Horizon
         RenderGraphTextureHandle closestHZBTexture = renderGraph.CreateTexture(hzbDesc, "ClosestHZBTexture");
         RenderGraphTextureHandle furthestHZBTexture = renderGraph.CreateTexture(hzbDesc, "FurthestHZBTexture");
 
-        //RenderDepthPyramid(renderGraph, view, hzbWidth, hzbHeight, hzbMipLevels, closestHZBTexture, furthestHZBTexture);
+        RenderDepthPyramid(renderGraph, view, hzbWidth, hzbHeight, hzbMipLevels, closestHZBTexture, furthestHZBTexture);
 
         if (IsSkyAtmosphereRenderingEnabled())
         {
