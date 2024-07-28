@@ -76,24 +76,6 @@ struct Geometry
     float3 boundsMax;
 };
 
-#define LIGHT_TYPE_DIRECTIONAL 0
-#define LIGHT_TYPE_POINT 1
-#define LIGHT_TYPE_SPOT 2
-
-struct LightData
-{
-    float3 color;
-    float3 position;
-    float3 forwardVec;
-    float3 rightVec;
-    float3 upVec;
-    uint type;
-    float radius;
-    float sizeX;
-    float sizeY;
-    int shadowMapIndex;
-};
-
 // @see https://media.contentapi.ea.com/content/dam/ea/seed/presentations/2019-ray-tracing-gems-chapter-20-akenine-moller-et-al.pdf
 float ComputeTextureLODRayCones(float baseTriangleLOD, uint textureWidth, uint textureHeight, float rayConeWidth, float3 rayDirection, float3 surfaceNormal)
 {

@@ -5,21 +5,24 @@
 #include "LightingCommon.hsh"
 #include "ShadowMapCommon.hsh"
 #include "SkyAtmosphereCommon.hsh"
+#include "GPUScene.hsh"
 
-BIND_BUFFER_CBV(0, PerFrameShaderParameters);
-BIND_BYTE_ADDRESS_BUFFER_SRV(11, GeometryBuffer);
-BIND_BYTE_ADDRESS_BUFFER_SRV(12, MaterialBuffer);
-BIND_BYTE_ADDRESS_BUFFER_SRV(13, LightBuffer);
-BIND_BYTE_ADDRESS_BUFFER_SRV(14, CubeShadowMapBuffer);
-BIND_TEXTURE_2D_SRV(1, SceneDepthTexture);
-BIND_TEXTURE_2D_TYPED_SRV(2, uint2, VBuffer0);
-BIND_TEXTURE_2D_SRV(3, VBuffer1);
-BIND_TEXTURE_2D_SRV(4, GBuffer0);
-BIND_TEXTURE_2D_SRV(5, GBuffer1);
-BIND_TEXTURE_2D_SRV(10, GBuffer2);
-BIND_TEXTURE_2D_SRV(8, ScreenSpaceShadowMaskTexture);
-BIND_TEXTURE_2D_ARRAY_TYPED_SRV(9, float, LocalLightShadowMapAtlas);
-BIND_TEXTURE_2D_SRV(15, SkyAtmosphereTransmittanceLUT);
+SHADER_CONSTANTS_STRUCT_BEGIN();
+SHADER_CONSTANTS_CONSTANT_BUFFER_CBV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferCBV);
+SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_SRV(1, GeometryDataBufferSRV);
+SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_SRV(2, GeometryInstanceDataBufferSRV);
+SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(3, LightData, LightDataBufferSRV);
+SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(4, SceneDepthTextureSRV);
+SHADER_CONSTANTS_TEXTURE_2D_SRV(5, uint2, VBuffer0SRV);
+SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(6, VBuffer1SRV);
+SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(7, GBuffer0SRV);
+SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(8, GBuffer1SRV);
+SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(9, GBuffer2SRV);
+SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(10, SkyAtmosphereTransmittanceLutSRV);
+SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_SRV(11, LocalLightShadowMapDataBufferSRV);
+SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(12, ScreenSpaceShadowMaskTextureSRV);
+SHADER_CONSTANTS_TEXTURE_2D_ARRAY_SRV(13, float, LocalLightShadowMapAtlasSRV);
+SHADER_CONSTANTS_STRUCT_END();
 
 // SHADER_CONSTANTS(ShaderConstants)
 // {
@@ -69,10 +72,10 @@ BIND_TEXTURE_2D_SRV(15, SkyAtmosphereTransmittanceLUT);
 // See explanation in "Physically Based Sky, Atmosphere and Cloud Rendering in Frostbite" page 26
 float3 ComputeAtmosphereTransmittance(float3 worldPosition, float3 lightDirection, float skyAtmosphereBottomRadiusInKilometers, float skyAtmosphereTopRadiusInKilometers)
 {
-    Texture2D skyAtmosphereTransmittanceLUTTexture = GetSkyAtmosphereTransmittanceLUTSRV();
+    Texture2D skyAtmosphereTransmittanceLutTexture = ShaderConstants.GetSkyAtmosphereTransmittanceLutSRV();
     float3 planetCenterToPixel = (worldPosition * M_TO_KM) + float3(0.0f, 0.0f, skyAtmosphereBottomRadiusInKilometers);
     float3 atmosphereTransmittance = GetAtmosphereTransmittance(
-        skyAtmosphereTransmittanceLUTTexture,
+        skyAtmosphereTransmittanceLutTexture,
         GlobalSamplerLinearClamp,
         planetCenterToPixel,
         lightDirection,
@@ -112,21 +115,21 @@ float3 ComputeDirectLightingContribution(PerFrameShaderParameters frameShaderPar
 {
     uint lightCount = 0; // TODO
 
-    ByteAddressBuffer lightBuffer = GetLightBufferSRV();
+    StructuredBuffer<LightData> lightDataBuffer = ShaderConstants.GetLightDataBufferSRV();
 
     float3 result = 0.0;
-    for (uint i = 0; i < lightCount; i++)
+    for (uint lightIndex = 0; lightIndex < lightCount; lightIndex++)
     {
-        LightData light = lightBuffer.Load<LightData>(i * sizeof(LightData));
+        LightData light = lightDataBuffer.Load(lightIndex);
 
         float3 lightColor = light.color;
         float visibility = 1.0;
         if (light.type == LIGHT_TYPE_DIRECTIONAL)
         {
-            Texture2D shadowMaskTexture = GetScreenSpaceShadowMaskTextureSRV();
+            Texture2D shadowMaskTexture = ShaderConstants.GetScreenSpaceShadowMaskTextureSRV();
             visibility = shadowMaskTexture.SampleLevel(GlobalSamplerLinearClamp, surface.uv, 0).r;
 
-            float3 L = normalize(-light.forwardVec);
+            float3 L = normalize(-light.direction);
             float3 N = normalize(surface.N);
             float3 V = normalize(surface.V);
             float3 H = normalize(L + V);
@@ -203,10 +206,10 @@ float3 ComputeDirectLightingContribution(PerFrameShaderParameters frameShaderPar
             {
                 int cubeShadowMapIndex = light.shadowMapIndex;
 
-                ByteAddressBuffer cubeShadowMapBuffer = GetCubeShadowMapBufferSRV();
+                ByteAddressBuffer cubeShadowMapBuffer = ShaderConstants.GetLocalLightShadowMapDataBufferSRV();
                 CubeShadowMapShaderParameters cubeShadowMapParameters = cubeShadowMapBuffer.Load<CubeShadowMapShaderParameters>(cubeShadowMapIndex * sizeof(CubeShadowMapShaderParameters));
 
-                Texture2DArray<float> localLightShadowMapAtlas = GetLocalLightShadowMapAtlasSRV();
+                Texture2DArray<float> localLightShadowMapAtlas = ShaderConstants.GetLocalLightShadowMapAtlasSRV();
                 float3 uvw = WorldSpaceDirectionToCubemapUvAndFaceIndex(-L);
                 int faceIndex = (int)uvw.z;
                 float4 shadowMapCoord = mul(cubeShadowMapParameters.worldToClipMatrix[faceIndex], float4(surface.P, 1.0));
@@ -328,44 +331,48 @@ float3 F_Schlick(float3 f0, float f90, float VoH)
 }
 
 [shader("pixel")]
-void DirectLightingPS(float4 svPosition : SV_Position, out float4 outSceneColor : SV_Target0)
+void DirectLightingPS(float4 position : SV_Position, out float4 outSceneColor : SV_Target0)
 {
-    ConstantBuffer<PerFrameShaderParameters> frameShaderParameters = GetPerFrameShaderParameterBufferCBV();
-    Texture2D<uint2> vbuffer0 = GetVBuffer0SRV();
-    Texture2D vbuffer1 = GetVBuffer1SRV();
-    Texture2D gbuffer0 = GetGBuffer0SRV();
-    Texture2D gbuffer1 = GetGBuffer1SRV();
-    Texture2D gbuffer2 = GetGBuffer2SRV();
-    Texture2D sceneDepthTexture = GetSceneDepthTextureSRV();
+    ConstantBuffer<PerFrameShaderParameters> frameShaderParameters = ShaderConstants.GetPerFrameShaderParameterBufferCBV();
+    Texture2D<uint2> vbuffer0 = ShaderConstants.GetVBuffer0SRV();
+    Texture2D vbuffer1 = ShaderConstants.GetVBuffer1SRV();
+    Texture2D gbuffer0 = ShaderConstants.GetGBuffer0SRV();
+    Texture2D gbuffer1 = ShaderConstants.GetGBuffer1SRV();
+    Texture2D gbuffer2 = ShaderConstants.GetGBuffer2SRV();
+    Texture2D sceneDepthTexture = ShaderConstants.GetSceneDepthTextureSRV();
 
-    const uint2 pixelCoord = uint2(svPosition.xy);
-    const float2 uv = (float2(pixelCoord) + 0.5f) / float2(frameShaderParameters.renderWidth, frameShaderParameters.renderHeight);
+    const uint2 pixelCoord = uint2(position.xy);
+    const float2 uv = (float2(pixelCoord) + 0.5f) * frameShaderParameters.renderResolution.zw;
+
+    uint2 visibilityID = vbuffer0[pixelCoord].rg;
+    float3 barycentrics = vbuffer1[pixelCoord].rgb;
+    uint geometryID = visibilityID.r;
+    uint primitiveID = visibilityID.g;
 
     float4 gbuffer0Data = gbuffer0[pixelCoord];
     float4 gbuffer1Data =  gbuffer1[pixelCoord];
     float4 gbuffer2Data =  gbuffer2[pixelCoord];
-    uint2 visibilityID = vbuffer0[pixelCoord].rg;
-    float3 barycentrics = vbuffer1[pixelCoord].rgb;
-    float sceneDepth = sceneDepthTexture[pixelCoord].r;
 
-    uint geometryID = visibilityID.r;
-    uint primitiveID = visibilityID.g;
+    float sceneDepth = sceneDepthTexture[pixelCoord].r;
 
     if (visibilityID.x == INVALID_VISIBILIY_ID)
     {
         return;
     }
 
-    ByteAddressBuffer geometryBuffer = GetGeometryBufferSRV();
-    Geometry geometry = geometryBuffer.Load<Geometry>(geometryID * sizeof(Geometry));
+    ByteAddressBuffer geometryDataBuffer = ShaderConstants.GetGeometryDataBufferSRV();
+    ByteAddressBuffer geometryInstanceDataBuffer = ShaderConstants.GetGeometryInstanceDataBufferSRV();
 
-    ByteAddressBuffer materialIndexBuffer = GetByteAddressBuffer(geometry.materialIndexBuffer);
+    GPUSceneGeometryInstanceData instanceData = GetGPUSceneGeometryInstanceData(geometryInstanceDataBuffer, 0);
+    GPUSceneGeometryData geometryData = GetGPUSceneGeometryData(geometryDataBuffer, instanceData.geometryID);
+
+    ByteAddressBuffer materialIndexBuffer = GetByteAddressBuffer(geometryData.materialIndexBuffer);
     uint materialIndex = materialIndexBuffer.Load<uint>(primitiveID * sizeof(uint));
 
-    ByteAddressBuffer materialBuffer = GetMaterialBufferSRV();
-    Material material = materialBuffer.Load<Material>(geometry.materialBufferOffset + (materialIndex * sizeof(Material)));
+    ByteAddressBuffer materialBuffer = GetByteAddressBuffer(geometryData.materialBuffer);
+    Material material = materialBuffer.Load<Material>(materialIndex * sizeof(Material));
 
-    float3 position = ReconstructWorldSpacePositionFromDepth(uv, sceneDepth, frameShaderParameters.clipToWorldMatrix);
+    float3 worldSpacePosition = ReconstructWorldSpacePositionFromDepth(uv, sceneDepth, frameShaderParameters.clipToWorldMatrix);
     float3 normal = DecodeNormalFromGBuffer(gbuffer0Data.xyz);
     float metallic = gbuffer1Data.x;
     float specular = gbuffer1Data.y;
@@ -376,9 +383,9 @@ void DirectLightingPS(float4 svPosition : SV_Position, out float4 outSceneColor 
 
     Surface surface;
     surface.uv = uv;
-    surface.P = position;
+    surface.P = worldSpacePosition;
     surface.N = normal;
-    surface.V = normalize(frameShaderParameters.cameraPosition - position);
+    surface.V = normalize(frameShaderParameters.cameraPosition - worldSpacePosition);
     surface.R = normalize(reflect(-surface.V, surface.N));
     surface.baseColor = baseColor;
     surface.subsurface = 0.0;
@@ -411,7 +418,8 @@ void DirectLightingPS(float4 svPosition : SV_Position, out float4 outSceneColor 
 
     finalColor += surface.emission * surface.emissionStrength;
 
-    finalColor += ComputeDirectLightingContribution(frameShaderParameters, surface) * frameShaderParameters.preExposure;
+    //finalColor += ComputeDirectLightingContribution(frameShaderParameters, surface) * frameShaderParameters.preExposure;
 
     outSceneColor = float4(finalColor, 1.0);
+    outSceneColor = 0.1;
 }

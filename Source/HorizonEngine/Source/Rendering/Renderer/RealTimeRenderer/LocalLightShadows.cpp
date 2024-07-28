@@ -1,23 +1,28 @@
 #include "RealTimeRenderer.h"
 
+// TODO
+#define NearClipPlaneDepthValue 1.0f
+#define FarClipPlaneDepthValue 0.0f
+
 namespace Horizon
 {
     RenderGraphTextureHandle RealTimeRenderer::RenderLocalLightShadows(
         RenderGraph& renderGraph,
         const SceneView& view)
     {
-        return RenderGraphTextureHandle::Null;
-        // static const uint32 cubeShadowMapSize = 256;
-        // static const uint32 localLightShadowMapAtlasSize = 4096;
-        // RenderGraphTextureDesc localLightShadowMapAtlasDesc = RenderGraphTextureDesc::Create2DArray(
-        //     localLightShadowMapAtlasSize,
-        //     localLightShadowMapAtlasSize,
-        //     RenderBackendTextureFormat::D32Float,
-        //     RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::DepthStencil,
-        //     2,
-        //     RenderBackendTextureClearValue::CreateDepthValue(FarClipPlaneDepthValue));
-        // auto localLightShadowMapAtlas = renderGraph.CreateTexture(localLightShadowMapAtlasDesc, "LocalLightShadowMapAtlas");
-        //
+        static const uint32 cubeShadowMapSize = 256;
+        static const uint32 localLightShadowMapAtlasSize = 4096;
+        RenderGraphTextureDesc localLightShadowMapAtlasDesc = RenderGraphTextureDesc::Create2DArray(
+            localLightShadowMapAtlasSize,
+            localLightShadowMapAtlasSize,
+            RenderBackendTextureFormat::D32Float,
+            RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::DepthStencil,
+            2,
+            RenderBackendTextureClearValue::CreateDepthValue(FarClipPlaneDepthValue));
+        RenderGraphTextureHandle localLightShadowMapAtlas = renderGraph.CreateTexture(localLightShadowMapAtlasDesc, "LocalLightShadowMapAtlas");
+        
+        return localLightShadowMapAtlas;
+
         // uint32 numViewports = renderEngine->numCubeShadowMaps * 6;
         //
         // renderGraph.AddPass(std::format("LocalLightShadows (Graphics, {}x{}, {} viewports)", localLightShadowMapAtlasSize, localLightShadowMapAtlasSize, numViewports), RenderGraphPassFlags::Graphics,

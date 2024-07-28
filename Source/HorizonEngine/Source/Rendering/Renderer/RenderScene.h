@@ -303,6 +303,11 @@ namespace Horizon
         std::vector<MaterialShaderParameters> materials;
         RenderBackendBufferHandle materialUploadBuffer;
         RenderBackendBufferHandle materialBuffer;
+
+        // Lights
+        uint64 lightDataBufferSize = 0;
+        RenderBackendBufferHandle lightDataUploadBuffer;
+        RenderBackendBufferHandle lightDataBuffer;
     };
 
     class RenderScene
