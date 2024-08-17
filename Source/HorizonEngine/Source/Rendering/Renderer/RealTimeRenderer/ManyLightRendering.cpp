@@ -63,7 +63,7 @@ namespace Horizon
         RenderGraphBufferHandle lightListStartOffsetBuffer = renderGraph.CreateBuffer(lightListStartOffsetBufferDesc, "LightGridLightListStartOffsetBuffer");
 
         renderGraph.AddPass(
-            std::format("LocalLightCullingClearBuffer ({} bytes)", lightListStartOffsetBufferDesc.size),
+            std::format("LocalLightCullingClearBuffer (Compute, {} bytes)", lightListStartOffsetBufferDesc.size),
             RenderGraphPassFlags::Compute,
             [&](RenderGraphBuilder& builder)
             {

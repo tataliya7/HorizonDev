@@ -4,6 +4,9 @@
 #include "GeometryRendering.h"
 #include "PostProcessing/PostProcessing.h"
 
+#define NearClipPlaneDepthValue 1.0f
+#define FarClipPlaneDepthValue 0.0f
+
 namespace Horizon
 {
     class TemporalSuperSamplingInterface;
@@ -451,14 +454,17 @@ namespace Horizon
         int32 currentPerFrameDataBufferIndex = 0;
         RenderBackendBufferHandle perFrameConstantBuffers[MaxNumFramesInFlight];
 
+        RenderBackendBufferHandle cascadeShadowMapDataBuffers[MaxNumFramesInFlight];
+
         RenderBackendBufferHandle GetCurrentPerFrameConstantBuffer() const;
 
         float materialTextureMipLodBias;
 
         float preExposure = 1.0f;
 
-        std::array<GeometryPassDrawCommandList, GeometryPassType::Count> geometryPassDrawCommandLists;
+        std::array<GeometryPassDrawCommandList, uint32(GeometryPassType::Count)> geometryPassDrawCommandLists;
         void DispatchOpaqueGeometryPassDrawCommands(RenderBackendCommandList& commandList);
+        void DispatchCascadedShadowMapPassDrawCommands(RenderBackendCommandList& commandList, const LightRenderObject& light, uint32 cascadeIndex, RenderBackendBufferHandle cascadeShadowMapDataBuffer);
 
         struct AutoExposureData
         {

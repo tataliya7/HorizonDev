@@ -470,9 +470,6 @@ namespace Horizon
     }
 #endif
 
-#define NearClipPlaneDepthValue 1.0f
-#define FarClipPlaneDepthValue 0.0f
-
     RenderBackendTextureClearValue clearColor = RenderBackendTextureClearValue::CreateColorValueFloat4(0.0f, 0.0f, 0.0f, 0.0f);
     RenderBackendTextureClearValue clearDepth = RenderBackendTextureClearValue::CreateDepthValue(FarClipPlaneDepthValue);
     RenderBackendTextureClearValue clearVisibilityBufferColor = RenderBackendTextureClearValue::CreateColorValueUnit4(0x0FFFFFFF, 0x0FFFFFFF, 0x0FFFFFFF, 0x0FFFFFFF);
@@ -685,66 +682,67 @@ namespace Horizon
             RenderBackendTextureFormat::R8G8B8A8Unorm,
             RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::UnorderedAccess);
         RenderGraphTextureHandle screenSpaceShadowMaskTexture = renderGraph.CreateTexture(screenSpaceShadowMaskTextureDesc, "ScreenSpaceShadowMaskTexture");
-        
+
         //if (view.visualizationMode == SceneViewVisualizationMode::ShadowMask)
         //{
         //    debugViewModeTextures.screenSpaceShadowMaskTextureDesc = screenSpaceShadowMaskTextureDesc;
         //    debugViewModeTextures.screenSpaceShadowMaskTexture = renderGraph.CreateTexture(screenSpaceShadowMaskTextureDesc, "ScreenSpaceShadowMaskTexture (Copy)");
         //}
-        
+
         RenderGraphTextureDesc rayDistanceDesc = RenderGraphTextureDesc::Create2D(
             renderResolution.width,
             renderResolution.height,
             RenderBackendTextureFormat::R16Float,
             RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::UnorderedAccess);
         RenderGraphTextureHandle rayDistance = renderGraph.CreateTexture(screenSpaceShadowMaskTextureDesc, "RayTracingShadowsRayDistance");
-        
-        //for (uint32 lightIndex = 0; lightIndex < renderEngine->numLights; lightIndex++)
-        //{
-        //    if (renderEngine->lightData[lightIndex].type == (uint32)LightComponent::LightType::Directional)
-        //    {
-        //        if (ShouldRenderRayTracingShadowsForLight(*renderEngine->lightInfo[lightIndex].component))
-        //        {
-        //            RenderRayTracingShadows(renderGraph, view, *renderEngine->lightInfo[lightIndex].component, screenSpaceShadowMaskTexture, rayDistance);
-        //        }
-        //        else
-        //        {
-        //            RenderScreenSpaceShadows(renderGraph, view, *renderEngine->lightInfo[lightIndex].component, screenSpaceShadowMaskTexture);
-        //        }
-        //        //if (true)
-        //        //{
-        //        //    auto filteredShadowMask = renderGraph->CreateTexture(shadowMaskDesc, "FilteredShadowMask");
-        //        //    DenoiseShadowMaskSSD(*renderGraph, blackboard, *view, filteredShadowMask, shadowMask);
-        //        //}
-        //        if (view.visualizationMode == SceneViewVisualizationMode::ShadowMask)
-        //        {
-        //            auto& debugViewModeTextures = renderGraph.blackboard.Get<RealTimeRendererDebugViewModeTextures>();
-        //
-        //            renderGraph.AddPass("CopyScreenSpaceShadowMaskTexture", RenderGraphPassFlags::Copy,
-        //                [&](RenderGraphBuilder& builder)
-        //                {
-        //                    builder.ReadTexture(screenSpaceShadowMaskTexture, RenderBackendResourceState::CopySrc);
-        //                    auto screenSpaceShadowMaskTextureCopy = debugViewModeTextures.screenSpaceShadowMaskTexture = builder.WriteTexture(debugViewModeTextures.screenSpaceShadowMaskTexture, RenderBackendResourceState::CopyDst);
-        //
-        //                    return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
-        //                    {
-        //                        Offset2D offset = { 0, 0 };
-        //                        Extent2D extent = { debugViewModeTextures.screenSpaceShadowMaskTextureDesc.width, debugViewModeTextures.screenSpaceShadowMaskTextureDesc.height };
-        //                     
-        //                        commandList.CopyTexture2D(
-        //                            registry.GetRenderBackendTextureHandle(screenSpaceShadowMaskTexture),
-        //                            offset,
-        //                            0,
-        //                            registry.GetRenderBackendTextureHandle(screenSpaceShadowMaskTextureCopy),
-        //                            offset,
-        //                            0,
-        //                            extent);
-        //                    };
-        //                });
-        //        }
-        //        break;
-        //    }
-        //}
+
+        for (uint32 lightIndex = 0; lightIndex < uint32(view.scene->lights.size()); lightIndex++)
+        {
+            const LightRenderObject* lightRenderObject = view.scene->lights[lightIndex];
+            if (lightRenderObject->lightType == LightType::DistantLight)
+            {
+                // if (ShouldRenderRayTracingShadowsForLight(*renderEngine->lightInfo[lightIndex].component))
+                // {
+                //     RenderRayTracingShadows(renderGraph, view, lightRenderObject, screenSpaceShadowMaskTexture, rayDistance);
+                // }
+                // else
+                {
+                    RenderScreenSpaceShadows(renderGraph, view, *lightRenderObject, screenSpaceShadowMaskTexture);
+                }
+                //if (true)
+                //{
+                //    auto filteredShadowMask = renderGraph->CreateTexture(shadowMaskDesc, "FilteredShadowMask");
+                //    DenoiseShadowMaskSSD(*renderGraph, blackboard, *view, filteredShadowMask, shadowMask);
+                //}
+                // if (view.visualizationMode == SceneViewVisualizationMode::ShadowMask)
+                // {
+                //     auto& debugViewModeTextures = renderGraph.blackboard.Get<RealTimeRendererDebugViewModeTextures>();
+                //
+                //     renderGraph.AddPass("CopyScreenSpaceShadowMaskTexture", RenderGraphPassFlags::Copy,
+                //         [&](RenderGraphBuilder& builder)
+                //         {
+                //             builder.ReadTexture(screenSpaceShadowMaskTexture, RenderBackendResourceState::CopySrc);
+                //             auto screenSpaceShadowMaskTextureCopy = debugViewModeTextures.screenSpaceShadowMaskTexture = builder.WriteTexture(debugViewModeTextures.screenSpaceShadowMaskTexture, RenderBackendResourceState::CopyDst);
+                //
+                //             return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
+                //             {
+                //                 Offset2D offset = { 0, 0 };
+                //                 Extent2D extent = { debugViewModeTextures.screenSpaceShadowMaskTextureDesc.width, debugViewModeTextures.screenSpaceShadowMaskTextureDesc.height };
+                //
+                //                 commandList.CopyTexture2D(
+                //                     registry.GetRenderBackendTextureHandle(screenSpaceShadowMaskTexture),
+                //                     offset,
+                //                     0,
+                //                     registry.GetRenderBackendTextureHandle(screenSpaceShadowMaskTextureCopy),
+                //                     offset,
+                //                     0,
+                //                     extent);
+                //             };
+                //         });
+                // }
+                break;
+            }
+        }
 
         RenderGraphTextureHandle localLightShadowMapAtlas = RenderLocalLightShadows(renderGraph, view);
 

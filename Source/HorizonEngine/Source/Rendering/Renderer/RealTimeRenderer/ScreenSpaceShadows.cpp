@@ -2,121 +2,254 @@
 
 namespace Horizon
 {
+    static void SetupCascadedShadowMapShaderParameters(CascadedShadowMapShaderParameters& outCascades, const SceneView& view, const LightRenderObject& light)
+    {
+        const Vector3& lightDirection = light.GetDirection();
+        const uint32 shadowCascadeCount = light.GetShadowCascadeCount();
+        const float maxShadowDistance = light.GetMaxShadowDistance();
+
+        float cascadeSplits[RendererMaxShadowMapCascadeCount];
+
+        float nearClip = view.nearClippingPlane;
+        float farClip = maxShadowDistance;//camera.farClippingPlane;
+        float fieldOfView = view.fieldOfView;
+        float aspectRatio = view.aspectRatio;
+
+        float clipRange = farClip - nearClip;
+
+        float minZ = nearClip;
+        float maxZ = nearClip + clipRange;
+
+        float range = maxZ - minZ;
+        float ratio = maxZ / minZ;
+
+        // Calculate split plane based on method presented in https://developer.nvidia.com/gpugems/GPUGems3/gpugems3_ch10.html
+        for (uint32_t i = 0; i < shadowCascadeCount; i++)
+        {
+            float p = (i + 1) / static_cast<float>(shadowCascadeCount);
+            float log = minZ * std::pow(ratio, p);
+            float uniform = minZ + range * p;
+            float d = light.GetShadowCascadeSplitLambda() * (log - uniform) + uniform;
+            cascadeSplits[i] = (d - nearClip) / clipRange;
+        }
+
+        // Calculate orthographic projection matrix for each cascade
+        float lastSplitDist = 0.0;
+        for (uint32_t cascadeIndex = 0; cascadeIndex < shadowCascadeCount; cascadeIndex++)
+        {
+            float splitDist = cascadeSplits[cascadeIndex];
+
+            glm::vec3 frustumCorners[8] = {
+                glm::vec3(-1.0f,  1.0f,  1.0f),
+                glm::vec3(1.0f,  1.0f,  1.0f),
+                glm::vec3(1.0f, -1.0f,  1.0f),
+                glm::vec3(-1.0f, -1.0f,  1.0f),
+                glm::vec3(-1.0f,  1.0f,  0.0f),
+                glm::vec3(1.0f,  1.0f,  0.0f),
+                glm::vec3(1.0f, -1.0f,  0.0f),
+                glm::vec3(-1.0f, -1.0f,  0.0f),
+            };
+
+            // Project frustum corners into world space
+            glm::mat4 cameraProjectionMatrix = Math::PerspectiveReverseZ_RH_ZO(Math::DegreesToRadians(fieldOfView), aspectRatio, nearClip, farClip);
+            glm::mat4 inverseCameraProjectionMatrix = Math::InverseMatrix(cameraProjectionMatrix);
+
+            glm::mat4 invCam = view.transformations.viewToWorldMatrix * inverseCameraProjectionMatrix;
+            for (uint32_t i = 0; i < 8; i++)
+            {
+                glm::vec4 invCorner = invCam * glm::vec4(frustumCorners[i], 1.0f);
+                frustumCorners[i] = invCorner / invCorner.w;
+            }
+
+            for (uint32_t i = 0; i < 4; i++) {
+                glm::vec3 dist = frustumCorners[i + 4] - frustumCorners[i];
+                frustumCorners[i + 4] = frustumCorners[i] + (dist * splitDist);
+                frustumCorners[i] = frustumCorners[i] + (dist * lastSplitDist);
+            }
+
+            // Get frustum center
+            glm::vec3 frustumCenter = glm::vec3(0.0f);
+            for (uint32_t i = 0; i < 8; i++)
+            {
+                frustumCenter += frustumCorners[i];
+            }
+            frustumCenter /= 8.0f;
+
+            float radius = 0.0f;
+            for (uint32_t i = 0; i < 8; i++)
+            {
+                float distance = glm::length(frustumCorners[i] - frustumCenter);
+                radius = glm::max(radius, distance);
+            }
+            radius = std::ceil(radius * 16.0f) / 16.0f;
+
+            glm::vec3 maxExtents = glm::vec3(radius);
+            glm::vec3 minExtents = -maxExtents;
+
+
+            glm::mat viewMatrix = glm::lookAt(frustumCenter - lightDirection * -minExtents.z, frustumCenter, glm::vec3(0.0f, 1.0f, 0.0f));
+            glm::mat projectionMatrix = glm::ortho(minExtents.x, maxExtents.x, minExtents.y, maxExtents.y, maxExtents.z - minExtents.z, 0.0f);
+
+            lastSplitDist = cascadeSplits[cascadeIndex];
+
+            outCascades.viewProjectionMatrix[cascadeIndex] = projectionMatrix * viewMatrix;
+            outCascades.splitDepth[cascadeIndex] = (nearClip + splitDist * clipRange) * -1.0f;
+            outCascades.cascadeCount = shadowCascadeCount;
+        }
+    }
+
+    void RealTimeRenderer::DispatchCascadedShadowMapPassDrawCommands(RenderBackendCommandList& commandList, const LightRenderObject& light, uint32 cascadeIndex, RenderBackendBufferHandle cascadeShadowMapDataBuffer)
+    {
+        const GeometryPassDrawCommandList& drawCommandList = geometryPassDrawCommandLists[uint32(GeometryPassType::CascadedShadowMap)];
+        const GPUScene* gpuScene = sceneView->scene->GetGPUScene();//drawCommandList.setupJobData.scene->GetGPUScene();
+
+        RenderBackendShaderHandle vertexShader = shaderLibrary->GetShader(ShaderID::CascadedShadowMapVS);
+        RenderBackendShaderHandle pixelShader = shaderLibrary->GetShader(ShaderID::CascadedShadowMapPS);
+
+        for (uint32 drawCommandIndex = 0; drawCommandIndex < drawCommandList.drawCommandCount; drawCommandIndex++)
+        {
+            const GeometryPassDrawCommand& drawCommand = drawCommandList.commands[drawCommandIndex];
+
+            RenderBackendGraphicsPipelineState graphicsPipelineState = {};
+            graphicsPipelineState.rasterizationState.cullMode = RenderBackendRasterizationCullMode::Back;
+            graphicsPipelineState.rasterizationState.fillMode = RenderBackendRasterizationFillMode::Solid;
+            graphicsPipelineState.depthStencilState.depthTestEnable = true;
+            graphicsPipelineState.depthStencilState.depthWriteEnable = true;
+            // TODO: vkCmdSetDepthBias
+            graphicsPipelineState.rasterizationState.depthBiasConstantFactor = light.shadowMapDepthBiasConstantFactor;
+            graphicsPipelineState.rasterizationState.depthBiasSlopeFactor = light.shadowMapDepthBiasSlopeFactor;
+            graphicsPipelineState.depthStencilState.depthCompareFunction = RenderBackendCompareOp::GreaterOrEqual;
+
+            RenderBackendShaderConstants shaderConstants = {};
+            shaderConstants.BindBufferCBV(0, renderBackend->GetBufferCBVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
+            shaderConstants.BindBufferCBV(1, renderBackend->GetBufferCBVBindlessResourceDescriptorIndex(cascadeShadowMapDataBuffer));
+            shaderConstants.BindBufferSRV(2, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(gpuScene->geometryDataBuffer));
+            shaderConstants.BindBufferSRV(3, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(gpuScene->geometryInstanceDataBuffer));
+            shaderConstants.BindScalar(4, cascadeIndex);
+
+            commandList.DrawIndexed(
+                vertexShader,
+                pixelShader,
+                graphicsPipelineState,
+                shaderConstants,
+                drawCommand.indexBuffer,
+                drawCommand.indexCount,
+                drawCommand.instanceCount,
+                drawCommand.firstIndex,
+                0, // TODO
+                drawCommand.firstInstance,
+                drawCommand.topology);
+        }
+    }
+
     void RealTimeRenderer::RenderScreenSpaceShadows(
         RenderGraph& renderGraph,
         const SceneView& view,
         const LightRenderObject& light,
         RenderGraphTextureHandle& screenSpaceShadowMaskTexture)
     {
-        // uint32 numDynamicShadowCascades = light.GetNumDynamicShadowCascades();
-        // // uint32 shadowMapSize = light.GetShadowMapSize();
-        // uint32 shadowMapSize = 4096;
-        //
-        // RenderGraphTextureDesc shadowMapDesc = RenderGraphTextureDesc::Create2DArray(
-        //     shadowMapSize,
-        //     shadowMapSize,
-        //     RenderBackendTextureFormat::D32Float,
-        //     RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::DepthStencil,
-        //     numDynamicShadowCascades,
-        //     RenderBackendTextureClearValue::CreateDepthValue(FarClipPlaneDepthValue));
-        //
-        // auto shadowMap = renderGraph.CreateTexture(shadowMapDesc, "CascadedShadowMap");
-        //
-        // static bool renderSM = true;
-        // if (renderSM)
-        // {
-        //     //renderSM = false;
-        //     for (uint32 cascadeIndex = 0; cascadeIndex < numDynamicShadowCascades; cascadeIndex++)
-        //     {
-        //         renderGraph.AddPass("CascadedShadowMap", RenderGraphPassFlags::Graphics,
-        //             [&](RenderGraphBuilder& builder)
-        //             {
-        //                 shadowMap = builder.WriteTexture(shadowMap, RenderBackendResourceState::DepthStencil);
-        //
-        //                 builder.BindDepthTarget(shadowMap, RenderBackendRenderPassBeginningAccessType::Clear, RenderBackendRenderPassEndingAccessType::Preserve, 0, cascadeIndex);
-        //
-        //                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
-        //                 {
-        //                     RenderBackendViewport viewport(0.0f, 0.0f, (float)shadowMapSize, (float)shadowMapSize);
-        //                     commandList.SetViewports(&viewport, 1);
-        //
-        //                     RenderBackendScissor scissor(0, 0, shadowMapSize, shadowMapSize);
-        //                     commandList.SetScissors(&scissor, 1);
-        //
-        //                     RenderBackendGraphicsPipelineState graphicsPipelineState = {};
-        //                     graphicsPipelineState.rasterizationState.cullMode = RenderBackendRasterizationCullMode::Back;
-        //                     // TODO: vkCmdSetDepthBias
-        //                     graphicsPipelineState.rasterizationState.depthBiasConstantFactor = light.shadowMapDepthBiasConstantFactor;
-        //                     graphicsPipelineState.rasterizationState.depthBiasSlopeFactor = light.shadowMapDepthBiasSlopeFactor;
-        //                     graphicsPipelineState.depthStencilState.depthTestEnable = true;
-        //                     graphicsPipelineState.depthStencilState.depthWriteEnable = true;
-        //                     graphicsPipelineState.depthStencilState.depthCompareFunction = RenderBackendCompareOp::GreaterOrEqual;
-        //
-        //                     RenderBackendShaderHandle graphicsShader = shaderLibrary->GetShader(ShaderID::CascadedShadowMap);
-        //
-        //                     for (const auto& drawCallInfo : renderEngine->drawList)
-        //                     {
-        //                         RenderBackendShaderConstants shaderConstants = {};
-        //                         shaderConstants.BindBufferCBV(0, renderBackend->GetBufferCBVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
-        //                         shaderConstants.BindBuffer(1, renderEngine->geometryBuffer, drawCallInfo.geometryIndex * sizeof(GeometryShaderParameters));
-        //                         shaderConstants.BindBuffer(2, renderEngine->materialBuffer, 0);
-        //                         shaderConstants.BindBuffer(3, renderEngine->cascadedShadowMapBuffer, 0);
-        //                         shaderConstants.PushConstants(0, 1.0f * cascadeIndex);
-        //
-        //                         commandList.DrawIndexed(
-        //                             graphicsShader,
-        //                             graphicsPipelineState,
-        //                             shaderConstants,
-        //                             drawCallInfo.indexBuffer,
-        //                             drawCallInfo.numIndices,
-        //                             1,
-        //                             drawCallInfo.firstIndex,
-        //                             0,
-        //                             0,
-        //                             RenderBackendPrimitiveTopology::TriangleList);
-        //                     }
-        //                 };
-        //             });
-        //     }
-        // }
-        //
-        // renderGraph.AddPass("ScreenSpaceShadows", RenderGraphPassFlags::Compute,
-        //     [&](RenderGraphBuilder& builder)
-        //     {
-        //         auto& sceneTextures = renderGraph.blackboard.Get<RealTimeRendererSceneTextures>();
-        //
-        //         auto sceneDepthTexture = builder.ReadTexture(sceneTextures.sceneDepthTexture, RenderBackendResourceState::ShaderResource);
-        //         shadowMap = builder.ReadTexture(shadowMap, RenderBackendResourceState::ShaderResource);
-        //
-        //         screenSpaceShadowMaskTexture = builder.WriteTexture(screenSpaceShadowMaskTexture, RenderBackendResourceState::UnorderedAccess);
-        //
-        //         return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
-        //         {
-        //             RenderBackendViewport viewport(0.0f, 0.0f, (float)renderResolution.width, (float)renderResolution.height);
-        //             commandList.SetViewports(&viewport, 1);
-        //
-        //             RenderBackendScissor scissor(0, 0, renderResolution.width, renderResolution.height);
-        //             commandList.SetScissors(&scissor, 1);
-        //
-        //             uint32 threadGroupCountX = ComputeWorkGroupCount(renderResolution.width, 8);
-        //             uint32 threadGroupCountY = ComputeWorkGroupCount(renderResolution.height, 8);
-        //             uint32 threadGroupCountZ = 1;
-        //
-        //             RenderBackendShaderConstants shaderConstants = {};
-        //             shaderConstants.BindBufferCBV(0, renderBackend->GetBufferCBVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
-        //             shaderConstants.BindBuffer(4, renderEngine->cascadedShadowMapBuffer, 0);
-        //             shaderConstants.BindTextureSRV(2, registry.GetTextureSRVBindlessResourceDescriptorIndex(sceneDepthTexture)));
-        //             shaderConstants.BindTextureSRV(3, registry.GetTextureSRVBindlessResourceDescriptorIndex(shadowMap)));
-        //             shaderConstants.BindTextureUAV(5, registry.GetTextureUAVBindlessResourceDescriptorIndexscreenSpaceShadowMaskTexture), 0));
-        //
-        //             RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::ScreenSpaceShadowsDirectionalLight);
-        //             commandList.Dispatch(
-        //                 computeShader,
-        //                 shaderConstants,
-        //                 threadGroupCountX,
-        //                 threadGroupCountY,
-        //                 threadGroupCountZ);
-        //         };
-        //     });
+        const uint32 shadowCascadeCount = light.GetShadowCascadeCount();
+        const uint32 shadowMapSize = light.GetShadowMapSize();
+
+        // Setup CascadedShadowMapShaderParameters
+        CascadedShadowMapShaderParameters cascadedShadowMapShaderParameters;
+        SetupCascadedShadowMapShaderParameters(cascadedShadowMapShaderParameters, view, light);
+
+        RenderBackendBufferHandle& cascadeShadowMapDataBuffer = cascadeShadowMapDataBuffers[currentPerFrameDataBufferIndex];
+        if (!cascadeShadowMapDataBuffer)
+        {
+            RenderBackendBufferDesc cascadeShadowMapDataBufferDesc = RenderBackendBufferDesc::CreateUniform(sizeof(CascadedShadowMapShaderParameters));
+            cascadeShadowMapDataBuffer = renderBackend->CreateBuffer(&cascadeShadowMapDataBufferDesc, nullptr, "CascadeShadowMapDataBuffer");
+        }
+        {
+            void* data = nullptr;
+            renderBackend->MapBuffer(cascadeShadowMapDataBuffer, &data);
+            memcpy(data, &cascadedShadowMapShaderParameters, sizeof(CascadedShadowMapShaderParameters));
+            renderBackend->UnmapBuffer(cascadeShadowMapDataBuffer);
+        }
+
+        RenderGraphTextureDesc shadowMapTextureDesc = RenderGraphTextureDesc::Create2DArray(
+            shadowMapSize,
+            shadowMapSize,
+            RenderBackendTextureFormat::D32Float,
+            RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::DepthStencil,
+            shadowCascadeCount,
+            RenderBackendTextureClearValue::CreateDepthValue(FarClipPlaneDepthValue));
+
+        RenderGraphTextureHandle shadowMapTexture = renderGraph.CreateTexture(shadowMapTextureDesc, "CascadedShadowMap");
+
+        static bool renderSM = true;
+        if (renderSM)
+        {
+            for (uint32 cascadeIndex = 0; cascadeIndex < shadowCascadeCount; cascadeIndex++)
+            {
+                renderGraph.AddPass(
+                    std::format("CascadedShadowMap (Graphics, {}x{}, cascade={})", shadowMapSize, shadowMapSize, cascadeIndex),
+                    RenderGraphPassFlags::Graphics,
+                    [&](RenderGraphBuilder& builder)
+                    {
+                        shadowMapTexture = builder.WriteTexture(shadowMapTexture, RenderBackendResourceState::DepthStencil);
+
+                        builder.BindDepthStencil(shadowMapTexture, RenderBackendRenderPassBeginningAccessType::Clear, RenderBackendRenderPassEndingAccessType::Preserve, 0, cascadeIndex);
+
+                        return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
+                        {
+                            {
+                                RenderBackendViewport viewport(0.0f, 0.0f, float(shadowMapSize), float(shadowMapSize));
+                                commandList.SetViewports(&viewport, 1);
+
+                                RenderBackendScissor scissor(0, 0, shadowMapSize, shadowMapSize);
+                                commandList.SetScissors(&scissor, 1);
+                            }
+
+                            DispatchCascadedShadowMapPassDrawCommands(commandList, light, cascadeIndex, cascadeShadowMapDataBuffer);
+
+                            {
+                                RenderBackendViewport viewport(0.0f, 0.0f, float(renderResolution.width), float(renderResolution.height));
+                                commandList.SetViewports(&viewport, 1);
+
+                                RenderBackendScissor scissor(0, 0, renderResolution.width, renderResolution.height);
+                                commandList.SetScissors(&scissor, 1);
+                            }
+                        };
+                    });
+            }
+        }
+
+        renderGraph.AddPass(
+            std::format("ScreenSpaceShadows (Compute, {}x{})", renderResolution.width, renderResolution.height),
+            RenderGraphPassFlags::Compute,
+            [&](RenderGraphBuilder& builder)
+            {
+                RealTimeRendererSceneTextures& sceneTextures = renderGraph.blackboard.Get<RealTimeRendererSceneTextures>();
+
+                RenderGraphTextureHandle sceneDepthTexture = builder.ReadTexture(sceneTextures.sceneDepthTexture, RenderBackendResourceState::ShaderResource);
+                shadowMapTexture = builder.ReadTexture(shadowMapTexture, RenderBackendResourceState::ShaderResource);
+
+                screenSpaceShadowMaskTexture = builder.WriteTexture(screenSpaceShadowMaskTexture, RenderBackendResourceState::UnorderedAccess);
+
+                return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
+                {
+                    uint32 threadGroupCountX = CeilDiv(renderResolution.width, 8);
+                    uint32 threadGroupCountY = CeilDiv(renderResolution.height, 8);
+                    uint32 threadGroupCountZ = 1;
+
+                    RenderBackendShaderConstants shaderConstants = {};
+                    shaderConstants.BindBufferCBV(0, renderBackend->GetBufferCBVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
+                    shaderConstants.BindBufferSRV(1, renderBackend->GetBufferCBVBindlessResourceDescriptorIndex(cascadeShadowMapDataBuffer));
+                    shaderConstants.BindTextureSRV(2, registry.GetTextureSRVBindlessResourceDescriptorIndex(sceneDepthTexture));
+                    shaderConstants.BindTextureSRV(3, registry.GetTextureSRVBindlessResourceDescriptorIndex(shadowMapTexture));
+                    shaderConstants.BindTextureUAV(4, registry.GetTextureUAVBindlessResourceDescriptorIndex(screenSpaceShadowMaskTexture, 0));
+
+                    RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::ScreenSpaceShadowsForDistantLight);
+
+                    commandList.Dispatch(
+                        computeShader,
+                        shaderConstants,
+                        threadGroupCountX,
+                        threadGroupCountY,
+                        threadGroupCountZ);
+                };
+            });
     }
 }

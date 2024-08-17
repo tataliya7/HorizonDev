@@ -1,14 +1,15 @@
 #pragma once
 
-#define MAX_NUM_SHADOW_MAP_CASCADES 4
+#define MAX_SHADOW_CASCADE_COUNT 4
 
 struct CascadedShadowMapShaderParameters
 {
-    float4x4 worldToClipMatrix[MAX_NUM_SHADOW_MAP_CASCADES];
-    float splitDepth[MAX_NUM_SHADOW_MAP_CASCADES];
-    uint numCascades;
+    float4x4 worldToClipMatrix[MAX_SHADOW_CASCADE_COUNT];
+    float splitDepth[MAX_SHADOW_CASCADE_COUNT];
+    uint cascadeCount;
     // float shadowMapInvSize;
 };
+DECLARE_ALIASED_ARRAY_CONSTANT_BUFFER_CBV(CascadedShadowMapShaderParameters);
 
 struct CubeShadowMapShaderParameters
 {
@@ -50,10 +51,10 @@ static const float2 PoissonOffsets[32] = {
     float2(0.4402924, 0.3640312),
 };
 
-uint CalculateCascadeIndex(float cameraSpacePositionZ, CascadedShadowMapShaderParameters parameters)
+uint CalculateCascadeIndex(float cameraSpacePositionZ, ConstantBuffer<CascadedShadowMapShaderParameters> parameters)
 {
     uint cascadeIndex = 0;
-    for (uint i = 0; i < parameters.numCascades - 1; i++)
+    for (uint i = 0; i < parameters.cascadeCount - 1; i++)
     {
         if (cameraSpacePositionZ < parameters.splitDepth[i])
         {

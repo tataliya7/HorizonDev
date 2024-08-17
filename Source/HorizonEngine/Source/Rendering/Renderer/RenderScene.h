@@ -200,6 +200,27 @@ namespace Horizon
 
         void GetLightShaderParameters(LightShaderParameters& parameters) const;
 
+
+        uint32 GetShadowCascadeCount() const
+        {
+            return shadowCascadeCount;
+        }
+
+        uint32 GetShadowMapSize() const
+        {
+            return shadowMapSize;
+        }
+
+        float GetMaxShadowDistance() const
+        {
+            return maxShadowDistance;
+        }
+
+        float GetShadowCascadeSplitLambda() const
+        {
+            return shadowCascadeSplitLambda;
+        }
+
     //private:
         LightType lightType;
         Vector3 color;
@@ -207,6 +228,12 @@ namespace Horizon
         Vector3 direction;
         Vector3 tangent;
         bool castRayTracingShadows;
+        uint32 shadowCascadeCount;
+        float shadowCascadeSplitLambda;
+        uint32 shadowMapSize;
+        float maxShadowDistance;
+        float shadowMapDepthBiasConstantFactor;
+        float shadowMapDepthBiasSlopeFactor;
         bool usedAsAtmosphericLight;
         float halfApexAngleInRadians;
         Vector3 atmosphericLightDiskColorFactor;

@@ -63,7 +63,7 @@ namespace Horizon
     {
         Matrix4x4 viewProjectionMatrix[RendererMaxShadowMapCascadeCount];
         float splitDepth[RendererMaxShadowMapCascadeCount];
-        uint32 numCascades;
+        uint32 cascadeCount;
     };
 
     struct CubeShadowMapShaderParameters

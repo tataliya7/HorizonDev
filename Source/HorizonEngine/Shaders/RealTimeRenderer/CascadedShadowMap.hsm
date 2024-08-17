@@ -1,0 +1,73 @@
+#include "../ShaderCommon.hsh"
+#include "RealTimeRendererCommon.hsh"
+#include "ShadowMapCommon.hsh"
+#include "GPUScene.hsh"
+
+SHADER_CONSTANTS_STRUCT_BEGIN();
+SHADER_CONSTANTS_CONSTANT_BUFFER_CBV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferCBV);
+SHADER_CONSTANTS_CONSTANT_BUFFER_CBV(1, CascadedShadowMapShaderParameters, CascadeShadowMapDataBufferCBV);
+SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_SRV(2, GeometryDataBufferSRV);
+SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_SRV(3, GeometryInstanceDataBufferSRV);
+SHADER_CONSTANTS_SCALAR(4, uint, CascadeIndex);
+SHADER_CONSTANTS_STRUCT_END();
+
+struct CascadedShadowMapVSToPS
+{
+    float4 position : SV_Position;
+    float2 textureCoord0 : TEXCOORD0;
+};
+
+[shader("vertex")]
+void CascadedShadowMapVS(
+    in uint vertexID : SV_VertexID,
+    in uint instanceID : SV_InstanceID,
+    out CascadedShadowMapVSToPS output)
+{
+    ConstantBuffer<PerFrameShaderParameters> frameShaderParameters = ShaderConstants.GetPerFrameShaderParameterBufferCBV();
+    ConstantBuffer<CascadedShadowMapShaderParameters> cascadedShadowMapShaderParameters = ShaderConstants.GetCascadeShadowMapDataBufferCBV();
+    ByteAddressBuffer geometryDataBuffer = ShaderConstants.GetGeometryDataBufferSRV();
+    ByteAddressBuffer geometryInstanceDataBuffer = ShaderConstants.GetGeometryInstanceDataBufferSRV();
+    const uint cascadeIndex = ShaderConstants.GetCascadeIndex();
+
+    GPUSceneGeometryInstanceData instanceData = GetGPUSceneGeometryInstanceData(geometryInstanceDataBuffer, instanceID);
+    GPUSceneGeometryData geometryData = GetGPUSceneGeometryData(geometryDataBuffer, instanceData.geometryID);
+
+    VertexAttributes vertexAttributes = GetVertexAttributes(geometryData, vertexID);
+
+    float4x4 worldToClipMatrix = cascadedShadowMapShaderParameters.worldToClipMatrix[cascadeIndex];
+
+    float3 worldSpaceVertexPosition = mul(instanceData.localToWorldMatrix, float4(vertexAttributes.position, 1.0f)).xyz;
+    float4 clipSpaceVertexPosition = mul(worldToClipMatrix, float4(worldSpaceVertexPosition, 1.0f));
+
+    output.position = clipSpaceVertexPosition;
+    output.textureCoord0 = vertexAttributes.textureCoord0;
+}
+
+[shader("pixel")]
+void CascadedShadowMapPS(
+    in CascadedShadowMapVSToPS input,
+    in uint primitiveID : SV_PrimitiveID)
+{
+#if 0
+    ConstantBuffer<PerFrameShaderParameters> frameShaderParameters = GetPerFrameShaderParameterBufferCBV();
+    Geometry geometry = GetGeometry();
+
+    float2 texCoord0 = input.texCoord0;
+
+    ByteAddressBuffer materialBuffer = GetMaterialBufferSRV();
+    ByteAddressBuffer materialIndexBuffer = GetByteAddressBuffer(geometry.materialIndexBuffer);
+
+    uint materialIndex = materialIndexBuffer.Load<uint>(primitiveID * sizeof(uint));
+    Material material = materialBuffer.Load<Material>(geometry.materialBufferOffset + (materialIndex * sizeof(Material)));
+
+    float4 baseColor = material.baseColor;
+    if (material.GetBaseColorMapIndex() > 0)
+    {
+        Texture2D baseColorMap = GetBindlessResourceTexture2D(material.GetBaseColorMapIndex());
+        baseColor = baseColorMap.Sample(GlobalSamplerLinearWarp, texCoord0);
+    }
+
+    float alphaCutoff = 0.2;
+    clip(baseColor.a - alphaCutoff);
+#endif
+}

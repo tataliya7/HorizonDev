@@ -4,10 +4,11 @@
 
 namespace Horizon
 {
-    enum GeometryPassType : uint8
+    enum class GeometryPassType : uint8
     {
         Opaque,
         Translucency,
+        CascadedShadowMap,
         EditorSelection,
         EditorPickingProxy,
         Count
