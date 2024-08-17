@@ -1,0 +1,16 @@
+#include "../ShaderCommon.hsh"
+#include "RealTimeRendererCommon.hsh"
+#include "ManyLightRenderingCommon.hsh"
+
+SHADER_CONSTANTS_STRUCT_BEGIN();
+SHADER_CONSTANTS_STRUCTURED_BUFFER_UAV(0, uint, LightGridLightListStartOffsetBufferUAV);
+SHADER_CONSTANTS_STRUCT_END();
+
+[shader("compute")]
+[numthreads(1, 1, 1)]
+void LocalLightCullingClearBufferCS()
+{
+    RWStructuredBuffer<uint> lightListStartOffsetBuffer = ShaderConstants.GetLightGridLightListStartOffsetBufferUAV();
+
+    lightListStartOffsetBuffer[0] = 0;
+}

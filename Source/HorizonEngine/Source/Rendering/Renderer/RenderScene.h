@@ -121,8 +121,16 @@ namespace Horizon
 
     };
 
+    enum class LightType
+    {
+        DistantLight,
+        PointLight,
+        SpotLight,
+    };
+
     struct LightRenderObjectDescription
     {
+        LightType lightType;
         Vector3 color;
         Vector3 position;
         Vector3 direction;
@@ -132,11 +140,33 @@ namespace Horizon
         Vector3 atmosphericLightDiskColorFactor;
     };
 
+    struct LocalLightRenderData
+    {
+        Vector3 position;
+        float inverseRadius;
+        Vector3 direction;
+        Vector3 tangent;
+        Vector3 color;
+    };
+
     class LightRenderObject
     {
     public:
         LightRenderObject(const LightRenderObjectDescription& description);
         virtual ~LightRenderObject();
+
+        bool IsLocalLight() const
+        {
+            return lightType == LightType::PointLight || lightType == LightType::SpotLight;
+        }
+
+        void SetupLocalLightRenderData(LocalLightRenderData& outRenderData) const
+        {
+            outRenderData.position = position;
+            outRenderData.direction = direction;
+            outRenderData.tangent = tangent;
+            outRenderData.color = color;
+        }
 
         Vector3 GetPhysicalLightColor() const
         {
@@ -171,9 +201,11 @@ namespace Horizon
         void GetLightShaderParameters(LightShaderParameters& parameters) const;
 
     //private:
+        LightType lightType;
         Vector3 color;
         Vector3 position;
         Vector3 direction;
+        Vector3 tangent;
         bool castRayTracingShadows;
         bool usedAsAtmosphericLight;
         float halfApexAngleInRadians;

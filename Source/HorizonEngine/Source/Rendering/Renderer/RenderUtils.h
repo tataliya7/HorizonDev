@@ -51,6 +51,22 @@ namespace Horizon
         RenderGraphPersistentTexture* whiteDummyTexture2D;
     };
 
+    static inline uint32 asuint(float x)
+    {
+        uint32 ret = {};
+        static_assert(sizeof(x) == sizeof(ret));
+        memcpy(&ret, &x, sizeof(x));
+        return ret;
+    }
+
+    static inline float asfloat(uint32 x)
+    {
+        float ret = {};
+        static_assert(sizeof(ret) == sizeof(x));
+        memcpy(&ret, &x, sizeof(x));
+        return ret;
+    }
+
     static inline uint32 CeilDiv(uint32 x, uint32 d)
     {
         return ((x + d - 1) / d);

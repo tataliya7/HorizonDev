@@ -179,6 +179,7 @@ namespace Horizon
             arguments.push_back(L"-fspv-target-env=vulkan1.3");
             arguments.push_back(L"-fvk-use-scalar-layout");
             arguments.push_back(L"-fvk-use-dx-position-w");
+            arguments.push_back(L"-fvk-allow-rwstructuredbuffer-arrays");
             break;
         default:
             std::unreachable();

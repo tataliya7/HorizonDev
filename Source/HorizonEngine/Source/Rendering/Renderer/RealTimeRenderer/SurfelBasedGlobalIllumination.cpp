@@ -134,7 +134,7 @@ namespace Horizon
 //         //            };
 //         //    });
 //
-//         /*renderGraph.AddPass("SurfelGIIndirectAruguments", RenderGraphPassFlags::Compute,
+//         /*renderGraph.AddPass("SurfelGIIndirectArguments", RenderGraphPassFlags::Compute,
 //             [&](RenderGraphBuilder& builder)
 //             {
 //                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
@@ -143,7 +143,7 @@ namespace Horizon
 //                     shaderConstants.BindBuffer(0, surfelGIConstantsBuffer, 0);
 //                     shaderConstants.BindBuffer(1, surfelGIIndirectArguments, 0);
 //
-//                     RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::SurfelGIIndirectAruguments);
+//                     RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::SurfelGIIndirectArguments);
 //                     commandList.Dispatch(
 //                         computeShader,
 //                         shaderConstants,

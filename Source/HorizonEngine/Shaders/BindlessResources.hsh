@@ -128,17 +128,35 @@
 
 // Buffer CBV
 #define DECLARE_ALIASED_ARRAY_CONSTANT_BUFFER_CBV(type) \
-[[vk::binding(BINDLESS_RESOURCE_BINDING_BUFFER_CBV, 0)]] ConstantBuffer<type> BindlessResource_ConstantBuffer_##type[];
+    [[vk::binding(BINDLESS_RESOURCE_BINDING_BUFFER_CBV, 0)]] ConstantBuffer<type> BindlessResource_ConstantBuffer_##type[];
 
 // Buffer SRV
 [[vk::binding(BINDLESS_RESOURCE_BINDING_BUFFER_SRV, 0)]] ByteAddressBuffer BindlessResource_ByteAddressBuffer[];
 #define DECLARE_ALIASED_ARRAY_STRUCTURED_BUFFER_SRV(type) \
-[[vk::binding(BINDLESS_RESOURCE_BINDING_BUFFER_SRV, 0)]] StructuredBuffer<type> BindlessResource_StructuredBuffer_##type[];
+    [[vk::binding(BINDLESS_RESOURCE_BINDING_BUFFER_SRV, 0)]] StructuredBuffer<type> BindlessResource_StructuredBuffer_##type[];
+
+[[vk::binding(BINDLESS_RESOURCE_BINDING_BUFFER_SRV, 0)]] StructuredBuffer<float>  BindlessResource_StructuredBuffer_float[];
+[[vk::binding(BINDLESS_RESOURCE_BINDING_BUFFER_SRV, 0)]] StructuredBuffer<float2> BindlessResource_StructuredBuffer_float2[];
+[[vk::binding(BINDLESS_RESOURCE_BINDING_BUFFER_SRV, 0)]] StructuredBuffer<float3> BindlessResource_StructuredBuffer_float3[];
+[[vk::binding(BINDLESS_RESOURCE_BINDING_BUFFER_SRV, 0)]] StructuredBuffer<float4> BindlessResource_StructuredBuffer_float4[];
+[[vk::binding(BINDLESS_RESOURCE_BINDING_BUFFER_SRV, 0)]] StructuredBuffer<uint>   BindlessResource_StructuredBuffer_uint[];
+[[vk::binding(BINDLESS_RESOURCE_BINDING_BUFFER_SRV, 0)]] StructuredBuffer<uint2>  BindlessResource_StructuredBuffer_uint2[];
+[[vk::binding(BINDLESS_RESOURCE_BINDING_BUFFER_SRV, 0)]] StructuredBuffer<uint3>  BindlessResource_StructuredBuffer_uint3[];
+[[vk::binding(BINDLESS_RESOURCE_BINDING_BUFFER_SRV, 0)]] StructuredBuffer<uint4>  BindlessResource_StructuredBuffer_uint4[];
 
 // Buffer UAV
 [[vk::binding(BINDLESS_RESOURCE_BINDING_BUFFER_UAV, 0)]] RWByteAddressBuffer BindlessResource_RWByteAddressBuffer[];
 #define DECLARE_ALIASED_ARRAY_STRUCTURED_BUFFER_UAV(type) \
-[[vk::binding(BINDLESS_RESOURCE_BINDING_BUFFER_UAV, 0)]] RWStructuredBuffer<type> BindlessResource_RWStructuredBuffer_##type[];
+    [[vk::binding(BINDLESS_RESOURCE_BINDING_BUFFER_UAV, 0)]] RWStructuredBuffer<type> BindlessResource_RWStructuredBuffer_##type[];
+
+[[vk::binding(BINDLESS_RESOURCE_BINDING_BUFFER_UAV, 0)]] RWStructuredBuffer<float>  BindlessResource_RWStructuredBuffer_float[];
+[[vk::binding(BINDLESS_RESOURCE_BINDING_BUFFER_UAV, 0)]] RWStructuredBuffer<float2> BindlessResource_RWStructuredBuffer_float2[];
+[[vk::binding(BINDLESS_RESOURCE_BINDING_BUFFER_UAV, 0)]] RWStructuredBuffer<float3> BindlessResource_RWStructuredBuffer_float3[];
+[[vk::binding(BINDLESS_RESOURCE_BINDING_BUFFER_UAV, 0)]] RWStructuredBuffer<float4> BindlessResource_RWStructuredBuffer_float4[];
+[[vk::binding(BINDLESS_RESOURCE_BINDING_BUFFER_UAV, 0)]] RWStructuredBuffer<uint>   BindlessResource_RWStructuredBuffer_uint[];
+[[vk::binding(BINDLESS_RESOURCE_BINDING_BUFFER_UAV, 0)]] RWStructuredBuffer<uint2>  BindlessResource_RWStructuredBuffer_uint2[];
+[[vk::binding(BINDLESS_RESOURCE_BINDING_BUFFER_UAV, 0)]] RWStructuredBuffer<uint3>  BindlessResource_RWStructuredBuffer_uint3[];
+[[vk::binding(BINDLESS_RESOURCE_BINDING_BUFFER_UAV, 0)]] RWStructuredBuffer<uint4>  BindlessResource_RWStructuredBuffer_uint4[];
 
 // Acceleration Structure
 #if RAY_TRACING_ENABLED
@@ -614,6 +632,13 @@ SamplerComparisonState GlobalSamplerComparisonLessLinearClamp    : register(s107
     StructuredBuffer<type> Get##name() \
     { \
         return BindlessResource_StructuredBuffer_##type[BindlessResourceDescriptorIndex_##name]; \
+    }
+
+#define SHADER_CONSTANTS_STRUCTURED_BUFFER_UAV(slot, type, name) \
+    [[vk::offset(slot * 4)]] int BindlessResourceDescriptorIndex_##name; \
+    RWStructuredBuffer<type> Get##name() \
+    { \
+        return BindlessResource_RWStructuredBuffer_##type[BindlessResourceDescriptorIndex_##name]; \
     }
 
 #define SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_SRV(slot, name) \

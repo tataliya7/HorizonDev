@@ -1,0 +1,43 @@
+#pragma once
+
+uint GetLightGridCellIndex(uint3 coordinate, uint3 gridSize)
+{
+	return (coordinate.z * gridSize.y + coordinate.y) * gridSize.x + coordinate.x;
+}
+
+struct LightGridCellData
+{
+    uint lightCount;
+    uint startOffset;
+};
+
+LightGridCellData GetLightGridCellData(StructuredBuffer<uint2> lightGridCellDataBuffer, uint cellIndex)
+{
+    uint2 rawData = lightGridCellDataBuffer[cellIndex];
+
+	LightGridCellData result = (LightGridCellData)0;
+    result.lightCount = rawData.x;
+    result.startOffset = rawData.y;
+
+	return result;
+}
+
+struct LocalLightData
+{
+    float4 data0;
+    float4 data1;
+    float4 data2;
+    float4 data3;
+
+    float4 GetPositionAndInverseRadius()
+    {
+        return data0;
+    }
+};
+DECLARE_ALIASED_ARRAY_STRUCTURED_BUFFER_SRV(LocalLightData);
+
+LocalLightData GetLocalLightData(StructuredBuffer<LocalLightData> localLightDataBuffer, uint lightIndex)
+{
+	LocalLightData result = localLightDataBuffer[lightIndex];
+	return result;
+}

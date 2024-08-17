@@ -135,6 +135,18 @@ namespace Horizon
             ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/GBuffer.hsm", "GBufferCS");
             shaderLibrary->LoadShader(ShaderID::GBuffer, shaderDesc);
         }
+        {
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/LocalLightCullingClearBuffer.hsm", "LocalLightCullingClearBufferCS");
+            shaderLibrary->LoadShader(ShaderID::LocalLightCullingClearBuffer, shaderDesc);
+        }
+        {
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/LocalLightCulling.hsm", "LocalLightCullingCS");
+            shaderLibrary->LoadShader(ShaderID::LocalLightCulling, shaderDesc);
+        }
+        {
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/LocalLightCullingDebug.hsm", "LocalLightCullingDebugCS");
+            shaderLibrary->LoadShader(ShaderID::LocalLightCullingDebug, shaderDesc);
+        }
         // {
         //     ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Vertex, "Shaders/RealTimeRenderer/ShadowMap.hsm", "ShadowMapVS");
         //     shaderLibrary->LoadShader(ShaderID::CascadedShadowMapVS, shaderDesc);

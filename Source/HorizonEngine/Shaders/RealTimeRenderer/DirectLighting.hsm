@@ -2,7 +2,7 @@
 #include "../BRDFCommon.hsh"
 #include "../PrincipledBSDF.hsh"
 #include "RealTimeRendererCommon.hsh"
-#include "LightingCommon.hsh"
+//#include "LightingCommon.hsh"
 #include "ShadowMapCommon.hsh"
 #include "SkyAtmosphereCommon.hsh"
 #include "GPUScene.hsh"
@@ -417,6 +417,23 @@ void DirectLightingPS(float4 position : SV_Position, out float4 outSceneColor : 
     float3 finalColor = 0.0;
 
     finalColor += surface.emission * surface.emissionStrength;
+
+#if 0
+	const uint cellIndex = GetLightGridCellIndex(uint2(LocalPosition.x, LocalPosition.y), sceneDepth);
+	const LightGridCellData cellData = GetLightGridCellData(cellIndex, EyeIndex);
+	// Early out if there are no lights in the cell.
+	if (cellData.lightCount == 0)
+	{
+		return;
+	}
+
+	[loop]
+	for (uint lightIndex = 0; lightIndex < lightCount; lightIndex++)
+	{
+		const LocalLightData localLight = GetLocalLightData(, cellData.startOffset + lightIndex);
+
+    }
+#endif
 
     //finalColor += ComputeDirectLightingContribution(frameShaderParameters, surface) * frameShaderParameters.preExposure;
 
