@@ -824,7 +824,7 @@ namespace Horizon
                 *outOldLayout = VK_IMAGE_LAYOUT_GENERAL;
             }
             *outSrcStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
-            *outSrcAccessMask = VK_ACCESS_2_SHADER_READ_BIT | VK_ACCESS_2_SHADER_WRITE_BIT;;
+            *outSrcAccessMask = VK_ACCESS_2_SHADER_READ_BIT | VK_ACCESS_2_SHADER_WRITE_BIT;
             break;
         case RenderBackendResourceState::IndirectArgument:
             if (outOldLayout)
