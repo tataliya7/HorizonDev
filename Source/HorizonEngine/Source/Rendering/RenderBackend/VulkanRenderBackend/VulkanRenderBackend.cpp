@@ -42,7 +42,7 @@ namespace Horizon
             freeIndices.push_back(index);
         }
     };
-    
+
     // It must match the values on the shader side
     enum
     {
