@@ -158,7 +158,7 @@ namespace Horizon
         RenderGraphTextureHandle outputTexture = renderGraph.CreateTexture(outputTextureDesc, "FSR2OutputTexture");
 
         renderGraph.AddPass(
-            std::format("FidelityFXSuperResolution2Dispatch (Compute, {}x{} -> {}x{})", 0, 0, 0, 0),
+            std::format("FidelityFXSuperResolution2Dispatch (Compute, {}x{} -> {}x{})", renderGraph.GetTextureDesc(dispatchDescription.colorTexture).width, renderGraph.GetTextureDesc(dispatchDescription.colorTexture).height, outputTextureDesc.width, outputTextureDesc.height),
             RenderGraphPassFlags::Compute,
             [&](RenderGraphBuilder& builder)
             {
