@@ -217,13 +217,13 @@ namespace Horizon
         bool showSceneHierarchyWindow = true;
         bool showProfilerWindow = true;
         bool showInspectorWindow = true;
-        //bool showRenderSettingsWindow = true;
+        bool showRenderSettingsWindow = true;
 
         void DrawSceneHierarchyWindow(bool* open);
         void DrawInspectorWindow(bool* open);
         void DrawProfilerWindow(bool* open);
         //void DrawConsoleWindow(bool* open);
-        //void DrawRenderSettingsWindow(bool* open);
+        void DrawRenderSettingsWindow(bool* open);
         //void DrawOverlay();
         //void DrawViewSettings();
 

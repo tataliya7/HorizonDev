@@ -327,6 +327,10 @@ namespace Horizon
             UpdateAutoExposureDataFromReadbackBuffer();
 
             preExposure = autoExposureData.adaptedExposure;
+            if (renderSettings.fixedPreExposureEnabled)
+            {
+                preExposure = renderSettings.fixedPreExposure;
+            }
 
             perFrameShaderParameters.preExposure = preExposure;
             perFrameShaderParameters.oneOverPreExposure = 1.0f / preExposure;

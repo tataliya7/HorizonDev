@@ -85,6 +85,10 @@ namespace Horizon
     {
         RendererType rendererType;
         float upscaleRatio;
+        bool fixedPreExposureEnabled = false;
+        float fixedPreExposure = 1.0f;
+        Vector3 indirectLightingTint = Vector3(1.0f, 1.0f, 1.0f);
+        float indirectLightingIntensity = 1.0f;
         GlobalIlluminationSettings globalIlluminationSettings;
         ShadowsTechnique shadowsTechnique;
         ReflectionsTechnique reflectionsTechnique;

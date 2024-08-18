@@ -68,6 +68,8 @@ namespace Horizon
         /** The radius of the bloom effect, controls how far the bloom extends out from the highlight. */
         float bloomRadius = 0.5f;
 
+        float lensFlaresIntensity = 1.0f;
+
         /** The strength of the chromatic aberration effect. */
         float chromaticAberrationIntensity = 0.0f;
 
