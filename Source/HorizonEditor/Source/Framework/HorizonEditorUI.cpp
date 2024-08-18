@@ -1957,10 +1957,6 @@ namespace Horizon
 
         DrawSceneViewWindow();
 
-        static bool open = true;
-        ImGui::Begin("22", &open);
-        ImGui::End();
-
         //bool showSceneViewportWindow = true;
         //if (true)
         //{

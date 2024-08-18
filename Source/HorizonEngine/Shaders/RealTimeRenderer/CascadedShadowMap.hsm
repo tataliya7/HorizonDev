@@ -5,7 +5,7 @@
 
 SHADER_CONSTANTS_STRUCT_BEGIN();
 SHADER_CONSTANTS_CONSTANT_BUFFER_CBV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferCBV);
-SHADER_CONSTANTS_CONSTANT_BUFFER_CBV(1, CascadedShadowMapShaderParameters, CascadeShadowMapDataBufferCBV);
+SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(1, CascadedShadowMapShaderParameters, CascadeShadowMapDataBufferSRV);
 SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_SRV(2, GeometryDataBufferSRV);
 SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_SRV(3, GeometryInstanceDataBufferSRV);
 SHADER_CONSTANTS_SCALAR(4, uint, CascadeIndex);
@@ -24,7 +24,7 @@ void CascadedShadowMapVS(
     out CascadedShadowMapVSToPS output)
 {
     ConstantBuffer<PerFrameShaderParameters> frameShaderParameters = ShaderConstants.GetPerFrameShaderParameterBufferCBV();
-    ConstantBuffer<CascadedShadowMapShaderParameters> cascadedShadowMapShaderParameters = ShaderConstants.GetCascadeShadowMapDataBufferCBV();
+    StructuredBuffer<CascadedShadowMapShaderParameters> cascadedShadowMapDataBuffer = ShaderConstants.GetCascadeShadowMapDataBufferSRV();
     ByteAddressBuffer geometryDataBuffer = ShaderConstants.GetGeometryDataBufferSRV();
     ByteAddressBuffer geometryInstanceDataBuffer = ShaderConstants.GetGeometryInstanceDataBufferSRV();
     const uint cascadeIndex = ShaderConstants.GetCascadeIndex();
@@ -34,6 +34,7 @@ void CascadedShadowMapVS(
 
     VertexAttributes vertexAttributes = GetVertexAttributes(geometryData, vertexID);
 
+    CascadedShadowMapShaderParameters cascadedShadowMapShaderParameters = cascadedShadowMapDataBuffer[0];
     float4x4 worldToClipMatrix = cascadedShadowMapShaderParameters.worldToClipMatrix[cascadeIndex];
 
     float3 worldSpaceVertexPosition = mul(instanceData.localToWorldMatrix, float4(vertexAttributes.position, 1.0f)).xyz;

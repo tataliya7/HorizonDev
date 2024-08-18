@@ -41,7 +41,7 @@ namespace Horizon
 
         bool useRayTracingShadows = false;
 
-        bool castShadows = false;
+        bool castShadows = true;
 
         // Cascade Shadow Maps
         uint32 shadowCascadeCount = 3;

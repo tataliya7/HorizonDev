@@ -9,7 +9,7 @@ struct CascadedShadowMapShaderParameters
     uint cascadeCount;
     // float shadowMapInvSize;
 };
-DECLARE_ALIASED_ARRAY_CONSTANT_BUFFER_CBV(CascadedShadowMapShaderParameters);
+DECLARE_ALIASED_ARRAY_STRUCTURED_BUFFER_SRV(CascadedShadowMapShaderParameters);
 
 struct CubeShadowMapShaderParameters
 {
@@ -51,7 +51,7 @@ static const float2 PoissonOffsets[32] = {
     float2(0.4402924, 0.3640312),
 };
 
-uint CalculateCascadeIndex(float cameraSpacePositionZ, ConstantBuffer<CascadedShadowMapShaderParameters> parameters)
+uint CalculateCascadeIndex(float cameraSpacePositionZ, CascadedShadowMapShaderParameters parameters)
 {
     uint cascadeIndex = 0;
     for (uint i = 0; i < parameters.cascadeCount - 1; i++)

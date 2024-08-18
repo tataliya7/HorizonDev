@@ -519,9 +519,6 @@ namespace Horizon
         RenderBackendBufferHandle distantLightDataBuffer;
         RenderBackendBufferHandle distantLightDataUploadBuffer;
 
-        RenderBackendBufferHandle cascadedShadowMapBuffer;
-        RenderBackendBufferHandle cascadedShadowMapUploadBuffer;
-
         RenderBackendBufferHandle localLightShadowMapBuffer;
         RenderBackendBufferHandle localLightShadowMapUploadBuffer;
 

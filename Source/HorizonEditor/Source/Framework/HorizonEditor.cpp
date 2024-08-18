@@ -123,12 +123,13 @@ namespace Horizon
             EntityHandle sunLight = scene->CreateEntity("SunLight");
             {
                 TransformComponent& transformComponent = scene->GetEntityManager()->GetComponent<TransformComponent>(sunLight);
-                //transformComponent.rotation = Vector3(11.0f, -15.0f, 0.0f);
+                transformComponent.rotation = Vector3(11.0f, 6.0f, 0.0f);
                 //transformComponent.rotation = Vector3(0.0f, 0.0f, 0.0f);
 
                 LightComponent& lightComponent = scene->GetEntityManager()->AddComponent<LightComponent>(sunLight);
                 lightComponent.type = LightComponent::Type::Distant;
                 lightComponent.forwardVec = DefaultLightDirection; //
+                lightComponent.forwardVec = Math::Normalize(Vector3(-0.102607988f, 0.190808982f, -0.976249754f));
                 lightComponent.color = Vector3(1.0f, 1.0f, 1.0f);
                 lightComponent.luminousIntensity = 120000.0f;
                 lightComponent.apexAngleInDegrees = 0.5357f;
@@ -173,7 +174,7 @@ namespace Horizon
         editorCamera.aspectRatio = 16.0f / 9.0f;
         editorCamera.nearClippingPlane = 0.1f;
         //editorCamera.farClippingPlane = std::numeric_limits<float>::max();
-        editorCamera.farClippingPlane = 1000.0f;
+        editorCamera.farClippingPlane = 100.0f;
         editorCamera.cameraSpeed = 1.0f;
         editorCamera.overrideAspectRatio = false;
 //

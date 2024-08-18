@@ -155,8 +155,6 @@ float3 ComputeDistantLightDirectLightingContribution(PerFrameShaderParameters fr
         frameShaderParameters.skyAtmosphereBottomRadiusInKilometers,
         frameShaderParameters.skyAtmosphereTopRadiusInKilometers);
 
-visibility= 1;
-atmosphereTransmittance = 1;
     float NdotV = max(0.0, dot(N, V));
     float NdotL = max(0.0, dot(N, L));
     float NdotH = max(0.0, dot(N, H));

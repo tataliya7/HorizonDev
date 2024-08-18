@@ -458,7 +458,8 @@ namespace Horizon
         int32 currentPerFrameDataBufferIndex = 0;
         RenderBackendBufferHandle perFrameConstantBuffers[MaxNumFramesInFlight];
 
-        RenderBackendBufferHandle cascadeShadowMapDataBuffers[MaxNumFramesInFlight];
+        RenderBackendBufferHandle cascadedShadowMapDataUploadBuffers[MaxNumFramesInFlight];
+        RenderBackendBufferHandle cascadedShadowMapDataBuffers[MaxNumFramesInFlight];
 
         RenderBackendBufferHandle GetCurrentPerFrameConstantBuffer() const;
 

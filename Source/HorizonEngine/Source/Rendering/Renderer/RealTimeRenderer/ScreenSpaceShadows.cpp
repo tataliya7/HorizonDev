@@ -122,7 +122,7 @@ namespace Horizon
 
             RenderBackendShaderConstants shaderConstants = {};
             shaderConstants.BindBufferCBV(0, renderBackend->GetBufferCBVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
-            shaderConstants.BindBufferCBV(1, renderBackend->GetBufferCBVBindlessResourceDescriptorIndex(cascadeShadowMapDataBuffer));
+            shaderConstants.BindBufferCBV(1, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(cascadeShadowMapDataBuffer));
             shaderConstants.BindBufferSRV(2, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(gpuScene->geometryDataBuffer));
             shaderConstants.BindBufferSRV(3, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(gpuScene->geometryInstanceDataBuffer));
             shaderConstants.BindScalar(4, cascadeIndex);
@@ -148,25 +148,43 @@ namespace Horizon
         const LightRenderObject& light,
         RenderGraphTextureHandle& screenSpaceShadowMaskTexture)
     {
-        const uint32 shadowCascadeCount = light.GetShadowCascadeCount();
-        const uint32 shadowMapSize = light.GetShadowMapSize();
-
-        // Setup CascadedShadowMapShaderParameters
         CascadedShadowMapShaderParameters cascadedShadowMapShaderParameters;
         SetupCascadedShadowMapShaderParameters(cascadedShadowMapShaderParameters, view, light);
 
-        RenderBackendBufferHandle& cascadeShadowMapDataBuffer = cascadeShadowMapDataBuffers[currentPerFrameDataBufferIndex];
-        if (!cascadeShadowMapDataBuffer)
+        RenderBackendBufferHandle& cascadedShadowMapDataUploadBuffer = cascadedShadowMapDataUploadBuffers[currentPerFrameDataBufferIndex];
+        RenderBackendBufferHandle& cascadedShadowMapDataBuffer = cascadedShadowMapDataBuffers[currentPerFrameDataBufferIndex];
+        if (!cascadedShadowMapDataBuffer)
         {
-            RenderBackendBufferDesc cascadeShadowMapDataBufferDesc = RenderBackendBufferDesc::CreateConstant(sizeof(CascadedShadowMapShaderParameters));
-            cascadeShadowMapDataBuffer = renderBackend->CreateBuffer(&cascadeShadowMapDataBufferDesc, nullptr, "CascadeShadowMapDataBuffer");
+            RenderBackendBufferDesc cascadedShadowMapDataUploadBufferDesc = RenderBackendBufferDesc::CreateUpload(sizeof(CascadedShadowMapShaderParameters));
+            cascadedShadowMapDataUploadBuffer = renderBackend->CreateBuffer(&cascadedShadowMapDataUploadBufferDesc, nullptr, "CascadedShadowMapDataUploadBuffer");
+            RenderBackendBufferDesc cascadedShadowMapDataBufferDesc = RenderBackendBufferDesc::CreateStructured(sizeof(CascadedShadowMapShaderParameters), 1);
+            cascadedShadowMapDataBuffer = renderBackend->CreateBuffer(&cascadedShadowMapDataBufferDesc, nullptr, "CascadedShadowMapDataBuffer");
         }
-        {
-            void* data = nullptr;
-            renderBackend->MapBuffer(cascadeShadowMapDataBuffer, &data);
-            memcpy(data, &cascadedShadowMapShaderParameters, sizeof(CascadedShadowMapShaderParameters));
-            renderBackend->UnmapBuffer(cascadeShadowMapDataBuffer);
-        }
+        renderBackend->UpdateBuffer(cascadedShadowMapDataUploadBuffer, 0, &cascadedShadowMapShaderParameters, sizeof(CascadedShadowMapShaderParameters));
+
+        renderGraph.AddPass(
+            std::format("UpdateCascadedShadowMapDataBuffer (Copy, {} bytes)", sizeof(CascadedShadowMapShaderParameters)),
+            RenderGraphPassFlags::Copy,
+            [&](RenderGraphBuilder& builder)
+            {
+                return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
+                {
+                    commandList.CopyBuffer(
+                        cascadedShadowMapDataUploadBuffer,
+                        0,
+                        cascadedShadowMapDataBuffer,
+                        0,
+                        sizeof(CascadedShadowMapShaderParameters));
+                    RenderBackendBarrier barrier[] =
+                    {
+                        RenderBackendBarrier(cascadedShadowMapDataBuffer, RenderBackendBufferSubresourceRange::Whole, RenderBackendResourceState::CopyDst, RenderBackendResourceState::ShaderResource)
+                    };
+                    commandList.Transitions(barrier, 1);
+                };
+            });
+
+        const uint32 shadowCascadeCount = light.GetShadowCascadeCount();
+        const uint32 shadowMapSize = light.GetShadowMapSize();
 
         RenderGraphTextureDesc shadowMapTextureDesc = RenderGraphTextureDesc::Create2DArray(
             shadowMapSize,
@@ -202,7 +220,7 @@ namespace Horizon
                                 commandList.SetScissors(&scissor, 1);
                             }
 
-                            DispatchCascadedShadowMapPassDrawCommands(commandList, light, cascadeIndex, cascadeShadowMapDataBuffer);
+                            DispatchCascadedShadowMapPassDrawCommands(commandList, light, cascadeIndex, cascadedShadowMapDataBuffer);
 
                             {
                                 RenderBackendViewport viewport(0.0f, 0.0f, float(renderResolution.width), float(renderResolution.height));
@@ -236,7 +254,7 @@ namespace Horizon
 
                     RenderBackendShaderConstants shaderConstants = {};
                     shaderConstants.BindBufferCBV(0, renderBackend->GetBufferCBVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
-                    shaderConstants.BindBufferSRV(1, renderBackend->GetBufferCBVBindlessResourceDescriptorIndex(cascadeShadowMapDataBuffer));
+                    shaderConstants.BindBufferSRV(1, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(cascadedShadowMapDataBuffer));
                     shaderConstants.BindTextureSRV(2, registry.GetTextureSRVBindlessResourceDescriptorIndex(sceneDepthTexture));
                     shaderConstants.BindTextureSRV(3, registry.GetTextureSRVBindlessResourceDescriptorIndex(shadowMapTexture));
                     shaderConstants.BindTextureUAV(4, registry.GetTextureUAVBindlessResourceDescriptorIndex(screenSpaceShadowMaskTexture, 0));
