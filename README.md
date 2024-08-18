@@ -37,7 +37,9 @@ Goals:
 
 2. Run "Setup.bat"
 
-3. Run "GenerateProjects.bat", Open "Horizon.sln" and build the solution
+3. Run "GenerateProjects.bat"
+
+4. Open "Horizon.sln" and build the solution
 
 ## Documentation
 
