@@ -33,14 +33,15 @@ Goals:
 
 1. Clone this repository
 
-`git clone https://github.com/harukumo/HorizonEngine`
+`git clone https://github.com/tataliya7/HorizonEngine`
 
-2. Run "GenerateProjects.bat"
-3. Open "Horizon.sln" and build the solution
+2. Run "Setup.bat"
+
+3. Run "GenerateProjects.bat", Open "Horizon.sln" and build the solution
 
 ## Documentation
 
-See [Horizon Documentation](https://harukumo.github.io/HorizonEngine/).
+See [Horizon Documentation](https://tataliya7.github.io/HorizonEngine/).
 
 ## Contribution
 
