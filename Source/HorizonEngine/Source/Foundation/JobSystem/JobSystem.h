@@ -40,7 +40,7 @@ namespace Horizon
     void JobSystemInit(uint32 workerThreadCount, uint32 fiberCount, uint32 fiberStackSize);
     void JobSystemExit();
     JobSystemCounterHandle JobSystemRunJobs(JobSystemJobDecl* jobs, uint32 jobCount);
-    JobSystemCounterHandle JobSystemRunJobs(JobSystemJobDecl* jobs, uint32 jobCount, JobSysteomPriority priority);
+    JobSystemCounterHandle JobSystemRunJobs(JobSystemJobDecl* jobs, uint32 jobCount, JobSystemPriority priority);
     void JobSystemWaitForCounter(JobSystemCounterHandle counter);
     void JobSystemWaitForCounterAndFree(JobSystemCounterHandle counter);
     void JobSystemWaitForCounterAndFreeWithoutFiber(JobSystemCounterHandle counter);
