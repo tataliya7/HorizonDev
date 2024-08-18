@@ -106,7 +106,7 @@ namespace Horizon
         //void OnUpdate(float deltaTime);
         //void OnRender(float deltaTime);
         void OnDrawUI();
-        //void OnDrawUIEx();
+        void OnDrawUIEx();
 
         //void OnKeyPressed(KeyCode key, bool repeat) {}
         //void OnKeyReleased(KeyCode key) {}
@@ -208,9 +208,12 @@ namespace Horizon
         //EngineSubsystem* renderEngine = nullptr;
         //SelectionManager* selectionManager;
 
-        //int gizmoOperationType;
+        int gizmoOperationType = -1;
 
-        //float GetSnapValue();
+        float GetSnapValue();
+
+        Matrix4x4 viewMatrix_deprecated = IdentityMatrix4x4;
+        Matrix4x4 projectionMatrix_deprecated = IdentityMatrix4x4;
 
         //bool showOverlay = true;
         //bool showConsoleWindow = true;

@@ -338,6 +338,9 @@ namespace Horizon
 
         sceneView.transformations.Update(sceneView.cameraPosition, sceneView.cameraRotation, sceneView.fieldOfView, sceneView.aspectRatio, sceneView.nearClippingPlane, sceneView.farClippingPlane);
 
+        viewMatrix_deprecated = sceneView.transformations.worldToViewMatrix;
+        projectionMatrix_deprecated = sceneView.transformations.viewToClipMatrix;
+
         engine->GetSubsystem<RenderSystem>()->RenderSceneView(renderer, &sceneView);
 
         RenderBackendCommandList* commandList = new RenderBackendCommandList(GArena);

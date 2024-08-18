@@ -149,18 +149,6 @@ dependency_imgui = dependency(
     dst_dir = "imgui",
     folder = "")
 
-def install_ImGuizmo(manager, dep, args = None):
-    dst_dir = os.path.join(manager.install_dir, dep.dst_dir)
-    downloaded_file = download_url(dep.url, manager.download_dir, False)
-    extract_dir = extract_zip_file(downloaded_file, dst_dir, dep.folder)
-
-dependency_ImGuizmo = dependency(
-    name = "ImGuizmo",
-    install = install_ImGuizmo,
-    url = "https://github.com/CedricGuillemet/ImGuizmo/archive/refs/tags/1.83.zip",
-    dst_dir = "ImGuizmo",
-    folder = "")
-
 def install_googletest(manager, dep, args = None):
     dst_dir = os.path.join(manager.install_dir, dep.dst_dir)
     downloaded_file = download_url(dep.url, manager.download_dir, False)
@@ -231,7 +219,6 @@ args = args_("ThirdParty", "Download")
 manager = dependency_manager(args)
 manager.add_dependency(dependency_glfw)
 manager.add_dependency(dependency_imgui)
-manager.add_dependency(dependency_ImGuizmo)
 manager.add_dependency(dependency_googletest)
 manager.add_dependency(dependency_optick)
 manager.add_dependency(dependency_dxc)
@@ -240,7 +227,6 @@ manager.add_dependency(dependency_meshoptimizer)
 required_dependencies = list()
 required_dependencies.append("glfw")
 required_dependencies.append("imgui")
-required_dependencies.append("ImGuizmo")
 required_dependencies.append("googletest")
 required_dependencies.append("optick")
 required_dependencies.append("dxc")

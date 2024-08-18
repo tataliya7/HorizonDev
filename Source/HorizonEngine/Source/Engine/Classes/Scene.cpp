@@ -121,33 +121,32 @@ namespace Horizon
     //     physicsScene->RemoveActor(entityManager, entity);
     // }
     //
-    // static void UpdateTransform_Deprecated(EntityManager* manager, EntityHandle entity)
-    // {
-    //     const SceneHierarchyComponent& hierarchy = manager->GetComponent<SceneHierarchyComponent>(entity);
-    //     TransformComponent& transform = manager->GetComponent<TransformComponent>(entity);
-    //     transform.Update();
-    //     if (hierarchy.parent != EntityHandle::Null)
-    //     {
-    //         TransformComponent& parentTransform = manager->GetComponent<TransformComponent>(hierarchy.parent);
-    //         transform.localToWorldMatrix = transform.relativeTransform * parentTransform.localToWorldMatrix;
-    //     }
-    //     else
-    //     {
-    //         transform.localToWorldMatrix = transform.relativeTransform;
-    //     }
-    //     EntityHandle currentEntity = hierarchy.firstChild;
-    //     for (uint32 i = 0; i < hierarchy.numChildren; i++)
-    //     {
-    //         if (manager->HasComponent<TransformDirtyComponent>(currentEntity))
-    //         {
-    //             continue;
-    //         }
-    //         UpdateTransform_Deprecated(manager, currentEntity);
-    //         currentEntity = manager->GetComponent<SceneHierarchyComponent>(currentEntity).next;
-    //     }
-    //     manager->RemoveComponent<TransformDirtyComponent>(entity);
-    // }
-    //
+    static void UpdateTransform_Deprecated(EntityManager* manager, EntityHandle entity)
+    {
+        const SceneHierarchyComponent& hierarchy = manager->GetComponent<SceneHierarchyComponent>(entity);
+        TransformComponent& transform = manager->GetComponent<TransformComponent>(entity);
+        transform.Update();
+        if (hierarchy.parent != EntityHandle::Null)
+        {
+            TransformComponent& parentTransform = manager->GetComponent<TransformComponent>(hierarchy.parent);
+            transform.localToWorldMatrix = transform.relativeTransform * parentTransform.localToWorldMatrix;
+        }
+        else
+        {
+            transform.localToWorldMatrix = transform.relativeTransform;
+        }
+        // EntityHandle currentEntity = hierarchy.firstChild;
+        // for (uint32 i = 0; i < hierarchy.numChildren; i++)
+        // {
+        //     if (manager->HasComponent<TransformDirtyComponent>(currentEntity))
+        //     {
+        //         continue;
+        //     }
+        //     UpdateTransform_Deprecated(manager, currentEntity);
+        //     currentEntity = manager->GetComponent<SceneHierarchyComponent>(currentEntity).next;
+        // }
+    }
+
     // struct UpdateTransformJobData
     // {
     //     EntityManager* manager;
@@ -202,45 +201,45 @@ namespace Horizon
         // {
         //     physicsScene->Simulate(deltaTime);
         // }
-        //
-        // // Update transforms
-        // {
-        //     entityManager->Get()->sort<TransformDirtyComponent>([&](EntityHandle lhs, EntityHandle rhs)
-        //     {
-        //         const auto& lc = entityManager->GetComponent<SceneHierarchyComponent>(lhs);
-        //         const auto& rc = entityManager->GetComponent<SceneHierarchyComponent>(rhs);
-        //         return lc.depth < rc.depth;
-        //     });
-        //
-        //     entityManager->GetView<TransformDirtyComponent>().each([&](EntityHandle entity)
-        //     {
-        //         UpdateTransform_Deprecated(entityManager, entity);
-        //     });
 
-            /*uint32 numTransformsToUpdate = 0;
-            std::vector<JobSystemJobDecl> updateTransformJobs;
-            std::vector<UpdateTransformJobData> updateTransformJobData;
-
-            entityManager->GetView<TransformDirtyComponent>().each([&](EntityHandle entity)
+        // Update transforms
+        {
+            entityManager->Get()->sort<TransformComponent>([&](EntityHandle lhs, EntityHandle rhs)
             {
-                UpdateTransformJobData data = {
-                    .manager = entityManager,
-                    .entity = entity
-                };
-                updateTransformJobData.push_back(data);
-
-                JobSystemJobDecl jobDecl = {
-                    .jobFunc = UpdateTransform,
-                    .data = &updateTransformJobData[numTransformsToUpdate]
-                };
-                updateTransformJobs.push_back(jobDecl);
-
-                numTransformsToUpdate++;
+                const auto& lc = entityManager->GetComponent<SceneHierarchyComponent>(lhs);
+                const auto& rc = entityManager->GetComponent<SceneHierarchyComponent>(rhs);
+                return lc.depth < rc.depth;
             });
 
-            JobSystemAtomicCounterHandle counter = JobSystemRunJobs(updateTransformJobs.data(), numTransformsToUpdate);
-            JobSystemWaitForCounter(counter, 0);*/
-        //}
+            entityManager->GetView<TransformComponent>().each([&](EntityHandle entity)
+            {
+                UpdateTransform_Deprecated(entityManager, entity);
+            });
+
+            // uint32 numTransformsToUpdate = 0;
+            // std::vector<JobSystemJobDecl> updateTransformJobs;
+            // std::vector<UpdateTransformJobData> updateTransformJobData;
+            //
+            // entityManager->GetView<TransformDirtyComponent>().each([&](EntityHandle entity)
+            // {
+            //     UpdateTransformJobData data = {
+            //       .manager = entityManager,
+            //       .entity = entity
+            //     };
+            //     updateTransformJobData.push_back(data);
+            //
+            //     JobSystemJobDecl jobDecl = {
+            //       .jobFunc = UpdateTransform,
+            //       .data = &updateTransformJobData[numTransformsToUpdate]
+            //     };
+            //     updateTransformJobs.push_back(jobDecl);
+            //
+            //     numTransformsToUpdate++;
+            // });
+            //
+            // JobSystemAtomicCounterHandle counter = JobSystemRunJobs(updateTransformJobs.data(), numTransformsToUpdate);
+            // JobSystemWaitForCounter(counter, 0);
+        }
 
         // Update armatures
         /*{

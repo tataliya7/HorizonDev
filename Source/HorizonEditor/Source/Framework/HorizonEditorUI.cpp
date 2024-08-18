@@ -5,7 +5,7 @@
 #include <imgui_internal.h>
 #include <backends/imgui_impl_glfw.h>
 
-#include <ImGuizmo.h>
+#include "Gizmo.h"
 
 #include "imnodes.h"
 #include "imnodes_internal.h"
@@ -167,6 +167,8 @@ namespace Horizon
 
         assert(window);
         ImGui_ImplGlfw_InitForOther(window->GetGLFWwindow(), true);
+
+        gizmoOperationType = ImGuizmo::OPERATION::TRANSLATE;
     }
 
     //struct ConsoleLog
@@ -665,16 +667,16 @@ namespace Horizon
     //    }
     //}
 
-    //float HorizonEditor::GetSnapValue()
-    //{
-    //    switch (gizmoOperationType)
-    //    {
-    //    case ImGuizmo::OPERATION::TRANSLATE: return 5.0f; break;
-    //    case ImGuizmo::OPERATION::ROTATE: return 10.0f; break;
-    //    case ImGuizmo::OPERATION::SCALE: return 0.1f; break;
-    //    }
-    //    return 0.0f;
-    //}
+    float HorizonEditor::GetSnapValue()
+    {
+        switch (gizmoOperationType)
+        {
+        case ImGuizmo::OPERATION::TRANSLATE: return 5.0f; break;
+        case ImGuizmo::OPERATION::ROTATE: return 10.0f; break;
+        case ImGuizmo::OPERATION::SCALE: return 0.1f; break;
+        }
+        return 0.0f;
+    }
 
     //void HorizonEditor::DrawOverlay()
     //{
@@ -831,62 +833,61 @@ namespace Horizon
         ImGui::End();
     }
 
-    //void HorizonEditor::OnDrawUIEx()
-    //{
-    //    // Draw gizmos
-    //    {
-    //        auto windowPos = ImGui::GetWindowPos();
-    //        //auto viewportSize = ImGui::GetContentRegionAvail();
-    //        Vector2 viewportSize = { swapChainWidth, swapChainHeight };
+    void HorizonEditor::OnDrawUIEx()
+    {
+        // Draw gizmos
+        {
+            auto windowPos = ImGui::GetWindowPos();
+            //auto viewportSize = ImGui::GetContentRegionAvail();
+            Vector2 viewportSize = { swapChainWidth, swapChainHeight };
 
-    //        if (selectedEntity && gizmoOperationType != -1)
-    //        {
-    //            ImGuizmo::SetOrthographic(false);
-    //            ImGuizmo::SetDrawlist();
-    //            ImGuizmo::SetRect(windowPos.x, windowPos.y, viewportSize.x, viewportSize.y);
+            if (selectedEntity && gizmoOperationType != -1)
+            {
+                ImGuizmo::SetOrthographic(false);
+                ImGuizmo::SetDrawlist();
+                ImGuizmo::SetRect(windowPos.x, windowPos.y, viewportSize.x, viewportSize.y);
 
-    //            bool snap = Input::GetKeyDown(KeyCode::LeftControl);
-    //            float snapValue = GetSnapValue();
-    //            float snapValues[3] = { snapValue, snapValue, snapValue };
+                bool snap = Input::GetKeyDown(KeyCode::LeftControl);
+                float snapValue = GetSnapValue();
+                float snapValues[3] = { snapValue, snapValue, snapValue };
 
-    //            // Editor camera
-    //            CameraComponent editorCamera = SceneManager::GetActiveScene()->GetEntityManager()->GetComponent<CameraComponent>(mainCamera);
-    //            Matrix4x4 cameraProjection = editorCamera.projectionMatrix;
-    //            Matrix4x4 cameraView = editorCamera.viewMatrix;
+                // Editor camera
+                Matrix4x4 cameraProjection = projectionMatrix_deprecated;
+                Matrix4x4 cameraView = viewMatrix_deprecated;
 
-    //            // Entity transform
-    //            static Matrix4x4 transformMatrix = Matrix4x4(1.0f);
-    //            auto& transformComponent = SceneManager::GetActiveScene()->GetEntityManager()->GetComponent<TransformComponent>(selectedEntity);
-    //            transformMatrix = transformComponent.relativeTransform;
+                // Entity transform
+                static Matrix4x4 transformMatrix = Matrix4x4(1.0f);
+                TransformComponent& transformComponent = editorSceneManager->GetActiveScene()->GetEntityManager()->GetComponent<TransformComponent>(selectedEntity);
+                transformMatrix = transformComponent.localToWorldMatrix;
 
-    //            //float deltaMatrix[16];
-    //            ImGuizmo::Manipulate(glm::value_ptr(cameraView),
-    //                glm::value_ptr(cameraProjection),
-    //                (ImGuizmo::OPERATION)gizmoOperationType,
-    //                ImGuizmo::LOCAL,
-    //                glm::value_ptr(transformMatrix),
-    //                nullptr,
-    //                snap ? snapValues : nullptr);
+                //float deltaMatrix[16];
 
-    //            /*static Quaternion zUpQuat = glm::rotate(glm::quat(), Math::DegreesToRadians(90.0), Vector3(1.0, 0.0, 0.0));
-    //            static Matrix4x4 preTransform = Math::Compose(Vector3(0.0f, 0.0f, 0.0f), zUpQuat, Vector3(1.0f, 1.0f, 1.0f));
-    //            ImGuizmo::DrawGrid(glm::value_ptr(cameraView),
-    //                glm::value_ptr(cameraProjection),
-    //                glm::value_ptr(preTransform),
-    //                10.0f);*/
+                ImVec4 deltaTranslation; ImVec4 deltaRotation; ImVec4 deltaScale;
+                ImGuizmo::Manipulate(glm::value_ptr(cameraView),
+                    glm::value_ptr(cameraProjection),
+                    (ImGuizmo::OPERATION)gizmoOperationType,
+                    ImGuizmo::LOCAL,
+                    glm::value_ptr(transformMatrix),
+                    &deltaTranslation, &deltaRotation, &deltaScale,
+                    nullptr,
+                    snap ? snapValues : nullptr);
 
-    //                /*if (ImGuizmo::IsUsing())
-    //                {
-    //                    auto parent = selectedEntity->GetCreator()->GetEntityByHandle(selectedEntity->GetComponent<SceneHierarchyComponent>().parent);
-    //                    if (parent)
-    //                    {
-    //                        transformMatrix = glm::inverse(parent->GetComponent<TransformComponent>().localToWorldMatrix) * transformMatrix;
-    //                    }
-    //                    SceneManager::GetActiveScene()->GetEntityManager()->ReplaceComponent<TransformComponent>(selectedEntity, transformComponent);
-    //                }*/
-    //        }
-    //    }
-    //}
+                /*static Quaternion zUpQuat = glm::rotate(glm::quat(), Math::DegreesToRadians(90.0), Vector3(1.0, 0.0, 0.0));
+                static Matrix4x4 preTransform = Math::Compose(Vector3(0.0f, 0.0f, 0.0f), zUpQuat, Vector3(1.0f, 1.0f, 1.0f));
+                ImGuizmo::DrawGrid(glm::value_ptr(cameraView),
+                    glm::value_ptr(cameraProjection),
+                    glm::value_ptr(preTransform),
+                    10.0f);*/
+
+                if (ImGuizmo::IsUsing())
+                {
+                    TransformComponent& _transformComponent = editorSceneManager->GetActiveScene()->GetEntityManager()->GetComponent<TransformComponent>(selectedEntity);
+                    _transformComponent.position += Vector3(deltaTranslation.x, deltaTranslation.y, deltaTranslation.z);
+                    //editorSceneManager->GetActiveScene()->GetEntityManager()->ReplaceComponent<TransformComponent>(selectedEntity, transformComponent);
+                }
+            }
+        }
+    }
 
     void HorizonEditor::DrawSceneViewWindow()
     {
@@ -2139,7 +2140,7 @@ namespace Horizon
         //    ImGui::End();
         //}
 
-        //OnDrawUIEx();
+        OnDrawUIEx();
 
         //if (showOverlay)
         //{
