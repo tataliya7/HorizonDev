@@ -2,6 +2,7 @@
 
 #include "RealTimeRendererCommon.h"
 #include "GeometryRendering.h"
+#include "ManyLightRendering.h"
 #include "PostProcessing/PostProcessing.h"
 
 #define NearClipPlaneDepthValue 1.0f
@@ -89,6 +90,13 @@ namespace Horizon
         //RenderGraphTextureHandle uiColorAndAlphaTexture;
         //RenderGraphTextureHandle targetTexture;
         //RenderGraphTextureHandle displayTexture;
+    };
+
+    struct RealTimeRendererLightGridData
+    {
+        LightGridInfo lightGridInfo;
+        RenderGraphBufferHandle lightGridCellDataBuffer;
+        RenderGraphBufferHandle lightGridLightListBuffer;
     };
 
     // struct RealTimeRendererDebugViewModeTextures
@@ -457,6 +465,9 @@ namespace Horizon
         static const int32 MaxNumFramesInFlight = 3;
         int32 currentPerFrameDataBufferIndex = 0;
         RenderBackendBufferHandle perFrameConstantBuffers[MaxNumFramesInFlight];
+
+        RenderBackendBufferHandle localLightDataUploadBuffers[MaxNumFramesInFlight];
+        RenderBackendBufferHandle localLightDataBuffers[MaxNumFramesInFlight];
 
         RenderBackendBufferHandle cascadedShadowMapDataUploadBuffers[MaxNumFramesInFlight];
         RenderBackendBufferHandle cascadedShadowMapDataBuffers[MaxNumFramesInFlight];

@@ -12,6 +12,7 @@ namespace Horizon
             description.color = GetPhysicalLightColor();
             description.position = Vector3(0.0f, 0.0f, 0.0f);
             description.direction = forwardVec;
+            description.radius = radius;
             description.castRayTracingShadows = castShadows;
             description.usedAsAtmosphericLight = usedAsAtmosphericLight;
             description.halfApexAngleInRadians = GetHalfApexAngleInRadians();

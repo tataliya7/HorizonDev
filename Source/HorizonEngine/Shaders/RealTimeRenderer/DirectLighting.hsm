@@ -6,6 +6,7 @@
 #include "ShadowMapCommon.hsh"
 #include "SkyAtmosphereCommon.hsh"
 #include "GPUScene.hsh"
+#include "ManyLightRenderingCommon.hsh"
 
 // TODO
 struct DistantLightData
@@ -20,7 +21,6 @@ SHADER_CONSTANTS_STRUCT_BEGIN();
 SHADER_CONSTANTS_CONSTANT_BUFFER_CBV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferCBV);
 SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_SRV(1, GeometryDataBufferSRV);
 SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_SRV(2, GeometryInstanceDataBufferSRV);
-SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(3, LightData, LightDataBufferSRV);
 SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(4, SceneDepthTextureSRV);
 SHADER_CONSTANTS_TEXTURE_2D_SRV(5, uint2, VBuffer0SRV);
 SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(6, VBuffer1SRV);
@@ -32,6 +32,12 @@ SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_SRV(11, LocalLightShadowMapDataBufferSRV);
 SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(12, ScreenSpaceShadowMaskTextureSRV);
 SHADER_CONSTANTS_TEXTURE_2D_ARRAY_SRV(13, float, LocalLightShadowMapAtlasSRV);
 SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(14, DistantLightData, DistantLightDataBufferSRV);
+SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(15, LocalLightData, LocalLightDataBufferSRV);
+SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(16, uint2, LightGridCellDataBufferSRV);
+SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(17, uint, LightGridLightListBufferSRV);
+SHADER_CONSTANTS_SCALAR(18, uint, LightGridSizeX);
+SHADER_CONSTANTS_SCALAR(19, uint, LightGridSizeY);
+SHADER_CONSTANTS_SCALAR(20, uint, LightGridSizeZ);
 SHADER_CONSTANTS_STRUCT_END();
 
 // SHADER_CONSTANTS(ShaderConstants)
@@ -190,23 +196,42 @@ float3 ComputeDistantLightDirectLightingContribution(PerFrameShaderParameters fr
     return result;
 }
 
-float3 ComputeDirectLightingContribution(PerFrameShaderParameters frameShaderParameters, Surface surface)
+float3 ComputeLocalLightDirectLightingContribution(PerFrameShaderParameters frameShaderParameters, Surface surface)
 {
-    uint lightCount = 0; // TODO
+    StructuredBuffer<LocalLightData> localLightDataBuffer = ShaderConstants.GetLocalLightDataBufferSRV();
+    StructuredBuffer<uint2> lightGridCellDataBuffer = ShaderConstants.GetLightGridCellDataBufferSRV();
+    StructuredBuffer<uint> lightGridLightListBuffer = ShaderConstants.GetLightGridLightListBufferSRV();
 
-    StructuredBuffer<LightData> lightDataBuffer = ShaderConstants.GetLightDataBufferSRV();
+    const uint3 lightGridSize = uint3(ShaderConstants.GetLightGridSizeX(), ShaderConstants.GetLightGridSizeY(), ShaderConstants.GetLightGridSizeZ());
 
-    float3 result = 0.0;
-    for (uint lightIndex = 0; lightIndex < lightCount; lightIndex++)
+    const uint lightGridCellIndex = GetLightGridCellIndex(0, lightGridSize);
+	const LightGridCellData lightGridCellData = GetLightGridCellData(lightGridCellDataBuffer, lightGridCellIndex);
+    const uint relevantLocalLightCount = lightGridCellData.lightCount;
+
+	// Early out if there are no lights in the cell.
+	if (relevantLocalLightCount == 0)
+	{
+		return 0.0f;
+	}
+
+    float3 result = 0.0f;
+
+    [loop]
+    for (uint lightIndex = 0; lightIndex < relevantLocalLightCount; lightIndex++)
     {
-        LightData light = lightDataBuffer.Load(lightIndex);
+        const uint localLightID = lightGridLightListBuffer[lightGridCellData.startOffset + lightIndex];
+		const LocalLightData localLightData = GetLocalLightData(localLightDataBuffer, localLightID);
 
-        float3 lightColor = light.color;
-        float visibility = 1.0;
-        if (light.type == LIGHT_TYPE_POINT)
+        float3 lightColor = localLightData.data3.xyz;
+        float3 lightPosition = localLightData.data0.xyz;
+        float lightRadius = localLightData.data0.w;
+
+        float visibility = 1.0f;
+        //if (light.type == LIGHT_TYPE_POINT)
         {
-            float3 L = normalize(light.position - surface.P);
+            float3 L = normalize(lightPosition - surface.P);
 
+#if 0
             if (light.shadowMapIndex >= 0)
             {
                 int cubeShadowMapIndex = light.shadowMapIndex;
@@ -261,14 +286,15 @@ float3 ComputeDirectLightingContribution(PerFrameShaderParameters frameShaderPar
                     }
                 }
             }
+#endif
 
-            float distanceSqaure = dot(light.position - surface.P, light.position - surface.P);
+            float distanceSqaure = dot(lightPosition - surface.P, lightPosition - surface.P);
 
             // Inverse squared falloff (1 is added here to avoid infinite intensity)
             float attenuation =  1.0 / (distanceSqaure + 1.0);
 
             // Ensure that the light intensity is 0 at a distance of the light's radius and the transition is smooth
-            float smoothFactor = Square(saturate(1.0 - Square(distanceSqaure / max(0.0001, (light.radius * light.radius)))));
+            float smoothFactor = Square(saturate(1.0 - Square(distanceSqaure / max(0.0001, (lightRadius * lightRadius)))));
             attenuation *= smoothFactor;
 
             if (attenuation > 0)
@@ -321,10 +347,10 @@ float3 ComputeDirectLightingContribution(PerFrameShaderParameters frameShaderPar
                 }
             }
         }
-        else if (light.type == LIGHT_TYPE_SPOT)
-        {
+        // else if (light.type == LIGHT_TYPE_SPOT)
+        // {
 
-        }
+        // }
     }
     return result;
 }
@@ -423,25 +449,9 @@ void DirectLightingPS(float4 position : SV_Position, out float4 outSceneColor : 
 
     finalColor += surface.emission * surface.emissionStrength;
 
-#if 0
-	const uint cellIndex = GetLightGridCellIndex(uint2(LocalPosition.x, LocalPosition.y), sceneDepth);
-	const LightGridCellData cellData = GetLightGridCellData(cellIndex, EyeIndex);
-	// Early out if there are no lights in the cell.
-	if (cellData.lightCount == 0)
-	{
-		return;
-	}
-
-	[loop]
-	for (uint lightIndex = 0; lightIndex < lightCount; lightIndex++)
-	{
-		const LocalLightData localLight = GetLocalLightData(, cellData.startOffset + lightIndex);
-
-    }
-#endif
-
     finalColor += ComputeDistantLightDirectLightingContribution(frameShaderParameters, surface) * frameShaderParameters.preExposure;
-    //finalColor += ComputeDirectLightingContribution(frameShaderParameters, surface) * frameShaderParameters.preExposure;
+
+    finalColor += ComputeLocalLightDirectLightingContribution(frameShaderParameters, surface) * frameShaderParameters.preExposure;
 
     outSceneColor = float4(finalColor, 1.0);
 }

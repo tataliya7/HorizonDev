@@ -13,7 +13,7 @@ namespace Horizon
         Vector4f data4;
     };
 
-    struct LightGridData
+    struct LightGridInfo
     {
         uint32 localLightCount;
         uint32 cellCount;

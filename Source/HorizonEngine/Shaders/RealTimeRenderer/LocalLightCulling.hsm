@@ -45,7 +45,7 @@ void LocalLightCullingCS(
     {
         LocalLightData localLightData = localLightDataBuffer[localLightIndex];
 
-        float4 lightPositionAndInverseRadius = localLightData.GetPositionAndInverseRadius();
+        float4 lightPositionAndInverseRadius = localLightData.GetPositionAndRadius();
 
         // TODO
         if (relevantLocalLightCount < LIGHT_GRID_MAX_LIGHT_COUNT_PER_CELL)

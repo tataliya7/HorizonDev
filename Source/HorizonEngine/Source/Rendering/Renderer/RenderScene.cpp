@@ -9,6 +9,7 @@ namespace Horizon
         , color(description.color)
         , position(description.position)
         , direction(description.direction)
+        , radius(description.radius)
         , castRayTracingShadows(description.castRayTracingShadows)
         , shadowMapSize(description.shadowMapSize)
         , shadowCascadeCount(description.shadowCascadeCount)

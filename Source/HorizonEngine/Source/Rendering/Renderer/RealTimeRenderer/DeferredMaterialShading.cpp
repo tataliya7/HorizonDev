@@ -265,6 +265,7 @@ namespace Horizon
              [&](RenderGraphBuilder& builder)
              {
                  RealTimeRendererSceneTextures& sceneTextures = renderGraph.blackboard.Get<RealTimeRendererSceneTextures>();
+                 RealTimeRendererLightGridData& lightGridData = renderGraph.blackboard.Get<RealTimeRendererLightGridData>();
 
                  RenderGraphTextureHandle vbuffer0 = builder.ReadTexture(sceneTextures.vbuffer0, RenderBackendResourceState::ShaderResource);
                  RenderGraphTextureHandle vbuffer1 = builder.ReadTexture(sceneTextures.vbuffer1, RenderBackendResourceState::ShaderResource);
@@ -278,6 +279,9 @@ namespace Horizon
                  localLightShadowMapAtlas = builder.ReadTexture(localLightShadowMapAtlas, RenderBackendResourceState::ShaderResource);
                  skyAtmosphereTransmittanceLUT = builder.ReadTexture(skyAtmosphereTransmittanceLUT, RenderBackendResourceState::ShaderResource);
 
+                 RenderGraphBufferHandle lightGridCellDataBuffer = builder.ReadBuffer(lightGridData.lightGridCellDataBuffer, RenderBackendResourceState::ShaderResource);
+                 RenderGraphBufferHandle lightGridLightListBuffer = builder.ReadBuffer(lightGridData.lightGridLightListBuffer, RenderBackendResourceState::ShaderResource);
+
                  RenderGraphTextureHandle sceneColorTexture = sceneTextures.sceneColorTexture = builder.WriteTexture(sceneTextures.sceneColorTexture, RenderBackendResourceState::RenderTarget);
 
                  builder.BindRenderTarget(0, sceneColorTexture, RenderBackendRenderPassBeginningAccessType::Clear, RenderBackendRenderPassEndingAccessType::Preserve);
@@ -290,7 +294,6 @@ namespace Horizon
                      shaderConstants.BindBufferSRV(14, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(view.scene->distantLightDataBuffer));
                      shaderConstants.BindBufferSRV(1, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(gpuScene->geometryDataBuffer));  // TODO: fix crash when geometryBuffer is null
                      shaderConstants.BindBufferSRV(2, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(gpuScene->geometryInstanceDataBuffer));
-                     shaderConstants.BindBufferSRV(3, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(gpuScene->lightDataBuffer));
                      shaderConstants.BindTextureSRV(4, registry.GetTextureSRVBindlessResourceDescriptorIndex(sceneDepthTexture));
                      shaderConstants.BindTextureSRV(5, registry.GetTextureSRVBindlessResourceDescriptorIndex(vbuffer0));
                      shaderConstants.BindTextureSRV(6, registry.GetTextureSRVBindlessResourceDescriptorIndex(vbuffer1));
@@ -302,6 +305,15 @@ namespace Horizon
                      shaderConstants.BindBufferSRV(11, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(gpuScene->lightDataBuffer));
                      shaderConstants.BindTextureSRV(12, registry.GetTextureSRVBindlessResourceDescriptorIndex(screenSpaceShadowMaskTexture));
                      shaderConstants.BindTextureSRV(13, registry.GetTextureSRVBindlessResourceDescriptorIndex(localLightShadowMapAtlas));
+
+                     shaderConstants.BindBufferSRV(15, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(localLightDataBuffers[currentPerFrameDataBufferIndex]));
+                     shaderConstants.BindBufferSRV(16, registry.GetBufferSRVBindlessResourceDescriptorIndex(lightGridCellDataBuffer));
+                     shaderConstants.BindBufferSRV(17, registry.GetBufferSRVBindlessResourceDescriptorIndex(lightGridLightListBuffer));
+
+                     // TODO
+                     shaderConstants.BindScalar(18, lightGridData.lightGridInfo.lightGridSizeX);
+                     shaderConstants.BindScalar(19, lightGridData.lightGridInfo.lightGridSizeY);
+                     shaderConstants.BindScalar(20, lightGridData.lightGridInfo.lightGridSizeZ);
 
                      RenderBackendGraphicsPipelineState graphicsPipelineState = {};
                      graphicsPipelineState.rasterizationState.cullMode = RenderBackendRasterizationCullMode::None;

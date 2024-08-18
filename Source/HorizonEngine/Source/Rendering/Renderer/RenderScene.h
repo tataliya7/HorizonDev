@@ -134,6 +134,7 @@ namespace Horizon
         Vector3 color;
         Vector3 position;
         Vector3 direction;
+        float radius;
         bool castRayTracingShadows;
         uint32 shadowMapSize;
         uint32 shadowCascadeCount;
@@ -156,7 +157,7 @@ namespace Horizon
     struct LocalLightRenderData
     {
         Vector3 position;
-        float inverseRadius;
+        float radius;
         Vector3 direction;
         Vector3 tangent;
         Vector3 color;
@@ -183,6 +184,7 @@ namespace Horizon
         void SetupLocalLightRenderData(LocalLightRenderData& outRenderData) const
         {
             outRenderData.position = position;
+            outRenderData.radius = radius;
             outRenderData.direction = direction;
             outRenderData.tangent = tangent;
             outRenderData.color = color;
@@ -244,6 +246,7 @@ namespace Horizon
         Vector3 position;
         Vector3 direction;
         Vector3 tangent;
+        float radius;
         bool castRayTracingShadows;
         uint32 shadowMapSize;
         uint32 shadowCascadeCount;

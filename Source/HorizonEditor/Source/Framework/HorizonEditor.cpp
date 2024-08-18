@@ -140,6 +140,36 @@ namespace Horizon
                 lightComponent.CreateRenderObject(scene->GetRenderScene());
             }
 
+            // Create point light 0
+            EntityHandle pointLight0 = scene->CreateEntity("PointLight0");
+            {
+                TransformComponent& transformComponent = scene->GetEntityManager()->GetComponent<TransformComponent>(pointLight0);
+                transformComponent.position = Vector3(9.0f, -3.0f, 1.5f);
+
+                LightComponent& lightComponent = scene->GetEntityManager()->AddComponent<LightComponent>(pointLight0);
+                lightComponent.type = LightComponent::Type::Point;
+                lightComponent.color = Vector4(255.0f / 255.0f, 41.0f / 255.0f, 0.0f / 255.0f, 1.0f);
+                lightComponent.luminousIntensity = 500.0f;
+                lightComponent.radius = 3.0f;
+                lightComponent.castShadows = true;
+                lightComponent.CreateRenderObject(scene->GetRenderScene());
+            }
+
+            // Create point light 1
+            EntityHandle pointLight1 = scene->CreateEntity("PointLight1");
+            {
+                TransformComponent& transformComponent = scene->GetEntityManager()->GetComponent<TransformComponent>(pointLight1);
+                transformComponent.position = Vector3(-9.5f, 3.5f, 1.5f);
+
+                LightComponent& lightComponent = scene->GetEntityManager()->AddComponent<LightComponent>(pointLight1);
+                lightComponent.type = LightComponent::Type::Point;
+                lightComponent.color = Vector4(0.0f, 7.0f / 255.0f, 255.0f / 255.0f, 1.0f);
+                lightComponent.luminousIntensity = 500.0f;
+                lightComponent.radius = 3.0f;
+                lightComponent.castShadows = true;
+                lightComponent.CreateRenderObject(scene->GetRenderScene());
+            }
+
             EntityHandle skyAtmosphere = scene->CreateEntity("SkyAtmosphere");
             {
                 SkyAtmosphereComponent& skyAtmosphereComponent = scene->GetEntityManager()->AddComponent<SkyAtmosphereComponent>(skyAtmosphere);

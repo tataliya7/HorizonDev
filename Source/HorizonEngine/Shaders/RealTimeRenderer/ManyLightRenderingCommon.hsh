@@ -28,8 +28,9 @@ struct LocalLightData
     float4 data1;
     float4 data2;
     float4 data3;
+    float4 data4;
 
-    float4 GetPositionAndInverseRadius()
+    float4 GetPositionAndRadius()
     {
         return data0;
     }

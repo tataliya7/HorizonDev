@@ -7,10 +7,11 @@ namespace Horizon
         LocalLightShaderParameters& outParameters,
         const LocalLightRenderData& lightRenderData)
     {
-        outParameters.data0 = Vector4f(lightRenderData.position, lightRenderData.inverseRadius);
+        outParameters.data0 = Vector4f(lightRenderData.position, lightRenderData.radius);
         outParameters.data1 = Vector4f(lightRenderData.direction, 0.0f);
         outParameters.data2 = Vector4f(lightRenderData.tangent, 0.0f);
         outParameters.data3 = Vector4f(lightRenderData.color, 0.0f);
+        outParameters.data4 = Vector4f(0.0f);
     }
 
     static const uint32 GLightGridPixelCount = 64;
@@ -42,10 +43,47 @@ namespace Horizon
 
         uint32 localLightCount = uint32(localLightData.size());
 
-        RenderGraphBufferDesc localLightDataBufferDesc = RenderGraphBufferDesc::CreateStructured(sizeof(LocalLightShaderParameters), localLightCount);
-        RenderGraphBufferHandle localLightDataBuffer = renderGraph.CreateBuffer(localLightDataBufferDesc, "LocalLightDataBuffer");
+        if (localLightCount == 0)
+        {
+            return;
+        }
+
+        // RenderGraphBufferDesc localLightDataBufferDesc = RenderGraphBufferDesc::CreateStructured(sizeof(LocalLightShaderParameters), localLightCount);
+        // RenderGraphBufferHandle localLightDataBuffer = renderGraph.CreateBuffer(localLightDataBufferDesc, "LocalLightDataBuffer");
 
         //renderGraph.UploadBufferDeferred();
+
+        RenderBackendBufferHandle& localLightDataUploadBuffer = localLightDataUploadBuffers[currentPerFrameDataBufferIndex];
+        RenderBackendBufferHandle& localLightDataBuffer = localLightDataBuffers[currentPerFrameDataBufferIndex];
+        if (!localLightDataBuffer)
+        {
+            RenderBackendBufferDesc localLightDataUploadBufferDesc = RenderBackendBufferDesc::CreateUpload(sizeof(LocalLightShaderParameters) * localLightCount);
+            localLightDataUploadBuffer = renderBackend->CreateBuffer(&localLightDataUploadBufferDesc, nullptr, "LocalLightDataUploadBuffer");
+            RenderBackendBufferDesc localLightDataBufferDesc = RenderBackendBufferDesc::CreateStructured(sizeof(LocalLightShaderParameters), localLightCount);
+            localLightDataBuffer = renderBackend->CreateBuffer(&localLightDataBufferDesc, nullptr, "LocalLightDataBuffer");
+        }
+        renderBackend->UpdateBuffer(localLightDataUploadBuffer, 0, localLightData.data(), sizeof(LocalLightShaderParameters) * localLightCount);
+
+        renderGraph.AddPass(
+            std::format("UpdateLocalLightDataBuffer (Copy, {} bytes)", sizeof(LocalLightShaderParameters) * localLightCount),
+            RenderGraphPassFlags::Copy,
+            [&](RenderGraphBuilder& builder)
+            {
+                return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
+                {
+                    commandList.CopyBuffer(
+                        localLightDataUploadBuffer,
+                        0,
+                        localLightDataBuffer,
+                        0,
+                        sizeof(LocalLightShaderParameters) * localLightCount);
+                    RenderBackendBarrier barrier[] =
+                    {
+                        RenderBackendBarrier(localLightDataBuffer, RenderBackendBufferSubresourceRange::Whole, RenderBackendResourceState::CopyDst, RenderBackendResourceState::ShaderResource)
+                    };
+                    commandList.Transitions(barrier, 1);
+                };
+            });
 
         const uint32 lightGridSizeX = CeilDiv(renderResolution.width, GLightGridPixelCount);
         const uint32 lightGridSizeY = CeilDiv(renderResolution.height, GLightGridPixelCount);
@@ -90,7 +128,7 @@ namespace Horizon
             RenderGraphPassFlags::Compute,
             [&](RenderGraphBuilder& builder)
             {
-                localLightDataBuffer = builder.ReadBuffer(localLightDataBuffer, RenderBackendResourceState::ShaderResource);
+                //localLightDataBuffer = builder.ReadBuffer(localLightDataBuffer, RenderBackendResourceState::ShaderResource);
                 cellDataBuffer = builder.WriteBuffer(cellDataBuffer, RenderBackendResourceState::UnorderedAccess);
                 lightListBuffer = builder.WriteBuffer(lightListBuffer, RenderBackendResourceState::UnorderedAccess);
                 lightListStartOffsetBuffer = builder.WriteBuffer(lightListStartOffsetBuffer, RenderBackendResourceState::UnorderedAccess);
@@ -103,7 +141,8 @@ namespace Horizon
 
                     RenderBackendShaderConstants shaderConstants = {};
                     shaderConstants.BindBufferCBV(0, renderBackend->GetBufferCBVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
-                    shaderConstants.BindTextureSRV(1, registry.GetBufferSRVBindlessResourceDescriptorIndex(localLightDataBuffer));
+                    shaderConstants.BindBufferCBV(1, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(localLightDataBuffer));
+                    //shaderConstants.BindTextureSRV(1, registry.GetBufferSRVBindlessResourceDescriptorIndex(localLightDataBuffer));
                     shaderConstants.BindTextureUAV(2, registry.GetBufferUAVBindlessResourceDescriptorIndex(cellDataBuffer));
                     shaderConstants.BindTextureUAV(3, registry.GetBufferUAVBindlessResourceDescriptorIndex(lightListBuffer));
                     shaderConstants.BindTextureUAV(4, registry.GetBufferUAVBindlessResourceDescriptorIndex(lightListStartOffsetBuffer));
@@ -122,5 +161,18 @@ namespace Horizon
                         threadGroupCountZ);
                 };
             });
+
+        LightGridInfo lightGridInfo;
+        lightGridInfo.localLightCount = localLightCount;
+        lightGridInfo.cellCount = cellCount;
+        lightGridInfo.lightGridSizeX = lightGridSizeX;
+        lightGridInfo.lightGridSizeX = lightGridSizeX;
+        lightGridInfo.lightGridSizeX = lightGridSizeX;
+        lightGridInfo.maxLightCountPerCell = GLightGridMaxLightCountPerCell;
+
+        RealTimeRendererLightGridData& lightGridData = renderGraph.blackboard.Create<RealTimeRendererLightGridData>();
+        lightGridData.lightGridCellDataBuffer = cellDataBuffer;
+        lightGridData.lightGridLightListBuffer = lightListBuffer;
+        lightGridData.lightGridInfo = lightGridInfo;
     }
 }
