@@ -12,6 +12,7 @@ namespace Horizon
         Lighting,
         Wireframe,
         Illuminance,
+        Depth,
         WorldSpaceNormal,
         PrimitiveID,
         MaterialID,
@@ -61,17 +62,19 @@ namespace Horizon
             worldToViewMatrix = glm::transpose(glm::mat4_cast(glm::normalize(cameraOrientation * zUpQuat))) * glm::translate(glm::mat4(1), -position);
             //viewToWorldMatrix = Math::InverseMatrix(worldToViewMatrix);
 
+#if 0
             if (farClippingPlane == std::numeric_limits<float>::max())
             {
                 // Infinite far plane
                 // TODO:
-                // 1. ComputeCameraSpaceDepth 
+                // 1. ComputeCameraSpaceDepth
                 // 2. Motion vector caculation
                 viewToClipMatrix = glm::infinitePerspectiveRH_ZO(Math::DegreesToRadians(fieldOfView), aspectRatio, nearClippingPlane);
             }
             else
+#endif
             {
-                viewToClipMatrix = glm::perspectiveRH_ZO(Math::DegreesToRadians(fieldOfView), aspectRatio, nearClippingPlane, farClippingPlane);
+                viewToClipMatrix = glm::perspectiveRH_ZO(Math::DegreesToRadians(fieldOfView), aspectRatio, farClippingPlane, nearClippingPlane);
             }
             //clipToViewMatrix = Math::InverseMatrix(viewToClipMatrix);
 

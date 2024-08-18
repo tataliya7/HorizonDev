@@ -170,10 +170,10 @@ namespace Horizon
         editorCamera.rotation = Vector3(0.0f, 0.0f, 0.0f);
         editorCamera.fieldOfView = 60.0f;
         //editorCamera.aspectRatio = (float)swapChainWidth / (float)swapChainHeight;
-        editorCamera.aspectRatio = 16.0f/9.0f;
+        editorCamera.aspectRatio = 16.0f / 9.0f;
         editorCamera.nearClippingPlane = 0.1f;
         //editorCamera.farClippingPlane = std::numeric_limits<float>::max();
-        editorCamera.farClippingPlane = 3000.0f;
+        editorCamera.farClippingPlane = 1000.0f;
         editorCamera.cameraSpeed = 1.0f;
         editorCamera.overrideAspectRatio = false;
 //

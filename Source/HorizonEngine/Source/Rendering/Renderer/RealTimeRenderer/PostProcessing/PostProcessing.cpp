@@ -24,6 +24,7 @@ namespace Horizon
         const bool isEditorGizmosEnabled = true;
 #endif
 
+        const bool isVisualizeDepthEnabled               = (view.debugVisualizationMode == SceneViewDebugVisualizationMode::Depth);
         const bool isVisualizePrimitiveIDEnabled         = (view.debugVisualizationMode == SceneViewDebugVisualizationMode::PrimitiveID);
         const bool isVisualizeMaterialIDEnabled          = (view.debugVisualizationMode == SceneViewDebugVisualizationMode::MaterialID);
         const bool isVisualizeWorldSpaceNormalEnabled    = (view.debugVisualizationMode == SceneViewDebugVisualizationMode::WorldSpaceNormal);
@@ -115,6 +116,10 @@ namespace Horizon
         // }
 #endif
 
+        if (isVisualizeDepthEnabled)
+        {
+            sceneColorTexture = AddVisualizeDepthPass(renderGraph, view);
+        }
         if (isVisualizePrimitiveIDEnabled)
         {
             sceneColorTexture = AddVisualizePrimitiveIDPass(renderGraph, view);

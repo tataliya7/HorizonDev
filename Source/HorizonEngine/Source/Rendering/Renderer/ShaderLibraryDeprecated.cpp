@@ -448,6 +448,10 @@ namespace Horizon
         //     shaderLibrary->LoadShader(ShaderID::SelectionOutlineComposite, shaderDesc);
         // }
         {
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/DebugVisualization/VisualizeDepth.hsm", "VisualizeDepthCS");
+            shaderLibrary->LoadShader(ShaderID::VisualizeDepth, shaderDesc);
+        }
+        {
             ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/DebugVisualization/VisualizePrimitiveID.hsm", "VisualizePrimitiveIDCS");
             shaderLibrary->LoadShader(ShaderID::VisualizePrimitiveID, shaderDesc);
         }

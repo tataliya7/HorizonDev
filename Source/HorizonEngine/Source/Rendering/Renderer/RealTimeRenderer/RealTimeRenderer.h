@@ -382,6 +382,10 @@ namespace Horizon
             const SceneView& view,
             RenderGraphTextureHandle sceneColorTexture);
 
+        RenderGraphTextureHandle AddVisualizeDepthPass(
+            RenderGraph& renderGraph,
+            const SceneView& view);
+
         RenderGraphTextureHandle AddVisualizePrimitiveIDPass(
             RenderGraph& renderGraph,
             const SceneView& view);

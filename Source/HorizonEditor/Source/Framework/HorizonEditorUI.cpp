@@ -96,7 +96,7 @@ namespace Horizon
     void HorizonEditor::SetColorTheme(HorizonEditorColorTheme theme) const
     {
         ImGui::SetCurrentContext(imguiContext);
-        
+
         ImGui::StyleColorsDark();
         ImGuiStyle& style = ImGui::GetStyle();
 
@@ -164,7 +164,7 @@ namespace Horizon
 
         // Set color theme
         SetColorTheme(colorTheme);
-        
+
         assert(window);
         ImGui_ImplGlfw_InitForOther(window->GetGLFWwindow(), true);
     }
@@ -901,7 +901,7 @@ namespace Horizon
 
         ImGui::Begin("SceneView", &open, flags);
 
-        static const char* viewModes[] = { "Lighting", "Wireframe", "Illuminance", "World Space Normal", "Primitive ID", "Material ID", "Motion Vectors", "Ambient Occlusion", "Screen Space Shadow Mask", "Surfel GI Surfel", "Surfel GI Heatmap" };
+        static const char* viewModes[] = { "Lighting", "Wireframe", "Illuminance", "Depth", "World Space Normal", "Primitive ID", "Material ID", "Motion Vectors", "Ambient Occlusion", "Screen Space Shadow Mask", "Surfel GI Surfel", "Surfel GI Heatmap" };
         static int currentViewModeIndex = 0;
         ImGui::Combo("##ViewMode", &currentViewModeIndex, viewModes, IM_ARRAYSIZE(viewModes));
         currentDebugVisualizationMode = (SceneViewDebugVisualizationMode)currentViewModeIndex;

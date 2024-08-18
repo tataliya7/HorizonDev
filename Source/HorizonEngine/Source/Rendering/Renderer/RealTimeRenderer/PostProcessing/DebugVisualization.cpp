@@ -3,6 +3,48 @@
 
 namespace Horizon
 {
+    RenderGraphTextureHandle RealTimeRenderer::AddVisualizeDepthPass(
+        RenderGraph& renderGraph,
+        const SceneView& view)
+    {
+        const RealTimeRendererSceneTextures& sceneTextures = renderGraph.blackboard.Get<RealTimeRendererSceneTextures>();
+
+        RenderGraphTextureHandle outputTexture = renderGraph.CreateTexture(view.targetTexture->GetDesc(), "VisualizeDepthTexture");
+
+        renderGraph.AddPass(
+            std::format("VisualizePrimitiveID (Compute, {}x{}->{}x{})", renderResolution.width, renderResolution.height, targetResolution.width, targetResolution.height),
+            RenderGraphPassFlags::Compute,
+            [&](RenderGraphBuilder& builder)
+            {
+                RenderGraphTextureHandle sceneDepthTexture = builder.ReadTexture(sceneTextures.sceneDepthTexture, RenderBackendResourceState::ShaderResource);
+
+                outputTexture = builder.WriteTexture(outputTexture, RenderBackendResourceState::UnorderedAccess);
+
+                return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
+                {
+                    uint32 threadGroupCountX = CeilDiv(targetResolution.width, PostProcessingThreadGroupSizeX);
+                    uint32 threadGroupCountY = CeilDiv(targetResolution.height, PostProcessingThreadGroupSizeY);
+                    uint32 threadGroupCountZ = 1;
+
+                    RenderBackendShaderConstants shaderConstants = {};
+                    shaderConstants.BindBufferCBV(0, renderBackend->GetBufferCBVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
+                    shaderConstants.BindTextureSRV(1, registry.GetTextureSRVBindlessResourceDescriptorIndex(sceneDepthTexture));
+                    shaderConstants.BindTextureUAV(2, registry.GetTextureUAVBindlessResourceDescriptorIndex(outputTexture, 0));
+
+                    RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::VisualizeDepth);
+
+                    commandList.Dispatch(
+                        computeShader,
+                        shaderConstants,
+                        threadGroupCountX,
+                        threadGroupCountY,
+                        threadGroupCountZ);
+                };
+            });
+
+        return outputTexture;
+    }
+
     RenderGraphTextureHandle RealTimeRenderer::AddVisualizePrimitiveIDPass(
         RenderGraph& renderGraph,
         const SceneView& view)

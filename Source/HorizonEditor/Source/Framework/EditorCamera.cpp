@@ -145,7 +145,7 @@ namespace Horizon
     void EditorCamera::Update(float deltaTimeInSeconds)
     {
         // TODO: make it configurable
-        float impulse = 5.0;
+        float impulse = 0.1f;
         const float translationMultiplier = controller.settings.translationMultiplier;
         const float rotationMultiplier = controller.settings.rotationMultiplier;
 

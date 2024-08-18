@@ -444,6 +444,6 @@ void DirectLightingPS(float4 position : SV_Position, out float4 outSceneColor : 
 
     finalColor += ComputeDistantLightDirectLightingContribution(frameShaderParameters, surface) * frameShaderParameters.preExposure;
     //finalColor += ComputeDirectLightingContribution(frameShaderParameters, surface) * frameShaderParameters.preExposure;
-finalColor = baseColor.rgb;
+
     outSceneColor = float4(finalColor, 1.0);
 }

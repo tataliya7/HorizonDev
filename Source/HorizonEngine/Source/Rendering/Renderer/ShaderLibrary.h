@@ -121,6 +121,7 @@ namespace Horizon
         SelectionOutlineSetup,
         SelectionOutlineJumpFlood,
         SelectionOutlineComposite,
+        VisualizeDepth,
         VisualizePrimitiveID,
         VisualizeMaterialID,
         VisualizeWorldSpaceNormal,
