@@ -15,13 +15,8 @@ namespace Horizon
 
     struct JobSystemQueuedJob
     {
-        JobSystemJobFunction workload;
+        JobSystemJobDecl workload;
         JobSystemCounterHandle counter;
-
-        JobSystemQueuedJob() noexcept
-            : workload(), counter() {}
-        JobSystemQueuedJob(const JobSystemQueuedJob& other) noexcept
-            : workload(other.workload), counter(other.counter) {}
     };
 
     struct Semaphore
@@ -35,11 +30,6 @@ namespace Horizon
         uint32 condition;
         JobSystemCounterHandle counter;
         JobSystemFiber* fiber;
-
-        JobSystemWaitingJob() noexcept
-            : condition(), counter(), fiber(nullptr) {}
-        JobSystemWaitingJob(const JobSystemWaitingJob& other) noexcept
-            : condition(other.condition), counter(other.counter), fiber(other.fiber) {}
     };
 
     struct JobSystemFiber
@@ -226,12 +216,11 @@ namespace Horizon
                 }
             }
 
-            JobSystemQueuedJob queuedJob = {};
+            JobSystemQueuedJob queuedJob;
             if (GJobSystemNormalPriorityJobQueue.try_pop(queuedJob))
             {
-                assert(queuedJob.workload);
-                JobSystemJobContext context = {};
-                queuedJob.workload(context);
+                assert(queuedJob.workload.func);
+                queuedJob.workload.func(queuedJob.workload.data);
                 FetchSubCounter(queuedJob.counter);
                 continue;
                 //std::wcout << std::format(L"Thread Name: {}, Fiber Index:{}", thread.name, currentFiber->index) << std::endl;
@@ -395,7 +384,7 @@ namespace Horizon
         // }
     }
 
-    JobSystemCounterHandle JobSystemDispatchJob(const char* jobName, JobSystemPriority jobPriority, const JobSystemJobFunction& jobFunction)
+    JobSystemCounterHandle JobSystemRunJobs(JobSystemJobDecl* jobs, uint32 jobCount)
     {
         assert(IsJobSystemInitialized());
 
@@ -403,14 +392,14 @@ namespace Horizon
         while (!FindFreeCounter(freeCounterIndex));
 
         JobSystemCounterHandle freeCounter = freeCounterIndex + 1;
-        StoreCounter(freeCounter, 1);
+        StoreCounter(freeCounter, jobCount);
 
         JobSystemQueuedJob job = {};
         job.counter = freeCounter;
 
-        // for (uint32 jobIndex = 0; jobIndex < jobCount; jobIndex++)
+        for (uint32 jobIndex = 0; jobIndex < jobCount; jobIndex++)
         {
-            job.workload = jobFunction;
+            job.workload = jobs[jobIndex];
 
             GJobSystemNormalPriorityJobQueue.push(job);
 
@@ -432,9 +421,11 @@ namespace Horizon
 
             JobSystemFiber* currentFiber = GetCurrentFiberData();
             JobSystemFiber* nextFiber = &GJobSystemFibers[freeFiberIndex];
-            nextFiber->waitingJobToSchedule.condition = 0;
-            nextFiber->waitingJobToSchedule.counter = counter;
-            nextFiber->waitingJobToSchedule.fiber = currentFiber;
+            nextFiber->waitingJobToSchedule = {
+                0,
+                counter,
+                currentFiber
+            };
 
             JobSystemSwitchToFiber(nextFiber->handle);
         }
