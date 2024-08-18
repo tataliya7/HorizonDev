@@ -20,7 +20,7 @@ namespace Horizon
         , defaultResources(defaultResources)
         , temporalSuperSamplingInterface(nullptr)
     {
-        RenderBackendBufferDesc perFrameConstantBufferDesc = RenderBackendBufferDesc::CreateUniform(sizeof(PerFrameShaderParameters));
+        RenderBackendBufferDesc perFrameConstantBufferDesc = RenderBackendBufferDesc::CreateConstant(sizeof(PerFrameShaderParameters));
         for (uint32 index = 0; index < MaxNumFramesInFlight; index++)
         {
             perFrameConstantBuffers[index] = renderBackend->CreateBuffer(&perFrameConstantBufferDesc, nullptr, "PerFrameConstantBuffer");
@@ -772,11 +772,13 @@ namespace Horizon
 
         RenderLocalVolumetricFogs(renderGraph, view);
 
-        RenderPostProcessingEffects(renderGraph, view);
+        ExecutePostProcessingPipeline(renderGraph, view);
 
         historyFrame.cameraJitterOffset = cameraJitterOffset;
         historyFrame.cameraPosition = view.cameraPosition;
         historyFrame.preExposure = preExposure;
         historyFrame.transformations = view.transformations;
+
+        currentPerFrameDataBufferIndex = (currentPerFrameDataBufferIndex + 1) % MaxNumFramesInFlight;
     }
 }

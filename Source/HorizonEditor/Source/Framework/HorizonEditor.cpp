@@ -127,7 +127,7 @@ namespace Horizon
                 //transformComponent.rotation = Vector3(0.0f, 0.0f, 0.0f);
 
                 LightComponent& lightComponent = scene->GetEntityManager()->AddComponent<LightComponent>(sunLight);
-                lightComponent.type = LightComponent::LightType::Distant;
+                lightComponent.type = LightComponent::Type::Distant;
                 lightComponent.forwardVec = DefaultLightDirection; //
                 lightComponent.color = Vector3(1.0f, 1.0f, 1.0f);
                 lightComponent.luminousIntensity = 120000.0f;
@@ -287,7 +287,7 @@ namespace Horizon
         sceneView.deltaTimeInSeconds = deltaTimeInSeconds;
         sceneView.scene = editorSceneManager->GetActiveScene()->GetRenderScene();
         sceneView.renderSettings = renderSettings;
-        sceneView.debugVisualizationMode = SceneViewDebugVisualizationMode::Lighting;//currentDebugVisualizationMode;
+        sceneView.debugVisualizationMode = currentDebugVisualizationMode;
         sceneView.reset = false;
         sceneView.cameraPosition = editorCamera.GetPosition();
         sceneView.cameraRotation = editorCamera.GetRotation();

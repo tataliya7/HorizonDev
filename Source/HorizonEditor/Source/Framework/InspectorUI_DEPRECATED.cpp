@@ -240,7 +240,7 @@ namespace Horizon
             ImGui::PopItemWidth();
             ImGui::NextColumn();
 
-            if (component.type == LightComponent::LightType::Point)
+            if (component.type == LightComponent::Type::Point)
             {
                 ImGui::AlignTextToFramePadding();
                 ImGui::TextUnformatted("Radius");
@@ -313,7 +313,9 @@ namespace Horizon
             ImGui::TextUnformatted("Shadow Cascade Count");
             ImGui::NextColumn();
             ImGui::PushItemWidth(-1);
-            if (ImGui::DragInt("##NumShadowCascades", &component.numShadowCascades, 1, 0, 4))
+
+            float v_min = 0.0f; float v_max = 4.0f;
+            if (ImGui::DragScalar("##NumShadowCascades", ImGuiDataType_U32, &component.shadowCascadeCount, 1.0f, &v_min, &v_max))
             {
 
             }
@@ -353,7 +355,7 @@ namespace Horizon
             ImGui::PopItemWidth();
             ImGui::NextColumn();
 
-            if (component.type == LightComponent::LightType::Distant)
+            if (component.type == LightComponent::Type::Distant)
             {
                 ImGui::AlignTextToFramePadding();
                 ImGui::TextUnformatted("Atmospheric Light Disk Color Factor");

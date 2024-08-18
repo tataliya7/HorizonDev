@@ -186,7 +186,7 @@ namespace Horizon
             flags |= RenderBackendBufferCreateFlags::UnorderedAccess;
             return RenderBackendBufferDesc(indexStride, indexCount, flags);
         }
-        static RenderBackendBufferDesc CreateUniform(uint64 bytes)
+        static RenderBackendBufferDesc CreateConstant(uint64 bytes)
         {
             RenderBackendBufferCreateFlags flags = RenderBackendBufferCreateFlags::UniformBuffer | RenderBackendBufferCreateFlags::CpuToGpu;
             return RenderBackendBufferDesc(4, (uint32)(bytes >> 2), flags);

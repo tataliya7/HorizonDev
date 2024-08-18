@@ -292,7 +292,7 @@ namespace Horizon
             RenderGraph& renderGraph,
             const SceneView& view);
 
-        void RenderPostProcessingEffects(
+        void ExecutePostProcessingPipeline(
             RenderGraph& renderGraph,
             const SceneView& view);
 

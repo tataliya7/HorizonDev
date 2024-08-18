@@ -5,10 +5,17 @@
 namespace Horizon
 {
     LightRenderObject::LightRenderObject(const LightRenderObjectDescription& description)
-        : color(description.color)
+        : lightType(description.lightType)
+        , color(description.color)
         , position(description.position)
         , direction(description.direction)
         , castRayTracingShadows(description.castRayTracingShadows)
+        , shadowMapSize(description.shadowMapSize)
+        , shadowCascadeCount(description.shadowCascadeCount)
+        , shadowCascadeSplitLambda(description.shadowCascadeSplitLambda)
+        , maxShadowDistance(description.maxShadowDistance)
+        , shadowMapDepthBiasConstantFactor(description.shadowMapDepthBiasConstantFactor)
+        , shadowMapDepthBiasSlopeFactor(description.shadowMapDepthBiasSlopeFactor)
         , usedAsAtmosphericLight(description.usedAsAtmosphericLight)
         , halfApexAngleInRadians(description.halfApexAngleInRadians)
         , atmosphericLightDiskColorFactor(description.atmosphericLightDiskColorFactor)
@@ -17,11 +24,6 @@ namespace Horizon
     }
 
     LightRenderObject::~LightRenderObject()
-    {
-
-    }
-
-    void LightRenderObject::GetLightShaderParameters(LightShaderParameters& parameters) const
     {
 
     }
@@ -168,6 +170,13 @@ namespace Horizon
 
     }
 
+    void SetupDistantLightShaderParameters(DistantLightRenderData& outParameters, const LightRenderObject* light)
+    {
+        outParameters.direction = light->direction;
+        outParameters.tangent = light->tangent;
+        outParameters.color = light->color;
+    }
+
     void RenderScene::UpdateGPUScene(RenderBackendCommandList* commandList)
     {
         gpuScene->geometryData.clear();
@@ -195,7 +204,7 @@ namespace Horizon
             gpuScene->geometryData.emplace_back(geometry);
 
             // TODO
-            GPUSceneGeometryInstanceData geometryInstance; 
+            GPUSceneGeometryInstanceData geometryInstance;
             geometryInstance.localToWorldMatrix = IdentityMatrix4x4;
             geometryInstance.worldToLocalMatrix = IdentityMatrix4x4;
             geometryInstance.previousLocalToWorldMatrix = geometryInstance.localToWorldMatrix;
@@ -231,7 +240,7 @@ namespace Horizon
                 gpuScene->geometryDataBufferSize);
             RenderBackendBarrier barrier[] =
             {
-                RenderBackendBarrier(gpuScene->geometryDataBuffer, RenderBackendBufferSubresourceRange::Whole, RenderBackendResourceState::CopyDst, RenderBackendResourceState::UnorderedAccess)
+                RenderBackendBarrier(gpuScene->geometryDataBuffer, RenderBackendBufferSubresourceRange::Whole, RenderBackendResourceState::CopyDst, RenderBackendResourceState::ShaderResource)
             };
             commandList->Transitions(barrier, 1);
         }
@@ -264,7 +273,32 @@ namespace Horizon
                 gpuScene->geometryInstanceDataBufferSize);
             RenderBackendBarrier barrier[] =
             {
-                RenderBackendBarrier(gpuScene->geometryInstanceDataBuffer, RenderBackendBufferSubresourceRange::Whole, RenderBackendResourceState::CopyDst, RenderBackendResourceState::UnorderedAccess)
+                RenderBackendBarrier(gpuScene->geometryInstanceDataBuffer, RenderBackendBufferSubresourceRange::Whole, RenderBackendResourceState::CopyDst, RenderBackendResourceState::ShaderResource)
+            };
+            commandList->Transitions(barrier, 1);
+        }
+
+        DistantLightRenderData distantLightShaderParameters;
+        SetupDistantLightShaderParameters(distantLightShaderParameters, atmosphericLight);
+
+        if (!distantLightDataBuffer)
+        {
+            RenderBackendBufferDesc distantLightDataUploadBufferDesc = RenderBackendBufferDesc::CreateUpload(sizeof(DistantLightRenderData));
+            distantLightDataUploadBuffer = renderBackend->CreateBuffer(&distantLightDataUploadBufferDesc, nullptr, "DistantLightDataBuffer");
+            RenderBackendBufferDesc distantLightDataBufferDesc = RenderBackendBufferDesc::CreateStructured(sizeof(DistantLightRenderData), 1);
+            distantLightDataBuffer = renderBackend->CreateBuffer(&distantLightDataBufferDesc, nullptr, "DistantLightDataBuffer");
+        }
+        {
+            renderBackend->UpdateBuffer(distantLightDataUploadBuffer, 0, &distantLightShaderParameters, sizeof(DistantLightRenderData));
+            commandList->CopyBuffer(
+                distantLightDataUploadBuffer,
+                0,
+                distantLightDataBuffer,
+                0,
+                sizeof(DistantLightRenderData));
+            RenderBackendBarrier barrier[] =
+            {
+                RenderBackendBarrier(distantLightDataBuffer, RenderBackendBufferSubresourceRange::Whole, RenderBackendResourceState::CopyDst, RenderBackendResourceState::ShaderResource)
             };
             commandList->Transitions(barrier, 1);
         }

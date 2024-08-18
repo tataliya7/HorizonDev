@@ -24,7 +24,7 @@ void VisibilityBufferVS(
     ByteAddressBuffer geometryDataBuffer = ShaderConstants.GetGeometryDataBufferSRV();
     ByteAddressBuffer geometryInstanceDataBuffer = ShaderConstants.GetGeometryInstanceDataBufferSRV();
 
-    GPUSceneGeometryInstanceData instanceData = GetGPUSceneGeometryInstanceData(geometryInstanceDataBuffer, instanceID);
+    GPUSceneGeometryInstanceData instanceData = GetGPUSceneGeometryInstanceData(geometryInstanceDataBuffer, 0);
     GPUSceneGeometryData geometryData = GetGPUSceneGeometryData(geometryDataBuffer, instanceData.geometryID);
 
     VertexAttributes vertexAttributes = GetVertexAttributes(geometryData, vertexID);
@@ -57,7 +57,7 @@ void VisibilityBufferPS(
     ByteAddressBuffer geometryDataBuffer = ShaderConstants.GetGeometryDataBufferSRV();
     ByteAddressBuffer geometryInstanceDataBuffer = ShaderConstants.GetGeometryInstanceDataBufferSRV();
 
-    GPUSceneGeometryInstanceData instanceData = GetGPUSceneGeometryInstanceData(geometryInstanceDataBuffer, instanceID);
+    GPUSceneGeometryInstanceData instanceData = GetGPUSceneGeometryInstanceData(geometryInstanceDataBuffer, 0);
     GPUSceneGeometryData geometryData = GetGPUSceneGeometryData(geometryDataBuffer, instanceData.geometryID);
 
     float materialTextureMipLodBias = frameShaderParameters.materialTextureMipLodBias;
@@ -68,13 +68,17 @@ void VisibilityBufferPS(
 #if 0
     float3 perspectiveCorrectBarycentrics = 0;
 #else
-    uint vertexIndex0 = GetByteAddressBuffer(geometryData.indexBuffer).Load<uint>((/*geometryData.baseIndex + */primitiveID * 3 + 0) * sizeof(uint));
-    uint vertexIndex1 = GetByteAddressBuffer(geometryData.indexBuffer).Load<uint>((/*geometryData.baseIndex + */primitiveID * 3 + 1) * sizeof(uint));
-    uint vertexIndex2 = GetByteAddressBuffer(geometryData.indexBuffer).Load<uint>((/*geometryData.baseIndex + */primitiveID * 3 + 2) * sizeof(uint));
 
-    float3 vertexPosition0 = GetByteAddressBuffer(geometryData.vertexBuffer0).Load<float3>(vertexIndex0 * sizeof(float3));
-    float3 vertexPosition1 = GetByteAddressBuffer(geometryData.vertexBuffer0).Load<float3>(vertexIndex1 * sizeof(float3));
-    float3 vertexPosition2 = GetByteAddressBuffer(geometryData.vertexBuffer0).Load<float3>(vertexIndex2 * sizeof(float3));
+    ByteAddressBuffer indexBuffer = GetByteAddressBuffer(geometryData.indexBuffer);
+    ByteAddressBuffer vertexBuffer0 = GetByteAddressBuffer(geometryData.vertexBuffer0);
+
+    uint vertexIndex0 = indexBuffer.Load<uint>((/*geometryData.baseIndex + */primitiveID * 3 + 0) * sizeof(uint));
+    uint vertexIndex1 = indexBuffer.Load<uint>((/*geometryData.baseIndex + */primitiveID * 3 + 1) * sizeof(uint));
+    uint vertexIndex2 = indexBuffer.Load<uint>((/*geometryData.baseIndex + */primitiveID * 3 + 2) * sizeof(uint));
+
+    float3 vertexPosition0 = vertexBuffer0.Load<float3>(vertexIndex0 * sizeof(float3));
+    float3 vertexPosition1 = vertexBuffer0.Load<float3>(vertexIndex1 * sizeof(float3));
+    float3 vertexPosition2 = vertexBuffer0.Load<float3>(vertexIndex2 * sizeof(float3));
 
     float3 worldSpaceVertexPosition0 = mul(instanceData.localToWorldMatrix, float4(vertexPosition0, 1.0f)).xyz;
     float3 worldSpaceVertexPosition1 = mul(instanceData.localToWorldMatrix, float4(vertexPosition1, 1.0f)).xyz;

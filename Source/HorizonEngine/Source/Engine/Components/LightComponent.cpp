@@ -16,6 +16,25 @@ namespace Horizon
             description.usedAsAtmosphericLight = usedAsAtmosphericLight;
             description.halfApexAngleInRadians = GetHalfApexAngleInRadians();
             description.atmosphericLightDiskColorFactor = atmosphericLightDiskColorFactor;
+            description.shadowMapSize = shadowMapSize;
+            description.shadowCascadeCount = shadowCascadeCount;
+            description.shadowCascadeSplitLambda = shadowCascadeSplitLambda;
+            description.maxShadowDistance = maxShadowDistance;
+            description.shadowMapDepthBiasConstantFactor = shadowMapDepthBiasConstantFactor;
+            description.shadowMapDepthBiasSlopeFactor = shadowMapDepthBiasSlopeFactor;
+
+            if (type == Type::Distant)
+            {
+                description.lightType = LightType::DistantLight;
+            }
+            else if (type == Type::Point)
+            {
+                description.lightType = LightType::PointLight;
+            }
+            else if (type == Type::Spot)
+            {
+                description.lightType = LightType::SpotLight;
+            }
 
             renderObject = new LightRenderObject(description);
             scene->AddLight(renderObject);

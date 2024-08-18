@@ -1,17 +1,19 @@
 #include "../../ShaderCommon.hsh"
 #include "../RealTimeRendererCommon.hsh"
 
-BIND_BUFFER_CBV(0, PerFrameShaderParameters);
-BIND_TEXTURE_2D_TYPED_SRV(1, uint2, VBuffer0);
-BIND_TEXTURE_2D_UAV(2, float4, OutputTexture);
+SHADER_CONSTANTS_STRUCT_BEGIN();
+SHADER_CONSTANTS_CONSTANT_BUFFER_CBV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferCBV);
+SHADER_CONSTANTS_TEXTURE_2D_SRV(1, uint2, VBuffer0SRV);
+SHADER_CONSTANTS_TEXTURE_2D_UAV(2, float4, OutputTextureUAV);
+SHADER_CONSTANTS_STRUCT_END();
 
 [shader("compute")]
 [numthreads(8, 8, 1)]
 void VisualizePrimitiveIDCS(uint3 DispatchThreadID : SV_DispatchThreadID)
 {
-    ConstantBuffer<PerFrameShaderParameters> frameShaderParameters = GetPerFrameShaderParameterBufferCBV();
-    Texture2D<uint2> vbuffer0 = GetVBuffer0SRV();
-    RWTexture2D<float4> outputTexture = GetOutputTextureUAV();
+    ConstantBuffer<PerFrameShaderParameters> frameShaderParameters = ShaderConstants.GetPerFrameShaderParameterBufferCBV();
+    Texture2D<uint2> vbuffer0 = ShaderConstants.GetVBuffer0SRV();
+    RWTexture2D<float4> outputTexture = ShaderConstants.GetOutputTextureUAV();
 
     uint2 pixelCoord = DispatchThreadID.xy;
 
@@ -22,22 +24,22 @@ void VisualizePrimitiveIDCS(uint3 DispatchThreadID : SV_DispatchThreadID)
         return;
     }
 
-    float2 uv = (pixelCoord + 0.5) * float2(1.0 / width, 1.0 / height);
+    float2 uv = (pixelCoord + 0.5f) * float2(1.0f / width, 1.0f / height);
 
-    //uint2 vbufferData = vbuffer0.SampleLevel(GlobalSamplerPointClamp, uv, 0).xy;
-    uint2 vbufferData = vbuffer0[pixelCoord].xy;
+    uint2 vbufferData = vbuffer0.SampleLevel(GlobalSamplerPointClamp, uv, 0).xy;
+    //uint2 vbufferData = vbuffer0[pixelCoord].xy;
 
     uint geometryID = vbufferData.r;
     uint primitiveID = vbufferData.g;
 
     if (geometryID == INVALID_VISIBILIY_ID)
     {
-        outputTexture[pixelCoord] = float4(0, 0, 0, 1);
+        outputTexture[pixelCoord] = float4(0.0f, 0.0f, 0.0f, 1.0f);
         return;
     }
 
     // +1 to avoid zero
     float3 color = UintToColor(primitiveID + 1);
 
-    outputTexture[pixelCoord] = float4(color, 1.0);
+    outputTexture[pixelCoord] = float4(color, 1.0f);
 }

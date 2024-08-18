@@ -135,9 +135,22 @@ namespace Horizon
         Vector3 position;
         Vector3 direction;
         bool castRayTracingShadows;
+        uint32 shadowMapSize;
+        uint32 shadowCascadeCount;
+        float shadowCascadeSplitLambda;
+        float maxShadowDistance;
+        float shadowMapDepthBiasConstantFactor;
+        float shadowMapDepthBiasSlopeFactor;
         bool usedAsAtmosphericLight;
         float halfApexAngleInRadians;
         Vector3 atmosphericLightDiskColorFactor;
+    };
+
+    struct DistantLightRenderData
+    {
+        Vector3 direction;
+        Vector3 tangent;
+        Vector3 color;
     };
 
     struct LocalLightRenderData
@@ -158,6 +171,13 @@ namespace Horizon
         bool IsLocalLight() const
         {
             return lightType == LightType::PointLight || lightType == LightType::SpotLight;
+        }
+
+        void SetupDistantLightRenderData(DistantLightRenderData& outRenderData) const
+        {
+            outRenderData.direction = direction;
+            outRenderData.tangent = tangent;
+            outRenderData.color = color;
         }
 
         void SetupLocalLightRenderData(LocalLightRenderData& outRenderData) const
@@ -198,9 +218,6 @@ namespace Horizon
             return usedAsAtmosphericLight;
         }
 
-        void GetLightShaderParameters(LightShaderParameters& parameters) const;
-
-
         uint32 GetShadowCascadeCount() const
         {
             return shadowCascadeCount;
@@ -228,9 +245,9 @@ namespace Horizon
         Vector3 direction;
         Vector3 tangent;
         bool castRayTracingShadows;
+        uint32 shadowMapSize;
         uint32 shadowCascadeCount;
         float shadowCascadeSplitLambda;
-        uint32 shadowMapSize;
         float maxShadowDistance;
         float shadowMapDepthBiasConstantFactor;
         float shadowMapDepthBiasSlopeFactor;
@@ -498,6 +515,9 @@ namespace Horizon
 
         RenderBackendBufferHandle lightDataBuffer;
         RenderBackendBufferHandle lightDataUploadBuffer;
+
+        RenderBackendBufferHandle distantLightDataBuffer;
+        RenderBackendBufferHandle distantLightDataUploadBuffer;
 
         RenderBackendBufferHandle cascadedShadowMapBuffer;
         RenderBackendBufferHandle cascadedShadowMapUploadBuffer;

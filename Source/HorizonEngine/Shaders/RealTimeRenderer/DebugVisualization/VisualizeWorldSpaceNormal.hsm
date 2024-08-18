@@ -1,17 +1,19 @@
 #include "../../ShaderCommon.hsh"
 #include "../RealTimeRendererCommon.hsh"
 
-BIND_BUFFER_CBV(0, PerFrameShaderParameters);
-BIND_TEXTURE_2D_SRV(1, GBuffer0);
-BIND_TEXTURE_2D_UAV(2, float4, OutputTexture);
+SHADER_CONSTANTS_STRUCT_BEGIN();
+SHADER_CONSTANTS_CONSTANT_BUFFER_CBV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferCBV);
+SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(1, GBuffer0SRV);
+SHADER_CONSTANTS_TEXTURE_2D_UAV(2, float4, OutputTextureUAV);
+SHADER_CONSTANTS_STRUCT_END();
 
 [shader("compute")]
 [numthreads(8, 8, 1)]
 void VisualizeWorldSpaceNormalCS(uint3 DispatchThreadID : SV_DispatchThreadID)
 {
-    ConstantBuffer<PerFrameShaderParameters> frameShaderParameters = GetPerFrameShaderParameterBufferCBV();
-    Texture2D gbuffer0 = GetGBuffer0SRV();
-    RWTexture2D<float4> outputTexture = GetOutputTextureUAV();
+    ConstantBuffer<PerFrameShaderParameters> frameShaderParameters = ShaderConstants.GetPerFrameShaderParameterBufferCBV();
+    Texture2D gbuffer0 = ShaderConstants.GetGBuffer0SRV();
+    RWTexture2D<float4> outputTexture = ShaderConstants.GetOutputTextureUAV();
 
     uint2 pixelCoord = DispatchThreadID.xy;
 
@@ -22,12 +24,12 @@ void VisualizeWorldSpaceNormalCS(uint3 DispatchThreadID : SV_DispatchThreadID)
         return;
     }
 
-    float2 uv = (pixelCoord + 0.5) * float2(1.0 / width, 1.0 / height);
+    float2 uv = (pixelCoord + 0.5f) * float2(1.0f / width, 1.0f / height);
 
     float4 gbuffer0Data = gbuffer0.SampleLevel(GlobalSamplerPointClamp, uv, 0);
     float3 worldSpaceNormal = DecodeNormalFromGBuffer(gbuffer0Data.xyz);
 
-    float3 rgb = worldSpaceNormal * 0.5 + 0.5;
+    float3 rgb = worldSpaceNormal * 0.5f + 0.5f;
 
-    outputTexture[pixelCoord] = float4(rgb, 1.0);
+    outputTexture[pixelCoord] = float4(rgb, 1.0f);
 }

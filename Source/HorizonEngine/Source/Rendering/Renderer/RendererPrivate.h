@@ -71,20 +71,6 @@ namespace Horizon
         Matrix4x4 viewProjectionMatrix[6];
     };
 
-    struct LightShaderParameters
-    {
-        Vector3 color;
-        Vector3 position;
-        Vector3 forwardVec;
-        Vector3 rightVec;
-        Vector3 upVec;
-        uint32 type;
-        float radius;
-        float sizeX;
-        float sizeY;
-        int32 shadowMapIndex;
-    };
-
     struct TextureShaderSlot
     {
         int bindlessTextureIndex = -1;

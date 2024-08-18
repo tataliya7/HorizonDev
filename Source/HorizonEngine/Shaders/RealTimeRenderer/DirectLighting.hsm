@@ -7,6 +7,15 @@
 #include "SkyAtmosphereCommon.hsh"
 #include "GPUScene.hsh"
 
+// TODO
+struct DistantLightData
+{
+    float3 direction;
+    float3 tangent;
+    float3 color;
+};
+DECLARE_ALIASED_ARRAY_STRUCTURED_BUFFER_SRV(DistantLightData);
+
 SHADER_CONSTANTS_STRUCT_BEGIN();
 SHADER_CONSTANTS_CONSTANT_BUFFER_CBV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferCBV);
 SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_SRV(1, GeometryDataBufferSRV);
@@ -22,6 +31,7 @@ SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(10, SkyAtmosphereTransmittanceLutSRV);
 SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_SRV(11, LocalLightShadowMapDataBufferSRV);
 SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(12, ScreenSpaceShadowMaskTextureSRV);
 SHADER_CONSTANTS_TEXTURE_2D_ARRAY_SRV(13, float, LocalLightShadowMapAtlasSRV);
+SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(14, DistantLightData, DistantLightDataBufferSRV);
 SHADER_CONSTANTS_STRUCT_END();
 
 // SHADER_CONSTANTS(ShaderConstants)
@@ -111,6 +121,77 @@ float3 WorldSpaceDirectionToCubemapUvAndFaceIndex(float3 d)
     return float3(uv, faceIndex);
 }
 
+float3 ComputeDistantLightDirectLightingContribution(PerFrameShaderParameters frameShaderParameters, Surface surface)
+{
+    StructuredBuffer<DistantLightData> distantLightDataBuffer = ShaderConstants.GetDistantLightDataBufferSRV();
+    DistantLightData distantLightData = distantLightDataBuffer[0];
+
+    float3 result = 0.0;
+    float3 lightColor = distantLightData.color;
+    float visibility = 1.0;
+
+    Texture2D shadowMaskTexture = ShaderConstants.GetScreenSpaceShadowMaskTextureSRV();
+    visibility = shadowMaskTexture.SampleLevel(GlobalSamplerLinearClamp, surface.uv, 0).r;
+
+    float3 L = normalize(-distantLightData.direction);
+    float3 N = normalize(surface.N);
+    float3 V = normalize(surface.V);
+    float3 H = normalize(L + V);
+
+    float metallic = surface.metallic;
+    float roughness = surface.roughness;
+    float4 baseColor = surface.baseColor;
+    float alpha = roughness * roughness;
+    float alpha2 = alpha * alpha;
+
+    float dielectricSpecular = 0.16 * surface.specular * surface.specular;
+    float3 F0 = lerp(dielectricSpecular, baseColor.rgb, metallic);
+
+    // TODO: Setup atmosphereTransmittanceFactor
+    float atmosphereTransmittanceFactor = 1.0f;
+    float3 atmosphereTransmittance = atmosphereTransmittanceFactor * ComputeAtmosphereTransmittance(
+        surface.P,
+        L,
+        frameShaderParameters.skyAtmosphereBottomRadiusInKilometers,
+        frameShaderParameters.skyAtmosphereTopRadiusInKilometers);
+
+visibility= 1;
+atmosphereTransmittance = 1;
+    float NdotV = max(0.0, dot(N, V));
+    float NdotL = max(0.0, dot(N, L));
+    float NdotH = max(0.0, dot(N, H));
+    float VdotH = max(0.0, dot(V, H));
+
+    //if (NdotL > 0.0)
+    {
+        // float3 F = FresnelSchlick(F0, VdotH);
+        // float D = D_GGX(NdotH, roughness);
+        // //float G = Vis_SmithJointApprox(alpha2, NdotV, NdotL);
+        // float G = SchlickGGX(NdotL, NdotV, roughness);
+
+        // float3 Kd = (1.0 - F) * (1.0 - metallic);
+        // float3 diffuse = Kd * baseColor.rgb / PI;
+        // //float3 diffuse = Kd * baseColor.rgb / PI;
+        // float3 specular = (F * D * G) / (4.0 * max(0.001, NdotL * NdotV));
+        // lightColor = lightColor * lightIntensity;
+
+        result += visibility * lightColor * atmosphereTransmittance * NdotL * PrincipledBSDF(
+            L, V, N,
+            baseColor,
+            metallic,
+            roughness,
+            /*subsurface =*/0,
+            /*specular =*/0.5,
+            /*specular =*/0,
+            /*specularTint =*/0,
+            0,
+            0.5,
+            0,
+            1);
+    }
+    return result;
+}
+
 float3 ComputeDirectLightingContribution(PerFrameShaderParameters frameShaderParameters, Surface surface)
 {
     uint lightCount = 0; // TODO
@@ -124,81 +205,7 @@ float3 ComputeDirectLightingContribution(PerFrameShaderParameters frameShaderPar
 
         float3 lightColor = light.color;
         float visibility = 1.0;
-        if (light.type == LIGHT_TYPE_DIRECTIONAL)
-        {
-            Texture2D shadowMaskTexture = ShaderConstants.GetScreenSpaceShadowMaskTextureSRV();
-            visibility = shadowMaskTexture.SampleLevel(GlobalSamplerLinearClamp, surface.uv, 0).r;
-
-            float3 L = normalize(-light.direction);
-            float3 N = normalize(surface.N);
-            float3 V = normalize(surface.V);
-            float3 H = normalize(L + V);
-
-            float metallic = surface.metallic;
-            float roughness = surface.roughness;
-            float4 baseColor = surface.baseColor;
-            float alpha = roughness * roughness;
-            float alpha2 = alpha * alpha;
-
-            float dielectricSpecular = 0.16 * surface.specular * surface.specular;
-            float3 F0 = lerp(dielectricSpecular, baseColor.rgb, metallic);
-
-            // TODO: Setup atmosphereTransmittanceFactor
-            float atmosphereTransmittanceFactor = 1.0f;
-            float3 atmosphereTransmittance = atmosphereTransmittanceFactor * ComputeAtmosphereTransmittance(
-                surface.P,
-                L,
-                frameShaderParameters.skyAtmosphereBottomRadiusInKilometers,
-                frameShaderParameters.skyAtmosphereTopRadiusInKilometers);
-
-            float NdotV = max(0.0, dot(N, V));
-            float NdotL = max(0.0, dot(N, L));
-            float NdotH = max(0.0, dot(N, H));
-            float VdotH = max(0.0, dot(V, H));
-
-            //if (NdotL > 0.0)
-            {
-                // float3 F = FresnelSchlick(F0, VdotH);
-                // float D = D_GGX(NdotH, roughness);
-                // //float G = Vis_SmithJointApprox(alpha2, NdotV, NdotL);
-                // float G = SchlickGGX(NdotL, NdotV, roughness);
-
-                // float3 Kd = (1.0 - F) * (1.0 - metallic);
-                // float3 diffuse = Kd * baseColor.rgb / PI;
-                // //float3 diffuse = Kd * baseColor.rgb / PI;
-                // float3 specular = (F * D * G) / (4.0 * max(0.001, NdotL * NdotV));
-                // lightColor = lightColor * lightIntensity;
-
-                result += visibility * lightColor * atmosphereTransmittance * NdotL * PrincipledBSDF(
-                    L, V, N,
-                    baseColor,
-                    metallic,
-                    roughness,
-                    /*subsurface =*/0,
-                    /*specular =*/0.5,
-                    /*specular =*/0,
-                    /*specularTint =*/0,
-                    0,
-                    0.5,
-                    0,
-                    1);
-            }
-
-            // result += lightColor * NdotV * PrincipledBSDF(
-            //         V, V, N,
-            //         baseColor,
-            //         metallic,
-            //         roughness,
-            //         /*subsurface =*/0,
-            //         /*specular =*/0.5,
-            //         /*specular =*/0,
-            //         /*specularTint =*/0,
-            //         0,
-            //         0.5,
-            //         0,
-            //         1);
-        }
-        else if (light.type == LIGHT_TYPE_POINT)
+        if (light.type == LIGHT_TYPE_POINT)
         {
             float3 L = normalize(light.position - surface.P);
 
@@ -435,8 +442,8 @@ void DirectLightingPS(float4 position : SV_Position, out float4 outSceneColor : 
     }
 #endif
 
+    finalColor += ComputeDistantLightDirectLightingContribution(frameShaderParameters, surface) * frameShaderParameters.preExposure;
     //finalColor += ComputeDirectLightingContribution(frameShaderParameters, surface) * frameShaderParameters.preExposure;
-
+finalColor = baseColor.rgb;
     outSceneColor = float4(finalColor, 1.0);
-    outSceneColor = 0.1;
 }

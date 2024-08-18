@@ -12,7 +12,7 @@ namespace Horizon
     {
     public:
 
-        enum class LightType
+        enum class Type
         {
             Distant = 0,
             Point = 1,
@@ -21,7 +21,7 @@ namespace Horizon
             Mesh = 4,
         };
 
-        LightType type = LightType::Distant;
+        Type type = Type::Distant;
 
         // Common
 
@@ -44,9 +44,11 @@ namespace Horizon
         bool castShadows = false;
 
         // Cascade Shadow Maps
-        int32 numShadowCascades = 3;
+        uint32 shadowCascadeCount = 3;
 
-        float cascadeSplitLambda = 0.6f;
+        uint32 shadowMapSize = 4096;
+
+        float shadowCascadeSplitLambda = 0.6f;
 
         float maxShadowDistance = 100.0f;
 
@@ -126,12 +128,12 @@ namespace Horizon
 
         uint32 GetNumDynamicShadowCascades() const
         {
-            return numShadowCascades;
+            return shadowCascadeCount;
         }
 
         float GetCascadeSplitLambda() const
         {
-            return cascadeSplitLambda;
+            return shadowCascadeSplitLambda;
         }
 
         Vector3 GetDirection() const

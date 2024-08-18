@@ -4,7 +4,7 @@
 
 namespace Horizon
 {
-    void RealTimeRenderer::RenderPostProcessingEffects(
+    void RealTimeRenderer::ExecutePostProcessingPipeline(
         RenderGraph& renderGraph,
         const SceneView& view)
     {
@@ -114,31 +114,31 @@ namespace Horizon
         //     sceneColorTexture = AddEditorGizmosPass(renderGraph, view, sceneColorTexture);
         // }
 #endif
-        //
-        // if (isVisualizePrimitiveIDEnabled)
-        // {
-        //     sceneColorTexture = AddVisualizePrimitiveIDPass(renderGraph, view);
-        // }
-        // if (isVisualizeMaterialIDEnabled)
-        // {
-        //     sceneColorTexture = AddVisualizeMaterialIDPass(renderGraph, view);
-        // }
-        // if (isVisualizeWorldSpaceNormalEnabled)
-        // {
-        //     sceneColorTexture = AddVisualizeWorldSpaceNormalPass(renderGraph, view);
-        // }
-        // if (isVisualizeMotionVectorsEnabled)
-        // {
-        //     sceneColorTexture = AddVisualizeMotionVectorsPass(renderGraph, view);
-        // }
-        // if (isVisualizeAmbientOcclusionEnabled)
-        // {
-        //     sceneColorTexture = AddVisualizeAmbientOcclusionPass(renderGraph, view);
-        // }
-        // if (isVisualizeShadowMaskEnabled)
-        // {
-        //     sceneColorTexture = AddVisualizeShadowMaskPass(renderGraph, view, sceneColorTexture);
-        // }
+
+        if (isVisualizePrimitiveIDEnabled)
+        {
+            sceneColorTexture = AddVisualizePrimitiveIDPass(renderGraph, view);
+        }
+        if (isVisualizeMaterialIDEnabled)
+        {
+            sceneColorTexture = AddVisualizeMaterialIDPass(renderGraph, view);
+        }
+        if (isVisualizeWorldSpaceNormalEnabled)
+        {
+            sceneColorTexture = AddVisualizeWorldSpaceNormalPass(renderGraph, view);
+        }
+        if (isVisualizeMotionVectorsEnabled)
+        {
+            sceneColorTexture = AddVisualizeMotionVectorsPass(renderGraph, view);
+        }
+        if (isVisualizeAmbientOcclusionEnabled)
+        {
+            sceneColorTexture = AddVisualizeAmbientOcclusionPass(renderGraph, view);
+        }
+        if (isVisualizeShadowMaskEnabled)
+        {
+            sceneColorTexture = AddVisualizeShadowMaskPass(renderGraph, view, sceneColorTexture);
+        }
 
         sceneTextures.hudLessColorTexture = sceneColorTexture;
 
