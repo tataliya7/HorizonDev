@@ -48,4 +48,3 @@ See [Horizon Documentation](https://tataliya7.github.io/HorizonEngine/).
 ## Contribution
 
 Contributions are welcome.
-
