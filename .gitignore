@@ -75,7 +75,7 @@
 .git
 .idea
 .vs
-.vscode
+.vscode*
 
 /*.sln
 
