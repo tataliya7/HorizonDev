@@ -182,6 +182,8 @@ namespace Horizon
         RenderGraph& renderGraph,
         const SceneView& view)
     {
+        const GPUScene* gpuScene = sceneView->scene->GetGPUScene();
+
          renderGraph.AddPass(
              std::format("MotionVectors (Compute, {}x{})", renderResolution.width, renderResolution.height),
              RenderGraphPassFlags::Compute,
@@ -201,10 +203,11 @@ namespace Horizon
 
                      RenderBackendShaderConstants shaderConstants = {};
                      shaderConstants.BindBufferCBV(0, renderBackend->GetBufferCBVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
-                     //shaderConstants.BindBuffer(1, renderEngine->geometryBuffer, 0);
-                     shaderConstants.BindTextureSRV(2, registry.GetTextureSRVBindlessResourceDescriptorIndex(sceneDepthTexture));
-                     shaderConstants.BindTextureSRV(3, registry.GetTextureSRVBindlessResourceDescriptorIndex(vbuffer0));
-                     shaderConstants.BindTextureUAV(4, registry.GetTextureUAVBindlessResourceDescriptorIndex(motionVectorTexture, 0));
+                     shaderConstants.BindBufferSRV(1, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(gpuScene->geometryDataBuffer));
+                     shaderConstants.BindBufferSRV(2, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(gpuScene->geometryInstanceDataBuffer));
+                     shaderConstants.BindTextureSRV(3, registry.GetTextureSRVBindlessResourceDescriptorIndex(sceneDepthTexture));
+                     shaderConstants.BindTextureSRV(4, registry.GetTextureSRVBindlessResourceDescriptorIndex(vbuffer0));
+                     shaderConstants.BindTextureUAV(5, registry.GetTextureUAVBindlessResourceDescriptorIndex(motionVectorTexture, 0));
 
                      RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::MotionVectors);
 
