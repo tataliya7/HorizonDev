@@ -28,7 +28,6 @@ project "HorizonEditorLauncher"
         "HorizonEngine",
         "HorizonEditor",
         "imgui",
-        "ImGuizmo",
         --"FidelityFX",
         --"USD",
         --"RenderDoc",
@@ -73,7 +72,6 @@ project "HorizonEditorLauncher"
         thirdpartypath("vma/include"),
         thirdpartypath("python/310/include"),
         thirdpartypath("miniaudio/include"),
-        thirdpartypath("ImGuizmo/ImGuizmo-1.83"),
     }
 
     postbuildcommands {
