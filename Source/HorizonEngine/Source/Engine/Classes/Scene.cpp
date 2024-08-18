@@ -273,15 +273,16 @@ namespace Horizon
         //     });
         // }
         //
-        // // Update lights
-        // {
-        //     entityManager->GetView<LightComponent>().each([&](EntityHandle entity, LightComponent& light)
-        //     {
-        //         const TransformComponent& transform = entityManager->GetComponent<TransformComponent>(entity);
-        //         light.position = transform.position;
-        //         light.forwardVec = Math::Normalize(Vector3(Math::QuaternionFromEulerAngles(Math::DegreesToRadians(transform.rotation)) * Vector4(0.0, 0.0, -1.0, 0.0)));
-        //     });
-        // }
+        // Update lights
+        {
+            entityManager->GetView<LightComponent>().each([&](EntityHandle entity, LightComponent& lightComponent)
+            {
+                const TransformComponent& transform = entityManager->GetComponent<TransformComponent>(entity);
+                lightComponent.position = transform.position;
+                lightComponent.direction = Math::Normalize(Vector3(Math::QuaternionFromEulerAngles(Math::DegreesToRadians(transform.rotation)) * Vector4(0.0, 0.0, -1.0, 0.0)));
+                lightComponent.UpdateRenderObject();
+            });
+        }
         //
         // // Update meshes
         // {

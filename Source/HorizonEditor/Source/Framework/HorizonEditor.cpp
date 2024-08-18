@@ -128,8 +128,8 @@ namespace Horizon
 
                 LightComponent& lightComponent = scene->GetEntityManager()->AddComponent<LightComponent>(sunLight);
                 lightComponent.type = LightComponent::Type::Distant;
-                lightComponent.forwardVec = DefaultLightDirection; //
-                lightComponent.forwardVec = Math::Normalize(Vector3(-0.102607988f, 0.190808982f, -0.976249754f));
+                lightComponent.direction = DefaultLightDirection; //
+                lightComponent.direction = Math::Normalize(Vector3(-0.102607988f, 0.190808982f, -0.976249754f));
                 lightComponent.color = Vector3(1.0f, 1.0f, 1.0f);
                 lightComponent.luminousIntensity = 120000.0f;
                 lightComponent.apexAngleInDegrees = 0.5357f;

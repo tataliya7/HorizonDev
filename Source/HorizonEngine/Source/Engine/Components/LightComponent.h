@@ -138,12 +138,12 @@ namespace Horizon
 
         Vector3 GetDirection() const
         {
-            return forwardVec;
+            return direction;
         }
 
         // Non-serialized
         Vector3 position;
-        Vector3 forwardVec;
+        Vector3 direction;
         Vector3 rightVec;
         Vector3 upVec;
 

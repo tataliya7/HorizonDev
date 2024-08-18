@@ -10,8 +10,8 @@ namespace Horizon
         {
             LightRenderObjectDescription description;
             description.color = GetPhysicalLightColor();
-            description.position = Vector3(0.0f, 0.0f, 0.0f);
-            description.direction = forwardVec;
+            description.position = position;
+            description.direction = direction;
             description.radius = radius;
             description.castRayTracingShadows = castShadows;
             description.usedAsAtmosphericLight = usedAsAtmosphericLight;
@@ -51,7 +51,33 @@ namespace Horizon
     {
         if (renderObject)
         {
+            renderObject->color = GetPhysicalLightColor();
+            renderObject->position = position;
+            renderObject->direction = direction;
+            renderObject->radius = radius;
+            renderObject->castRayTracingShadows = castShadows;
+            renderObject->usedAsAtmosphericLight = usedAsAtmosphericLight;
+            renderObject->halfApexAngleInRadians = GetHalfApexAngleInRadians();
+            renderObject->atmosphericLightDiskColorFactor = atmosphericLightDiskColorFactor;
+            renderObject->shadowMapSize = shadowMapSize;
+            renderObject->shadowCascadeCount = shadowCascadeCount;
+            renderObject->shadowCascadeSplitLambda = shadowCascadeSplitLambda;
+            renderObject->maxShadowDistance = maxShadowDistance;
+            renderObject->shadowMapDepthBiasConstantFactor = shadowMapDepthBiasConstantFactor;
+            renderObject->shadowMapDepthBiasSlopeFactor = shadowMapDepthBiasSlopeFactor;
 
+            if (type == Type::Distant)
+            {
+                renderObject->lightType = LightType::DistantLight;
+            }
+            else if (type == Type::Point)
+            {
+                renderObject->lightType = LightType::PointLight;
+            }
+            else if (type == Type::Spot)
+            {
+                renderObject->lightType = LightType::SpotLight;
+            }
         }
     }
 }

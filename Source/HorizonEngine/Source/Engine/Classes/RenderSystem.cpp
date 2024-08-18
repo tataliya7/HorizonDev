@@ -105,6 +105,9 @@ namespace Horizon
     {
         shaderLibrary->HotReload();
         renderGraphResourcePool->Tick();
+
+
+
     }
 
     RealTimeRenderer* RenderSystem::CreateRenderer()
