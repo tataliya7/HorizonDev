@@ -231,7 +231,7 @@ namespace Horizon
         if (!IsAutoExposureEnabled())
         {
             finalPostProcessingSettings.autoExposureMinExposureValue = finalPostProcessingSettings.fixedExposureValue;
-            finalPostProcessingSettings.autoExposureMinExposureValue = finalPostProcessingSettings.fixedExposureValue;
+            finalPostProcessingSettings.autoExposureMaxExposureValue = finalPostProcessingSettings.fixedExposureValue;
         }
 
         UpdatePerFrameDataBuffer();
