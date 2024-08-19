@@ -8,15 +8,6 @@
 #include "GPUScene.hsh"
 #include "ManyLightRenderingCommon.hsh"
 
-// TODO
-struct DistantLightData
-{
-    float3 direction;
-    float3 tangent;
-    float3 color;
-};
-DECLARE_ALIASED_ARRAY_STRUCTURED_BUFFER_SRV(DistantLightData);
-
 SHADER_CONSTANTS_STRUCT_BEGIN();
 SHADER_CONSTANTS_CONSTANT_BUFFER_CBV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferCBV);
 SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_SRV(1, GeometryDataBufferSRV);

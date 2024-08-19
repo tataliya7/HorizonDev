@@ -63,6 +63,14 @@ VertexAttributes GetVertexAttributes(GPUSceneGeometryData geometryData, uint ver
     return vertexAttributes;
 }
 
+struct DistantLightData
+{
+    float3 direction;
+    float3 tangent;
+    float3 color;
+};
+DECLARE_ALIASED_ARRAY_STRUCTURED_BUFFER_SRV(DistantLightData);
+
 #define LIGHT_TYPE_DIRECTIONAL 0
 #define LIGHT_TYPE_POINT 1
 #define LIGHT_TYPE_SPOT 2
