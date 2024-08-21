@@ -15,6 +15,8 @@ struct ImGuiDrawData
 {
     int textureID;
     int vertexOffset;
+    int scissorOffset;
+    int scissorSize;
     float2 scale;
     float2 translate;
 };
@@ -30,6 +32,7 @@ struct ImGuiVSOutput
     float4 color : COLOR0;
     float2 textureCoord0 : TEXCOORD0;
     nointerpolation int textureID: TEXCOORD1;
+    nointerpolation float4 scissor: TEXCOORD2;
 };
 
 [shader("vertex")]
@@ -47,16 +50,34 @@ void ImGuiVS(
 
     uint4 packedColor = uint4(vertex.color & 0xff, (vertex.color >> 8) & 0xff, (vertex.color >> 16) & 0xff, (vertex.color >> 24) & 0xff);
 
+    float4 scissor = float4(
+        (drawData.scissorOffset >> 16) & 0xffff,
+        (drawData.scissorOffset & 0xffff),
+        (drawData.scissorSize >> 16) & 0xffff,
+        (drawData.scissorSize & 0xffff));
+
     position = float4(vertex.position * drawData.scale + drawData.translate, 0.0f, 1.0f);
 
     output.color = float4(packedColor) / 255.0f;
     output.textureCoord0 = vertex.uv;
     output.textureID = drawData.textureID;
+    output.scissor = scissor;
 }
 
 [shader("pixel")]
-void ImGuiPS(in ImGuiVSOutput input, out float4 color : SV_Target)
+void ImGuiPS(
+    in ImGuiVSOutput input,
+    in float4 position : SV_Position,
+    out float4 color : SV_Target)
 {
+    if (position.x < input.scissor.x ||
+        position.x > input.scissor.x + input.scissor.z ||
+        position.y < input.scissor.y ||
+        position.y > input.scissor.y + input.scissor.w)
+    {
+        discard;
+    }
+
     Texture2D texture = GetBindlessResourceTexture2D(input.textureID);
     color = input.color * texture.SampleLevel(GlobalSamplerLinearWarp, input.textureCoord0, 0);
 }

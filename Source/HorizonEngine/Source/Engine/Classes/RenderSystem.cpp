@@ -183,6 +183,8 @@ namespace Horizon
     {
         int textureID;
         int vertexOffset;
+        int scissorOffset;
+        int scissorSize;
         Vector2 scale;
         Vector2 translate;
     };
@@ -240,9 +242,16 @@ namespace Horizon
                 Vector2 scale = Vector2(2.0f / drawData->DisplaySize.x, -2.0f / drawData->DisplaySize.y);
                 Vector2 translate = Vector2(-1.0f - drawData->DisplayPos.x * scale.x, 1.0f + drawData->DisplayPos.y * scale.y);
 
+                int32 clipMin_x_int = int32(clipMin.x);
+                int32 clipMin_y_int = int32(clipMin.y);
+                int32 scissor_w_int = int32(clipMax.x - clipMin.x);
+                int32 scissor_h_int = int32(clipMax.y - clipMin.y);
+
                 ImGuiDrawData& drawCommandData = drawDataArray.emplace_back();
                 drawCommandData.textureID = textureID;
                 drawCommandData.vertexOffset = vertexOffset;
+                drawCommandData.scissorOffset = ((clipMin_x_int & 0xFFFF) << 16) | (clipMin_y_int & 0xFFFF);
+                drawCommandData.scissorSize = ((scissor_w_int & 0xFFFF) << 16) | (scissor_h_int & 0xFFFF);
                 drawCommandData.scale = scale;
                 drawCommandData.translate = translate;
 
