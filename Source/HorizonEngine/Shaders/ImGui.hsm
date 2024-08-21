@@ -1,5 +1,7 @@
 #include "ShaderCommon.hsh"
 
+#define IM_GUI_ONE_DRAW_CALL 0
+
 struct ImGuiVertex
 {
     float2 position;
@@ -8,9 +10,62 @@ struct ImGuiVertex
 };
 DECLARE_ALIASED_ARRAY_STRUCTURED_BUFFER_SRV(ImGuiVertex);
 
+#if IM_GUI_ONE_DRAW_CALL
+struct ImGuiDrawData
+{
+    int textureID;
+    int vertexOffset;
+    float2 translate;
+    float2 scale;
+};
+DECLARE_ALIASED_ARRAY_STRUCTURED_BUFFER_SRV(ImGuiDrawData);
+
 SHADER_CONSTANTS_STRUCT_BEGIN();
-SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(0, ImGuiTextureSRV);
-SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(1, ImGuiVertex, VertexBufferSRV);
+SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, ImGuiVertex, VertexBufferSRV);
+SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(1, ImGuiDrawData, ImGuiDrawDataBufferSRV);
+SHADER_CONSTANTS_STRUCT_END();
+
+struct ImGuiVSOutput
+{
+    float4 color : COLOR0;
+    float2 textureCoord0 : TEXCOORD0;
+    nointerpolation int textureID: TEXCOORD1;
+};
+
+[shader("vertex")]
+void ImGuiVS(
+    in uint instanceID : SV_InstanceID,
+    in uint vertexID : SV_VertexID,
+    out float4 position : SV_POSITION,
+    out ImGuiVSOutput output)
+{
+    StructuredBuffer<ImGuiDrawData> drawDataBuffer = ShaderConstants.GetImGuiDrawDataBufferSRV();
+    ImGuiDrawData drawData = drawDataBuffer[instanceID];
+
+    StructuredBuffer<ImGuiVertex> vertexBuffer = ShaderConstants.GetVertexBufferSRV();
+    ImGuiVertex vertex = vertexBuffer.Load(drawData.vertexOffset + vertexID);
+
+    uint4 packedColor = uint4(vertex.color & 0xff, (vertex.color >> 8) & 0xff, (vertex.color >> 16) & 0xff, (vertex.color >> 24) & 0xff);
+
+    position = float4(vertex.position * drawData.scale + drawData.translate, 0.0f, 1.0f);
+
+    output.color = float4(packedColor) / 255.0f;
+    output.textureCoord0 = vertex.uv;
+    output.textureID = drawData.textureID;
+}
+
+[shader("pixel")]
+void ImGuiPS(in ImGuiVSOutput input, out float4 color : SV_Target)
+{
+    Texture2D texture = GetBindlessResourceTexture2D(input.textureID);
+    color = input.color * texture.SampleLevel(GlobalSamplerLinearWarp, input.textureCoord0, 0);
+}
+
+#else
+
+SHADER_CONSTANTS_STRUCT_BEGIN();
+SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, ImGuiVertex, VertexBufferSRV);
+SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(1, ImGuiTextureSRV);
 SHADER_CONSTANTS_SCALAR(2, float, ScaleX);
 SHADER_CONSTANTS_SCALAR(3, float, ScaleY);
 SHADER_CONSTANTS_SCALAR(4, float, TranslateX);
@@ -21,7 +76,7 @@ SHADER_CONSTANTS_STRUCT_END();
 struct ImGuiVSOutput
 {
     float4 color : COLOR0;
-    float2 texCoord0 : TEXCOORD0;
+    float2 textureCoord0 : TEXCOORD0;
 };
 
 [shader("vertex")]
@@ -39,12 +94,14 @@ void ImGuiVS(uint vertexID : SV_VertexID, out float4 position : SV_POSITION, out
     position = float4(vertex.position * scale + translate, 0.0f, 1.0f);
 
     output.color = float4(packedColor) / 255.0f;
-    output.texCoord0 = vertex.uv;
+    output.textureCoord0 = vertex.uv;
 }
 
 [shader("pixel")]
-void ImGuiPS(ImGuiVSOutput input, out float4 color : SV_Target)
+void ImGuiPS(in ImGuiVSOutput input, out float4 color : SV_Target)
 {
     Texture2D texture = ShaderConstants.GetImGuiTextureSRV();
-    color = input.color * texture.SampleLevel(GlobalSamplerLinearWarp, input.texCoord0, 0);
+    color = input.color * texture.SampleLevel(GlobalSamplerLinearWarp, input.textureCoord0, 0);
 }
+
+#endif
