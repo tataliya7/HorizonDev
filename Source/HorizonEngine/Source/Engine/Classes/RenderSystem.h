@@ -188,6 +188,19 @@ namespace Horizon
         uint64 currentIndexBufferDataSize[3];
         RenderBackendBufferHandle indexBuffer[3];
         RenderBackendBufferHandle indexBufferUpload[3];
+
+        uint32 totalDrawCommandCount = 0;
+
+        uint64 drawDataBufferSize[3];
+        uint64 currentDrawDataBufferDataSize[3];
+        RenderBackendBufferHandle drawDataBuffer[3];
+        RenderBackendBufferHandle drawDataBufferUpload[3];
+
+        uint64 drawIndexedIndirectCommandBufferSize[3];
+        uint64 currentDrawIndexedIndirectCommandBufferDataSize[3];
+        RenderBackendBufferHandle drawIndexedIndirectCommandBuffer[3];
+        RenderBackendBufferHandle drawIndexedIndirectCommandBufferUpload[3];
+
         //
         // bool shouldUpdateRayTracingScene = false;
         //

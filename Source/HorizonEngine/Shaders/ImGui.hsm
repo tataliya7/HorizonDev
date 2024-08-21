@@ -1,6 +1,6 @@
 #include "ShaderCommon.hsh"
 
-#define IM_GUI_ONE_DRAW_CALL 0
+#define IM_GUI_ONE_DRAW_CALL 1
 
 struct ImGuiVertex
 {
@@ -15,8 +15,8 @@ struct ImGuiDrawData
 {
     int textureID;
     int vertexOffset;
-    float2 translate;
     float2 scale;
+    float2 translate;
 };
 DECLARE_ALIASED_ARRAY_STRUCTURED_BUFFER_SRV(ImGuiDrawData);
 
@@ -34,13 +34,13 @@ struct ImGuiVSOutput
 
 [shader("vertex")]
 void ImGuiVS(
-    in uint instanceID : SV_InstanceID,
+    [[vk::builtin("BaseInstance")]] in uint StartInstanceLocation : SV_StartInstanceLocation,
     in uint vertexID : SV_VertexID,
     out float4 position : SV_POSITION,
     out ImGuiVSOutput output)
 {
     StructuredBuffer<ImGuiDrawData> drawDataBuffer = ShaderConstants.GetImGuiDrawDataBufferSRV();
-    ImGuiDrawData drawData = drawDataBuffer[instanceID];
+    ImGuiDrawData drawData = drawDataBuffer[StartInstanceLocation];
 
     StructuredBuffer<ImGuiVertex> vertexBuffer = ShaderConstants.GetVertexBufferSRV();
     ImGuiVertex vertex = vertexBuffer.Load(drawData.vertexOffset + vertexID);
