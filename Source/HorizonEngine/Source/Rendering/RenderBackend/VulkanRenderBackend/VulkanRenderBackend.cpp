@@ -3972,7 +3972,7 @@ namespace Horizon
                 .pQueueCreateInfos = queueInfos.data(),
                 .enabledExtensionCount = (uint32)(enabledDeviceExtensions.size()),
                 .ppEnabledExtensionNames = enabledDeviceExtensions.data(),
-                .pEnabledFeatures = &physicalDevice->enabledFeatures
+                .pEnabledFeatures = nullptr // If the pNext chain includes a VkPhysicalDeviceFeatures2 structure, then pEnabledFeatures must be NULL
             };
 
             VK_CHECK(vkCreateDevice(physicalDevice->handle, &deviceInfo, VULKAN_ALLOCATION_CALLBACKS, &handle));
