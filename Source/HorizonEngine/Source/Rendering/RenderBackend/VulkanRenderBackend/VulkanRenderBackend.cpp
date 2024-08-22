@@ -867,6 +867,7 @@ namespace Horizon
 
         VulkanRenderBackendHandleManager handleManager;
 
+        bool enableMeshShaderSupport = false;
         bool enableRayTracingSupport = false;
 
         struct VulkanFunctions
@@ -1014,14 +1015,25 @@ namespace Horizon
                 .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_FEATURES,
                 .pNext = &physicalDevice.shaderDemoteToHelperInvocationFeatures,
             };
-            physicalDevice.shaderDemoteToHelperInvocationFeatures = {
-                .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_DEMOTE_TO_HELPER_INVOCATION_FEATURES,
-                .pNext = &physicalDevice.meshShaderFeaturesEXT,
-            };
-            physicalDevice.meshShaderFeaturesEXT = {
-                .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_EXT,
-                .pNext = nullptr,
-            };
+
+            if (enableMeshShaderSupport)
+            {
+                physicalDevice.shaderDemoteToHelperInvocationFeatures = {
+                    .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_DEMOTE_TO_HELPER_INVOCATION_FEATURES,
+                    .pNext = &physicalDevice.meshShaderFeaturesEXT,
+                };
+                physicalDevice.meshShaderFeaturesEXT = {
+                    .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_EXT,
+                    .pNext = nullptr,
+                };
+            }
+            else
+            {
+                physicalDevice.shaderDemoteToHelperInvocationFeatures = {
+                    .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_DEMOTE_TO_HELPER_INVOCATION_FEATURES,
+                    .pNext = nullptr,
+                };
+            }
 
             if (enableRayTracingSupport)
             {
@@ -3904,9 +3916,12 @@ namespace Horizon
             requiredDeviceExtensions.push_back(VK_EXT_SCALAR_BLOCK_LAYOUT_EXTENSION_NAME);
             requiredDeviceExtensions.push_back(VK_EXT_PIPELINE_CREATION_FEEDBACK_EXTENSION_NAME);
             requiredDeviceExtensions.push_back(VK_EXT_HOST_QUERY_RESET_EXTENSION_NAME);
-            requiredDeviceExtensions.push_back(VK_EXT_MESH_SHADER_EXTENSION_NAME);
             requiredDeviceExtensions.push_back(VK_EXT_SHADER_VIEWPORT_INDEX_LAYER_EXTENSION_NAME);
             requiredDeviceExtensions.push_back(VK_EXT_SHADER_DEMOTE_TO_HELPER_INVOCATION_EXTENSION_NAME);
+            if (backend->enableMeshShaderSupport)
+            {
+                requiredDeviceExtensions.push_back(VK_EXT_MESH_SHADER_EXTENSION_NAME);
+            }
 
 #if HE_ENBALE_STREAMLINE_SUPPORT
             requiredDeviceExtensions.push_back(VK_NVX_IMAGE_VIEW_HANDLE_EXTENSION_NAME);
@@ -3948,6 +3963,12 @@ namespace Horizon
             std::vector<float> queuePriorities[RenderBackendQueueFamilyCount];
             for (uint32 family = 0; family < RenderBackendQueueFamilyCount; family++)
             {
+                // don't support optical flow
+                if (family == RenderBackendQueueFamilyCount - 1)
+                {
+                    continue;
+                }
+
                 const uint32 queueCount = numCommandQueues[family];
                 // Set all priorities to 1.0 for now.
                 queuePriorities[family].resize(queueCount, 1.0f);
@@ -3959,6 +3980,7 @@ namespace Horizon
                     .queueCount = queueCount,
                     .pQueuePriorities = queuePriorities[family].data()
                 };
+
                 if (queueInfo.queueCount > 0)
                 {
                     queueInfos.push_back(queueInfo);
