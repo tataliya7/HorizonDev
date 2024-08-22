@@ -3,8 +3,6 @@
 #include <imgui.h>
 #include <imgui_internal.h>
 
-#include <ImGuizmo.h>
-
 namespace HE
 {
     SceneViewportWindow::SceneViewportWindow(const std::string& title, HorizonEditor* editor)
@@ -12,7 +10,7 @@ namespace HE
         , editor(editor)
         , viewportPos(0, 0)
         , viewportSize(0, 0)
-        , gizmoOperationType(ImGuizmo::OPERATION::TRANSLATE)
+        //, gizmoOperationType(ImGuizmo::OPERATION::TRANSLATE)
     {
 
     }
@@ -116,12 +114,12 @@ namespace HE
 
     float SceneViewportWindow::GetSnapValue()
     {
-        switch (gizmoOperationType)
-        {
-            case  ImGuizmo::OPERATION::TRANSLATE: return 5.0f;
-            case  ImGuizmo::OPERATION::ROTATE: return 10.0f;
-            case  ImGuizmo::OPERATION::SCALE: return 0.1f;
-        }
+        //switch (gizmoOperationType)
+        //{
+        //    case  ImGuizmo::OPERATION::TRANSLATE: return 5.0f;
+        //    case  ImGuizmo::OPERATION::ROTATE: return 10.0f;
+        //    case  ImGuizmo::OPERATION::SCALE: return 0.1f;
+        //}
         return 0.0f;
     }
 
@@ -139,7 +137,7 @@ namespace HE
 
             if (ImGui::BeginMenuBar())
             {
-                if (ImGui::Button("T"))
+                /*if (ImGui::Button("T"))
                 {
                     gizmoOperationType = ImGuizmo::OPERATION::TRANSLATE;
                 }
@@ -150,7 +148,7 @@ namespace HE
                 if (ImGui::Button("S"))
                 {
                     gizmoOperationType = ImGuizmo::OPERATION::SCALE;
-                }
+                }*/
 
                 auto ToolbarButton = [](const char* id, RenderBackendTextureHandle icon)
                 {

@@ -135,7 +135,6 @@ group ""
 
 group "ThirdParty"
     include "../ThirdParty/imgui"
-    include "../ThirdParty/ImGuizmo"
     include "../ThirdParty/googletest"
     include "../ThirdParty/meshoptimizer"
 group ""

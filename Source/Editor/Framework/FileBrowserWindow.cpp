@@ -418,7 +418,7 @@ void FileBrowserWindow::RenderItems()
     float scrollY = ImGui::GetScrollY();
     uint32 rowStart = (uint32)std::floor(scrollY / (cellSize.y + padding.y));
     uint32 rowEnd = rowStart + (uint32)std::ceil(std::max(ImGui::GetContentRegionAvail().y, 0.0f) / (cellSize.y + padding.y));
-    printf("%f %f start: %u, end: %u\n", ImGui::GetContentRegionAvail().y, (cellSize.y + padding.y), rowStart, rowEnd);
+    //printf("%f %f start: %u, end: %u\n", ImGui::GetContentRegionAvail().y, (cellSize.y + padding.y), rowStart, rowEnd);
 
     ImGui::Dummy(ImVec2(gridWidth, gridHeight));
 

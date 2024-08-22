@@ -37,7 +37,6 @@ project "HorizonEditor"
         thirdpartypath("glm/include"),
         thirdpartypath("glfw/glfw-3.3.9.bin.WIN64/include"),
         thirdpartypath("imgui/imgui-1.89.9-docking"),
-        thirdpartypath("ImGuizmo/ImGuizmo-1.83"),
         thirdpartypath("optick/Optick_1.4.0/include"),
         thirdpartypath("entt/include"),
         thirdpartypath("streamline/include"),

@@ -28,7 +28,6 @@ project "HorizonEditorLauncher"
         "HorizonEngine",
         "HorizonEditor",
         "imgui",
-        "ImGuizmo",
         "USD",
         "RenderDoc",
         thirdpartypath("glfw/glfw-3.3.9.bin.WIN64/lib-vc2022/glfw3.lib"),
@@ -72,7 +71,6 @@ project "HorizonEditorLauncher"
         thirdpartypath("vma/include"),
         thirdpartypath("python/310/include"),
         thirdpartypath("miniaudio/include"),
-        thirdpartypath("ImGuizmo/ImGuizmo-1.83"),
     }
 
     filter "configurations:Debug"

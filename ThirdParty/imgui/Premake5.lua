@@ -35,5 +35,4 @@ project "imgui"
         thirdpartypath("glfw/glfw-3.3.9.bin.WIN64/include"),
         thirdpartypath("vulkan/1.3.280.0/include"),
         thirdpartypath("imgui/imgui-1.89.9-docking"),
-        thirdpartypath("ImGuizmo/ImGuizmo-1.83"),
     }
