@@ -71,42 +71,20 @@ namespace Horizon
 
         for (uint32 t = 0; t < 3; t++)
         {
-            {
-                RenderBackendBufferDesc vertexBufferDesc = RenderBackendBufferDesc::CreateByteAddress(4);
-                vertexBuffer[t] = renderBackend->CreateBuffer(&vertexBufferDesc, nullptr, "ImGuiVertexBuffer");
+            RenderBackendBufferDesc vertexBufferDesc = RenderBackendBufferDesc::CreateByteAddress(4);
+            vertexBuffer[t] = renderBackend->CreateBuffer(&vertexBufferDesc, nullptr, "ImGuiVertexBuffer");
 
-                RenderBackendBufferDesc vertexBufferUploadDesc = RenderBackendBufferDesc::CreateUpload(4);
-                vertexBufferUpload[t] = renderBackend->CreateBuffer(&vertexBufferUploadDesc, nullptr, "ImGuiVertexBufferUpload");
+            RenderBackendBufferDesc vertexBufferUploadDesc = RenderBackendBufferDesc::CreateUpload(4);
+            vertexBufferUpload[t] = renderBackend->CreateBuffer(&vertexBufferUploadDesc, nullptr, "ImGuiVertexBufferUpload");
 
-                vertexBufferSize[t] = 4;
-            }
-            {
-                RenderBackendBufferDesc indexBufferDesc = RenderBackendBufferDesc::CreateIndex(sizeof(uint32), 1);
-                indexBuffer[t] = renderBackend->CreateBuffer(&indexBufferDesc, nullptr, "ImGuiIndexBuffer");
+            RenderBackendBufferDesc indexBufferDesc = RenderBackendBufferDesc::CreateIndex(sizeof(uint32), 1);
+            indexBuffer[t] = renderBackend->CreateBuffer(&indexBufferDesc, nullptr, "ImGuiIndexBuffer");
 
-                RenderBackendBufferDesc indexBufferUploadDesc = RenderBackendBufferDesc::CreateUpload(4);
-                indexBufferUpload[t] = renderBackend->CreateBuffer(&indexBufferUploadDesc, nullptr, "ImGuiIndexBufferUpload");
+            RenderBackendBufferDesc indexBufferUploadDesc = RenderBackendBufferDesc::CreateUpload(4);
+            indexBufferUpload[t] = renderBackend->CreateBuffer(&indexBufferUploadDesc, nullptr, "ImGuiIndexBufferUpload");
 
-                indexBufferSize[t] = 4;
-            }
-            {
-                RenderBackendBufferDesc drawDataBufferDesc = RenderBackendBufferDesc::CreateByteAddress(4);
-                drawDataBuffer[t] = renderBackend->CreateBuffer(&drawDataBufferDesc, nullptr, "ImGuiDrawDataBuffer");
-
-                RenderBackendBufferDesc drawDataBufferUploadDesc = RenderBackendBufferDesc::CreateUpload(4);
-                drawDataBufferUpload[t] = renderBackend->CreateBuffer(&drawDataBufferUploadDesc, nullptr, "ImGuiDrawDataBufferUpload");
-
-                drawDataBufferSize[t] = 4;
-            }
-            {
-                RenderBackendBufferDesc drawIndexedIndirectCommandBufferDesc = RenderBackendBufferDesc::CreateIndirectArguments(4);
-                drawIndexedIndirectCommandBuffer[t] = renderBackend->CreateBuffer(&drawIndexedIndirectCommandBufferDesc, nullptr, "ImGuiDrawIndexedIndirectCommandBuffer");
-
-                RenderBackendBufferDesc drawIndexedIndirectCommandBufferUploadDesc = RenderBackendBufferDesc::CreateUpload(4);
-                drawIndexedIndirectCommandBufferUpload[t] = renderBackend->CreateBuffer(&drawIndexedIndirectCommandBufferUploadDesc, nullptr, "ImGuiDrawIndexedIndirectCommandBufferUpload");
-
-                drawIndexedIndirectCommandBufferSize[t] = 4;
-            }
+            vertexBufferSize[t] = 4;
+            indexBufferSize[t] = 4;
         }
     }
 
@@ -179,16 +157,6 @@ namespace Horizon
         ImGui::NewFrame();
     }
 
-    struct ImGuiDrawData
-    {
-        int textureID;
-        int vertexOffset;
-        int scissorOffset;
-        int scissorSize;
-        Vector2 scale;
-        Vector2 translate;
-    };
-
     void RenderSystem::EndDrawUI()
     {
         OPTICK_EVENT();
@@ -205,117 +173,33 @@ namespace Horizon
             return;
         }
 
-        // Will project scissor/clipping rectangles into framebuffer space
-        ImVec2 clipOffset = drawData->DisplayPos;         // (0,0) unless using multi-viewports
-        ImVec2 clipScale = drawData->FramebufferScale;    // (1,1) unless using retina display which are often (2,2)
-
-        totalDrawCommandCount = 0;
-        std::vector<ImGuiDrawData> drawDataArray;
-        std::vector<RenderBackendDrawIndexedIndirectArguments> drawIndexedIndirectArguments;
-
-        // (Because we merged all buffers into a single one, we maintain our own offset into them)
-        int globalIndexOffset = 0;
-        int globalVertexOffset = 0;
-        for (int i = 0; i < drawData->CmdListsCount; i++)
-        {
-            const ImDrawList* cmdList = drawData->CmdLists[i];
-            for (int drawCallIndex = 0; drawCallIndex < cmdList->CmdBuffer.Size; drawCallIndex++)
-            {
-                const ImDrawCmd* pcmd = &cmdList->CmdBuffer[drawCallIndex];
-
-                // Project scissor/clipping rectangles into framebuffer space
-                ImVec2 clipMin((pcmd->ClipRect.x - clipOffset.x) * clipScale.x, (pcmd->ClipRect.y - clipOffset.y) * clipScale.y);
-                ImVec2 clipMax((pcmd->ClipRect.z - clipOffset.x) * clipScale.x, (pcmd->ClipRect.w - clipOffset.y) * clipScale.y);
-
-                // Clamp to viewport as vkCmdSetScissor() won't accept values that are off bounds
-                if (clipMin.x < 0.0f) { clipMin.x = 0.0f; }
-                if (clipMin.y < 0.0f) { clipMin.y = 0.0f; }
-                if (clipMax.x > fbWidth) { clipMax.x = (float)fbWidth; }
-                if (clipMax.y > fbHeight) { clipMax.y = (float)fbHeight; }
-                if (clipMax.x <= clipMin.x || clipMax.y <= clipMin.y)
-                {
-                    continue;
-                }
-
-                int textureID = renderBackend->GetTextureSRVBindlessResourceDescriptorIndex(RenderBackendTextureHandle(pcmd->TextureId));
-                int vertexOffset = pcmd->VtxOffset + globalVertexOffset;
-                Vector2 scale = Vector2(2.0f / drawData->DisplaySize.x, -2.0f / drawData->DisplaySize.y);
-                Vector2 translate = Vector2(-1.0f - drawData->DisplayPos.x * scale.x, 1.0f + drawData->DisplayPos.y * scale.y);
-
-                int32 clipMin_x_int = int32(clipMin.x);
-                int32 clipMin_y_int = int32(clipMin.y);
-                int32 scissor_w_int = int32(clipMax.x - clipMin.x);
-                int32 scissor_h_int = int32(clipMax.y - clipMin.y);
-
-                ImGuiDrawData& drawCommandData = drawDataArray.emplace_back();
-                drawCommandData.textureID = textureID;
-                drawCommandData.vertexOffset = vertexOffset;
-                drawCommandData.scissorOffset = ((clipMin_x_int & 0xFFFF) << 16) | (clipMin_y_int & 0xFFFF);
-                drawCommandData.scissorSize = ((scissor_w_int & 0xFFFF) << 16) | (scissor_h_int & 0xFFFF);
-                drawCommandData.scale = scale;
-                drawCommandData.translate = translate;
-
-                RenderBackendDrawIndexedIndirectArguments& arguments = drawIndexedIndirectArguments.emplace_back();
-                arguments.numIndices = pcmd->ElemCount;
-                arguments.numInstances = 1;
-                arguments.firstIndex = pcmd->IdxOffset + globalIndexOffset;
-                arguments.vertexOffset = 0;
-                arguments.firstInstance = totalDrawCommandCount;
-
-                totalDrawCommandCount++;
-            }
-            globalIndexOffset += cmdList->IdxBuffer.Size;
-            globalVertexOffset += cmdList->VtxBuffer.Size;
-        }
-
         frameInFlightCounter = (frameInFlightCounter + 1) % 3;
 
         currentVertexBufferDataSize[frameInFlightCounter] = 0;
         currentIndexBufferDataSize[frameInFlightCounter] = 0;
-        currentDrawDataBufferDataSize[frameInFlightCounter] = 0;
-        currentDrawIndexedIndirectCommandBufferDataSize[frameInFlightCounter] = 0;
         if (drawData->TotalVtxCount > 0)
         {
             // Create or reserve the vertex/index buffers
             currentVertexBufferDataSize[frameInFlightCounter] = drawData->TotalVtxCount * sizeof(ImDrawVert);
+            currentIndexBufferDataSize[frameInFlightCounter] = drawData->TotalIdxCount * sizeof(ImDrawIdx);
             if (vertexBufferSize[frameInFlightCounter] < currentVertexBufferDataSize[frameInFlightCounter])
             {
                 renderBackend->ResizeBuffer(vertexBuffer[frameInFlightCounter], currentVertexBufferDataSize[frameInFlightCounter]);
                 renderBackend->ResizeBuffer(vertexBufferUpload[frameInFlightCounter], currentVertexBufferDataSize[frameInFlightCounter]);
                 vertexBufferSize[frameInFlightCounter] = currentVertexBufferDataSize[frameInFlightCounter];
             }
-
-            currentIndexBufferDataSize[frameInFlightCounter] = drawData->TotalIdxCount * sizeof(ImDrawIdx);
             if (indexBufferSize[frameInFlightCounter] < currentIndexBufferDataSize[frameInFlightCounter])
             {
                 renderBackend->ResizeBuffer(indexBuffer[frameInFlightCounter], currentIndexBufferDataSize[frameInFlightCounter]);
                 renderBackend->ResizeBuffer(indexBufferUpload[frameInFlightCounter], currentIndexBufferDataSize[frameInFlightCounter]);
                 indexBufferSize[frameInFlightCounter] = currentIndexBufferDataSize[frameInFlightCounter];
             }
-
-            currentDrawDataBufferDataSize[frameInFlightCounter] = totalDrawCommandCount * sizeof(ImGuiDrawData);
-            if (drawDataBufferSize[frameInFlightCounter] < currentDrawDataBufferDataSize[frameInFlightCounter])
-            {
-                renderBackend->ResizeBuffer(drawDataBuffer[frameInFlightCounter], currentDrawDataBufferDataSize[frameInFlightCounter]);
-                renderBackend->ResizeBuffer(drawDataBufferUpload[frameInFlightCounter], currentDrawDataBufferDataSize[frameInFlightCounter]);
-                drawDataBufferSize[frameInFlightCounter] = currentDrawDataBufferDataSize[frameInFlightCounter];
-            }
-
-            currentDrawIndexedIndirectCommandBufferDataSize[frameInFlightCounter] = totalDrawCommandCount * sizeof(RenderBackendDrawIndexedIndirectArguments);
-            if (drawIndexedIndirectCommandBufferSize[frameInFlightCounter] < currentDrawIndexedIndirectCommandBufferDataSize[frameInFlightCounter])
-            {
-                renderBackend->ResizeBuffer(drawIndexedIndirectCommandBuffer[frameInFlightCounter], currentDrawIndexedIndirectCommandBufferDataSize[frameInFlightCounter]);
-                renderBackend->ResizeBuffer(drawIndexedIndirectCommandBufferUpload[frameInFlightCounter], currentDrawIndexedIndirectCommandBufferDataSize[frameInFlightCounter]);
-                drawIndexedIndirectCommandBufferSize[frameInFlightCounter] = currentDrawIndexedIndirectCommandBufferDataSize[frameInFlightCounter];
-            }
-
             uint32 vertexOffset = 0;
             uint32 indexOffset = 0;
 
             void* vertexBufferDataPtr;
-            renderBackend->MapBuffer(vertexBufferUpload[frameInFlightCounter], &vertexBufferDataPtr);
-
             void* indexBufferDataPtr;
+            renderBackend->MapBuffer(vertexBufferUpload[frameInFlightCounter], &vertexBufferDataPtr);
             renderBackend->MapBuffer(indexBufferUpload[frameInFlightCounter], &indexBufferDataPtr);
 
             ImDrawVert* vtx_dst = (ImDrawVert*)vertexBufferDataPtr;
@@ -330,9 +214,6 @@ namespace Horizon
             }
             renderBackend->UnmapBuffer(vertexBufferUpload[frameInFlightCounter]);
             renderBackend->UnmapBuffer(indexBufferUpload[frameInFlightCounter]);
-
-            renderBackend->UpdateBuffer(drawDataBufferUpload[frameInFlightCounter], 0, drawDataArray.data(), currentDrawDataBufferDataSize[frameInFlightCounter]);
-            renderBackend->UpdateBuffer(drawIndexedIndirectCommandBufferUpload[frameInFlightCounter], 0, drawIndexedIndirectArguments.data(), currentDrawIndexedIndirectCommandBufferDataSize[frameInFlightCounter]);
         }
     }
 
@@ -355,7 +236,7 @@ namespace Horizon
                     currentVertexBufferDataSize[frameInFlightCounter]);
                 RenderBackendBarrier barrier2[] =
                 {
-                    RenderBackendBarrier(vertexBuffer[frameInFlightCounter], RenderBackendBufferSubresourceRange::Whole, RenderBackendResourceState::CopyDst, RenderBackendResourceState::ShaderResource)
+                    RenderBackendBarrier(vertexBuffer[frameInFlightCounter], RenderBackendBufferSubresourceRange::Whole, RenderBackendResourceState::CopyDst, RenderBackendResourceState::UnorderedAccess)
                 };
                 commandList->Transitions(barrier2, 1);
             }
@@ -379,46 +260,6 @@ namespace Horizon
                 };
                 commandList->Transitions(barrier2, 1);
             }
-
-            if (currentDrawDataBufferDataSize[frameInFlightCounter] > 0)
-            {
-                RenderBackendBarrier barrier1[] =
-                {
-                    RenderBackendBarrier(drawDataBuffer[frameInFlightCounter], RenderBackendBufferSubresourceRange::Whole, RenderBackendResourceState::Undefined, RenderBackendResourceState::CopyDst)
-                };
-                commandList->Transitions(barrier1, 1);
-                commandList->CopyBuffer(
-                    drawDataBufferUpload[frameInFlightCounter],
-                    0,
-                    drawDataBuffer[frameInFlightCounter],
-                    0,
-                    currentDrawDataBufferDataSize[frameInFlightCounter]);
-                RenderBackendBarrier barrier2[] =
-                {
-                    RenderBackendBarrier(drawDataBuffer[frameInFlightCounter], RenderBackendBufferSubresourceRange::Whole, RenderBackendResourceState::CopyDst, RenderBackendResourceState::ShaderResource)
-                };
-                commandList->Transitions(barrier2, 1);
-            }
-
-            if (currentDrawIndexedIndirectCommandBufferDataSize[frameInFlightCounter] > 0)
-            {
-                RenderBackendBarrier barrier1[] =
-                {
-                    RenderBackendBarrier(drawIndexedIndirectCommandBuffer[frameInFlightCounter], RenderBackendBufferSubresourceRange::Whole, RenderBackendResourceState::Undefined, RenderBackendResourceState::CopyDst)
-                };
-                commandList->Transitions(barrier1, 1);
-                commandList->CopyBuffer(
-                    drawIndexedIndirectCommandBufferUpload[frameInFlightCounter],
-                    0,
-                    drawIndexedIndirectCommandBuffer[frameInFlightCounter],
-                    0,
-                    currentDrawIndexedIndirectCommandBufferDataSize[frameInFlightCounter]);
-                RenderBackendBarrier barrier2[] =
-                {
-                    RenderBackendBarrier(drawIndexedIndirectCommandBuffer[frameInFlightCounter], RenderBackendBufferSubresourceRange::Whole, RenderBackendResourceState::CopyDst, RenderBackendResourceState::IndirectArgument)
-                };
-                commandList->Transitions(barrier2, 1);
-            }
         }
     }
 
@@ -433,52 +274,95 @@ namespace Horizon
             return;
         }
 
-        if (totalDrawCommandCount == 0)
-        {
-            return;
-        }
-
         RenderBackendViewport viewport(0.0f, 0.0f, (float)fbWidth, (float)fbHeight);
         commandList.SetViewports(&viewport, 1);
-
-        RenderBackendScissor scissor(0, 0, fbWidth, fbHeight);
-        commandList.SetScissors(&scissor, 1);
 
         RenderBackendRenderPassInfo renderPass = {
             .renderTargets = { {.texture = output, .mipLevel = 0, .arrayLayer = 0, .loadOp = RenderBackendRenderPassBeginningAccessType::Clear, .storeOp = RenderBackendRenderPassEndingAccessType::Preserve } },
         };
         commandList.BeginRenderPass(renderPass);
 
+        // Will project scissor/clipping rectangles into framebuffer space
+        ImVec2 clipOffset = drawData->DisplayPos;         // (0,0) unless using multi-viewports
+        ImVec2 clipScale = drawData->FramebufferScale;    // (1,1) unless using retina display which are often (2,2)
+
         RenderBackendShaderHandle vertexShader = shaderLibrary->GetShader(ShaderID::ImGuiVS);
         RenderBackendShaderHandle pixelShader = shaderLibrary->GetShader(ShaderID::ImGuiPS);
 
-        RenderBackendGraphicsPipelineState graphicsPipelineState = {};
-        graphicsPipelineState.rasterizationState.cullMode = RenderBackendRasterizationCullMode::None;
-        graphicsPipelineState.depthStencilState.depthTestEnable = false;
-        graphicsPipelineState.depthStencilState.depthWriteEnable = false;
-        graphicsPipelineState.colorBlendState.targetBlends[0].blendEnable = true;
-        graphicsPipelineState.colorBlendState.targetBlends[0].srcColorBlendFactor = RenderBackendBlendFactor::SrcAlpha;
-        graphicsPipelineState.colorBlendState.targetBlends[0].dstColorBlendFactor = RenderBackendBlendFactor::OneMinusSrcAlpha;
-        graphicsPipelineState.colorBlendState.targetBlends[0].colorBlendOp = RenderBackendBlendOp::Add;
-        graphicsPipelineState.colorBlendState.targetBlends[0].srcAlphaBlendFactor = RenderBackendBlendFactor::One;
-        graphicsPipelineState.colorBlendState.targetBlends[0].dstAlphaBlendFactor = RenderBackendBlendFactor::OneMinusSrcAlpha;
-        graphicsPipelineState.colorBlendState.targetBlends[0].alphaBlendOp = RenderBackendBlendOp::Add;
-        graphicsPipelineState.colorBlendState.targetBlends[0].writeMask = RenderBackendColorComponentFlags::RGBA;
+        // Render command lists
+        // (Because we merged all buffers into a single one, we maintain our own offset into them)
+        int globalIndexOffset = 0;
+        int globalVertexOffset = 0;
+        for (int i = 0; i < drawData->CmdListsCount; i++)
+        {
+            const ImDrawList* cmdList = drawData->CmdLists[i];
+            for (int drawCallIndex = 0; drawCallIndex < cmdList->CmdBuffer.Size; drawCallIndex++)
+            {
+                //if (drawCallIndex >= 1)
+                //{
+                //    int a = 0;
+                //}
+                const ImDrawCmd* pcmd = &cmdList->CmdBuffer[drawCallIndex];
 
-        RenderBackendShaderConstants shaderConstants = {};
-        shaderConstants.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(vertexBuffer[frameInFlightCounter]));
-        shaderConstants.BindBufferSRV(1, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(drawDataBuffer[frameInFlightCounter]));
+                // Project scissor/clipping rectangles into framebuffer space
+                ImVec2 clipMin((pcmd->ClipRect.x - clipOffset.x) * clipScale.x, (pcmd->ClipRect.y - clipOffset.y) * clipScale.y);
+                ImVec2 clipMax((pcmd->ClipRect.z - clipOffset.x) * clipScale.x, (pcmd->ClipRect.w - clipOffset.y) * clipScale.y);
 
-        commandList.DrawIndexedIndirect(
-            vertexShader,
-            pixelShader,
-            graphicsPipelineState,
-            shaderConstants,
-            indexBuffer[frameInFlightCounter],
-            drawIndexedIndirectCommandBuffer[frameInFlightCounter],
-            0,
-            totalDrawCommandCount,
-            RenderBackendPrimitiveTopology::TriangleList);
+                // Clamp to viewport as vkCmdSetScissor() won't accept values that are off bounds
+                if (clipMin.x < 0.0f) { clipMin.x = 0.0f; }
+                if (clipMin.y < 0.0f) { clipMin.y = 0.0f; }
+                if (clipMax.x > fbWidth) { clipMax.x = (float)fbWidth; }
+                if (clipMax.y > fbHeight) { clipMax.y = (float)fbHeight; }
+                if (clipMax.x <= clipMin.x || clipMax.y <= clipMin.y)
+                {
+                    continue;
+                }
+
+                RenderBackendScissor scissor((int32)(clipMin.x), (int32)(clipMin.y), (uint32)(clipMax.x - clipMin.x), (uint32)(clipMax.y - clipMin.y));
+                commandList.SetScissors(&scissor, 1);
+
+                Vector2 scale = Vector2(2.0f / drawData->DisplaySize.x, -2.0f / drawData->DisplaySize.y);
+                Vector2 translate = Vector2(-1.0f - drawData->DisplayPos.x * scale.x, 1.0f + drawData->DisplayPos.y * scale.y);
+                int vertexOffset = pcmd->VtxOffset + globalVertexOffset;
+
+                RenderBackendGraphicsPipelineState graphicsPipelineState = {};
+                graphicsPipelineState.rasterizationState.cullMode = RenderBackendRasterizationCullMode::None;
+                graphicsPipelineState.depthStencilState.depthTestEnable = false;
+                graphicsPipelineState.depthStencilState.depthWriteEnable = false;
+                graphicsPipelineState.colorBlendState.targetBlends[0].blendEnable = true;
+                graphicsPipelineState.colorBlendState.targetBlends[0].srcColorBlendFactor = RenderBackendBlendFactor::SrcAlpha;
+                graphicsPipelineState.colorBlendState.targetBlends[0].dstColorBlendFactor = RenderBackendBlendFactor::OneMinusSrcAlpha;
+                graphicsPipelineState.colorBlendState.targetBlends[0].colorBlendOp = RenderBackendBlendOp::Add;
+                graphicsPipelineState.colorBlendState.targetBlends[0].srcAlphaBlendFactor = RenderBackendBlendFactor::One;
+                graphicsPipelineState.colorBlendState.targetBlends[0].dstAlphaBlendFactor = RenderBackendBlendFactor::OneMinusSrcAlpha;
+                graphicsPipelineState.colorBlendState.targetBlends[0].alphaBlendOp = RenderBackendBlendOp::Add;
+                graphicsPipelineState.colorBlendState.targetBlends[0].writeMask = RenderBackendColorComponentFlags::RGBA;
+
+                RenderBackendShaderConstants shaderConstants = {};
+                shaderConstants.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(vertexBuffer[frameInFlightCounter]));
+                shaderConstants.BindTextureSRV(1, renderBackend->GetTextureSRVBindlessResourceDescriptorIndex(RenderBackendTextureHandle(pcmd->TextureId)));
+                shaderConstants.BindScalar(2, scale.x);
+                shaderConstants.BindScalar(3, scale.y);
+                shaderConstants.BindScalar(4, translate.x);
+                shaderConstants.BindScalar(5, translate.y);
+                shaderConstants.BindScalar(6, vertexOffset);
+
+                commandList.DrawIndexed(
+                    vertexShader,
+                    pixelShader,
+                    graphicsPipelineState,
+                    shaderConstants,
+                    indexBuffer[frameInFlightCounter],
+                    pcmd->ElemCount,
+                    1,
+                    pcmd->IdxOffset + globalIndexOffset,
+                    0,//pcmd->VtxOffset + globalVertexOffset,
+                    0,
+                    RenderBackendPrimitiveTopology::TriangleList);
+            }
+            globalIndexOffset += cmdList->IdxBuffer.Size;
+            globalVertexOffset += cmdList->VtxBuffer.Size;
+        }
 
         commandList.EndRenderPass();
     }

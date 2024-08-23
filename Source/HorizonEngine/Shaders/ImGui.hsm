@@ -1,6 +1,6 @@
 #include "ShaderCommon.hsh"
 
-#define IM_GUI_ONE_DRAW_CALL 1
+#define IM_GUI_ONE_DRAW_CALL 0
 
 struct ImGuiVertex
 {
@@ -11,6 +11,7 @@ struct ImGuiVertex
 DECLARE_ALIASED_ARRAY_STRUCTURED_BUFFER_SRV(ImGuiVertex);
 
 #if IM_GUI_ONE_DRAW_CALL
+
 struct ImGuiDrawData
 {
     int textureID;
