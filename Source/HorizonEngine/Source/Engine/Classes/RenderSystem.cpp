@@ -289,6 +289,19 @@ namespace Horizon
         RenderBackendShaderHandle vertexShader = shaderLibrary->GetShader(ShaderID::ImGuiVS);
         RenderBackendShaderHandle pixelShader = shaderLibrary->GetShader(ShaderID::ImGuiPS);
 
+        RenderBackendGraphicsPipelineState graphicsPipelineState = {};
+        graphicsPipelineState.rasterizationState.cullMode = RenderBackendRasterizationCullMode::None;
+        graphicsPipelineState.depthStencilState.depthTestEnable = false;
+        graphicsPipelineState.depthStencilState.depthWriteEnable = false;
+        graphicsPipelineState.colorBlendState.targetBlends[0].blendEnable = true;
+        graphicsPipelineState.colorBlendState.targetBlends[0].srcColorBlendFactor = RenderBackendBlendFactor::SrcAlpha;
+        graphicsPipelineState.colorBlendState.targetBlends[0].dstColorBlendFactor = RenderBackendBlendFactor::OneMinusSrcAlpha;
+        graphicsPipelineState.colorBlendState.targetBlends[0].colorBlendOp = RenderBackendBlendOp::Add;
+        graphicsPipelineState.colorBlendState.targetBlends[0].srcAlphaBlendFactor = RenderBackendBlendFactor::One;
+        graphicsPipelineState.colorBlendState.targetBlends[0].dstAlphaBlendFactor = RenderBackendBlendFactor::OneMinusSrcAlpha;
+        graphicsPipelineState.colorBlendState.targetBlends[0].alphaBlendOp = RenderBackendBlendOp::Add;
+        graphicsPipelineState.colorBlendState.targetBlends[0].writeMask = RenderBackendColorComponentFlags::RGBA;
+
         // Render command lists
         // (Because we merged all buffers into a single one, we maintain our own offset into them)
         int globalIndexOffset = 0;
@@ -324,19 +337,6 @@ namespace Horizon
                 Vector2 scale = Vector2(2.0f / drawData->DisplaySize.x, -2.0f / drawData->DisplaySize.y);
                 Vector2 translate = Vector2(-1.0f - drawData->DisplayPos.x * scale.x, 1.0f + drawData->DisplayPos.y * scale.y);
                 int vertexOffset = pcmd->VtxOffset + globalVertexOffset;
-
-                RenderBackendGraphicsPipelineState graphicsPipelineState = {};
-                graphicsPipelineState.rasterizationState.cullMode = RenderBackendRasterizationCullMode::None;
-                graphicsPipelineState.depthStencilState.depthTestEnable = false;
-                graphicsPipelineState.depthStencilState.depthWriteEnable = false;
-                graphicsPipelineState.colorBlendState.targetBlends[0].blendEnable = true;
-                graphicsPipelineState.colorBlendState.targetBlends[0].srcColorBlendFactor = RenderBackendBlendFactor::SrcAlpha;
-                graphicsPipelineState.colorBlendState.targetBlends[0].dstColorBlendFactor = RenderBackendBlendFactor::OneMinusSrcAlpha;
-                graphicsPipelineState.colorBlendState.targetBlends[0].colorBlendOp = RenderBackendBlendOp::Add;
-                graphicsPipelineState.colorBlendState.targetBlends[0].srcAlphaBlendFactor = RenderBackendBlendFactor::One;
-                graphicsPipelineState.colorBlendState.targetBlends[0].dstAlphaBlendFactor = RenderBackendBlendFactor::OneMinusSrcAlpha;
-                graphicsPipelineState.colorBlendState.targetBlends[0].alphaBlendOp = RenderBackendBlendOp::Add;
-                graphicsPipelineState.colorBlendState.targetBlends[0].writeMask = RenderBackendColorComponentFlags::RGBA;
 
                 RenderBackendShaderConstants shaderConstants = {};
                 shaderConstants.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(vertexBuffer[frameInFlightCounter]));
