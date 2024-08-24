@@ -5,6 +5,11 @@
 
 #include <optick.h>
 
+#include "Engine/Components/SkyLightComponent.h"
+
+
+#include "TextureImporter.h"
+
 // TODO: delete this
 #define BIND_FUNCTION(func) [this](auto&&... args) -> decltype(auto) { return this->func(std::forward<decltype(args)> (args)...); }
 
@@ -105,12 +110,26 @@ namespace Horizon
             RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::UnorderedAccess | RenderBackendTextureCreateFlags::RenderTarget);
         targetTexture = renderGraphResourcePool->AllocateTexture(targetTextureDesc, "SceneViewTexture");
 
+        const uint32 environmentMapTextureSize = 128;
+        const uint32 environmentMapTextureMipLevelCount = Math::MaxNumMipLevels(environmentMapTextureSize);
+        RenderBackendTextureHandle environmentMapTextureLatLong = LoadTextureFromHDRFile(renderBackend, "../../../Assets/HDRIs/HDR_029_Sky_Cloudy_Ref.hdr");
+        RenderBackendTextureDesc environmentMapTextureDesc = RenderBackendTextureDesc::CreateCube(
+            environmentMapTextureSize,
+            RenderBackendTextureFormat::R11G11B10Float,
+            RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::UnorderedAccess,
+            environmentMapTextureMipLevelCount);
+        RenderBackendTextureHandle environmentMapTexture = renderBackend->CreateTexture(&environmentMapTextureDesc, nullptr, "EnvironmentMapTexture");
+
         RenderBackendCommandList* commandList = new RenderBackendCommandList(GArena);
         RenderBackendBarrier transitions[] =
         {
             RenderBackendBarrier(targetTexture->GetHandle(), RenderBackendTextureSubresourceRange(0, 1, 0, 1), RenderBackendResourceState::Undefined, RenderBackendResourceState::ShaderResource),
         };
         commandList->Transitions(transitions, 1);
+
+        ConvertLatLongToCubemap(renderBackend, renderSystem->GetShaderLibrary(), *commandList, environmentMapTextureLatLong, environmentMapTexture, environmentMapTextureSize);
+        GenerateCubemapMips(renderBackend, renderSystem->GetShaderLibrary(), *commandList, environmentMapTexture, environmentMapTextureMipLevelCount);
+
         renderBackend->SubmitCommandLists(&commandList, 1, RenderBackendSwapChainHandle::Null);
 
         renderer = renderSystem->CreateRenderer();
@@ -170,6 +189,13 @@ namespace Horizon
                 lightComponent.CreateRenderObject(scene->GetRenderScene());
             }
 
+            EntityHandle skyDome = scene->CreateEntity("SkyDome");
+            {
+                SkyLightComponent& skyLightComponent = scene->GetEntityManager()->AddComponent<SkyLightComponent>(skyDome);
+                skyLightComponent.environmentMapTexture = RenderGraphPersistentTexture("EnvironmentMapTexture", environmentMapTextureDesc, environmentMapTexture);
+                skyLightComponent.CreateRenderObject(scene->GetRenderScene());
+            }
+
             EntityHandle skyAtmosphere = scene->CreateEntity("SkyAtmosphere");
             {
                 SkyAtmosphereComponent& skyAtmosphereComponent = scene->GetEntityManager()->AddComponent<SkyAtmosphereComponent>(skyAtmosphere);
@@ -213,6 +239,7 @@ namespace Horizon
 //        selectionManager = new SelectionManager();
 //
 //        Setup();
+
         return true;
     }
 

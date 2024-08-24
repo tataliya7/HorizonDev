@@ -9,6 +9,10 @@ namespace Horizon
     class RenderGraphPersistentTexture
     {
     public:
+        RenderGraphPersistentTexture()
+        {
+
+        }
         RenderGraphPersistentTexture(const char* name, const RenderBackendTextureDesc& desc, RenderBackendTextureHandle handle)
             : active(false)
             , name(name)

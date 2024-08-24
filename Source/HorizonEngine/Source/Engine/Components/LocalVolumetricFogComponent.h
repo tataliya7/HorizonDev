@@ -22,7 +22,7 @@ namespace Horizon
 
         void DestroyRenderObject(RenderScene* scene);
 
-        void UpdateRenderObject();
+        void UpdateRenderObject(const Matrix4x4f& transform);
 
         Vector3 emission;
 

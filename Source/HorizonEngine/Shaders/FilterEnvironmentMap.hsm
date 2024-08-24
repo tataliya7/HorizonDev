@@ -73,7 +73,7 @@ void FilterEnvironmentMapCS(uint3 DispatchThreadID : SV_DispatchThreadID)
     TextureCube environmentMapTexture = ShaderConstants.GetEnvironmentMapTextureSRV();
     float roughness = ShaderConstants.GetRoughness();
 
-    if (roughness < 0.01)
+    if (roughness < 0.01f)
     {
         filteredEnvironmentMapTexture[coord] = environmentMapTexture.SampleLevel(GlobalSamplerLinearWarp, N, 0);
         return;

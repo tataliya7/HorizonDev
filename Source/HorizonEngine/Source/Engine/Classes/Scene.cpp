@@ -206,8 +206,8 @@ namespace Horizon
         {
             entityManager->Get()->sort<TransformComponent>([&](EntityHandle lhs, EntityHandle rhs)
             {
-                const auto& lc = entityManager->GetComponent<SceneHierarchyComponent>(lhs);
-                const auto& rc = entityManager->GetComponent<SceneHierarchyComponent>(rhs);
+                const SceneHierarchyComponent& lc = entityManager->GetComponent<SceneHierarchyComponent>(lhs);
+                const SceneHierarchyComponent& rc = entityManager->GetComponent<SceneHierarchyComponent>(rhs);
                 return lc.depth < rc.depth;
             });
 
@@ -296,6 +296,14 @@ namespace Horizon
         {
             SkyAtmosphereComponent& skyAtmosphereComponent = entityManager->GetComponent<SkyAtmosphereComponent>(entity);
             skyAtmosphereComponent.UpdateRenderObject();
+        });
+
+        entityManager->GetView<LocalVolumetricFogComponent>().each([&](EntityHandle entity)
+        {
+            const TransformComponent& transformComponent = entityManager->GetComponent<TransformComponent>(entity);
+
+            LocalVolumetricFogComponent& localVolumetricFogComponent = entityManager->GetComponent<LocalVolumetricFogComponent>(entity);
+            localVolumetricFogComponent.UpdateRenderObject(transformComponent.localToWorldMatrix);
         });
 
         // Update audio sources and listeners

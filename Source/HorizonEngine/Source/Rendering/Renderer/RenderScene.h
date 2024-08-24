@@ -264,6 +264,9 @@ namespace Horizon
     public:
         SkyLightRenderObject();
         virtual ~SkyLightRenderObject();
+
+        RenderGraphPersistentTexture environmentMapTexture;
+
     private:
     };
 
@@ -424,6 +427,16 @@ namespace Horizon
          */
         virtual void RemoveLight(LightRenderObject* light);
 
+        /**
+         * Adds a new sky light to the scene.
+         */
+        virtual void AddSkyLight(SkyLightRenderObject* skyLight);
+
+        /**
+         * Removes a sky light from the scene.
+         */
+        virtual void RemoveSkyLight(SkyLightRenderObject* skyLight);
+
         // virtual void HasSkyLight() = 0;
         //
         // virtual void SetSkyLight(FSkyLightSceneProxy* component);
@@ -462,6 +475,8 @@ namespace Horizon
         std::vector<MeshRenderObject*> meshes;
 
         std::vector<LightRenderObject*> lights;
+
+        std::vector<SkyLightRenderObject*> skyLights;
 
         LightRenderObject* atmosphericLight;
 

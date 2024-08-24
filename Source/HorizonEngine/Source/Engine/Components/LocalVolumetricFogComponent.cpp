@@ -34,11 +34,11 @@ namespace Horizon
 
     }
 
-    void LocalVolumetricFogComponent::UpdateRenderObject()
+    void LocalVolumetricFogComponent::UpdateRenderObject(const Matrix4x4f& transform)
     {
         if (renderObject)
         {
-            //renderObject->transform = ;
+            renderObject->transform = transform;
             renderObject->emission = emission;
         }
     }

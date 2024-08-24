@@ -288,6 +288,10 @@ namespace Horizon
 
         void AddSkyAtmosphereDebugVisualizationPass();
 
+        void CaptureEnvironmentMap(
+            RenderGraph& renderGraph,
+            const SceneView& view);
+
         void RenderSubsurfaceScattering(
             RenderGraph& renderGraph,
             const SceneView& view);

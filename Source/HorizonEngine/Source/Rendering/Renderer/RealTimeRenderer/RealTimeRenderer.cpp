@@ -619,6 +619,8 @@ namespace Horizon
             RenderSkyAtmosphereLUTs(renderGraph, view);
         }
 
+        CaptureEnvironmentMap(renderGraph, view);
+
         if (IsScreenSpaceAmbientOcclusionEnabled())
         {
             sceneTextures.ambientOcclusionTexture = RenderScreenSpaceAmbientOcclusion(renderGraph, view);

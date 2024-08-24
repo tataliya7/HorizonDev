@@ -578,10 +578,10 @@ namespace Horizon
             ImGui::Separator();
 
             ImGui::AlignTextToFramePadding();
-            ImGui::TextUnformatted("Position");
+            ImGui::TextUnformatted("Emission");
             ImGui::NextColumn();
             ImGui::PushItemWidth(-1);
-            if (ImGui::DragFloat3("##Position", static_cast<float*>(&component.emission.x)))
+            if (ImGui::DragFloat3("##Emission", static_cast<float*>(&component.emission.x)))
             {
                 dirty = true;
             }

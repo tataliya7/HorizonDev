@@ -37,8 +37,8 @@ struct LocalVolumetricFogVertexShaderOutput
 
 [shader("vertex")]
 void LocalVolumetricFogVS(
-	uint vertexID : SV_VertexID,
-	uint instanceID : SV_InstanceID,
+	in uint vertexID : SV_VertexID,
+	in uint instanceID : SV_InstanceID,
 	out float4 position : SV_POSITION,
 	out LocalVolumetricFogVertexShaderOutput vertexShaderOutput)
 {
@@ -57,7 +57,10 @@ void LocalVolumetricFogVS(
 }
 
 [shader("pixel")]
-void LocalVolumetricFogPS(float4 position : SV_Position, uint instanceID : SV_InstanceID)
+void LocalVolumetricFogPS(
+    in float4 position : SV_Position,
+    in uint instanceID : SV_InstanceID,
+    out float4 outputColor : SV_Target0)
 {
     ConstantBuffer<PerFrameShaderParameters> frameShaderParameters = ShaderConstants.GetPerFrameShaderParameterBufferCBV();
 
@@ -71,4 +74,6 @@ void LocalVolumetricFogPS(float4 position : SV_Position, uint instanceID : SV_In
 
     float depth = depthTexture.SampleLevel(GlobalSamplerPointClamp, uv, 0).r;
     float3 worldSpacePosition = ReconstructWorldSpacePositionFromDepth(uv, depth, frameShaderParameters.clipToWorldMatrix);
+
+    outputColor = float4(instanceData.emission, 1.0f);
 }

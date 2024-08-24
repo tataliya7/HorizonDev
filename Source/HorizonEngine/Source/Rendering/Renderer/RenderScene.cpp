@@ -29,6 +29,13 @@ namespace Horizon
 
     }
 
+    SkyLightRenderObject::SkyLightRenderObject()
+    {
+    }
+    SkyLightRenderObject::~SkyLightRenderObject()
+    {
+    }
+
     LocalVolumetricFogRenderObject::LocalVolumetricFogRenderObject()
         : transform(IdentityMatrix4x4)
         , emission(Vector3(0.0f, 0.0f, 0.0f))
@@ -97,6 +104,20 @@ namespace Horizon
 
     void RenderScene::RemoveLight(LightRenderObject* light)
     {
+
+    }
+
+    void RenderScene::AddSkyLight(SkyLightRenderObject* skyLight)
+    {
+        assert(skyLight != nullptr);
+        assert(std::ranges::find(skyLights, skyLight) == skyLights.end());
+
+        skyLights.push_back(skyLight);
+    }
+
+    void RenderScene::RemoveSkyLight(SkyLightRenderObject* skyLight)
+    {
+
     }
 
     bool RenderScene::HasAtmosphericLight() const
