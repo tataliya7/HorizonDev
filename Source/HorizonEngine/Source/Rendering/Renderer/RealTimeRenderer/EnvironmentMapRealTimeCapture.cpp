@@ -74,6 +74,8 @@ namespace Horizon
     {
         SkyLightRenderObject* skyLight = view.scene->skyLights[0];
 
+        RealTimeRendererSceneTextures& sceneTextures = renderGraph.blackboard.Get<RealTimeRendererSceneTextures>();
+
         const uint32 environmentMapTextureSize = 128;
         const uint32 environmentMapTextureMipLevelCount = Math::MaxNumMipLevels(environmentMapTextureSize);
 
@@ -98,7 +100,6 @@ namespace Horizon
                     RenderGraphPassFlags::Compute,
                     [&](RenderGraphBuilder& builder)
                     {
-                        capturedEnvironmentMapTexture = builder.WriteTexture(capturedEnvironmentMapTexture, RenderBackendResourceState::UnorderedAccess);
 
                         return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
                         {
@@ -241,5 +242,8 @@ namespace Horizon
                     }
                 };
             });
+
+        sceneTextures.irradianceEnvironmentMapBuffer = irradianceEnvironmentMapBuffer;
+        sceneTextures.convolvedEnvironmentMapTexture = convolvedEnvironmentMapTexture;
     }
 }

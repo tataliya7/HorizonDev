@@ -90,6 +90,9 @@ namespace Horizon
         //RenderGraphTextureHandle uiColorAndAlphaTexture;
         //RenderGraphTextureHandle targetTexture;
         //RenderGraphTextureHandle displayTexture;
+
+        RenderGraphBufferHandle irradianceEnvironmentMapBuffer;
+        RenderGraphTextureHandle convolvedEnvironmentMapTexture;
     };
 
     struct RealTimeRendererLightGridData

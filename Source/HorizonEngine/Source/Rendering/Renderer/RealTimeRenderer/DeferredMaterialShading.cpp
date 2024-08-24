@@ -284,7 +284,7 @@ namespace Horizon
 
                  RenderGraphTextureHandle sceneColorTexture = sceneTextures.sceneColorTexture = builder.WriteTexture(sceneTextures.sceneColorTexture, RenderBackendResourceState::RenderTarget);
 
-                 builder.BindRenderTarget(0, sceneColorTexture, RenderBackendRenderPassBeginningAccessType::Clear, RenderBackendRenderPassEndingAccessType::Preserve);
+                 builder.BindRenderTarget(0, sceneColorTexture, RenderBackendRenderPassBeginningAccessType::Preserve, RenderBackendRenderPassEndingAccessType::Preserve);
                  builder.BindDepthStencil(sceneDepthTexture, RenderBackendRenderPassBeginningAccessType::Preserve, RenderBackendRenderPassEndingAccessType::Preserve);
 
                  return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
@@ -320,14 +320,7 @@ namespace Horizon
                      graphicsPipelineState.depthStencilState.depthTestEnable = true;
                      graphicsPipelineState.depthStencilState.depthCompareFunction = RenderBackendCompareOp::NotEqual;
                      graphicsPipelineState.depthStencilState.depthWriteEnable = false;
-                     graphicsPipelineState.colorBlendState.targetBlends[0].blendEnable = true;
-                     graphicsPipelineState.colorBlendState.targetBlends[0].srcColorBlendFactor = RenderBackendBlendFactor::One;
-                     graphicsPipelineState.colorBlendState.targetBlends[0].dstColorBlendFactor = RenderBackendBlendFactor::One;
-                     graphicsPipelineState.colorBlendState.targetBlends[0].colorBlendOp = RenderBackendBlendOp::Add;
-                     graphicsPipelineState.colorBlendState.targetBlends[0].srcAlphaBlendFactor = RenderBackendBlendFactor::One;
-                     graphicsPipelineState.colorBlendState.targetBlends[0].dstAlphaBlendFactor = RenderBackendBlendFactor::One;
-                     graphicsPipelineState.colorBlendState.targetBlends[0].alphaBlendOp = RenderBackendBlendOp::Add;
-                     graphicsPipelineState.colorBlendState.targetBlends[0].writeMask = RenderBackendColorComponentFlags::RGBA;
+                     graphicsPipelineState.colorBlendState.targetBlends[0] = RenderBackendColorBlendAttachmentState::AdditiveRGBA;
 
                      RenderBackendShaderHandle vertexShader = shaderLibrary->GetShader(ShaderID::FullScreenQuadVS);
                      RenderBackendShaderHandle pixelShader = shaderLibrary->GetShader(ShaderID::DirectLighting);
@@ -347,96 +340,113 @@ namespace Horizon
         RenderGraph& renderGraph,
         const SceneView& view)
     {
-        // renderGraph.AddPass(std::format("IndirectLightingDiffuse (Graphics, {}x{})", renderResolution.width, renderResolution.height), RenderGraphPassFlags::Graphics,
-        //     [&](RenderGraphBuilder& builder)
-        //     {
-        //         auto& sceneTextures = renderGraph.blackboard.Get<RealTimeRendererSceneTextures>();
-        //         auto gbuffer0 = builder.ReadTexture(sceneTextures.gbuffer0, RenderBackendResourceState::ShaderResource);
-        //         auto gbuffer1 = builder.ReadTexture(sceneTextures.gbuffer1, RenderBackendResourceState::ShaderResource);
-        //         auto gbuffer2 = builder.ReadTexture(sceneTextures.gbuffer2, RenderBackendResourceState::ShaderResource);
-        //         auto ambientOcclusionTexture = builder.ReadTexture(sceneTextures.ambientOcclusionTexture, RenderBackendResourceState::ShaderResource);
-        //         auto sceneDepthTexture = builder.ReadTexture(sceneTextures.sceneDepthTexture, RenderBackendResourceState::DepthStencil);
-        //
-        //         auto sceneColorTexture = sceneTextures.sceneColorTexture = builder.WriteTexture(sceneTextures.sceneColorTexture, RenderBackendResourceState::RenderTarget);
-        //
-        //         // TODO: move clear render target to a separate pass
-        //         builder.BindColorTarget(0, sceneColorTexture, RenderBackendRenderPassBeginningAccessType::Clear, RenderBackendRenderPassEndingAccessType::Preserve);
-        //         builder.BindDepthTarget(sceneDepthTexture, RenderBackendRenderPassBeginningAccessType::Preserve, RenderBackendRenderPassEndingAccessType::Preserve);
-        //
-        //         return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
-        //         {
-        //             RenderBackendGraphicsPipelineState graphicsPipelineState = {};
-        //             graphicsPipelineState.rasterizationState.cullMode = RenderBackendRasterizationCullMode::None;
-        //             graphicsPipelineState.depthStencilState.depthTestEnable = true;
-        //             graphicsPipelineState.depthStencilState.depthCompareFunction = RenderBackendCompareOp::NotEqual;
-        //             graphicsPipelineState.depthStencilState.depthWriteEnable = false;
-        //
-        //             RenderBackendShaderConstants shaderConstants = {};
-        //             shaderConstants.BindBufferCBV(0, renderBackend->GetBufferCBVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
-        //             shaderConstants.BindTextureSRV(1, registry.GetTextureSRVBindlessResourceDescriptorIndex(gbuffer0)));
-        //             shaderConstants.BindTextureSRV(2, registry.GetTextureSRVBindlessResourceDescriptorIndex(gbuffer1)));
-        //             shaderConstants.BindTextureSRV(3, registry.GetTextureSRVBindlessResourceDescriptorIndex(gbuffer2)));
-        //             shaderConstants.BindTextureSRV(4, registry.GetTextureSRVBindlessResourceDescriptorIndex(ambientOcclusionTexture)));
-        //             shaderConstants.BindTextureSRV(5, RenderBackendTextureSRVDesc::Create(renderEngine->irradianceEnvironmentMap));
-        //             shaderConstants.BindBuffer(6, renderEngine->irradianceEnvironmentMapSH, 0);
-        //
-        //             RenderBackendShaderHandle graphicsShader = shaderLibrary->GetShader(ShaderID::IndirectLightingDiffuse);
-        //             commandList.Draw(
-        //                 graphicsShader,
-        //                 graphicsPipelineState,
-        //                 shaderConstants,
-        //                 3, 1, 0, 0,
-        //                 RenderBackendPrimitiveTopology::TriangleList);
-        //         };
-        //     });
+         renderGraph.AddPass(
+             std::format("IndirectLightingDiffuse (Graphics, {}x{})", renderResolution.width, renderResolution.height), 
+             RenderGraphPassFlags::Graphics,
+             [&](RenderGraphBuilder& builder)
+             {
+                 RealTimeRendererSceneTextures& sceneTextures = renderGraph.blackboard.Get<RealTimeRendererSceneTextures>();
+                 RenderGraphTextureHandle gbuffer0 = builder.ReadTexture(sceneTextures.gbuffer0, RenderBackendResourceState::ShaderResource);
+                 RenderGraphTextureHandle gbuffer1 = builder.ReadTexture(sceneTextures.gbuffer1, RenderBackendResourceState::ShaderResource);
+                 RenderGraphTextureHandle gbuffer2 = builder.ReadTexture(sceneTextures.gbuffer2, RenderBackendResourceState::ShaderResource);
+                 RenderGraphTextureHandle ambientOcclusionTexture = builder.ReadTexture(sceneTextures.ambientOcclusionTexture, RenderBackendResourceState::ShaderResource);
+                 RenderGraphTextureHandle sceneDepthTexture = builder.ReadTexture(sceneTextures.sceneDepthTexture, RenderBackendResourceState::DepthStencil);
+                 RenderGraphBufferHandle irradianceEnvironmentMapBuffer = builder.ReadBuffer(sceneTextures.irradianceEnvironmentMapBuffer, RenderBackendResourceState::ShaderResource);
+                 
+                 RenderGraphTextureHandle sceneColorTexture = sceneTextures.sceneColorTexture = builder.WriteTexture(sceneTextures.sceneColorTexture, RenderBackendResourceState::RenderTarget);
+
+                 builder.BindRenderTarget(0, sceneColorTexture, RenderBackendRenderPassBeginningAccessType::Preserve, RenderBackendRenderPassEndingAccessType::Preserve);
+                 builder.BindDepthStencil(sceneDepthTexture, RenderBackendRenderPassBeginningAccessType::Preserve, RenderBackendRenderPassEndingAccessType::Preserve);
+
+                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
+                 {
+                     RenderBackendGraphicsPipelineState graphicsPipelineState = {};
+                     graphicsPipelineState.rasterizationState.cullMode = RenderBackendRasterizationCullMode::None;
+                     graphicsPipelineState.depthStencilState.depthTestEnable = true;
+                     graphicsPipelineState.depthStencilState.depthCompareFunction = RenderBackendCompareOp::NotEqual;
+                     graphicsPipelineState.depthStencilState.depthWriteEnable = false;
+                     graphicsPipelineState.colorBlendState.targetBlends[0].blendEnable = true;
+                     graphicsPipelineState.colorBlendState.targetBlends[0].srcColorBlendFactor = RenderBackendBlendFactor::One;
+                     graphicsPipelineState.colorBlendState.targetBlends[0].dstColorBlendFactor = RenderBackendBlendFactor::Src1Color;
+                     graphicsPipelineState.colorBlendState.targetBlends[0].colorBlendOp = RenderBackendBlendOp::Add;
+                     graphicsPipelineState.colorBlendState.targetBlends[0].srcAlphaBlendFactor = RenderBackendBlendFactor::One;
+                     graphicsPipelineState.colorBlendState.targetBlends[0].dstAlphaBlendFactor = RenderBackendBlendFactor::Src1Alpha;
+                     graphicsPipelineState.colorBlendState.targetBlends[0].alphaBlendOp = RenderBackendBlendOp::Add;
+                     graphicsPipelineState.colorBlendState.targetBlends[0].writeMask = RenderBackendColorComponentFlags::RGBA;
+
+                     RenderBackendShaderConstants shaderConstants = {};
+                     shaderConstants.BindBufferCBV(0, renderBackend->GetBufferCBVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
+                     shaderConstants.BindTextureSRV(1, registry.GetTextureSRVBindlessResourceDescriptorIndex(gbuffer0));
+                     shaderConstants.BindTextureSRV(2, registry.GetTextureSRVBindlessResourceDescriptorIndex(gbuffer1));
+                     shaderConstants.BindTextureSRV(3, registry.GetTextureSRVBindlessResourceDescriptorIndex(gbuffer2));
+                     shaderConstants.BindTextureSRV(4, registry.GetTextureSRVBindlessResourceDescriptorIndex(ambientOcclusionTexture));
+                     shaderConstants.BindBufferSRV(5, registry.GetBufferSRVBindlessResourceDescriptorIndex(irradianceEnvironmentMapBuffer));
+
+                     RenderBackendShaderHandle vertexShader = shaderLibrary->GetShader(ShaderID::FullScreenQuadVS);
+                     RenderBackendShaderHandle pixelShader = shaderLibrary->GetShader(ShaderID::IndirectLightingDiffuse);
+
+                     commandList.Draw(
+                         vertexShader,
+                         pixelShader,
+                         graphicsPipelineState,
+                         shaderConstants,
+                         3, 1, 0, 0,
+                         RenderBackendPrimitiveTopology::TriangleList);
+                 };
+             });
     }
 
     void RealTimeRenderer::AddIndirectLightingSpecularPass(
         RenderGraph& renderGraph,
         const SceneView& view)
     {
-        // renderGraph.AddPass(std::format("IndirectLightingSpecular (Graphics, {}x{})", renderResolution.width, renderResolution.height), RenderGraphPassFlags::Graphics,
-        //     [&](RenderGraphBuilder& builder)
-        //     {
-        //         auto& sceneTextures = renderGraph.blackboard.Get<RealTimeRendererSceneTextures>();
-        //         auto gbuffer0 = builder.ReadTexture(sceneTextures.gbuffer0, RenderBackendResourceState::ShaderResource);
-        //         auto gbuffer1 = builder.ReadTexture(sceneTextures.gbuffer1, RenderBackendResourceState::ShaderResource);
-        //         auto gbuffer2 = builder.ReadTexture(sceneTextures.gbuffer2, RenderBackendResourceState::ShaderResource);
-        //         auto sceneDepthTexture = builder.ReadTexture(sceneTextures.sceneDepthTexture, RenderBackendResourceState::DepthStencil);
-        //         auto ambientOcclusionTexture = builder.ReadTexture(sceneTextures.ambientOcclusionTexture, RenderBackendResourceState::ShaderResource);
-        //
-        //         auto sceneColorTexture = sceneTextures.sceneColorTexture = builder.WriteTexture(sceneTextures.sceneColorTexture, RenderBackendResourceState::RenderTarget);
-        //
-        //         builder.BindColorTarget(0, sceneColorTexture, RenderBackendRenderPassBeginningAccessType::Preserve, RenderBackendRenderPassEndingAccessType::Preserve);
-        //         builder.BindDepthTarget(sceneDepthTexture, RenderBackendRenderPassBeginningAccessType::Preserve, RenderBackendRenderPassEndingAccessType::Preserve);
-        //
-        //         return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
-        //         {
-        //             RenderBackendGraphicsPipelineState graphicsPipelineState = {};
-        //             graphicsPipelineState.rasterizationState.cullMode = RenderBackendRasterizationCullMode::None;
-        //             graphicsPipelineState.depthStencilState.depthTestEnable = true;
-        //             graphicsPipelineState.depthStencilState.depthCompareFunction = RenderBackendCompareOp::NotEqual;
-        //             graphicsPipelineState.depthStencilState.depthWriteEnable = false;
-        //             graphicsPipelineState.colorBlendState.targetBlends[0] = additiveColorBlendAttachmentStateRGBA;
-        //
-        //             RenderBackendShaderConstants shaderConstants = {};
-        //             shaderConstants.BindBufferCBV(0, renderBackend->GetBufferCBVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
-        //             shaderConstants.BindTextureSRV(1, registry.GetTextureSRVBindlessResourceDescriptorIndex(gbuffer0)));
-        //             shaderConstants.BindTextureSRV(2, registry.GetTextureSRVBindlessResourceDescriptorIndex(gbuffer1)));
-        //             shaderConstants.BindTextureSRV(7, registry.GetTextureSRVBindlessResourceDescriptorIndex(gbuffer2)));
-        //             shaderConstants.BindTextureSRV(3, registry.GetTextureSRVBindlessResourceDescriptorIndex(sceneDepthTexture)));
-        //             shaderConstants.BindTextureSRV(4, registry.GetTextureSRVBindlessResourceDescriptorIndex(ambientOcclusionTexture)));
-        //             shaderConstants.BindTextureSRV(5, RenderBackendTextureSRVDesc::Create(renderEngine->GetDefaultResources().GetPreIntegratedBrdfLut()));
-        //             shaderConstants.BindTextureSRV(6, RenderBackendTextureSRVDesc::Create(renderEngine->filteredEnvironmentMap));
-        //
-        //             RenderBackendShaderHandle graphicsShader = shaderLibrary->GetShader(ShaderID::IndirectLightingSpecular);
-        //             commandList.Draw(
-        //                 graphicsShader,
-        //                 graphicsPipelineState,
-        //                 shaderConstants,
-        //                 3, 1, 0, 0,
-        //                 RenderBackendPrimitiveTopology::TriangleList);
-        //         };
-        //     });
+        RenderBackendTextureHandle preIntegratedBrdfLutTexture = defaultResources->GetPreIntegratedBrdfLut();
+
+         renderGraph.AddPass(std::format("IndirectLightingSpecular (Graphics, {}x{})", renderResolution.width, renderResolution.height), RenderGraphPassFlags::Graphics,
+             [&](RenderGraphBuilder& builder)
+             {
+                 RealTimeRendererSceneTextures& sceneTextures = renderGraph.blackboard.Get<RealTimeRendererSceneTextures>();
+                 RenderGraphTextureHandle gbuffer0 = builder.ReadTexture(sceneTextures.gbuffer0, RenderBackendResourceState::ShaderResource);
+                 RenderGraphTextureHandle gbuffer1 = builder.ReadTexture(sceneTextures.gbuffer1, RenderBackendResourceState::ShaderResource);
+                 RenderGraphTextureHandle gbuffer2 = builder.ReadTexture(sceneTextures.gbuffer2, RenderBackendResourceState::ShaderResource);
+                 RenderGraphTextureHandle sceneDepthTexture = builder.ReadTexture(sceneTextures.sceneDepthTexture, RenderBackendResourceState::DepthStencil);
+                 RenderGraphTextureHandle ambientOcclusionTexture = builder.ReadTexture(sceneTextures.ambientOcclusionTexture, RenderBackendResourceState::ShaderResource);
+                 RenderGraphTextureHandle convolvedEnvironmentMapTexture = builder.ReadTexture(sceneTextures.convolvedEnvironmentMapTexture, RenderBackendResourceState::ShaderResource);
+                 RenderGraphTextureHandle sceneColorTexture = sceneTextures.sceneColorTexture = builder.WriteTexture(sceneTextures.sceneColorTexture, RenderBackendResourceState::RenderTarget);
+        
+                 builder.BindRenderTarget(0, sceneColorTexture, RenderBackendRenderPassBeginningAccessType::Preserve, RenderBackendRenderPassEndingAccessType::Preserve);
+                 builder.BindDepthStencil(sceneDepthTexture, RenderBackendRenderPassBeginningAccessType::Preserve, RenderBackendRenderPassEndingAccessType::Preserve);
+        
+                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
+                 {
+                     RenderBackendGraphicsPipelineState graphicsPipelineState = {};
+                     graphicsPipelineState.rasterizationState.cullMode = RenderBackendRasterizationCullMode::None;
+                     graphicsPipelineState.depthStencilState.depthTestEnable = true;
+                     graphicsPipelineState.depthStencilState.depthCompareFunction = RenderBackendCompareOp::NotEqual;
+                     graphicsPipelineState.depthStencilState.depthWriteEnable = false;
+                     graphicsPipelineState.colorBlendState.targetBlends[0] = RenderBackendColorBlendAttachmentState::AdditiveRGBA;
+        
+                     RenderBackendShaderConstants shaderConstants = {};
+                     shaderConstants.BindBufferCBV(0, renderBackend->GetBufferCBVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
+                     shaderConstants.BindTextureSRV(1, registry.GetTextureSRVBindlessResourceDescriptorIndex(gbuffer0));
+                     shaderConstants.BindTextureSRV(2, registry.GetTextureSRVBindlessResourceDescriptorIndex(gbuffer1));
+                     shaderConstants.BindTextureSRV(3, registry.GetTextureSRVBindlessResourceDescriptorIndex(gbuffer2));
+                     shaderConstants.BindTextureSRV(4, registry.GetTextureSRVBindlessResourceDescriptorIndex(sceneDepthTexture));
+                     shaderConstants.BindTextureSRV(5, registry.GetTextureSRVBindlessResourceDescriptorIndex(ambientOcclusionTexture));
+                     shaderConstants.BindTextureSRV(6, renderBackend->GetTextureSRVBindlessResourceDescriptorIndex(preIntegratedBrdfLutTexture));
+                     shaderConstants.BindTextureSRV(7, registry.GetTextureSRVBindlessResourceDescriptorIndex(convolvedEnvironmentMapTexture));
+
+                     RenderBackendShaderHandle vertexShader = shaderLibrary->GetShader(ShaderID::FullScreenQuadVS);
+                     RenderBackendShaderHandle pixelShader = shaderLibrary->GetShader(ShaderID::IndirectLightingSpecular);
+
+                     commandList.Draw(
+                         vertexShader,
+                         pixelShader,
+                         graphicsPipelineState,
+                         shaderConstants,
+                         3, 1, 0, 0,
+                         RenderBackendPrimitiveTopology::TriangleList);
+                 };
+             });
     }
 }

@@ -233,6 +233,8 @@ namespace Horizon
         editorCamera.farClippingPlane = 100.0f;
         editorCamera.cameraSpeed = 1.0f;
         editorCamera.overrideAspectRatio = false;
+
+        renderSettings.indirectLightingIntensity = 1000.0f;
 //
 //        ShaderGraphSystemInit();
 //

@@ -3,16 +3,18 @@
 #include "../PrincipledBSDF.hsh"
 #include "../SphericalHarmonics.hsh"
 #include "RealTimeRendererCommon.hsh"
-#include "LightingCommon.hsh"
+//#include "LightingCommon.hsh"
 
-BIND_BUFFER_CBV(0, PerFrameShaderParameters);
-BIND_TEXTURE_2D_SRV(1, GBuffer0);
-BIND_TEXTURE_2D_SRV(2, GBuffer1);
-BIND_TEXTURE_2D_SRV(3, SceneDepthTexture);
-BIND_TEXTURE_2D_SRV(4, AmbientOcclusionTexture);
-BIND_TEXTURE_2D_TYPED_SRV(5, float2, EnvironmentBRDFLut);
-BIND_TEXTURE_CUBE_SRV(6, FilteredEnvironmentMap);
-BIND_TEXTURE_2D_SRV(7, GBuffer2);
+SHADER_CONSTANTS_STRUCT_BEGIN();
+SHADER_CONSTANTS_CONSTANT_BUFFER_CBV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferCBV);
+SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(1, GBuffer0SRV);
+SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(2, GBuffer1SRV);
+SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(3, GBuffer2SRV);
+SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(4, SceneDepthTextureSRV);
+SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(5, AmbientOcclusionTextureSRV);
+SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(6, PreIntegratedBrdfLutTextureSRV);
+SHADER_CONSTANTS_TEXTURE_CUBE_DEFAULT_SRV(7, ConvolvedEnvironmentMapTextureSRV);
+SHADER_CONSTANTS_STRUCT_END();
 
 // IBL
 float3 ComputeImageBasedLightingSpecular(Surface surface)
@@ -36,36 +38,36 @@ float3 ComputeImageBasedLightingSpecular(Surface surface)
     //float3 F90 = saturate(50.0 * dot(F0, 0.33));
     //float3 F = FresnelSchlick1994(F0, F90, NdotV);
 
-    Texture2D<float2> brdfLut = GetEnvironmentBRDFLutSRV();
-    TextureCube filteredEnvironmentMap = GetFilteredEnvironmentMapSRV();
+    Texture2D preIntegratedBrdfLutTexture = ShaderConstants.GetPreIntegratedBrdfLutTextureSRV();
+    TextureCube convolvedEnvironmentMapTexture = ShaderConstants.GetConvolvedEnvironmentMapTextureSRV();
 
     float3 F = F_SchlickR(F0, NdotV, roughness);
 
     // Specular
     uint width; uint height; uint numMipLevels;
-    filteredEnvironmentMap.GetDimensions(0, width, height, numMipLevels);
+    convolvedEnvironmentMapTexture.GetDimensions(0, width, height, numMipLevels);
 
     float mipLevel = roughness * (numMipLevels - 1);
-    float3 prefilteredColor = filteredEnvironmentMap.SampleLevel(GlobalSamplerLinearWarp, R, mipLevel).rgb;
+    float3 prefilteredColor = convolvedEnvironmentMapTexture.SampleLevel(GlobalSamplerLinearWarp, R, mipLevel).rgb;
 
     // @note: When loading the texture, use CLAMP_TO_EDGE to ensure that values are read correctly.
-    float2 brdfLutValue = brdfLut.SampleLevel(GlobalSamplerLinearClamp, float2(NdotV, roughness), 0).rg;
+    float2 brdfLutValue = preIntegratedBrdfLutTexture.SampleLevel(GlobalSamplerLinearClamp, float2(NdotV, roughness), 0).rg;
     color += (F * brdfLutValue.x + brdfLutValue.y) * prefilteredColor * specularOcculusion;
 
     return color;
 }
 
 [shader("pixel")]
-void IndirectLightingSpecularPS(float4 svPosition : SV_Position, out float4 outSceneColor : SV_Target0)
+void IndirectLightingSpecularPS(in float4 position : SV_Position, out float4 outputColor : SV_Target0)
 {
-    ConstantBuffer<PerFrameShaderParameters> frameShaderParameters = GetPerFrameShaderParameterBufferCBV();
-    Texture2D gbuffer0 = GetGBuffer0SRV();
-    Texture2D gbuffer1 = GetGBuffer1SRV();
-    Texture2D gbuffer2 = GetGBuffer2SRV();
-    Texture2D sceneDepthTexture = GetSceneDepthTextureSRV();
-    Texture2D ambientOcclusionTexture = GetAmbientOcclusionTextureSRV();
+    ConstantBuffer<PerFrameShaderParameters> frameShaderParameters = ShaderConstants.GetPerFrameShaderParameterBufferCBV();
+    Texture2D gbuffer0 = ShaderConstants.GetGBuffer0SRV();
+    Texture2D gbuffer1 = ShaderConstants.GetGBuffer1SRV();
+    Texture2D gbuffer2 = ShaderConstants.GetGBuffer2SRV();
+    Texture2D sceneDepthTexture = ShaderConstants.GetSceneDepthTextureSRV();
+    Texture2D ambientOcclusionTexture = ShaderConstants.GetAmbientOcclusionTextureSRV();
 
-    const uint2 pixelCoord = uint2(svPosition.xy);
+    const uint2 pixelCoord = uint2(position.xy);
     const float2 uv = (float2(pixelCoord) + 0.5f) / float2(frameShaderParameters.renderWidth, frameShaderParameters.renderHeight);
 
     float4 gbuffer0Data = gbuffer0[pixelCoord];
@@ -74,19 +76,18 @@ void IndirectLightingSpecularPS(float4 svPosition : SV_Position, out float4 outS
     float sceneDepth = sceneDepthTexture[pixelCoord].r;
     float ambientOcclusion = ambientOcclusionTexture[pixelCoord].r;
 
-    float3 position = ReconstructWorldSpacePositionFromDepth(uv, sceneDepth, frameShaderParameters.clipToWorldMatrix);
+    float3 worldPosition = ReconstructWorldSpacePositionFromDepth(uv, sceneDepth, frameShaderParameters.clipToWorldMatrix);
     float3 normal = DecodeNormalFromGBuffer(gbuffer0Data.xyz);
     float metallic = gbuffer1Data.x;
     float specular = gbuffer1Data.y;
     float roughness = gbuffer1Data.z;
     float4 baseColor = gbuffer2Data;
-    ambientOcclusion = 1;
 
     Surface surface;
     surface.uv = uv;
-    surface.P = position;
+    surface.P = worldPosition;
     surface.N = normal;
-    surface.V = normalize(frameShaderParameters.cameraPosition - position);
+    surface.V = normalize(frameShaderParameters.cameraPosition - worldPosition);
     surface.R = normalize(reflect(-surface.V, surface.N));
     surface.baseColor = baseColor;
     surface.subsurface = 0.0;
@@ -108,6 +109,6 @@ void IndirectLightingSpecularPS(float4 svPosition : SV_Position, out float4 outS
     indirectSpecular *= frameShaderParameters.indirectLightingMultiplier;
     indirectSpecular *= frameShaderParameters.preExposure;
 
-    outSceneColor = 0;
-    outSceneColor.rgb += indirectSpecular;
+    outputColor = 0;
+    outputColor.rgb += indirectSpecular;
 }

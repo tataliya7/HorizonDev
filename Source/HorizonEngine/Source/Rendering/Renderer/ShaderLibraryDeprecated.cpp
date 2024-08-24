@@ -210,18 +210,18 @@ namespace Horizon
         //     ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/ScreenSpaceAmbientOcclusion.hsm", "GTAOTemporalFilteringCS");
         //     shaderLibrary->LoadShader(ShaderID::GTAOTemporalFiltering, shaderDesc);
         // }
-        // {
-        //     ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Pixel, "Shaders/RealTimeRenderer/IndirectLightingDiffuse.hsm", "IndirectLightingDiffusePS");
-        //     shaderLibrary->LoadShader(ShaderID::IndirectLightingDiffuse, shaderDesc);
-        // }
-        // {
-        //     ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Pixel, "Shaders/RealTimeRenderer/IndirectLightingSpecular.hsm", "IndirectLightingSpecularPS");
-        //     shaderLibrary->LoadShader(ShaderID::IndirectLightingSpecular, shaderDesc);
-        // }
-         {
-             ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Pixel, "Shaders/RealTimeRenderer/DirectLighting.hsm", "DirectLightingPS");
-             shaderLibrary->LoadShader(ShaderID::DirectLighting, shaderDesc);
-         }
+        {
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Pixel, "Shaders/RealTimeRenderer/IndirectLightingDiffuse.hsm", "IndirectLightingDiffusePS");
+            shaderLibrary->LoadShader(ShaderID::IndirectLightingDiffuse, shaderDesc);
+        }
+        {
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Pixel, "Shaders/RealTimeRenderer/IndirectLightingSpecular.hsm", "IndirectLightingSpecularPS");
+            shaderLibrary->LoadShader(ShaderID::IndirectLightingSpecular, shaderDesc);
+        }
+        {
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Pixel, "Shaders/RealTimeRenderer/DirectLighting.hsm", "DirectLightingPS");
+            shaderLibrary->LoadShader(ShaderID::DirectLighting, shaderDesc);
+        }
         // {
         //     ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Vertex, "Shaders/RealTimeRenderer/SkyBox.hsm", "SkyBoxVS");
         //     shaderLibrary->LoadShader(ShaderID::SkyBoxVS, shaderDesc);

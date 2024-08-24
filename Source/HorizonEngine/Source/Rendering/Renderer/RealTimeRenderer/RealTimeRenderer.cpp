@@ -341,7 +341,7 @@ namespace Horizon
             // TODO: move this to other place?
             historyFrame.preExposure = preExposure;
 
-            perFrameShaderParameters.indirectLightingMultiplier = renderSettings.globalIlluminationSettings.indirectLightingIntensity * renderSettings.globalIlluminationSettings.indirectLightingColor;
+            perFrameShaderParameters.indirectLightingMultiplier = renderSettings.indirectLightingIntensity * renderSettings.indirectLightingTint;
 
             if (scene != nullptr)
             {
@@ -621,16 +621,34 @@ namespace Horizon
 
         CaptureEnvironmentMap(renderGraph, view);
 
+        renderGraph.AddPass(
+            std::format("ClearSceneTextures"),
+            RenderGraphPassFlags::Graphics,
+            [&](RenderGraphBuilder& builder)
+            {
+                RenderGraphTextureHandle sceneColorTexture = sceneTextures.sceneColorTexture = builder.WriteTexture(sceneTextures.sceneColorTexture, RenderBackendResourceState::UnorderedAccess);
+
+                return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
+                {
+                    RenderBackendTextureUAVDesc sceneColorTextureUAV = RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(sceneColorTexture), 0);
+                    commandList.ClearTextureUAV(sceneColorTextureUAV, RenderBackendTextureClearValue::Black);
+                };
+            });
+
         if (IsScreenSpaceAmbientOcclusionEnabled())
         {
             sceneTextures.ambientOcclusionTexture = RenderScreenSpaceAmbientOcclusion(renderGraph, view);
+        }
+        else
+        {
+            sceneTextures.ambientOcclusionTexture = defaultResources->ImportWhiteDummyTexture2D(renderGraph);
         }
         // if (IsRayTracingAmbientOcclusionEnabled())
         // {
         //     sceneTextures.ambientOcclusionTexture = RenderRayTracingAmbientOcclusion(renderGraph, view);
         // }
 
-        //AddIndirectLightingDiffusePass(renderGraph, view);
+        AddIndirectLightingDiffusePass(renderGraph, view);
 
         // RenderGraphTextureDesc reflectionsTextureDesc = RenderGraphTextureDesc::Create2D(
         //     renderResolution.width,
@@ -680,7 +698,7 @@ namespace Horizon
         //         });
         // }
 
-        //AddIndirectLightingSpecularPass(renderGraph, view);
+        AddIndirectLightingSpecularPass(renderGraph, view);
 
         // AddSurfleGIPasses(renderGraph, view);
 
