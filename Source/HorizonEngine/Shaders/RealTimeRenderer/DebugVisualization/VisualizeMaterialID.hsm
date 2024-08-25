@@ -29,8 +29,9 @@ void VisualizeMaterialIDCS(uint3 DispatchThreadID : SV_DispatchThreadID)
 
     float2 uv = (pixelCoord + 0.5f) * float2(1.0f / width, 1.0f / height);
 
-    uint2 vbufferData = vbuffer0.SampleLevel(GlobalSamplerPointClamp, uv, 0).xy;
-    //uint2 vbufferData = vbuffer0[pixelCoord].xy;
+    //uint2 vbufferData = vbuffer0.SampleLevel(GlobalSamplerPointClamp, uv, 0).xy;
+    uint2 vBufferTextureCoord = uint2(uv * frameShaderParameters.renderResolution.xy);
+    uint2 vbufferData = vbuffer0[vBufferTextureCoord].xy;
 
     uint geometryID = vbufferData.r;
     uint primitiveID = vbufferData.g;

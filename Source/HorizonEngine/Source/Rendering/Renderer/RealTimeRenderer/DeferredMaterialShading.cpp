@@ -448,5 +448,5 @@ namespace Horizon
                          RenderBackendPrimitiveTopology::TriangleList);
                  };
              });
-    }
+    } 
 }

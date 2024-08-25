@@ -123,7 +123,7 @@ namespace Horizon
             shaderSource.numDefines = static_cast<uint32>(desc.defines.size());
             shaderSource.includeDirectories = includeDirectories.data();
             shaderSource.numIncludeDirectories = static_cast<uint32>(includeDirectories.size());
-            shaderSource.shaderModel = HLSLShaderModel::ShaderModel_6_8;
+            shaderSource.shaderModel = HLSLShaderModel::ShaderModel_6_6;
 
             ShaderCompiler* shaderCompiler = CreateDXCShaderCompiler();
             if (shaderCompiler)
