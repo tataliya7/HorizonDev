@@ -32,7 +32,7 @@ namespace Horizon
         uint32 renderHeight;
         float cameraNearClippingPlane;
         float cameraFarClippingPlane;
-        float cameraFieldOfView;
+        float cameraFovAngleVertical;
     };
 
     struct TemporalSuperSamplingDispatchDescription

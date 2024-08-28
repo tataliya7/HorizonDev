@@ -3,7 +3,7 @@
 #include "GPUScene.hsh"
 
 SHADER_CONSTANTS_STRUCT_BEGIN();
-SHADER_CONSTANTS_CONSTANT_BUFFER_CBV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferCBV);
+SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferSRV);
 SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_SRV(1, GeometryDataBufferSRV);
 SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_SRV(2, GeometryInstanceDataBufferSRV);
 SHADER_CONSTANTS_TEXTURE_2D_SRV(3, uint2, VBuffer0SRV);
@@ -148,7 +148,8 @@ void SurfaceInit(inout Surface surface, PerFrameShaderParameters frameShaderPara
 [numthreads(8, 8, 1)]
 void GBufferCS(uint3 DispatchThreadID : SV_DispatchThreadID)
 {
-    ConstantBuffer<PerFrameShaderParameters> frameShaderParameters = ShaderConstants.GetPerFrameShaderParameterBufferCBV();
+    StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
+    PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
 
     Texture2D<uint2> vbuffer0 = ShaderConstants.GetVBuffer0SRV();
     Texture2D<float3> vbuffer1 = ShaderConstants.GetVBuffer1SRV();

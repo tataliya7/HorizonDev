@@ -172,7 +172,7 @@ namespace Horizon
         switch (language)
         {
         case ShadingLanguage::DXIL:
-            arguments.push_back(L"-Fd");
+            //arguments.push_back(L"-Fd");
             break;
         case ShadingLanguage::SPIRV:
             arguments.push_back(L"-spirv");

@@ -32,6 +32,7 @@ namespace Horizon
     SkyLightRenderObject::SkyLightRenderObject()
     {
     }
+
     SkyLightRenderObject::~SkyLightRenderObject()
     {
     }
@@ -254,17 +255,27 @@ namespace Horizon
         if (gpuScene->geometryDataBuffer && geometryCount > 0)
         {
             renderBackend->UpdateBuffer(gpuScene->geometryDataUploadBuffer, 0, gpuScene->geometryData.data(), gpuScene->geometryDataBufferSize);
+
+            // {
+            //     RenderBackendBarrier barrier[] =
+            //     {
+            //         RenderBackendBarrier(gpuScene->geometryDataBuffer, RenderBackendBufferSubresourceRange::Whole, RenderBackendResourceState::Undefined, RenderBackendResourceState::CopyDst)
+            //     };
+            //     commandList->Transitions(barrier, 1);
+            // }
             commandList->CopyBuffer(
                 gpuScene->geometryDataUploadBuffer,
                 0,
                 gpuScene->geometryDataBuffer,
                 0,
                 gpuScene->geometryDataBufferSize);
-            RenderBackendBarrier barrier[] =
-            {
-                RenderBackendBarrier(gpuScene->geometryDataBuffer, RenderBackendBufferSubresourceRange::Whole, RenderBackendResourceState::CopyDst, RenderBackendResourceState::ShaderResource)
-            };
-            commandList->Transitions(barrier, 1);
+            // {
+            //     RenderBackendBarrier barrier[] =
+            //     {
+            //         RenderBackendBarrier(gpuScene->geometryDataBuffer, RenderBackendBufferSubresourceRange::Whole, RenderBackendResourceState::CopyDst, RenderBackendResourceState::ShaderResource)
+            //     };
+            //     commandList->Transitions(barrier, 1);
+            // }
         }
 
         uint32 geometryInstanceCount = geometryCount;
@@ -293,11 +304,11 @@ namespace Horizon
                 gpuScene->geometryInstanceDataBuffer,
                 0,
                 gpuScene->geometryInstanceDataBufferSize);
-            RenderBackendBarrier barrier[] =
-            {
-                RenderBackendBarrier(gpuScene->geometryInstanceDataBuffer, RenderBackendBufferSubresourceRange::Whole, RenderBackendResourceState::CopyDst, RenderBackendResourceState::ShaderResource)
-            };
-            commandList->Transitions(barrier, 1);
+            // RenderBackendBarrier barrier[] =
+            // {
+            //     RenderBackendBarrier(gpuScene->geometryInstanceDataBuffer, RenderBackendBufferSubresourceRange::Whole, RenderBackendResourceState::CopyDst, RenderBackendResourceState::ShaderResource)
+            // };
+            // commandList->Transitions(barrier, 1);
         }
 
         DistantLightRenderData distantLightShaderParameters;
@@ -306,7 +317,7 @@ namespace Horizon
         if (!distantLightDataBuffer)
         {
             RenderBackendBufferDesc distantLightDataUploadBufferDesc = RenderBackendBufferDesc::CreateUpload(sizeof(DistantLightRenderData));
-            distantLightDataUploadBuffer = renderBackend->CreateBuffer(&distantLightDataUploadBufferDesc, nullptr, "DistantLightDataBuffer");
+            distantLightDataUploadBuffer = renderBackend->CreateBuffer(&distantLightDataUploadBufferDesc, nullptr, "DistantLightDataUploadBuffer");
             RenderBackendBufferDesc distantLightDataBufferDesc = RenderBackendBufferDesc::CreateStructured(sizeof(DistantLightRenderData), 1);
             distantLightDataBuffer = renderBackend->CreateBuffer(&distantLightDataBufferDesc, nullptr, "DistantLightDataBuffer");
         }
@@ -318,11 +329,11 @@ namespace Horizon
                 distantLightDataBuffer,
                 0,
                 sizeof(DistantLightRenderData));
-            RenderBackendBarrier barrier[] =
-            {
-                RenderBackendBarrier(distantLightDataBuffer, RenderBackendBufferSubresourceRange::Whole, RenderBackendResourceState::CopyDst, RenderBackendResourceState::ShaderResource)
-            };
-            commandList->Transitions(barrier, 1);
+            // RenderBackendBarrier barrier[] =
+            // {
+            //     RenderBackendBarrier(distantLightDataBuffer, RenderBackendBufferSubresourceRange::Whole, RenderBackendResourceState::CopyDst, RenderBackendResourceState::ShaderResource)
+            // };
+            // commandList->Transitions(barrier, 1);
         }
     }
 

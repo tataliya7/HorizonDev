@@ -4,7 +4,7 @@
 #include "GPUScene.hsh"
 
 SHADER_CONSTANTS_STRUCT_BEGIN();
-SHADER_CONSTANTS_CONSTANT_BUFFER_CBV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferCBV);
+SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferSRV);
 SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(1, CascadedShadowMapShaderParameters, CascadeShadowMapDataBufferSRV);
 SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_SRV(2, GeometryDataBufferSRV);
 SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_SRV(3, GeometryInstanceDataBufferSRV);
@@ -23,7 +23,8 @@ void CascadedShadowMapVS(
     in uint instanceID : SV_InstanceID,
     out CascadedShadowMapVSToPS output)
 {
-    ConstantBuffer<PerFrameShaderParameters> frameShaderParameters = ShaderConstants.GetPerFrameShaderParameterBufferCBV();
+    StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
+    PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
     StructuredBuffer<CascadedShadowMapShaderParameters> cascadedShadowMapDataBuffer = ShaderConstants.GetCascadeShadowMapDataBufferSRV();
     ByteAddressBuffer geometryDataBuffer = ShaderConstants.GetGeometryDataBufferSRV();
     ByteAddressBuffer geometryInstanceDataBuffer = ShaderConstants.GetGeometryInstanceDataBufferSRV();
@@ -50,7 +51,8 @@ void CascadedShadowMapPS(
     in uint primitiveID : SV_PrimitiveID)
 {
 #if 0
-    ConstantBuffer<PerFrameShaderParameters> frameShaderParameters = GetPerFrameShaderParameterBufferCBV();
+    StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
+    PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
     Geometry geometry = GetGeometry();
 
     float2 texCoord0 = input.texCoord0;

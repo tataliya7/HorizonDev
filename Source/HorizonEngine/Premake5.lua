@@ -54,7 +54,7 @@ project "HorizonEngine"
         enginepath("Source"),
         enginepath("Plugins/FidelityFX/Source"),
         thirdpartypath("entt/include"),
-        thirdpartypath("dxc/dxc_2024_03_22/inc"),
+        thirdpartypath("dxc/dxc_2024_07_31/inc"),
         thirdpartypath("glfw/glfw-3.3.9.bin.WIN64/include"),
         thirdpartypath("glm/include"),
         thirdpartypath("spdlog/include"),

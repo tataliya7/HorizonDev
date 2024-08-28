@@ -44,7 +44,7 @@ namespace Horizon
                     outputTextureWidth,
                     outputTextureHeight,
                     RenderBackendTextureFormat::R11G11B10Float,
-                    RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::UnorderedAccess | RenderBackendTextureCreateFlags::RenderTarget);
+                    RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::UnorderedAccess);
                 RenderGraphTextureHandle outputTexture = renderGraph.CreateTexture(outputTextureDesc, "GaussianBloomDownsampleTexture");
 
                 renderGraph.AddPass(
@@ -62,7 +62,7 @@ namespace Horizon
                             uint32 threadGroupCountZ = 1;
 
                             RenderBackendShaderConstants shaderConstants = {};
-                            shaderConstants.BindBufferCBV(0, renderBackend->GetBufferCBVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
+                            shaderConstants.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
                             shaderConstants.BindTextureSRV(1, registry.GetTextureSRVBindlessResourceDescriptorIndex(inputTexture));
                             shaderConstants.BindTextureUAV(2, registry.GetTextureUAVBindlessResourceDescriptorIndex(outputTexture, 0));
                             shaderConstants.BindScalar(3, 1.0f / float(outputTextureWidth));
@@ -100,7 +100,7 @@ namespace Horizon
                     outputTextureWidth,
                     outputTextureHeight,
                     RenderBackendTextureFormat::R11G11B10Float,
-                    RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::UnorderedAccess | RenderBackendTextureCreateFlags::RenderTarget);
+                    RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::UnorderedAccess);
                 RenderGraphTextureHandle outputTexture = renderGraph.CreateTexture(outputTextureDesc, "GaussianBloomUpsampleTexture");
 
                 renderGraph.AddPass(
@@ -119,7 +119,7 @@ namespace Horizon
                             uint32 threadGroupCountZ = 1;
 
                             RenderBackendShaderConstants shaderConstants = {};
-                            shaderConstants.BindBufferCBV(0, renderBackend->GetBufferCBVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
+                            shaderConstants.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
                             shaderConstants.BindTextureSRV(1, registry.GetTextureSRVBindlessResourceDescriptorIndex(downsampledInputTexture));
                             shaderConstants.BindTextureSRV(2, registry.GetTextureSRVBindlessResourceDescriptorIndex(lowResolutionInputTexture));
                             shaderConstants.BindTextureUAV(3, registry.GetTextureUAVBindlessResourceDescriptorIndex(outputTexture, 0));

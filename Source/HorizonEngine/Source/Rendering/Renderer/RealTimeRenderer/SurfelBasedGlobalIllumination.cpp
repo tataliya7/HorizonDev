@@ -53,7 +53,7 @@ namespace Horizon
 //                     uint32 threadGroupCountY = ComputeWorkGroupCount(surfelGIRenderHeight, SurfelGIScreenTileSize);
 //
 //                     RenderBackendShaderConstants shaderConstants = {};
-//                     shaderConstants.BindBufferCBV(0, renderBackend->GetBufferCBVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
+//                     shaderConstants.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
 //                     shaderConstants.BindTextureSRV(1, registry.GetTextureSRVBindlessResourceDescriptorIndex(sceneDepthTexture)));
 //                     shaderConstants.BindTextureSRV(2, registry.GetTextureSRVBindlessResourceDescriptorIndex(gbuffer0)));
 //                     shaderConstants.BindBuffer(3, surfelGIInfoBuffer, 0);
@@ -99,7 +99,7 @@ namespace Horizon
 //                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
 //                 {
 //                     RenderBackendShaderConstants shaderConstants = {};
-//                     shaderConstants.BindBufferCBV(0, renderBackend->GetBufferCBVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
+//                     shaderConstants.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
 //                     shaderConstants.BindBuffer(1, surfelGIInfoBuffer, 0);
 //                     shaderConstants.BindBuffer(2, surfelGIAliveSurfelIndirectionBuffer, 0);
 //                     shaderConstants.BindBuffer(3, surfelGISurfelHotDataBuffer, 0);
@@ -176,7 +176,7 @@ namespace Horizon
 //                     uint32 threadGroupCountY = ComputeWorkGroupCount(targetResolution.height, PostProcessingThreadGroupSizeY);
 //
 //                     RenderBackendShaderConstants shaderConstants = {};
-//                     shaderConstants.BindBufferCBV(0, renderBackend->GetBufferCBVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
+//                     shaderConstants.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
 //                     shaderConstants.BindTextureSRV(1, registry.GetTextureSRVBindlessResourceDescriptorIndex(sceneColorTexture)));
 //                     shaderConstants.BindTextureSRV(2, registry.GetTextureSRVBindlessResourceDescriptorIndex(sceneDepthTexture)));
 //                     shaderConstants.BindBuffer(3, surfelGIInfoBuffer, 0);

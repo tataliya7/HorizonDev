@@ -4,7 +4,7 @@
 #include "MotionBlurCommon.hsh"
 
 SHADER_CONSTANTS_STRUCT_BEGIN();
-SHADER_CONSTANTS_CONSTANT_BUFFER_CBV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferCBV);
+SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferSRV);
 SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(1, VelocityRangeTextureSRV);
 SHADER_CONSTANTS_SCALAR(4, uint, ScatterPassIndex);
 SHADER_CONSTANTS_STRUCT_END();

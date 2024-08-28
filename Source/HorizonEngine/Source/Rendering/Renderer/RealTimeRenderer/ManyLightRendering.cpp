@@ -51,7 +51,7 @@ namespace Horizon
         // RenderGraphBufferDesc localLightDataBufferDesc = RenderGraphBufferDesc::CreateStructured(sizeof(LocalLightShaderParameters), localLightCount);
         // RenderGraphBufferHandle localLightDataBuffer = renderGraph.CreateBuffer(localLightDataBufferDesc, "LocalLightDataBuffer");
 
-        //renderGraph.UploadBufferDeferred();
+        // renderGraph.UploadBufferDeferred();
 
         RenderBackendBufferHandle& localLightDataUploadBuffer = localLightDataUploadBuffers[currentPerFrameDataBufferIndex];
         RenderBackendBufferHandle& localLightDataBuffer = localLightDataBuffers[currentPerFrameDataBufferIndex];
@@ -140,7 +140,7 @@ namespace Horizon
                     uint32 threadGroupCountZ = CeilDiv(lightGridSizeZ, GLocalLightCullingThreadGroupSize);
 
                     RenderBackendShaderConstants shaderConstants = {};
-                    shaderConstants.BindBufferCBV(0, renderBackend->GetBufferCBVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
+                    shaderConstants.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
                     shaderConstants.BindBufferCBV(1, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(localLightDataBuffer));
                     //shaderConstants.BindTextureSRV(1, registry.GetBufferSRVBindlessResourceDescriptorIndex(localLightDataBuffer));
                     shaderConstants.BindTextureUAV(2, registry.GetBufferUAVBindlessResourceDescriptorIndex(cellDataBuffer));

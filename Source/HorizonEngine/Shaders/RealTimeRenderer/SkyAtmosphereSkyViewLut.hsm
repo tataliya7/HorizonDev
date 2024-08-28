@@ -33,7 +33,7 @@
 #include "SkyAtmosphereCommon.hsh"
 
 SHADER_CONSTANTS_STRUCT_BEGIN();
-SHADER_CONSTANTS_CONSTANT_BUFFER_CBV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferCBV);
+SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferSRV);
 SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(1, TransmittanceLutTextureSRV);
 SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(2, MultipleScatteringLutTextureSRV);
 SHADER_CONSTANTS_TEXTURE_2D_UAV(3, float3, SkyViewLutTextureUAV);
@@ -86,7 +86,8 @@ float3 UvToSkyViewLutParams(in float4 skyViewLutSize, in float bottomRadius, in 
 [numthreads(8, 8, 1)]
 void SkyAtmosphereSkyViewLutCS(uint3 DispatchThreadID : SV_DispatchThreadID)
 {
-    ConstantBuffer<PerFrameShaderParameters> frameShaderParameters = ShaderConstants.GetPerFrameShaderParameterBufferCBV();
+    StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
+    PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
     Texture2D transmittanceLutTexture = ShaderConstants.GetTransmittanceLutTextureSRV();
     Texture2D multipleScatteringLutTexture = ShaderConstants.GetMultipleScatteringLutTextureSRV();
     RWTexture2D<float3> skyViewLutTexture = ShaderConstants.GetSkyViewLutTextureUAV();

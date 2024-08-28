@@ -15,158 +15,156 @@ namespace Horizon
         const RenderBackendTextureResource& motionVectors,
         const RenderBackendTextureResource& exposure)
     {
-        // FfxFsr2ContextDescription& fsr2InitializationParameters = device->fsr2InitializationParameters;
-        // FfxFsr2Context& fsr2Context = device->fsr2Context;
-        //
-        // // Setup interface.
-        // static uint32 previousRenderWidth = 0;
-        // static uint32 previousRenderHeight = 0;
-        // static uint32 previousTargetWidth = 0;
-        // static uint32 previousTargetHeight = 0;
-        //
-        // if (previousRenderWidth != command.renderWidth ||
-        //     previousRenderHeight != command.renderHeight ||
-        //     previousTargetWidth != command.targetWidth ||
-        //     previousTargetHeight != command.targetHeight)
-        // {
-        //     // only destroy contexts which are live
-        //     if (fsr2InitializationParameters.callbacks.scratchBuffer != nullptr)
-        //     {
-        //         ffxFsr2ContextDestroy(&fsr2Context);
-        //         free(fsr2InitializationParameters.callbacks.scratchBuffer);
-        //         fsr2InitializationParameters.callbacks.scratchBuffer = nullptr;
-        //     }
-        //
-        //     const size_t scratchBufferSize = ffxFsr2GetScratchMemorySizeDX12();
-        //     void* scratchBuffer = malloc(scratchBufferSize);
-        //     FfxErrorCode errorCode = ffxFsr2GetInterfaceDX12(&fsr2InitializationParameters.callbacks, device->GetID3D12Device(), scratchBuffer, scratchBufferSize);
-        //     FFX_ASSERT(errorCode == FFX_OK);
-        //
-        //     fsr2InitializationParameters.device = ffxGetDeviceDX12(device->GetID3D12Device());
-        //     fsr2InitializationParameters.maxRenderSize.width = command.renderWidth;
-        //     fsr2InitializationParameters.maxRenderSize.height = command.renderHeight;
-        //     fsr2InitializationParameters.displaySize.width = command.targetWidth;
-        //     fsr2InitializationParameters.displaySize.height = command.targetHeight;
-        //     //fsr2InitializationParameters.flags = FFX_FSR2_ENABLE_AUTO_EXPOSURE;
-        //
-        //     // if (m_bInvertedDepth)
-        //     {
-        //         fsr2InitializationParameters.flags |= FFX_FSR2_ENABLE_DEPTH_INVERTED;
-        //         //fsr2InitializationParameters.flags |= FFX_FSR2_ENABLE_DEPTH_INFINITE;
-        //     }
-        //
-        //     if (device->fsr2EnableDebugCheck)
-        //     {
-        //         fsr2InitializationParameters.flags |= FFX_FSR2_ENABLE_DEBUG_CHECKING;
-        //         fsr2InitializationParameters.fpMessage = &FSR2MessageCallBack;
-        //     }
-        //
-        //     // Input data is HDR
-        //     fsr2InitializationParameters.flags |= FFX_FSR2_ENABLE_HIGH_DYNAMIC_RANGE;
-        //
-        //     errorCode = ffxFsr2ContextCreate(&fsr2Context, &fsr2InitializationParameters);
-        //     FFX_ASSERT(errorCode == FFX_OK);
-        //
-        //     previousRenderWidth = command.renderWidth;
-        //     previousRenderHeight = command.renderHeight;
-        //     previousTargetWidth = command.targetWidth;
-        //     previousTargetHeight = command.targetHeight;
-        //
-        //     // device->WaitIdle();
-        // }
-        //
-        // D3D12Texture* output = device->GetTexture(command.output);
-        // D3D12Texture* color = device->GetTexture(command.color);
-        // D3D12Texture* depth = device->GetTexture(command.depth);
-        // D3D12Texture* motionVectors = device->GetTexture(command.motionVectors);
-        //
-        // FfxFsr2DispatchDescription fsr2DispatchParameters = {};
-        //
-        // fsr2DispatchParameters.color = ffxGetResourceDX12(
-        //     &fsr2Context,
-        //     color->GetID3D12Resource(),
-        //     L"FSR2_InputColor",
-        //     FFX_RESOURCE_STATE_COMPUTE_READ);
-        //
-        // fsr2DispatchParameters.depth = ffxGetResourceDX12(
-        //     &fsr2Context,
-        //     depth->GetID3D12Resource(),
-        //     L"FSR2_InputDepth",
-        //     FFX_RESOURCE_STATE_COMPUTE_READ);
-        //
-        // fsr2DispatchParameters.motionVectors = ffxGetResourceDX12(
-        //     &fsr2Context,
-        //     motionVectors->GetID3D12Resource(),
-        //     L"FSR2_InputMotionVectors",
-        //     FFX_RESOURCE_STATE_COMPUTE_READ);
-        //
-        // fsr2DispatchParameters.output = ffxGetResourceDX12(
-        //     &fsr2Context,
-        //     output->GetID3D12Resource(),
-        //     L"FSR2_OutputUpscaledColor",
-        //     FFX_RESOURCE_STATE_UNORDERED_ACCESS);
-        //
-        // if (true)
-        // {
-        //     fsr2DispatchParameters.exposure = ffxGetResourceDX12(
-        //         &fsr2Context,
-        //         nullptr,
-        //         L"FSR2_InputExposure");
-        // }
-        // else
-        // {
-        //     // TODO
-        // }
-        //
-        // if (true)
-        // {
-        //     fsr2DispatchParameters.reactive = ffxGetResourceDX12(
-        //         &fsr2Context,
-        //         nullptr,
-        //         L"FSR2_EmptyInputReactiveMap");
-        // }
-        // else
-        // {
-        //     // TODO
-        // }
-        //
-        // if (true)
-        // {
-        //     fsr2DispatchParameters.transparencyAndComposition = ffxGetResourceDX12(
-        //         &fsr2Context,
-        //         nullptr,
-        //         L"FSR2_EmptyTransparencyAndCompositionMap");
-        // }
-        // else
-        // {
-        //     // TODO
-        // }
-        //
-        // fsr2DispatchParameters.commandList = ffxGetCommandListDX12(commandList->GetID3D12GraphicsCommandList());
-        // fsr2DispatchParameters.jitterOffset.x = command.jitterOffsetX;
-        // fsr2DispatchParameters.jitterOffset.y = command.jitterOffsetY;
-        // fsr2DispatchParameters.motionVectorScale.x = (float)command.renderWidth;
-        // fsr2DispatchParameters.motionVectorScale.y = (float)command.renderHeight;
-        // fsr2DispatchParameters.reset = command.reset;
-        // fsr2DispatchParameters.enableSharpening = command.enableSharpening;
-        // fsr2DispatchParameters.sharpness = command.sharpeness;
-        // fsr2DispatchParameters.frameTimeDelta = command.deltaTime * 1000.0f; // @note frameTimeDelta is expressed in milliseconds
-        // fsr2DispatchParameters.preExposure = 1.0f;
-        // fsr2DispatchParameters.renderSize.width = command.renderWidth;
-        // fsr2DispatchParameters.renderSize.height = command.renderHeight;
-        // fsr2DispatchParameters.cameraFar = command.cameraFarPlane;
-        // fsr2DispatchParameters.cameraNear = command.cameraNearPlane;
-        // fsr2DispatchParameters.cameraFovAngleVertical = command.cameraFovAngleVertical;
-        // fsr2DispatchParameters.viewSpaceToMetersFactor = 1.0f;
-        //
-        // if (fsr2InitializationParameters.flags & FFX_FSR2_ENABLE_DEPTH_INVERTED)
-        // {
-        //     std::swap(fsr2DispatchParameters.cameraFar, fsr2DispatchParameters.cameraNear);
-        // }
-        //
-        // FfxErrorCode errorCode = ffxFsr2ContextDispatch(&fsr2Context, &fsr2DispatchParameters);
-        // FFX_ASSERT(errorCode == FFX_OK);
+        FidelityFXSuperResolution2* fsr2 = static_cast<FidelityFXSuperResolution2*>(context);
+        FidelityFxSuperResolution2State& fsr2State = *fsr2->state;
 
-        return false;
+        FfxFsr2ContextDescription& fsr2ContextDescription = fsr2State.fsr2ContextDescription;
+        FfxFsr2Context& fsr2Context = fsr2State.fsr2Context;
+
+        bool isContextValid =
+            fsr2State.initialized &&
+            fsr2State.fsr2ContextDescription.displaySize.width == fsr2->options.targetWidth &&
+            fsr2State.fsr2ContextDescription.displaySize.height == fsr2->options.targetHeight;
+
+        if (!isContextValid)
+        {
+            RenderBackendDevice device = fsr2->renderBackend->GetNativeDevice();
+            ID3D12Device* d3d12Device = static_cast<ID3D12Device*>(device.device);
+
+            uint32 targetWidth = fsr2->options.targetWidth;
+            uint32 targetHeight = fsr2->options.targetHeight;
+
+            // only destroy contexts which are live
+            if (fsr2ContextDescription.callbacks.scratchBuffer != nullptr)
+            {
+                ffxFsr2ContextDestroy(&fsr2Context);
+                free(fsr2ContextDescription.callbacks.scratchBuffer);
+                fsr2ContextDescription.callbacks.scratchBuffer = nullptr;
+            }
+
+            const size_t scratchBufferSize = ffxFsr2GetScratchMemorySizeDX12();
+            void* scratchBuffer = malloc(scratchBufferSize);
+            FfxErrorCode errorCode = ffxFsr2GetInterfaceDX12(&fsr2ContextDescription.callbacks, d3d12Device, scratchBuffer, scratchBufferSize);
+            FFX_ASSERT(errorCode == FFX_OK);
+
+            fsr2ContextDescription.device = ffxGetDeviceDX12(d3d12Device);
+            fsr2ContextDescription.maxRenderSize.width = targetWidth;
+            fsr2ContextDescription.maxRenderSize.height = targetHeight;
+            fsr2ContextDescription.displaySize.width = targetWidth;
+            fsr2ContextDescription.displaySize.height = targetHeight;
+
+            fsr2ContextDescription.flags |= FFX_FSR2_ENABLE_HIGH_DYNAMIC_RANGE;
+            fsr2ContextDescription.flags |= FFX_FSR2_ENABLE_DEPTH_INVERTED;
+            //fsr2ContextDescription.flags |= FFX_FSR2_ENABLE_DEPTH_INFINITE;
+
+            //We never use FSR2's own auto-exposure.
+            //fsr2ContextDescription.flags |= enableAutoExposure ? FFX_FSR2_ENABLE_AUTO_EXPOSURE : 0;
+
+#if !HORIZON_CONFIGURATION_RELEASE
+            //if (device->fsr2EnableDebugCheck)
+            {
+                fsr2ContextDescription.flags |= FFX_FSR2_ENABLE_DEBUG_CHECKING;
+                fsr2ContextDescription.fpMessage = FidelityFXSuperResolution2Message;
+            }
+#endif
+
+            errorCode = ffxFsr2ContextCreate(&fsr2Context, &fsr2ContextDescription);
+            FFX_ASSERT(errorCode == FFX_OK);
+
+            fsr2State.initialized = true;
+        }
+
+        FfxFsr2DispatchDescription fsr2DispatchDescription = {};
+
+        fsr2DispatchDescription.output = ffxGetResourceDX12(
+            &fsr2Context,
+            static_cast<ID3D12Resource*>(output.texture),
+            L"FSR2_OutputUpscaledColor",
+            FFX_RESOURCE_STATE_UNORDERED_ACCESS);
+
+        fsr2DispatchDescription.color = ffxGetResourceDX12(
+            &fsr2Context,
+            static_cast<ID3D12Resource*>(color.texture),
+            L"FSR2_InputColor",
+            FFX_RESOURCE_STATE_COMPUTE_READ);
+
+        fsr2DispatchDescription.depth = ffxGetResourceDX12(
+            &fsr2Context,
+            static_cast<ID3D12Resource*>(depth.texture),
+            L"FSR2_InputDepth",
+            FFX_RESOURCE_STATE_COMPUTE_READ);
+
+        fsr2DispatchDescription.motionVectors = ffxGetResourceDX12(
+            &fsr2Context,
+            static_cast<ID3D12Resource*>(motionVectors.texture),
+            L"FSR2_InputMotionVectors",
+            FFX_RESOURCE_STATE_COMPUTE_READ);
+
+        if (false)
+        {
+            fsr2DispatchDescription.exposure = ffxGetResourceDX12(
+                &fsr2Context,
+                nullptr,
+                L"FSR2_InputExposure");
+        }
+        else
+        {
+            fsr2DispatchDescription.exposure = ffxGetResourceDX12(
+                &fsr2Context,
+                static_cast<ID3D12Resource*>(exposure.texture),
+                L"FSR2_InputExposure");
+        }
+
+        if (true)
+        {
+            fsr2DispatchDescription.reactive = ffxGetResourceDX12(
+                &fsr2Context,
+                nullptr,
+                L"FSR2_EmptyInputReactiveMap");
+        }
+        else
+        {
+            // TODO
+        }
+
+        if (true)
+        {
+            fsr2DispatchDescription.transparencyAndComposition = ffxGetResourceDX12(
+                &fsr2Context,
+                nullptr,
+                L"FSR2_EmptyTransparencyAndCompositionMap");
+        }
+        else
+        {
+            // TODO
+        }
+
+        const TemporalSuperSamplingConstants& constants = fsr2->constants;
+        fsr2DispatchDescription.commandList = ffxGetCommandListDX12(static_cast<ID3D12CommandList*>(commandList));
+        fsr2DispatchDescription.jitterOffset.x = constants.jitterOffsetX;
+        fsr2DispatchDescription.jitterOffset.y = constants.jitterOffsetY;
+        fsr2DispatchDescription.motionVectorScale.x = constants.motionVectorScaleX;
+        fsr2DispatchDescription.motionVectorScale.y = constants.motionVectorScaleY;
+        fsr2DispatchDescription.reset = constants.reset;
+        fsr2DispatchDescription.enableSharpening = constants.sharpness > 0.0f;
+        fsr2DispatchDescription.sharpness = constants.sharpness;
+        fsr2DispatchDescription.frameTimeDelta = constants.deltaTime; // 'frameTimeDelta' is expressed in milliseconds
+        fsr2DispatchDescription.preExposure = constants.preExposure;
+        fsr2DispatchDescription.renderSize.width = constants.renderWidth;
+        fsr2DispatchDescription.renderSize.height = constants.renderHeight;
+        fsr2DispatchDescription.cameraFar = constants.cameraFarClippingPlane;
+        fsr2DispatchDescription.cameraNear = constants.cameraNearClippingPlane;
+        fsr2DispatchDescription.cameraFovAngleVertical = constants.cameraFovAngleVertical;
+        fsr2DispatchDescription.viewSpaceToMetersFactor = 1.0f;
+
+        if (fsr2ContextDescription.flags & FFX_FSR2_ENABLE_DEPTH_INVERTED)
+        {
+            std::swap(fsr2DispatchDescription.cameraFar, fsr2DispatchDescription.cameraNear);
+        }
+
+        FfxErrorCode errorCode = ffxFsr2ContextDispatch(&fsr2Context, &fsr2DispatchDescription);
+        FFX_ASSERT(errorCode == FFX_OK);
+
+        return (errorCode == FFX_OK);
     }
 }

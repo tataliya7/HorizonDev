@@ -56,6 +56,8 @@ void GenerateIrradianceEnvironmentMapCS(uint3 dispatchThreadID : SV_DispatchThre
     if (threadIndex < 1)
     {
         SharedSHCoefficients[threadIndex] = SHCoefficientsAdd(SharedSHCoefficients[threadIndex], SharedSHCoefficients[threadIndex + 1]);
-        irradianceEnvironmentMapBuffer.Store<ThreeBandSHCoefficientsRGB>(0, SharedSHCoefficients[threadIndex]);
+
+        ThreeBandSHCoefficientsRGB result = SharedSHCoefficients[threadIndex];
+        irradianceEnvironmentMapBuffer.Store<ThreeBandSHCoefficientsRGB>(0, result);
     }
 }

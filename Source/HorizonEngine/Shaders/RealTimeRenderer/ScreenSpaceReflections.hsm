@@ -83,7 +83,8 @@ uint2 GetReflectionIndirectDispatchCoord(uint3 GroupID, uint3 GroupThreadID, Tex
 [numthreads(SSR_THREAD_GROUP_SIZE * SSR_THREAD_GROUP_SIZE, 1, 1)]
 void ScreenSpaceReflectionsCS(uint3 GroupID : SV_GroupID, uint3 GroupThreadID : SV_GroupThreadID)
 {
-    ConstantBuffer<PerFrameShaderParameters> frameShaderParameters = GetPerFrameShaderParameterBufferCBV();
+    StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
+    PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
     Texture2D gbuffer1 = GetGBuffer1SRV();
     Texture2D velocityBuffer = GetVelocityBufferSRV();
     Texture2D sceneDepth = GetSceneDepthSRV();

@@ -13,7 +13,8 @@ void LightShaftsApplyVS(uint vertexID : SV_VertexID, out float4 outPosition : SV
 [shader("pixel")]
 void LightShaftsApplyPS(float4 position : SV_Position, out float4 outColor : SV_Target0)
 {
-    ConstantBuffer<PerFrameShaderParameters> frameShaderParameters = GetPerFrameShaderParameterBufferCBV();
+    StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
+    PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
     Texture2D lightShaftsTexture = GetLightShaftsTextureSRV();
 
     float2 uv = position.xy * frameShaderParameters.renderResolution.zw;

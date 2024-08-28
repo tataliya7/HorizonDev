@@ -4,6 +4,7 @@
 #include "GeometryRendering.h"
 #include "ManyLightRendering.h"
 #include "PostProcessing/PostProcessing.h"
+#include "PerFrameShaderParameters.h"
 
 #define NearClipPlaneDepthValue 1.0f
 #define FarClipPlaneDepthValue 0.0f
@@ -469,8 +470,14 @@ namespace Horizon
 
         PostProcessingSettings finalPostProcessingSettings;
 
+        PerFrameShaderParameters perFrameShaderParameters = {};
+
         static const int32 MaxNumFramesInFlight = 3;
+
         int32 currentPerFrameDataBufferIndex = 0;
+        RenderBackendBufferHandle currentPerFrameConstantBuffer;
+
+        RenderBackendBufferHandle perFrameConstantUploadBuffers[MaxNumFramesInFlight];
         RenderBackendBufferHandle perFrameConstantBuffers[MaxNumFramesInFlight];
 
         RenderBackendBufferHandle localLightDataUploadBuffers[MaxNumFramesInFlight];
@@ -504,7 +511,7 @@ namespace Horizon
 
         void UpdateAutoExposureDataFromReadbackBuffer();
 
-        RenderBackendBufferHandle localVolumetricFogInstanceDataBuffer;
+        RenderBackendBufferHandle localVolumetricFogInstanceDataBufferUpload;
         uint64 localVolumetricFogInstanceDataBufferSize = 0;
 
         struct HistoryFrame

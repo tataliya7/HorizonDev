@@ -79,7 +79,7 @@ void FilterEnvironmentMapCS(uint3 DispatchThreadID : SV_DispatchThreadID)
         return;
     }
 
-    const uint NumSamples = 1024;
+    const uint NumSamples = 256;
     //const uint NumSamples = roughness < 0.1 ? 32 : 64;
 
     float3 result = FilterEnvironmentMap(environmentMapTexture, N, roughness, NumSamples);

@@ -254,7 +254,8 @@ float GTAOComputeInnerIntegral(float2 horizons, float2 searchDirection, float3 v
 [numthreads(8, 8, 1)]
 void GTAOHorizonSearchAndIntegralCS(uint3 DispatchThreadID : SV_DispatchThreadID, uint2 GroupThreadID : SV_GroupThreadID, uint2 GroupID : SV_GroupID)
 {
-    ConstantBuffer<PerFrameShaderParameters> frameShaderParameters = GetPerFrameShaderParameterBufferCBV();
+    StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
+    PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
     Texture2D sceneDepthTexture = GetSceneDepthTextureSRV();
     Texture2D gbuffer0 = GetGBuffer0SRV();
     RWTexture2D<float4> outputTexture = GetGTAOHorizonSearchAndIntegralTextureUAV();

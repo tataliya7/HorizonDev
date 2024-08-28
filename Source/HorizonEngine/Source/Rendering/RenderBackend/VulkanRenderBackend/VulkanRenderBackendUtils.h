@@ -442,7 +442,7 @@ namespace Horizon
         {
             usage |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT;
         }
-        if (EnumClassHasFlags(flags, RenderBackendBufferCreateFlags::AccelerationStruture))
+        if (EnumClassHasFlags(flags, RenderBackendBufferCreateFlags::AccelerationStructure))
         {
             usage |= VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR;
         }
@@ -794,6 +794,14 @@ namespace Horizon
             *outSrcStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
             *outSrcAccessMask = VK_ACCESS_2_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT;
             break;
+        case RenderBackendResourceState::DepthStencilReadOnly:
+            if (outOldLayout)
+            {
+                *outOldLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
+            }
+            *outSrcStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+            *outSrcAccessMask = VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
+            break;
         case RenderBackendResourceState::DepthStencil:
             if (outOldLayout)
             {
@@ -887,7 +895,7 @@ namespace Horizon
                 *outNewLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
             }
             *outDstStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
-            *outDstAccessMask = VK_ACCESS_2_SHADER_READ_BIT;
+            *outDstAccessMask = VK_ACCESS_2_SHADER_READ_BIT | VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
             break;
         case RenderBackendResourceState::CopySrc:
             if (outNewLayout)

@@ -181,9 +181,9 @@ def install_dxc(manager, dep, args = None):
 dependency_dxc = dependency(
     name = "dxc",
     install = install_dxc,
-    url = "https://github.com/microsoft/DirectXShaderCompiler/releases/download/v1.8.2403.1/dxc_2024_03_22.zip",
+    url = "https://github.com/microsoft/DirectXShaderCompiler/releases/download/v1.8.2403.1/dxc_2024_07_31.zip",
     dst_dir = "dxc",
-    folder = "dxc_2024_03_22")
+    folder = "dxc_2024_07_31")
 
 def install_meshoptimizer(manager, dep, args = None):
     dst_dir = os.path.join(manager.install_dir, dep.dst_dir)

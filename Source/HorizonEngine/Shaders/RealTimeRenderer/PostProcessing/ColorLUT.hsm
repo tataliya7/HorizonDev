@@ -6,7 +6,7 @@
 #include "ColorLUTCommon.hsh"
 
 SHADER_CONSTANTS_STRUCT_BEGIN();
-SHADER_CONSTANTS_CONSTANT_BUFFER_CBV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferCBV);
+SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferSRV);
 SHADER_CONSTANTS_TEXTURE_3D_UAV(1, float4, ColorLUTTextureUAV);
 SHADER_CONSTANTS_STRUCT_END();
 
@@ -115,7 +115,8 @@ float3 PurkinjeShift(float3 linearRGB)
 [numthreads(8, 8, 8)]
 void ColorLUTCS(uint3 DispatchThreadID : SV_DispatchThreadID)
 {
-    ConstantBuffer<PerFrameShaderParameters> frameShaderParameters = ShaderConstants.GetPerFrameShaderParameterBufferCBV();
+    StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
+    PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
     RWTexture3D<float4> colorLUTTexture = ShaderConstants.GetColorLUTTextureUAV();
 
     float whiteBalance = frameShaderParameters.whiteBalance;

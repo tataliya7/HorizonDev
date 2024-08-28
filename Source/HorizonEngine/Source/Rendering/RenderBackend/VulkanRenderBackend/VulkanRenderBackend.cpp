@@ -201,7 +201,7 @@ namespace Horizon
 
     struct VulkanTexture
     {
-        const char* name;
+        std::string name;
         VkImage handle;
         bool swapchainBuffer;
         VmaAllocation allocation;
@@ -856,6 +856,8 @@ namespace Horizon
 
         VkInstance instance;
 
+        bool enableValidationLayers = false;
+
         std::vector<const char*> enabledInstanceLayers;
         std::vector<const char*> enabledInstanceExtensions;
 
@@ -1054,15 +1056,16 @@ namespace Horizon
             // TODO
             physicalDevice.meshShaderFeaturesEXT.primitiveFragmentShadingRateMeshShader = false;
 
-            LogInfo(GLogger, std::format("Found physical device (name: {}, type: {}, vendor id: {}, device id: {}, support vulkan version: {}.{}.{})",
+            LogInfo(
+                GLogger,
+                std::format("Found physical device (name: {}, type: {}, vendor id: {}, device id: {}, support vulkan version: {}.{}.{})",
                 physicalDevice.properties.deviceName,
                 (int32)physicalDevice.properties.deviceType,
                 physicalDevice.properties.vendorID,
                 physicalDevice.properties.deviceID,
                 VK_API_VERSION_MAJOR(physicalDevice.properties.apiVersion),
                 VK_API_VERSION_MINOR(physicalDevice.properties.apiVersion),
-                VK_API_VERSION_PATCH(physicalDevice.properties.apiVersion)
-            ));
+                VK_API_VERSION_PATCH(physicalDevice.properties.apiVersion)));
 
             uint32 numQueueFamilyProperties;
             vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice.handle, &numQueueFamilyProperties, 0);
@@ -1101,14 +1104,15 @@ namespace Horizon
             VK_CHECK(vkEnumerateDeviceLayerProperties(physicalDevice.handle, &numLayerProperties, physicalDevice.layerProperties.data()));
             for (const auto& layerProperties : physicalDevice.layerProperties)
             {
-                LogInfo(GLogger, std::format("Available device layer: {} - vulkan apid version: {}.{}.{} - implemetation version: {} - description: {}.",
+                LogInfo(
+                    GLogger,
+                    std::format("Available device layer: {} - vulkan apid version: {}.{}.{} - implemetation version: {} - description: {}.",
                     layerProperties.layerName,
                     VK_API_VERSION_MAJOR(layerProperties.specVersion),
                     VK_API_VERSION_MINOR(layerProperties.specVersion),
                     VK_API_VERSION_PATCH(layerProperties.specVersion),
                     layerProperties.implementationVersion,
-                    layerProperties.description
-                ));
+                    layerProperties.description));
             }
 
             uint32 numExtensionProperties = 0;
@@ -1117,10 +1121,11 @@ namespace Horizon
             VK_CHECK(vkEnumerateDeviceExtensionProperties(physicalDevice.handle, nullptr, &numExtensionProperties, physicalDevice.extensionProperties.data()));
             for (const auto& extensionProperty : physicalDevice.extensionProperties)
             {
-                LogInfo(GLogger, std::format("Available device extension: {} - extension version: {}.",
+                LogInfo(
+                    GLogger,
+                    std::format("Available device extension: {} - extension version: {}.",
                     extensionProperty.extensionName,
-                    extensionProperty.specVersion
-                ));
+                    extensionProperty.specVersion));
             }
         }
     }
@@ -1289,7 +1294,7 @@ namespace Horizon
         }
 #endif
 
-        bool enableValidationLayers = flags & VULKAN_RENDER_BACKEND_CREATE_FLAGS_VALIDATION_LAYERS;
+        enableValidationLayers = flags & VULKAN_RENDER_BACKEND_CREATE_FLAGS_VALIDATION_LAYERS;
 
         std::vector<const char*> requiredInstanceLayers;
         if (enableValidationLayers)
@@ -3912,12 +3917,14 @@ namespace Horizon
             requiredDeviceExtensions.push_back(VK_KHR_MULTIVIEW_EXTENSION_NAME);
             requiredDeviceExtensions.push_back(VK_KHR_PRESENT_WAIT_EXTENSION_NAME);
             requiredDeviceExtensions.push_back(VK_KHR_PRESENT_ID_EXTENSION_NAME);
+            requiredDeviceExtensions.push_back(VK_KHR_PRESENT_ID_EXTENSION_NAME);
             requiredDeviceExtensions.push_back(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
             requiredDeviceExtensions.push_back(VK_EXT_SCALAR_BLOCK_LAYOUT_EXTENSION_NAME);
             requiredDeviceExtensions.push_back(VK_EXT_PIPELINE_CREATION_FEEDBACK_EXTENSION_NAME);
             requiredDeviceExtensions.push_back(VK_EXT_HOST_QUERY_RESET_EXTENSION_NAME);
             requiredDeviceExtensions.push_back(VK_EXT_SHADER_VIEWPORT_INDEX_LAYER_EXTENSION_NAME);
             requiredDeviceExtensions.push_back(VK_EXT_SHADER_DEMOTE_TO_HELPER_INVOCATION_EXTENSION_NAME);
+
             if (backend->enableMeshShaderSupport)
             {
                 requiredDeviceExtensions.push_back(VK_EXT_MESH_SHADER_EXTENSION_NAME);
@@ -5269,12 +5276,16 @@ namespace Horizon
     bool VulkanRenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandBeginDebugLabel& command)
     {
 #if !HE_ENBALE_STREAMLINE_SUPPORT
-        VkDebugUtilsLabelEXT lableInfo = {
-            .sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT,
-            .pLabelName = command.labelName,
-            .color = { command.color[0], command.color[1], command.color[2], command.color[3] }
-        };
-        device->backend->vulkanFunctions.vkCmdBeginDebugUtilsLabelEXT(commandBuffer, &lableInfo);
+        if (device->backend->enableValidationLayers)
+        {
+            VkDebugUtilsLabelEXT lableInfo = 
+            {
+                .sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT,
+                .pLabelName = command.labelName,
+                .color = { command.color[0], command.color[1], command.color[2], command.color[3] }
+            };
+            device->backend->vulkanFunctions.vkCmdBeginDebugUtilsLabelEXT(commandBuffer, &lableInfo);
+        }
 #endif
         return true;
     }
@@ -5282,7 +5293,10 @@ namespace Horizon
     bool VulkanRenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandEndDebugLabel& command)
     {
 #if !HE_ENBALE_STREAMLINE_SUPPORT
-        device->backend->vulkanFunctions.vkCmdEndDebugUtilsLabelEXT(commandBuffer);
+        if (device->backend->enableValidationLayers)
+        {
+            device->backend->vulkanFunctions.vkCmdEndDebugUtilsLabelEXT(commandBuffer);
+        }
 #endif
         return true;
     }
@@ -5311,6 +5325,7 @@ namespace Horizon
             textureResource.usage = texture->info.usage;
             return textureResource;
         };
+
         RenderBackendTextureResource output = GetRenderBackendTextureResourceVulkan(outputTexture, true);
         RenderBackendTextureResource color = GetRenderBackendTextureResourceVulkan(colorTexture, false);
         RenderBackendTextureResource depth = GetRenderBackendTextureResourceVulkan(depthTexture, false);

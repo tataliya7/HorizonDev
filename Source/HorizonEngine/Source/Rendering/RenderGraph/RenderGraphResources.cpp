@@ -43,7 +43,7 @@ namespace Horizon
 
         // TODO: destroy unused resources here
 
-        
+
         tickCount++;
     }
 
@@ -83,6 +83,7 @@ namespace Horizon
         RenderBackendTextureHandle textureHandle = backend->CreateTexture(&desc, nullptr, name);
 
         RenderGraphPersistentTexture* persistentTexture = new RenderGraphPersistentTexture(name, desc, textureHandle);
+        persistentTexture->active = true;
 
         allocatedTextures.push_back(persistentTexture);
 
@@ -109,6 +110,7 @@ namespace Horizon
         RenderBackendBufferHandle bufferHandle = backend->CreateBuffer(&desc, nullptr, name);
 
         RenderGraphPersistentBuffer* persistentBuffer = new RenderGraphPersistentBuffer(name, desc, bufferHandle);
+        persistentBuffer->active = true;
 
         allocatedBuffers.push_back(persistentBuffer);
 

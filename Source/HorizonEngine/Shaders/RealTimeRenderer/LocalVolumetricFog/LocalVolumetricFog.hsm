@@ -3,7 +3,7 @@
 #include "LocalVolumetricFogCommon.hsh"
 
 SHADER_CONSTANTS_STRUCT_BEGIN();
-SHADER_CONSTANTS_CONSTANT_BUFFER_CBV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferCBV);
+SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferSRV);
 SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(1, LocalVolumetricFogInstanceData, LocalVolumetricFogInstanceDataBufferSRV);
 SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(2, DepthTextureSRV);
 SHADER_CONSTANTS_STRUCT_END();
@@ -30,19 +30,20 @@ static uint CubeIndices[36] =
     4, 7, 6, 4, 6, 5
 };
 
-struct LocalVolumetricFogVertexShaderOutput
+struct LocalVolumetricFogVSOutput
 {
-
+    nointerpolation uint instanceID : TEXCOORD0;
 };
 
 [shader("vertex")]
 void LocalVolumetricFogVS(
 	in uint vertexID : SV_VertexID,
 	in uint instanceID : SV_InstanceID,
-	out float4 position : SV_POSITION,
-	out LocalVolumetricFogVertexShaderOutput vertexShaderOutput)
+	out LocalVolumetricFogVSOutput output,
+	out float4 position : SV_Position)
 {
-    ConstantBuffer<PerFrameShaderParameters> frameShaderParameters = ShaderConstants.GetPerFrameShaderParameterBufferCBV();
+    StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
+    PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
 
     StructuredBuffer<LocalVolumetricFogInstanceData> localVolumetricFogInstanceDataBuffer = ShaderConstants.GetLocalVolumetricFogInstanceDataBufferSRV();
     LocalVolumetricFogInstanceData instanceData = localVolumetricFogInstanceDataBuffer.Load(instanceID);
@@ -53,16 +54,19 @@ void LocalVolumetricFogVS(
     float3 worldSpaceVertexPosition = mul(instanceData.localToWorldMatrix, float4(vertexPosition, 1.0f)).xyz;
     float4 clipSpaceVertexPosition = mul(frameShaderParameters.worldToClipMatrix, float4(worldSpaceVertexPosition, 1.0f));
 
+    output.instanceID = instanceID;
     position = clipSpaceVertexPosition;
 }
 
 [shader("pixel")]
 void LocalVolumetricFogPS(
+    in LocalVolumetricFogVSOutput input,
     in float4 position : SV_Position,
-    in uint instanceID : SV_InstanceID,
     out float4 outputColor : SV_Target0)
 {
-    ConstantBuffer<PerFrameShaderParameters> frameShaderParameters = ShaderConstants.GetPerFrameShaderParameterBufferCBV();
+    uint instanceID = input.instanceID;
+    StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
+    PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
 
     StructuredBuffer<LocalVolumetricFogInstanceData> localVolumetricFogInstanceDataBuffer = ShaderConstants.GetLocalVolumetricFogInstanceDataBufferSRV();
     LocalVolumetricFogInstanceData instanceData = localVolumetricFogInstanceDataBuffer.Load(instanceID);

@@ -32,7 +32,7 @@ project "HorizonEditorLauncher"
         --"USD",
         --"RenderDoc",
         thirdpartypath("glfw/glfw-3.3.9.bin.WIN64/lib-vc2022/glfw3.lib"),
-        thirdpartypath("dxc/dxc_2024_03_22/lib/x64/dxcompiler.lib"),
+        thirdpartypath("dxc/dxc_2024_07_31/lib/x64/dxcompiler.lib"),
         thirdpartypath("vulkan/1.3.280.0/lib/vulkan-1.lib"),
         thirdpartypath("optick/Optick_1.4.0/lib/x64/release/OptickCore.lib"),
         thirdpartypath("python/310/libs/python310.lib"),
@@ -51,15 +51,15 @@ project "HorizonEditorLauncher"
         "{COPY} %{wks.location}/ThirdParty/streamline/bin/x64/development/sl.interposer.dll %{cfg.targetdir}",
         "{COPY} %{wks.location}/ThirdParty/streamline/bin/x64/development/sl.reflex.dll %{cfg.targetdir}",
 
-        "{COPY} %{wks.location}/ThirdParty/dxc/dxc_2024_03_22/bin/x64/dxcompiler.dll %{cfg.targetdir}",
-        "{COPY} %{wks.location}/ThirdParty/dxc/dxc_2024_03_22/bin/x64/dxil.dll %{cfg.targetdir}",
+        "{COPY} %{wks.location}/ThirdParty/dxc/dxc_2024_07_31/bin/x64/dxcompiler.dll %{cfg.targetdir}",
+        "{COPY} %{wks.location}/ThirdParty/dxc/dxc_2024_07_31/bin/x64/dxil.dll %{cfg.targetdir}",
     }
 
     includedirs {
         enginepath("Source"),
         editorpath("Source"),
         thirdpartypath("entt/include"),
-        thirdpartypath("dxc/dxc_2024_03_22/inc"),
+        thirdpartypath("dxc/dxc_2024_07_31/inc"),
         thirdpartypath("glfw/glfw-3.3.9.bin.WIN64/include"),
         thirdpartypath("glm/include"),
         thirdpartypath("spdlog/include"),

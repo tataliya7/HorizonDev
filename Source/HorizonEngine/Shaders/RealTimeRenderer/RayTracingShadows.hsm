@@ -27,7 +27,8 @@ void RayTracingShadowsRayGen()
     uint3 launchIndex = DispatchRaysIndex();
     uint3 launchDimensions = DispatchRaysDimensions();
 
-    ConstantBuffer<PerFrameShaderParameters> frameShaderParameters = GetPerFrameShaderParameterBufferCBV();
+    StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
+    PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
     Texture2D sceneDepth = GetSceneDepthSRV();
     RWTexture2D<float> shadowMask = GetShadowMaskUAV();
     RWTexture2D<float> rayDistance = GetRayDistanceUAV();

@@ -74,7 +74,7 @@ namespace Horizon
 //        streamlineContext = new Streamline::StreamlineContext();
 //#endif
 //
-        RenderDocPluginInit();
+        //RenderDocPluginInit();
 //
 
         InitializeEngine();
@@ -107,7 +107,11 @@ namespace Horizon
             swapChainWidth,
             swapChainHeight,
             targetTextureFormat,
-            RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::UnorderedAccess | RenderBackendTextureCreateFlags::RenderTarget);
+            RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::UnorderedAccess | RenderBackendTextureCreateFlags::RenderTarget,
+            RenderBackendTextureClearValue::Black,
+            1,
+            1,
+            RenderBackendResourceState::ShaderResource); // TODO: handle transition
         targetTexture = renderGraphResourcePool->AllocateTexture(targetTextureDesc, "SceneViewTexture");
 
         const uint32 environmentMapTextureSize = 128;
@@ -121,11 +125,11 @@ namespace Horizon
         RenderBackendTextureHandle environmentMapTexture = renderBackend->CreateTexture(&environmentMapTextureDesc, nullptr, "EnvironmentMapTexture");
 
         RenderBackendCommandList* commandList = new RenderBackendCommandList(GArena);
-        RenderBackendBarrier transitions[] =
-        {
-            RenderBackendBarrier(targetTexture->GetHandle(), RenderBackendTextureSubresourceRange(0, 1, 0, 1), RenderBackendResourceState::Undefined, RenderBackendResourceState::ShaderResource),
-        };
-        commandList->Transitions(transitions, 1);
+        // RenderBackendBarrier transitions[] =
+        // {
+        //     RenderBackendBarrier(targetTexture->GetHandle(), RenderBackendTextureSubresourceRange(0, 1, 0, 1), RenderBackendResourceState::Undefined, RenderBackendResourceState::ShaderResource),
+        // };
+        // commandList->Transitions(transitions, 1);
 
         ConvertLatLongToCubemap(renderBackend, renderSystem->GetShaderLibrary(), *commandList, environmentMapTextureLatLong, environmentMapTexture, environmentMapTextureSize);
         GenerateCubemapMips(renderBackend, renderSystem->GetShaderLibrary(), *commandList, environmentMapTexture, environmentMapTextureMipLevelCount);

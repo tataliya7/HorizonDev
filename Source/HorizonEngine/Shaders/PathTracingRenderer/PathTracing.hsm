@@ -132,7 +132,8 @@ void PathTracingRG()
     uint3 dispatchRaysIndex = DispatchRaysIndex();
     uint3 dispatchRaysDimensions = DispatchRaysDimensions();
 
-    ConstantBuffer<PerFrameShaderParameters> frameShaderParameters = GetPerFrameShaderParameterBufferCBV();
+    StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
+    PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
     RaytracingAccelerationStructure topLevelAS = GetTopLevelAS();
     RWTexture2D<float4> radianceTexture = GetRadianceTextureUAV();
 

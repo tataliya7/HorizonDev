@@ -2,7 +2,7 @@
 #include "../RealTimeRendererCommon.hsh"
 
 SHADER_CONSTANTS_STRUCT_BEGIN();
-SHADER_CONSTANTS_CONSTANT_BUFFER_CBV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferCBV);
+SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferSRV);
 SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(1, MotionVectorTextureSRV);
 SHADER_CONSTANTS_TEXTURE_2D_UAV(2, float4, OutputTextureUAV);
 SHADER_CONSTANTS_STRUCT_END();
@@ -11,7 +11,8 @@ SHADER_CONSTANTS_STRUCT_END();
 [numthreads(8, 8, 1)]
 void VisualizeMotionVectorsCS(uint3 DispatchThreadID : SV_DispatchThreadID)
 {
-    ConstantBuffer<PerFrameShaderParameters> frameShaderParameters = ShaderConstants.GetPerFrameShaderParameterBufferCBV();
+    StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
+    PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
     Texture2D motionVectorTexture = ShaderConstants.GetMotionVectorTextureSRV();
     RWTexture2D<float4> outputTexture = ShaderConstants.GetOutputTextureUAV();
 

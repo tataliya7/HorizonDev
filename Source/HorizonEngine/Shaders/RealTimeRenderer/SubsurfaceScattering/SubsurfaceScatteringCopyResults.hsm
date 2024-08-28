@@ -15,7 +15,8 @@ struct SubsurfaceScatteringCopyResultsVSOutput
 [shader("vertex")]
 void SubsurfaceScatteringCopyResultsVS(uint VertexID : SV_VertexID, uint InstanceID : SV_InstanceID, out SubsurfaceScatteringCopyResultsVSOutput vsOutput)
 {
-    ConstantBuffer<PerFrameShaderParameters> frameShaderParameters = GetPerFrameShaderParameterBufferCBV();
+    StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
+    PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
     ByteAddressBuffer tileDataBuffer = GetSubsurfaceScatteringTileDataBufferSRV();
 
     uint2 tileIndex = tileDataBuffer.Load<uint2>(InstanceID * sizeof(uint2));

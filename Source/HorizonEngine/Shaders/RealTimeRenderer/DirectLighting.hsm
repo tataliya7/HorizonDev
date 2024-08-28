@@ -9,26 +9,26 @@
 #include "ManyLightRenderingCommon.hsh"
 
 SHADER_CONSTANTS_STRUCT_BEGIN();
-SHADER_CONSTANTS_CONSTANT_BUFFER_CBV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferCBV);
+SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferSRV);
 SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_SRV(1, GeometryDataBufferSRV);
 SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_SRV(2, GeometryInstanceDataBufferSRV);
-SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(4, SceneDepthTextureSRV);
-SHADER_CONSTANTS_TEXTURE_2D_SRV(5, uint2, VBuffer0SRV);
-SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(6, VBuffer1SRV);
-SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(7, GBuffer0SRV);
-SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(8, GBuffer1SRV);
-SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(9, GBuffer2SRV);
-SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(10, SkyAtmosphereTransmittanceLutSRV);
-SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_SRV(11, LocalLightShadowMapDataBufferSRV);
-SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(12, ScreenSpaceShadowMaskTextureSRV);
-SHADER_CONSTANTS_TEXTURE_2D_ARRAY_SRV(13, float, LocalLightShadowMapAtlasSRV);
-SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(14, DistantLightData, DistantLightDataBufferSRV);
-SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(15, LocalLightData, LocalLightDataBufferSRV);
-SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(16, uint2, LightGridCellDataBufferSRV);
-SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(17, uint, LightGridLightListBufferSRV);
-SHADER_CONSTANTS_SCALAR(18, uint, LightGridSizeX);
-SHADER_CONSTANTS_SCALAR(19, uint, LightGridSizeY);
-SHADER_CONSTANTS_SCALAR(20, uint, LightGridSizeZ);
+SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(3, SceneDepthTextureSRV);
+SHADER_CONSTANTS_TEXTURE_2D_SRV(4, uint2, VBuffer0SRV);
+SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(5, VBuffer1SRV);
+SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(6, GBuffer0SRV);
+SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(7, GBuffer1SRV);
+SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(8, GBuffer2SRV);
+SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(9, SkyAtmosphereTransmittanceLutSRV);
+SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_SRV(10, LocalLightShadowMapDataBufferSRV);
+SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(11, ScreenSpaceShadowMaskTextureSRV);
+SHADER_CONSTANTS_TEXTURE_2D_ARRAY_SRV(12, float, LocalLightShadowMapAtlasSRV);
+SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(13, DistantLightData, DistantLightDataBufferSRV);
+SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(14, LocalLightData, LocalLightDataBufferSRV);
+SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(15, uint2, LightGridCellDataBufferSRV);
+SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(16, uint, LightGridLightListBufferSRV);
+SHADER_CONSTANTS_SCALAR(17, uint, LightGridSizeX);
+SHADER_CONSTANTS_SCALAR(18, uint, LightGridSizeY);
+SHADER_CONSTANTS_SCALAR(19, uint, LightGridSizeZ);
 SHADER_CONSTANTS_STRUCT_END();
 
 // SHADER_CONSTANTS(ShaderConstants)
@@ -123,9 +123,9 @@ float3 ComputeDistantLightDirectLightingContribution(PerFrameShaderParameters fr
     StructuredBuffer<DistantLightData> distantLightDataBuffer = ShaderConstants.GetDistantLightDataBufferSRV();
     DistantLightData distantLightData = distantLightDataBuffer[0];
 
-    float3 result = 0.0;
+    float3 result = 0.0f;
     float3 lightColor = distantLightData.color;
-    float visibility = 1.0;
+    float visibility = 1.0f;
 
     Texture2D shadowMaskTexture = ShaderConstants.GetScreenSpaceShadowMaskTextureSRV();
     visibility = shadowMaskTexture.SampleLevel(GlobalSamplerLinearClamp, surface.uv, 0).r;
@@ -138,10 +138,11 @@ float3 ComputeDistantLightDirectLightingContribution(PerFrameShaderParameters fr
     float metallic = surface.metallic;
     float roughness = surface.roughness;
     float4 baseColor = surface.baseColor;
+
     float alpha = roughness * roughness;
     float alpha2 = alpha * alpha;
 
-    float dielectricSpecular = 0.16 * surface.specular * surface.specular;
+    float dielectricSpecular = 0.16f * surface.specular * surface.specular;
     float3 F0 = lerp(dielectricSpecular, baseColor.rgb, metallic);
 
     // TODO: Setup atmosphereTransmittanceFactor
@@ -152,10 +153,10 @@ float3 ComputeDistantLightDirectLightingContribution(PerFrameShaderParameters fr
         frameShaderParameters.skyAtmosphereBottomRadiusInKilometers,
         frameShaderParameters.skyAtmosphereTopRadiusInKilometers);
 
-    float NdotV = max(0.0, dot(N, V));
-    float NdotL = max(0.0, dot(N, L));
-    float NdotH = max(0.0, dot(N, H));
-    float VdotH = max(0.0, dot(V, H));
+    float NdotV = max(0.0f, dot(N, V));
+    float NdotL = max(0.0f, dot(N, L));
+    float NdotH = max(0.0f, dot(N, H));
+    float VdotH = max(0.0f, dot(V, H));
 
     //if (NdotL > 0.0)
     {
@@ -184,6 +185,7 @@ float3 ComputeDistantLightDirectLightingContribution(PerFrameShaderParameters fr
             0,
             1);
     }
+
     return result;
 }
 
@@ -343,6 +345,7 @@ float3 ComputeLocalLightDirectLightingContribution(PerFrameShaderParameters fram
 
         // }
     }
+
     return result;
 }
 
@@ -353,9 +356,10 @@ float3 F_Schlick(float3 f0, float f90, float VoH)
 }
 
 [shader("pixel")]
-void DirectLightingPS(float4 position : SV_Position, out float4 outSceneColor : SV_Target0)
+void DirectLightingPS(in float4 position : SV_Position, out float4 outputColor : SV_Target0)
 {
-    ConstantBuffer<PerFrameShaderParameters> frameShaderParameters = ShaderConstants.GetPerFrameShaderParameterBufferCBV();
+    StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
+    PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
     Texture2D<uint2> vbuffer0 = ShaderConstants.GetVBuffer0SRV();
     Texture2D vbuffer1 = ShaderConstants.GetVBuffer1SRV();
     Texture2D gbuffer0 = ShaderConstants.GetGBuffer0SRV();
@@ -401,7 +405,7 @@ void DirectLightingPS(float4 position : SV_Position, out float4 outSceneColor : 
     float roughness = gbuffer1Data.z;
     float4 baseColor = gbuffer2Data;
     float3 emission = 0;
-    float ambientOcclusion = 1.0;
+    float ambientOcclusion = 1.0f;
 
     Surface surface;
     surface.uv = uv;
@@ -436,7 +440,7 @@ void DirectLightingPS(float4 position : SV_Position, out float4 outSceneColor : 
     float F90 = saturate(50.0 * dot(F0, 0.33));
     float3 F = F_Schlick(F0, F90, NdotV);
 
-    float3 finalColor = 0.0;
+    float3 finalColor = 0.0f;
 
     finalColor += surface.emission * surface.emissionStrength;
 
@@ -444,5 +448,5 @@ void DirectLightingPS(float4 position : SV_Position, out float4 outSceneColor : 
 
     finalColor += ComputeLocalLightDirectLightingContribution(frameShaderParameters, surface) * frameShaderParameters.preExposure;
 
-    outSceneColor = float4(finalColor, 1.0);
+    outputColor = float4(finalColor, 1.0f);
 }

@@ -326,7 +326,7 @@ namespace Horizon
 
             commandList.BeginDebugLabel(pass->GetName(), Vector4(1.0f, 1.0f, 1.0f, 1.0f));
 
-            for (auto& state : pass->textureStates)
+            for (RenderGraphPass::TextureState& state : pass->textureStates)
             {
                 RenderGraphTexture* texture = state.texture;
                 if (state.state != texture->intermediateState)
@@ -391,7 +391,7 @@ namespace Horizon
             commandList.EndDebugLabel();
         }
 
-        for (auto& texture : textures)
+        for (RenderGraphTexture* texture : textures)
         {
             if (texture->intermediateState != texture->finalState)
             {

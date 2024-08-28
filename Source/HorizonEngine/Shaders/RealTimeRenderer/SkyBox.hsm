@@ -13,7 +13,8 @@ struct SkyBoxVSToPS
 [shader("vertex")]
 void SkyBoxVS(uint vertexIndex : SV_VertexID, out SkyBoxVSToPS output)
 {
-    ConstantBuffer<PerFrameShaderParameters> frameShaderParameters = GetPerFrameShaderParameterBufferCBV();
+    StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
+    PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
 
     // @see https://www.saschawillems.de/blog/2016/08/13/vulkan-tutorial-on-rendering-a-fullscreen-quad-without-buffers/
     float2 uv = float2((vertexIndex << 1) & 2, vertexIndex & 2);

@@ -195,7 +195,7 @@ namespace Horizon
                     shaderConstants.BindBufferUAV(1, registry.GetBufferUAVBindlessResourceDescriptorIndex(irradianceEnvironmentMapBuffer));
                     shaderConstants.BindScalar(2, sourceMipLevel);
 
-                    RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::ComputeEnvironmentIrradianceSH);
+                    RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::GenerateIrradianceEnvironmentMapCS);
 
                     commandList.Dispatch(
                         computeShader,

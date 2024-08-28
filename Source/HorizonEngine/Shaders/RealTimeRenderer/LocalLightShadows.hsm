@@ -18,7 +18,8 @@ struct LocalLightShadowsVSToPS
 [shader("vertex")]
 void LocalLightShadowsVS(uint instanceID : SV_InstanceID, uint vertexIndex : SV_VertexID, out LocalLightShadowsVSToPS output)
 {
-    ConstantBuffer<PerFrameShaderParameters> frameShaderParameters = GetPerFrameShaderParameterBufferCBV();
+    StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
+    PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
     Geometry geometry = GetGeometry();
 
     float3 vertexPosition = GetRWByteAddressBuffer(geometry.vertexBuffer0).Load<float3>(vertexIndex * sizeof(float3));
@@ -41,7 +42,8 @@ void LocalLightShadowsVS(uint instanceID : SV_InstanceID, uint vertexIndex : SV_
 [shader("pixel")]
 void LocalLightShadowsPS(in LocalLightShadowsVSToPS input, in uint primitiveID : SV_PrimitiveID)
 {
-    ConstantBuffer<PerFrameShaderParameters> frameShaderParameters = GetPerFrameShaderParameterBufferCBV();
+    StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
+    PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
     Geometry geometry = GetGeometry();
 
     float2 texCoord0 = input.texCoord0;

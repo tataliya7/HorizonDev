@@ -512,7 +512,7 @@ namespace Horizon
         renderPipelineSettings.postProcessingSettings.autoExposureHistogramMaxEV100 = 20.0f;
         renderPipelineSettings.postProcessingSettings.autoExposureSpeedDarkToBright = 3.0f;
         renderPipelineSettings.postProcessingSettings.autoExposureSpeedBrightToDark = 1.0f;
-        renderPipelineSettings.postProcessingSettings.autoExposureUseTargetExposure = 0;
+        renderPipelineSettings.postProcessingSettings.autoExposureUseTargetExposure = 0.0f;
         renderPipelineSettings.superResolutionTechnique = SuperResolutionTechnique::FSR2;
         renderPipelineSettings.fsr2Settings.qualityMode = FSR2QualityMode::Balanced;
         renderPipelineSettings.toneMappingOperator = ToneMappingOperatorType::ACES;

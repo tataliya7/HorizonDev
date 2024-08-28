@@ -125,14 +125,15 @@ namespace Horizon
         VertexBuffer = (1 << 7),
         IndexBuffer = (1 << 8),
         UniformBuffer = (1 << 9),
-        AccelerationStruture = (1 << 10),
-        ShaderBindingTable = (1 << 11),
+        StructuredBuffer = (1 << 10),
+        AccelerationStructure = (1 << 11),
+        ShaderBindingTable = (1 << 12),
         // Memory access
-        CreateMapped = (1 << 12),
-        CpuOnly = (1 << 13),
-        GpuOnly = (1 << 14),
-        CpuToGpu = (1 << 15),
-        GpuToCpu = (1 << 16),
+        CreateMapped = (1 << 13),
+        CpuOnly = (1 << 14),
+        GpuOnly = (1 << 15),
+        CpuToGpu = (1 << 16),
+        GpuToCpu = (1 << 17),
     };
     HORIZON_ENUM_CLASS_OPERATORS(RenderBackendBufferCreateFlags);
 
@@ -156,7 +157,7 @@ namespace Horizon
         }
         static RenderBackendBufferDesc CreateUpload(uint64 bytes)
         {
-            auto flags = RenderBackendBufferCreateFlags::Upload | RenderBackendBufferCreateFlags::CreateMapped;
+            RenderBackendBufferCreateFlags flags = RenderBackendBufferCreateFlags::Upload | RenderBackendBufferCreateFlags::CreateMapped;
             return RenderBackendBufferDesc(4, (uint32)(bytes >> 2), flags);
         }
         static RenderBackendBufferDesc CreateUpload(uint64 bytes, RenderBackendBufferCreateFlags flags)
@@ -166,17 +167,17 @@ namespace Horizon
         }
         static RenderBackendBufferDesc CreateReadback(uint64 bytes)
         {
-            auto flags = RenderBackendBufferCreateFlags::Readback | RenderBackendBufferCreateFlags::CreateMapped;
+            RenderBackendBufferCreateFlags flags = RenderBackendBufferCreateFlags::Readback | RenderBackendBufferCreateFlags::CreateMapped;
             return RenderBackendBufferDesc(4, (uint32)(bytes >> 2), flags);
         }
         static RenderBackendBufferDesc CreateIndirectArguments(uint64 bytes)
         {
-            auto flags = RenderBackendBufferCreateFlags::IndirectArguments | RenderBackendBufferCreateFlags::UnorderedAccess | RenderBackendBufferCreateFlags::ShaderResource;
+            RenderBackendBufferCreateFlags flags = RenderBackendBufferCreateFlags::IndirectArguments | RenderBackendBufferCreateFlags::UnorderedAccess | RenderBackendBufferCreateFlags::ShaderResource;
             return RenderBackendBufferDesc(4, (uint32)(bytes >> 2), flags);
         }
         static RenderBackendBufferDesc CreateIndirectArguments(uint32 elementSize, uint32 elementCount)
         {
-            auto flags = RenderBackendBufferCreateFlags::IndirectArguments | RenderBackendBufferCreateFlags::UnorderedAccess | RenderBackendBufferCreateFlags::ShaderResource;
+            RenderBackendBufferCreateFlags flags = RenderBackendBufferCreateFlags::IndirectArguments | RenderBackendBufferCreateFlags::UnorderedAccess | RenderBackendBufferCreateFlags::ShaderResource;
             return RenderBackendBufferDesc(elementSize, elementCount, flags);
         }
         static RenderBackendBufferDesc CreateIndex(uint32 indexStride, uint32 indexCount)
@@ -202,17 +203,17 @@ namespace Horizon
         }
         static RenderBackendBufferDesc CreateStructured(uint32 elementSize, uint32 elementCount)
         {
-            auto flags = RenderBackendBufferCreateFlags::UnorderedAccess | RenderBackendBufferCreateFlags::ShaderResource;
+            RenderBackendBufferCreateFlags flags = RenderBackendBufferCreateFlags::UnorderedAccess | RenderBackendBufferCreateFlags::ShaderResource | RenderBackendBufferCreateFlags::StructuredBuffer;
             return RenderBackendBufferDesc(elementSize, elementCount, flags);
         }
         static RenderBackendBufferDesc CreateShaderBindingTable(uint64 bytes)
         {
-            auto flags = RenderBackendBufferCreateFlags::ShaderBindingTable | RenderBackendBufferCreateFlags::CpuOnly | RenderBackendBufferCreateFlags::CreateMapped;
+            RenderBackendBufferCreateFlags flags = RenderBackendBufferCreateFlags::ShaderBindingTable | RenderBackendBufferCreateFlags::CpuOnly | RenderBackendBufferCreateFlags::CreateMapped;
             return RenderBackendBufferDesc(4, (uint32)(bytes >> 2), flags);
         }
         static RenderBackendBufferDesc CreateShaderBindingTable(uint64 handleSize, uint32 handleCount)
         {
-            auto flags = RenderBackendBufferCreateFlags::ShaderBindingTable | RenderBackendBufferCreateFlags::CpuOnly | RenderBackendBufferCreateFlags::CreateMapped;
+            RenderBackendBufferCreateFlags flags = RenderBackendBufferCreateFlags::ShaderBindingTable | RenderBackendBufferCreateFlags::CpuOnly | RenderBackendBufferCreateFlags::CreateMapped;
             return RenderBackendBufferDesc(4, (uint32)((handleSize * handleCount) >> 2), flags);
         }
         RenderBackendBufferDesc() = default;
@@ -271,6 +272,8 @@ namespace Horizon
 
     struct RenderBackendTextureClearValue
     {
+        bool test = false;
+
         enum class ClearOp
         {
             None,

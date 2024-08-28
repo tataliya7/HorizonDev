@@ -24,9 +24,10 @@ namespace Horizon
         this->shadingLanguage = (renderBackend->GetType() == RenderBackendType::Vulkan) ? ShadingLanguage::SPIRV : ShadingLanguage::DXIL;
 
         // TODO:
-        this->shaderCompilerOptions = {
-            .generateDebugInfo = true,
-            .skipOptimization = true,
+        this->shaderCompilerOptions =
+        {
+            .generateDebugInfo = false,
+            .skipOptimization = false,
             .warningAreErrors = true,
             .enable16BitTypes = false,
             .optimizationLevel = ShaderOptimizationLevel::O3

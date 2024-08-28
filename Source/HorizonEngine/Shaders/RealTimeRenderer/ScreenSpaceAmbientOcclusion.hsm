@@ -96,7 +96,8 @@ float2 GTAOSearchForHorizons(
     float attenuation = 1.0 / (radius * radius);
 
 #if 1
-    ConstantBuffer<PerFrameShaderParameters> frameShaderParameters = GetPerFrameShaderParameterBufferCBV();
+    StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
+    PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
     RWTexture2D<float4> debugOutputTexture = GetGATODebugTextureUAV();
     uint2 coord1 = pixelCoord;
     uint2 coord2 = pixelCoord;
@@ -262,7 +263,8 @@ float GTAOComputeInnerIntegral(float2 horizons, float2 searchDirection, float3 v
 [numthreads(8, 8, 1)]
 void GTAOHorizonSearchAndIntegralCS(uint3 DispatchThreadID : SV_DispatchThreadID, uint2 GroupThreadID : SV_GroupThreadID, uint2 GroupID : SV_GroupID)
 {
-    ConstantBuffer<PerFrameShaderParameters> frameShaderParameters = GetPerFrameShaderParameterBufferCBV();
+    StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
+    PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
     uint2 pixelCoord = DispatchThreadID.xy;
     uint width = frameShaderParameters.renderWidth / 2;
     uint height = frameShaderParameters.renderHeight / 2;
@@ -359,7 +361,8 @@ void GTAOHorizonSearchAndIntegralCS(uint3 DispatchThreadID : SV_DispatchThreadID
 #define KERNEL_RADIUS 8
 inline float CrossBilateralWeight(float r, float d, float d0)
 {
-    ConstantBuffer<PerFrameShaderParameters> frameShaderParameters = GetPerFrameShaderParameterBufferCBV();
+    StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
+    PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
     const float BlurSigma = (float)KERNEL_RADIUS * 0.5;
     const float BlurFalloff = 1 / (2 * BlurSigma * BlurSigma);
 
@@ -413,7 +416,8 @@ inline void ProcessRadius(float2 uv0, float2 deltaUV, float d0, inout float tota
 [numthreads(8, 8, 1)]
 void GTAOSpatialFilteringCS(uint3 DispatchThreadID : SV_DispatchThreadID)
 {
-    ConstantBuffer<PerFrameShaderParameters> frameShaderParameters = GetPerFrameShaderParameterBufferCBV();
+    StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
+    PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
     uint2 pixelCoord = DispatchThreadID.xy;
     uint width = frameShaderParameters.renderWidth / 2;
     uint height = frameShaderParameters.renderHeight / 2;
@@ -444,7 +448,8 @@ void GTAOSpatialFilteringCS(uint3 DispatchThreadID : SV_DispatchThreadID)
 [numthreads(8, 8, 1)]
 void GTAOTemporalFilteringCS(uint3 DispatchThreadID : SV_DispatchThreadID)
 {
-    ConstantBuffer<PerFrameShaderParameters> frameShaderParameters = GetPerFrameShaderParameterBufferCBV();
+    StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
+    PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
     uint2 pixelCoord = DispatchThreadID.xy;
     uint width = frameShaderParameters.renderWidth / 2;
     uint height = frameShaderParameters.renderHeight / 2;

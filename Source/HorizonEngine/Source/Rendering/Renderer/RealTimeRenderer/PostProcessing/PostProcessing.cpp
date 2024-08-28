@@ -50,10 +50,10 @@ namespace Horizon
             sceneColorTexture = DispatchCustomTemporalSuperSampling(temporalSuperSamplingInterface, renderGraph, view, tssDispatchDescription);
         }
 
-        if (IsMotionBlurEnabled())
-        {
-            sceneColorTexture = DispatchMotionBlur(renderGraph, view, sceneColorTexture, sceneDepthTexture, motionVectorTexture);
-        }
+        // if (IsMotionBlurEnabled())
+        // {
+        //     sceneColorTexture = DispatchMotionBlur(renderGraph, view, sceneColorTexture, sceneDepthTexture, motionVectorTexture);
+        // }
 
         //sceneColorTexture = renderGraph.ImportExternalTexture(localExposureTestTexture, localExposureTestTextureDesc, RenderBackendResourceState::ShaderResource, "Test");
         PostProcessingSceneColorMipChain sceneColorMipChain;
@@ -158,8 +158,8 @@ namespace Horizon
                     auto& sceneTextures = renderGraph.blackboard.Get<RealTimeRendererSceneTextures>();
                     auto& finalTextureData = renderGraph.blackboard.Get<RenderGraphFinalTexture>();
 
-                    auto sceneDepthTexture = sceneTextures.sceneDepthTexture = builder.ReadWriteTexture(sceneTextures.sceneDepthTexture, RenderBackendResourceState::DepthStencil);
-                    auto finalTexture = finalTextureData.finalTexture = builder.ReadWriteTexture(finalTextureData.finalTexture, RenderBackendResourceState::RenderTarget);
+                    auto sceneDepthTexture = sceneTextures.sceneDepthTexture = builder.WriteTexture(sceneTextures.sceneDepthTexture, RenderBackendResourceState::DepthStencil);
+                    auto finalTexture = finalTextureData.finalTexture = builder.WriteTexture(finalTextureData.finalTexture, RenderBackendResourceState::RenderTarget);
 
                     builder.BindColorTarget(0, finalTexture, RenderBackendRenderPassBeginningAccessType::Preserve, RenderBackendRenderPassEndingAccessType::Preserve);
                     builder.BindDepthTarget(sceneDepthTexture, RenderBackendRenderPassBeginningAccessType::Preserve, RenderBackendRenderPassEndingAccessType::Preserve);
@@ -174,7 +174,7 @@ namespace Horizon
                         graphicsPipelineState.depthStencilState.depthCompareFunction = RenderBackendCompareOp::GreaterOrEqual;
 
                         RenderBackendShaderConstants shaderConstants = {};
-                        shaderConstants.BindBufferCBV(0, renderBackend->GetBufferCBVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
+                        shaderConstants.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
                         shaderConstants.BindBuffer(1, renderEngine->debugDrawLinesVertexBuffer, 0);
 
                         RenderBackendShaderHandle graphicsShader = shaderLibrary->GetShader(ShaderID::DebugDraw);

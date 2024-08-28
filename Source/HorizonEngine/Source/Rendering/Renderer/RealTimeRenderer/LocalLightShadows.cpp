@@ -10,6 +10,8 @@ namespace Horizon
         RenderGraph& renderGraph,
         const SceneView& view)
     {
+        return defaultResources->ImportWhiteDummyTexture2D(renderGraph);
+
         static const uint32 cubeShadowMapSize = 256;
         static const uint32 localLightShadowMapAtlasSize = 4096;
         RenderGraphTextureDesc localLightShadowMapAtlasDesc = RenderGraphTextureDesc::Create2DArray(
@@ -20,8 +22,6 @@ namespace Horizon
             2,
             RenderBackendTextureClearValue::CreateDepthValue(FarClipPlaneDepthValue));
         RenderGraphTextureHandle localLightShadowMapAtlas = renderGraph.CreateTexture(localLightShadowMapAtlasDesc, "LocalLightShadowMapAtlas");
-        
-        return localLightShadowMapAtlas;
 
         // uint32 numViewports = renderEngine->numCubeShadowMaps * 6;
         //
@@ -62,7 +62,7 @@ namespace Horizon
         //             for (const auto& drawCallInfo : renderEngine->drawList)
         //             {
         //                 RenderBackendShaderConstants shaderConstants = {};
-        //                 shaderConstants.BindBufferCBV(0, renderBackend->GetBufferCBVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
+        //                 shaderConstants.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
         //                 shaderConstants.BindBuffer(1, renderEngine->geometryBuffer, drawCallInfo.geometryIndex * sizeof(GeometryShaderParameters));
         //                 shaderConstants.BindBuffer(2, renderEngine->materialBuffer, 0);
         //                 shaderConstants.BindBuffer(3, renderEngine->cubeShadowMapBuffer, sizeof(CubeShadowMapShaderParameters));

@@ -298,6 +298,9 @@ RaytracingAccelerationStructure Get##name() \
 SamplerState           BindlessResource_SamplerState[]           : register(s0, space1);
 SamplerComparisonState BindlessResource_SamplerComparisonState[] : register(s0, space2);
 
+#define DECLARE_ALIASED_ARRAY_CONSTANT_BUFFER_CBV(type)
+#define DECLARE_ALIASED_ARRAY_STRUCTURED_BUFFER_SRV(type)
+
 ByteAddressBuffer GetByteAddressBuffer(int index)
 {
     return ResourceDescriptorHeap[index];
@@ -663,6 +666,188 @@ SamplerComparisonState GlobalSamplerComparisonLessLinearClamp    : register(s107
     }
 
 #else // DXIL
+
+#define SHADER_CONSTANTS_TEXTURE_1D_DEFAULT_SRV(slot, name) \
+    int BindlessResourceDescriptorIndex_##name/* : packoffset(c##slot)*/; \
+    Texture1D Get##name() \
+    { \
+        return ResourceDescriptorHeap[BindlessResourceDescriptorIndex_##name]; \
+    }
+
+#define SHADER_CONSTANTS_TEXTURE_1D_SRV(slot, type, name) \
+    int BindlessResourceDescriptorIndex_##name/* : packoffset(c##slot)*/; \
+    Texture1D<type> Get##name() \
+    { \
+        return ResourceDescriptorHeap[BindlessResourceDescriptorIndex_##name]; \
+    }
+
+#define SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(slot, name) \
+    int BindlessResourceDescriptorIndex_##name/* : packoffset(c##slot)*/; \
+    Texture2D Get##name() \
+    { \
+        return ResourceDescriptorHeap[BindlessResourceDescriptorIndex_##name]; \
+    }
+
+#define SHADER_CONSTANTS_TEXTURE_2D_SRV(slot, type, name) \
+    int BindlessResourceDescriptorIndex_##name/* : packoffset(c##slot)*/; \
+    Texture2D<type> Get##name() \
+    { \
+        return ResourceDescriptorHeap[BindlessResourceDescriptorIndex_##name]; \
+    }
+
+#define SHADER_CONSTANTS_TEXTURE_3D_DEFAULT_SRV(slot, name) \
+    int BindlessResourceDescriptorIndex_##name/* : packoffset(c##slot)*/; \
+    Texture3D Get##name() \
+    { \
+        return ResourceDescriptorHeap[BindlessResourceDescriptorIndex_##name]; \
+    }
+
+#define SHADER_CONSTANTS_TEXTURE_3D_SRV(slot, type, name) \
+    int BindlessResourceDescriptorIndex_##name/* : packoffset(c##slot)*/; \
+    Texture3D<type> Get##name() \
+    { \
+        return ResourceDescriptorHeap[BindlessResourceDescriptorIndex_##name]; \
+    }
+
+#define SHADER_CONSTANTS_TEXTURE_CUBE_DEFAULT_SRV(slot, name) \
+    int BindlessResourceDescriptorIndex_##name/* : packoffset(c##slot)*/; \
+    TextureCube Get##name() \
+    { \
+        return ResourceDescriptorHeap[BindlessResourceDescriptorIndex_##name]; \
+    }
+
+#define SHADER_CONSTANTS_TEXTURE_CUBE_SRV(slot, type, name) \
+    int BindlessResourceDescriptorIndex_##name/* : packoffset(c##slot)*/; \
+    TextureCube<type> Get##name() \
+    { \
+        return ResourceDescriptorHeap[BindlessResourceDescriptorIndex_##name]; \
+    }
+
+#define SHADER_CONSTANTS_TEXTURE_1D_ARRAY_DEFAULT_SRV(slot, name) \
+    int BindlessResourceDescriptorIndex_##name/* : packoffset(c##slot)*/; \
+    Texture1DArray Get##name() \
+    { \
+        return ResourceDescriptorHeap[BindlessResourceDescriptorIndex_##name]; \
+    }
+
+#define SHADER_CONSTANTS_TEXTURE_1D_ARRAY_SRV(slot, type, name) \
+    int BindlessResourceDescriptorIndex_##name/* : packoffset(c##slot)*/; \
+    Texture1DArray<type> Get##name() \
+    { \
+        return ResourceDescriptorHeap[BindlessResourceDescriptorIndex_##name]; \
+    }
+
+#define SHADER_CONSTANTS_TEXTURE_2D_ARRAY_DEFAULT_SRV(slot, name) \
+    int BindlessResourceDescriptorIndex_##name/* : packoffset(c##slot)*/; \
+    Texture2DArray Get##name() \
+    { \
+        return ResourceDescriptorHeap[BindlessResourceDescriptorIndex_##name]; \
+    }
+
+#define SHADER_CONSTANTS_TEXTURE_2D_ARRAY_SRV(slot, type, name) \
+    int BindlessResourceDescriptorIndex_##name/* : packoffset(c##slot)*/; \
+    Texture2DArray<type> Get##name() \
+    { \
+        return ResourceDescriptorHeap[BindlessResourceDescriptorIndex_##name]; \
+    }
+
+#define SHADER_CONSTANTS_TEXTURE_CUBE_ARRAY_DEFAULT_SRV(slot, name) \
+    int BindlessResourceDescriptorIndex_##name/* : packoffset(c##slot)*/; \
+    TextureCubeArray Get##name() \
+    { \
+        return ResourceDescriptorHeap[BindlessResourceDescriptorIndex_##name]; \
+    }
+
+#define SHADER_CONSTANTS_TEXTURE_CUBE_ARRAY_SRV(slot, type, name) \
+    int BindlessResourceDescriptorIndex_##name/* : packoffset(c##slot)*/; \
+    TextureCubeArray<type> Get##name() \
+    { \
+        return ResourceDescriptorHeap[BindlessResourceDescriptorIndex_##name]; \
+    }
+
+#define SHADER_CONSTANTS_TEXTURE_1D_UAV(slot, type, name) \
+    int BindlessResourceDescriptorIndex_##name/* : packoffset(c##slot)*/; \
+    RWTexture1D<type> Get##name() \
+    { \
+        return ResourceDescriptorHeap[BindlessResourceDescriptorIndex_##name]; \
+    }
+
+#define SHADER_CONSTANTS_TEXTURE_2D_UAV(slot, type, name) \
+    int BindlessResourceDescriptorIndex_##name/* : packoffset(c##slot)*/; \
+    RWTexture2D<type> Get##name() \
+    { \
+        return ResourceDescriptorHeap[BindlessResourceDescriptorIndex_##name]; \
+    }
+
+#define SHADER_CONSTANTS_TEXTURE_3D_UAV(slot, type, name) \
+    int BindlessResourceDescriptorIndex_##name/* : packoffset(c##slot)*/; \
+    RWTexture3D<type> Get##name() \
+    { \
+        return ResourceDescriptorHeap[BindlessResourceDescriptorIndex_##name]; \
+    }
+
+#define SHADER_CONSTANTS_TEXTURE_1D_ARRAY_UAV(slot, type, name) \
+    int BindlessResourceDescriptorIndex_##name/* : packoffset(c##slot)*/; \
+    RWTexture1DArray<type> Get##name() \
+    { \
+        return ResourceDescriptorHeap[BindlessResourceDescriptorIndex_##name]; \
+    }
+
+#define SHADER_CONSTANTS_TEXTURE_2D_ARRAY_UAV(slot, type, name) \
+    int BindlessResourceDescriptorIndex_##name/* : packoffset(c##slot)*/; \
+    RWTexture2DArray<type> Get##name() \
+    { \
+        return ResourceDescriptorHeap[BindlessResourceDescriptorIndex_##name]; \
+    }
+
+#define SHADER_CONSTANTS_TEXTURE_3D_ARRAY_UAV(slot, type, name) \
+    int BindlessResourceDescriptorIndex_##name/* : packoffset(c##slot)*/; \
+    RWTexture3DArray<type> Get##name() \
+    { \
+        return ResourceDescriptorHeap[BindlessResourceDescriptorIndex_##name]; \
+    }
+
+#define SHADER_CONSTANTS_CONSTANT_BUFFER_CBV(slot, type, name) \
+    int BindlessResourceDescriptorIndex_##name/* : packoffset(c##slot)*/; \
+    ConstantBuffer<type> Get##name() \
+    { \
+        return ResourceDescriptorHeap[BindlessResourceDescriptorIndex_##name]; \
+    }
+
+#define SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(slot, type, name) \
+    int BindlessResourceDescriptorIndex_##name/* : packoffset(c##slot)*/; \
+    StructuredBuffer<type> Get##name() \
+    { \
+        return ResourceDescriptorHeap[BindlessResourceDescriptorIndex_##name]; \
+    }
+
+#define SHADER_CONSTANTS_STRUCTURED_BUFFER_UAV(slot, type, name) \
+    int BindlessResourceDescriptorIndex_##name/* : packoffset(c##slot)*/; \
+    RWStructuredBuffer<type> Get##name() \
+    { \
+        return ResourceDescriptorHeap[BindlessResourceDescriptorIndex_##name]; \
+    }
+
+#define SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_SRV(slot, name) \
+    int BindlessResourceDescriptorIndex_##name/* : packoffset(c##slot)*/; \
+    ByteAddressBuffer Get##name() \
+    { \
+        return ResourceDescriptorHeap[BindlessResourceDescriptorIndex_##name]; \
+    }
+
+#define SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_UAV(slot, name) \
+    int BindlessResourceDescriptorIndex_##name/* : packoffset(c##slot)*/; \
+    RWByteAddressBuffer Get##name() \
+    { \
+        return ResourceDescriptorHeap[BindlessResourceDescriptorIndex_##name]; \
+    }
+
+#define SHADER_CONSTANTS_SCALAR(slot, type, name) \
+    type name/* : packoffset(c##slot)*/; \
+    type Get##name() \
+    { \
+        return name; \
+    }
 
 #endif
 

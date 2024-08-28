@@ -3,7 +3,7 @@
 #include "ManyLightRenderingCommon.hsh"
 
 SHADER_CONSTANTS_STRUCT_BEGIN();
-SHADER_CONSTANTS_CONSTANT_BUFFER_CBV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferCBV);
+SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferSRV);
 SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(1, LocalLightData, LocalLightDataBufferSRV);
 SHADER_CONSTANTS_STRUCTURED_BUFFER_UAV(2, uint2, LightGridCellDataBufferUAV);
 SHADER_CONSTANTS_STRUCTURED_BUFFER_UAV(3, uint, LightGridLightListBufferUAV);

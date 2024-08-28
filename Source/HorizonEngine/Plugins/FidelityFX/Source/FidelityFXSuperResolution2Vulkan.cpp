@@ -70,9 +70,6 @@ namespace Horizon
             }
 #endif
 
-            // Input data is HDR
-            fsr2ContextDescription.flags |= FFX_FSR2_ENABLE_HIGH_DYNAMIC_RANGE;
-
             //const uint64_t memoryUsageBefore = getMemoryUsageSnapshot(device->GetPhysicalDeviceHandle());
             errorCode = ffxFsr2ContextCreate(&fsr2Context, &fsr2ContextDescription);
             FFX_ASSERT(errorCode == FFX_OK);
@@ -193,7 +190,7 @@ namespace Horizon
         fsr2DispatchDescription.renderSize.height = constants.renderHeight;
         fsr2DispatchDescription.cameraFar = constants.cameraFarClippingPlane;
         fsr2DispatchDescription.cameraNear = constants.cameraNearClippingPlane;
-        fsr2DispatchDescription.cameraFovAngleVertical = constants.cameraFieldOfView;
+        fsr2DispatchDescription.cameraFovAngleVertical = constants.cameraFovAngleVertical;
         fsr2DispatchDescription.viewSpaceToMetersFactor = 1.0f;
 
         if (fsr2ContextDescription.flags & FFX_FSR2_ENABLE_DEPTH_INVERTED)

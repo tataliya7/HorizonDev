@@ -37,7 +37,8 @@ void SurfelGISurfelApplicationCS(
 
     GroupMemoryBarrierWithGroupSync();
 
-    ConstantBuffer<PerFrameShaderParameters> frameShaderParameters = GetPerFrameShaderParameterBufferCBV();
+    StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
+    PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
 
     Texture2D visibilityBuffer0 = GetVisibilityBuffer0RV();
     Texture2D visibilityBuffer1 = GetVisibilityBuffer1RV();

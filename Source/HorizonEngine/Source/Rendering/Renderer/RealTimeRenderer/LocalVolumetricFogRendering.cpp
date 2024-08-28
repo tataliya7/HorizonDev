@@ -39,23 +39,42 @@ namespace Horizon
             instanceData.emission = localVolumetricFog->emission;
         }
 
-        if (!localVolumetricFogInstanceDataBuffer)
+        if (!localVolumetricFogInstanceDataBufferUpload)
         {
-            RenderBackendBufferDesc localVolumetricFogInstanceDataBufferDesc = RenderBackendBufferDesc::CreateStructured(sizeof(LocalVolumetricFogInstanceData), localVolumetricFogInstanceCount);
+            RenderBackendBufferDesc localVolumetricFogInstanceDataBufferDesc = RenderBackendBufferDesc::CreateUpload(sizeof(LocalVolumetricFogInstanceData) * localVolumetricFogInstanceCount);
             localVolumetricFogInstanceDataBufferDesc.flags |= RenderBackendBufferCreateFlags::CpuToGpu; // TODO
-            localVolumetricFogInstanceDataBuffer = renderBackend->CreateBuffer(&localVolumetricFogInstanceDataBufferDesc, nullptr, "LocalVolumetricFogInstanceDataBuffer");
+            localVolumetricFogInstanceDataBufferUpload = renderBackend->CreateBuffer(&localVolumetricFogInstanceDataBufferDesc, nullptr, "LocalVolumetricFogInstanceDataBuffer");
             localVolumetricFogInstanceDataBufferSize = sizeof(LocalVolumetricFogInstanceData) * localVolumetricFogInstanceCount;
         }
         else if (localVolumetricFogInstanceDataBufferSize < sizeof(LocalVolumetricFogInstanceData) * localVolumetricFogInstanceCount)
         {
-            renderBackend->ResizeBuffer(localVolumetricFogInstanceDataBuffer, sizeof(LocalVolumetricFogInstanceData) * localVolumetricFogInstanceCount);
+            renderBackend->ResizeBuffer(localVolumetricFogInstanceDataBufferUpload, sizeof(LocalVolumetricFogInstanceData) * localVolumetricFogInstanceCount);
             localVolumetricFogInstanceDataBufferSize = sizeof(LocalVolumetricFogInstanceData) * localVolumetricFogInstanceCount;
         }
 
         void* data = nullptr;
-        renderBackend->MapBuffer(localVolumetricFogInstanceDataBuffer, &data);
+        renderBackend->MapBuffer(localVolumetricFogInstanceDataBufferUpload, &data);
         memcpy(data, renderData.instanceData.data(), localVolumetricFogInstanceDataBufferSize);
-        renderBackend->UnmapBuffer(localVolumetricFogInstanceDataBuffer);
+        renderBackend->UnmapBuffer(localVolumetricFogInstanceDataBufferUpload);
+
+        RenderGraphBufferDesc localVolumetricFogInstanceDataBufferDesc = RenderGraphBufferDesc::CreateStructured(sizeof(LocalVolumetricFogInstanceData), localVolumetricFogInstanceCount);
+        RenderGraphBufferHandle localVolumetricFogInstanceDataBuffer = renderGraph.CreateBuffer(localVolumetricFogInstanceDataBufferDesc, "LocalVolumetricFogInstanceDataBuffer");
+
+        renderGraph.AddPass(
+            std::format("UpdateLocalVolumetricFogData"),
+            RenderGraphPassFlags::Copy,
+            [&](RenderGraphBuilder& builder)
+            {
+                return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
+                {
+                    commandList.CopyBuffer(
+                        localVolumetricFogInstanceDataBufferUpload,
+                        0,
+                        registry.GetRenderBackendBufferHandle(localVolumetricFogInstanceDataBuffer),
+                        0,
+                        localVolumetricFogInstanceDataBufferSize);
+                };
+            });
 
         renderGraph.AddPass(
             std::format("LocalVolumetricFog (Graphics, {}x{})", renderResolution.width, renderResolution.height),
@@ -64,7 +83,7 @@ namespace Horizon
             {
                 RealTimeRendererSceneTextures& sceneTextures = renderGraph.blackboard.Get<RealTimeRendererSceneTextures>();
 
-                RenderGraphTextureHandle sceneDepthTexture = builder.ReadTexture(sceneTextures.sceneDepthTexture, RenderBackendResourceState::DepthStencil);
+                RenderGraphTextureHandle sceneDepthTexture = builder.ReadTexture(sceneTextures.sceneDepthTexture, RenderBackendResourceState::DepthStencilReadOnly);
                 RenderGraphTextureHandle sceneColorTexture = sceneTextures.sceneColorTexture = builder.WriteTexture(sceneTextures.sceneColorTexture, RenderBackendResourceState::RenderTarget);
 
                 builder.BindRenderTarget(0, sceneColorTexture, RenderBackendRenderPassBeginningAccessType::Preserve, RenderBackendRenderPassEndingAccessType::Preserve);
@@ -87,8 +106,8 @@ namespace Horizon
                     graphicsPipelineState.colorBlendState.targetBlends[0].writeMask = RenderBackendColorComponentFlags::RGBA;
 
                     RenderBackendShaderConstants shaderConstants = {};
-                    shaderConstants.BindBufferCBV(0, renderBackend->GetBufferCBVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
-                    shaderConstants.BindBufferSRV(1, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(localVolumetricFogInstanceDataBuffer));
+                    shaderConstants.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
+                    shaderConstants.BindBufferSRV(1, registry.GetBufferSRVBindlessResourceDescriptorIndex(localVolumetricFogInstanceDataBuffer));
                     shaderConstants.BindTextureSRV(2, registry.GetTextureSRVBindlessResourceDescriptorIndex(sceneDepthTexture));
 
                     RenderBackendShaderHandle vertexShader = shaderLibrary->GetShader(ShaderID::LocalVolumetricFogVS);

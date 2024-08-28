@@ -98,7 +98,7 @@ namespace Horizon
         static const uint32 log2_16 = 4;
         uint32 sourceMipLevel = uint32(std::log2(float(environmentMapSize))) - log2_16;
 
-        RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::ComputeEnvironmentIrradianceSH);
+        RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::GenerateIrradianceEnvironmentMapCS);
 
         RenderBackendShaderConstants shaderConstants = {};
         shaderConstants.BindTextureSRV(0, renderBackend->GetTextureSRVBindlessResourceDescriptorIndex(environmentMap));

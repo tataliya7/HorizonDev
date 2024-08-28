@@ -47,6 +47,7 @@ namespace Horizon
         uint32 GetJitterPhaseCount(uint32 renderWidth, uint32 targetWidth) const override;
         Vector2 GetJitterOffset(uint32 index, uint32 phaseCount) const override;
         RenderGraphTextureHandle Dispatch(RenderGraph& renderGraph, const SceneView& view, const TemporalSuperSamplingDispatchDescription& dispatchDescription) override;
+
     private:
 
         friend bool FidelityFXSuperResolution2DispatchD3D12(

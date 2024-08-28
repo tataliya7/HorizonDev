@@ -16,11 +16,11 @@ namespace Horizon
 
     void ShaderBlob::Release()
     {
-        if (IsValid())
+        /*if (IsValid())
         {
             free(data);
             data = nullptr;
             size = 0;
-        }
+        }*/
     }
 }

@@ -20,7 +20,7 @@ namespace Horizon
         DownsampleTexture2DVS,
         DownsampleTexture2DPS,
         ComputeEnvironmentIrradiance,
-        ComputeEnvironmentIrradianceSH,
+        GenerateIrradianceEnvironmentMapCS,
         FilterEnvironmentMap,
         SharedMemoryComplexFFT,
         SharedMemoryComplexIFFT,

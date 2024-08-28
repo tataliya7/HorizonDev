@@ -119,7 +119,8 @@ void VisibilityBufferMS(
         return;
     }
 
-    ConstantBuffer<PerFrameShaderParameters> frameShaderParameters = GetPerFrameShaderParameterBufferCBV();
+    StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
+    PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
     //ByteAddressBuffer meshletDescBuffer = GetMeshletDescBufferSRV();
 
     MeshletDesc meshletDesc;// = GetMeshletDesc(meshletDescBuffer, meshletIndex);

@@ -12,7 +12,8 @@ struct DebugDrawLinesVSToPS
 [shader("pixel")]
 void DebugDrawLinesVS(uint vertexIndex : SV_VertexID, out float4 svPosition : SV_Position, out DebugDrawLinesVSToPS output)
 {
-    ConstantBuffer<PerFrameShaderParameters> frameShaderParameters = GetPerFrameShaderParameterBufferCBV();
+    StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
+    PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
 
     ByteAddressBuffer vertexBuffer = GetLineVertexBufferSRV();
     uint bufferIndex = GetShaderConstantValue(1);

@@ -65,7 +65,7 @@ namespace Horizon
                         Vector2 invDstSize = Vector2(1.0f / dstSize.x, 1.0f / dstSize.y);
 
                         std::vector<RenderBackendBarrier> transitions;
-                        transitions.emplace_back(RenderBackendBarrier(registry.GetRenderBackendTextureHandle(closestHZBTexture), RenderBackendTextureSubresourceRange(mipLevel - 1, 1, 0, 1), RenderBackendResourceState::UnorderedAccess, RenderBackendResourceState::ShaderResource));
+                        //transitions.emplace_back(RenderBackendBarrier(registry.GetRenderBackendTextureHandle(closestHZBTexture), RenderBackendTextureSubresourceRange(mipLevel - 1, 1, 0, 1), RenderBackendResourceState::UnorderedAccess, RenderBackendResourceState::ShaderResource));
                         transitions.emplace_back(RenderBackendBarrier(registry.GetRenderBackendTextureHandle(furthestHZBTexture), RenderBackendTextureSubresourceRange(mipLevel - 1, 1, 0, 1), RenderBackendResourceState::UnorderedAccess, RenderBackendResourceState::ShaderResource));
                         commandList.Transitions(transitions.data(), (uint32)transitions.size());
 
@@ -90,7 +90,7 @@ namespace Horizon
 
                     // TODO: Find better way to do this
                     std::vector<RenderBackendBarrier> transitions;
-                    transitions.emplace_back(RenderBackendBarrier(registry.GetRenderBackendTextureHandle(closestHZBTexture), RenderBackendTextureSubresourceRange(0, std::max(hzbMipLevels - 1, 0u), 0, 1), RenderBackendResourceState::ShaderResource, RenderBackendResourceState::UnorderedAccess));
+                    //transitions.emplace_back(RenderBackendBarrier(registry.GetRenderBackendTextureHandle(closestHZBTexture), RenderBackendTextureSubresourceRange(0, std::max(hzbMipLevels - 1, 0u), 0, 1), RenderBackendResourceState::ShaderResource, RenderBackendResourceState::UnorderedAccess));
                     transitions.emplace_back(RenderBackendBarrier(registry.GetRenderBackendTextureHandle(furthestHZBTexture), RenderBackendTextureSubresourceRange(0, std::max(hzbMipLevels - 1, 0u), 0, 1), RenderBackendResourceState::ShaderResource, RenderBackendResourceState::UnorderedAccess));
                     commandList.Transitions(transitions.data(), (uint32)transitions.size());
                 };

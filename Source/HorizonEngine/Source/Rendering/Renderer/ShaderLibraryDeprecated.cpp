@@ -100,8 +100,8 @@ namespace Horizon
             shaderLibrary->LoadShader(ShaderID::SharedMemoryComplexFFTConvolution, shaderDesc);
         }
         {
-            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/ComputeEnvironmentIrradianceSH.hsm", "ComputeEnvironmentIrradianceSHCS");
-            shaderLibrary->LoadShader(ShaderID::ComputeEnvironmentIrradianceSH, shaderDesc);
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/IrradianceEnvironmentMap.hsm", "GenerateIrradianceEnvironmentMapCS");
+            shaderLibrary->LoadShader(ShaderID::GenerateIrradianceEnvironmentMapCS, shaderDesc);
         }
         {
             ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Vertex, "Shaders/RealTimeRenderer/VisibilityBuffer.hsm", "VisibilityBufferVS");

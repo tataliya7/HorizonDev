@@ -12,7 +12,8 @@ BIND_TEXTURE_2D_UAV(3, float, GTAOSpatialFilteringTexture);
 [numthreads(8, 8, 1)]
 void GTAOSpatialFilteringCS(uint3 DispatchThreadID : SV_DispatchThreadID)
 {
-    ConstantBuffer<PerFrameShaderParameters> frameShaderParameters = GetPerFrameShaderParameterBufferCBV();
+    StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
+    PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
     Texture2D sceneDepthTexture = GetSceneDepthTextureSRV();
     Texture2D horizonSearchAndIntegralTexture = GetGTAOHorizonSearchAndIntegralTextureSRV();
     RWTexture2D<float> outputTexture = GetGTAOSpatialFilteringTextureUAV();

@@ -17,24 +17,34 @@ struct PerFrameShaderParameters
     uint frameIndexMod8;
     uint renderWidth;
     uint renderHeight;
+
     uint targetWidth;
     uint targetHeight;
     uint displayWidth;
     uint displayHeight;
-    uint padding1;
 
     float4 renderResolution;
     float4 targetResolution;
     float4 displayResolution;
 
-    float deltaTimeInSeconds;
     float3 cameraPosition;
+    float deltaTimeInSeconds;
+
     float3 previousCameraPosition;
+    float padding0;
+
     float2 cameraJitterOffset;
     float2 previousCameraJitterOffset;
+
     float3 cameraUpVector;
+    float padding1;
+
     float3 cameraRightVector;
+    float padding2;
+
     float3 cameraForwardVector;
+    float padding3;
+
     float halfFovInRadians;
     float aspectRatio;
     float nearClippingPlane;
@@ -47,6 +57,8 @@ struct PerFrameShaderParameters
     float preExposureCorrection;
 
     float2 motionVectorScale;
+    float padding4;
+    float padding5;
 
     float4x4 worldToViewMatrix;
     float4x4 viewToWorldMatrix;
@@ -68,9 +80,14 @@ struct PerFrameShaderParameters
     float4x4 previousClipToCurrentClipMatrix;
 
     float3 indirectLightingMultiplier;
+    float padding6;
 
     float3 atmosphericLightDirection;
+    float padding7;
+
     float3 atmosphericLightOuterSpaceIlluminance;
+    float padding8;
+
     float3 atmosphericLightDiskLuminance;
     float atmosphericLightDiskCosHalfApexAngle;
 
@@ -79,61 +96,100 @@ struct PerFrameShaderParameters
     float4 skyAtmosphereSkyViewLutSize;
 
     float2 skyAtmosphereAerialPerspectiveVolumeSize;
-    float2 padding2;
+    float2 padding9;
 
     float skyAtmosphereTransmittanceLutSampleCount;
     float skyAtmosphereMultipleScatteringLutSampleCount;
     float skyAtmosphereRayMarchingMinSampleCount;
     float skyAtmosphereRayMarchingMaxSampleCount;
+
     float skyAtmosphereBottomRadiusInKilometers;
     float skyAtmosphereTopRadiusInKilometers;
+    float padding19;
+    float padding20;
+
     float3 skyAtmosphereGroundAlbedo;
+    float padding21;
+
     float3 skyAtmosphereRayleighScattering;
+    float padding22;
+
     float skyAtmosphereRayleighDensityExpScale;
+    float padding23;
+    float padding24;
+    float padding25;
+
     float3 skyAtmosphereMieScattering;
+    float padding26;
+
     float3 skyAtmosphereMieAbsorption;
+    float padding27;
+
     float3 skyAtmosphereMieExtinction;
     float skyAtmosphereMiePhaseG;
+
     float skyAtmosphereMieDensityExpScale;
     float skyAtmosphereAbsorptionDensity0LayerWidth;
     float skyAtmosphereAbsorptionDensity0ConstantTerm;
     float skyAtmosphereAbsorptionDensity0LinearTerm;
+
     float skyAtmosphereAbsorptionDensity1ConstantTerm;
     float skyAtmosphereAbsorptionDensity1LinearTerm;
+    float padding17;
+    float padding18;
+
     float3 skyAtmosphereAbsorptionExtinction;
+    float padding16;
+
     float3 skyAtmosphereSkyLuminanceFactor;
+    float padding15;
+
     float3x3 skyAtmosphereSkyViewLutReferential;
 
     // TODO: move post processing settings to a separate struct
     uint motionBlurMaxSampleCount;
     float motionBlurIntensity;
     float motionBlurMaxVelocityLengthInPixels;
+    float padding10;
+
+    float autoExposureUseTargetExposure;
     float autoExposureExposureCompensation;
     float autoExposureMinExposureValue;
     float autoExposureMaxExposureValue;
+
     float autoExposureSpeedDarkToBright;
     float autoExposureSpeedBrightToDark;
     float autoExposureHistogramLowerPercentage;
     float autoExposureHistogramHigherPercentage;
+
     float autoExposureHistogramMinEV100;
     float autoExposureHistogramMaxEV100;
-    int autoExposureUseTargetExposure;
+    float padding11;
+    float padding12;
+
     float bloomIntensity;
     float bloomRadius;
     float chromaticAberrationIntensity;
     float chromaticAberrationOffset;
+
     float whiteBalance;
+    float vignetteIntensity;
+    float padding13;
+    float padding14;
+
     //float3 lensDirtScaleFactor;
     //float4 colorCorrectionSaturation;
     //float4 colorCorrectionContrast;
     //float4 colorCorrectionGamma;
     //float4 colorCorrectionGain;
     //float4 colorCorrectionOffset;
-    float vignetteIntensity;
+
+    //float paddingT[23];
 };
 
 #ifndef __cplusplus
-DECLARE_ALIASED_ARRAY_CONSTANT_BUFFER_CBV(PerFrameShaderParameters);
+//DECLARE_ALIASED_ARRAY_CONSTANT_BUFFER_CBV(PerFrameShaderParameters);
+DECLARE_ALIASED_ARRAY_STRUCTURED_BUFFER_SRV(PerFrameShaderParameters);
 #endif
 
 #ifdef __cplusplus

@@ -14,7 +14,8 @@ BIND_TEXTURE_2D_UAV(5, float4, OutputTexture);
 [numthreads(SUBSURFACE_SCATTERING_TILE_SIZE, SUBSURFACE_SCATTERING_TILE_SIZE, 1)]
 void SubsurfaceScatteringGatherTilesCS(uint3 DispatchThreadID : SV_DispatchThreadID, uint3 GroupID : SV_GroupID, uint GroupIndex : SV_GroupIndex)
 {
-    ConstantBuffer<PerFrameShaderParameters> frameShaderParameters = GetPerFrameShaderParameterBufferCBV();
+    StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
+    PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
     Texture2D sceneColorTexture = GetSceneColorTextureSRV();
     Texture2D sceneDepthTexture = GetSceneDepthTextureSRV();
     RWByteAddressBuffer tileCountBuffer = GetSubsurfaceScatteringTileCountBufferUAV();

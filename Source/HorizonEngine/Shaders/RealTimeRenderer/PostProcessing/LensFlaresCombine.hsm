@@ -24,7 +24,8 @@ float2 ComputeFisheyeUV(float2 uv, float f, float zoom)
 [shader("pixel")]
 void LensFlaresCombinePS(float4 position : SV_Position, out float3 outColor : SV_Target)
 {
-    ConstantBuffer<PerFrameShaderParameters> frameShaderParameters = GetPerFrameShaderParameterBufferCBV();
+    StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
+    PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
     Texture2D ghostTexture = GetLensFlaresGhostTextureSRV();
     Texture2D glareTexture = GetLensFlaresGlareTextureSRV();
     Texture2D gradientLUTTexture = GetLensFlaresGradiantLUTTextureSRV();

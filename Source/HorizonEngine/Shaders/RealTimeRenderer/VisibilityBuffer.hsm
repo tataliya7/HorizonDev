@@ -3,24 +3,26 @@
 #include "GPUScene.hsh"
 
 SHADER_CONSTANTS_STRUCT_BEGIN();
-SHADER_CONSTANTS_CONSTANT_BUFFER_CBV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferCBV);
+SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferSRV);
 SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_SRV(1, GeometryDataBufferSRV);
 SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_SRV(2, GeometryInstanceDataBufferSRV);
 SHADER_CONSTANTS_STRUCT_END();
 
-struct VisibilityBufferVextexShaderOutput
+struct VisibilityBufferVSOutput
 {
     float2 textureCoord0 : TEXCOORD0;
+	nointerpolation uint instanceID : TEXCOORD1;
 };
 
 [shader("vertex")]
 void VisibilityBufferVS(
     in uint vertexID : SV_VertexID,
     in uint instanceID : SV_InstanceID,
-    out float4 position : SV_Position,
-    out VisibilityBufferVextexShaderOutput output)
+    out VisibilityBufferVSOutput output,
+    out float4 position : SV_Position)
 {
-    ConstantBuffer<PerFrameShaderParameters> frameShaderParameters = ShaderConstants.GetPerFrameShaderParameterBufferCBV();
+    StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
+    PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
     ByteAddressBuffer geometryDataBuffer = ShaderConstants.GetGeometryDataBufferSRV();
     ByteAddressBuffer geometryInstanceDataBuffer = ShaderConstants.GetGeometryInstanceDataBufferSRV();
 
@@ -32,9 +34,10 @@ void VisibilityBufferVS(
     float3 worldSpaceVertexPosition = mul(instanceData.localToWorldMatrix, float4(vertexAttributes.position, 1.0f)).xyz;
     float4 clipSpaceVertexPosition = mul(frameShaderParameters.worldToClipMatrix, float4(worldSpaceVertexPosition, 1.0f));
 
-    position = clipSpaceVertexPosition;
-
     output.textureCoord0 = vertexAttributes.textureCoord0;
+    output.instanceID = instanceID;
+
+    position = clipSpaceVertexPosition;
 }
 
 // TODO: Turning on [earlydepthstencil] will cause alpha cutoff to work inproperly
@@ -42,9 +45,8 @@ void VisibilityBufferVS(
 
 [shader("pixel")]
 void VisibilityBufferPS(
-    in VisibilityBufferVextexShaderOutput vertexShaderOutput,
+    in VisibilityBufferVSOutput input,
     in float4 position : SV_Position,
-    in uint instanceID : SV_InstanceID,
     in uint primitiveID : SV_PrimitiveID,
     in bool isFrontFace : SV_IsFrontFace,
 #if !__spirv__
@@ -53,16 +55,18 @@ void VisibilityBufferPS(
     out uint2 vbuffer0 : SV_Target0,
     out float4 vbuffer1 : SV_Target1)
 {
-    ConstantBuffer<PerFrameShaderParameters> frameShaderParameters = ShaderConstants.GetPerFrameShaderParameterBufferCBV();
+    const float2 textureCoord0 = input.textureCoord0;
+    const uint instanceID = input.instanceID;
+
+    StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
+    PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
     ByteAddressBuffer geometryDataBuffer = ShaderConstants.GetGeometryDataBufferSRV();
     ByteAddressBuffer geometryInstanceDataBuffer = ShaderConstants.GetGeometryInstanceDataBufferSRV();
 
-    GPUSceneGeometryInstanceData instanceData = GetGPUSceneGeometryInstanceData(geometryInstanceDataBuffer, 0);
+    GPUSceneGeometryInstanceData instanceData = GetGPUSceneGeometryInstanceData(geometryInstanceDataBuffer, instanceID);
     GPUSceneGeometryData geometryData = GetGPUSceneGeometryData(geometryDataBuffer, instanceData.geometryID);
 
     float materialTextureMipLodBias = frameShaderParameters.materialTextureMipLodBias;
-
-    float2 textureCoord0 = vertexShaderOutput.textureCoord0;
 
 #if __spirv__
 #if 0

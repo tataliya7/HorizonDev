@@ -90,10 +90,14 @@ namespace Horizon
     {
         switch (queueType)
         {
-        case D3D12CommandQueueType::Direct:     return D3D12_COMMAND_LIST_TYPE_DIRECT;
-        case D3D12CommandQueueType::Compute:    return D3D12_COMMAND_LIST_TYPE_COMPUTE;
-        case D3D12CommandQueueType::Copy:       return D3D12_COMMAND_LIST_TYPE_COPY;
-        default: std::unreachable();          return D3D12_COMMAND_LIST_TYPE_NONE;
+        case D3D12CommandQueueType::Direct:
+            return D3D12_COMMAND_LIST_TYPE_DIRECT;
+        case D3D12CommandQueueType::Compute:
+            return D3D12_COMMAND_LIST_TYPE_COMPUTE;
+        case D3D12CommandQueueType::Copy:
+            return D3D12_COMMAND_LIST_TYPE_COPY;
+        default: std::unreachable();
+            return D3D12_COMMAND_LIST_TYPE_NONE;
         }
     }
 
@@ -111,11 +115,12 @@ namespace Horizon
 
     struct D3D12CommandList
     {
+        D3D12CommandQueueType queueType;
+
         Microsoft::WRL::ComPtr<ID3D12CommandList> commandList;
         Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> graphicsCommandList;
         Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList6> graphicsCommandList6;
         Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList7> graphicsCommandList7;
-        D3D12CommandQueueType queueType;
 
         ID3D12CommandList* GetID3D12CommandList()
         {
@@ -202,6 +207,7 @@ namespace Horizon
         Microsoft::WRL::ComPtr<ID3D12Resource> resource;
         Microsoft::WRL::ComPtr<D3D12MA::Allocation> allocation;
         RenderBackendBufferCreateFlags flags;
+        RenderBackendBufferDesc desc;
         D3D12_RESOURCE_DESC resourceDesc;
         D3D12_RESOURCE_STATES initialState;
         D3D12_GPU_VIRTUAL_ADDRESS gpuAddress;
@@ -597,9 +603,14 @@ namespace Horizon
             {
                 initialState = D3D12_RESOURCE_STATE_GENERIC_READ;
             }
+            //else if (EnumClassHasFlags(desc->flags, RenderBackendBufferCreateFlags::UniformBuffer))
+            //{
+            //    initialState = D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER;
+            //}
 
             assert(buffer->resource == nullptr);
             assert(buffer->allocation == nullptr);
+
             D3D12_CHECK(allocator->CreateResource(
                 &allocationDesc,
                 &resourceDesc,
@@ -608,7 +619,9 @@ namespace Horizon
                 &buffer->allocation,
                 IID_PPV_ARGS(&buffer->resource)));
             D3D12_CHECK(buffer->resource->SetName(UTF8ToUTF16(name).c_str()));
+
             buffer->debugName = name;
+            buffer->desc = *desc;
             buffer->resourceDesc = resourceDesc;
             buffer->initialState = initialState;
             buffer->gpuAddress = buffer->resource->GetGPUVirtualAddress();
@@ -661,18 +674,74 @@ namespace Horizon
                 }
             }
 
-            if (EnumClassHasFlags(desc->flags, RenderBackendBufferCreateFlags::UnorderedAccess))
+            if (EnumClassHasFlags(desc->flags, RenderBackendBufferCreateFlags::UniformBuffer))
             {
-                D3D12_BUFFER_UAV bufferUAV = {
-                    .FirstElement = 0,
-                    .NumElements = uint32(buffer->size / sizeof(uint32)),
-                    .StructureByteStride = 0,
-                    .CounterOffsetInBytes = 0,
-                    .Flags = D3D12_BUFFER_UAV_FLAG_RAW
+                D3D12_CONSTANT_BUFFER_VIEW_DESC cbcDesc =
+                {
+                    .BufferLocation = buffer->gpuAddress,
+                    .SizeInBytes = UINT(buffer->size),
                 };
 
-                D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = {
-                    .Format = DXGI_FORMAT_R32_TYPELESS,
+                buffer->descriptor = resourceDescriptorAllocator.Allocate();
+                device->CreateConstantBufferView(&cbcDesc, buffer->descriptor);
+
+                buffer->bindlessResourceDescriptorIndexCBV = AllocateResourceDescriptorIndex();
+                if (buffer->bindlessResourceDescriptorIndexCBV >= 0)
+                {
+                    assert(buffer->bindlessResourceDescriptorIndexCBV < D3D12_BINDLESS_MAX_NUM_RESOURCE_DESCRIPTOERS);
+                    D3D12_CPU_DESCRIPTOR_HANDLE rangeStart = resourceDescriptorHeap->cpuDescriptorHandle;
+                    rangeStart.ptr += buffer->bindlessResourceDescriptorIndexCBV * device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+                    device->CopyDescriptorsSimple(1, rangeStart, buffer->descriptor, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+                }
+            }
+            if (EnumClassHasFlags(desc->flags, RenderBackendBufferCreateFlags::ShaderResource))
+            {
+                bool isStructuredBuffer = EnumClassHasFlags(desc->flags, RenderBackendBufferCreateFlags::StructuredBuffer);
+
+                D3D12_BUFFER_SRV bufferSRV =
+                {
+                    .FirstElement = 0,
+                    .NumElements = isStructuredBuffer ? desc->elementCount : uint32(buffer->size / sizeof(uint32)),
+                    .StructureByteStride = isStructuredBuffer ? desc->elementSize : 0,
+                    .Flags = isStructuredBuffer ? D3D12_BUFFER_SRV_FLAG_NONE : D3D12_BUFFER_SRV_FLAG_RAW
+                };
+
+                D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc =
+                {
+                    .Format = isStructuredBuffer ? DXGI_FORMAT_UNKNOWN : DXGI_FORMAT_R32_TYPELESS,
+                    .ViewDimension = D3D12_SRV_DIMENSION_BUFFER,
+                    .Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING,
+                    .Buffer = bufferSRV
+                };
+
+                buffer->descriptor = resourceDescriptorAllocator.Allocate();
+                device->CreateShaderResourceView(buffer->GetID3D12Resource(), &srvDesc, buffer->descriptor);
+
+                buffer->bindlessResourceDescriptorIndexSRV = AllocateResourceDescriptorIndex();
+                if (buffer->bindlessResourceDescriptorIndexSRV >= 0)
+                {
+                    assert(buffer->bindlessResourceDescriptorIndexSRV < D3D12_BINDLESS_MAX_NUM_RESOURCE_DESCRIPTOERS);
+                    D3D12_CPU_DESCRIPTOR_HANDLE rangeStart = resourceDescriptorHeap->cpuDescriptorHandle;
+                    rangeStart.ptr += buffer->bindlessResourceDescriptorIndexSRV * device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+                    device->CopyDescriptorsSimple(1, rangeStart, buffer->descriptor, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+                }
+            }
+            if (EnumClassHasFlags(desc->flags, RenderBackendBufferCreateFlags::UnorderedAccess))
+            {
+                bool isStructuredBuffer = EnumClassHasFlags(desc->flags, RenderBackendBufferCreateFlags::StructuredBuffer);
+
+                D3D12_BUFFER_UAV bufferUAV =
+                {
+                    .FirstElement = 0,
+                    .NumElements = isStructuredBuffer ? desc->elementCount : uint32(buffer->size / sizeof(uint32)),
+                    .StructureByteStride = isStructuredBuffer ? desc->elementSize : 0,
+                    .CounterOffsetInBytes = 0,
+                    .Flags = isStructuredBuffer ? D3D12_BUFFER_UAV_FLAG_NONE : D3D12_BUFFER_UAV_FLAG_RAW
+                };
+
+                D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc =
+                {
+                    .Format = isStructuredBuffer ? DXGI_FORMAT_UNKNOWN : DXGI_FORMAT_R32_TYPELESS,
                     .ViewDimension = D3D12_UAV_DIMENSION_BUFFER,
                     .Buffer = bufferUAV
                 };
@@ -716,7 +785,8 @@ namespace Horizon
                 nullptr,
                 &buffer->allocation,
                 IID_PPV_ARGS(&buffer->resource)));
-            D3D12_CHECK(buffer->resource->SetName(UTF8ToUTF16(buffer->debugName).c_str()));
+            D3D12_CHECK(buffer->resource->SetName(UTF8ToUTF16(buffer->debugName).c_str()))
+
             buffer->gpuAddress = buffer->resource->GetGPUVirtualAddress();
             buffer->size = size;
             buffer->bindlessResourceDescriptorIndexCBV = -1;
@@ -742,18 +812,78 @@ namespace Horizon
                 buffer->mappedData = nullptr;
             }
 
-            if (EnumClassHasFlags(buffer->flags, RenderBackendBufferCreateFlags::UnorderedAccess))
+            // TODO:
+            RenderBackendBufferDesc* desc = &buffer->desc;
+            desc->elementCount = uint32(size / desc->elementSize);
+
+            if (EnumClassHasFlags(desc->flags, RenderBackendBufferCreateFlags::UniformBuffer))
             {
-                D3D12_BUFFER_UAV bufferUAV = {
-                    .FirstElement = 0,
-                    .NumElements = uint32(buffer->size / sizeof(uint32)),
-                    .StructureByteStride = 0,
-                    .CounterOffsetInBytes = 0,
-                    .Flags = D3D12_BUFFER_UAV_FLAG_RAW
+                D3D12_CONSTANT_BUFFER_VIEW_DESC cbcDesc =
+                {
+                    .BufferLocation = buffer->gpuAddress,
+                    .SizeInBytes = UINT(buffer->size),
                 };
 
-                D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = {
-                    .Format = DXGI_FORMAT_R32_TYPELESS,
+                buffer->descriptor = resourceDescriptorAllocator.Allocate();
+                device->CreateConstantBufferView(&cbcDesc, buffer->descriptor);
+
+                buffer->bindlessResourceDescriptorIndexCBV = AllocateResourceDescriptorIndex();
+                if (buffer->bindlessResourceDescriptorIndexCBV >= 0)
+                {
+                    assert(buffer->bindlessResourceDescriptorIndexCBV < D3D12_BINDLESS_MAX_NUM_RESOURCE_DESCRIPTOERS);
+                    D3D12_CPU_DESCRIPTOR_HANDLE rangeStart = resourceDescriptorHeap->cpuDescriptorHandle;
+                    rangeStart.ptr += buffer->bindlessResourceDescriptorIndexCBV * device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+                    device->CopyDescriptorsSimple(1, rangeStart, buffer->descriptor, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+                }
+            }
+            if (EnumClassHasFlags(desc->flags, RenderBackendBufferCreateFlags::ShaderResource))
+            {
+                bool isStructuredBuffer = EnumClassHasFlags(desc->flags, RenderBackendBufferCreateFlags::StructuredBuffer);
+
+                D3D12_BUFFER_SRV bufferSRV =
+                {
+                    .FirstElement = 0,
+                    .NumElements = isStructuredBuffer ? desc->elementCount : uint32(buffer->size / sizeof(uint32)),
+                    .StructureByteStride = isStructuredBuffer ? desc->elementSize : 0,
+                    .Flags = isStructuredBuffer ? D3D12_BUFFER_SRV_FLAG_NONE : D3D12_BUFFER_SRV_FLAG_RAW
+                };
+
+                D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc =
+                {
+                    .Format = isStructuredBuffer ? DXGI_FORMAT_UNKNOWN : DXGI_FORMAT_R32_TYPELESS,
+                    .ViewDimension = D3D12_SRV_DIMENSION_BUFFER,
+                    .Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING,
+                    .Buffer = bufferSRV
+                };
+
+                buffer->descriptor = resourceDescriptorAllocator.Allocate();
+                device->CreateShaderResourceView(buffer->GetID3D12Resource(), &srvDesc, buffer->descriptor);
+
+                buffer->bindlessResourceDescriptorIndexSRV = AllocateResourceDescriptorIndex();
+                if (buffer->bindlessResourceDescriptorIndexSRV >= 0)
+                {
+                    assert(buffer->bindlessResourceDescriptorIndexSRV < D3D12_BINDLESS_MAX_NUM_RESOURCE_DESCRIPTOERS);
+                    D3D12_CPU_DESCRIPTOR_HANDLE rangeStart = resourceDescriptorHeap->cpuDescriptorHandle;
+                    rangeStart.ptr += buffer->bindlessResourceDescriptorIndexSRV * device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+                    device->CopyDescriptorsSimple(1, rangeStart, buffer->descriptor, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+                }
+            }
+            if (EnumClassHasFlags(desc->flags, RenderBackendBufferCreateFlags::UnorderedAccess))
+            {
+                bool isStructuredBuffer = EnumClassHasFlags(desc->flags, RenderBackendBufferCreateFlags::StructuredBuffer);
+
+                D3D12_BUFFER_UAV bufferUAV =
+                {
+                    .FirstElement = 0,
+                    .NumElements = isStructuredBuffer ? desc->elementCount : uint32(buffer->size / sizeof(uint32)),
+                    .StructureByteStride = isStructuredBuffer ? desc->elementSize : 0,
+                    .CounterOffsetInBytes = 0,
+                    .Flags = isStructuredBuffer ? D3D12_BUFFER_UAV_FLAG_NONE : D3D12_BUFFER_UAV_FLAG_RAW
+                };
+
+                D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc =
+                {
+                    .Format = isStructuredBuffer ? DXGI_FORMAT_UNKNOWN : DXGI_FORMAT_R32_TYPELESS,
                     .ViewDimension = D3D12_UAV_DIMENSION_BUFFER,
                     .Buffer = bufferUAV
                 };
@@ -794,7 +924,7 @@ namespace Horizon
             D3D12Texture* texture = textures[index];
 
             D3D12_RESOURCE_DESC resourceDesc = {
-                .Dimension = GetD3D12ResourceDemension(desc->type),
+                .Dimension = GetD3D12ResourceDimension(desc->type),
                 .Alignment = 0,
                 .Width = desc->width,
                 .Height = desc->height,
@@ -817,7 +947,7 @@ namespace Horizon
                 .pPrivateData = nullptr,
             };
 
-            D3D12_RESOURCE_STATES resourceState = ConvertToD3D12ResourceState(desc->initialState);
+            D3D12_RESOURCE_STATES initialResourceState = ConvertToD3D12ResourceState(desc->initialState);
 
             D3D12_CLEAR_VALUE optimizedClearValue = {};
             optimizedClearValue.Color[0] = desc->clearValue.colorValue.float32[0];
@@ -832,7 +962,7 @@ namespace Horizon
             D3D12_CHECK(allocator->CreateResource(
                 &allocationDesc,
                 &resourceDesc,
-                resourceState,
+                initialResourceState,
                 useClearValue ? &optimizedClearValue : nullptr,
                 &texture->allocation,
                 IID_PPV_ARGS(&texture->resource)));
@@ -1058,7 +1188,7 @@ namespace Horizon
                 D3D12_RENDER_TARGET_VIEW_DESC rtvDesc = {};
                 rtvDesc.Format = texture->format;
 
-                //texture->renderTargetViews.resize(texture->mipLevels * texture->arraySize);
+                texture->renderTargetViews.resize(texture->mipLevels);
                 for (uint32 mipSlice = 0; mipSlice < texture->mipLevels; mipSlice++)
                 {
                     //for (uint32 arraySlice = 0; arraySlice < texture->arraySize; arraySlice++)
@@ -1469,7 +1599,7 @@ namespace Horizon
 
             D3D12ComputePipelineState* newComputePipelineState = new D3D12ComputePipelineState();
 
-            D3D12_COMPUTE_PIPELINE_STATE_DESC desc = {
+            D3D12_COMPUTE_PIPELINE_STATE_DESC computePipelineStateDesc = {
                 .pRootSignature = rootSignature.Get(),
                 .CS = shader->bytecode,
                 .NodeMask = mask.Get(),
@@ -1477,7 +1607,7 @@ namespace Horizon
                 .Flags = D3D12_PIPELINE_STATE_FLAG_NONE
             };
 
-            D3D12_CHECK(device->CreateComputePipelineState(&desc, IID_PPV_ARGS(&newComputePipelineState->state)));
+            D3D12_CHECK(device->CreateComputePipelineState(&computePipelineStateDesc, IID_PPV_ARGS(&newComputePipelineState->state)));
 
             computePipelineStateMap.emplace(pipelineStateHash, newComputePipelineState);
             return computePipelineStateMap[pipelineStateHash];
@@ -2042,8 +2172,8 @@ namespace Horizon
 
     bool D3D12RenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandCopyBuffer& command)
     {
-        const auto& srcBuffer = device->GetBuffer(command.srcBuffer);
-        const auto& dstBuffer = device->GetBuffer(command.dstBuffer);
+        D3D12Buffer* srcBuffer = device->GetBuffer(command.srcBuffer);
+        D3D12Buffer* dstBuffer = device->GetBuffer(command.dstBuffer);
 
         commandList->GetID3D12GraphicsCommandList6()->CopyBufferRegion(dstBuffer->GetID3D12Resource(), command.dstOffset, srcBuffer->GetID3D12Resource(), command.srcOffset, command.bytes);
         return true;
@@ -2051,8 +2181,8 @@ namespace Horizon
 
     bool D3D12RenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandCopyTexture& command)
     {
-        const auto& srcTexture = device->GetTexture(command.srcTexture);
-        const auto& dstTexture = device->GetTexture(command.dstTexture);
+        D3D12Texture* srcTexture = device->GetTexture(command.srcTexture);
+        D3D12Texture* dstTexture = device->GetTexture(command.dstTexture);
 
         D3D12_TEXTURE_COPY_LOCATION dstLocation = {
             .pResource = dstTexture->GetID3D12Resource(),
@@ -2091,22 +2221,48 @@ namespace Horizon
 
     bool D3D12RenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandClearTextureUAV& command)
     {
-        const auto& texture = device->GetTexture(command.uav.texture);
+        D3D12Texture* texture = device->GetTexture(command.uav.texture);
 
-        const FLOAT clearValue[4] = {
-            command.clearValue.colorValue.float32[0],
-            command.clearValue.colorValue.float32[1],
-            command.clearValue.colorValue.float32[2],
-            command.clearValue.colorValue.float32[3]
+        const UINT clearValue[4] =
+        {
+            command.clearValue.colorValue.uint32[0],
+            command.clearValue.colorValue.uint32[1],
+            command.clearValue.colorValue.uint32[2],
+            command.clearValue.colorValue.uint32[3]
         };
 
+    if (!command.clearValue.test)
+    {
         D3D12UnorderedAccessView* uav = texture->GetUnorderedAccessView(command.uav.mipLevel);
 
         D3D12_GPU_DESCRIPTOR_HANDLE viewGPUHandle = device->resourceDescriptorHeap->gpuDescriptorHandle;
         viewGPUHandle.ptr += uav->bindlessIndex * device->device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
         D3D12_CPU_DESCRIPTOR_HANDLE viewCPUHandle = uav->descriptor;
 
-        commandList->GetID3D12GraphicsCommandList()->ClearUnorderedAccessViewFloat(viewGPUHandle, viewCPUHandle, texture->GetID3D12Resource(), clearValue, 0, nullptr);
+        commandList->GetID3D12GraphicsCommandList()->ClearUnorderedAccessViewUint(viewGPUHandle, viewCPUHandle, texture->GetID3D12Resource(), clearValue, 0, nullptr);
+    }
+    else
+    {
+        const FLOAT clearRGBA[4] =
+        {
+            command.clearValue.colorValue.float32[0],
+            command.clearValue.colorValue.float32[1],
+            command.clearValue.colorValue.float32[2],
+            command.clearValue.colorValue.float32[3]
+        };
+
+        D3D12RenderTargetView* rtv = texture->GetRenderTargetView(0);
+        D3D12_CPU_DESCRIPTOR_HANDLE viewCPUHandle = rtv->descriptor;
+        D3D12_RECT rect =
+        {
+            .left = 0,
+            .top = 0,
+            .right = LONG(texture->width),
+            .bottom = LONG(texture->height)
+        };
+        commandList->GetID3D12GraphicsCommandList()->ClearRenderTargetView(viewCPUHandle, clearRGBA, 1, &rect);
+    }
+
         return true;
     }
 
@@ -2122,14 +2278,17 @@ namespace Horizon
         {
             ID3D12Resource* resource = nullptr;
             D3D12_DISCARD_REGION region = {};
+
+            std::string debug;
         };
         std::vector<D3D12DiscardResourceDesc> resourcesToDiscard;
 
         std::vector<D3D12_RESOURCE_BARRIER> barriers;
         for (uint32 i = 0; i < command.transitionCount; i++)
         {
-            const auto& transition = command.transitions[i];
+            const RenderBackendBarrier& transition = command.transitions[i];
             assert(transition.stateBefore != transition.stateAfter);
+
 
             switch (transition.type)
             {
@@ -2139,18 +2298,27 @@ namespace Horizon
                 uint32 firstLevel  = transition.textureRange.firstLevel;
                 uint32 firstLayer  = transition.textureRange.firstLayer;
                 uint32 planeSlice  = 0;
-                uint32 mipLevels = (transition.textureRange.mipLevels == RenderBackendTextureSubresourceRange::RemainingMipLevels) ? (texture->mipLevels - firstLevel) : (transition.textureRange.mipLevels);
+                uint32 mipLevels   = (transition.textureRange.mipLevels == RenderBackendTextureSubresourceRange::RemainingMipLevels) ? (texture->mipLevels - firstLevel) : (transition.textureRange.mipLevels);
                 uint32 arraySlices = (transition.textureRange.arrayLayers == RenderBackendTextureSubresourceRange::RemainingArrayLayers) ? (texture->arraySize - firstLayer) : (transition.textureRange.arrayLayers);
+
+                //printf("Processing Texture State Transition: %s, initial state: %d, state before: %d, state after: %d\n", texture->debugName.c_str(), texture->initialState, transition.stateBefore, transition.stateAfter);
 
                 if (transition.textureRange.IsAll())
                 {
-                    auto& barrier = barriers.emplace_back();
+                    D3D12_RESOURCE_BARRIER barrier = {};
                     barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
                     barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
                     barrier.Transition.pResource = texture->GetID3D12Resource();
                     barrier.Transition.StateBefore = (transition.stateBefore != RenderBackendResourceState::Undefined) ? ConvertToD3D12ResourceState(transition.stateBefore) : ConvertToD3D12ResourceState(texture->initialState);
                     barrier.Transition.StateAfter = ConvertToD3D12ResourceState(transition.stateAfter);
                     barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+
+                    // Before and after states must be different.
+                    // TODO: better way?
+                    if (barrier.Transition.StateBefore != barrier.Transition.StateAfter)
+                    {
+                        barriers.emplace_back(barrier);
+                    }
                 }
                 else
                 {
@@ -2158,13 +2326,20 @@ namespace Horizon
                     {
                         for (uint32 arraySlice = firstLayer; arraySlice < firstLayer + arraySlices; arraySlice++)
                         {
-                            auto& barrier = barriers.emplace_back();
+                            D3D12_RESOURCE_BARRIER barrier = {};
                             barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
                             barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
                             barrier.Transition.pResource = texture->GetID3D12Resource();
                             barrier.Transition.StateBefore = (transition.stateBefore != RenderBackendResourceState::Undefined) ? ConvertToD3D12ResourceState(transition.stateBefore) : ConvertToD3D12ResourceState(texture->initialState);
                             barrier.Transition.StateAfter = ConvertToD3D12ResourceState(transition.stateAfter);
                             barrier.Transition.Subresource = D3D12CalcSubresource(mipSlice, arraySlice, planeSlice, texture->mipLevels, texture->arraySize);
+
+                            // Before and after states must be different.
+                            // TODO: better way?
+                            if (barrier.Transition.StateBefore != barrier.Transition.StateAfter)
+                            {
+                                barriers.emplace_back(barrier);
+                            }
                         }
                     }
                 }
@@ -2176,6 +2351,8 @@ namespace Horizon
                     discard.region.NumSubresources = GetNumSubresources(device->GetID3D12Device(), mipLevels, arraySlices, texture->format);
                     discard.region.NumRects = 0;
                     discard.region.pRects = nullptr;
+
+                    discard.debug = texture->debugName;
                 }
             } break;
             case RenderBackendBarrier::Type::Buffer:
@@ -2202,10 +2379,12 @@ namespace Horizon
             commandList->GetID3D12GraphicsCommandList6()->ResourceBarrier((UINT)barriers.size(), barriers.data());
         }
 
+        // https://www.asawicki.info/news_1724_initializing_dx12_textures_after_allocation_and_aliasing
         if (!resourcesToDiscard.empty())
         {
-            for (auto& discard : resourcesToDiscard)
+            for (D3D12DiscardResourceDesc& discard : resourcesToDiscard)
             {
+                //printf("Discard: %s\n", discard.debug.c_str());
                 commandList->GetID3D12GraphicsCommandList6()->DiscardResource(discard.resource, (discard.region.NumSubresources > 0) ? &discard.region : nullptr);
             }
         }
@@ -2323,7 +2502,8 @@ namespace Horizon
 
     bool D3D12RenderBackendCommandListContext::PrepareForDispatch(RenderBackendShaderHandle computeShader, const RenderBackendShaderConstants& shaderConstants)
     {
-        D3D12ComputePipelineState* pipelineState = device->FindOrCreateComputePipelineState(device->GetShader(computeShader));
+        D3D12Shader* d3d12Shader = device->GetShader(computeShader);
+        D3D12ComputePipelineState* pipelineState = device->FindOrCreateComputePipelineState(d3d12Shader);
         if (pipelineState->GetID3D12PipelineState() != activeComputePipeline)
         {
             ID3D12RootSignature* rootSignature = device->GetID3D12RootSignature();
@@ -2334,13 +2514,12 @@ namespace Horizon
             activeComputePipeline = pipelineState->GetID3D12PipelineState();
         }
 
-        uint32 pushConstantsSize = RenderBackendPushConstantsBytes;
-        if (pushConstantsSize > 0)
+        if (RenderBackendPushConstantsBytes > 0)
         {
             const void* pushConstantsData = &shaderConstants.data;
             commandList->GetID3D12GraphicsCommandList6()->SetComputeRoot32BitConstants(
                 0, // TODO
-                pushConstantsSize / 4,
+                RenderBackendPushConstantsBytes / 4,
                 pushConstantsData,
                 0);
         }
@@ -2515,14 +2694,9 @@ namespace Horizon
             activeComputePipeline = pipelineState->GetID3D12PipelineState();
         }
 
-        D3D12Buffer* ib = nullptr;
-        uint32 ibi = 999999;
         if (indexBuffer)
         {
-            ib = device->GetBuffer(indexBuffer);
-            ibi = device->GetRenderBackendHandleRepresentation(indexBuffer.GetIndex());
-
-            const auto& buffer = device->GetBuffer(indexBuffer);
+            const D3D12Buffer* buffer = device->GetBuffer(indexBuffer);
             D3D12_INDEX_BUFFER_VIEW indexBufferView = {
                 .BufferLocation = buffer->gpuAddress,
                 .SizeInBytes = (UINT)buffer->size,
@@ -2531,13 +2705,12 @@ namespace Horizon
             commandList->GetID3D12GraphicsCommandList6()->IASetIndexBuffer(&indexBufferView);
         }
 
-        uint32 pushConstantsSize = RenderBackendPushConstantsBytes;
-        if (pushConstantsSize > 0)
+        if (RenderBackendPushConstantsBytes > 0)
         {
             const void* pushConstantsData = &shaderConstants.data;
             commandList->GetID3D12GraphicsCommandList6()->SetGraphicsRoot32BitConstants(
                 0, // TODO
-                pushConstantsSize / 4,
+                RenderBackendPushConstantsBytes / 4,
                 pushConstantsData,
                 0);
         }
@@ -2645,8 +2818,30 @@ namespace Horizon
 
     bool D3D12RenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandDispatchSuperSampling& command)
     {
+        D3D12Texture* outputTexture = device->GetTexture(command.output);
+        D3D12Texture* colorTexture = device->GetTexture(command.color);
+        D3D12Texture* depthTexture = device->GetTexture(command.depth);
+        D3D12Texture* motionVectorTexture = device->GetTexture(command.motionVectors);
+        D3D12Texture* exposureTexture = device->GetTexture(command.exposure);
+
+        auto GetRenderBackendTextureResourceD3D12 = [](D3D12Texture* texture)
+        {
+            RenderBackendTextureResource textureResource = {};
+            textureResource.texture = texture->resource.Get();
+            return textureResource;
+        };
+
+        RenderBackendTextureResource output = GetRenderBackendTextureResourceD3D12(outputTexture);
+        RenderBackendTextureResource color = GetRenderBackendTextureResourceD3D12(colorTexture);
+        RenderBackendTextureResource depth = GetRenderBackendTextureResourceD3D12(depthTexture);
+        RenderBackendTextureResource motionVectors = GetRenderBackendTextureResourceD3D12(motionVectorTexture);
+        RenderBackendTextureResource exposure = GetRenderBackendTextureResourceD3D12(exposureTexture);
+
+        bool succeed = command.callback(static_cast<void*>(commandList->commandList.Get()), command.context, output, color, depth, motionVectors, exposure);
+
         // TODO: restore pipeline state
-        ID3D12DescriptorHeap* descriptorHeaps[] = {
+        ID3D12DescriptorHeap* descriptorHeaps[] =
+        {
             device->resourceDescriptorHeap->GetID3D12DescriptorHeap(),
             device->samplerDescriptorHeap->GetID3D12DescriptorHeap(),
         };
@@ -3052,16 +3247,16 @@ namespace Horizon
         D3D12Device* device = devices[0];
         D3D12Buffer* buffer = device->GetBuffer(handle);
 
-        //buffer->resource->Map(0, nullptr, data);
-        *data = buffer->mappedData;
+        buffer->resource->Map(0, nullptr, data);
+        //*data = buffer->mappedData;
     }
 
     void D3D12RenderBackend::UnmapBuffer(RenderBackendBufferHandle handle)
     {
-        //D3D12Device* device = devices[0];
-        //D3D12Buffer* buffer = device->GetBuffer(handle);
+        D3D12Device* device = devices[0];
+        D3D12Buffer* buffer = device->GetBuffer(handle);
 
-        //buffer->resource->Unmap(0, nullptr);
+        buffer->resource->Unmap(0, nullptr);
     }
 
     void D3D12RenderBackend::DestroyBuffer(RenderBackendBufferHandle handle)
@@ -3580,7 +3775,7 @@ namespace Horizon
 
         resourceDescriptorAllocator.Init(this, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 8192);
         samplerDescriptorAllocator.Init(this, D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER, 256);
-        rtvDescriptorAllocator.Init(this, D3D12_DESCRIPTOR_HEAP_TYPE_RTV, 512);
+        rtvDescriptorAllocator.Init(this, D3D12_DESCRIPTOR_HEAP_TYPE_RTV, 1024);
         dsvDescriptorAllocator.Init(this, D3D12_DESCRIPTOR_HEAP_TYPE_DSV, 128);
 
         // Resource descriptor heap
@@ -3639,9 +3834,9 @@ namespace Horizon
         rootSignatureFlags |= D3D12_ROOT_SIGNATURE_FLAG_CBV_SRV_UAV_HEAP_DIRECTLY_INDEXED;
         rootSignatureFlags |= D3D12_ROOT_SIGNATURE_FLAG_SAMPLER_HEAP_DIRECTLY_INDEXED;
 
-        D3D12_STATIC_SAMPLER_DESC staticSamplers[5] = {};
+        D3D12_STATIC_SAMPLER_DESC staticSamplers[8] = {};
         {
-            RenderBackendSamplerDesc desc = RenderBackendSamplerDesc::CreateLinearClamp(0.0f, -FLT_MAX, FLT_MAX, 1);
+            RenderBackendSamplerDesc desc = RenderBackendSamplerDesc::CreatePointWarp(0.0f, -FLT_MAX, FLT_MAX, 1);
             staticSamplers[0].Filter = ConvertToD3D12Filter(desc.filter);
             staticSamplers[0].AddressU = ConvertToD3D12TextureAddressMode(desc.addressModeU);
             staticSamplers[0].AddressV = ConvertToD3D12TextureAddressMode(desc.addressModeV);
@@ -3657,7 +3852,7 @@ namespace Horizon
             staticSamplers[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
         }
         {
-            RenderBackendSamplerDesc desc = RenderBackendSamplerDesc::CreateLinearWarp(0.0f, -FLT_MAX, FLT_MAX, 1);
+            RenderBackendSamplerDesc desc = RenderBackendSamplerDesc::CreatePointClamp(0.0f, -FLT_MAX, FLT_MAX, 1);
             staticSamplers[1].Filter = ConvertToD3D12Filter(desc.filter);
             staticSamplers[1].AddressU = ConvertToD3D12TextureAddressMode(desc.addressModeU);
             staticSamplers[1].AddressV = ConvertToD3D12TextureAddressMode(desc.addressModeV);
@@ -3673,7 +3868,7 @@ namespace Horizon
             staticSamplers[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
         }
         {
-            RenderBackendSamplerDesc desc = RenderBackendSamplerDesc::CreatePointClamp(0.0f, -FLT_MAX, FLT_MAX, 1);
+            RenderBackendSamplerDesc desc = RenderBackendSamplerDesc::CreatePointBorder(0.0f, -FLT_MAX, FLT_MAX, 1);
             staticSamplers[2].Filter = ConvertToD3D12Filter(desc.filter);
             staticSamplers[2].AddressU = ConvertToD3D12TextureAddressMode(desc.addressModeU);
             staticSamplers[2].AddressV = ConvertToD3D12TextureAddressMode(desc.addressModeV);
@@ -3689,7 +3884,7 @@ namespace Horizon
             staticSamplers[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
         }
         {
-            RenderBackendSamplerDesc desc = RenderBackendSamplerDesc::CreateComparisonLinearClamp(0.0f, -FLT_MAX, FLT_MAX, 0, RenderBackendCompareOp::Greater);
+            RenderBackendSamplerDesc desc = RenderBackendSamplerDesc::CreateLinearWarp(0.0f, -FLT_MAX, FLT_MAX, 1);
             staticSamplers[3].Filter = ConvertToD3D12Filter(desc.filter);
             staticSamplers[3].AddressU = ConvertToD3D12TextureAddressMode(desc.addressModeU);
             staticSamplers[3].AddressV = ConvertToD3D12TextureAddressMode(desc.addressModeV);
@@ -3705,7 +3900,7 @@ namespace Horizon
             staticSamplers[3].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
         }
         {
-            RenderBackendSamplerDesc desc = RenderBackendSamplerDesc::CreateComparisonLinearClamp(0.0f, -FLT_MAX, FLT_MAX, 1, RenderBackendCompareOp::Less);
+            RenderBackendSamplerDesc desc = RenderBackendSamplerDesc::CreateLinearClamp(0.0f, -FLT_MAX, FLT_MAX, 1);
             staticSamplers[4].Filter = ConvertToD3D12Filter(desc.filter);
             staticSamplers[4].AddressU = ConvertToD3D12TextureAddressMode(desc.addressModeU);
             staticSamplers[4].AddressV = ConvertToD3D12TextureAddressMode(desc.addressModeV);
@@ -3719,6 +3914,54 @@ namespace Horizon
             staticSamplers[4].ShaderRegister = 104;
             staticSamplers[4].RegisterSpace = 0;
             staticSamplers[4].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+        }
+        {
+            RenderBackendSamplerDesc desc = RenderBackendSamplerDesc::CreateLinearBorder(0.0f, -FLT_MAX, FLT_MAX, 1);
+            staticSamplers[5].Filter = ConvertToD3D12Filter(desc.filter);
+            staticSamplers[5].AddressU = ConvertToD3D12TextureAddressMode(desc.addressModeU);
+            staticSamplers[5].AddressV = ConvertToD3D12TextureAddressMode(desc.addressModeV);
+            staticSamplers[5].AddressW = ConvertToD3D12TextureAddressMode(desc.addressModeW);
+            staticSamplers[5].MipLODBias = desc.mipLodBias;
+            staticSamplers[5].MaxAnisotropy = desc.maxAnisotropy;
+            staticSamplers[5].ComparisonFunc = ConvertToD3D12ComparisonFunc(desc.compareOp);
+            staticSamplers[5].BorderColor = D3D12_STATIC_BORDER_COLOR_TRANSPARENT_BLACK;
+            staticSamplers[5].MinLOD = desc.minLod;
+            staticSamplers[5].MaxLOD = desc.maxLod;
+            staticSamplers[5].ShaderRegister = 105;
+            staticSamplers[5].RegisterSpace = 0;
+            staticSamplers[5].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+        }
+        {
+            RenderBackendSamplerDesc desc = RenderBackendSamplerDesc::CreateComparisonLinearClamp(0.0f, -FLT_MAX, FLT_MAX, 0, RenderBackendCompareOp::Greater);
+            staticSamplers[6].Filter = ConvertToD3D12Filter(desc.filter);
+            staticSamplers[6].AddressU = ConvertToD3D12TextureAddressMode(desc.addressModeU);
+            staticSamplers[6].AddressV = ConvertToD3D12TextureAddressMode(desc.addressModeV);
+            staticSamplers[6].AddressW = ConvertToD3D12TextureAddressMode(desc.addressModeW);
+            staticSamplers[6].MipLODBias = desc.mipLodBias;
+            staticSamplers[6].MaxAnisotropy = desc.maxAnisotropy;
+            staticSamplers[6].ComparisonFunc = ConvertToD3D12ComparisonFunc(desc.compareOp);
+            staticSamplers[6].BorderColor = D3D12_STATIC_BORDER_COLOR_TRANSPARENT_BLACK;
+            staticSamplers[6].MinLOD = desc.minLod;
+            staticSamplers[6].MaxLOD = desc.maxLod;
+            staticSamplers[6].ShaderRegister = 106;
+            staticSamplers[6].RegisterSpace = 0;
+            staticSamplers[6].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+        }
+        {
+            RenderBackendSamplerDesc desc = RenderBackendSamplerDesc::CreateComparisonLinearClamp(0.0f, -FLT_MAX, FLT_MAX, 1, RenderBackendCompareOp::Less);
+            staticSamplers[7].Filter = ConvertToD3D12Filter(desc.filter);
+            staticSamplers[7].AddressU = ConvertToD3D12TextureAddressMode(desc.addressModeU);
+            staticSamplers[7].AddressV = ConvertToD3D12TextureAddressMode(desc.addressModeV);
+            staticSamplers[7].AddressW = ConvertToD3D12TextureAddressMode(desc.addressModeW);
+            staticSamplers[7].MipLODBias = desc.mipLodBias;
+            staticSamplers[7].MaxAnisotropy = desc.maxAnisotropy;
+            staticSamplers[7].ComparisonFunc = ConvertToD3D12ComparisonFunc(desc.compareOp);
+            staticSamplers[7].BorderColor = D3D12_STATIC_BORDER_COLOR_TRANSPARENT_BLACK;
+            staticSamplers[7].MinLOD = desc.minLod;
+            staticSamplers[7].MaxLOD = desc.maxLod;
+            staticSamplers[7].ShaderRegister = 107;
+            staticSamplers[7].RegisterSpace = 0;
+            staticSamplers[7].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
         }
 
         CD3DX12_VERSIONED_ROOT_SIGNATURE_DESC versionedRootSignatureDesc;
