@@ -112,7 +112,7 @@ void SkyAtmosphereSkyViewLutCS(uint3 DispatchThreadID : SV_DispatchThreadID)
         return;
     }
 
-    float3x3 localReferencial = frameShaderParameters.skyAtmosphereSkyViewLutReferential;
+    float3x3 localReferencial = (float3x3)frameShaderParameters.skyAtmosphereSkyViewLutReferential;
     float3 atmosphericLightDirection = frameShaderParameters.atmosphericLightDirection;
 
     float3 lightDirection = mul(localReferencial, atmosphericLightDirection);

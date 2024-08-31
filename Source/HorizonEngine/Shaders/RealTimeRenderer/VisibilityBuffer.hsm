@@ -47,7 +47,7 @@ void VisibilityBufferVS(
 void VisibilityBufferPS(
     in VisibilityBufferVSOutput input,
     in float4 position : SV_Position,
-    in uint primitiveID : SV_PrimitiveID,
+    in uint primitiveID : SV_PrimitiveID, // TODO: SV_PrimitiveID requires SPIR-V Capability Geometry
     in bool isFrontFace : SV_IsFrontFace,
 #if !__spirv__
     in float3 perspectiveCorrectBarycentrics : SV_Barycentrics,

@@ -28,11 +28,11 @@ project "imgui"
 
     links {
         thirdpartypath("glfw/glfw-3.3.9.bin.WIN64/lib-vc2022/glfw3.lib"),
-        thirdpartypath("vulkan/1.3.280.0/lib/vulkan-1.lib"),
+        thirdpartypath("vulkan/1.3.290.0/Lib/vulkan-1.lib"),
     }
 
     includedirs {
         thirdpartypath("glfw/glfw-3.3.9.bin.WIN64/include"),
-        thirdpartypath("vulkan/1.3.280.0/include"),
+        thirdpartypath("vulkan/1.3.290.0/Include"),
         thirdpartypath("imgui/imgui-1.89.9-docking"),
     }

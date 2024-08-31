@@ -144,7 +144,7 @@ struct PerFrameShaderParameters
     float3 skyAtmosphereSkyLuminanceFactor;
     float padding15;
 
-    float3x3 skyAtmosphereSkyViewLutReferential;
+    float4x4 skyAtmosphereSkyViewLutReferential;
 
     // TODO: move post processing settings to a separate struct
     uint motionBlurMaxSampleCount;
@@ -189,13 +189,15 @@ struct PerFrameShaderParameters
     //float4 colorCorrectionGamma;
     //float4 colorCorrectionGain;
     //float4 colorCorrectionOffset;
-
-    //float paddingT[23];
 };
 
 #ifndef __cplusplus
 //DECLARE_ALIASED_ARRAY_CONSTANT_BUFFER_CBV(PerFrameShaderParameters);
 DECLARE_ALIASED_ARRAY_STRUCTURED_BUFFER_SRV(PerFrameShaderParameters);
+#endif
+
+#ifdef __cplusplus
+static_assert(sizeof(PerFrameShaderParameters) % 16 == 0);
 #endif
 
 #ifdef __cplusplus

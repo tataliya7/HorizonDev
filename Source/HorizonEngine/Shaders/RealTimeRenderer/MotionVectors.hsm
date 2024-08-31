@@ -11,7 +11,7 @@ SHADER_CONSTANTS_TEXTURE_2D_SRV(4, uint2, VisibilityBufferSRV);
 SHADER_CONSTANTS_TEXTURE_2D_UAV(5, float2, MotionVectorTextureUAV);
 SHADER_CONSTANTS_STRUCT_END();
 
-inline float3 BarycentricInterpolation(in float3 a0, in float3 a1, in float3 a2, in float3 bary)
+float3 BarycentricInterpolation(in float3 a0, in float3 a1, in float3 a2, in float3 bary)
 {
     return mad(a0, bary.z, mad(a1, bary.x, a2 * bary.y));
 }

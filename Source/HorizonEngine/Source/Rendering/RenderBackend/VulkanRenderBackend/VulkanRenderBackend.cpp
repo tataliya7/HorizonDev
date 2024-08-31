@@ -153,6 +153,7 @@ namespace Horizon
         VkPhysicalDeviceFragmentShaderBarycentricFeaturesKHR fragmentShaderBarycentricFeatures;
         VkPhysicalDeviceMultiviewFeatures multiviewFeatures;
         VkPhysicalDeviceShaderDemoteToHelperInvocationFeatures shaderDemoteToHelperInvocationFeatures;
+        VkPhysicalDeviceScalarBlockLayoutFeaturesEXT scalarBlockLayoutFeaturesEXT;
         VkPhysicalDeviceMeshShaderFeaturesEXT meshShaderFeaturesEXT;
 
         void* featuresEntry;
@@ -1011,6 +1012,10 @@ namespace Horizon
             };
             physicalDevice.fragmentShaderBarycentricFeatures = {
                 .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADER_BARYCENTRIC_FEATURES_KHR,
+                .pNext = &physicalDevice.scalarBlockLayoutFeaturesEXT,
+            };
+            physicalDevice.scalarBlockLayoutFeaturesEXT = {
+                .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SCALAR_BLOCK_LAYOUT_FEATURES_EXT,
                 .pNext = &physicalDevice.multiviewFeatures,
             };
             physicalDevice.multiviewFeatures = {
@@ -1741,6 +1746,7 @@ namespace Horizon
         buffer.allocationFlags = GetVmaAllocationCreateFlags(desc->flags);
         buffer.memeryUsage = GetVmaMemoryUsage(desc->flags);
         buffer.createMapped = (buffer.allocationFlags & VMA_ALLOCATION_CREATE_MAPPED_BIT) ? true : false;
+        buffer.createMapped = false;
         buffer.indexType = VK_INDEX_TYPE_NONE_KHR;
         if (buffer.usageFlags & VK_BUFFER_USAGE_INDEX_BUFFER_BIT)
         {
@@ -1791,7 +1797,9 @@ namespace Horizon
             uint32 bufferIndex = CreateBuffer(&uploadBufferDesc, nullptr, "UploadBuffer");
             VulkanBuffer& uploadBuffer = buffers[bufferIndex];
 
+            VK_CHECK(vmaMapMemory(vmaAllocator, uploadBuffer.allocation, &uploadBuffer.mappedData));
             memcpy(uploadBuffer.mappedData, data, bufferSize);
+            vmaUnmapMemory(vmaAllocator, uploadBuffer.allocation);
 
             VkCommandBuffer commandBuffer; VkCommandPool pool;
             VulkanHelper::CreateTemporaryCommandBuffer(handle, GetQueueFamilyIndex(RenderBackendQueueFamily::Graphics), pool, commandBuffer);
@@ -3917,7 +3925,7 @@ namespace Horizon
             requiredDeviceExtensions.push_back(VK_KHR_MULTIVIEW_EXTENSION_NAME);
             requiredDeviceExtensions.push_back(VK_KHR_PRESENT_WAIT_EXTENSION_NAME);
             requiredDeviceExtensions.push_back(VK_KHR_PRESENT_ID_EXTENSION_NAME);
-            requiredDeviceExtensions.push_back(VK_KHR_PRESENT_ID_EXTENSION_NAME);
+            //requiredDeviceExtensions.push_back(VK_KHR_SHADER_RELAXED_EXTENDED_INSTRUCTION_EXTENSION_NAME);
             requiredDeviceExtensions.push_back(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
             requiredDeviceExtensions.push_back(VK_EXT_SCALAR_BLOCK_LAYOUT_EXTENSION_NAME);
             requiredDeviceExtensions.push_back(VK_EXT_PIPELINE_CREATION_FEEDBACK_EXTENSION_NAME);
@@ -4857,7 +4865,8 @@ namespace Horizon
 
         if (!bufferBarriers.empty() || !imageBarriers.empty())
         {
-            VkDependencyInfo dependency = {
+            VkDependencyInfo dependency = 
+            {
                 .sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
                 .bufferMemoryBarrierCount = (uint32)bufferBarriers.size(),
                 .pBufferMemoryBarriers = bufferBarriers.data(),
@@ -5278,7 +5287,7 @@ namespace Horizon
 #if !HE_ENBALE_STREAMLINE_SUPPORT
         if (device->backend->enableValidationLayers)
         {
-            VkDebugUtilsLabelEXT lableInfo = 
+            VkDebugUtilsLabelEXT lableInfo =
             {
                 .sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT,
                 .pLabelName = command.labelName,

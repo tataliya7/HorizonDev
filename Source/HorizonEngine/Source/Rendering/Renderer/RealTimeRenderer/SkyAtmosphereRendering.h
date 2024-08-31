@@ -49,7 +49,7 @@ namespace Horizon
 
     struct SkyAtmosphereViewRelatedParameters
     {
-        Matrix3x3 skyViewLutReferential;
+        Matrix4x4 skyViewLutReferential;
     };
 
     void SetupSkyAtmosphereViewRelatedParameters(SkyAtmosphereViewRelatedParameters& outParameters, const SkyAtmosphereRenderObject& renderObject, const Vector3& worldSpaceCameraPosition, const Vector3& cameraForwardVector);

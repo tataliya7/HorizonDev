@@ -63,7 +63,7 @@ project "HorizonEngine"
         thirdpartypath("stb/include"),
         thirdpartypath("physx/include"),
         thirdpartypath("optick/Optick_1.4.0/include"),
-        thirdpartypath("vulkan/1.3.280.0/include"),
+        thirdpartypath("vulkan/1.3.290.0/Include"),
         thirdpartypath("vma/include"),
         thirdpartypath("directx/include"),
         thirdpartypath("python/310/include"),
