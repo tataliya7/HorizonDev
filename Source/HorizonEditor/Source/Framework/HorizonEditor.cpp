@@ -7,7 +7,6 @@
 
 #include "Engine/Components/SkyLightComponent.h"
 
-
 #include "TextureImporter.h"
 
 // TODO: delete this
@@ -74,7 +73,7 @@ namespace Horizon
 //        streamlineContext = new Streamline::StreamlineContext();
 //#endif
 //
-        RenderDocPluginInit();
+        //RenderDocPluginInit();
 //
 
         InitializeEngine();
