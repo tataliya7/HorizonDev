@@ -21,7 +21,7 @@ namespace Horizon
     {
         // TODO: make it configurable
         RenderBackendType renderBackendType = RenderBackendType::Vulkan;
-        bool enableDebugLayers = false;
+        bool enableDebugLayers = true;
         bool enableHardwareRayTracing = false;
 
         if (renderBackendType == RenderBackendType::Vulkan)

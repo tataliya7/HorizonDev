@@ -525,7 +525,7 @@ namespace Horizon
                     ImGui::TreePop();
                 }
 
-                if (ImGui::TreeNode("Lens Flares"))
+                if (ImGui::TreeNode("Lens Flare"))
                 {
                     ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(2, 2));
                     ImGui::Columns(2);
@@ -535,7 +535,7 @@ namespace Horizon
                     ImGui::TextUnformatted("Intensity");
                     ImGui::NextColumn();
                     ImGui::PushItemWidth(-1);
-                    if (ImGui::DragFloat("##lensFlaresIntensity", &renderSettings.postProcessingSettings.lensFlaresIntensity, 0.001f, 0.0f, 1.0f))
+                    if (ImGui::DragFloat("##lensFlareIntensity", &renderSettings.postProcessingSettings.lensFlareIntensity, 0.001f, 0.0f, 1.0f))
                     {
 
                     }

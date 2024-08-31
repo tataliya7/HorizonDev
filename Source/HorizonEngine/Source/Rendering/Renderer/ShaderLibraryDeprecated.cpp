@@ -379,26 +379,26 @@ namespace Horizon
             ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/PostProcessing/ConvolutionBloomResizeKernel.hsm", "ConvolutionBloomResizeKernelCS");
             shaderLibrary->LoadShader(ShaderID::ConvolutionBloomResizeKernel, shaderDesc);
         }
+        {
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Pixel, "Shaders/RealTimeRenderer/PostProcessing/LensFlareGhost.hsm", "LensFlareGhostPS");
+            shaderLibrary->LoadShader(ShaderID::LensFlareGhost, shaderDesc);
+        }
         // {
-        //     ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Pixel, "Shaders/RealTimeRenderer/PostProcessing/LensFlaresGhost.hsm", "LensFlaresGhostPS");
-        //     shaderLibrary->LoadShader(ShaderID::LensFlaresGhost, shaderDesc);
+        //     ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/PostProcessing/LensFlareTileCulling.hsm", "LensFlareTileCullingCS");
+        //     shaderLibrary->LoadShader(ShaderID::LensFlareTileCulling, shaderDesc);
         // }
         // {
-        //     ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/PostProcessing/LensFlaresTileCulling.hsm", "LensFlaresTileCullingCS");
-        //     shaderLibrary->LoadShader(ShaderID::LensFlaresTileCulling, shaderDesc);
+        //     ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Pixel, "Shaders/RealTimeRenderer/PostProcessing/LensFlareGlare.hsm", "LensFlareGlareVS");
+        //     shaderLibrary->LoadShader(ShaderID::LensFlareGlareVS, shaderDesc);
         // }
         // {
-        //     ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Pixel, "Shaders/RealTimeRenderer/PostProcessing/LensFlaresGlare.hsm", "LensFlaresGlareVS");
-        //     shaderLibrary->LoadShader(ShaderID::LensFlaresGlareVS, shaderDesc);
+        //     ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Pixel, "Shaders/RealTimeRenderer/PostProcessing/LensFlareGlare.hsm", "LensFlareGlarePS");
+        //     shaderLibrary->LoadShader(ShaderID::LensFlareGlarePS, shaderDesc);
         // }
-        // {
-        //     ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Pixel, "Shaders/RealTimeRenderer/PostProcessing/LensFlaresGlare.hsm", "LensFlaresGlarePS");
-        //     shaderLibrary->LoadShader(ShaderID::LensFlaresGlarePS, shaderDesc);
-        // }
-        // {
-        //     ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Pixel, "Shaders/RealTimeRenderer/PostProcessing/LensFlaresCombine.hsm", "LensFlaresCombinePS");
-        //     shaderLibrary->LoadShader(ShaderID::LensFlaresCombine, shaderDesc);
-        // }
+        {
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Pixel, "Shaders/RealTimeRenderer/PostProcessing/LensFlareCombine.hsm", "LensFlareCombinePS");
+            shaderLibrary->LoadShader(ShaderID::LensFlareCombine, shaderDesc);
+        }
         // {
         //     ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/PostProcessing/LocalExposureComputeLuminance.hsm", "LocalExposureComputeLuminanceCS");
         //     shaderLibrary->LoadShader(ShaderID::LocalExposureComputeLuminance, shaderDesc);

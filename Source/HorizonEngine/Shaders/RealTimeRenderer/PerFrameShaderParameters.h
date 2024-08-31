@@ -169,6 +169,12 @@ struct PerFrameShaderParameters
 
     float bloomIntensity;
     float bloomRadius;
+
+    float lensFlareIntensity;
+    float lensFlareHaloIntensity;
+    float lensFlareHaloWidth;
+    float lensFlareHaloChromaticAberrationOffset;
+
     float chromaticAberrationIntensity;
     float chromaticAberrationOffset;
 

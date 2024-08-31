@@ -226,6 +226,7 @@ namespace Horizon
         features.enableAutoExposure = (finalPostProcessingSettings.exposureMethod == ExposureMethod::AutoExposure);
 
         features.enableGaussianBloom = finalPostProcessingSettings.bloomIntensity > 0.0f;
+        features.enableLensFlare = finalPostProcessingSettings.lensFlareIntensity > 0.0f;
 
         features.enableConvolutionBloom = false;
 
@@ -429,6 +430,11 @@ namespace Horizon
 
                 perFrameShaderParameters.bloomIntensity = finalPostProcessingSettings.bloomIntensity;
                 perFrameShaderParameters.bloomRadius = finalPostProcessingSettings.bloomRadius;
+
+                perFrameShaderParameters.lensFlareIntensity = finalPostProcessingSettings.lensFlareIntensity;
+                perFrameShaderParameters.lensFlareHaloIntensity = finalPostProcessingSettings.lensFlareHaloIntensity;
+                perFrameShaderParameters.lensFlareHaloWidth = finalPostProcessingSettings.lensFlareHaloWidth;
+                perFrameShaderParameters.lensFlareHaloChromaticAberrationOffset = finalPostProcessingSettings.lensFlareHaloChromaticAberrationOffset;
 
                 perFrameShaderParameters.chromaticAberrationIntensity = finalPostProcessingSettings.chromaticAberrationIntensity;
                 perFrameShaderParameters.chromaticAberrationOffset = finalPostProcessingSettings.chromaticAberrationOffset;

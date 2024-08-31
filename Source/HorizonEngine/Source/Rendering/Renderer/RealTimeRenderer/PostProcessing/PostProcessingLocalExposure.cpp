@@ -8,7 +8,6 @@ namespace Horizon
         return features.enableLocalExposure;
     }
 
-
     RenderGraphTextureHandle RealTimeRenderer::DispatchLocalExposure(
         RenderGraph& renderGraph,
         const SceneView& view,

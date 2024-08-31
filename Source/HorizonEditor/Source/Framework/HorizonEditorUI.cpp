@@ -1451,7 +1451,7 @@ namespace Horizon
                     ImGui::TreePop();
                 }
 #endif
-                if (ImGui::TreeNode("Lens Flares"))
+                if (ImGui::TreeNode("Lens Flare"))
                 {
                     ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(2, 2));
                     ImGui::Columns(2);
@@ -1461,7 +1461,40 @@ namespace Horizon
                     ImGui::TextUnformatted("Intensity");
                     ImGui::NextColumn();
                     ImGui::PushItemWidth(-1);
-                    if (ImGui::DragFloat("##lensFlaresIntensity", &renderSettings.postProcessingSettings.lensFlaresIntensity, 0.001f, 0.0f, 1.0f))
+                    if (ImGui::DragFloat("##lensFlareIntensity", &renderSettings.postProcessingSettings.lensFlareIntensity, 0.001f, 0.0f, 10.0f))
+                    {
+
+                    }
+                    ImGui::PopItemWidth();
+                    ImGui::NextColumn();
+
+                    ImGui::AlignTextToFramePadding();
+                    ImGui::TextUnformatted("Halo Intensity");
+                    ImGui::NextColumn();
+                    ImGui::PushItemWidth(-1);
+                    if (ImGui::DragFloat("##lensFlareHaloIntensity", &renderSettings.postProcessingSettings.lensFlareHaloIntensity, 0.001f, 0.0f, 10.0f))
+                    {
+
+                    }
+                    ImGui::PopItemWidth();
+                    ImGui::NextColumn();
+
+                    ImGui::AlignTextToFramePadding();
+                    ImGui::TextUnformatted("Halo Width");
+                    ImGui::NextColumn();
+                    ImGui::PushItemWidth(-1);
+                    if (ImGui::DragFloat("##lensFlareHaloWidth", &renderSettings.postProcessingSettings.lensFlareHaloWidth, 0.001f, 0.0f, 10.0f))
+                    {
+
+                    }
+                    ImGui::PopItemWidth();
+                    ImGui::NextColumn();
+
+                    ImGui::AlignTextToFramePadding();
+                    ImGui::TextUnformatted("Halo Chromatic Aberration Offset");
+                    ImGui::NextColumn();
+                    ImGui::PushItemWidth(-1);
+                    if (ImGui::DragFloat("##lensFlareHaloChromaticAberrationOffset", &renderSettings.postProcessingSettings.lensFlareHaloChromaticAberrationOffset, 0.001f, 0.0f, 10.0f))
                     {
 
                     }

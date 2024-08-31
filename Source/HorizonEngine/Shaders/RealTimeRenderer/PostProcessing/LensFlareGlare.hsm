@@ -2,8 +2,8 @@
 #include "../RealTimeRendererCommon.hsh"
 #include "PostProcessingCommon.hsh"
 
-BIND_TEXTURE_2D_SRV(0, LensFlaresGlareLUTTexture);
-BIND_TEXTURE_2D_TYPED_SRV(1, float3, LensFlaresTileCullingTexture);
+BIND_TEXTURE_2D_SRV(0, LensFlareGlareLUTTexture);
+BIND_TEXTURE_2D_TYPED_SRV(1, float3, LensFlareTileCullingTexture);
 
 // https://www.froyok.fr/blog/2021-09-ue4-custom-lens-flare/
 
@@ -12,7 +12,7 @@ BIND_TEXTURE_2D_TYPED_SRV(1, float3, LensFlaresTileCullingTexture);
 // point position. This function also take into account
 // the angle and scale of the quad to compute the target
 // position of the final vertex.
-float4 LensFlaresGlareComputeVertexPosition(float2 TilePos, float Angle, float2 Scale, float2 UV, float2 BufferSize)
+float4 LensFlareGlareComputeVertexPosition(float2 TilePos, float Angle, float2 Scale, float2 UV, float2 BufferSize)
 {
     float2 BufferRatio = float2(BufferSize.y / BufferSize.x, 1.0f);
     // Compute the position of the quad based on the ID
@@ -41,14 +41,14 @@ float4 LensFlaresGlareComputeVertexPosition(float2 TilePos, float Angle, float2 
 // Quad UV coordinates of each vertex
 // Used as well to know which vertex of the quad is being computed (by its position).
 // The order is important to ensure the triangles will be front facing and therefore visible.
-static const float2 LensFlaresGlareQuadUVs[4] = {
+static const float2 LensFlareGlareQuadUVs[4] = {
     float2(0.0f, 0.0f),
     float2(1.0f, 0.0f),
     float2(0.0f, 1.0f),
     float2(1.0f, 1.0f),
 };
 
-struct LensFlaresGlareVSOutput
+struct LensFlareGlareVSOutput
 {
     float4 position : SV_Position;
     float3 color : COLOR0;
@@ -56,12 +56,12 @@ struct LensFlaresGlareVSOutput
 };
 
 [shader("vertex")]
-void LensFlaresGlareVS(uint instanceID : SV_InstanceID, uint vertexID : SV_VertexID, out LensFlaresGlareVSOutput output)
+void LensFlareGlareVS(uint instanceID : SV_InstanceID, uint vertexID : SV_VertexID, out LensFlareGlareVSOutput output)
 {
-    Texture2D<float3> tileCullingTexture = GetLensFlaresTileCullingTextureSRV();
-    float lensFlaresTextureWidth = (0);
-    float lensFlaresTextureHeight = (1);
-    float2 lensFlaresTextureInvSize = float2(1.0f / lensFlaresTextureWidth, 1.0f / lensFlaresTextureHeight);
+    Texture2D<float3> tileCullingTexture = GetLensFlareTileCullingTextureSRV();
+    float lensFlareTextureWidth = (0);
+    float lensFlareTextureHeight = (1);
+    float2 lensFlareTextureInvSize = float2(1.0f / lensFlareTextureWidth, 1.0f / lensFlareTextureHeight);
 
     uint tileCullingTextureWidth, tileCullingTextureHeight;
     tileCullingTexture.GetDimensions(tileCullingTextureWidth, tileCullingTextureHeight);
@@ -87,7 +87,7 @@ void LensFlaresGlareVS(uint instanceID : SV_InstanceID, uint vertexID : SV_Verte
     if (luminance > luminanceThreshold)
     {
         uint2 tileCenterPixelCoord = tileID * 2 + 1;
-        float2 tileCenterUV = float2(tileCenterPixelCoord) * lensFlaresTextureInvSize;
+        float2 tileCenterUV = float2(tileCenterPixelCoord) * lensFlareTextureInvSize;
 
         float2 quadPosition = tileID;
 
@@ -115,24 +115,24 @@ void LensFlaresGlareVS(uint instanceID : SV_InstanceID, uint vertexID : SV_Verte
         // The divider is used to specify the referential point of
         // which light is bright or not and normalize the result.
         float luminanceScale = 0.2f * saturate(luminance / GlareDivider);
-        float2 quadScale = float2(luminanceScale * Mask, (1.0f / min(lensFlaresTextureWidth, lensFlaresTextureHeight)) * 4.0f);
+        float2 quadScale = float2(luminanceScale * Mask, (1.0f / min(lensFlareTextureWidth, lensFlareTextureHeight)) * 4.0f);
 
         float3 quadColor = 1* color * glareIntensity * glareTint;
 
-        float2 vertexUV = LensFlaresGlareQuadUVs[vertexID];
+        float2 vertexUV = LensFlareGlareQuadUVs[vertexID];
 
-        //float2 uuv = (tileID + LensFlaresGlareQuadUVs[vertexID]) * 2.0f * lensFlaresTextureInvSize;
+        //float2 uuv = (tileID + LensFlareGlareQuadUVs[vertexID]) * 2.0f * lensFlareTextureInvSize;
         //output.position = float4(UVSpaceToClipSpace(uuv), 0.0f, 1.0f);
-        output.position = LensFlaresGlareComputeVertexPosition(quadPosition, quadAngle, quadScale, vertexUV, float2(lensFlaresTextureWidth, lensFlaresTextureHeight));
+        output.position = LensFlareGlareComputeVertexPosition(quadPosition, quadAngle, quadScale, vertexUV, float2(lensFlareTextureWidth, lensFlareTextureHeight));
         output.color = quadColor;
         output.uv = vertexUV;
     }
 }
 
 [shader("pixel")]
-void LensFlaresGlarePS(LensFlaresGlareVSOutput vsOutput, out float3 outColor : SV_Target)
+void LensFlareGlarePS(LensFlareGlareVSOutput vsOutput, out float3 outColor : SV_Target)
 {
-    Texture2D glareLUTTexture = GetLensFlaresGlareLUTTextureSRV();
+    Texture2D glareLUTTexture = GetLensFlareGlareLUTTextureSRV();
     float3 glareLUTColor = glareLUTTexture.SampleLevel(GlobalSamplerLinearClamp, vsOutput.uv, 0).rgb;
     outColor = vsOutput.color * glareLUTColor;
 }

@@ -100,7 +100,7 @@ namespace Horizon
                     outputTextureWidth,
                     outputTextureHeight,
                     RenderBackendTextureFormat::R11G11B10Float,
-                    RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::UnorderedAccess);
+                    RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::UnorderedAccess | RenderBackendTextureCreateFlags::RenderTarget);
                 RenderGraphTextureHandle outputTexture = renderGraph.CreateTexture(outputTextureDesc, "GaussianBloomUpsampleTexture");
 
                 renderGraph.AddPass(

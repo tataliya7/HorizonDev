@@ -64,7 +64,7 @@ namespace Horizon
         ScreenSpaceReflectionsQuality quality = ScreenSpaceReflectionsQuality::High;
     };
 
-    enum class PostProcessingLensFlaresQuality
+    enum class PostProcessingLensFlareQuality
     {
         Off,
         Low,

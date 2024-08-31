@@ -541,7 +541,7 @@ namespace Horizon
         settings.postProcessingSettings.lensDirtIntensity = 0.0f;
         settings.postProcessingSettings.lensDirtTint = Vector4(1.0f, 1.0f, 1.0f, 1.0f);
 
-        settings.postProcessingSettings.lensFlaresIntensity = 0.0f;
+        settings.postProcessingSettings.lensFlareIntensity = 0.0f;
 
         settings.postProcessingSettings.colorGradingWhiteBalanceColorTemperature = 6500.0f;
 

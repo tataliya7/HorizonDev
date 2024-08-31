@@ -176,7 +176,7 @@ namespace Horizon
 
         bool IsBloomEnabled() const;
 
-        bool IsLensFlaresEnabled() const;
+        bool IsLensFlareEnabled() const;
 
         void InitializeSceneView(SceneView* sceneView);
 
@@ -361,7 +361,7 @@ namespace Horizon
             RenderGraphTextureHandle sceneDepthTexture,
             RenderGraphTextureHandle motionVectorTexture);
 
-        RenderGraphTextureHandle AddLensFlaresPass(
+        RenderGraphTextureHandle AddLensFlarePass(
             RenderGraph& renderGraph,
             const SceneView& view,
             RenderGraphTextureHandle halfResolutionSceneColorTexture,
@@ -455,7 +455,7 @@ namespace Horizon
             uint32 enableAutoExposure : 1;
             uint32 enableLocalExposure : 1;
             uint32 enableDepthOfField : 1;
-            uint32 enableLensFlares : 1;
+            uint32 enableLensFlare : 1;
             uint32 enableGaussianBloom : 1;
             uint32 enableConvolutionBloom : 1;
         } features;

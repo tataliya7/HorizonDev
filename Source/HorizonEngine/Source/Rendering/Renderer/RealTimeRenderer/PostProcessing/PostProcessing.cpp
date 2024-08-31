@@ -50,10 +50,10 @@ namespace Horizon
             sceneColorTexture = DispatchCustomTemporalSuperSampling(temporalSuperSamplingInterface, renderGraph, view, tssDispatchDescription);
         }
 
-        // if (IsMotionBlurEnabled())
-        // {
-        //     sceneColorTexture = DispatchMotionBlur(renderGraph, view, sceneColorTexture, sceneDepthTexture, motionVectorTexture);
-        // }
+        if (IsMotionBlurEnabled())
+        {
+            sceneColorTexture = DispatchMotionBlur(renderGraph, view, sceneColorTexture, sceneDepthTexture, motionVectorTexture);
+        }
 
         //sceneColorTexture = renderGraph.ImportExternalTexture(localExposureTestTexture, localExposureTestTextureDesc, RenderBackendResourceState::ShaderResource, "Test");
         PostProcessingSceneColorMipChain sceneColorMipChain;
@@ -87,9 +87,9 @@ namespace Horizon
                 bloomTexture = DispatchConvolutionBloom(renderGraph, view, sceneColorMipChain.textures[0]);
             }
 
-            if (IsLensFlaresEnabled())
+            if (IsLensFlareEnabled())
             {
-                bloomTexture = AddLensFlaresPass(renderGraph, view, sceneColorMipChain.textures[1], bloomTexture);
+                bloomTexture = AddLensFlarePass(renderGraph, view, sceneColorMipChain.textures[1], bloomTexture);
             }
         }
 

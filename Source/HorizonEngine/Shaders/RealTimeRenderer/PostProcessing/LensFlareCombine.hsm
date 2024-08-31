@@ -1,0 +1,92 @@
+#include "../../ShaderCommon.hsh"
+#include "../RealTimeRendererCommon.hsh"
+#include "PostProcessingCommon.hsh"
+
+SHADER_CONSTANTS_STRUCT_BEGIN();
+SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferSRV);
+SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(1, LensFlareGradientTextureSRV);
+SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(2, LensFlareGhostTextureSRV);
+SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(3, LensFlareGlareTextureSRV);
+SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(4, SceneColorTextureSRV);
+SHADER_CONSTANTS_SCALAR(5, float, InverseOutputTextureSizeX);
+SHADER_CONSTANTS_SCALAR(6, float, InverseOutputTextureSizeY);
+SHADER_CONSTANTS_STRUCT_END();
+
+static const float2 HaloCenterUV = float2(0.5f, 0.5f);
+
+// https://www.shadertoy.com/view/tstBDl
+float2 ComputeFisheyeUV(float2 uv, float f, float zoom)
+{
+    float2 ndcPos = 2.0f * uv - 1.0f;
+    float scale = f * atan(1.0f / f);
+    float r_d = length(ndcPos) * scale;
+    float r_u = f * tan(r_d / f) * zoom;
+    float phi = atan2(ndcPos.y, ndcPos.x);
+    return float2(r_u * cos(phi) + 1.0f, r_u * sin(phi) + 1.0f) * 0.5f;
+}
+
+[shader("pixel")]
+void LensFlareCombinePS(float4 position : SV_Position, out float3 result : SV_Target)
+{
+    StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
+    PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
+    Texture2D ghostTexture = ShaderConstants.GetLensFlareGhostTextureSRV();
+    Texture2D glareTexture = ShaderConstants.GetLensFlareGlareTextureSRV();
+    Texture2D gradientTexture = ShaderConstants.GetLensFlareGradientTextureSRV();
+    Texture2D SceneColorTexture = ShaderConstants.GetSceneColorTextureSRV();
+
+    float2 inverseOutputTextureSize = float2(ShaderConstants.GetInverseOutputTextureSizeX(), ShaderConstants.GetInverseOutputTextureSizeY());
+    float lensFlareIntensity = frameShaderParameters.lensFlareIntensity;
+
+    float2 uv = position.xy * inverseOutputTextureSize;
+
+    float3 lensFlareColor = 0.0f;
+
+    float3 ghostColor = ghostTexture.SampleLevel(GlobalSamplerLinearClamp, uv, 0).rgb;
+    lensFlareColor += ghostColor;
+
+    float3 glareColor = 0.0f;
+    glareColor.rgb += 0.25f * glareTexture.SampleLevel(GlobalSamplerLinearClamp, (position.xy + float2(-1.0f, -1.0f)) * inverseOutputTextureSize, 0).rgb;
+    glareColor.rgb += 0.25f * glareTexture.SampleLevel(GlobalSamplerLinearClamp, (position.xy + float2(-1.0f,  1.0f)) * inverseOutputTextureSize, 0).rgb;
+    glareColor.rgb += 0.25f * glareTexture.SampleLevel(GlobalSamplerLinearClamp, (position.xy + float2( 1.0f, -1.0f)) * inverseOutputTextureSize, 0).rgb;
+    glareColor.rgb += 0.25f * glareTexture.SampleLevel(GlobalSamplerLinearClamp, (position.xy + float2( 1.0f,  1.0f)) * inverseOutputTextureSize, 0).rgb;
+    lensFlareColor += glareColor;
+
+    // TODO
+    float haloCompression = 0.65f;
+    float haloWidth = 0.4f;
+    float haloIntensity = 1.0f;
+    float chromaticAberrationOffset = 0.01f;
+
+    float2 fisheyeUV = ComputeFisheyeUV(uv, haloCompression , 1.0f);
+
+    float2 haloVector = normalize(HaloCenterUV - uv) * haloWidth;
+
+    float haloMask = distance(uv, HaloCenterUV);
+    haloMask = saturate(2.0f * haloMask);
+    haloMask = smoothstep(0.5f, 1.0f, haloMask);
+    haloMask = 0;
+
+    float2 ndcPos = UVSpaceToClipSpace(uv);
+    float vignette = Vignette(ndcPos);
+    vignette *= Vignette(ndcPos * 0.8f);
+    vignette = vignette * 0.95 + 0.05;
+
+    float2 chromaticAberrationUV_R = (fisheyeUV - HaloCenterUV) * (1.0f + chromaticAberrationOffset) + haloVector + HaloCenterUV;
+    float2 chromaticAberrationUV_G = fisheyeUV + haloVector;
+    float2 chromaticAberrationUV_B = (fisheyeUV - HaloCenterUV) * (1.0f - chromaticAberrationOffset) + haloVector + HaloCenterUV;
+
+    float3 haloColor = 0.0f;
+    haloColor.r = SceneColorTexture.SampleLevel(GlobalSamplerLinearClamp, chromaticAberrationUV_R, 0).r;
+    haloColor.g = SceneColorTexture.SampleLevel(GlobalSamplerLinearClamp, chromaticAberrationUV_G, 0).g;
+    haloColor.b = SceneColorTexture.SampleLevel(GlobalSamplerLinearClamp, chromaticAberrationUV_B, 0).b;
+
+    lensFlareColor += haloColor * haloIntensity * haloMask * vignette;
+
+    float2 gradientTextureUV = float2(saturate(distance(uv, float2(0.5f, 0.5f)) * 2.0f), 0.0f);
+    float3 gradient = gradientTexture.SampleLevel(GlobalSamplerLinearClamp, gradientTextureUV, 0).rgb;
+
+    lensFlareColor = lensFlareColor * gradient * lensFlareIntensity * 0.1f;
+
+    result = lensFlareColor;
+}

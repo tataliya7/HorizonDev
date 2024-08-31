@@ -26,8 +26,8 @@ namespace Horizon
         // TODO:
         this->shaderCompilerOptions =
         {
-            .generateDebugInfo = false,
-            .skipOptimization = false,
+            .generateDebugInfo = true,
+            .skipOptimization = true,
             .warningAreErrors = true,
             .enable16BitTypes = false,
             .optimizationLevel = ShaderOptimizationLevel::O3
