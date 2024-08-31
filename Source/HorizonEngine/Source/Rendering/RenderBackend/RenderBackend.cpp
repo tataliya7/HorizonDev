@@ -15,23 +15,13 @@ namespace Horizon
     const RenderBackendTextureClearValue RenderBackendTextureClearValue::DepthOne  = RenderBackendTextureClearValue(1.0f, 0);
     const RenderBackendTextureClearValue RenderBackendTextureClearValue::DepthZero = RenderBackendTextureClearValue(0.0f, 0);
 
-    const RenderBackendColorBlendAttachmentState RenderBackendColorBlendAttachmentState::AdditiveRGB = {
+    const RenderBackendColorBlendAttachmentState RenderBackendColorBlendAttachmentState::Additive =
+    {
         .blendEnable = true,
         .srcColorBlendFactor = RenderBackendBlendFactor::One,
         .dstColorBlendFactor = RenderBackendBlendFactor::One,
         .colorBlendOp = RenderBackendBlendOp::Add,
-        .srcAlphaBlendFactor = RenderBackendBlendFactor::One,
-        .dstAlphaBlendFactor = RenderBackendBlendFactor::One,
-        .alphaBlendOp = RenderBackendBlendOp::Add,
-        .writeMask = RenderBackendColorComponentFlags::RGB,
-    };
-
-    const RenderBackendColorBlendAttachmentState RenderBackendColorBlendAttachmentState::AdditiveRGBA = {
-        .blendEnable = true,
-        .srcColorBlendFactor = RenderBackendBlendFactor::One,
-        .dstColorBlendFactor = RenderBackendBlendFactor::One,
-        .colorBlendOp = RenderBackendBlendOp::Add,
-        .srcAlphaBlendFactor = RenderBackendBlendFactor::One,
+        .srcAlphaBlendFactor = RenderBackendBlendFactor::Zero,
         .dstAlphaBlendFactor = RenderBackendBlendFactor::One,
         .alphaBlendOp = RenderBackendBlendOp::Add,
         .writeMask = RenderBackendColorComponentFlags::RGBA,

@@ -56,7 +56,7 @@ namespace Horizon
                     shaderConstants.BindScalar(3, lensFlareTextureSize.w);
 
                     RenderBackendGraphicsPipelineState graphicsPipelineState = {};
-                    graphicsPipelineState.colorBlendState.targetBlends[0] = RenderBackendColorBlendAttachmentState::AdditiveRGB;
+                    graphicsPipelineState.colorBlendState.targetBlends[0] = RenderBackendColorBlendAttachmentState::Additive;
 
                     RenderBackendShaderHandle vertexShader = shaderLibrary->GetShader(ShaderID::FullScreenQuadVS);
                     RenderBackendShaderHandle pixelShader = shaderLibrary->GetShader(ShaderID::LensFlareGhost);
@@ -185,7 +185,7 @@ namespace Horizon
                     shaderConstants.BindScalar(6, outputTextureSize.w);
 
                     RenderBackendGraphicsPipelineState graphicsPipelineState = {};
-                    graphicsPipelineState.colorBlendState.targetBlends[0] = RenderBackendColorBlendAttachmentState::AdditiveRGB;
+                    graphicsPipelineState.colorBlendState.targetBlends[0] = RenderBackendColorBlendAttachmentState::Additive;
 
                     RenderBackendShaderHandle vertexShader = shaderLibrary->GetShader(ShaderID::FullScreenQuadVS);
                     RenderBackendShaderHandle pixelShader = shaderLibrary->GetShader(ShaderID::LensFlareCombine);
