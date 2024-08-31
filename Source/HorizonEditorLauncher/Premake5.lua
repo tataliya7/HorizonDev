@@ -28,7 +28,6 @@ project "HorizonEditorLauncher"
         "HorizonEngine",
         "HorizonEditor",
         "imgui",
-        --"FidelityFX",
         --"USD",
         --"RenderDoc",
         thirdpartypath("glfw/glfw-3.3.9.bin.WIN64/lib-vc2022/glfw3.lib"),

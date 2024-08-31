@@ -181,7 +181,7 @@ def install_dxc(manager, dep, args = None):
 dependency_dxc = dependency(
     name = "dxc",
     install = install_dxc,
-    url = "https://github.com/microsoft/DirectXShaderCompiler/releases/download/v1.8.2403.1/dxc_2024_07_31.zip",
+    url = "https://github.com/microsoft/DirectXShaderCompiler/releases/download/v1.8.2407/dxc_2024_07_31.zip",
     dst_dir = "dxc",
     folder = "dxc_2024_07_31")
 

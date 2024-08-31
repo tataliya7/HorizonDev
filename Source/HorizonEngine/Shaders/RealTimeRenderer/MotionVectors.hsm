@@ -160,7 +160,6 @@ void MotionVectorsCS(uint3 DispatchThreadID : SV_DispatchThreadID)
             motionVector = 0;
         }
 #endif
-
         motionVectorTexture[pixelCoord] = motionVector;
         // motionVectorTexture[pixelCoord] = float2(0.0, 0.0);
     }
