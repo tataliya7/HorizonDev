@@ -305,7 +305,7 @@ namespace Horizon
             perFrameShaderParameters.clipToViewMatrix = view.transformations.clipToViewMatrix;
             perFrameShaderParameters.worldToClipMatrix = view.transformations.worldToClipMatrix;
             perFrameShaderParameters.clipToWorldMatrix = view.transformations.clipToWorldMatrix;
-            perFrameShaderParameters.nonJitteredWorldToClipMatrix = view.transformations.nonJitteredViewToClipMatrix;
+            perFrameShaderParameters.nonJitteredWorldToClipMatrix = view.transformations.nonJitteredWorldToClipMatrix;
 
             perFrameShaderParameters.previousWorldToViewMatrix = historyFrame.transformations.worldToViewMatrix;
             perFrameShaderParameters.previousViewToWorldMatrix = historyFrame.transformations.viewToWorldMatrix;
@@ -313,13 +313,12 @@ namespace Horizon
             perFrameShaderParameters.previousClipToViewMatrix = historyFrame.transformations.clipToViewMatrix;
             perFrameShaderParameters.previousWorldToClipMatrix = historyFrame.transformations.worldToClipMatrix;
             perFrameShaderParameters.previousClipToWorldMatrix = historyFrame.transformations.clipToWorldMatrix;
-            perFrameShaderParameters.previousNonJitteredWorldToClipMatrix = historyFrame.transformations.nonJitteredViewToClipMatrix;
+            perFrameShaderParameters.previousNonJitteredWorldToClipMatrix = historyFrame.transformations.nonJitteredWorldToClipMatrix;
 
             // TODO: Precision loss
-            Matrix4x4 reprojectionMatrix = glm::inverse(perFrameShaderParameters.nonJitteredWorldToClipMatrix) * perFrameShaderParameters.previousNonJitteredWorldToClipMatrix;
+            Matrix4x4 reprojectionMatrix = perFrameShaderParameters.previousNonJitteredWorldToClipMatrix * glm::inverse(perFrameShaderParameters.nonJitteredWorldToClipMatrix);
             Matrix4x4 inverseReprojectionMatrix = glm::inverse(reprojectionMatrix);
-            //Matrix4x4 reprojectionMatrix = perFrameShaderParameters.clipToWorldMatrix * perFrameShaderParameters.previousWorldToClipMatrix;
-            //Matrix4x4 inverseReprojectionMatrix = glm::inverse(reprojectionMatrix);
+
             perFrameShaderParameters.currentClipToPreviousClipMatrix = reprojectionMatrix;
             perFrameShaderParameters.previousClipToCurrentClipMatrix = inverseReprojectionMatrix;
 

@@ -32,7 +32,7 @@ namespace Horizon
             , clipToViewMatrix(IdentityMatrix4x4)
             , worldToClipMatrix(IdentityMatrix4x4)
             , clipToWorldMatrix(IdentityMatrix4x4)
-            , nonJitteredViewToClipMatrix(IdentityMatrix4x4)
+            , nonJitteredWorldToClipMatrix(IdentityMatrix4x4)
         {
 
         }
@@ -45,7 +45,7 @@ namespace Horizon
             clipToViewMatrix = IdentityMatrix4x4;
             worldToClipMatrix = IdentityMatrix4x4;
             clipToWorldMatrix = IdentityMatrix4x4;
-            nonJitteredViewToClipMatrix = IdentityMatrix4x4;
+            nonJitteredWorldToClipMatrix = IdentityMatrix4x4;
         }
 
         void Update(const Vector3& position, const Vector3& rotation, float fieldOfView, float aspectRatio, float nearClippingPlane, float farClippingPlane)
@@ -76,12 +76,8 @@ namespace Horizon
             {
                 viewToClipMatrix = glm::perspectiveRH_ZO(Math::DegreesToRadians(fieldOfView), aspectRatio, farClippingPlane, nearClippingPlane);
             }
-            //clipToViewMatrix = Math::InverseMatrix(viewToClipMatrix);
 
-            //worldToClipMatrix = viewToClipMatrix * worldToViewMatrix;
-            //clipToWorldMatrix = viewToWorldMatrix * clipToViewMatrix;
-
-            nonJitteredViewToClipMatrix = viewToClipMatrix;
+            nonJitteredWorldToClipMatrix = viewToClipMatrix * worldToViewMatrix;
         }
 
         void ApplyJitterOffset(const Vector2& jitterOffset, uint32 renderWidth, uint32 renderHeight)
@@ -193,7 +189,7 @@ namespace Horizon
         Matrix4x4 clipToViewMatrix;
         Matrix4x4 worldToClipMatrix;
         Matrix4x4 clipToWorldMatrix;
-        Matrix4x4 nonJitteredViewToClipMatrix;
+        Matrix4x4 nonJitteredWorldToClipMatrix;
     };
 
     /**
