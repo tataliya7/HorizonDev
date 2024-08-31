@@ -261,11 +261,11 @@ float GTAOComputeInnerIntegral(float2 horizons, float2 searchDirection, float3 v
 
 [shader("compute")]
 [numthreads(8, 8, 1)]
-void GTAOHorizonSearchAndIntegralCS(uint3 DispatchThreadID : SV_DispatchThreadID, uint2 GroupThreadID : SV_GroupThreadID, uint2 GroupID : SV_GroupID)
+void GTAOHorizonSearchAndIntegralCS(uint3 dispatchThreadID : SV_DispatchThreadID, uint2 GroupThreadID : SV_GroupThreadID, uint2 GroupID : SV_GroupID)
 {
     StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
     PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
-    uint2 pixelCoord = DispatchThreadID.xy;
+    uint2 pixelCoord = dispatchThreadID.xy;
     uint width = frameShaderParameters.renderWidth / 2;
     uint height = frameShaderParameters.renderHeight / 2;
     if (pixelCoord.x >= width || pixelCoord.y >= height)
@@ -414,11 +414,11 @@ inline void ProcessRadius(float2 uv0, float2 deltaUV, float d0, inout float tota
 
 [shader("compute")]
 [numthreads(8, 8, 1)]
-void GTAOSpatialFilteringCS(uint3 DispatchThreadID : SV_DispatchThreadID)
+void GTAOSpatialFilteringCS(uint3 dispatchThreadID : SV_DispatchThreadID)
 {
     StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
     PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
-    uint2 pixelCoord = DispatchThreadID.xy;
+    uint2 pixelCoord = dispatchThreadID.xy;
     uint width = frameShaderParameters.renderWidth / 2;
     uint height = frameShaderParameters.renderHeight / 2;
     if (pixelCoord.x >= width || pixelCoord.y >= height)
@@ -446,11 +446,11 @@ void GTAOSpatialFilteringCS(uint3 DispatchThreadID : SV_DispatchThreadID)
 
 [shader("compute")]
 [numthreads(8, 8, 1)]
-void GTAOTemporalFilteringCS(uint3 DispatchThreadID : SV_DispatchThreadID)
+void GTAOTemporalFilteringCS(uint3 dispatchThreadID : SV_DispatchThreadID)
 {
     StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
     PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
-    uint2 pixelCoord = DispatchThreadID.xy;
+    uint2 pixelCoord = dispatchThreadID.xy;
     uint width = frameShaderParameters.renderWidth / 2;
     uint height = frameShaderParameters.renderHeight / 2;
     if (pixelCoord.x >= width || pixelCoord.y >= height)

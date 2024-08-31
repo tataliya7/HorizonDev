@@ -15,31 +15,31 @@ BIND_BYTE_ADDRESS_BUFFER_UAV(8, OutputVertexBuffer2);
 
 [shader("compute")]
 [numthreads(64, 1, 1)]
-void SkinningCS(uint3 DispatchThreadID : SV_DispatchThreadID)
+void SkinningCS(uint3 dispatchThreadID : SV_DispatchThreadID)
 {
     uint maxNumVertices = 0; // TODO
-    if (DispatchThreadID.x >= maxNumVertices)
+    if (dispatchThreadID.x >= maxNumVertices)
     {
         return;
     }
 
     uint vertexBuffer0Index = GetShaderConstantValue(0);
-    uint vertexBuffer0Offset = (vertexBuffer0Index & 0xffff) + DispatchThreadID.x * sizeof(float3);
+    uint vertexBuffer0Offset = (vertexBuffer0Index & 0xffff) + dispatchThreadID.x * sizeof(float3);
     float3 position = GetRWByteAddressBuffer((vertexBuffer0Index >> 16) & 0xffff).Load<float3>(vertexBuffer0Offset);
 
     uint vertexBuffer1Index = GetShaderConstantValue(1);
-    uint vertexBuffer1Offset = (vertexBuffer1Index & 0xffff) + DispatchThreadID.x * sizeof(float3);
+    uint vertexBuffer1Offset = (vertexBuffer1Index & 0xffff) + dispatchThreadID.x * sizeof(float3);
     float3 normal = GetRWByteAddressBuffer((vertexBuffer1Index >> 16) & 0xffff).Load<float3>(vertexBuffer1Offset);
 
     uint vertexBuffer2Index = GetShaderConstantValue(2);
-    uint vertexBuffer2Offset = (vertexBuffer2Index & 0xffff) + DispatchThreadID.x * sizeof(float4);
+    uint vertexBuffer2Offset = (vertexBuffer2Index & 0xffff) + dispatchThreadID.x * sizeof(float4);
     float4 tangent = GetRWByteAddressBuffer((vertexBuffer2Index >> 16) & 0xffff).Load<float4>(vertexBuffer2Offset);
 
     uint boneIndexBufferIndex = GetShaderConstantValue(3);
-    uint4 boneIndices = GetRWByteAddressBuffer((boneIndexBufferIndex >> 16) & 0xffff).Load<uint4>((boneIndexBufferIndex & 0xffff) + DispatchThreadID.x * sizeof(uint4));
+    uint4 boneIndices = GetRWByteAddressBuffer((boneIndexBufferIndex >> 16) & 0xffff).Load<uint4>((boneIndexBufferIndex & 0xffff) + dispatchThreadID.x * sizeof(uint4));
 
     uint boneWeightBufferIndex = GetShaderConstantValue(4);
-    float4 boneWeights = GetRWByteAddressBuffer((boneWeightBufferIndex >> 16) & 0xffff).Load<float4>((boneWeightBufferIndex & 0xffff) + DispatchThreadID.x * sizeof(float4));
+    float4 boneWeights = GetRWByteAddressBuffer((boneWeightBufferIndex >> 16) & 0xffff).Load<float4>((boneWeightBufferIndex & 0xffff) + dispatchThreadID.x * sizeof(float4));
 
     float4x4 boneMatrix[MAX_NUM_BONES_PER_VERTEX];
     uint boneTransformBufferIndex = GetShaderConstantValue(5);

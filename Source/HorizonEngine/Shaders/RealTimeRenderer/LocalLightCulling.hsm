@@ -22,11 +22,11 @@ static uint relevantLocalLights[LIGHT_GRID_MAX_LIGHT_COUNT_PER_CELL];
 [shader("compute")]
 [numthreads(LOCAL_LIGHT_CULLING_THREAD_GROUP_SIZE, LOCAL_LIGHT_CULLING_THREAD_GROUP_SIZE, LOCAL_LIGHT_CULLING_THREAD_GROUP_SIZE)]
 void LocalLightCullingCS(
-	uint3 DispatchThreadID : SV_DispatchThreadID,
+	uint3 dispatchThreadID : SV_DispatchThreadID,
     uint GroupThreadID : SV_GroupThreadID,
     uint GroupID : SV_GroupID)
 {
-	const uint3 lightGridCoordinate = DispatchThreadID;
+	const uint3 lightGridCoordinate = dispatchThreadID;
     const uint3 lightGridSize = uint3(ShaderConstants.GetLightGridSizeX(), ShaderConstants.GetLightGridSizeY(), ShaderConstants.GetLightGridSizeZ());
 
     if (any(lightGridCoordinate >= lightGridSize))

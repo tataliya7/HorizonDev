@@ -1,0 +1,22 @@
+#pragma once
+
+struct VolumetricFogShaderParameters
+{
+    uint3 volumeResolution;
+    float4 tileCountAndInverseTileCount;
+    float2 sliceCountAndInverseSliceCount;
+};
+DECLARE_ALIASED_ARRAY_STRUCTURED_BUFFER_SRV(VolumetricFogShaderParameters);
+
+float3 ComputeVoWorldPosition(VolumetricFogShaderParameters volumetricFogShaderParameters, uint3 voxelCoordinate, float3 CellOffset, float4x4 nonJitteredClipToWorldMatrix)
+{
+	float2 uv = (GridCoordinate.xy + CellOffset.xy) / volumetricFogShaderParameters.volumeResolutionFloat.xy;
+	float SceneDepth = ComputeDepthFromZSlice(GridCoordinate.z + CellOffset.z);
+	float TileDeviceZ = ConvertToDeviceZ(SceneDepth);
+
+    float4 clipPosition = float4(UVSpaceToClipSpace(uv), TileDeviceZ, 1.0f);
+	float4 worldPosition = mul(nonJitteredClipToWorldMatrix, clipPosition);
+    worldPosition /= worldPosition.w;
+
+	return worldPosition.xyz;
+}

@@ -169,6 +169,9 @@ namespace Horizon
             L"-T", targetProfile.c_str(),
         };
 
+        // Pack matrices in column-major order
+        arguments.push_back(L"-Zpc");
+
         switch (language)
         {
         case ShadingLanguage::DXIL:

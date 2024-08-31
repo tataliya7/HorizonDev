@@ -61,7 +61,7 @@ float2 Hammersley2D_Random(uint index, uint samples, uint2 random)
 
 [shader("compute")]
 [numthreads(SSR_THREAD_GROUP_SIZE, SSR_THREAD_GROUP_SIZE, 1)]
-void ScreenSpaceReflectionsResolveCS(uint3 DispatchThreadID : SV_DispatchThreadID)
+void ScreenSpaceReflectionsResolveCS(uint3 dispatchThreadID : SV_DispatchThreadID)
 {
     StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
     PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
@@ -75,7 +75,7 @@ void ScreenSpaceReflectionsResolveCS(uint3 DispatchThreadID : SV_DispatchThreadI
     RWTexture2D<float> resolveVarianceTexture = GetResolveVarianceUAV();
     RWTexture2D<float> reprojectionDepthTexture = GetReprojectionDepthUAV();
 
-    const uint2 coord = DispatchThreadID.xy;
+    const uint2 coord = dispatchThreadID.xy;
     const float2 uv = (coord + 0.5f) * (1.0 / frameShaderParameters.renderWidth, 1.0 / frameShaderParameters.renderHeight); // Full resolution
     const uint2 tracingCoord = coord / SSR_DOWN_SAMPLE_FACTOR;
 
@@ -166,7 +166,7 @@ void ScreenSpaceReflectionsResolveCS(uint3 DispatchThreadID : SV_DispatchThreadI
 
     // Convert to post-projection depth so we can construct dual source reprojection buffers later
     float linearDepth = ComputeCameraSpaceDepth(depth, frameShaderParameters.nearClippingPlane, frameShaderParameters.farClippingPlane);
-    float reprojectionDepth = ComputeDepthFromComputeCameraSpaceDepth(linearDepth + closestRayLength, frameShaderParameters.nearClippingPlane, frameShaderParameters.farClippingPlane);
+    float reprojectionDepth = ComputeDepthFromCameraSpaceDepth(linearDepth + closestRayLength, frameShaderParameters.nearClippingPlane, frameShaderParameters.farClippingPlane);
 
     resolveTexture[coord] = max(result, 0.00001f);
     resolveVarianceTexture[coord] = resolveVariance;

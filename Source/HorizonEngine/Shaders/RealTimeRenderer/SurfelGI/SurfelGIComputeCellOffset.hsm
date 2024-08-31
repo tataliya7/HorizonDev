@@ -4,7 +4,7 @@
 
 [shader("compute")]
 [numthreads(SurfelGIIndirectDispatchGroupThreadCount, 1, 1)]
-void SurfelGIComputeCellOffsetCS(uint3 DispatchThreadID : SV_DispatchThreadID)
+void SurfelGIComputeCellOffsetCS(uint3 dispatchThreadID : SV_DispatchThreadID)
 {
 
 }

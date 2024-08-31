@@ -43,7 +43,7 @@ groupshared float3 LSharedMem[64];
 
 [shader("compute")]
 [numthreads(1, 1, 64)]
-void SkyAtmosphereMultipleScatteringLutCS(uint3 DispatchThreadID : SV_DispatchThreadID)
+void SkyAtmosphereMultipleScatteringLutCS(uint3 dispatchThreadID : SV_DispatchThreadID)
 {
     StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
     PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
@@ -53,7 +53,7 @@ void SkyAtmosphereMultipleScatteringLutCS(uint3 DispatchThreadID : SV_DispatchTh
     SkyAtmosphereShaderParameters skyAtmosphereParameters = GetSkyAtmosphereShaderParameters(frameShaderParameters);
     float4 multipleScatteringLutSize = skyAtmosphereParameters.multipleScatteringLutSize;
 
-    uint2 pixelCoord = DispatchThreadID.xy;
+    uint2 pixelCoord = dispatchThreadID.xy;
     float2 uv = (float2(pixelCoord) + 0.5f) * multipleScatteringLutSize.zw;
 
     float cosSunZenithAngle = uv.x * 2.0f - 1.0f;
@@ -81,8 +81,8 @@ void SkyAtmosphereMultipleScatteringLutCS(uint3 DispatchThreadID : SV_DispatchTh
     // Reference. Since there are many samples, it requires MULTI_SCATTERING_POWER_SERIE to be true for accuracy and to avoid divergences (see declaration for explanations).
     const uint sqrtSampleCount = 8;
     const float sqrtSample = float(sqrtSampleCount);
-    float i = 0.5f + float(DispatchThreadID.z / sqrtSampleCount);
-    float j = 0.5f + float(DispatchThreadID.z - float((DispatchThreadID.z / sqrtSampleCount) * sqrtSampleCount));
+    float i = 0.5f + float(dispatchThreadID.z / sqrtSampleCount);
+    float j = 0.5f + float(dispatchThreadID.z - float((dispatchThreadID.z / sqrtSampleCount) * sqrtSampleCount));
     {
         float randA = i / sqrtSample;
         float randB = j / sqrtSample;
@@ -115,51 +115,51 @@ void SkyAtmosphereMultipleScatteringLutCS(uint3 DispatchThreadID : SV_DispatchTh
             lightDirection,
             oneIlluminance);
 
-        MultiScatAs1SharedMem[DispatchThreadID.z] = result.multiScatAs1 * sphereSolidAngle / (sqrtSample * sqrtSample);
-        LSharedMem[DispatchThreadID.z] = result.L * sphereSolidAngle / (sqrtSample * sqrtSample);
+        MultiScatAs1SharedMem[dispatchThreadID.z] = result.multiScatAs1 * sphereSolidAngle / (sqrtSample * sqrtSample);
+        LSharedMem[dispatchThreadID.z] = result.L * sphereSolidAngle / (sqrtSample * sqrtSample);
     }
 
     GroupMemoryBarrierWithGroupSync();
     // 64 to 32
-    if (DispatchThreadID.z < 32)
+    if (dispatchThreadID.z < 32)
     {
-        MultiScatAs1SharedMem[DispatchThreadID.z] += MultiScatAs1SharedMem[DispatchThreadID.z + 32];
-        LSharedMem[DispatchThreadID.z] += LSharedMem[DispatchThreadID.z + 32];
+        MultiScatAs1SharedMem[dispatchThreadID.z] += MultiScatAs1SharedMem[dispatchThreadID.z + 32];
+        LSharedMem[dispatchThreadID.z] += LSharedMem[dispatchThreadID.z + 32];
     }
     GroupMemoryBarrierWithGroupSync();
     // 32 to 16
-    if (DispatchThreadID.z < 16)
+    if (dispatchThreadID.z < 16)
     {
-        MultiScatAs1SharedMem[DispatchThreadID.z] += MultiScatAs1SharedMem[DispatchThreadID.z + 16];
-        LSharedMem[DispatchThreadID.z] += LSharedMem[DispatchThreadID.z + 16];
+        MultiScatAs1SharedMem[dispatchThreadID.z] += MultiScatAs1SharedMem[dispatchThreadID.z + 16];
+        LSharedMem[dispatchThreadID.z] += LSharedMem[dispatchThreadID.z + 16];
     }
     GroupMemoryBarrierWithGroupSync();
     // 16 to 8 (16 is thread group min hardware size with intel, no sync required from there)
-    if (DispatchThreadID.z < 8)
+    if (dispatchThreadID.z < 8)
     {
-        MultiScatAs1SharedMem[DispatchThreadID.z] += MultiScatAs1SharedMem[DispatchThreadID.z + 8];
-        LSharedMem[DispatchThreadID.z] += LSharedMem[DispatchThreadID.z + 8];
+        MultiScatAs1SharedMem[dispatchThreadID.z] += MultiScatAs1SharedMem[dispatchThreadID.z + 8];
+        LSharedMem[dispatchThreadID.z] += LSharedMem[dispatchThreadID.z + 8];
     }
     //GroupMemoryBarrierWithGroupSync();
-    if (DispatchThreadID.z < 4)
+    if (dispatchThreadID.z < 4)
     {
-        MultiScatAs1SharedMem[DispatchThreadID.z] += MultiScatAs1SharedMem[DispatchThreadID.z + 4];
-        LSharedMem[DispatchThreadID.z] += LSharedMem[DispatchThreadID.z + 4];
+        MultiScatAs1SharedMem[dispatchThreadID.z] += MultiScatAs1SharedMem[dispatchThreadID.z + 4];
+        LSharedMem[dispatchThreadID.z] += LSharedMem[dispatchThreadID.z + 4];
     }
     //GroupMemoryBarrierWithGroupSync();
-    if (DispatchThreadID.z < 2)
+    if (dispatchThreadID.z < 2)
     {
-        MultiScatAs1SharedMem[DispatchThreadID.z] += MultiScatAs1SharedMem[DispatchThreadID.z + 2];
-        LSharedMem[DispatchThreadID.z] += LSharedMem[DispatchThreadID.z + 2];
+        MultiScatAs1SharedMem[dispatchThreadID.z] += MultiScatAs1SharedMem[dispatchThreadID.z + 2];
+        LSharedMem[dispatchThreadID.z] += LSharedMem[dispatchThreadID.z + 2];
     }
     //GroupMemoryBarrierWithGroupSync();
-    if (DispatchThreadID.z < 1)
+    if (dispatchThreadID.z < 1)
     {
-        MultiScatAs1SharedMem[DispatchThreadID.z] += MultiScatAs1SharedMem[DispatchThreadID.z + 1];
-        LSharedMem[DispatchThreadID.z] += LSharedMem[DispatchThreadID.z + 1];
+        MultiScatAs1SharedMem[dispatchThreadID.z] += MultiScatAs1SharedMem[dispatchThreadID.z + 1];
+        LSharedMem[dispatchThreadID.z] += LSharedMem[dispatchThreadID.z + 1];
     }
     //GroupMemoryBarrierWithGroupSync();
-    if (DispatchThreadID.z > 0)
+    if (dispatchThreadID.z > 0)
     {
         return;
     }

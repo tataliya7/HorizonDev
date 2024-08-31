@@ -29,7 +29,7 @@ groupshared float4 SharedTileData[MOTION_BLUR_TILE_SIZE * MOTION_BLUR_TILE_SIZE]
 
 [shader("compute")]
 [numthreads(MOTION_BLUR_TILE_SIZE, MOTION_BLUR_TILE_SIZE, 1)]
-void MotionBlurSetupCS(uint3 DispatchThreadID : SV_DispatchThreadID, uint3 GroupID : SV_GroupID, uint GroupIndex : SV_GroupIndex)
+void MotionBlurSetupCS(uint3 dispatchThreadID : SV_DispatchThreadID, uint3 GroupID : SV_GroupID, uint GroupIndex : SV_GroupIndex)
 {
     StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
     PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
@@ -38,7 +38,7 @@ void MotionBlurSetupCS(uint3 DispatchThreadID : SV_DispatchThreadID, uint3 Group
     RWTexture2D<float4> velocityRangeTexture = ShaderConstants.GetVelocityRangeTextureUAV();
     RWTexture2D<float3> velocityAndDepthTexture = ShaderConstants.GetVelocityAndDepthTextureUAV();
 
-    uint2 pixelCoord = DispatchThreadID.xy;
+    uint2 pixelCoord = dispatchThreadID.xy;
 
     float2 velocity = velocityTexture[pixelCoord].xy;
     float depth = depthTexture[pixelCoord].x;

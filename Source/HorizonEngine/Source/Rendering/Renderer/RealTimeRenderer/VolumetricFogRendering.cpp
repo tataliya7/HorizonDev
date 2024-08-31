@@ -3,6 +3,16 @@
 
 namespace Horizon
 {
+    // 8x8 piexels per tile
+    static const uint32 VolumetricFogVolumeTileSize = 8;
+    //
+    static const uint32 VolumetricFogVolumeDepthSliceCount = 64;
+
+    struct VolumetricFogShaderParameters
+    {
+         Vector3 volumeResolution;
+    };
+
     struct LocalVolumetricFogInstanceData
     {
         Matrix4x4f localToWorldMatrix;

@@ -23,7 +23,7 @@ static const float LensFlareTileCullingSampleWeights[5] = {
 
 [shader("compute")]
 [numthreads(POST_PROCESSING_THREAD_GROUP_SIZE_X, POST_PROCESSING_THREAD_GROUP_SIZE_Y, 1)]
-void LensFlareTileCullingCS(uint2 DispatchThreadID : SV_DispatchThreadID)
+void LensFlareTileCullingCS(uint2 dispatchThreadID : SV_DispatchThreadID)
 {
     Texture2D inputTexture = GetInputTextureSRV();
     RWTexture2D<float3> outputTexture = GetOutputTextureUAV();
@@ -32,7 +32,7 @@ void LensFlareTileCullingCS(uint2 DispatchThreadID : SV_DispatchThreadID)
     inputTexture.GetDimensions(inputTextureWidth, inputTextureHeight);
     float2 inputeTextureInvSize = 1.0f / float2(inputTextureWidth, inputTextureHeight);
 
-    uint2 tileID = DispatchThreadID.xy;
+    uint2 tileID = dispatchThreadID.xy;
     uint2 centerPixelCoord = tileID * 2 + 1;
     float2 centerUV = float2(centerPixelCoord) * inputeTextureInvSize;
 

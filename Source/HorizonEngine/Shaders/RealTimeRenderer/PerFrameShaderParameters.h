@@ -67,6 +67,7 @@ struct PerFrameShaderParameters
     float4x4 worldToClipMatrix;
     float4x4 clipToWorldMatrix;
     float4x4 nonJitteredWorldToClipMatrix;
+    float4x4 nonJitteredClipToWorldMatrix;
 
     float4x4 previousWorldToViewMatrix;
     float4x4 previousViewToWorldMatrix;

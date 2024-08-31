@@ -306,6 +306,7 @@ namespace Horizon
             perFrameShaderParameters.worldToClipMatrix = view.transformations.worldToClipMatrix;
             perFrameShaderParameters.clipToWorldMatrix = view.transformations.clipToWorldMatrix;
             perFrameShaderParameters.nonJitteredWorldToClipMatrix = view.transformations.nonJitteredWorldToClipMatrix;
+            perFrameShaderParameters.nonJitteredClipToWorldMatrix = view.transformations.nonJitteredClipToWorldMatrix;
 
             perFrameShaderParameters.previousWorldToViewMatrix = historyFrame.transformations.worldToViewMatrix;
             perFrameShaderParameters.previousViewToWorldMatrix = historyFrame.transformations.viewToWorldMatrix;
@@ -316,7 +317,7 @@ namespace Horizon
             perFrameShaderParameters.previousNonJitteredWorldToClipMatrix = historyFrame.transformations.nonJitteredWorldToClipMatrix;
 
             // TODO: Precision loss
-            Matrix4x4 reprojectionMatrix = perFrameShaderParameters.previousNonJitteredWorldToClipMatrix * glm::inverse(perFrameShaderParameters.nonJitteredWorldToClipMatrix);
+            Matrix4x4 reprojectionMatrix = perFrameShaderParameters.previousNonJitteredWorldToClipMatrix * perFrameShaderParameters.nonJitteredClipToWorldMatrix;
             Matrix4x4 inverseReprojectionMatrix = glm::inverse(reprojectionMatrix);
 
             perFrameShaderParameters.currentClipToPreviousClipMatrix = reprojectionMatrix;

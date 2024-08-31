@@ -70,13 +70,13 @@ uint3 DecodeTriangleIndices(MeshletDesc meshletDesc, uint triangleIndex)
 
 [shader("amplification")]
 [numthreads(TASK_SHADER_WORKGROUP_SIZE, 1, 1)]
-void VisibilityBufferAS(uint DispatchThreadID : SV_DispatchThreadID)
+void VisibilityBufferAS(uint dispatchThreadID : SV_DispatchThreadID)
 {
     bool visible = false;
 
     ByteAddressBuffer vertexBuffer0 = GetVertexBuffer0SRV();
 
-    if (DispatchThreadID.x < MeshInfo.meshletCount)
+    if (dispatchThreadID.x < MeshInfo.meshletCount)
     {
         // visible = IsVisible(MeshletCullData[dtid], Instance.World, Instance.Scale, Constants.CullViewPosition);
         visible = true;
@@ -85,7 +85,7 @@ void VisibilityBufferAS(uint DispatchThreadID : SV_DispatchThreadID)
     if (visible)
     {
         uint visibleMeshletIndex = WavePrefixCountBits(visible);
-        SharedPayload.meshletIndices[visibleMeshletIndex] = DispatchThreadID;
+        SharedPayload.meshletIndices[visibleMeshletIndex] = dispatchThreadID;
     }
 
     uint visibleMeshletCount = WaveActiveCountBits(visible);

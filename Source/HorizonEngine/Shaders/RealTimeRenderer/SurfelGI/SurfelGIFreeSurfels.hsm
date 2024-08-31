@@ -7,18 +7,18 @@ BIND_BYTE_ADDRESS_BUFFER_UAV(1, SurfelGIFreeSurfelBuffer);
 
 [shader("compute")]
 [numthreads(SurfelGIIndirectDispatchGroupThreadCount, 1, 1)]
-void SurfelGIFreeSurfelsCS(uint3 DispatchThreadID : SV_DispatchThreadID)
+void SurfelGIFreeSurfelsCS(uint3 dispatchThreadID : SV_DispatchThreadID)
 {
-    if (DispatchThreadID.x == 0)
+    if (dispatchThreadID.x == 0)
     {
         RWByteAddressBuffer infoBuffer = GetSurfelGIInfoBufferUAV();
         infoBuffer.Store<uint>(SurfelGIInfoBufferOffset_AliveSurfelCount, 0);
         infoBuffer.Store<uint>(SurfelGIInfoBufferOffset_DeadSurfelCount, SurfelGIMaxSurfelCount);
     }
 
-    if (DispatchThreadID.x < SurfelGIMaxSurfelCount)
+    if (dispatchThreadID.x < SurfelGIMaxSurfelCount)
     {
         RWByteAddressBuffer freeSurfelBuffer = GetSurfelGIFreeSurfelBufferUAV();
-        freeSurfelBuffer.Store<uint>(DispatchThreadID.x * sizeof(uint), DispatchThreadID.x);
+        freeSurfelBuffer.Store<uint>(dispatchThreadID.x * sizeof(uint), dispatchThreadID.x);
     }
 }

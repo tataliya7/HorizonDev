@@ -18,7 +18,7 @@ static const uint2 bilateralMinMaxRadius = uint2(0, 2); // Chosen by variance
 
 [shader("compute")]
 [numthreads(SSR_THREAD_GROUP_SIZE, SSR_THREAD_GROUP_SIZE, 1)]
-void SSRSpatialFilteringCS(uint3 DispatchThreadID : SV_DispatchThreadID)
+void SSRSpatialFilteringCS(uint3 dispatchThreadID : SV_DispatchThreadID)
 {
     StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
     PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
@@ -29,7 +29,7 @@ void SSRSpatialFilteringCS(uint3 DispatchThreadID : SV_DispatchThreadID)
     RWTexture2D<float4> outputTexture = GetOutputTextureUAV();
 
     const float2 resolution = float2(frameShaderParameters.renderWidth, frameShaderParameters.renderHeight);
-    const uint2 coord = DispatchThreadID.xy;
+    const uint2 coord = dispatchThreadID.xy;
     const float2 uv = (coord + 0.5f) * (1.0 / resolution.x, 1.0 / resolution.y);
     const float depth = sceneDepth[coord].r;
     const float roughness = gbuffer1[coord].w;

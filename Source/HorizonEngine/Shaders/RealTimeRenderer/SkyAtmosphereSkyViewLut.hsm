@@ -84,7 +84,7 @@ float3 UvToSkyViewLutParams(in float4 skyViewLutSize, in float bottomRadius, in 
 
 [shader("compute")]
 [numthreads(8, 8, 1)]
-void SkyAtmosphereSkyViewLutCS(uint3 DispatchThreadID : SV_DispatchThreadID)
+void SkyAtmosphereSkyViewLutCS(uint3 dispatchThreadID : SV_DispatchThreadID)
 {
     StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
     PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
@@ -95,7 +95,7 @@ void SkyAtmosphereSkyViewLutCS(uint3 DispatchThreadID : SV_DispatchThreadID)
     SkyAtmosphereShaderParameters skyAtmosphereParameters = GetSkyAtmosphereShaderParameters(frameShaderParameters);
     float4 skyViewLutSize = skyAtmosphereParameters.skyViewLutSize;
 
-    uint2 pixelCoord = DispatchThreadID.xy;
+    uint2 pixelCoord = dispatchThreadID.xy;
     float2 uv = (float2(pixelCoord) + 0.5f) * skyViewLutSize.zw;
 
     float3 worldPos = (frameShaderParameters.cameraPosition * M_TO_KM) - float3(0.0f, 0.0f, -skyAtmosphereParameters.bottomRadius);

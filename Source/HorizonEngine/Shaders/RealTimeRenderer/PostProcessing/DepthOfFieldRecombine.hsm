@@ -10,18 +10,18 @@ BIND_TEXTURE_2D_UAV(4, float4, DOFOutputTexture);
 
 [shader("compute")]
 [numthreads(POST_PROCESSING_THREAD_GROUP_SIZE_X, POST_PROCESSING_THREAD_GROUP_SIZE_Y, 1)]
-void DepthOfFieldRecombineCS(uint3 DispatchThreadID : SV_DispatchThreadID)
+void DepthOfFieldRecombineCS(uint3 dispatchThreadID : SV_DispatchThreadID)
 {
     StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
     PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
     uint width = frameShaderParameters.targetWidth;
     uint height = frameShaderParameters.targetHeight;
-    if (DispatchThreadID.x >= width || DispatchThreadID.y >= height)
+    if (dispatchThreadID.x >= width || dispatchThreadID.y >= height)
     {
         return;
     }
 
-    uint2 pixelCoord = DispatchThreadID.xy;
+    uint2 pixelCoord = dispatchThreadID.xy;
     float2 uv = (pixelCoord + 0.5) / float2(width, height);
 
     Texture2D sceneColorTexture = GetSceneColorTextureSRV();

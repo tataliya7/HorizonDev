@@ -39,7 +39,7 @@ float SampleWeight(
 
 [shader("compute")]
 [numthreads(MOTION_BLUR_TILE_SIZE, MOTION_BLUR_TILE_SIZE, 1)]
-void MotionBlurReconstructionFilterCS(uint3 DispatchThreadID : SV_DispatchThreadID, uint3 GroupID : SV_GroupID, uint GroupIndex : SV_GroupIndex)
+void MotionBlurReconstructionFilterCS(uint3 dispatchThreadID : SV_DispatchThreadID, uint3 GroupID : SV_GroupID, uint GroupIndex : SV_GroupIndex)
 {
     StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
     PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
@@ -48,7 +48,7 @@ void MotionBlurReconstructionFilterCS(uint3 DispatchThreadID : SV_DispatchThread
     Texture2D dilatedVelocityRangeTexture = ShaderConstants.GetDilatedVelocityRangeTextureSRV();
     RWTexture2D<float3> outputTexture = ShaderConstants.GetOutputTextureUAV();
 
-    uint2 pixelCoord = DispatchThreadID.xy;
+    uint2 pixelCoord = dispatchThreadID.xy;
     float2 centerUV = (float2(pixelCoord) + 0.5f) * frameShaderParameters.targetResolution.zw;
 
     float3 centerColor = colorTexture.SampleLevel(GlobalSamplerPointClamp, centerUV, 0).xyz;

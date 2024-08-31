@@ -39,7 +39,7 @@ static const float GaussianBloomUpsampleWeights[9] =
 
 [shader("compute")]
 [numthreads(POST_PROCESSING_THREAD_GROUP_SIZE_X, POST_PROCESSING_THREAD_GROUP_SIZE_Y, 1)]
-void GaussianBloomUpsampleCS(uint3 DispatchThreadID : SV_DispatchThreadID)
+void GaussianBloomUpsampleCS(uint3 dispatchThreadID : SV_DispatchThreadID)
 {
     StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
     PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
@@ -50,7 +50,7 @@ void GaussianBloomUpsampleCS(uint3 DispatchThreadID : SV_DispatchThreadID)
     float radius = frameShaderParameters.bloomRadius;
     float2 outputTextureInvSize = float2(ShaderConstants.GetOutputTextureInvSizeX(), ShaderConstants.GetOutputTextureInvSizeY());
 
-    uint2 pixelCoord = DispatchThreadID.xy;
+    uint2 pixelCoord = dispatchThreadID.xy;
     float2 uv = (float2(pixelCoord) + 0.5f) * outputTextureInvSize;
 
     // There is no need to apply pre-exposure because the result color is the same as when we don't use it.

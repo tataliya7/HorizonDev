@@ -19,7 +19,7 @@ groupshared int GroupSharedMaxSpawnCountPerTile;
 [shader("compute")]
 [numthreads(SurfelGIScreenTileSize, SurfelGIScreenTileSize, 1)]
 void SurfelGIGapFillingCS(
-    uint3 DispatchThreadID : SV_DispatchThreadID,
+    uint3 dispatchThreadID : SV_DispatchThreadID,
     uint3 GroupID : SV_GroupID,
     uint3 GroupThreadID : SV_GroupThreadID,
     uint GroupIndex : SV_GroupIndex)
@@ -37,7 +37,7 @@ void SurfelGIGapFillingCS(
 
     uint width = frameShaderParameters.renderWidth;
     uint height = frameShaderParameters.renderHeight;
-    uint2 pixelCoord = DispatchThreadID.xy;
+    uint2 pixelCoord = dispatchThreadID.xy;
     float2 uv = (pixelCoord + 0.5) / float2(width, height);
     if (pixelCoord.x >= width || pixelCoord.y >= height)
     {
@@ -130,7 +130,7 @@ void SurfelGIGapFillingCS(
             float linearDepth = ComputeCameraSpaceDepth(sceneDepth, frameShaderParameters.nearClippingPlane, frameShaderParameters.farClippingPlane);
             float spawnChance = 1 - pow(1 - linearDepth, 4);
 
-            uint randSeed = RandInit(DispatchThreadID.x + DispatchThreadID.y * SurfelGIScreenTileSize, frameShaderParameters.frameIndex);
+            uint randSeed = RandInit(dispatchThreadID.x + dispatchThreadID.y * SurfelGIScreenTileSize, frameShaderParameters.frameIndex);
             float rand = Rand(randSeed);
 
             // Spawn surfels probabilistically

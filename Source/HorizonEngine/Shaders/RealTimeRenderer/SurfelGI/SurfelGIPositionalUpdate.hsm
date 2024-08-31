@@ -22,11 +22,11 @@ bool RecyclingHeuristic(uint totalLiveSurfels, uint framesSinceSeen, uint distan
 
 [shader("compute")]
 [numthreads(SurfelGIIndirectDispatchGroupThreadCount, 1, 1)]
-void SurfelGIPositionUpdateCS(uint3 DispatchThreadID : SV_DispatchThreadID)
+void SurfelGIPositionUpdateCS(uint3 dispatchThreadID : SV_DispatchThreadID)
 {
     RWByteAddressBuffer constantsBuffer = GetSurfelGIConstantsBufferUAV();
     uint liveSurfelCount = constantsBuffer.Load(SurfelGIConstantsBufferOffset_LiveSurfelCount);
-    if (DispatchThreadID.x >= liveSurfelCount)
+    if (dispatchThreadID.x >= liveSurfelCount)
     {
         return;
     }
@@ -34,7 +34,7 @@ void SurfelGIPositionUpdateCS(uint3 DispatchThreadID : SV_DispatchThreadID)
     RWByteAddressBuffer aliveSurfelBuffer = GetSurfelGILiveSurfelBufferUAV();
     RWByteAddressBuffer surfelBuffer = GetSurfelGISurfelBufferUAV();
 
-    uint surfelIndex = aliveSurfelBuffer[DispatchThreadID.x];
+    uint surfelIndex = aliveSurfelBuffer[dispatchThreadID.x];
     Surfel surfel = surfelBuffer[surfelIndex];
 
     Surface surface;

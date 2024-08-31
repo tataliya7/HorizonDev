@@ -92,7 +92,7 @@ float KarisAverage(float3 color)
 
 [shader("compute")]
 [numthreads(POST_PROCESSING_THREAD_GROUP_SIZE_X, POST_PROCESSING_THREAD_GROUP_SIZE_Y, 1)]
-void GaussianBloomDownsampleCS(uint3 DispatchThreadID : SV_DispatchThreadID)
+void GaussianBloomDownsampleCS(uint3 dispatchThreadID : SV_DispatchThreadID)
 {
     StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
     PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
@@ -102,7 +102,7 @@ void GaussianBloomDownsampleCS(uint3 DispatchThreadID : SV_DispatchThreadID)
     float2 outputTextureInvSize = float2(ShaderConstants.GetOutputTextureInvSizeX(), ShaderConstants.GetOutputTextureInvSizeY());
     bool useKarisAverage = ShaderConstants.GetUseKarisAverage() > 0;
 
-    uint2 pixelCoord = DispatchThreadID.xy;
+    uint2 pixelCoord = dispatchThreadID.xy;
     float2 uv = (float2(pixelCoord) + 0.5f) * outputTextureInvSize;
 
     float3 color = 0.0f;

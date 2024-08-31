@@ -12,7 +12,7 @@ BIND_TEXTURE_2D_UAV(5, float4, OutputTexture);
 
 [shader("compute")]
 [numthreads(SUBSURFACE_SCATTERING_TILE_SIZE, SUBSURFACE_SCATTERING_TILE_SIZE, 1)]
-void SubsurfaceScatteringGatherTilesCS(uint3 DispatchThreadID : SV_DispatchThreadID, uint3 GroupID : SV_GroupID, uint GroupIndex : SV_GroupIndex)
+void SubsurfaceScatteringGatherTilesCS(uint3 dispatchThreadID : SV_DispatchThreadID, uint3 GroupID : SV_GroupID, uint GroupIndex : SV_GroupIndex)
 {
     StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
     PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
@@ -24,12 +24,12 @@ void SubsurfaceScatteringGatherTilesCS(uint3 DispatchThreadID : SV_DispatchThrea
 
     uint width = frameShaderParameters.renderWidth;
     uint height = frameShaderParameters.renderHeight;
-    if (DispatchThreadID.x >= width || DispatchThreadID.y >= height)
+    if (dispatchThreadID.x >= width || dispatchThreadID.y >= height)
     {
         return;
     }
 
-    uint2 pixelCoord = DispatchThreadID.xy;
+    uint2 pixelCoord = dispatchThreadID.xy;
     float2 pixelPosition = float2(pixelCoord) + 0.5f;
     float2 uv = pixelPosition * frameShaderParameters.renderResolution.zw;
 

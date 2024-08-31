@@ -146,7 +146,7 @@ void SurfaceInit(inout Surface surface, PerFrameShaderParameters frameShaderPara
 
 [shader("compute")]
 [numthreads(8, 8, 1)]
-void GBufferCS(uint3 DispatchThreadID : SV_DispatchThreadID)
+void GBufferCS(uint3 dispatchThreadID : SV_DispatchThreadID)
 {
     StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
     PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
@@ -157,7 +157,7 @@ void GBufferCS(uint3 DispatchThreadID : SV_DispatchThreadID)
     RWTexture2D<float4> gbuffer1 = ShaderConstants.GetGBuffer1UAV();
     RWTexture2D<float4> gbuffer2 = ShaderConstants.GetGBuffer2UAV();
 
-    uint2 pixelCoord = DispatchThreadID.xy;
+    uint2 pixelCoord = dispatchThreadID.xy;
     float2 uv = (pixelCoord.xy + 0.5f) * frameShaderParameters.renderResolution.zw;
 
     uint2 visibilityID = vbuffer0[pixelCoord];

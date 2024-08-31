@@ -147,7 +147,7 @@ float ComputeCameraSpaceDepth(float depth, float near, float far)
     return LinearDepth01(depth, near, far) * far;
 }
 
-float ComputeDepthFromComputeCameraSpaceDepth(float linearDepth, float near, float far)
+float ComputeDepthFromCameraSpaceDepth(float linearDepth, float near, float far)
 {
     float x = -1.0 + far / near;
     float y = 1.0;

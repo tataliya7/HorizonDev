@@ -4865,7 +4865,7 @@ namespace Horizon
 
         if (!bufferBarriers.empty() || !imageBarriers.empty())
         {
-            VkDependencyInfo dependency = 
+            VkDependencyInfo dependency =
             {
                 .sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
                 .bufferMemoryBarrierCount = (uint32)bufferBarriers.size(),

@@ -23,6 +23,9 @@ namespace Horizon
         SurfelGIHeatmap,
     };
 
+    // TODO
+    const float MinNearClippingPlane = 0.01f;
+
     struct CameraTransformations
     {
         CameraTransformations()
@@ -33,6 +36,7 @@ namespace Horizon
             , worldToClipMatrix(IdentityMatrix4x4)
             , clipToWorldMatrix(IdentityMatrix4x4)
             , nonJitteredWorldToClipMatrix(IdentityMatrix4x4)
+            , nonJitteredClipToWorldMatrix(IdentityMatrix4x4)
         {
 
         }
@@ -46,6 +50,7 @@ namespace Horizon
             worldToClipMatrix = IdentityMatrix4x4;
             clipToWorldMatrix = IdentityMatrix4x4;
             nonJitteredWorldToClipMatrix = IdentityMatrix4x4;
+            nonJitteredClipToWorldMatrix = IdentityMatrix4x4;
         }
 
         void Update(const Vector3& position, const Vector3& rotation, float fieldOfView, float aspectRatio, float nearClippingPlane, float farClippingPlane)
@@ -61,6 +66,8 @@ namespace Horizon
             // worldToViewMatrix = Math::InverseMatrix(viewToWorldMatrix);
             worldToViewMatrix = glm::transpose(glm::mat4_cast(glm::normalize(cameraOrientation * zUpQuat))) * glm::translate(glm::mat4(1), -position);
             //viewToWorldMatrix = Math::InverseMatrix(worldToViewMatrix);
+
+            nearClippingPlane = std::max(nearClippingPlane, MinNearClippingPlane);
 
 #if 0
             if (farClippingPlane == std::numeric_limits<float>::max())
@@ -78,6 +85,7 @@ namespace Horizon
             }
 
             nonJitteredWorldToClipMatrix = viewToClipMatrix * worldToViewMatrix;
+            nonJitteredClipToWorldMatrix = Math::InverseMatrix(nonJitteredWorldToClipMatrix);
         }
 
         void ApplyJitterOffset(const Vector2& jitterOffset, uint32 renderWidth, uint32 renderHeight)
@@ -190,6 +198,7 @@ namespace Horizon
         Matrix4x4 worldToClipMatrix;
         Matrix4x4 clipToWorldMatrix;
         Matrix4x4 nonJitteredWorldToClipMatrix;
+        Matrix4x4 nonJitteredClipToWorldMatrix;
     };
 
     /**

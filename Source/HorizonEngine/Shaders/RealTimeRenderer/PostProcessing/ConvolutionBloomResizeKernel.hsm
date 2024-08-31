@@ -9,15 +9,15 @@ SHADER_CONSTANTS_STRUCT_END();
 
 [shader("compute")]
 [numthreads(POST_PROCESSING_THREAD_GROUP_SIZE_X, POST_PROCESSING_THREAD_GROUP_SIZE_Y, 1)]
-void ConvolutionBloomResizeKernelCS(uint3 DispatchThreadID : SV_DispatchThreadID)
+void ConvolutionBloomResizeKernelCS(uint3 dispatchThreadID : SV_DispatchThreadID)
 {
     Texture2D inputTexture = ShaderConstants.GetInputTextureSRV();
     RWTexture2D<float4> outputTexture = ShaderConstants.GetOutputTextureUAV();
 
     uint N = 1024;
     uint halfN = N / 2;
-    uint2 uvSrc = DispatchThreadID.xy;
-    uint2 uvDst = (DispatchThreadID.xy + uint2(halfN, halfN));
+    uint2 uvSrc = dispatchThreadID.xy;
+    uint2 uvDst = (dispatchThreadID.xy + uint2(halfN, halfN));
 
     uvDst.x %= N;
     uvDst.y %= N;

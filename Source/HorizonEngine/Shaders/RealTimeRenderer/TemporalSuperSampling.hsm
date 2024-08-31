@@ -277,7 +277,7 @@ float3 InverseTonemap(float3 color)
 
 [shader("compute")]
 [numthreads(8, 8, 1)]
-void TemporalSuperSamplingCS(uint3 DispatchThreadID : SV_DispatchThreadID)
+void TemporalSuperSamplingCS(uint3 dispatchThreadID : SV_DispatchThreadID)
 {
     StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
     PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
@@ -290,13 +290,13 @@ void TemporalSuperSamplingCS(uint3 DispatchThreadID : SV_DispatchThreadID)
 
     uint width = frameShaderParameters.renderWidth;
     uint height = frameShaderParameters.renderHeight;
-    if (DispatchThreadID.x >= width || DispatchThreadID.y >= height)
+    if (dispatchThreadID.x >= width || dispatchThreadID.y >= height)
     {
         return;
     }
 
     float2 resolution = float2(width, height);
-    int2 centerPixel = DispatchThreadID.xy;
+    int2 centerPixel = dispatchThreadID.xy;
     int2 inputMinPixelCoord = int2(0, 0);
     int2 inputMaxPixelCoord = int2(width - 1, height - 1);
     const float2 uv = (centerPixel + 0.5f) * float2(1.0 / resolution.x, 1.0 / resolution.y);
@@ -388,5 +388,5 @@ void TemporalSuperSamplingCS(uint3 DispatchThreadID : SV_DispatchThreadID)
     result.rgb = InverseTonemap(YCoCgToRGB(result.rgb));
     result.a = 1.0;
 
-    outputTexture[DispatchThreadID.xy] = result;
+    outputTexture[dispatchThreadID.xy] = result;
 }

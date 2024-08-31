@@ -66,7 +66,7 @@ float InterpolateExposure(float srcExposure, float dstExposure, float deltaTimeI
 
 [shader("compute")]
 [numthreads(1, 1, 1)]
-void AutoExposureComputeExposureCS(uint3 DispatchThreadID : SV_DispatchThreadID)
+void AutoExposureComputeExposureCS(uint3 dispatchThreadID : SV_DispatchThreadID)
 {
     StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
     PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];

@@ -9,14 +9,14 @@ SHADER_CONSTANTS_STRUCT_END();
 
 [shader("compute")]
 [numthreads(8, 8, 1)]
-void VisualizeAmbientOcclusionCS(uint3 DispatchThreadID : SV_DispatchThreadID)
+void VisualizeAmbientOcclusionCS(uint3 dispatchThreadID : SV_DispatchThreadID)
 {
     StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
     PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
     Texture2D ambientOcclusionTexture = ShaderConstants.GetAmbientOcclusionTextureSRV();
     RWTexture2D<float4> outputTexture = ShaderConstants.GetOutputTextureUAV();
 
-    uint2 pixelCoord = DispatchThreadID.xy;
+    uint2 pixelCoord = dispatchThreadID.xy;
 
     uint width, height;
     outputTexture.GetDimensions(width, height);

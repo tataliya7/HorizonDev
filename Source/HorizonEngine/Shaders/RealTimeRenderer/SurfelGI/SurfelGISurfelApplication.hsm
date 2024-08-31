@@ -24,7 +24,7 @@ groupshared int GroupSharedSurfelSpawnCountPerTile;
 [shader("compute")]
 [numthreads(SurfelGIScreenTileSize, SurfelGIScreenTileSize, 1)]
 void SurfelGISurfelApplicationCS(
-    uint3 DispatchThreadID : SV_DispatchThreadID,
+    uint3 dispatchThreadID : SV_DispatchThreadID,
     uint3 GroupID : SV_GroupID,
     uint3 GroupThreadID : SV_GroupThreadID,
     uint GroupIndex : SV_GroupIndex)
@@ -57,7 +57,7 @@ void SurfelGISurfelApplicationCS(
     RWByteAddressBuffer deadSurfelBuffer = GetSurfelGIDeadSurfelBufferUAV();
     RWByteAddressBuffer surfelColdDataBuffer = GetSurfelGISurfelColdDataBufferUAV();
 
-    uint2 pixelCoord = DispatchThreadID.xy;
+    uint2 pixelCoord = dispatchThreadID.xy;
     float depth = sceneDepth[pixelCoord];
     if (depth == FarClipPlaneDepthValue)
     {

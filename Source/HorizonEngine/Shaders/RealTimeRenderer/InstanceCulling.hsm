@@ -23,15 +23,15 @@ bool PointInsidePlane(float3 position, float4 plane)
 
 [shader("compute")]
 [numthreads(64, 1, 1)]
-void InstanceCullingCS(uint3 DispatchThreadID : SV_DispatchThreadID)
+void InstanceCullingCS(uint3 dispatchThreadID : SV_DispatchThreadID)
 {
     int instanceCount = (int)(0);
-    if (DispatchThreadID.x >= instanceCount)
+    if (dispatchThreadID.x >= instanceCount)
     {
         return;
     }
 
-    uint instanceID = DispatchThreadID.x;
+    uint instanceID = dispatchThreadID.x;
 
     ByteAddressBuffer geometryBuffer = GetGeometryBufferSRV();
     Geometry geometry = geometryBuffer.Load<Geometry>(instanceID * sizeof(Geometry));

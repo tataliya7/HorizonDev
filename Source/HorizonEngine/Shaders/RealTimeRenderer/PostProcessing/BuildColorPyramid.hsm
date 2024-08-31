@@ -24,7 +24,7 @@ float HdrWeightInv4(float3 Color)
 
 [shader("compute")]
 [numthreads(POST_PROCESSING_THREAD_GROUP_SIZE_X, POST_PROCESSING_THREAD_GROUP_SIZE_Y, 1)]
-void BuildColorPyramidCS(uint3 DispatchThreadID : SV_DispatchThreadID)
+void BuildColorPyramidCS(uint3 dispatchThreadID : SV_DispatchThreadID)
 {
     Texture2D inputTexture = ShaderConstants.GetInputTextureSRV();
     RWTexture2D<float3> outputTexture = ShaderConstants.GetOutputTextureUAV();
@@ -32,7 +32,7 @@ void BuildColorPyramidCS(uint3 DispatchThreadID : SV_DispatchThreadID)
     uint width, height;
     outputTexture.GetDimensions(width, height);
 
-    uint2 pixelCoord = DispatchThreadID.xy;
+    uint2 pixelCoord = dispatchThreadID.xy;
     if (pixelCoord.x >= width || pixelCoord.y >= height)
     {
         return;

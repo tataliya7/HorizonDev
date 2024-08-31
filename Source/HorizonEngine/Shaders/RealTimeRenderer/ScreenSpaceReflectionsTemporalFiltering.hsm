@@ -133,7 +133,7 @@ float4 SamplePreviousColor(PerFrameShaderParameters frameShaderParameters, Textu
 
 [shader("compute")]
 [numthreads(SSR_THREAD_GROUP_SIZE, SSR_THREAD_GROUP_SIZE, 1)]
-void SSRTemporalFilteringCS(uint3 DispatchThreadID : SV_DispatchThreadID)
+void SSRTemporalFilteringCS(uint3 dispatchThreadID : SV_DispatchThreadID)
 {
     StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
     PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
@@ -154,18 +154,18 @@ void SSRTemporalFilteringCS(uint3 DispatchThreadID : SV_DispatchThreadID)
 
     if (frameShaderParameters.frameIndex == 0)
     {
-        outputTexture[DispatchThreadID.xy] = resolveTexture[DispatchThreadID.xy];
-        temporalVariance[DispatchThreadID.xy] = 0.0;
+        outputTexture[dispatchThreadID.xy] = resolveTexture[dispatchThreadID.xy];
+        temporalVariance[dispatchThreadID.xy] = 0.0;
         return;
     }
 
-    const float depth = sceneDepth[DispatchThreadID.xy].r;
-    const float roughness = gbuffer1[DispatchThreadID.xy].w;
+    const float depth = sceneDepth[dispatchThreadID.xy].r;
+    const float roughness = gbuffer1[dispatchThreadID.xy].w;
 
     if (!NeedReflection(roughness, depth, SSRRoughnessCutoff))
     {
-        outputTexture[DispatchThreadID.xy] = resolveTexture[DispatchThreadID.xy];
-        temporalVariance[DispatchThreadID.xy] = 0.0;
+        outputTexture[dispatchThreadID.xy] = resolveTexture[dispatchThreadID.xy];
+        temporalVariance[dispatchThreadID.xy] = 0.0;
         return;
     }
 
@@ -177,7 +177,7 @@ void SSRTemporalFilteringCS(uint3 DispatchThreadID : SV_DispatchThreadID)
         for (int y = -1; y <= 1; y++)
         {
             int2 offset = int2(x, y);
-            int2 coord = DispatchThreadID.xy + offset;
+            int2 coord = dispatchThreadID.xy + offset;
 
             float4 sampleColor = resolveTexture[coord];
 
@@ -192,10 +192,10 @@ void SSRTemporalFilteringCS(uint3 DispatchThreadID : SV_DispatchThreadID)
 
     // Secondary reprojection based on ray lengths: https://www.ea.com/seed/news/seed-dd18-presentation-slides-raytracing (Slide 45)
 
-    float2 velocity = velocityBuffer[DispatchThreadID.xy].rg;
-    float reprojectionDepth = reprojectionDepthTexture[DispatchThreadID.xy].r;
+    float2 velocity = velocityBuffer[dispatchThreadID.xy].rg;
+    float reprojectionDepth = reprojectionDepthTexture[dispatchThreadID.xy].r;
 
-    float2 uv = (DispatchThreadID.xy + 0.5f) * float2(1.0 / resolution.x, 1.0 / resolution.y);
+    float2 uv = (dispatchThreadID.xy + 0.5f) * float2(1.0 / resolution.x, 1.0 / resolution.y);
 
     float2 prevUVVelocity = uv + velocity;
     float2 prevUVReflectionHit = CalculateReprojectionBuffer(uv, reprojectionDepth, frameShaderParameters.clipToWorldMatrix, frameShaderParameters.previousWorldToClipMatrix);
@@ -212,7 +212,7 @@ void SSRTemporalFilteringCS(uint3 DispatchThreadID : SV_DispatchThreadID)
     float2 prevUVSample = 0.0;
     float4 previousColor = SamplePreviousColor(frameShaderParameters, historyOutputTexture, historyDepthBuffer, prevUV, resolution, depth, disocclusion, prevUVSample);
 
-    float4 currentColor = resolveTexture[DispatchThreadID.xy];
+    float4 currentColor = resolveTexture[dispatchThreadID.xy];
     float4 resultColor = currentColor;
 
     // Disocclusion fallback: color
@@ -226,7 +226,7 @@ void SSRTemporalFilteringCS(uint3 DispatchThreadID : SV_DispatchThreadID)
         resultColor = lerp(currentColor, previousColor, temporalResponse);
     }
 
-    float currentVariance = resolveVariance[DispatchThreadID.xy].r;
+    float currentVariance = resolveVariance[dispatchThreadID.xy].r;
     float varianceResponse = varianceTemporalResponse;
 
     // Disocclusion fallback: variance
@@ -240,6 +240,6 @@ void SSRTemporalFilteringCS(uint3 DispatchThreadID : SV_DispatchThreadID)
     float previousVariance = historyTemporalVariance.SampleLevel(GlobalSamplerLinearClamp, prevUVSample, 0).r;
     float resultVariance = lerp(currentVariance, previousVariance, varianceResponse);
 
-    outputTexture[DispatchThreadID.xy] = max(0, resultColor);
-    temporalVariance[DispatchThreadID.xy] = max(0, resultVariance);
+    outputTexture[dispatchThreadID.xy] = max(0, resultColor);
+    temporalVariance[dispatchThreadID.xy] = max(0, resultVariance);
 }
