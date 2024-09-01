@@ -308,6 +308,18 @@ namespace Horizon
         //     shaderLibrary->LoadShader(ShaderID::LightShaftsApply, shaderDesc);
         // }
         {
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/VolumetricFogVoxelization.hsm", "VolumetricFogVoxelizationCS");
+            shaderLibrary->LoadShader(ShaderID::VolumetricFogVoxelization, shaderDesc);
+        }
+        {
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/VolumetricFogLightScattering.hsm", "VolumetricFogLightScatteringCS");
+            shaderLibrary->LoadShader(ShaderID::VolumetricFogLightScattering, shaderDesc);
+        }
+        {
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/VolumetricFogFinalIntegration.hsm", "VolumetricFogFinalIntegrationCS");
+            shaderLibrary->LoadShader(ShaderID::VolumetricFogFinalIntegration, shaderDesc);
+        }
+        {
             ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Vertex, "Shaders/RealTimeRenderer/LocalVolumetricFog/LocalVolumetricFog.hsm", "LocalVolumetricFogVS");
             shaderLibrary->LoadShader(ShaderID::LocalVolumetricFogVS, shaderDesc);
         }

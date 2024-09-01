@@ -14,11 +14,14 @@ SHADER_CONSTANTS_STRUCT_END();
 void VolumetricFogFinalIntegrationCS(uint3 groupID : SV_GroupID, uint3 groupThreadID : SV_GroupThreadID, uint3 dispatchThreadID : SV_DispatchThreadID)
 {
     StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
-    PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
     StructuredBuffer<VolumetricFogShaderParameters> volumetricFogShaderParameterBuffer = ShaderConstants.GetVolumetricFogShaderParameterBufferSRV();
-    VolumetricFogShaderParameters volumetricFogShaderParameters = volumetricFogShaderParameterBuffer[0];
     Texture3D<float4> scatteringAndExtinctionTexture = ShaderConstants.GetVolumetricFogScatteringAndExtinctionTextureSRV();
     RWTexture3D<float4> integratedLightScatteringTextureUAV = ShaderConstants.GetVolumetricFogIntegratedLightScatteringTextureUAV();
+
+    PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
+    VolumetricFogShaderParameters volumetricFogShaderParameters = volumetricFogShaderParameterBuffer[0];
+
+    float3 previousVoxelCenterWorldPosition = ComputeVoxelWorldPosition(frameShaderParameters, volumetricFogShaderParameters, uint3(dispatchThreadID.xy, 0), float3(0.5f, 0.5f, 0.5f));
 
     float4 accumulatedScatteringAndTransmittance = float4(0.0f, 0.0f, 0.0f, 1.0f);
     for (uint sliceIndex = 0; sliceIndex < volumetricFogShaderParameters.volumeResolution.z; sliceIndex++)
@@ -26,9 +29,9 @@ void VolumetricFogFinalIntegrationCS(uint3 groupID : SV_GroupID, uint3 groupThre
         uint3 voxelCoordinate = uint3(dispatchThreadID.xy, sliceIndex);
         float4 scatteringAndExtinction = scatteringAndExtinctionTexture[voxelCoordinate];
 
-		float3 LayerTranslatedWorldPosition = ComputeCellTranslatedWorldPosition(LayerCoordinate, .5f);
-		float stepLength = length(LayerTranslatedWorldPosition - PreviousSliceTranslatedWorldPosition);
-		PreviousSliceTranslatedWorldPosition = LayerTranslatedWorldPosition;
+		float3 voxelCenterWorldPosition = ComputeVoxelWorldPosition(frameShaderParameters, volumetricFogShaderParameters, voxelCoordinate, float3(0.5f, 0.5f, 0.5f));
+		float stepLength = length(voxelCenterWorldPosition - previousVoxelCenterWorldPosition);
+		previousVoxelCenterWorldPosition = voxelCenterWorldPosition;
 
         float transmittance = exp(-scatteringAndExtinction.w * stepLength);
 
@@ -37,8 +40,8 @@ void VolumetricFogFinalIntegrationCS(uint3 groupID : SV_GroupID, uint3 groupThre
             accumulatedScatteringAndTransmittance.xyz += scatteringAndExtinction.xyz * accumulatedScatteringAndTransmittance.w;
             accumulatedScatteringAndTransmittance.w *= transmittance;
         #else // Energy-conserving integration
-			float3 ScatteringIntegratedOverSlice = (PreExposedScatteringAndExtinction.rgb - PreExposedScatteringAndExtinction.rgb * transmittance) / max(PreExposedScatteringAndExtinction.w, .00001f);
-			accumulatedScatteringAndTransmittance.xyz += ScatteringIntegratedOverSlice * accumulatedScatteringAndTransmittance.w;
+			float3 t = (scatteringAndExtinction.rgb - scatteringAndExtinction.rgb * transmittance) / max(scatteringAndExtinction.w, 0.00001f);
+			accumulatedScatteringAndTransmittance.xyz += t * accumulatedScatteringAndTransmittance.w;
             accumulatedScatteringAndTransmittance.w *= transmittance;
         #endif
 

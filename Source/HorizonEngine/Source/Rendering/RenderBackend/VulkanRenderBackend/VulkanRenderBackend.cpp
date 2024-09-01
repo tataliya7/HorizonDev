@@ -59,8 +59,8 @@ namespace Horizon
         uint32 numSamplers;
         uint32 numSampledImages;
         uint32 numStorageImages;
-        uint32 numStorageBuffers;
         uint32 numUniformBuffers;
+        uint32 numStorageBuffers;
         uint32 numAccelerationStructures;
     };
 
@@ -78,11 +78,11 @@ namespace Horizon
         VkPipelineLayout compatibleGraphicsPipelineLayout;
         VkPipelineLayout compatibleRayTracingPipelineLayout;
 
-        std::vector<uint32> freeSampledImages;
         std::vector<uint32> freeSamplers;
+        std::vector<uint32> freeSampledImages;
         std::vector<uint32> freeStorageImages;
-        std::vector<uint32> freeStorageBuffers;
         std::vector<uint32> freeUniformBuffers;
+        std::vector<uint32> freeStorageBuffers;
         std::vector<uint32> freeAccelerationStructures;
 
         uint32 AllocateSampledImageIndex()
@@ -4324,42 +4324,48 @@ namespace Horizon
 
     bool VulkanDevice::CreateBindlessDescriptorManager(const VulkanBindlessConfig& bindlessConfig)
     {
-        const uint32 maxNumSampledImages = physicalDevice->descriptorIndexingProperties.maxDescriptorSetUpdateAfterBindSampledImages;
         const uint32 maxNumSamplers = physicalDevice->descriptorIndexingProperties.maxDescriptorSetUpdateAfterBindSamplers;
+        const uint32 maxNumSampledImages = physicalDevice->descriptorIndexingProperties.maxDescriptorSetUpdateAfterBindSampledImages;
         const uint32 maxNumStorageImage = physicalDevice->descriptorIndexingProperties.maxDescriptorSetUpdateAfterBindStorageImages;
-        const uint32 maxNumStorageBuffers = physicalDevice->descriptorIndexingProperties.maxDescriptorSetUpdateAfterBindStorageBuffers;
         const uint32 maxNumUniformBuffers = physicalDevice->descriptorIndexingProperties.maxDescriptorSetUpdateAfterBindUniformBuffers;
-        const uint32 maxNumAccellerationStructures = physicalDevice->accelerationStructureProperties.maxDescriptorSetAccelerationStructures;
+        const uint32 maxNumStorageBuffers = physicalDevice->descriptorIndexingProperties.maxDescriptorSetUpdateAfterBindStorageBuffers;
+        const uint32 maxNumAccelerationStructures = physicalDevice->accelerationStructureProperties.maxDescriptorSetAccelerationStructures;
 
-        uint32 numSampledImages = Math::Min(bindlessConfig.numSampledImages, maxNumSampledImages);
         uint32 numSamplers = Math::Min(bindlessConfig.numSamplers, maxNumSamplers);
+        uint32 numSampledImages = Math::Min(bindlessConfig.numSampledImages, maxNumSampledImages);
         uint32 numStorageImages = Math::Min(bindlessConfig.numStorageImages, maxNumStorageImage);
-        uint32 numStorageBuffers = Math::Min(bindlessConfig.numStorageBuffers, maxNumStorageBuffers);
         uint32 numUniformBuffers = Math::Min(bindlessConfig.numUniformBuffers, maxNumUniformBuffers);
-        uint32 numAccelerationStructures = Math::Min(bindlessConfig.numAccelerationStructures, maxNumAccellerationStructures);
+        uint32 numStorageBuffers = Math::Min(bindlessConfig.numStorageBuffers, maxNumStorageBuffers);
+        uint32 numAccelerationStructures = Math::Min(bindlessConfig.numAccelerationStructures, maxNumAccelerationStructures);
 
         std::vector<VkDescriptorPoolSize> bindlessPoolSizes;
         std::vector<VkDescriptorSetLayoutBinding> bindlessDescriptorSetLayoutBindings;
         std::vector<VkDescriptorBindingFlags> bindlessDescriptorBindingFlags;
+
         if (backend->enableRayTracingSupport)
         {
-            bindlessPoolSizes = {
-                { VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,              numSampledImages          },
+            bindlessPoolSizes =
+            {
                 { VK_DESCRIPTOR_TYPE_SAMPLER,                    numSamplers               },
+                { VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,              numSampledImages          },
                 { VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,              numStorageImages          },
-                { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,             numStorageBuffers         },
                 { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,             numUniformBuffers         },
+                { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,             numStorageBuffers         },
                 { VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, numAccelerationStructures },
             };
-            bindlessDescriptorSetLayoutBindings = {
-                { .binding = BINDLESS_RESOURCE_BINDING_SAMPLER,               .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER,                    .descriptorCount = numSamplers,               .stageFlags = VK_SHADER_STAGE_ALL },
-                { .binding = BINDLESS_RESOURCE_BINDING_TEXTURE_SRV,          .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,              .descriptorCount = numSampledImages,          .stageFlags = VK_SHADER_STAGE_ALL },
-                { .binding = BINDLESS_RESOURCE_BINDING_TEXTURE_UAV,          .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,              .descriptorCount = numStorageImages,          .stageFlags = VK_SHADER_STAGE_ALL },
-                { .binding = BINDLESS_RESOURCE_BINDING_BUFFER_SRV_AND_UAV,         .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,             .descriptorCount = numStorageBuffers,         .stageFlags = VK_SHADER_STAGE_ALL },
-                { .binding = BINDLESS_RESOURCE_BINDING_BUFFER_CBV,         .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,             .descriptorCount = numUniformBuffers,         .stageFlags = VK_SHADER_STAGE_ALL },
+
+            bindlessDescriptorSetLayoutBindings =
+            {
+                { .binding = BINDLESS_RESOURCE_BINDING_SAMPLER,                .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER,                    .descriptorCount = numSamplers,               .stageFlags = VK_SHADER_STAGE_ALL },
+                { .binding = BINDLESS_RESOURCE_BINDING_TEXTURE_SRV,            .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,              .descriptorCount = numSampledImages,          .stageFlags = VK_SHADER_STAGE_ALL },
+                { .binding = BINDLESS_RESOURCE_BINDING_TEXTURE_UAV,            .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,              .descriptorCount = numStorageImages,          .stageFlags = VK_SHADER_STAGE_ALL },
+                { .binding = BINDLESS_RESOURCE_BINDING_BUFFER_CBV,             .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,             .descriptorCount = numUniformBuffers,         .stageFlags = VK_SHADER_STAGE_ALL },
+                { .binding = BINDLESS_RESOURCE_BINDING_BUFFER_SRV_AND_UAV,     .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,             .descriptorCount = numStorageBuffers,         .stageFlags = VK_SHADER_STAGE_ALL },
                 { .binding = BINDLESS_RESOURCE_BINDING_ACCELERATION_STRUCTURE, .descriptorType = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, .descriptorCount = numAccelerationStructures, .stageFlags = VK_SHADER_STAGE_ALL },
             };
-            bindlessDescriptorBindingFlags = {
+
+            bindlessDescriptorBindingFlags =
+            {
                 VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT | VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT | VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT,
                 VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT | VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT | VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT,
                 VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT | VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT | VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT,
@@ -4370,21 +4376,26 @@ namespace Horizon
         }
         else
         {
-            bindlessPoolSizes = {
-                { VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,              numSampledImages          },
-                { VK_DESCRIPTOR_TYPE_SAMPLER,                    numSamplers               },
-                { VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,              numStorageImages          },
-                { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,             numStorageBuffers         },
-                { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,             numUniformBuffers         },
+            bindlessPoolSizes =
+            {
+                { VK_DESCRIPTOR_TYPE_SAMPLER,        numSamplers       },
+                { VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,  numSampledImages  },
+                { VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,  numStorageImages  },
+                { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, numUniformBuffers },
+                { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, numStorageBuffers },
             };
-            bindlessDescriptorSetLayoutBindings = {
-                { .binding = BINDLESS_RESOURCE_BINDING_SAMPLER,               .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER,                    .descriptorCount = numSamplers,               .stageFlags = VK_SHADER_STAGE_ALL },
-                { .binding = BINDLESS_RESOURCE_BINDING_TEXTURE_SRV,          .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,              .descriptorCount = numSampledImages,          .stageFlags = VK_SHADER_STAGE_ALL },
-                { .binding = BINDLESS_RESOURCE_BINDING_TEXTURE_UAV,          .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,              .descriptorCount = numStorageImages,          .stageFlags = VK_SHADER_STAGE_ALL },
-                { .binding = BINDLESS_RESOURCE_BINDING_BUFFER_SRV_AND_UAV,         .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,             .descriptorCount = numStorageBuffers,         .stageFlags = VK_SHADER_STAGE_ALL },
-                { .binding = BINDLESS_RESOURCE_BINDING_BUFFER_CBV,         .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,             .descriptorCount = numUniformBuffers,         .stageFlags = VK_SHADER_STAGE_ALL },
+
+            bindlessDescriptorSetLayoutBindings =
+            {
+                { .binding = BINDLESS_RESOURCE_BINDING_SAMPLER,            .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER,        .descriptorCount = numSamplers,       .stageFlags = VK_SHADER_STAGE_ALL },
+                { .binding = BINDLESS_RESOURCE_BINDING_TEXTURE_SRV,        .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,  .descriptorCount = numSampledImages,  .stageFlags = VK_SHADER_STAGE_ALL },
+                { .binding = BINDLESS_RESOURCE_BINDING_TEXTURE_UAV,        .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,  .descriptorCount = numStorageImages,  .stageFlags = VK_SHADER_STAGE_ALL },
+                { .binding = BINDLESS_RESOURCE_BINDING_BUFFER_CBV,         .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, .descriptorCount = numUniformBuffers, .stageFlags = VK_SHADER_STAGE_ALL },
+                { .binding = BINDLESS_RESOURCE_BINDING_BUFFER_SRV_AND_UAV, .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, .descriptorCount = numStorageBuffers, .stageFlags = VK_SHADER_STAGE_ALL },
             };
-            bindlessDescriptorBindingFlags = {
+
+            bindlessDescriptorBindingFlags =
+            {
                 VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT | VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT | VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT,
                 VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT | VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT | VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT,
                 VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT | VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT | VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT,
@@ -4394,7 +4405,8 @@ namespace Horizon
         }
         assert(bindlessDescriptorSetLayoutBindings.size() == bindlessDescriptorBindingFlags.size());
 
-        VkDescriptorPoolCreateInfo descriptorPoolInfo = {
+        VkDescriptorPoolCreateInfo descriptorPoolInfo =
+        {
             .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
             .flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT | VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT,
             .maxSets = 1,
@@ -4411,13 +4423,15 @@ namespace Horizon
 
         uint32 numBindings = (uint32)bindlessDescriptorSetLayoutBindings.size();
 
-        VkDescriptorSetLayoutBindingFlagsCreateInfo descriptorSetLayoutBindingFlagsInfo = {
+        VkDescriptorSetLayoutBindingFlagsCreateInfo descriptorSetLayoutBindingFlagsInfo =
+        {
             .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO,
             .bindingCount = numBindings,
             .pBindingFlags = bindlessDescriptorBindingFlags.data()
         };
 
-        const VkDescriptorSetLayoutCreateInfo descriptorSetLayoutInfo = {
+        const VkDescriptorSetLayoutCreateInfo descriptorSetLayoutInfo =
+        {
             .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
             .pNext = &descriptorSetLayoutBindingFlagsInfo,
             .flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT,
@@ -4431,7 +4445,8 @@ namespace Horizon
             return false;
         }
 
-        const VkDescriptorSetAllocateInfo descriptorSetAllocateInfo = {
+        const VkDescriptorSetAllocateInfo descriptorSetAllocateInfo =
+        {
             .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
             .descriptorPool = bindlessDescriptorManager.pool,
             .descriptorSetCount = 1,
@@ -4457,30 +4472,31 @@ namespace Horizon
             .numSamplers = numSamplers,
             .numSampledImages = numSampledImages,
             .numStorageImages = numStorageImages,
-            .numStorageBuffers = numStorageBuffers,
             .numUniformBuffers = numUniformBuffers,
+            .numStorageBuffers = numStorageBuffers,
             .numAccelerationStructures = numAccelerationStructures,
         };
 
-        for (int32 i = numSampledImages - 1; i >= 0; i--)
-        {
-            bindlessDescriptorManager.freeSampledImages.push_back(i);
-        }
         for (int32 i = numSamplers - 1; i >= 0; i--)
         {
             bindlessDescriptorManager.freeSamplers.push_back(i);
         }
+        for (int32 i = numSampledImages - 1; i >= 0; i--)
+        {
+            bindlessDescriptorManager.freeSampledImages.push_back(i);
+        }
+
         for (int32 i = numStorageImages - 1; i >= 0; i--)
         {
             bindlessDescriptorManager.freeStorageImages.push_back(i);
         }
-        for (int32 i = numStorageBuffers - 1; i >= 0; i--)
-        {
-            bindlessDescriptorManager.freeStorageBuffers.push_back(i);
-        }
         for (int32 i = numUniformBuffers - 1; i >= 0; i--)
         {
             bindlessDescriptorManager.freeUniformBuffers.push_back(i);
+        }
+        for (int32 i = numStorageBuffers - 1; i >= 0; i--)
+        {
+            bindlessDescriptorManager.freeStorageBuffers.push_back(i);
         }
         for (int32 i = numAccelerationStructures - 1; i >= 0; i--)
         {
@@ -5453,8 +5469,8 @@ namespace Horizon
             .numSamplers = 4 * 1024,
             .numSampledImages = 16 * 1024,
             .numStorageImages = 16 * 1024,
+            .numUniformBuffers = 16,
             .numStorageBuffers = 8 * 1024,
-            .numUniformBuffers = 1 * 1024,
             .numAccelerationStructures = 8 * 1024
         };
 

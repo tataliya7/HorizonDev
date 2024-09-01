@@ -304,6 +304,10 @@ namespace Horizon
             RenderGraph& renderGraph,
             const SceneView& view);
 
+        void RenderVolumetricFog(
+            RenderGraph& renderGraph,
+            const SceneView& view);
+
         void RenderLocalVolumetricFogs(
             RenderGraph& renderGraph,
             const SceneView& view);

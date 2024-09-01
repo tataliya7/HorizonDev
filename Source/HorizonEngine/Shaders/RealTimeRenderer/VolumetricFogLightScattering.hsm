@@ -1,0 +1,27 @@
+#include "../ShaderCommon.hsh"
+#include "RealTimeRendererCommon.hsh"
+#include "VolumetricFogCommon.hsh"
+
+SHADER_CONSTANTS_STRUCT_BEGIN();
+SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferSRV);
+SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(1, VolumetricFogShaderParameters, VolumetricFogShaderParameterBufferSRV);
+SHADER_CONSTANTS_TEXTURE_3D_SRV(2, float4, PreviousVolumetricFogScatteringAndExtinctionTextureSRV);
+SHADER_CONSTANTS_TEXTURE_3D_SRV(3, float4, VolumetricFogParticipatingMediaPropertyTextureASRV);
+SHADER_CONSTANTS_TEXTURE_3D_SRV(4, float4, VolumetricFogParticipatingMediaPropertyTextureBSRV);
+SHADER_CONSTANTS_TEXTURE_3D_UAV(5, float4, VolumetricFogScatteringAndExtinctionTextureUAV);
+SHADER_CONSTANTS_STRUCT_END();
+
+[shader("compute")]
+[numthreads(4, 4, 4)]
+void VolumetricFogLightScatteringCS(uint3 groupID : SV_GroupID, uint3 groupThreadID : SV_GroupThreadID, uint3 dispatchThreadID : SV_DispatchThreadID)
+{
+    StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
+    StructuredBuffer<VolumetricFogShaderParameters> volumetricFogShaderParameterBuffer = ShaderConstants.GetVolumetricFogShaderParameterBufferSRV();
+    Texture3D<float4> previousScatteringAndExtinctionTexture = ShaderConstants.GetPreviousVolumetricFogScatteringAndExtinctionTextureSRV();
+    Texture3D<float4> participatingMediaPropertyTextureA = ShaderConstants.GetVolumetricFogParticipatingMediaPropertyTextureASRV();
+    Texture3D<float4> participatingMediaPropertyTextureB = ShaderConstants.GetVolumetricFogParticipatingMediaPropertyTextureBSRV();
+    RWTexture3D<float4> scatteringAndExtinctionTextureUAV = ShaderConstants.GetVolumetricFogScatteringAndExtinctionTextureUAV();
+
+    PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
+    VolumetricFogShaderParameters volumetricFogShaderParameters = volumetricFogShaderParameterBuffer[0];
+}

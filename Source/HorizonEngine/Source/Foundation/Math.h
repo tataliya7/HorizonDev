@@ -16,6 +16,7 @@
 #include <glm/gtx/string_cast.hpp>
 #include <glm/gtx/compatibility.hpp>
 #include <glm/gtx/matrix_decompose.hpp>
+#include <glm/gtx/matrix_major_storage.hpp>
 
 #define M_PI                   (3.1415926535897932f)
 #define M_INV_PI              (0.3183098861837067f)

@@ -42,6 +42,10 @@ namespace DXCUtils
     }
 }
 
+/*
+ * https://docs.vulkan.org/guide/latest/hlsl.html
+ */
+
 namespace Horizon
 {
     struct DXCShaderCompilerIncludeHandler : public IDxcIncludeHandler

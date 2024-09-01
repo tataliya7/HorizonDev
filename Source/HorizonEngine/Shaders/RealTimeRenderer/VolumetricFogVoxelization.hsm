@@ -1,0 +1,28 @@
+#include "../ShaderCommon.hsh"
+#include "RealTimeRendererCommon.hsh"
+#include "VolumetricFogCommon.hsh"
+
+SHADER_CONSTANTS_STRUCT_BEGIN();
+SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferSRV);
+SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(1, VolumetricFogShaderParameters, VolumetricFogShaderParameterBufferSRV);
+SHADER_CONSTANTS_TEXTURE_3D_UAV(2, float4, VolumetricFogParticipatingMediaPropertyTextureAUAV);
+SHADER_CONSTANTS_TEXTURE_3D_UAV(3, float4, VolumetricFogParticipatingMediaPropertyTextureBUAV);
+SHADER_CONSTANTS_STRUCT_END();
+
+[shader("compute")]
+[numthreads(4, 4, 4)]
+void VolumetricFogVoxelizationCS(uint3 groupID : SV_GroupID, uint3 groupThreadID : SV_GroupThreadID, uint3 dispatchThreadID : SV_DispatchThreadID)
+{
+    StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
+    StructuredBuffer<VolumetricFogShaderParameters> volumetricFogShaderParameterBuffer = ShaderConstants.GetVolumetricFogShaderParameterBufferSRV();
+    RWTexture3D<float4> participatingMediaPropertyTextureA = ShaderConstants.GetVolumetricFogParticipatingMediaPropertyTextureAUAV();
+    RWTexture3D<float4> participatingMediaPropertyTextureB = ShaderConstants.GetVolumetricFogParticipatingMediaPropertyTextureBUAV();
+
+    PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
+    VolumetricFogShaderParameters volumetricFogShaderParameters = volumetricFogShaderParameterBuffer[0];
+
+    // if ()
+    // {
+    //     return;
+    // }
+}

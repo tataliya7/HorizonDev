@@ -804,6 +804,8 @@ namespace Horizon
             RenderSubsurfaceScattering(renderGraph, view);
         }
 
+        RenderVolumetricFog(renderGraph, view);
+
         if (IsSkyAtmosphereRenderingEnabled())
         {
             RenderSkyAtmosphere(renderGraph, view);
