@@ -1,42 +1,29 @@
-#pragma once
+module;
 
 #include "Foundation/FoundationModule.h"
 #include "Rendering/RenderingModule.h"
 
+#include <ffx_fsr2.h>
+
+module FidelityFX.SuperResolution2:Private;
+
+import FidelityFX.SuperResolution2;
+
 namespace Horizon
 {
-    struct FidelityFxSuperResolution2State;
-
-    enum class FidelityFXSuperResolution2API
+    struct FidelityFxSuperResolution2State
     {
-        Unknown,
-        D3D12,
-        Vulkan,
-    };
-
-    enum class FidelityFXSuperResolution2QualityMode
-    {
-        Quality,
-        Balanced,
-        Performance,
-        UltraPerformance,
-    };
-
-    struct FidelityFXSuperResolution2Settings
-    {
-        bool enabled = false;
-        bool enableSharpening = false;
-        bool overrideRenderResolutionPercentage = false;
-        float sharpness = 1.0f;
-        float renderResolutionPercentage = 1.0f;
-        FidelityFXSuperResolution2QualityMode qualityMode = FidelityFXSuperResolution2QualityMode::Quality;
+        FfxFsr2ContextDescription fsr2ContextDescription;
+        FfxFsr2Context fsr2Context;
+        bool initialized;
+        //uint32 viewportID;
     };
 
     class FidelityFXSuperResolution2 : public TemporalSuperSamplingInterface
     {
     public:
         FidelityFXSuperResolution2(RenderBackend* renderBackend);
-        ~FidelityFXSuperResolution2();
+        virtual ~FidelityFXSuperResolution2();
         TemporalSuperSamplingConstants GetConstants() const
         {
             return constants;
@@ -74,4 +61,34 @@ namespace Horizon
         TemporalSuperSamplingOptions options;
         TemporalSuperSamplingConstants constants;
     };
+
+    void FidelityFXSuperResolution2Message(FfxFsr2MsgType type, const wchar_t* message)
+    {
+        if (type == FFX_FSR2_MESSAGE_TYPE_ERROR)
+        {
+            Horizon::LogError(Horizon::GLogger, std::format(L"FSR2_API_DEBUG_ERROR: {}", message));
+        }
+        else if (type == FFX_FSR2_MESSAGE_TYPE_WARNING)
+        {
+            Horizon::LogWarning(Horizon::GLogger, std::format(L"FSR2_API_DEBUG_WARNING: {}", message));
+        }
+    }
+
+    bool FidelityFXSuperResolution2DispatchD3D12(
+        void* commandList,
+        void* context,
+        const RenderBackendTextureResource& output,
+        const RenderBackendTextureResource& color,
+        const RenderBackendTextureResource& depth,
+        const RenderBackendTextureResource& motionVectors,
+        const RenderBackendTextureResource& exposure);
+
+    bool FidelityFXSuperResolution2DispatchVulkan(
+        void* commandList,
+        void* context,
+        const RenderBackendTextureResource& output,
+        const RenderBackendTextureResource& color,
+        const RenderBackendTextureResource& depth,
+        const RenderBackendTextureResource& motionVectors,
+        const RenderBackendTextureResource& exposure);
 }

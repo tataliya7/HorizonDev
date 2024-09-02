@@ -1,8 +1,14 @@
-#include "FidelityFXSuperResolution2.h"
-#include "FidelityFXSuperResolution2Private.h"
+module;
+
+#include "Foundation/FoundationModule.h"
+#include "Rendering/RenderingModule.h"
 
 #include <ffx_fsr2.h>
 #include <vk/ffx_fsr2_vk.h>
+
+module FidelityFX.SuperResolution2:Vulkan;
+
+import :Private;
 
 namespace Horizon
 {

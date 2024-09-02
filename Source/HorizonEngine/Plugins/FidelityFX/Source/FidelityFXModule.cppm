@@ -1,0 +1,1 @@
+export import FidelityFX.SuperResolution2;

@@ -1,18 +1,25 @@
-#include "FidelityFXSuperResolution2.h"
-#include "FidelityFXSuperResolution2Private.h"
+module;
+
+#include "Foundation/FoundationModule.h"
+#include "Rendering/RenderingModule.h"
+
+#include <ffx_fsr2.h>
+
+module FidelityFX.SuperResolution2;
+
+import :D3D12;
+import :Vulkan;
 
 namespace Horizon
 {
-    void FidelityFXSuperResolution2Message(FfxFsr2MsgType type, const wchar_t* message)
+    TemporalSuperSamplingInterface* FidelityFXSuperResolution2Create(RenderBackend* renderBackend)
     {
-        if (type == FFX_FSR2_MESSAGE_TYPE_ERROR)
-        {
-            Horizon::LogError(Horizon::GLogger, std::format(L"FSR2_API_DEBUG_ERROR: {}", message));
-        }
-        else if (type == FFX_FSR2_MESSAGE_TYPE_WARNING)
-        {
-            Horizon::LogWarning(Horizon::GLogger, std::format(L"FSR2_API_DEBUG_WARNING: {}", message));
-        }
+        return new FidelityFXSuperResolution2(renderBackend);
+    }
+
+    void FidelityFXSuperResolution2Destroy(TemporalSuperSamplingInterface* interface)
+    {
+        delete reinterpret_cast<FidelityFXSuperResolution2*>(interface);
     }
 
     static FfxFsr2QualityMode GetFfxFsr2QualityMode(FidelityFXSuperResolution2QualityMode qualityMode)

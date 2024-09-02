@@ -1,10 +1,11 @@
 #include "RealTimeRenderer.h"
 //#include "RealTimeRendererPrivate.h"
 #include "SkyAtmosphereRendering.h"
-
-#include "FidelityFXSuperResolution2Module.h"
+#include "TemporalSuperSampling.h"
 
 #include <optick.h>
+
+import FidelityFX.SuperResolution2;
 
 namespace Horizon
 {
@@ -131,7 +132,7 @@ namespace Horizon
 
         if (temporalSuperSamplingInterface == nullptr)
         {
-            temporalSuperSamplingInterface = new FidelityFXSuperResolution2(renderBackend);
+            temporalSuperSamplingInterface = FidelityFXSuperResolution2Create(renderBackend);
         }
 
         renderResolution = Extent2D(view.targetWidth, view.targetHeight);
