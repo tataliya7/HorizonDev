@@ -205,10 +205,10 @@ namespace Horizon
                 skyAtmosphereComponent.CreateRenderObject(scene->GetRenderScene());
             }
 
-            EntityHandle localVolumetricFog = scene->CreateEntity("LocalVolumetricFog");
+            EntityHandle localFogVolume = scene->CreateEntity("LocalFogVolume");
             {
-                LocalVolumetricFogComponent& localVolumetricFogComponent = scene->GetEntityManager()->AddComponent<LocalVolumetricFogComponent>(localVolumetricFog);
-                localVolumetricFogComponent.CreateRenderObject(scene->GetRenderScene());
+                LocalFogVolumeComponent& localFogVolumeComponent = scene->GetEntityManager()->AddComponent<LocalFogVolumeComponent>(localFogVolume);
+                localFogVolumeComponent.CreateRenderObject(scene->GetRenderScene());
             }
 
             // DistantLightRenderObject* distantLight = new DistantLightRenderObject();
