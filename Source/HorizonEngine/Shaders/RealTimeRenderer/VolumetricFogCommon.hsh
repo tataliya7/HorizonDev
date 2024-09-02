@@ -1,18 +1,34 @@
 #pragma once
 
+#include "VolumitricRenderingCommon.hsh"
+
 struct VolumetricFogShaderParameters
 {
     uint3 volumeResolution;
     float4 tileCountAndInverseTileCount;
     float2 sliceCountAndInverseSliceCount;
+    uint localFogVolumeInstanceCount;
 };
 DECLARE_ALIASED_ARRAY_STRUCTURED_BUFFER_SRV(VolumetricFogShaderParameters);
+
+struct LocalFogVolumeInstanceData
+{
+	float4x4 localToWorldMatrix;
+	float3 emission;
+};
+DECLARE_ALIASED_ARRAY_STRUCTURED_BUFFER_SRV(LocalFogVolumeInstanceData);
 
 float ComputeZSlice(float slice, float sliceCount, float near, float far)
 {
     // Logarithmical depth distribution
 	float ZSlice = near * pow(far / near, slice / sliceCount);
 	return ZSlice;
+}
+
+float ComputeSliceUV(float ZSlice, float sliceCount, float near, float far)
+{
+	float sliceUV = log2(ZSlice / near) / log2(far / near);
+	return sliceUV;
 }
 
 float3 ComputeVoxelWorldPosition(PerFrameShaderParameters frameShaderParameters, VolumetricFogShaderParameters volumetricFogShaderParameters, uint3 voxelCoordinate, float3 offset)

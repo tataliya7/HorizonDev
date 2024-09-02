@@ -50,7 +50,7 @@ void AutoExposureBuildHistogramCS(uint3 dispatchThreadID : SV_DispatchThreadID, 
         float2 uv = (float2(pixelCoord) + 0.5f) / float2(width, height);
 
         float3 sceneColor = sceneColorTexture.SampleLevel(GlobalSamplerLinearClamp, uv, 0).rgb;
-        sceneColor.rgb *= frameShaderParameters.oneOverPreExposure;
+        sceneColor.rgb *= frameShaderParameters.inversePreExposure;
 
         float sceneColorLuminance = ComputeSceneColorLuminance(sceneColor);
 

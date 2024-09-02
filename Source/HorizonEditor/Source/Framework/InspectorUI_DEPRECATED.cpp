@@ -41,10 +41,10 @@ namespace Horizon
                     bool dirty = DrawComponentUI_SkyAtmosphereComponent("Sky Atmosphere Component", skyAtmosphereComponent);
                 }
 
-                if (editorSceneManager->GetActiveScene()->GetEntityManager()->HasComponent<LocalVolumetricFogComponent>(selectedEntity))
+                if (editorSceneManager->GetActiveScene()->GetEntityManager()->HasComponent<LocalFogVolumeComponent>(selectedEntity))
                 {
-                    LocalVolumetricFogComponent& localVolumetricFogComponent = editorSceneManager->GetActiveScene()->GetEntityManager()->GetComponent<LocalVolumetricFogComponent>(selectedEntity);
-                    bool dirty = DrawComponentUI_LocalVolumetricFogComponent("Local Volumetric Fog Component", localVolumetricFogComponent);
+                    LocalFogVolumeComponent& localFogVolumeComponent = editorSceneManager->GetActiveScene()->GetEntityManager()->GetComponent<LocalFogVolumeComponent>(selectedEntity);
+                    bool dirty = DrawComponentUI_LocalFogVolumeComponent("Local Volumetric Fog Component", localFogVolumeComponent);
                 }
 
                 //if (editorSceneManager->GetActiveScene()->GetEntityManager()->HasComponent<ArmatureComponent>(selectedEntity))
@@ -568,7 +568,7 @@ namespace Horizon
         return dirty;
     }
 
-    bool DrawComponentUI_LocalVolumetricFogComponent(const char* lable, LocalVolumetricFogComponent& component)
+    bool DrawComponentUI_LocalFogVolumeComponent(const char* lable, LocalFogVolumeComponent& component)
     {
         bool dirty = false;
         if (ImGui::CollapsingHeader(lable, ImGuiTreeNodeFlags_DefaultOpen))

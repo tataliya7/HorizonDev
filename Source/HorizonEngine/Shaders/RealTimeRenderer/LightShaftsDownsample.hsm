@@ -64,7 +64,7 @@ void LightShaftsDownsampleCS(uint3 dispatchThreadID : SV_DispatchThreadID)
 
     // Only bloom colors according if post exposure brightness is over BloomThreshold,
     // and if brightness is greater than BloomMaxBrightness, scale it down to BloomMaxBrightness to avoid saturated artefacts.
-    float luminance = max(RelativeLuminance(sceneColor * frameShaderParameters.oneOverPreExposure), 6.10352e-5);
+    float luminance = max(RelativeLuminance(sceneColor * frameShaderParameters.inversePreExposure), 6.10352e-5);
     float adjustedLuminance = clamp(luminance - BloomTintAndThreshold.a, 0.0f, BloomMaxBrightness);
     float3 BloomColor = LightShaftParameters.y * sceneColor / luminance * adjustedLuminance * 2.0f;
 

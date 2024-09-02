@@ -53,7 +53,7 @@ struct PerFrameShaderParameters
 
     float materialTextureMipLodBias;
     float preExposure;
-    float oneOverPreExposure;
+    float inversePreExposure;
     float preExposureCorrection;
 
     float2 motionVectorScale;

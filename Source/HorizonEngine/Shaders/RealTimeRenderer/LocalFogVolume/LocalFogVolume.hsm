@@ -1,10 +1,10 @@
 #include "../../ShaderCommon.hsh"
 #include "../RealTimeRendererCommon.hsh"
-#include "LocalVolumetricFogCommon.hsh"
+#include "LocalFogVolumeCommon.hsh"
 
 SHADER_CONSTANTS_STRUCT_BEGIN();
 SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferSRV);
-SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(1, LocalVolumetricFogInstanceData, LocalVolumetricFogInstanceDataBufferSRV);
+SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(1, LocalFogVolumeInstanceData, LocalFogVolumeInstanceDataBufferSRV);
 SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(2, DepthTextureSRV);
 SHADER_CONSTANTS_STRUCT_END();
 
@@ -30,23 +30,23 @@ static uint CubeIndices[36] =
     4, 7, 6, 4, 6, 5
 };
 
-struct LocalVolumetricFogVSOutput
+struct LocalFogVolumeVSOutput
 {
     nointerpolation uint instanceID : TEXCOORD0;
 };
 
 [shader("vertex")]
-void LocalVolumetricFogVS(
+void LocalFogVolumeVS(
 	in uint vertexID : SV_VertexID,
 	in uint instanceID : SV_InstanceID,
-	out LocalVolumetricFogVSOutput output,
+	out LocalFogVolumeVSOutput output,
 	out float4 position : SV_Position)
 {
     StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
     PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
 
-    StructuredBuffer<LocalVolumetricFogInstanceData> localVolumetricFogInstanceDataBuffer = ShaderConstants.GetLocalVolumetricFogInstanceDataBufferSRV();
-    LocalVolumetricFogInstanceData instanceData = localVolumetricFogInstanceDataBuffer.Load(instanceID);
+    StructuredBuffer<LocalFogVolumeInstanceData> localFogVolumeInstanceDataBuffer = ShaderConstants.GetLocalFogVolumeInstanceDataBufferSRV();
+    LocalFogVolumeInstanceData instanceData = localFogVolumeInstanceDataBuffer.Load(instanceID);
 
     uint vertexIndex = CubeIndices[vertexID];
     float3 vertexPosition = CubeVertices[vertexIndex];
@@ -59,8 +59,8 @@ void LocalVolumetricFogVS(
 }
 
 [shader("pixel")]
-void LocalVolumetricFogPS(
-    in LocalVolumetricFogVSOutput input,
+void LocalFogVolumePS(
+    in LocalFogVolumeVSOutput input,
     in float4 position : SV_Position,
     out float4 outputColor : SV_Target0)
 {
@@ -68,8 +68,8 @@ void LocalVolumetricFogPS(
     StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
     PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
 
-    StructuredBuffer<LocalVolumetricFogInstanceData> localVolumetricFogInstanceDataBuffer = ShaderConstants.GetLocalVolumetricFogInstanceDataBufferSRV();
-    LocalVolumetricFogInstanceData instanceData = localVolumetricFogInstanceDataBuffer.Load(instanceID);
+    StructuredBuffer<LocalFogVolumeInstanceData> localFogVolumeInstanceDataBuffer = ShaderConstants.GetLocalFogVolumeInstanceDataBufferSRV();
+    LocalFogVolumeInstanceData instanceData = localFogVolumeInstanceDataBuffer.Load(instanceID);
 
     Texture2D depthTexture = ShaderConstants.GetDepthTextureSRV();
 

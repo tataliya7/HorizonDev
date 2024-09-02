@@ -13,24 +13,84 @@ namespace Horizon
         Vector3u volumeResolution;
         Vector4f tileCountAndInverseTileCount;
         Vector2f sliceCountAndInverseSliceCount;
+        uint32 localFogVolumeInstanceCount;
     };
 
-    struct LocalVolumetricFogInstanceData
+    struct LocalFogVolumeInstanceData
     {
         Matrix4x4f localToWorldMatrix;
         Vector3f emission;
     };
 
-    struct LocalVolumetricFogRenderData
+    struct LocalFogVolumeRenderData
     {
         uint32 instanceCount;
-        std::vector<LocalVolumetricFogInstanceData> instanceData;
+        std::vector<LocalFogVolumeInstanceData> instanceData;
     };
 
     void RealTimeRenderer::RenderVolumetricFog(
         RenderGraph& renderGraph,
         const SceneView& view)
     {
+        uint32 localFogVolumeInstanceCount = uint32(view.scene->localFogVolumes.size());
+
+        if (localFogVolumeInstanceCount == 0)
+        {
+            return;
+        }
+
+        LocalFogVolumeRenderData renderData = {};
+        renderData.instanceCount = localFogVolumeInstanceCount;
+        renderData.instanceData.resize(localFogVolumeInstanceCount);
+
+        for (uint32 index = 0; index < localFogVolumeInstanceCount; index++)
+        {
+            LocalFogVolumeRenderObject* localFogVolume = view.scene->localFogVolumes[index];
+
+            LocalFogVolumeInstanceData& instanceData = renderData.instanceData[index];
+            instanceData.localToWorldMatrix = localFogVolume->transform;
+            instanceData.emission = localFogVolume->emission;
+        }
+
+        if (!localFogVolumeInstanceDataBufferUpload)
+        {
+            RenderBackendBufferDesc localFogVolumeInstanceDataBufferDesc = RenderBackendBufferDesc::CreateUpload(sizeof(LocalFogVolumeInstanceData) * localFogVolumeInstanceCount);
+            //localFogVolumeInstanceDataBufferDesc.flags |= RenderBackendBufferCreateFlags::CpuToGpu; // TODO
+            localFogVolumeInstanceDataBufferUpload = renderBackend->CreateBuffer(&localFogVolumeInstanceDataBufferDesc, nullptr, "LocalFogVolumeInstanceDataBuffer");
+            localFogVolumeInstanceDataBufferSize = sizeof(LocalFogVolumeInstanceData) * localFogVolumeInstanceCount;
+        }
+        else if (localFogVolumeInstanceDataBufferSize < sizeof(LocalFogVolumeInstanceData) * localFogVolumeInstanceCount)
+        {
+            renderBackend->ResizeBuffer(localFogVolumeInstanceDataBufferUpload, sizeof(LocalFogVolumeInstanceData) * localFogVolumeInstanceCount);
+            localFogVolumeInstanceDataBufferSize = sizeof(LocalFogVolumeInstanceData) * localFogVolumeInstanceCount;
+        }
+
+        void* data = nullptr;
+        renderBackend->MapBuffer(localFogVolumeInstanceDataBufferUpload, &data);
+        memcpy(data, renderData.instanceData.data(), localFogVolumeInstanceDataBufferSize);
+        renderBackend->UnmapBuffer(localFogVolumeInstanceDataBufferUpload);
+
+        RenderGraphBufferDesc localFogVolumeInstanceDataBufferDesc = RenderGraphBufferDesc::CreateStructured(sizeof(LocalFogVolumeInstanceData), localFogVolumeInstanceCount);
+        RenderGraphBufferHandle localFogVolumeInstanceDataBuffer = renderGraph.CreateBuffer(localFogVolumeInstanceDataBufferDesc, "LocalFogVolumeInstanceDataBuffer");
+
+        renderGraph.AddPass(
+            std::format("UpdateLocalFogVolumeData"),
+            RenderGraphPassFlags::Copy,
+            [&](RenderGraphBuilder& builder)
+            {
+                return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
+                {
+                    commandList.CopyBuffer(
+                        localFogVolumeInstanceDataBufferUpload,
+                        0,
+                        registry.GetRenderBackendBufferHandle(localFogVolumeInstanceDataBuffer),
+                        0,
+                        localFogVolumeInstanceDataBufferSize);
+                };
+            });
+
+
+
         const uint32 volumetricFogTileSize = VolumetricFogTileSize;
         const uint32 volumetricFogTileCountX = CeilDiv(renderResolution.width, volumetricFogTileSize);
         const uint32 volumetricFogTileCountY = CeilDiv(renderResolution.height, volumetricFogTileSize);
@@ -43,6 +103,7 @@ namespace Horizon
         volumetricFogShaderParameters.volumeResolution = Vector3u(volumetricFogTileCountX, volumetricFogTileCountY, volumetricFogDepthSliceCount);
         volumetricFogShaderParameters.tileCountAndInverseTileCount = Vector4f(float(volumetricFogTileCountX), float(volumetricFogTileCountY), 1.0f / float(volumetricFogTileCountX), 1.0f / float(volumetricFogTileCountY));
         volumetricFogShaderParameters.sliceCountAndInverseSliceCount = Vector2f(float(volumetricFogDepthSliceCount), 1.0f / float(volumetricFogDepthSliceCount));
+        volumetricFogShaderParameters.localFogVolumeInstanceCount = localFogVolumeInstanceCount;
 
         static RenderBackendBufferHandle volumetricFogShaderParameterBufferUpload;
         if (!volumetricFogShaderParameterBufferUpload)
@@ -98,8 +159,9 @@ namespace Horizon
                      RenderBackendShaderConstants shaderConstants = {};
                      shaderConstants.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
                      shaderConstants.BindBufferSRV(1, registry.GetBufferSRVBindlessResourceDescriptorIndex(volumetricFogShaderParameterBuffer));
-                     shaderConstants.BindTextureUAV(2, registry.GetTextureUAVBindlessResourceDescriptorIndex(volumetricFogParticipatingMediaPropertyTextureA, 0));
-                     shaderConstants.BindTextureUAV(3, registry.GetTextureUAVBindlessResourceDescriptorIndex(volumetricFogParticipatingMediaPropertyTextureB, 0));
+                     shaderConstants.BindBufferSRV(2, registry.GetBufferSRVBindlessResourceDescriptorIndex(localFogVolumeInstanceDataBuffer));
+                     shaderConstants.BindTextureUAV(3, registry.GetTextureUAVBindlessResourceDescriptorIndex(volumetricFogParticipatingMediaPropertyTextureA, 0));
+                     shaderConstants.BindTextureUAV(4, registry.GetTextureUAVBindlessResourceDescriptorIndex(volumetricFogParticipatingMediaPropertyTextureB, 0));
 
                      RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::VolumetricFogVoxelization);
 
@@ -181,71 +243,117 @@ namespace Horizon
                         threadGroupCountZ);
                 };
             });
+
+      renderGraph.AddPass(
+            std::format("VolumetricFogComposition (Graphics, {}x{})", renderResolution.width, renderResolution.height),
+            RenderGraphPassFlags::Graphics,
+            [&](RenderGraphBuilder& builder)
+            {
+                RealTimeRendererSceneTextures& sceneTextures = renderGraph.blackboard.Get<RealTimeRendererSceneTextures>();
+
+                volumetricFogIntegratedLightScatteringTexture = builder.ReadTexture(volumetricFogIntegratedLightScatteringTexture, RenderBackendResourceState::ShaderResource);
+                RenderGraphTextureHandle sceneDepthTexture = builder.ReadTexture(sceneTextures.sceneDepthTexture, RenderBackendResourceState::ShaderResource);
+                RenderGraphTextureHandle sceneColorTexture = sceneTextures.sceneColorTexture = builder.WriteTexture(sceneTextures.sceneColorTexture, RenderBackendResourceState::RenderTarget);
+
+                builder.BindRenderTarget(0, sceneColorTexture, RenderBackendRenderPassBeginningAccessType::Preserve, RenderBackendRenderPassEndingAccessType::Preserve);
+                //builder.BindDepthStencil(sceneDepthTexture, RenderBackendRenderPassBeginningAccessType::Preserve, RenderBackendRenderPassEndingAccessType::Preserve);
+
+                return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
+                {
+                    RenderBackendGraphicsPipelineState graphicsPipelineState = {};
+                    graphicsPipelineState.rasterizationState.cullMode = RenderBackendRasterizationCullMode::None;
+                    graphicsPipelineState.depthStencilState.depthTestEnable = false;
+                    graphicsPipelineState.depthStencilState.depthCompareFunction = RenderBackendCompareOp::NotEqual;
+                    graphicsPipelineState.depthStencilState.depthWriteEnable = false;
+                    graphicsPipelineState.colorBlendState.targetBlends[0].blendEnable = true;
+                    graphicsPipelineState.colorBlendState.targetBlends[0].srcColorBlendFactor = RenderBackendBlendFactor::One;
+                    graphicsPipelineState.colorBlendState.targetBlends[0].dstColorBlendFactor = RenderBackendBlendFactor::SrcAlpha;
+                    graphicsPipelineState.colorBlendState.targetBlends[0].colorBlendOp = RenderBackendBlendOp::Add;
+                    graphicsPipelineState.colorBlendState.targetBlends[0].writeMask = RenderBackendColorComponentFlags::RGB;
+
+                    RenderBackendShaderConstants shaderConstants = {};
+                    shaderConstants.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
+                    shaderConstants.BindBufferSRV(1, registry.GetBufferSRVBindlessResourceDescriptorIndex(volumetricFogShaderParameterBuffer));
+                    shaderConstants.BindTextureSRV(2, registry.GetTextureSRVBindlessResourceDescriptorIndex(volumetricFogIntegratedLightScatteringTexture));
+                    shaderConstants.BindTextureSRV(3, registry.GetTextureSRVBindlessResourceDescriptorIndex(sceneDepthTexture));
+
+                    RenderBackendShaderHandle vertexShader = shaderLibrary->GetShader(ShaderID::FullScreenQuadVS);
+                    RenderBackendShaderHandle pixelShader = shaderLibrary->GetShader(ShaderID::VolumetricFogComposition);
+
+                    commandList.Draw(
+                        vertexShader,
+                        pixelShader,
+                        graphicsPipelineState,
+                        shaderConstants,
+                        3, 1, 0, 0,
+                        RenderBackendPrimitiveTopology::TriangleList);
+                };
+            });
     }
 
-    void RealTimeRenderer::RenderLocalVolumetricFogs(
+    void RealTimeRenderer::RenderLocalFogVolumes(
         RenderGraph& renderGraph,
         const SceneView& view)
     {
-        uint32 localVolumetricFogInstanceCount = uint32(view.scene->localVolumetricFogs.size());
+        uint32 localFogVolumeInstanceCount = uint32(view.scene->localFogVolumes.size());
 
-        if (localVolumetricFogInstanceCount == 0)
+        if (localFogVolumeInstanceCount == 0)
         {
             return;
         }
 
-        LocalVolumetricFogRenderData renderData = {};
-        renderData.instanceCount = localVolumetricFogInstanceCount;
-        renderData.instanceData.resize(localVolumetricFogInstanceCount);
+        LocalFogVolumeRenderData renderData = {};
+        renderData.instanceCount = localFogVolumeInstanceCount;
+        renderData.instanceData.resize(localFogVolumeInstanceCount);
 
-        for (uint32 index = 0; index < localVolumetricFogInstanceCount; index++)
+        for (uint32 index = 0; index < localFogVolumeInstanceCount; index++)
         {
-            LocalVolumetricFogRenderObject* localVolumetricFog = view.scene->localVolumetricFogs[index];
+            LocalFogVolumeRenderObject* localFogVolume = view.scene->localFogVolumes[index];
 
-            LocalVolumetricFogInstanceData& instanceData = renderData.instanceData[index];
-            instanceData.localToWorldMatrix = localVolumetricFog->transform;
-            instanceData.emission = localVolumetricFog->emission;
+            LocalFogVolumeInstanceData& instanceData = renderData.instanceData[index];
+            instanceData.localToWorldMatrix = localFogVolume->transform;
+            instanceData.emission = localFogVolume->emission;
         }
 
-        if (!localVolumetricFogInstanceDataBufferUpload)
+        if (!localFogVolumeInstanceDataBufferUpload)
         {
-            RenderBackendBufferDesc localVolumetricFogInstanceDataBufferDesc = RenderBackendBufferDesc::CreateUpload(sizeof(LocalVolumetricFogInstanceData) * localVolumetricFogInstanceCount);
-            //localVolumetricFogInstanceDataBufferDesc.flags |= RenderBackendBufferCreateFlags::CpuToGpu; // TODO
-            localVolumetricFogInstanceDataBufferUpload = renderBackend->CreateBuffer(&localVolumetricFogInstanceDataBufferDesc, nullptr, "LocalVolumetricFogInstanceDataBuffer");
-            localVolumetricFogInstanceDataBufferSize = sizeof(LocalVolumetricFogInstanceData) * localVolumetricFogInstanceCount;
+            RenderBackendBufferDesc localFogVolumeInstanceDataBufferDesc = RenderBackendBufferDesc::CreateUpload(sizeof(LocalFogVolumeInstanceData) * localFogVolumeInstanceCount);
+            //localFogVolumeInstanceDataBufferDesc.flags |= RenderBackendBufferCreateFlags::CpuToGpu; // TODO
+            localFogVolumeInstanceDataBufferUpload = renderBackend->CreateBuffer(&localFogVolumeInstanceDataBufferDesc, nullptr, "LocalFogVolumeInstanceDataBuffer");
+            localFogVolumeInstanceDataBufferSize = sizeof(LocalFogVolumeInstanceData) * localFogVolumeInstanceCount;
         }
-        else if (localVolumetricFogInstanceDataBufferSize < sizeof(LocalVolumetricFogInstanceData) * localVolumetricFogInstanceCount)
+        else if (localFogVolumeInstanceDataBufferSize < sizeof(LocalFogVolumeInstanceData) * localFogVolumeInstanceCount)
         {
-            renderBackend->ResizeBuffer(localVolumetricFogInstanceDataBufferUpload, sizeof(LocalVolumetricFogInstanceData) * localVolumetricFogInstanceCount);
-            localVolumetricFogInstanceDataBufferSize = sizeof(LocalVolumetricFogInstanceData) * localVolumetricFogInstanceCount;
+            renderBackend->ResizeBuffer(localFogVolumeInstanceDataBufferUpload, sizeof(LocalFogVolumeInstanceData) * localFogVolumeInstanceCount);
+            localFogVolumeInstanceDataBufferSize = sizeof(LocalFogVolumeInstanceData) * localFogVolumeInstanceCount;
         }
 
         void* data = nullptr;
-        renderBackend->MapBuffer(localVolumetricFogInstanceDataBufferUpload, &data);
-        memcpy(data, renderData.instanceData.data(), localVolumetricFogInstanceDataBufferSize);
-        renderBackend->UnmapBuffer(localVolumetricFogInstanceDataBufferUpload);
+        renderBackend->MapBuffer(localFogVolumeInstanceDataBufferUpload, &data);
+        memcpy(data, renderData.instanceData.data(), localFogVolumeInstanceDataBufferSize);
+        renderBackend->UnmapBuffer(localFogVolumeInstanceDataBufferUpload);
 
-        RenderGraphBufferDesc localVolumetricFogInstanceDataBufferDesc = RenderGraphBufferDesc::CreateStructured(sizeof(LocalVolumetricFogInstanceData), localVolumetricFogInstanceCount);
-        RenderGraphBufferHandle localVolumetricFogInstanceDataBuffer = renderGraph.CreateBuffer(localVolumetricFogInstanceDataBufferDesc, "LocalVolumetricFogInstanceDataBuffer");
+        RenderGraphBufferDesc localFogVolumeInstanceDataBufferDesc = RenderGraphBufferDesc::CreateStructured(sizeof(LocalFogVolumeInstanceData), localFogVolumeInstanceCount);
+        RenderGraphBufferHandle localFogVolumeInstanceDataBuffer = renderGraph.CreateBuffer(localFogVolumeInstanceDataBufferDesc, "LocalFogVolumeInstanceDataBuffer");
 
         renderGraph.AddPass(
-            std::format("UpdateLocalVolumetricFogData"),
+            std::format("UpdateLocalFogVolumeData"),
             RenderGraphPassFlags::Copy,
             [&](RenderGraphBuilder& builder)
             {
                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
                 {
                     commandList.CopyBuffer(
-                        localVolumetricFogInstanceDataBufferUpload,
+                        localFogVolumeInstanceDataBufferUpload,
                         0,
-                        registry.GetRenderBackendBufferHandle(localVolumetricFogInstanceDataBuffer),
+                        registry.GetRenderBackendBufferHandle(localFogVolumeInstanceDataBuffer),
                         0,
-                        localVolumetricFogInstanceDataBufferSize);
+                        localFogVolumeInstanceDataBufferSize);
                 };
             });
 
         renderGraph.AddPass(
-            std::format("LocalVolumetricFog (Graphics, {}x{})", renderResolution.width, renderResolution.height),
+            std::format("LocalFogVolume (Graphics, {}x{})", renderResolution.width, renderResolution.height),
             RenderGraphPassFlags::Graphics,
             [&](RenderGraphBuilder& builder)
             {
@@ -275,18 +383,18 @@ namespace Horizon
 
                     RenderBackendShaderConstants shaderConstants = {};
                     shaderConstants.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
-                    shaderConstants.BindBufferSRV(1, registry.GetBufferSRVBindlessResourceDescriptorIndex(localVolumetricFogInstanceDataBuffer));
+                    shaderConstants.BindBufferSRV(1, registry.GetBufferSRVBindlessResourceDescriptorIndex(localFogVolumeInstanceDataBuffer));
                     shaderConstants.BindTextureSRV(2, registry.GetTextureSRVBindlessResourceDescriptorIndex(sceneDepthTexture));
 
-                    RenderBackendShaderHandle vertexShader = shaderLibrary->GetShader(ShaderID::LocalVolumetricFogVS);
-                    RenderBackendShaderHandle pixelShader = shaderLibrary->GetShader(ShaderID::LocalVolumetricFogPS);
+                    RenderBackendShaderHandle vertexShader = shaderLibrary->GetShader(ShaderID::LocalFogVolumeVS);
+                    RenderBackendShaderHandle pixelShader = shaderLibrary->GetShader(ShaderID::LocalFogVolumePS);
 
                     commandList.Draw(
                         vertexShader,
                         pixelShader,
                         graphicsPipelineState,
                         shaderConstants,
-                        36, localVolumetricFogInstanceCount, 0, 0,
+                        36, localFogVolumeInstanceCount, 0, 0,
                         RenderBackendPrimitiveTopology::TriangleList);
                 };
             });

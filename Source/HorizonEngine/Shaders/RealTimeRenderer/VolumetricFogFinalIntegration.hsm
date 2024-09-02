@@ -21,6 +21,11 @@ void VolumetricFogFinalIntegrationCS(uint3 groupID : SV_GroupID, uint3 groupThre
     PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
     VolumetricFogShaderParameters volumetricFogShaderParameters = volumetricFogShaderParameterBuffer[0];
 
+    if (any(dispatchThreadID.xy >= volumetricFogShaderParameters.volumeResolution.xy))
+    {
+        return;
+    }
+
     float3 previousVoxelCenterWorldPosition = ComputeVoxelWorldPosition(frameShaderParameters, volumetricFogShaderParameters, uint3(dispatchThreadID.xy, 0), float3(0.5f, 0.5f, 0.5f));
 
     float4 accumulatedScatteringAndTransmittance = float4(0.0f, 0.0f, 0.0f, 1.0f);
@@ -33,6 +38,7 @@ void VolumetricFogFinalIntegrationCS(uint3 groupID : SV_GroupID, uint3 groupThre
 		float stepLength = length(voxelCenterWorldPosition - previousVoxelCenterWorldPosition);
 		previousVoxelCenterWorldPosition = voxelCenterWorldPosition;
 
+        stepLength = 1;
         float transmittance = exp(-scatteringAndExtinction.w * stepLength);
 
         #if 1 // Wrong

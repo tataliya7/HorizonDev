@@ -71,7 +71,7 @@ void ToneMappingCS(uint3 dispatchThreadID : SV_DispatchThreadID)
         sceneColor = sceneColorTexture[pixelCoord];
     }
 
-    float oneOverPreExposure = frameShaderParameters.oneOverPreExposure;
+    float inversePreExposure = frameShaderParameters.inversePreExposure;
     float4 hdrColor = sceneColor;
 
     // Apply local toneMapping
@@ -97,7 +97,7 @@ void ToneMappingCS(uint3 dispatchThreadID : SV_DispatchThreadID)
     hdrColor.rgb = lerp(hdrColor.rgb, bloomColor.rgb, bloomMask);
 
     float vignetting = NaturalVignetting(uv, frameShaderParameters.aspectRatio, frameShaderParameters.vignetteIntensity);
-    hdrColor.rgb = hdrColor.rgb * (oneOverPreExposure * exposure) * vignetting;
+    hdrColor.rgb = hdrColor.rgb * (inversePreExposure * exposure) * vignetting;
 
 // #if 1
 //     Texture2D testTexture = GetTestTextureSRV();

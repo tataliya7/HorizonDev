@@ -73,7 +73,7 @@ void LensFlareGlareVS(uint instanceID : SV_InstanceID, uint vertexID : SV_Vertex
     uint2 tileID = uint2(tileIndex % tileCullingTextureWidth, tileIndex / tileCullingTextureWidth);
     float3 color = tileCullingTexture[tileID].rgb;
     float luminance = dot(color, 1.0f);
-    //float luminance = tileCullingTexture[tileID].r * oneOverPreExposure;
+    //float luminance = tileCullingTexture[tileID].r * inversePreExposure;
 
     output.position = float4(0.0f, 0.0f, 0.0f, 1.0f);
 

@@ -298,12 +298,12 @@ namespace Horizon
             skyAtmosphereComponent.UpdateRenderObject();
         });
 
-        entityManager->GetView<LocalVolumetricFogComponent>().each([&](EntityHandle entity)
+        entityManager->GetView<LocalFogVolumeComponent>().each([&](EntityHandle entity)
         {
             const TransformComponent& transformComponent = entityManager->GetComponent<TransformComponent>(entity);
 
-            LocalVolumetricFogComponent& localVolumetricFogComponent = entityManager->GetComponent<LocalVolumetricFogComponent>(entity);
-            localVolumetricFogComponent.UpdateRenderObject(transformComponent.localToWorldMatrix);
+            LocalFogVolumeComponent& localFogVolumeComponent = entityManager->GetComponent<LocalFogVolumeComponent>(entity);
+            localFogVolumeComponent.UpdateRenderObject(transformComponent.localToWorldMatrix);
         });
 
         // Update audio sources and listeners

@@ -148,7 +148,7 @@ void SkyAtmosphereRayMarchingPS(float4 position : SV_Position, out float4 outLum
     {
         float2 texCoord;
 
-        float3x3 localReferencial = (float3x3)(frameShaderParameters.skyAtmosphereSkyViewLutReferential);
+        float3x3 localReferencial = (float3x3)frameShaderParameters.skyAtmosphereSkyViewLutReferential;
 
         float3 worldPosLocal = float3(0.0f, 0.0f, viewHeight);
         float3 upVectorLocal = float3(0.0f, 0.0f, 1.0f);

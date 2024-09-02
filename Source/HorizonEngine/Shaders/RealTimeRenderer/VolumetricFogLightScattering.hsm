@@ -24,4 +24,19 @@ void VolumetricFogLightScatteringCS(uint3 groupID : SV_GroupID, uint3 groupThrea
 
     PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
     VolumetricFogShaderParameters volumetricFogShaderParameters = volumetricFogShaderParameterBuffer[0];
+
+    uint3 voxelCoordinate = dispatchThreadID;
+
+    if (any(voxelCoordinate >= volumetricFogShaderParameters.volumeResolution))
+    {
+        return;
+    }
+
+    float4 pmScatteringAndExtinction = participatingMediaPropertyTextureA[voxelCoordinate];
+    float4 pmEmissionAndPhaseG = participatingMediaPropertyTextureB[voxelCoordinate];
+
+    float3 scattering = frameShaderParameters.preExposure * pmEmissionAndPhaseG.xyz;
+    float extinction = 1.0f;
+
+    scatteringAndExtinctionTextureUAV[voxelCoordinate] = float4(scattering, extinction);
 }

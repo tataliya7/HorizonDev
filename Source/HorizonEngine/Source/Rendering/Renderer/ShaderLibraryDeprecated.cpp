@@ -320,12 +320,16 @@ namespace Horizon
             shaderLibrary->LoadShader(ShaderID::VolumetricFogFinalIntegration, shaderDesc);
         }
         {
-            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Vertex, "Shaders/RealTimeRenderer/LocalVolumetricFog/LocalVolumetricFog.hsm", "LocalVolumetricFogVS");
-            shaderLibrary->LoadShader(ShaderID::LocalVolumetricFogVS, shaderDesc);
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Pixel, "Shaders/RealTimeRenderer/VolumetricFogComposition.hsm", "VolumetricFogCompositionPS");
+            shaderLibrary->LoadShader(ShaderID::VolumetricFogComposition, shaderDesc);
         }
         {
-            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Pixel, "Shaders/RealTimeRenderer/LocalVolumetricFog/LocalVolumetricFog.hsm", "LocalVolumetricFogPS");
-            shaderLibrary->LoadShader(ShaderID::LocalVolumetricFogPS, shaderDesc);
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Vertex, "Shaders/RealTimeRenderer/LocalFogVolume/LocalFogVolume.hsm", "LocalFogVolumeVS");
+            shaderLibrary->LoadShader(ShaderID::LocalFogVolumeVS, shaderDesc);
+        }
+        {
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Pixel, "Shaders/RealTimeRenderer/LocalFogVolume/LocalFogVolume.hsm", "LocalFogVolumePS");
+            shaderLibrary->LoadShader(ShaderID::LocalFogVolumePS, shaderDesc);
         }
         {
             ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/PostProcessing/MotionBlurSetup.hsm", "MotionBlurSetupCS");

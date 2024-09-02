@@ -6,15 +6,15 @@
 namespace Horizon
 {
     class RenderScene;
-    class LocalVolumetricFogRenderObject;
+    class LocalFogVolumeRenderObject;
 
-    class LocalVolumetricFogComponent
+    class LocalFogVolumeComponent
     {
     public:
 
-        LocalVolumetricFogComponent();
+        LocalFogVolumeComponent();
 
-        ~LocalVolumetricFogComponent();
+        ~LocalFogVolumeComponent();
 
         bool IsRenderObjectValid() const;
 
@@ -28,6 +28,6 @@ namespace Horizon
 
     private:
 
-        LocalVolumetricFogRenderObject* renderObject = nullptr;
+        LocalFogVolumeRenderObject* renderObject = nullptr;
     };
 }

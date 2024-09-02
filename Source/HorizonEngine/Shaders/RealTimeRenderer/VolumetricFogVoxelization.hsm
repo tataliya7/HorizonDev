@@ -5,8 +5,9 @@
 SHADER_CONSTANTS_STRUCT_BEGIN();
 SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferSRV);
 SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(1, VolumetricFogShaderParameters, VolumetricFogShaderParameterBufferSRV);
-SHADER_CONSTANTS_TEXTURE_3D_UAV(2, float4, VolumetricFogParticipatingMediaPropertyTextureAUAV);
-SHADER_CONSTANTS_TEXTURE_3D_UAV(3, float4, VolumetricFogParticipatingMediaPropertyTextureBUAV);
+SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(2, LocalFogVolumeInstanceData, LocalFogVolumeInstanceDataBufferSRV);
+SHADER_CONSTANTS_TEXTURE_3D_UAV(3, float4, VolumetricFogParticipatingMediaPropertyTextureAUAV);
+SHADER_CONSTANTS_TEXTURE_3D_UAV(4, float4, VolumetricFogParticipatingMediaPropertyTextureBUAV);
 SHADER_CONSTANTS_STRUCT_END();
 
 [shader("compute")]
@@ -21,8 +22,31 @@ void VolumetricFogVoxelizationCS(uint3 groupID : SV_GroupID, uint3 groupThreadID
     PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
     VolumetricFogShaderParameters volumetricFogShaderParameters = volumetricFogShaderParameterBuffer[0];
 
-    // if ()
-    // {
-    //     return;
-    // }
+    uint3 voxelCoordinate = dispatchThreadID;
+
+    if (any(voxelCoordinate >= volumetricFogShaderParameters.volumeResolution))
+    {
+        return;
+    }
+
+    float3 scattering = float3(1.0f, 1.0f, 1.0f);
+    float extinction = 0.0f;
+    float3 emission = float3(0.0f, 0.0f, 0.0f);
+    float phaseG = 0.0f;
+
+    uint localFogVolumeInstanceCount = volumetricFogShaderParameters.localFogVolumeInstanceCount;
+    if (localFogVolumeInstanceCount > 0)
+    {
+        StructuredBuffer<LocalFogVolumeInstanceData> localFogVolumeInstanceDataBuffer = ShaderConstants.GetLocalFogVolumeInstanceDataBufferSRV();
+
+        for (uint localFogVolumeInstanceIndex = 0; localFogVolumeInstanceIndex < localFogVolumeInstanceCount; localFogVolumeInstanceIndex++)
+        {
+            LocalFogVolumeInstanceData instanceData = localFogVolumeInstanceDataBuffer.Load(localFogVolumeInstanceIndex);
+
+            emission += instanceData.emission;
+        }
+    }
+
+    participatingMediaPropertyTextureA[voxelCoordinate] = float4(scattering, extinction);
+    participatingMediaPropertyTextureB[voxelCoordinate] = float4(emission, phaseG);
 }

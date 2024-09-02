@@ -55,7 +55,7 @@ void GaussianBloomUpsampleCS(uint3 dispatchThreadID : SV_DispatchThreadID)
 
     // There is no need to apply pre-exposure because the result color is the same as when we don't use it.
     // float preExposure = frameShaderParameters.preExposure;
-    // float oneOverPreExposure = frameShaderParameters.oneOverPreExposure;
+    // float inversePreExposure = frameShaderParameters.inversePreExposure;
 
     float3 downsampledColor = downsampledInputTexture.SampleLevel(GlobalSamplerLinearClamp, uv, 0).rgb;
     float3 upsampledColor = 0.0f;

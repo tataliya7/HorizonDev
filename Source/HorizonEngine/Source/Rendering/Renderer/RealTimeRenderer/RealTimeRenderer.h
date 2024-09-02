@@ -308,7 +308,7 @@ namespace Horizon
             RenderGraph& renderGraph,
             const SceneView& view);
 
-        void RenderLocalVolumetricFogs(
+        void RenderLocalFogVolumes(
             RenderGraph& renderGraph,
             const SceneView& view);
 
@@ -515,8 +515,8 @@ namespace Horizon
 
         void UpdateAutoExposureDataFromReadbackBuffer();
 
-        RenderBackendBufferHandle localVolumetricFogInstanceDataBufferUpload;
-        uint64 localVolumetricFogInstanceDataBufferSize = 0;
+        RenderBackendBufferHandle localFogVolumeInstanceDataBufferUpload;
+        uint64 localFogVolumeInstanceDataBufferSize = 0;
 
         struct HistoryFrame
         {

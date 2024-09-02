@@ -109,7 +109,7 @@ void GaussianBloomDownsampleCS(uint3 dispatchThreadID : SV_DispatchThreadID)
 
     // TODO: Apply pre-exposure
     // float preExposure = frameShaderParameters.preExposure;
-    // float oneOverPreExposure = frameShaderParameters.oneOverPreExposure;
+    // float inversePreExposure = frameShaderParameters.inversePreExposure;
 
 #if COD_METHOD == 0
     [unroll]

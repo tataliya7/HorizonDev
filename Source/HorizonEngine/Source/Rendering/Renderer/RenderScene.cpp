@@ -37,14 +37,14 @@ namespace Horizon
     {
     }
 
-    LocalVolumetricFogRenderObject::LocalVolumetricFogRenderObject()
+    LocalFogVolumeRenderObject::LocalFogVolumeRenderObject()
         : transform(IdentityMatrix4x4)
         , emission(Vector3(0.0f, 0.0f, 0.0f))
     {
 
     }
 
-    LocalVolumetricFogRenderObject::~LocalVolumetricFogRenderObject()
+    LocalFogVolumeRenderObject::~LocalFogVolumeRenderObject()
     {
 
     }
@@ -161,30 +161,30 @@ namespace Horizon
         activeSkyAtmosphere = skyAtmospheres.empty() ? nullptr : skyAtmospheres.back();
     }
 
-    bool RenderScene::HasAnyLocalVolumetricFog() const
+    bool RenderScene::HasAnyLocalFogVolume() const
     {
-        return !localVolumetricFogs.empty();
+        return !localFogVolumes.empty();
     }
 
-    void RenderScene::AddLocalVolumetricFog(LocalVolumetricFogRenderObject* localVolumetricFog)
+    void RenderScene::AddLocalFogVolume(LocalFogVolumeRenderObject* localFogVolume)
     {
-        assert(localVolumetricFog != nullptr);
-        assert(std::ranges::find(localVolumetricFogs, localVolumetricFog) == localVolumetricFogs.end());
+        assert(localFogVolume != nullptr);
+        assert(std::ranges::find(localFogVolumes, localFogVolume) == localFogVolumes.end());
 
-        localVolumetricFogs.push_back(localVolumetricFog);
+        localFogVolumes.push_back(localFogVolume);
     }
 
-    void RenderScene::RemoveLocalVolumetricFog(LocalVolumetricFogRenderObject* localVolumetricFog)
+    void RenderScene::RemoveLocalFogVolume(LocalFogVolumeRenderObject* localFogVolume)
     {
-        assert(localVolumetricFog != nullptr);
-        assert(std::ranges::find(localVolumetricFogs, localVolumetricFog) != localVolumetricFogs.end());
+        assert(localFogVolume != nullptr);
+        assert(std::ranges::find(localFogVolumes, localFogVolume) != localFogVolumes.end());
 
         // Avoid the overhead of moving the items as the order does not matter.
-        auto iter = std::ranges::find(localVolumetricFogs, localVolumetricFog);
+        auto iter = std::ranges::find(localFogVolumes, localFogVolume);
         //if (iter != localFogVolumes.end())
         {
-            std::swap(*iter, localVolumetricFogs.back());
-            localVolumetricFogs.pop_back();
+            std::swap(*iter, localFogVolumes.back());
+            localFogVolumes.pop_back();
         }
     }
 

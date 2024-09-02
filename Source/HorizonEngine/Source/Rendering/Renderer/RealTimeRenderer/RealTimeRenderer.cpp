@@ -335,7 +335,7 @@ namespace Horizon
             }
 
             perFrameShaderParameters.preExposure = preExposure;
-            perFrameShaderParameters.oneOverPreExposure = 1.0f / preExposure;
+            perFrameShaderParameters.inversePreExposure = 1.0f / preExposure;
             perFrameShaderParameters.preExposureCorrection = preExposure / historyFrame.preExposure;
 
             perFrameShaderParameters.motionVectorScale = Vector2(float(renderResolution.width), float(renderResolution.height));
@@ -804,8 +804,6 @@ namespace Horizon
             RenderSubsurfaceScattering(renderGraph, view);
         }
 
-        RenderVolumetricFog(renderGraph, view);
-
         if (IsSkyAtmosphereRenderingEnabled())
         {
             RenderSkyAtmosphere(renderGraph, view);
@@ -823,7 +821,8 @@ namespace Horizon
             RenderScreenSpaceLightShafts(renderGraph, view);
         }
 
-        RenderLocalVolumetricFogs(renderGraph, view);
+        RenderVolumetricFog(renderGraph, view);
+        //RenderLocalFogVolumes(renderGraph, view);
 
         ExecutePostProcessingPipeline(renderGraph, view);
 

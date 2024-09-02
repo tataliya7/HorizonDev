@@ -48,7 +48,7 @@ void IndirectLightingDiffusePS(in float4 position : SV_Position, out float4 outp
 
     ThreeBandSHCoefficientsRGB irradianceEnvironmentMapSH = irradianceEnvironmentMapBuffer.Load<ThreeBandSHCoefficientsRGB>(0);
     float3 irradiance = EvaluateSHCosineWeighted(irradianceEnvironmentMapSH, normal);
-    //irradiance *= frameShaderParameters.oneOverPreExposure;
+    //irradiance *= frameShaderParameters.inversePreExposure;
 
     float3 indirectDiffuse = diffuseBRDF * irradiance * ambientOcclusion;
     indirectDiffuse *= frameShaderParameters.indirectLightingMultiplier;
