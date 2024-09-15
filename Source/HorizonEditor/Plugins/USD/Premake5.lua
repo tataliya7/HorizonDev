@@ -35,7 +35,7 @@ project "USD"
             --"__TBB_NO_IMPLICIT_LINKAGE=1",
         }
 
-    filter "configurations:Development or Release"
+    filter "configurations:Test or Release"
         defines {
             "TBB_USE_DEBUG=0",
             --"__TBB_NO_IMPLICIT_LINKAGE=1",

@@ -58,7 +58,7 @@ project "Tests"
             "{COPY} %{wks.location}/ThirdParty/python/310/DLLs %{cfg.targetdir}/python310/DLLs",
         }
 
-    filter "configurations:Development or Release"
+    filter "configurations:Test or Release"
         links {
             thirdpartypath("optick/Optick_1.4.0/lib/x64/release/OptickCore.lib"),
             thirdpartypath("python/310/libs/python310.lib"),

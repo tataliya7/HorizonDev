@@ -81,7 +81,7 @@ project "HorizonEditor"
     filter "configurations:Debug"
         defines { "USE_OPTICK=1" }
 
-    filter "configurations:Development"
+    filter "configurations:Test"
         defines { "USE_OPTICK=1" }
 
     filter "configurations:Release"

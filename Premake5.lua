@@ -49,7 +49,7 @@ workspace "Horizon"
     location ""
     configurations {
         "Debug",
-        "Development",
+        "Test",
         "Release",
     }
     flags {
@@ -72,8 +72,8 @@ filter "configurations:Debug"
         "/NODEFAULTLIB:libcmtd.lib",
     }
 
-filter "configurations:Development"
-    defines { "NDEBUG", "HORIZON_CONFIGURATION_DEVELOPMENT" }
+filter "configurations:Test"
+    defines { "NDEBUG", "HORIZON_CONFIGURATION_TEST" }
     runtime "Release"
     optimize "Speed"
     symbols "On"

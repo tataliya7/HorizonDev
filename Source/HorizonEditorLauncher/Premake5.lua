@@ -151,7 +151,7 @@ project "HorizonEditorLauncher"
             "{COPY} %{wks.location}/ThirdParty/streamline/Streamline-2.4.15/bin/x64/development/sl.reflex.dll %{cfg.targetdir}",
         }
 
-    filter "configurations:Development or Release"
+    filter "configurations:Test or Release"
         links {
             thirdpartypath("physx/lib/release/PhysX_64.lib"),
             thirdpartypath("physx/lib/release/PhysXCommon_64.lib"),
