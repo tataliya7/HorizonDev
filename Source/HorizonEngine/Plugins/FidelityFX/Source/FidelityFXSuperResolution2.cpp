@@ -22,20 +22,22 @@ namespace Horizon
         delete reinterpret_cast<FidelityFXSuperResolution2*>(interface);
     }
 
-    static FfxFsr2QualityMode GetFfxFsr2QualityMode(FidelityFXSuperResolution2QualityMode qualityMode)
+    static FfxFsr2QualityMode GetFfxFsr2QualityMode(uint32 qualityMode)
     {
         switch (qualityMode)
         {
-        case FidelityFXSuperResolution2QualityMode::Quality:
+        case 1:
             return FFX_FSR2_QUALITY_MODE_QUALITY;
-        case FidelityFXSuperResolution2QualityMode::Balanced:
+        case 2:
             return FFX_FSR2_QUALITY_MODE_BALANCED;
-        case FidelityFXSuperResolution2QualityMode::Performance:
+        case 3:
             return FFX_FSR2_QUALITY_MODE_PERFORMANCE;
-        case FidelityFXSuperResolution2QualityMode::UltraPerformance:
+        case 4:
             return FFX_FSR2_QUALITY_MODE_ULTRA_PERFORMANCE;
+        default:
+            std::unreachable();
+            return FFX_FSR2_QUALITY_MODE_QUALITY;
         }
-        std::unreachable();
     }
 
     static FidelityFXSuperResolution2API GetFidelityFXSuperResolution2API(RenderBackendType renderBackendType)
@@ -55,6 +57,8 @@ namespace Horizon
         : renderBackend(renderBackend)
         , api(GetFidelityFXSuperResolution2API(renderBackend->GetType()))
         , state(nullptr)
+        , options()
+        , constants()
     {
         state = new FidelityFxSuperResolution2State();
         state->initialized = false;
@@ -88,26 +92,22 @@ namespace Horizon
 
     TemporalSuperSamplingOptimalSettings FidelityFXSuperResolution2::GetOptimalSettings() const
     {
-        uint32_t targetWidth = options.targetWidth;
-        uint32_t targetHeight = options.targetHeight;
+        uint32_t targetWidth = options.outputWidth;
+        uint32_t targetHeight = options.outputHeight;
         uint32_t renderWidth = 0;
         uint32_t renderHeight = 0;
         float renderResolutionPercentage = 1.0f;
 
-#if 0
-        if (false)
+        if (options.qualityMode < FFX_FSR2_QUALITY_MODE_QUALITY || options.qualityMode > FFX_FSR2_QUALITY_MODE_ULTRA_PERFORMANCE)
         {
-            renderResolutionPercentage = ;
+            renderResolutionPercentage = std::clamp(options.desiredRenderResolutionPercentage, SuperResolutionMinPercentage, SuperResolutionMaxPercentage);
 
             renderWidth = uint32_t(renderResolutionPercentage * float(targetWidth));
             renderHeight = uint32_t(renderResolutionPercentage * float(targetHeight));
         }
         else
-#endif
         {
-            // TODO: Implement FSR2 quality mode selection.
-            //FfxFsr2QualityMode fsr2QualityMode = GetFfxFsr2QualityMode();
-            FfxFsr2QualityMode fsr2QualityMode = FFX_FSR2_QUALITY_MODE_QUALITY;
+            FfxFsr2QualityMode fsr2QualityMode = GetFfxFsr2QualityMode(options.qualityMode);
 
             FfxErrorCode errorCode = ffxFsr2GetRenderResolutionFromQualityMode(
                 &renderWidth,
@@ -121,10 +121,12 @@ namespace Horizon
             renderResolutionPercentage = 1.0f / upscaleRatio;
         }
 
-        TemporalSuperSamplingOptimalSettings optimalSettings = {};
-        optimalSettings.optimalRenderWidth = renderWidth;
-        optimalSettings.optimalRenderHeight = renderHeight;
-        optimalSettings.optimalRenderResolutionPercentage = renderResolutionPercentage;
+        TemporalSuperSamplingOptimalSettings optimalSettings =
+        {
+            .optimalRenderWidth = renderWidth,
+            .optimalRenderHeight = renderHeight,
+            .optimalRenderResolutionPercentage = renderResolutionPercentage
+        };
 
         return optimalSettings;
     }
@@ -157,6 +159,8 @@ namespace Horizon
         default: std::unreachable(); break;
         }
 
+        void* fsrContext = this;
+
         RenderGraphTextureDesc outputTextureDesc = RenderGraphTextureDesc::Create2D(
                 view.targetWidth,
                 view.targetHeight,
@@ -178,7 +182,7 @@ namespace Horizon
                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
                 {
                     commandList.DispatchSuperSampling(
-                        this,
+                        fsrContext,
                         dispatchCallback,
                         registry.GetRenderBackendTextureHandle(outputTexture),
                         registry.GetRenderBackendTextureHandle(colorTexture),

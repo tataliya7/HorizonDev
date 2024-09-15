@@ -472,6 +472,9 @@ namespace Horizon
 
         Vector2 cameraJitterOffset;
 
+        Matrix4x4 reprojectionMatrix;
+        Matrix4x4 inverseReprojectionMatrix;
+
         PostProcessingSettings finalPostProcessingSettings;
 
         PerFrameShaderParameters perFrameShaderParameters = {};

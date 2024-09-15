@@ -238,6 +238,10 @@ namespace Horizon
         editorCamera.overrideAspectRatio = false;
 
         renderSettings.indirectLightingIntensity = 1000.0f;
+
+        renderSettings.superSamplingSettings.superSamplingTechnique = SuperSamplingTechnique::FSR;
+        renderSettings.superSamplingSettings.qualityMode = 5;
+        renderSettings.superSamplingSettings.desiredRenderResolutionPercentage = 1.0f;
 //
 //        ShaderGraphSystemInit();
 //
@@ -357,7 +361,7 @@ namespace Horizon
         sceneView.cameraUpVector = cameraUpVector;
         sceneView.cameraRightVector = cameraRightVector;
         sceneView.cameraForwardVector = cameraForwardVector;
-        sceneView.fieldOfView = editorCamera.fieldOfView;
+        sceneView.fieldOfViewAngleVertical = editorCamera.fieldOfView;
         sceneView.aspectRatio = editorCamera.aspectRatio;
         sceneView.nearClippingPlane = editorCamera.nearClippingPlane;
         sceneView.farClippingPlane = editorCamera.farClippingPlane;
@@ -368,7 +372,7 @@ namespace Horizon
         sceneView.displayWidth = swapChainWidth;
         sceneView.displayHeight = swapChainHeight;
 
-        sceneView.transformations.Update(sceneView.cameraPosition, sceneView.cameraRotation, sceneView.fieldOfView, sceneView.aspectRatio, sceneView.nearClippingPlane, sceneView.farClippingPlane);
+        sceneView.transformations.Update(sceneView.cameraPosition, sceneView.cameraRotation, sceneView.fieldOfViewAngleVertical, sceneView.aspectRatio, sceneView.nearClippingPlane, sceneView.farClippingPlane);
 
         viewMatrix_deprecated = sceneView.transformations.worldToViewMatrix;
         projectionMatrix_deprecated = sceneView.transformations.viewToClipMatrix;

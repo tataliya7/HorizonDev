@@ -3,43 +3,35 @@
 
 namespace Horizon
 {
-    void JitterProjectionMatrix(Matrix4x4& outProjectionMatrix, Vector2& outJitterOffset, const Extent2D& renderResolution, float upscaleRatio)
+    uint32 TemporalSuperSamplingGetJitterPhaseCount(uint32 renderWidth, uint32 targetWidth)
+    {
+        constexpr float basePhaseCount = 32.0f;
+        float upscaleRatio = float(targetWidth) / float(renderWidth);
+        uint32 jitterPhaseCount = uint32(basePhaseCount * std::max(1.0f, upscaleRatio * upscaleRatio));
+        jitterPhaseCount = std::clamp(jitterPhaseCount, 1u, 255u);
+        return jitterPhaseCount;
+    }
+
+    Vector2 TemporalSuperSamplingGetJitterOffset(uint32 index, uint32 phaseCount)
     {
         static const auto HaltonSequence = [](uint32 index, uint32 base)
+        {
+            float f = 1.0f, result = 0.0f;
+            for (uint32 i = index; i > 0;)
             {
-                float f = 1.0f, result = 0.0f;
-                for (uint32 i = index; i > 0;)
-                {
-                    f /= static_cast<float>(base);
-                    result = result + f * static_cast<float>(i % base);
-                    i = static_cast<uint32>(floorf(static_cast<float>(i) / static_cast<float>(base)));
-                }
-                return result;
-            };
+                f /= static_cast<float>(base);
+                result = result + f * static_cast<float>(i % base);
+                i = static_cast<uint32>(floorf(static_cast<float>(i) / static_cast<float>(base)));
+            }
+            return result;
+        };
 
-        uint32 temporalSampleCount = 32;
-        temporalSampleCount = uint32(float(temporalSampleCount) * std::max(1.0f, upscaleRatio * upscaleRatio));
-        temporalSampleCount = Math::Clamp(temporalSampleCount, 1, 255);
-
-        static uint32 temporalSampleIndex = 0;
-        temporalSampleIndex = (temporalSampleIndex + 1) % temporalSampleCount;
+        float offsetX = HaltonSequence(index + 1, 2) - 0.5f;
+        float offsetY = HaltonSequence(index + 1, 3) - 0.5f;
 
         // Unit pixel space offset
-        float offsetX = HaltonSequence(temporalSampleIndex + 1, 2) - 0.5f;
-        float offsetY = HaltonSequence(temporalSampleIndex + 1, 3) - 0.5f;
-
-        // Clip space offset [-1, 1]
-        // -y for clip space to uv space
-        Vector2 jitterOffset = { offsetX * 2.0f / (float)renderResolution.width, -offsetY * 2.0f / (float)renderResolution.height };
-
-        /*
-         * Horizon Engine uses righted-handed coordinate system,
-         * the w component of clip space position is -Zc instead of Zc,
-         * so it should be multiplied by -1.
-         */
-        outProjectionMatrix[2][0] += -jitterOffset.x;
-        outProjectionMatrix[2][1] += -jitterOffset.y;
-        outJitterOffset = { offsetX, offsetY };
+        Vector2 jitterOffset = Vector2(offsetX, offsetY);
+        return jitterOffset;
     }
 
     bool RealTimeRenderer::IsSuperResolutionEnabled() const

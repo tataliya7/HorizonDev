@@ -17,6 +17,19 @@ namespace Horizon
         Vulkan,
     };
 
+    struct RenderBackendVulkanInfo
+    {
+        void* device;
+        void* instance;
+        void* physicalDevice;
+        uint32 computeQueueIndex;
+        uint32 computeQueueFamily;
+        uint32 graphicsQueueIndex;
+        uint32 graphicsQueueFamily;
+        uint32 opticalFlowQueueIndex;
+        uint32 opticalFlowQueueFamily;
+    };
+
     /**
      * Render backend interface.
      */
@@ -53,6 +66,8 @@ namespace Horizon
          * TBD.
          */
         virtual RenderBackendDevice GetNativeDevice() = 0;
+
+        virtual void GetRenderBackendVulkanInfo(RenderBackendVulkanInfo* vulkanInfo) {}
 
         /**
          * TBD.

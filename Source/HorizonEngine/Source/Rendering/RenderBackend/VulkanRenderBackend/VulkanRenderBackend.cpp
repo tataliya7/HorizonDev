@@ -822,6 +822,7 @@ namespace Horizon
         void DestroyRenderDevices() override;
         void FlushRenderDevices() override;
         RenderBackendDevice GetNativeDevice() override;
+        void GetRenderBackendVulkanInfo(RenderBackendVulkanInfo* vulkanInfo) override;
         RenderBackendSwapChainHandle CreateSwapChain(const RenderBackendSwapChainDesc* desc) override;
         void DestroySwapChain(RenderBackendSwapChainHandle swapChain) override;
         void ResizeSwapChain(RenderBackendSwapChainHandle swapChain, uint32* width, uint32* height) override;
@@ -3871,21 +3872,6 @@ namespace Horizon
         assert(handle == VK_NULL_HANDLE);
     }
 
-//#if HE_ENBALE_STREAMLINE_SUPPORT
-//    void NVSDK_CONV NGXLogSink(const char* InNGXMessage, NVSDK_NGX_Logging_Level InLoggingLevel, NVSDK_NGX_Feature InSourceComponent)
-//    {
-//        const char* NGXComponent = "Unknown";
-//        switch (InSourceComponent)
-//        {
-//        case NVSDK_NGX_Feature_SuperSampling: NGXComponent = "DLSS";    break;
-//        case NVSDK_NGX_Feature_Reserved_SDK:  NGXComponent = "SDK";        break;
-//        case NVSDK_NGX_Feature_Reserved_Core: NGXComponent = "Core";    break;
-//        }
-//
-//        LogVerbose(GLogger, std::format("[{}]: {}", NGXComponent, InNGXMessage));
-//    }
-//#endif
-
     bool VulkanDevice::Init(VulkanRenderBackend* backend, VulkanPhysicalDevice* physicalDevice, const VulkanBindlessConfig& bindlessConfig)
     {
         this->backend = backend;
@@ -3893,19 +3879,15 @@ namespace Horizon
         this->instance = backend->instance;
         this->deviceMask = ~uint32(0);
 
-//#if HE_ENBALE_STREAMLINE_SUPPORT
-//        NVSDK_NGX_FeatureDiscoveryInfo featureDiscoveryInfo = {};
-//        uint32 extensionCount = 0;
-//        NGX_CHECK(NVSDK_NGX_VULKAN_GetFeatureDeviceExtensionRequirements(instance, physicalDevice->handle, nullptr, &extensionCount, nullptr));
-//        //std::vector<VkExtensionProperties*> extensionProperties(extensionCount);
-//        //NGX_CHECK(NVSDK_NGX_VULKAN_GetFeatureDeviceExtensionRequirements(instance, physicalDevice->handle, nullptr, &extensionCount, extensionProperties.data()));
-//        VkExtensionProperties* extensionProperties = nullptr;
-//        NGX_CHECK(NVSDK_NGX_VULKAN_GetFeatureDeviceExtensionRequirements(instance, physicalDevice->handle, &featureDiscoveryInfo, &extensionCount, &extensionProperties));
-//#endif
-
         // Create logical device
         {
             std::vector<const char*> requiredDeviceExtensions;
+            requiredDeviceExtensions.push_back(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
+            requiredDeviceExtensions.push_back(VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
+            requiredDeviceExtensions.push_back(VK_KHR_MAINTENANCE_3_EXTENSION_NAME);
+            requiredDeviceExtensions.push_back(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
+            requiredDeviceExtensions.push_back(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
+            requiredDeviceExtensions.push_back(VK_KHR_MAINTENANCE_6_EXTENSION_NAME);
             requiredDeviceExtensions.push_back(VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME);
             requiredDeviceExtensions.push_back(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
             requiredDeviceExtensions.push_back(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
@@ -3925,6 +3907,10 @@ namespace Horizon
             requiredDeviceExtensions.push_back(VK_KHR_MULTIVIEW_EXTENSION_NAME);
             requiredDeviceExtensions.push_back(VK_KHR_PRESENT_WAIT_EXTENSION_NAME);
             requiredDeviceExtensions.push_back(VK_KHR_PRESENT_ID_EXTENSION_NAME);
+            requiredDeviceExtensions.push_back(VK_KHR_EXTERNAL_SEMAPHORE_EXTENSION_NAME);
+            requiredDeviceExtensions.push_back(VK_KHR_EXTERNAL_SEMAPHORE_WIN32_EXTENSION_NAME);
+            requiredDeviceExtensions.push_back(VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME);
+            requiredDeviceExtensions.push_back(VK_KHR_EXTERNAL_MEMORY_WIN32_EXTENSION_NAME);
             //requiredDeviceExtensions.push_back(VK_KHR_SHADER_RELAXED_EXTENDED_INSTRUCTION_EXTENSION_NAME);
             requiredDeviceExtensions.push_back(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
             requiredDeviceExtensions.push_back(VK_EXT_SCALAR_BLOCK_LAYOUT_EXTENSION_NAME);
@@ -3933,22 +3919,17 @@ namespace Horizon
             requiredDeviceExtensions.push_back(VK_EXT_SHADER_VIEWPORT_INDEX_LAYER_EXTENSION_NAME);
             requiredDeviceExtensions.push_back(VK_EXT_SHADER_DEMOTE_TO_HELPER_INVOCATION_EXTENSION_NAME);
 
+            // TODO
+#if 1
+            requiredDeviceExtensions.push_back(VK_NVX_IMAGE_VIEW_HANDLE_EXTENSION_NAME);
+            requiredDeviceExtensions.push_back(VK_NVX_BINARY_IMPORT_EXTENSION_NAME);
+            requiredDeviceExtensions.push_back(VK_NV_LOW_LATENCY_EXTENSION_NAME);
+            requiredDeviceExtensions.push_back(VK_NV_OPTICAL_FLOW_EXTENSION_NAME);
+#endif
             if (backend->enableMeshShaderSupport)
             {
                 requiredDeviceExtensions.push_back(VK_EXT_MESH_SHADER_EXTENSION_NAME);
             }
-
-#if HE_ENBALE_STREAMLINE_SUPPORT
-            requiredDeviceExtensions.push_back(VK_NVX_IMAGE_VIEW_HANDLE_EXTENSION_NAME);
-            requiredDeviceExtensions.push_back(VK_NVX_BINARY_IMPORT_EXTENSION_NAME);
-
-            requiredDeviceExtensions.push_back(VK_NV_OPTICAL_FLOW_EXTENSION_NAME);
-            requiredDeviceExtensions.push_back(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
-            requiredDeviceExtensions.push_back(VK_KHR_EXTERNAL_SEMAPHORE_EXTENSION_NAME);
-            requiredDeviceExtensions.push_back(VK_KHR_EXTERNAL_SEMAPHORE_WIN32_EXTENSION_NAME);
-            requiredDeviceExtensions.push_back(VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME);
-            requiredDeviceExtensions.push_back(VK_KHR_EXTERNAL_MEMORY_WIN32_EXTENSION_NAME);
-#endif
 
             if (backend->enableRayTracingSupport)
             {
@@ -4016,237 +3997,6 @@ namespace Horizon
 
             SetDebugUtilsObjectName(VK_OBJECT_TYPE_DEVICE, (uint64)handle, physicalDevice->properties.deviceName);
         }
-
-#if HE_ENBALE_STREAMLINE_SUPPORT
-        {
-            sl::VulkanInfo slVulkanInfo = {};
-            slVulkanInfo.instance = instance;
-            slVulkanInfo.device = handle;
-            slVulkanInfo.physicalDevice = physicalDevice->handle;
-            slVulkanInfo.computeQueueIndex = commandQueues[(uint32)RenderBackendQueueFamily::Compute][0].queueIndex;
-            slVulkanInfo.computeQueueFamily = commandQueues[(uint32)RenderBackendQueueFamily::Compute][0].familyIndex;
-            slVulkanInfo.graphicsQueueIndex = commandQueues[(uint32)RenderBackendQueueFamily::Graphics][0].queueIndex;
-            slVulkanInfo.graphicsQueueFamily = commandQueues[(uint32)RenderBackendQueueFamily::Graphics][0].familyIndex;
-            slVulkanInfo.opticalFlowQueueIndex = commandQueues[(uint32)RenderBackendQueueFamily::OpticalFlow][0].queueIndex;
-            slVulkanInfo.opticalFlowQueueFamily = commandQueues[(uint32)RenderBackendQueueFamily::OpticalFlow][0].familyIndex;
-            sl::Result slResult = slSetVulkanInfo(slVulkanInfo);
-
-            if (true)
-            {
-                // Set reflex consts to a default config. This can be changed at runtime in the UI.
-                sl::ReflexOptions reflexOptions = {};
-                reflexOptions.mode = sl::ReflexMode::eLowLatency;
-                reflexOptions.frameLimitUs = 0;
-                reflexOptions.useMarkersToOptimize = true;
-                //reflexOptions.virtualKey = VK_F13;
-                if (SL_FAILED(result, slReflexSetOptions(reflexOptions)))
-                {
-                    LogError(GLogger, std::format("slReflexSetOptions, error code: {}", (int32)result));
-                }
-            }
-        }
-        //// Init NGX
-        //{
-        //    bool bNGXInitialized = false;
-        //    const wchar_t* path = L"TODO";
-        //    const std::wstring wpath(path);
-
-        //    NVSDK_NGX_FeatureCommonInfo FeatureInfo = {};
-        //    /*    FeatureInfo.PathListInfo.Path = const_cast<wchar_t**>(&path);
-        //        FeatureInfo.PathListInfo.Length = wpath.size();*/
-        //        // logging
-        //    {
-        //        FeatureInfo.LoggingInfo.DisableOtherLoggingSinks = true;
-        //        FeatureInfo.LoggingInfo.LoggingCallback = &NGXLogSink;
-        //        FeatureInfo.LoggingInfo.MinimumLoggingLevel = NVSDK_NGX_LOGGING_LEVEL_VERBOSE;
-        //    }
-
-        //    NVSDK_NGX_Result ResultNGXInit = NVSDK_NGX_VULKAN_Init_with_ProjectID(
-        //        "a0f57b54-1daf-4934-90ae-c4035c19df04",
-        //        NVSDK_NGX_ENGINE_TYPE_CUSTOM,
-        //        "HorizonEngine",
-        //        path,
-        //        instance,
-        //        physicalDevice->handle,
-        //        handle,
-        //        nullptr,
-        //        nullptr,
-        //        &FeatureInfo,
-        //        NVSDK_NGX_Version_API);
-        //    LogInfo(GLogger, std::format("NVSDK_NGX_VULKAN_Init_with_ProjectID {}", (int)ResultNGXInit));
-
-        //    /*
-        //    const wchar_t* path = L"TODO";
-        //    NVSDK_NGX_Result ResultNGXInit = NVSDK_NGX_VULKAN_Init_with_ProjectID(
-        //        "a0f57b54-1daf-4934-90ae-c4035c19df04",
-        //        NVSDK_NGX_ENGINE_TYPE_CUSTOM,
-        //        "HorizonEngine",
-        //        path,
-        //        instance,
-        //        physicalDevice->handle,
-        //        handle);
-        //    LogInfo(GLogger, std::format("NVSDK_NGX_VULKAN_Init_with_ProjectID {}", (int)ResultNGXInit));*/
-
-        //    assert(NVSDK_NGX_SUCCEED(ResultNGXInit));
-
-        //    if (NVSDK_NGX_SUCCEED(ResultNGXInit))
-        //    {
-        //        bNGXInitialized = true;
-
-        //        NVSDK_NGX_Parameter* CapabilityParameters = nullptr;
-
-        //        NVSDK_NGX_Result ResultGetCapabilityParameters = NVSDK_NGX_VULKAN_GetCapabilityParameters(&CapabilityParameters);
-        //        LogInfo(GLogger, std::format("NVSDK_NGX_VULKAN_GetCapabilityParameters {}", (int)ResultGetCapabilityParameters));
-
-        //        if (NVSDK_NGX_SUCCEED(ResultGetCapabilityParameters)) // Query DLSS Support
-        //        {
-        //            assert(CapabilityParameters != nullptr);
-
-        //            int NeedsUpdatedDriver = 0;
-        //            unsigned int MinDriverVersionMajor = 0;
-        //            unsigned int MinDriverVersionMinor = 0;
-
-        //            NVSDK_NGX_Result ResultUpdatedDriver = CapabilityParameters->Get(NVSDK_NGX_Parameter_SuperSampling_NeedsUpdatedDriver, &NeedsUpdatedDriver);
-        //            NVSDK_NGX_Result ResultMinDriverVersionMajor = CapabilityParameters->Get(NVSDK_NGX_Parameter_SuperSampling_MinDriverVersionMajor, &MinDriverVersionMajor);
-        //            NVSDK_NGX_Result ResultMinDriverVersionMinor = CapabilityParameters->Get(NVSDK_NGX_Parameter_SuperSampling_MinDriverVersionMinor, &MinDriverVersionMinor);
-
-        //            LogInfo(GLogger, std::format("NVSDK_NGX_Parameter_SuperSampling_NeedsUpdatedDriver {} {}", (int)ResultUpdatedDriver, NeedsUpdatedDriver));
-        //            LogInfo(GLogger, std::format("NVSDK_NGX_Parameter_SuperSampling_MinDriverVersionMajor {} {}", (int)ResultMinDriverVersionMajor, MinDriverVersionMajor));
-        //            LogInfo(GLogger, std::format("NVSDK_NGX_Parameter_SuperSampling_MinDriverVersionMinor {} {}", (int)ResultMinDriverVersionMinor, MinDriverVersionMinor));
-
-        //            if (NVSDK_NGX_SUCCEED(ResultUpdatedDriver))
-        //            {
-        //                if (NeedsUpdatedDriver)
-        //                {
-        //                    // NVIDIA DLSS cannot be loaded due to outdated driver.
-        //                    if (NVSDK_NGX_SUCCEED(ResultMinDriverVersionMajor) && NVSDK_NGX_SUCCEED(ResultMinDriverVersionMinor))
-        //                    {
-        //                        // Min Driver Version required: minDriverVersionMajor.minDriverVersionMinor
-        //                        LogWarning(GLogger, std::format("NVIDIA DLSS cannot be loaded due to outdated driver."));
-        //                    }
-        //                }
-        //                else
-        //                {
-        //                    // driver update is not required �C so application is not expected to
-        //                    // query minDriverVersion in this case
-        //                }
-        //            }
-        //            else
-        //            {
-        //                LogInfo(GLogger, std::format("NVIDIA NGX DLSS Minimum driver version was not reported"));
-        //            }
-
-        //            int DlssAvailable = 0;
-        //            NVSDK_NGX_Result ResultDlssAvailable = CapabilityParameters->Get(NVSDK_NGX_Parameter_SuperSampling_Available, &DlssAvailable);
-        //            LogInfo(GLogger, std::format("NVSDK_NGX_Parameter_SuperSampling_Available {} {}", (int)ResultDlssAvailable, NeedsUpdatedDriver));
-
-        //            if (NVSDK_NGX_FAILED(ResultDlssAvailable) || !DlssAvailable)
-        //            {
-        //                LogInfo(GLogger, std::format("NVIDIA DLSS not available on this hardward/platform."));
-        //            }
-
-        //            NVSDK_NGX_Result ResultFeatureInitResult = CapabilityParameters->Get(NVSDK_NGX_Parameter_SuperSampling_FeatureInitResult, &DlssAvailable);
-        //            if (NVSDK_NGX_FAILED(ResultFeatureInitResult) || !DlssAvailable)
-        //            {
-        //                LogInfo(GLogger, std::format("NVIDIA DLSS is denied on for this application."));
-        //            }
-        //        }
-
-        //        unsigned int RenderWidth, RenderHeight;
-        //        float Sharpness = 0.0f;
-        //        unsigned int TargetWidth = 1280;
-        //        unsigned int TargetHeight = 720;
-        //        unsigned int RecommendedOptimalRenderWidth = 0;
-        //        unsigned int RecommendedOptimalRenderHeight = 0;
-        //        unsigned int DynamicMaximumRenderSizeWidth = 0;
-        //        unsigned int DynamicMaximumRenderSizeHeight = 0;
-        //        unsigned int DynamicMinimumRenderSizeWidth = 0;
-        //        unsigned int DynamicMinimumRenderSizeHeight = 0;
-        //        NVSDK_NGX_PerfQuality_Value PerfQualityValue = NVSDK_NGX_PerfQuality_Value_MaxPerf;
-        //        NVSDK_NGX_Result DLSSMode = NGX_DLSS_GET_OPTIMAL_SETTINGS(
-        //            CapabilityParameters,
-        //            TargetWidth, TargetHeight,
-        //            PerfQualityValue,
-        //            &RecommendedOptimalRenderWidth, &RecommendedOptimalRenderHeight,
-        //            &DynamicMaximumRenderSizeWidth, &DynamicMaximumRenderSizeHeight,
-        //            &DynamicMinimumRenderSizeWidth, &DynamicMinimumRenderSizeHeight,
-        //            &Sharpness);
-
-        //        if (RecommendedOptimalRenderWidth == 0 || RecommendedOptimalRenderHeight == 0)
-        //        {
-        //            // This PerfQuality mode has not been made available yet.
-        //            // Please request another PerfQuality mode.
-        //        }
-        //        else
-        //        {
-        //            LogInfo(GLogger, std::format("NVSDK_NGX_PerfQuality_Value_MaxPerf"));
-        //            LogInfo(GLogger, std::format("TargetWidth {} TargetHeight {}", TargetWidth, TargetHeight));
-        //            LogInfo(GLogger, std::format("DynamicMaximumRenderSizeWidth {} DynamicMaximumRenderSizeHeight {}", DynamicMaximumRenderSizeWidth, DynamicMaximumRenderSizeHeight));
-        //            LogInfo(GLogger, std::format("DynamicMinimumRenderSizeWidth {} DynamicMinimumRenderSizeHeight {}", DynamicMinimumRenderSizeWidth, DynamicMinimumRenderSizeHeight));
-        //            // Use DLSS for this combination
-        //            // - Create feature with RecommendedOptimalRenderWidth, RecommendedOptimalRenderHeight
-        //            // - Render to (RenderWidth, RenderHeight) between Min and Max inclusive
-        //            // - Call DLSS to upscale to (TargetWidth, TargetHeight)
-        //        }
-
-        //        PerfQualityValue = NVSDK_NGX_PerfQuality_Value_Balanced;
-        //        DLSSMode = NGX_DLSS_GET_OPTIMAL_SETTINGS(
-        //            CapabilityParameters,
-        //            TargetWidth, TargetHeight,
-        //            PerfQualityValue,
-        //            &RecommendedOptimalRenderWidth, &RecommendedOptimalRenderHeight,
-        //            &DynamicMaximumRenderSizeWidth, &DynamicMaximumRenderSizeHeight,
-        //            &DynamicMinimumRenderSizeWidth, &DynamicMinimumRenderSizeHeight,
-        //            &Sharpness);
-        //        LogInfo(GLogger, std::format("NVSDK_NGX_PerfQuality_Value_Balanced"));
-        //        LogInfo(GLogger, std::format("TargetWidth {} TargetHeight {}", TargetWidth, TargetHeight));
-        //        LogInfo(GLogger, std::format("DynamicMaximumRenderSizeWidth {} DynamicMaximumRenderSizeHeight {}", DynamicMaximumRenderSizeWidth, DynamicMaximumRenderSizeHeight));
-        //        LogInfo(GLogger, std::format("DynamicMinimumRenderSizeWidth {} DynamicMinimumRenderSizeHeight {}", DynamicMinimumRenderSizeWidth, DynamicMinimumRenderSizeHeight));
-
-        //        PerfQualityValue = NVSDK_NGX_PerfQuality_Value_MaxQuality;
-        //        DLSSMode = NGX_DLSS_GET_OPTIMAL_SETTINGS(
-        //            CapabilityParameters,
-        //            TargetWidth, TargetHeight,
-        //            PerfQualityValue,
-        //            &RecommendedOptimalRenderWidth, &RecommendedOptimalRenderHeight,
-        //            &DynamicMaximumRenderSizeWidth, &DynamicMaximumRenderSizeHeight,
-        //            &DynamicMinimumRenderSizeWidth, &DynamicMinimumRenderSizeHeight,
-        //            &Sharpness);
-        //        LogInfo(GLogger, std::format("NVSDK_NGX_PerfQuality_Value_MaxQuality"));
-        //        LogInfo(GLogger, std::format("TargetWidth {} TargetHeight {}", TargetWidth, TargetHeight));
-        //        LogInfo(GLogger, std::format("DynamicMaximumRenderSizeWidth {} DynamicMaximumRenderSizeHeight {}", DynamicMaximumRenderSizeWidth, DynamicMaximumRenderSizeHeight));
-        //        LogInfo(GLogger, std::format("DynamicMinimumRenderSizeWidth {} DynamicMinimumRenderSizeHeight {}", DynamicMinimumRenderSizeWidth, DynamicMinimumRenderSizeHeight));
-
-        //        PerfQualityValue = NVSDK_NGX_PerfQuality_Value_UltraPerformance;
-        //        DLSSMode = NGX_DLSS_GET_OPTIMAL_SETTINGS(
-        //            CapabilityParameters,
-        //            TargetWidth, TargetHeight,
-        //            PerfQualityValue,
-        //            &RecommendedOptimalRenderWidth, &RecommendedOptimalRenderHeight,
-        //            &DynamicMaximumRenderSizeWidth, &DynamicMaximumRenderSizeHeight,
-        //            &DynamicMinimumRenderSizeWidth, &DynamicMinimumRenderSizeHeight,
-        //            &Sharpness);
-        //        LogInfo(GLogger, std::format("NVSDK_NGX_PerfQuality_Value_UltraPerformance"));
-        //        LogInfo(GLogger, std::format("TargetWidth {} TargetHeight {}", TargetWidth, TargetHeight));
-        //        LogInfo(GLogger, std::format("DynamicMaximumRenderSizeWidth {} DynamicMaximumRenderSizeHeight {}", DynamicMaximumRenderSizeWidth, DynamicMaximumRenderSizeHeight));
-        //        LogInfo(GLogger, std::format("DynamicMinimumRenderSizeWidth {} DynamicMinimumRenderSizeHeight {}", DynamicMinimumRenderSizeWidth, DynamicMinimumRenderSizeHeight));
-
-        //        PerfQualityValue = NVSDK_NGX_PerfQuality_Value_UltraQuality;
-        //        DLSSMode = NGX_DLSS_GET_OPTIMAL_SETTINGS(
-        //            CapabilityParameters,
-        //            TargetWidth, TargetHeight,
-        //            PerfQualityValue,
-        //            &RecommendedOptimalRenderWidth, &RecommendedOptimalRenderHeight,
-        //            &DynamicMaximumRenderSizeWidth, &DynamicMaximumRenderSizeHeight,
-        //            &DynamicMinimumRenderSizeWidth, &DynamicMinimumRenderSizeHeight,
-        //            &Sharpness);
-        //        LogInfo(GLogger, std::format("NVSDK_NGX_PerfQuality_Value_UltraQuality"));
-        //        LogInfo(GLogger, std::format("TargetWidth {} TargetHeight {}", TargetWidth, TargetHeight));
-        //        LogInfo(GLogger, std::format("DynamicMaximumRenderSizeWidth {} DynamicMaximumRenderSizeHeight {}", DynamicMaximumRenderSizeWidth, DynamicMaximumRenderSizeHeight));
-        //        LogInfo(GLogger, std::format("DynamicMinimumRenderSizeWidth {} DynamicMinimumRenderSizeHeight {}", DynamicMinimumRenderSizeWidth, DynamicMinimumRenderSizeHeight));
-        //    }
-        //}
-#endif
 
         // Init command queues
         {
@@ -5424,39 +5174,41 @@ namespace Horizon
     {                                                                                                  \
         return false;                                                                                  \
     }                                                                                                  \
-    break;
+    break
 
         for (uint32 i = 0; i < container.numCommands; i++)
         {
             switch (container.types[i])
             {
-                COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandCopyBuffer);
-                COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandCopyTexture);
-                COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandUpdateBuffer);
-                COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandUpdateTexture);
-                COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandClearTextureUAV);
-                COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandBarriers);
-                COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandTransitions);
-                COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandBeginTimingQuery);
-                COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandEndTimingQuery);
-                COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandResolveTimingQueryResults);
-                COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandDispatch);
-                COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandDispatchIndirect);
-                COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandBuildBottomLevelAS);
-                COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandBuildTopLevelAS);
-                COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandDispatchRays);
-                COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandSetViewport);
-                COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandSetScissor);
-                COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandSetStencilReference);
-                COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandBeginRenderPass);
-                COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandEndRenderPass);
-                COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandDraw);
-                COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandDrawIndirect);
-                COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandDispatchMesh);
-                COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandDispatchMeshIndirect);
-                COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandBeginDebugLabel);
-                COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandEndDebugLabel);
-                COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandDispatchSuperSampling);
+            COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandCopyBuffer);
+            COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandCopyTexture);
+            COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandUpdateBuffer);
+            COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandUpdateTexture);
+            COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandClearTextureUAV);
+            COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandBarriers);
+            COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandTransitions);
+            COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandBeginTimingQuery);
+            COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandEndTimingQuery);
+            COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandResolveTimingQueryResults);
+            COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandDispatch);
+            COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandDispatchIndirect);
+            COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandBuildBottomLevelAS);
+            COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandBuildTopLevelAS);
+            COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandDispatchRays);
+            COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandSetViewport);
+            COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandSetScissor);
+            COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandSetStencilReference);
+            COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandBeginRenderPass);
+            COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandEndRenderPass);
+            COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandDraw);
+            COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandDrawIndirect);
+            COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandDispatchMesh);
+            COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandDispatchMeshIndirect);
+            COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandBeginDebugLabel);
+            COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandEndDebugLabel);
+            COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandDispatchSuperSampling);
+            default:
+                std::unreachable();
             }
         }
 #undef COMPILE_RENDER_COMMAND
@@ -5504,6 +5256,20 @@ namespace Horizon
         d.device = device.handle;
         d.physicalDevice = device.physicalDevice->handle;
         return d;
+    }
+
+    void VulkanRenderBackend::GetRenderBackendVulkanInfo(RenderBackendVulkanInfo* vulkanInfo)
+    {
+        vulkanInfo->instance = instance;
+        vulkanInfo->device = device.handle;
+        vulkanInfo->physicalDevice = device.physicalDevice->handle;
+
+        vulkanInfo->computeQueueIndex = device.commandQueues[(uint32)RenderBackendQueueFamily::Compute][0].queueIndex;
+        vulkanInfo->computeQueueFamily = device.commandQueues[(uint32)RenderBackendQueueFamily::Compute][0].familyIndex;
+        vulkanInfo->graphicsQueueIndex = device.commandQueues[(uint32)RenderBackendQueueFamily::Graphics][0].queueIndex;
+        vulkanInfo->graphicsQueueFamily = device.commandQueues[(uint32)RenderBackendQueueFamily::Graphics][0].familyIndex;
+        //vulkanInfo->opticalFlowQueueIndex = device.commandQueues[(uint32)RenderBackendQueueFamily::OpticalFlow][0].queueIndex;
+        //vulkanInfo->opticalFlowQueueFamily = device.commandQueues[(uint32)RenderBackendQueueFamily::OpticalFlow][0].familyIndex;
     }
 
     void VulkanRenderBackend::Tick()

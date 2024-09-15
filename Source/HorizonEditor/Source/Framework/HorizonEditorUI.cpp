@@ -1222,8 +1222,8 @@ namespace Horizon
                 ImGui::Separator();
                 ImGui::PopStyleVar();
             }
-#if 0
-            if (ImGui::CollapsingHeader("Antialiasing", ImGuiTreeNodeFlags_DefaultOpen))
+
+            if (ImGui::CollapsingHeader("Super Sampling", ImGuiTreeNodeFlags_DefaultOpen))
             {
                 ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(2, 2));
                 ImGui::Columns(2);
@@ -1234,112 +1234,98 @@ namespace Horizon
                 ImGui::NextColumn();
                 ImGui::PushItemWidth(-1);
 
-                const char* items[] = { "None", "TAA", "NVIDIA DLAA" };
-                static int item = 0;
-                ImGui::Combo("##AntialiasingTechnique", &item, items, IM_ARRAYSIZE(items));
-                renderSettings.antialiasingTechnique = (AntialiasingTechnique)item;
-
-                ImGui::PopItemWidth();
-                ImGui::NextColumn();
-
-                ImGui::Columns(1);
-                ImGui::Separator();
-                ImGui::PopStyleVar();
-            }
-
-            if (ImGui::CollapsingHeader("Super Resolution", ImGuiTreeNodeFlags_DefaultOpen))
-            {
-                ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(2, 2));
-                ImGui::Columns(2);
-                ImGui::Separator();
-
-                ImGui::AlignTextToFramePadding();
-                ImGui::TextUnformatted("Technique");
-                ImGui::NextColumn();
-                ImGui::PushItemWidth(-1);
-
-                const char* items[] = { "None", "AMD FSR2", "NVIDIA DLSS" };
-                int item = (int)renderSettings.superResolutionTechnique;
+                const char* items[] = { "None", "AMD FSR", "NVIDIA DLSS" };
+                int item = int(renderSettings.superSamplingSettings.superSamplingTechnique);
                 ImGui::Combo("##SuperResolutionTechnique", &item, items, IM_ARRAYSIZE(items));
-                renderSettings.superResolutionTechnique = (SuperResolutionTechnique)item;
+                renderSettings.superSamplingSettings.superSamplingTechnique = SuperSamplingTechnique(item);
 
                 ImGui::PopItemWidth();
                 ImGui::NextColumn();
 
                 switch (item)
                 {
-                case (uint32)SuperResolutionTechnique::FSR2:
+                case uint32(SuperSamplingTechnique::FSR):
                 {
                     ImGui::AlignTextToFramePadding();
                     ImGui::TextUnformatted("Quality Mode");
                     ImGui::NextColumn();
                     ImGui::PushItemWidth(-1);
 
-                    static const char* fsr2QualityModeNames[] = { "Custom", "Quality", "Balanced", "Performance", "Ultra Performance" };
-                    int fsr2QualityModeNameIndex = (int)renderSettings.fsr2Settings.qualityMode;
-                    ImGui::Combo("##FSR2QualityMode", &fsr2QualityModeNameIndex, fsr2QualityModeNames, IM_ARRAYSIZE(fsr2QualityModeNames));
-                    renderSettings.fsr2Settings.qualityMode = (FSR2QualityMode)fsr2QualityModeNameIndex;
+                    static const char* fsrQualityModeNames[] = { "Off", "Quality", "Balanced", "Performance", "Ultra Performance", "Custom" };
+                    int fsrQualityModeNameIndex = int(renderSettings.superSamplingSettings.qualityMode);
+                    ImGui::Combo("##FSRQualityMode", &fsrQualityModeNameIndex, fsrQualityModeNames, IM_ARRAYSIZE(fsrQualityModeNames));
+                    renderSettings.superSamplingSettings.qualityMode = uint32(fsrQualityModeNameIndex);
                     ImGui::PopItemWidth();
                     ImGui::NextColumn();
 
-                    if (renderSettings.fsr2Settings.qualityMode == FSR2QualityMode::Custom)
+                    //if (renderSettings.superSamplingSettings.qualityMode == FidelityFXSuperResolution2QualityMode::Custom)
                     {
                         ImGui::AlignTextToFramePadding();
-                        ImGui::TextUnformatted("Custom Upscale Ratio");
+                        ImGui::TextUnformatted("Render Resolution Percentage");
                         ImGui::NextColumn();
                         ImGui::PushItemWidth(-1);
-                        if (ImGui::DragFloat("##FSR2UpscaleRatio", &renderSettings.fsr2Settings.customUpscaleRatio, 0.001f, 1.0f, 3.0f))
-                        {
 
+                        int desiredRenderResolutionPercentage = int(renderSettings.superSamplingSettings.desiredRenderResolutionPercentage * 100.0f);
+                        if (ImGui::DragInt("##desiredRenderResolutionPercentage", &desiredRenderResolutionPercentage, 1, 25, 100))
+                        {
+                            renderSettings.superSamplingSettings.desiredRenderResolutionPercentage = 0.01f * desiredRenderResolutionPercentage;
                         }
+
                         ImGui::PopItemWidth();
                         ImGui::NextColumn();
                     }
 
                     ImGui::AlignTextToFramePadding();
-                    ImGui::TextUnformatted("Enable Sharpening");
+                    ImGui::TextUnformatted("Frame Interpolation");
                     ImGui::NextColumn();
                     ImGui::PushItemWidth(-1);
-                    if (ImGui::Checkbox("##FSR2EnableSharpening", &renderSettings.fsr2Settings.useRCAS))
+                    if (ImGui::Checkbox("##FrameInterpolation", &renderSettings.superSamplingSettings.frameInterpolationEnabled))
                     {
 
                     }
                     ImGui::PopItemWidth();
                     ImGui::NextColumn();
-
-                    if (!renderSettings.fsr2Settings.useRCAS)
-                    {
-                        ImGui::BeginDisabled();
-                    }
-                    ImGui::AlignTextToFramePadding();
-                    ImGui::TextUnformatted("Sharpeness");
-                    ImGui::NextColumn();
-                    ImGui::PushItemWidth(-1);
-                    if (ImGui::DragFloat("##FSR2Sharpeness", &renderSettings.fsr2Settings.sharpeness, 0.001f, 0.0f, 1.0f))
-                    {
-
-                    }
-                    ImGui::PopItemWidth();
-                    ImGui::NextColumn();
-                    if (!renderSettings.fsr2Settings.useRCAS)
-                    {
-                        ImGui::EndDisabled();
-                    }
                 } break;
-                case (uint32)SuperResolutionTechnique::DLSSSuperResolution:
+                case uint32(SuperSamplingTechnique::DLSS):
                 {
                     ImGui::AlignTextToFramePadding();
                     ImGui::TextUnformatted("Quality Mode");
                     ImGui::NextColumn();
                     ImGui::PushItemWidth(-1);
 
-                    static const char* dlssQualityModeNames[] = { "Off", "Auto", "Quality", "Balanced", "Performance", "Ultra Performance" };
+                    static const char* dlssQualityModeNames[] = { "Off", "Auto", "Quality", "Balanced", "Performance", "Ultra Performance", "Ultra Quality" };
                     static int dlssQualityModeNameIndex = 1;
                     ImGui::Combo("##DLSSQualityMode", &dlssQualityModeNameIndex, dlssQualityModeNames, IM_ARRAYSIZE(dlssQualityModeNames));
-                    renderSettings.dlssSettings.qualityMode = (DLSSQualityMode)dlssQualityModeNameIndex;
+                    renderSettings.superSamplingSettings.qualityMode = uint32(dlssQualityModeNameIndex);
                     ImGui::PopItemWidth();
                     ImGui::NextColumn();
 
+                    {
+                        ImGui::AlignTextToFramePadding();
+                        ImGui::TextUnformatted("Render Resolution Percentage");
+                        ImGui::NextColumn();
+                        ImGui::PushItemWidth(-1);
+
+                        int desiredRenderResolutionPercentage = int(renderSettings.superSamplingSettings.desiredRenderResolutionPercentage * 100.0f);
+                        if (ImGui::DragInt("##desiredRenderResolutionPercentage", &desiredRenderResolutionPercentage, 1, 25, 100))
+                        {
+                            renderSettings.superSamplingSettings.desiredRenderResolutionPercentage = 0.01f * float(desiredRenderResolutionPercentage);
+                        }
+
+                        ImGui::PopItemWidth();
+                        ImGui::NextColumn();
+                    }
+
+                    ImGui::AlignTextToFramePadding();
+                    ImGui::TextUnformatted("Frame Interpolation");
+                    ImGui::NextColumn();
+                    ImGui::PushItemWidth(-1);
+                    if (ImGui::Checkbox("##FrameInterpolation", &renderSettings.superSamplingSettings.frameInterpolationEnabled))
+                    {
+
+                    }
+                    ImGui::PopItemWidth();
+                    ImGui::NextColumn();
                 } break;
                 default: break;
                 }
@@ -1348,7 +1334,6 @@ namespace Horizon
                 ImGui::Separator();
                 ImGui::PopStyleVar();
             }
-#endif
 
             if (ImGui::CollapsingHeader((const char*)(u8"Post Proccesing"), ImGuiTreeNodeFlags_DefaultOpen))
             {

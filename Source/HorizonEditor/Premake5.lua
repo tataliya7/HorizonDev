@@ -65,7 +65,7 @@ project "HorizonEditor"
         thirdpartypath("imgui/imgui-1.89.9-docking"),
         thirdpartypath("optick/Optick_1.4.0/include"),
         thirdpartypath("entt/include"),
-        thirdpartypath("streamline/include"),
+        thirdpartypath("streamline/Streamline-2.4.15/include"),
         thirdpartypath("spdlog/include"),
         thirdpartypath("stb/include"),
 

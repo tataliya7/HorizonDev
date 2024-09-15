@@ -35,6 +35,8 @@ namespace Horizon
             , clipToViewMatrix(IdentityMatrix4x4)
             , worldToClipMatrix(IdentityMatrix4x4)
             , clipToWorldMatrix(IdentityMatrix4x4)
+            , nonJitteredViewToClipMatrix(IdentityMatrix4x4)
+            , nonJitteredClipToViewMatrix(IdentityMatrix4x4)
             , nonJitteredWorldToClipMatrix(IdentityMatrix4x4)
             , nonJitteredClipToWorldMatrix(IdentityMatrix4x4)
         {
@@ -49,6 +51,8 @@ namespace Horizon
             clipToViewMatrix = IdentityMatrix4x4;
             worldToClipMatrix = IdentityMatrix4x4;
             clipToWorldMatrix = IdentityMatrix4x4;
+            nonJitteredViewToClipMatrix = IdentityMatrix4x4;
+            nonJitteredClipToViewMatrix = IdentityMatrix4x4;
             nonJitteredWorldToClipMatrix = IdentityMatrix4x4;
             nonJitteredClipToWorldMatrix = IdentityMatrix4x4;
         }
@@ -82,6 +86,8 @@ namespace Horizon
 #endif
             {
                 viewToClipMatrix = glm::perspectiveRH_ZO(Math::DegreesToRadians(fieldOfView), aspectRatio, farClippingPlane, nearClippingPlane);
+                nonJitteredViewToClipMatrix = viewToClipMatrix;
+                nonJitteredClipToViewMatrix = Math::InverseMatrix(nonJitteredViewToClipMatrix);
             }
 
             nonJitteredWorldToClipMatrix = viewToClipMatrix * worldToViewMatrix;
@@ -197,6 +203,8 @@ namespace Horizon
         Matrix4x4 clipToViewMatrix;
         Matrix4x4 worldToClipMatrix;
         Matrix4x4 clipToWorldMatrix;
+        Matrix4x4 nonJitteredViewToClipMatrix;
+        Matrix4x4 nonJitteredClipToViewMatrix;
         Matrix4x4 nonJitteredWorldToClipMatrix;
         Matrix4x4 nonJitteredClipToWorldMatrix;
     };
@@ -265,12 +273,12 @@ namespace Horizon
 
         const Vector2& GetCameraJitterOffset() const
         {
-            return cameraJitterOffset;
+            return jitterOffset;
         }
 
         float GetFieldOfView() const
         {
-            return fieldOfView;
+            return fieldOfViewAngleVertical;
         }
 
         float GetAspectRatio() const
@@ -369,7 +377,7 @@ namespace Horizon
         /**
          * Vertical field of view in degrees.
          */
-        float fieldOfView;
+        float fieldOfViewAngleVertical;
 
         /**
          * The aspect ratio of the scene color texture (expressed as a ratio of width to height).
@@ -396,9 +404,9 @@ namespace Horizon
          */
         Frustum viewFrustum;
 
-        uint32 cameraJitterPhaseCount;
+        uint32 jitterPhaseCount;
 
-        Vector2 cameraJitterOffset;
+        Vector2 jitterOffset;
 
         /**
          * Transformations of the current frame required for rasterization.

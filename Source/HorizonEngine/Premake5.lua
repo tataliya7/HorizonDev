@@ -48,11 +48,19 @@ project "HorizonEngine"
         "Plugins/FidelityFX/Source/**.cpp",
         "Plugins/FidelityFX/Source/**.cppm",
         "Plugins/FidelityFX/Source/**.inl",
+
+        "Plugins/Streamline/Source/**.h",
+        "Plugins/Streamline/Source/**.c",
+        "Plugins/Streamline/Source/**.hpp",
+        "Plugins/Streamline/Source/**.cpp",
+        "Plugins/Streamline/Source/**.cppm",
+        "Plugins/Streamline/Source/**.inl",
     }
 
     includedirs {
         enginepath("Source"),
         enginepath("Plugins/FidelityFX/Source"),
+        enginepath("Plugins/Streamline/Source"),
         thirdpartypath("entt/include"),
         thirdpartypath("dxc/dxc_2024_07_31/inc"),
         thirdpartypath("glfw/glfw-3.3.9.bin.WIN64/include"),
@@ -68,7 +76,7 @@ project "HorizonEngine"
         thirdpartypath("directx/include"),
         thirdpartypath("python/310/include"),
         thirdpartypath("miniaudio/include"),
-        thirdpartypath("streamline/include"),
+        thirdpartypath("streamline/Streamline-2.4.15/include"),
         thirdpartypath("ffx-fsr2/include"),
         thirdpartypath("concurrentqueue/include")
     }

@@ -12,7 +12,7 @@ namespace Horizon
 
         float nearClip = view.nearClippingPlane;
         float farClip = maxShadowDistance;//camera.farClippingPlane;
-        float fieldOfView = view.fieldOfView;
+        float fieldOfView = view.fieldOfViewAngleVertical;
         float aspectRatio = view.aspectRatio;
 
         float clipRange = farClip - nearClip;

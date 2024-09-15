@@ -35,20 +35,11 @@ project "HorizonEditorLauncher"
         thirdpartypath("vulkan/1.3.290.0/Lib/vulkan-1.lib"),
         thirdpartypath("optick/Optick_1.4.0/lib/x64/release/OptickCore.lib"),
         thirdpartypath("python/310/libs/python310.lib"),
-        thirdpartypath("streamline/lib/x64/sl.interposer.lib"),
+        thirdpartypath("streamline/Streamline-2.4.15/lib/x64/sl.interposer.lib"),
     }
 
     postbuildcommands {
         "{COPY} %{wks.location}/ThirdParty/optick/Optick_1.4.0/lib/x64/release/OptickCore.dll %{cfg.targetdir}",
-
-        "{COPY} %{wks.location}/ThirdParty/streamline/bin/x64/development/nvngx_dlss.dll %{cfg.targetdir}",
-        "{COPY} %{wks.location}/ThirdParty/streamline/bin/x64/development/nvngx_dlssg.dll %{cfg.targetdir}",
-        "{COPY} %{wks.location}/ThirdParty/streamline/bin/x64/development/NvLowLatencyVk.dll %{cfg.targetdir}",
-        "{COPY} %{wks.location}/ThirdParty/streamline/bin/x64/development/sl.common.dll %{cfg.targetdir}",
-        "{COPY} %{wks.location}/ThirdParty/streamline/bin/x64/development/sl.dlss.dll %{cfg.targetdir}",
-        "{COPY} %{wks.location}/ThirdParty/streamline/bin/x64/development/sl.dlss_g.dll %{cfg.targetdir}",
-        "{COPY} %{wks.location}/ThirdParty/streamline/bin/x64/development/sl.interposer.dll %{cfg.targetdir}",
-        "{COPY} %{wks.location}/ThirdParty/streamline/bin/x64/development/sl.reflex.dll %{cfg.targetdir}",
 
         "{COPY} %{wks.location}/ThirdParty/dxc/dxc_2024_07_31/bin/x64/dxcompiler.dll %{cfg.targetdir}",
         "{COPY} %{wks.location}/ThirdParty/dxc/dxc_2024_07_31/bin/x64/dxil.dll %{cfg.targetdir}",
@@ -126,10 +117,6 @@ project "HorizonEditorLauncher"
             "{COPY} %{wks.location}/ThirdParty/python/310/lib %{cfg.targetdir}/python310/lib",
             "{COPY} %{wks.location}/ThirdParty/python/310/DLLs %{cfg.targetdir}/python310/DLLs",
 
-            "{COPY} %{wks.location}/ThirdParty/ffx-fsr2/lib/ffx_fsr2_api_dx12_x64d.dll %{cfg.targetdir}",
-            "{COPY} %{wks.location}/ThirdParty/ffx-fsr2/lib/ffx_fsr2_api_vk_x64d.dll %{cfg.targetdir}",
-            "{COPY} %{wks.location}/ThirdParty/ffx-fsr2/lib/ffx_fsr2_api_x64d.dll %{cfg.targetdir}",
-
             "{COPY} %{wks.location}/ThirdParty/usd/lib/debug/usd %{cfg.targetdir}/usd",
             "{COPY} %{wks.location}/ThirdParty/usd/lib/debug/usd_ms.dll %{cfg.targetdir}",
             "{COPY} %{wks.location}/ThirdParty/usd/bin/debug/tbb_debug.dll %{cfg.targetdir}",
@@ -146,6 +133,22 @@ project "HorizonEditorLauncher"
             "{COPY} %{wks.location}/ThirdParty/usd/bin/debug/MaterialXRenderGlsl.dll %{cfg.targetdir}",
             "{COPY} %{wks.location}/ThirdParty/usd/bin/debug/MaterialXRenderHw.dll %{cfg.targetdir}",
             "{COPY} %{wks.location}/ThirdParty/usd/bin/debug/MaterialXRenderOsl.dll %{cfg.targetdir}",
+
+            "{COPY} %{wks.location}/ThirdParty/ffx-fsr2/lib/ffx_fsr2_api_dx12_x64d.dll %{cfg.targetdir}",
+            "{COPY} %{wks.location}/ThirdParty/ffx-fsr2/lib/ffx_fsr2_api_vk_x64d.dll %{cfg.targetdir}",
+            "{COPY} %{wks.location}/ThirdParty/ffx-fsr2/lib/ffx_fsr2_api_x64d.dll %{cfg.targetdir}",
+
+            "{COPY} %{wks.location}/ThirdParty/streamline/Streamline-2.4.15/bin/x64/development/NvLowLatencyVk.dll %{cfg.targetdir}",
+            "{COPY} %{wks.location}/ThirdParty/streamline/Streamline-2.4.15/bin/x64/development/nvngx_dlss.dll %{cfg.targetdir}",
+            "{COPY} %{wks.location}/ThirdParty/streamline/Streamline-2.4.15/bin/x64/development/nvngx_dlssg.dll %{cfg.targetdir}",
+            "{COPY} %{wks.location}/ThirdParty/streamline/Streamline-2.4.15/bin/x64/development/sl.common.dll %{cfg.targetdir}",
+            "{COPY} %{wks.location}/ThirdParty/streamline/Streamline-2.4.15/bin/x64/development/sl.dlss.dll %{cfg.targetdir}",
+            "{COPY} %{wks.location}/ThirdParty/streamline/Streamline-2.4.15/bin/x64/development/sl.dlss_g.dll %{cfg.targetdir}",
+            "{COPY} %{wks.location}/ThirdParty/streamline/Streamline-2.4.15/bin/x64/development/sl.imgui.dll %{cfg.targetdir}",
+            "{COPY} %{wks.location}/ThirdParty/streamline/Streamline-2.4.15/bin/x64/development/sl.interposer.dll %{cfg.targetdir}",
+            "{COPY} %{wks.location}/ThirdParty/streamline/Streamline-2.4.15/bin/x64/development/sl.nvperf.dll %{cfg.targetdir}",
+            "{COPY} %{wks.location}/ThirdParty/streamline/Streamline-2.4.15/bin/x64/development/sl.pcl.dll %{cfg.targetdir}",
+            "{COPY} %{wks.location}/ThirdParty/streamline/Streamline-2.4.15/bin/x64/development/sl.reflex.dll %{cfg.targetdir}",
         }
 
     filter "configurations:Development or Release"
@@ -197,10 +200,6 @@ project "HorizonEditorLauncher"
             "{COPY} %{wks.location}/ThirdParty/python/310/lib %{cfg.targetdir}/python310/lib",
             "{COPY} %{wks.location}/ThirdParty/python/310/DLLs %{cfg.targetdir}/python310/DLLs",
 
-            "{COPY} %{wks.location}/ThirdParty/ffx-fsr2/lib/ffx_fsr2_api_dx12_x64.dll %{cfg.targetdir}",
-            "{COPY} %{wks.location}/ThirdParty/ffx-fsr2/lib/ffx_fsr2_api_vk_x64.dll %{cfg.targetdir}",
-            "{COPY} %{wks.location}/ThirdParty/ffx-fsr2/lib/ffx_fsr2_api_x64.dll %{cfg.targetdir}",
-
             "{COPY} %{wks.location}/ThirdParty/usd/lib/release/usd %{cfg.targetdir}/usd",
             "{COPY} %{wks.location}/ThirdParty/usd/lib/release/usd_ms.dll %{cfg.targetdir}",
             "{COPY} %{wks.location}/ThirdParty/usd/bin/release/tbb.dll %{cfg.targetdir}",
@@ -217,4 +216,18 @@ project "HorizonEditorLauncher"
             "{COPY} %{wks.location}/ThirdParty/usd/bin/release/MaterialXRenderGlsl.dll %{cfg.targetdir}",
             "{COPY} %{wks.location}/ThirdParty/usd/bin/release/MaterialXRenderHw.dll %{cfg.targetdir}",
             "{COPY} %{wks.location}/ThirdParty/usd/bin/release/MaterialXRenderOsl.dll %{cfg.targetdir}",
+
+            "{COPY} %{wks.location}/ThirdParty/ffx-fsr2/lib/ffx_fsr2_api_dx12_x64.dll %{cfg.targetdir}",
+            "{COPY} %{wks.location}/ThirdParty/ffx-fsr2/lib/ffx_fsr2_api_vk_x64.dll %{cfg.targetdir}",
+            "{COPY} %{wks.location}/ThirdParty/ffx-fsr2/lib/ffx_fsr2_api_x64.dll %{cfg.targetdir}",
+
+            "{COPY} %{wks.location}/ThirdParty/streamline/Streamline-2.4.15/bin/x64/NvLowLatencyVk.dll %{cfg.targetdir}",
+            "{COPY} %{wks.location}/ThirdParty/streamline/Streamline-2.4.15/bin/x64/nvngx_dlss.dll %{cfg.targetdir}",
+            "{COPY} %{wks.location}/ThirdParty/streamline/Streamline-2.4.15/bin/x64/nvngx_dlssg.dll %{cfg.targetdir}",
+            "{COPY} %{wks.location}/ThirdParty/streamline/Streamline-2.4.15/bin/x64/sl.common.dll %{cfg.targetdir}",
+            "{COPY} %{wks.location}/ThirdParty/streamline/Streamline-2.4.15/bin/x64/sl.dlss.dll %{cfg.targetdir}",
+            "{COPY} %{wks.location}/ThirdParty/streamline/Streamline-2.4.15/bin/x64/sl.dlss_g.dll %{cfg.targetdir}",
+            "{COPY} %{wks.location}/ThirdParty/streamline/Streamline-2.4.15/bin/x64/sl.interposer.dll %{cfg.targetdir}",
+            "{COPY} %{wks.location}/ThirdParty/streamline/Streamline-2.4.15/bin/x64/sl.pcl.dll %{cfg.targetdir}",
+            "{COPY} %{wks.location}/ThirdParty/streamline/Streamline-2.4.15/bin/x64/sl.reflex.dll %{cfg.targetdir}",
         }

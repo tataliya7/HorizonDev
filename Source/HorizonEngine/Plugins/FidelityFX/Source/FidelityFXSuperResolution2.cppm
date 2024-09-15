@@ -16,10 +16,12 @@ export namespace Horizon
 
     enum class FidelityFXSuperResolution2QualityMode
     {
+        Off,
         Quality,
         Balanced,
         Performance,
         UltraPerformance,
+        Custom
     };
 
     struct FidelityFXSuperResolution2Settings

@@ -1,6 +1,8 @@
 #include "HorizonEngine.h"
 #include "RenderSystem.h"
 
+#include "Streamline.h"
+
 namespace Horizon
 {
     HorizonEngine* HorizonEngine::Instance = nullptr;
@@ -33,7 +35,13 @@ namespace Horizon
 
     void HorizonEngine::RegisterAndInitializeSubsystems()
     {
+        // TODO:
+        StreamlineContext* streamlineContext = new StreamlineContext();
+        streamlineContext->Init();
+
         RenderSystem* renderSystem = subsystemRegistry.RegisterSubsystem<RenderSystem>();
         renderSystem->Init();
+
+        streamlineContext->Test(renderSystem->GetRenderBackend());
     }
 }

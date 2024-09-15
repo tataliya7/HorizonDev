@@ -39,7 +39,7 @@ project "Tests"
         thirdpartypath("vma/include"),
         thirdpartypath("python/310/include"),
         thirdpartypath("miniaudio/include"),
-        thirdpartypath("streamline/include"),
+        thirdpartypath("streamline/Streamline-2.4.15/include"),
         thirdpartypath("ffx-fsr2/include"),
         thirdpartypath("googletest/googletest-1.14.0/googletest/include"),
     }

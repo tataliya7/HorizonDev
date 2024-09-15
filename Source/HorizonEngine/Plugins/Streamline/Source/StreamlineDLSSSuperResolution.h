@@ -3,9 +3,9 @@
 #include "Foundation/FoundationModule.h"
 #include "Rendering/RenderingModule.h"
 
-namespace Streamline
+namespace Horizon
 {
-    enum class DLSSQualityMode
+    enum class DLSSSuperResolutionQualityMode
     {
         Off = 0,
         Auto = 1,
@@ -13,18 +13,17 @@ namespace Streamline
         Balanced = 3,
         Performance = 4,
         UltraPerformance = 5,
+        UltraQuality = 6,
     };
 
-    struct DLSSSettings
+    enum class DLSSSuperResolutionAPI
     {
-        DLSSQualityMode qualityMode = DLSSQualityMode::Auto;
+        Unknown,
+        D3D12,
+        Vulkan,
     };
 
-    class StreamlineDLSS : public TemporalSuperSamplingInterface
-    {
-    public:
-        AddPass() override;
-    private:
+    TemporalSuperSamplingInterface* StreamlineDLSSSuperResolutionCreate(RenderBackend* renderBackend);
 
-    };
+    void StreamlineDLSSSuperResolutionDestroy(TemporalSuperSamplingInterface* interface);
 }

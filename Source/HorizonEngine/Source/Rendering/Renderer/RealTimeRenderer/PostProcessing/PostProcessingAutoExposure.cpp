@@ -11,6 +11,24 @@ namespace Horizon
         return features.enableAutoExposure;
     }
 
+    void RealTimeRenderer::UpdateAutoExposureDataFromReadbackBuffer()
+    {
+        RenderGraphPersistentBuffer* autoExposureReadbackBuffer = autoExposureReadbackBuffers[currentAutoExposureReadbackBufferIndex];
+        if (autoExposureReadbackBuffer != nullptr)
+        {
+            void* data = nullptr;
+            renderBackend->MapBuffer(autoExposureReadbackBuffer->GetHandle(), &data);
+            if (data != nullptr)
+            {
+                autoExposureData.adaptedExposure = static_cast<float*>(data)[0];
+                autoExposureData.targetExposure = static_cast<float*>(data)[1];
+                autoExposureData.exposureCompensation = static_cast<float*>(data)[2];
+                autoExposureData.averageSceneLuminance = static_cast<float*>(data)[3];
+                renderBackend->UnmapBuffer(autoExposureReadbackBuffer->GetHandle());
+            }
+        }
+    }
+
     RenderGraphBufferHandle RealTimeRenderer::DispatchHistogramBasedAutoExposure(
         RenderGraph& renderGraph,
         const SceneView& view,

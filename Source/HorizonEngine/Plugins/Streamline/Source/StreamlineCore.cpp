@@ -10,6 +10,8 @@
 
 // #define STREAMLINE_CEHCK(slFunction) { sl::Result result = slFunction; if (result != sl::Result::eOk) { LogError(GLogger, std::format("Streamline function returns a runtime error. Result: {}. Function: {}. File: {}. Line: {}.", sl::getResultAsStr(result), slFunction, __FILE__, __LINE__)); } }
 
+
+
 // namespace Horizon
 // {
 //     sl::ReflexOptions gActiveReflexOptions;

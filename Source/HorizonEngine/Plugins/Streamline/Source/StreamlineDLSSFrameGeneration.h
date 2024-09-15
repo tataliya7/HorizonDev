@@ -3,7 +3,7 @@
 #include "Foundation/FoundationModule.h"
 #include "Rendering/RenderingModule.h"
 
-namespace Streamline
+namespace Horizon
 {
 
 }

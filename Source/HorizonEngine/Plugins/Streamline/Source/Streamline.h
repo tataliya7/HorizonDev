@@ -1,21 +1,19 @@
 #pragma once
 
-#include <sl.h>
-#include <sl_consts.h>
-#include <sl_hooks.h>
-#include <sl_version.h>
+#include "Foundation/FoundationModule.h"
+#include "Rendering/RenderingModule.h"
 
-#include <sl_dlss.h>
-#include <sl_reflex.h>
-#include <sl_dlss_g.h>
-
-namespace Streamline
+namespace Horizon
 {
     class StreamlineContext
     {
     public:
 
-        void GetNewFrameToken();
+        void Init();
+        void Exit();
+
+        void Test(RenderBackend* renderBackend);
+        //void GetNewFrameToken();
 
         bool IsInitialized() const
         {
@@ -27,21 +25,21 @@ namespace Streamline
             return isReflexSupported;
         }
 
-        bool ReflexSetOptions(const sl::ReflexOptions& options);
-        void ReflexSleep();
-        void ReflexSetMarkerInputSample();
-        void ReflexSetMarkerSimulationStart();
-        void ReflexSetMarkerSimulationEnd();
-        void ReflexSetMarkerRenderSubmitStart();
-        void ReflexSetMarkerRenderSubmitEnd();
-        void ReflexSetMarkerPresentStart();
-        void ReflexSetMarkerPresentEnd();
-        //void ReflexSetMarkerTriggerFlash();
-        void ReflexSetMarkerPCLatencyPing();
+        // bool ReflexSetOptions(const sl::ReflexOptions& options);
+        // void ReflexSleep();
+        // void ReflexSetMarkerControllerInputSample();
+        // void ReflexSetMarkerSimulationStart();
+        // void ReflexSetMarkerSimulationEnd();
+        // void ReflexSetMarkerRenderSubmitStart();
+        // void ReflexSetMarkerRenderSubmitEnd();
+        // void ReflexSetMarkerPresentStart();
+        // void ReflexSetMarkerPresentEnd();
+        // //void ReflexSetMarkerTriggerFlash();
+        // void ReflexSetMarkerPCLatencyPing();
 
     private:
 
-        sl::FrameToken* currentFrameToken = nullptr;
+        //sl::FrameToken* currentFrameToken = nullptr;
 
         bool isInitialized = true;
         bool isReflexSupported = true;

@@ -24,7 +24,7 @@ def current_working_dir(dir):
     finally:
         os.chdir(curdir)
 
-# TODO: urlopen is so slow, use better way
+# TODO: urlopen() is so slow, use a better method
 def download_url(url, dir, force = False):
     max_retries = 5
     last_error = None
@@ -197,6 +197,18 @@ dependency_meshoptimizer = dependency(
     dst_dir = "meshoptimizer",
     folder = "")
 
+def install_streamline(manager, dep, args = None):
+    dst_dir = os.path.join(manager.install_dir, dep.dst_dir)
+    downloaded_file = download_url(dep.url, manager.download_dir, False)
+    extract_dir = extract_zip_file(downloaded_file, dst_dir, dep.folder)
+
+dependency_streamline = dependency(
+    name = "streamline",
+    install = install_streamline,
+    url = "https://github.com/NVIDIAGameWorks/Streamline/archive/refs/tags/v2.4.15.zip",
+    dst_dir = "streamline",
+    folder = "")
+
 # parser = argparse.ArgumentParser()
 # parser.add_argument(
 #    "install_dir",
@@ -223,6 +235,7 @@ manager.add_dependency(dependency_googletest)
 manager.add_dependency(dependency_optick)
 manager.add_dependency(dependency_dxc)
 manager.add_dependency(dependency_meshoptimizer)
+manager.add_dependency(dependency_streamline)
 
 required_dependencies = list()
 required_dependencies.append("glfw")
@@ -231,6 +244,7 @@ required_dependencies.append("googletest")
 required_dependencies.append("optick")
 required_dependencies.append("dxc")
 required_dependencies.append("meshoptimizer")
+required_dependencies.append("streamline")
 
 try:
     for dependency_name in required_dependencies:

@@ -29,16 +29,16 @@ namespace Horizon
 
         bool isContextValid =
             fsr2State.initialized &&
-            fsr2State.fsr2ContextDescription.displaySize.width == fsr2->options.targetWidth &&
-            fsr2State.fsr2ContextDescription.displaySize.height == fsr2->options.targetHeight;
+            fsr2State.fsr2ContextDescription.displaySize.width == fsr2->options.outputWidth &&
+            fsr2State.fsr2ContextDescription.displaySize.height == fsr2->options.outputHeight;
 
         if (!isContextValid)
         {
             RenderBackendDevice device = fsr2->renderBackend->GetNativeDevice();
             ID3D12Device* d3d12Device = static_cast<ID3D12Device*>(device.device);
 
-            uint32 targetWidth = fsr2->options.targetWidth;
-            uint32 targetHeight = fsr2->options.targetHeight;
+            uint32 targetWidth = fsr2->options.outputWidth;
+            uint32 targetHeight = fsr2->options.outputHeight;
 
             // only destroy contexts which are live
             if (fsr2ContextDescription.callbacks.scratchBuffer != nullptr)
@@ -147,10 +147,10 @@ namespace Horizon
 
         const TemporalSuperSamplingConstants& constants = fsr2->constants;
         fsr2DispatchDescription.commandList = ffxGetCommandListDX12(static_cast<ID3D12CommandList*>(commandList));
-        fsr2DispatchDescription.jitterOffset.x = constants.jitterOffsetX;
-        fsr2DispatchDescription.jitterOffset.y = constants.jitterOffsetY;
-        fsr2DispatchDescription.motionVectorScale.x = constants.motionVectorScaleX;
-        fsr2DispatchDescription.motionVectorScale.y = constants.motionVectorScaleY;
+        fsr2DispatchDescription.jitterOffset.x = constants.jitterOffset.x;
+        fsr2DispatchDescription.jitterOffset.y = constants.jitterOffset.y;
+        fsr2DispatchDescription.motionVectorScale.x = constants.motionVectorScale.x;
+        fsr2DispatchDescription.motionVectorScale.y = constants.motionVectorScale.y;
         fsr2DispatchDescription.reset = constants.reset;
         fsr2DispatchDescription.enableSharpening = constants.sharpness > 0.0f;
         fsr2DispatchDescription.sharpness = constants.sharpness;

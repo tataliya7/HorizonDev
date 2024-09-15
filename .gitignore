@@ -89,9 +89,11 @@
 !/Assets/HDRIs
 !/Assets/Textures
 
+/ThirdParty/dxc
 /ThirdParty/glfw
+/ThirdParty/optick
+/ThirdParty/streamline
+
 /ThirdParty/imgui/imgui-1.89.9-docking
 /ThirdParty/googletest/googletest-1.14.0
 /ThirdParty/meshoptimizer/meshoptimizer-0.20
-/ThirdParty/optick
-/ThirdParty/dxc

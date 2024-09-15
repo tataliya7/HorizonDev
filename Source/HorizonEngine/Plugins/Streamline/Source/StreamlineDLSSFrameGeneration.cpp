@@ -1,15 +1,6 @@
-#pragma once
+#include "StreamlineDLSSFrameGeneration.h"
 
-#include "Foundation/FoundationModule.h"
-#include "Rendering/RenderingModule.h"
-
-namespace Streamline
+namespace Horizon
 {
-    class StreamlineDLSS : public TemporalSuperSamplingInterface
-    {
-    public:
-        AddPass() override;
-    private:
 
-    };
 }

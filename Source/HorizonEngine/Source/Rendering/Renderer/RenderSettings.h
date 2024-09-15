@@ -6,18 +6,20 @@
 
 namespace Horizon
 {
-    enum class FrameRateUpConversionTechnique
-    {
-        None,
-        ThirdParty,
-    };
-
     enum class SuperSamplingTechnique
     {
         None,
-        SuperSamplingAntiAliasing,
-        TemporalSuperSampling,
-        ThirdParty,
+        //TSS,
+        FSR,
+        DLSS,
+    };
+
+    struct SuperSamplingSettings
+    {
+        SuperSamplingTechnique superSamplingTechnique = SuperSamplingTechnique::None;
+        uint32 qualityMode = 0; // 0 means off.
+        float desiredRenderResolutionPercentage = 1.0f;
+        bool frameInterpolationEnabled = false;
     };
 
     enum class ShadowsTechnique
@@ -64,13 +66,13 @@ namespace Horizon
         ScreenSpaceReflectionsQuality quality = ScreenSpaceReflectionsQuality::High;
     };
 
-    enum class PostProcessingLensFlareQuality
-    {
-        Off,
-        Low,
-        Medium,
-        High,
-    };
+    // enum class PostProcessingLensFlareQuality
+    // {
+    //     Off,
+    //     Low,
+    //     Medium,
+    //     High,
+    // };
 
     struct GlobalIlluminationSettings
     {
@@ -90,10 +92,10 @@ namespace Horizon
         Vector3 indirectLightingTint = Vector3(1.0f, 1.0f, 1.0f);
         float indirectLightingIntensity = 1.0f;
         GlobalIlluminationSettings globalIlluminationSettings;
+        SuperSamplingSettings superSamplingSettings;
         ShadowsTechnique shadowsTechnique;
         ReflectionsTechnique reflectionsTechnique;
         AmbientOcclusionTechnique ambientOcclusionTechnique;
-        SuperSamplingTechnique superSamplingTechnique;
         ScreenSpaceReflectionsSettings ssrSettings;
         GroundTruthAmbientOcclusionSettings gtaoSettings;
         PostProcessingSettings postProcessingSettings;

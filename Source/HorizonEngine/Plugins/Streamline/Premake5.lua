@@ -15,10 +15,6 @@ project "Streamline"
         "**.inl",
     }
 
-    links {
-        "HorizonEngine",
-    }
-
     includedirs {
         enginepath("Source"),
         thirdpartypath("glm/include"),

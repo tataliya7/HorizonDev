@@ -2,6 +2,7 @@
 //#include "RealTimeRendererPrivate.h"
 #include "SkyAtmosphereRendering.h"
 #include "TemporalSuperSampling.h"
+#include "StreamlineModule.h"
 
 #include <optick.h>
 
@@ -47,24 +48,6 @@ namespace Horizon
     RenderBackendBufferHandle RealTimeRenderer::GetCurrentPerFrameConstantBuffer() const
     {
         return currentPerFrameConstantBuffer;
-    }
-
-    void RealTimeRenderer::UpdateAutoExposureDataFromReadbackBuffer()
-    {
-        RenderGraphPersistentBuffer* autoExposureReadbackBuffer = autoExposureReadbackBuffers[currentAutoExposureReadbackBufferIndex];
-        if (autoExposureReadbackBuffer != nullptr)
-        {
-            void* data = nullptr;
-            renderBackend->MapBuffer(autoExposureReadbackBuffer->GetHandle(), &data);
-            if (data != nullptr)
-            {
-                autoExposureData.adaptedExposure = static_cast<float*>(data)[0];
-                autoExposureData.targetExposure = static_cast<float*>(data)[1];
-                autoExposureData.exposureCompensation = static_cast<float*>(data)[2];
-                autoExposureData.averageSceneLuminance = static_cast<float*>(data)[3];
-                renderBackend->UnmapBuffer(autoExposureReadbackBuffer->GetHandle());
-            }
-        }
     }
 
     void RealTimeRenderer::ResetHistoryFrame()
@@ -127,12 +110,36 @@ namespace Horizon
         //}
 
         SceneView& view = *sceneView;
+        const RenderSettings& renderSettings = view.renderSettings;
+
+        // TODO: initialize buffer
+        UpdateAutoExposureDataFromReadbackBuffer();
+
+        preExposure = autoExposureData.adaptedExposure;
+        if (renderSettings.fixedPreExposureEnabled)
+        {
+            preExposure = renderSettings.fixedPreExposure;
+        }
 
         renderResolutionPercentage = 1.0f;
 
         if (temporalSuperSamplingInterface == nullptr)
         {
-            temporalSuperSamplingInterface = FidelityFXSuperResolution2Create(renderBackend);
+            if (renderSettings.superSamplingSettings.superSamplingTechnique == SuperSamplingTechnique::FSR)
+            {
+                temporalSuperSamplingInterface = FidelityFXSuperResolution2Create(renderBackend);
+            }
+            else if (renderSettings.superSamplingSettings.superSamplingTechnique == SuperSamplingTechnique::DLSS)
+            {
+                temporalSuperSamplingInterface = StreamlineDLSSSuperResolutionCreate(renderBackend);
+            }
+        }
+
+        if (renderSettings.superSamplingSettings.superSamplingTechnique == SuperSamplingTechnique::None)
+        {
+            // TODO: destroy resources
+
+            temporalSuperSamplingInterface = nullptr;
         }
 
         renderResolution = Extent2D(view.targetWidth, view.targetHeight);
@@ -144,11 +151,15 @@ namespace Horizon
         if (temporalSuperSamplingInterface != nullptr)
         {
             TemporalSuperSamplingOptions tssOptions = {};
-            tssOptions.targetWidth = targetResolution.width;
-            tssOptions.targetHeight = targetResolution.height;
+            tssOptions.qualityMode = renderSettings.superSamplingSettings.qualityMode;
+            tssOptions.desiredRenderResolutionPercentage = renderSettings.superSamplingSettings.desiredRenderResolutionPercentage;
+            tssOptions.outputWidth = targetResolution.width;
+            tssOptions.outputHeight = targetResolution.height;
+            tssOptions.preExposure = preExposure;
             temporalSuperSamplingInterface->SetOptions(tssOptions);
 
             TemporalSuperSamplingOptimalSettings optimalSettings = temporalSuperSamplingInterface->GetOptimalSettings();
+
             renderResolution.width = optimalSettings.optimalRenderWidth;
             renderResolution.height = optimalSettings.optimalRenderHeight;
             renderResolutionPercentage = optimalSettings.optimalRenderResolutionPercentage;
@@ -242,19 +253,29 @@ namespace Horizon
         if (temporalSuperSamplingInterface != nullptr)
         {
             TemporalSuperSamplingConstants tssConstants = {};
-            tssConstants.reset = false;
+            tssConstants.reset = false; // TODO
+            tssConstants.frameIndex = view.frameIndex;
             tssConstants.sharpness = 0.0f;
             tssConstants.deltaTime = view.deltaTimeInSeconds * 1000.0f;
             tssConstants.preExposure = preExposure;
             tssConstants.renderWidth = renderResolution.width;
             tssConstants.renderHeight = renderResolution.height;
-            tssConstants.jitterOffsetX = cameraJitterOffset.x;
-            tssConstants.jitterOffsetY = cameraJitterOffset.y;
-            tssConstants.motionVectorScaleX = float(renderResolution.width);
-            tssConstants.motionVectorScaleY = float(renderResolution.height);
+            tssConstants.jitterOffset = cameraJitterOffset;
+            tssConstants.motionVectorScale = Vector2(1.0f, 1.0f);
             tssConstants.cameraNearClippingPlane = view.nearClippingPlane;
             tssConstants.cameraFarClippingPlane = view.farClippingPlane;
-            tssConstants.cameraFovAngleVertical = Math::DegreesToRadians(view.fieldOfView);
+            tssConstants.cameraFovAngleVertical = Math::DegreesToRadians(view.fieldOfViewAngleVertical);
+            tssConstants.cameraAspectRatio = view.aspectRatio;
+            tssConstants.cameraPosition = view.cameraPosition;
+            tssConstants.cameraUpVector = view.cameraUpVector;
+            tssConstants.cameraRightVector = view.cameraRightVector;
+            tssConstants.cameraForwardVector = view.cameraForwardVector;
+            tssConstants.cameraForwardVector = view.cameraForwardVector;
+            tssConstants.cameraForwardVector = view.cameraForwardVector;
+            tssConstants.nonJitteredViewToClipMatrix = view.transformations.nonJitteredViewToClipMatrix;
+            tssConstants.nonJitteredClipToViewMatrix = view.transformations.nonJitteredClipToViewMatrix;
+            tssConstants.reprojectionMatrix = reprojectionMatrix;
+            tssConstants.inverseReprojectionMatrix = inverseReprojectionMatrix;
 
             temporalSuperSamplingInterface->SetConstants(tssConstants);
         }
@@ -290,7 +311,7 @@ namespace Horizon
             perFrameShaderParameters.cameraUpVector = view.cameraUpVector;
             perFrameShaderParameters.cameraRightVector = view.cameraRightVector;
             perFrameShaderParameters.cameraForwardVector = view.cameraForwardVector;
-            perFrameShaderParameters.halfFovInRadians = Math::DegreesToRadians(view.fieldOfView) * 0.5f;
+            perFrameShaderParameters.halfFovInRadians = Math::DegreesToRadians(view.fieldOfViewAngleVertical) * 0.5f;
             perFrameShaderParameters.aspectRatio = view.aspectRatio;
             perFrameShaderParameters.nearClippingPlane = view.nearClippingPlane;
             perFrameShaderParameters.farClippingPlane = view.farClippingPlane;
@@ -318,22 +339,13 @@ namespace Horizon
             perFrameShaderParameters.previousNonJitteredWorldToClipMatrix = historyFrame.transformations.nonJitteredWorldToClipMatrix;
 
             // TODO: Precision loss
-            Matrix4x4 reprojectionMatrix = perFrameShaderParameters.previousNonJitteredWorldToClipMatrix * perFrameShaderParameters.nonJitteredClipToWorldMatrix;
-            Matrix4x4 inverseReprojectionMatrix = glm::inverse(reprojectionMatrix);
+            reprojectionMatrix = perFrameShaderParameters.previousNonJitteredWorldToClipMatrix * perFrameShaderParameters.nonJitteredClipToWorldMatrix;
+            inverseReprojectionMatrix = glm::inverse(reprojectionMatrix);
 
             perFrameShaderParameters.currentClipToPreviousClipMatrix = reprojectionMatrix;
             perFrameShaderParameters.previousClipToCurrentClipMatrix = inverseReprojectionMatrix;
 
             perFrameShaderParameters.materialTextureMipLodBias = materialTextureMipLodBias;
-
-            // TODO: initialize buffer
-            UpdateAutoExposureDataFromReadbackBuffer();
-
-            preExposure = autoExposureData.adaptedExposure;
-            if (renderSettings.fixedPreExposureEnabled)
-            {
-                preExposure = renderSettings.fixedPreExposure;
-            }
 
             perFrameShaderParameters.preExposure = preExposure;
             perFrameShaderParameters.inversePreExposure = 1.0f / preExposure;

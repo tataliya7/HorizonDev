@@ -1,13 +1,19 @@
 #include "Streamline.h"
 
-#include <assert.h>
-#include <filesystem>
+#include <vulkan/vulkan.h>
 
-//#include <Windows.h>
+#include <sl.h>
+#include <sl_consts.h>
+#include <sl_hooks.h>
+#include <sl_version.h>
 
-#define STREAMLINE_CEHCK(f) assert(f == sl::Result::eOk)
+#include <sl_reflex.h>
+#include <sl_dlss.h>
+#include <sl_dlss_g.h>
+#include <sl_helpers.h>
+#include <sl_helpers_vk.h>
 
-namespace Streamline
+namespace Horizon
 {
     //static std::wstring GetStreamlineInterposerDLLPath()
     //{
@@ -21,90 +27,211 @@ namespace Streamline
     //    return dllPath;
     //}
 
-    void StreamlineContext::GetNewFrameToken()
+    // void StreamlineContext::GetNewFrameToken()
+    // {
+    //     STREAMLINE_CHECK(slGetNewFrameToken(currentFrameToken, nullptr));
+    // }
+    //
+    // bool StreamlineContext::ReflexSetOptions(const sl::ReflexOptions& options)
+    // {
+    //     if (!IsInitialized() || !CheckReflexSupport())
+    //     {
+    //         return false;
+    //     }
+    //     STREAMLINE_CHECK(slReflexSetOptions(options));
+    //     return true;
+    // }
+    //
+    // void StreamlineContext::ReflexSleep()
+    // {
+    //     if (CheckReflexSupport())
+    //     {
+    //         STREAMLINE_CHECK(slReflexSleep(*currentFrameToken));
+    //     }
+    // }
+    //
+    // void StreamlineContext::ReflexSetMarkerControllerInputSample()
+    // {
+    //     if (CheckReflexSupport())
+    //     {
+    //         STREAMLINE_CHECK(slPCLSetMarker(sl::PCLMarker::eControllerInputSample, *currentFrameToken));
+    //     }
+    // }
+    //
+    // void StreamlineContext::ReflexSetMarkerSimulationStart()
+    // {
+    //     if (CheckReflexSupport())
+    //     {
+    //         STREAMLINE_CHECK(slPCLSetMarker(sl::PCLMarker::eSimulationStart, *currentFrameToken));
+    //     }
+    // }
+    //
+    // void StreamlineContext::ReflexSetMarkerSimulationEnd()
+    // {
+    //     if (CheckReflexSupport())
+    //     {
+    //         STREAMLINE_CHECK(slPCLSetMarker(sl::PCLMarker::eSimulationEnd, *currentFrameToken));
+    //     }
+    // }
+    //
+    // void StreamlineContext::ReflexSetMarkerRenderSubmitStart()
+    // {
+    //     if (CheckReflexSupport())
+    //     {
+    //         STREAMLINE_CHECK(slPCLSetMarker(sl::PCLMarker::eRenderSubmitStart, *currentFrameToken));
+    //     }
+    // }
+    //
+    // void StreamlineContext::ReflexSetMarkerRenderSubmitEnd()
+    // {
+    //     if (CheckReflexSupport())
+    //     {
+    //         STREAMLINE_CHECK(slPCLSetMarker(sl::PCLMarker::eRenderSubmitEnd, *currentFrameToken));
+    //     }
+    // }
+    //
+    // void StreamlineContext::ReflexSetMarkerPresentStart()
+    // {
+    //     if (CheckReflexSupport())
+    //     {
+    //         STREAMLINE_CHECK(slPCLSetMarker(sl::PCLMarker::ePresentStart, *currentFrameToken));
+    //     }
+    // }
+    //
+    // void StreamlineContext::ReflexSetMarkerPresentEnd()
+    // {
+    //     if (CheckReflexSupport())
+    //     {
+    //         STREAMLINE_CHECK(slPCLSetMarker(sl::PCLMarker::ePresentEnd, *currentFrameToken));
+    //     }
+    // }
+    //
+    // void StreamlineContext::ReflexSetMarkerPCLatencyPing()
+    // {
+    //     if (CheckReflexSupport())
+    //     {
+    //         STREAMLINE_CHECK(slPCLSetMarker(sl::PCLMarker::ePCLatencyPing, *currentFrameToken));
+    //     }
+    // }
+
+    static void StreamlineLogMessageCallback(sl::LogType type, const char* msg)
     {
-        STREAMLINE_CEHCK(slGetNewFrameToken(currentFrameToken, nullptr));
+        switch (type)
+        {
+        case sl::LogType::eError:
+            Horizon::LogError(Horizon::GLogger, std::format("Streamline: {}", msg));
+            break;
+        case sl::LogType::eWarn:
+            Horizon::LogWarning(Horizon::GLogger, std::format("Streamline: {}", msg));
+            break;
+        case sl::LogType::eInfo:
+            Horizon::LogInfo(Horizon::GLogger, std::format("Streamline: {}", msg));
+            break;
+            break;
+        }
     }
 
-    bool StreamlineContext::ReflexSetOptions(const sl::ReflexOptions& options)
+    void StreamlineContext::Init()
     {
-        if (!IsInitialized() || !CheckReflexSupport())
-        {
-            return false;
-        }
-        STREAMLINE_CEHCK(slReflexSetOptions(options));
-        return true;
-    }
+        std::vector<sl::Feature> features = { };
 
-    void StreamlineContext::ReflexSleep()
-    {
-        if (CheckReflexSupport())
+        if (true)
         {
-            STREAMLINE_CEHCK(slReflexSleep(*currentFrameToken));
+            features.push_back(sl::kFeatureDLSS);
         }
-    }
 
-    void StreamlineContext::ReflexSetMarkerInputSample()
-    {
-        if (CheckReflexSupport())
+#if !HORIZON_CONFIGURATION_RELEASE
+        if (true)
         {
-            STREAMLINE_CEHCK(slReflexSetMarker(sl::ReflexMarker::eInputSample, *currentFrameToken));
+            features.push_back(sl::kFeatureImGUI);
         }
-    }
+#endif
 
-    void StreamlineContext::ReflexSetMarkerSimulationStart()
-    {
-        if (CheckReflexSupport())
+        sl::Preferences preferences = {};
+        preferences.showConsole = true;
+        preferences.logLevel = sl::LogLevel::eVerbose; //sl::LogLevel::eDefault;
+        preferences.pathsToPlugins = nullptr;
+        preferences.numPathsToPlugins = 0;
+        preferences.pathToLogsAndData = nullptr;
+        preferences.allocateCallback = nullptr;
+        preferences.releaseCallback = nullptr;
+        preferences.logMessageCallback = StreamlineLogMessageCallback;
+        preferences.flags = sl::PreferenceFlags::eDisableCLStateTracking;// | sl::PreferenceFlags::eAllowOTA; // | sl::PreferenceFlags::eUseManualHooking;
+        preferences.featuresToLoad = features.data();
+        preferences.numFeaturesToLoad = uint32_t(features.size());
+        preferences.applicationId = sl::INVALID_UINT;
+        preferences.engine = sl::EngineType::eCustom;
+        preferences.engineVersion = "Horizon Engine";
+        preferences.projectId = "a0f57b54-1daf-4934-90ae-c4035c19df04";
+        //if (renderBackend)
+        //{
+        //    preferences.renderAPI = sl::RenderAPI::eD3D12;
+        //}
+        //else if ()
         {
-            STREAMLINE_CEHCK(slReflexSetMarker(sl::ReflexMarker::eSimulationStart, *currentFrameToken));
+            preferences.renderAPI = sl::RenderAPI::eVulkan;
         }
-    }
+        // else
+        // {
+        //     LogError(GLogger, std::format("Unsupported API: {}, skipping Streamline initialization."), );
+        //     return;
+        // }
 
-    void StreamlineContext::ReflexSetMarkerSimulationEnd()
-    {
-        if (CheckReflexSupport())
+        sl::Result result = slInit(preferences, sl::kSDKVersion);
+
+        if (result == sl::Result::eOk)
         {
-            STREAMLINE_CEHCK(slReflexSetMarker(sl::ReflexMarker::eSimulationEnd, *currentFrameToken));
+            isInitialized = true;
         }
-    }
-
-    void StreamlineContext::ReflexSetMarkerRenderSubmitStart()
-    {
-        if (CheckReflexSupport())
+        else
         {
-            STREAMLINE_CEHCK(slReflexSetMarker(sl::ReflexMarker::eRenderSubmitStart, *currentFrameToken));
-        }
-    }
-
-    void StreamlineContext::ReflexSetMarkerRenderSubmitEnd()
-    {
-        if (CheckReflexSupport())
-        {
-            STREAMLINE_CEHCK(slReflexSetMarker(sl::ReflexMarker::eRenderSubmitEnd, *currentFrameToken));
-        }
-    }
-
-    void StreamlineContext::ReflexSetMarkerPresentStart()
-    {
-        if (CheckReflexSupport())
-        {
-            STREAMLINE_CEHCK(slReflexSetMarker(sl::ReflexMarker::ePresentStart, *currentFrameToken));
+            //LogError(GLogger, std::format("Failed to initialize Streamline ({}, {})."), result, sl::getResultAsStr(result));
+            isInitialized = false;
         }
     }
 
-    void StreamlineContext::ReflexSetMarkerPresentEnd()
+    void StreamlineContext::Exit()
     {
-        if (CheckReflexSupport())
+
+    }
+
+    void StreamlineContext::Test(RenderBackend* renderBackend)
+    {
+        if (renderBackend->GetType() == RenderBackendType::Vulkan)
         {
-            STREAMLINE_CEHCK(slReflexSetMarker(sl::ReflexMarker::ePresentEnd, *currentFrameToken));
+            RenderBackendVulkanInfo renderBackendVulkanInfo = {};
+            renderBackend->GetRenderBackendVulkanInfo(&renderBackendVulkanInfo);
+
+            sl::VulkanInfo vulkanInfo = {};
+            vulkanInfo.instance = static_cast<VkInstance>(renderBackendVulkanInfo.instance);
+            vulkanInfo.device = static_cast<VkDevice>(renderBackendVulkanInfo.device);
+            vulkanInfo.physicalDevice = static_cast<VkPhysicalDevice>(renderBackendVulkanInfo.physicalDevice);
+            vulkanInfo.computeQueueIndex = renderBackendVulkanInfo.computeQueueIndex;
+            vulkanInfo.computeQueueFamily = renderBackendVulkanInfo.computeQueueFamily;
+            vulkanInfo.graphicsQueueIndex = renderBackendVulkanInfo.graphicsQueueIndex;
+            vulkanInfo.graphicsQueueFamily = renderBackendVulkanInfo.graphicsQueueFamily;
+            vulkanInfo.opticalFlowQueueIndex = renderBackendVulkanInfo.opticalFlowQueueIndex;
+            vulkanInfo.opticalFlowQueueFamily = renderBackendVulkanInfo.opticalFlowQueueFamily;
+            sl::Result slResult = slSetVulkanInfo(vulkanInfo);
         }
     }
 
-    void StreamlineContext::ReflexSetMarkerPCLatencyPing()
-    {
-        if (CheckReflexSupport())
-        {
-            STREAMLINE_CEHCK(slReflexSetMarker(sl::ReflexMarker::ePCLatencyPing, *currentFrameToken));
-        }
-    }
+    // void FeatureSupport()
+    // {
+    //     sl::Feature feature =
+    //     if (IsStreamlineSupported())
+    //     {
+    //         sl::FeatureRequirements featureRequirements;
+    //         if (SL_SUCCEEDED(slGetFeatureRequirements(feature, featureRequirements)))
+    //         {
+    //             // Feature is loaded, we can check the requirements
+    //             assert(freatureRequirements.flags & sl::FeatureRequirementFlags::eD3D12Supported);
+    //             assert(freatureRequirements.flags & sl::FeatureRequirementFlags::eVulkanSupported);
+    //         }
+    //         else
+    //         {
+    //             LogError(GLogger, std::format("slGetFeatureRequirements, error code: {}.", int32(result)));
+    //         }
+    //     }
+    // }
 }
