@@ -76,12 +76,13 @@ namespace Horizon
 #if HORIZON_EXPERIMENTAL_INFINITE_PERSPECTIVE
             if (farClippingPlane == std::numeric_limits<float>::max())
             {
-                // Infinite far plane
-                viewToClipMatrix = glm::infinitePerspectiveRH_ZO(Math::DegreesToRadians(fieldOfView), aspectRatio, nearClippingPlane);
+                // Infinite far plane and reversed-z
+                viewToClipMatrix = Math::InfinitePerspectiveReversedZ_RH(fieldOfView, aspectRatio, nearClippingPlane);
             }
             else
 #endif
             {
+                // Swap the near and far plane to get a perspective matrix with reversed-z.
                 viewToClipMatrix = glm::perspectiveRH_ZO(fieldOfView, aspectRatio, farClippingPlane, nearClippingPlane);
             }
 

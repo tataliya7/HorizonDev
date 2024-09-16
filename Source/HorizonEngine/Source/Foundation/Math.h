@@ -359,4 +359,19 @@ namespace Horizon::Math
         outT = glm::dot(v0v2, qvec) * det_rcp;
         return (det >= 1e-6f && outT >= 0.0f && u >= 0.0f && v >= 0.0f && (u + v) <= 1.0f);
     }
+
+    FORCEINLINE Matrix4x4f InfinitePerspectiveReversedZ_RH(float fovy, float aspect, float near)
+    {
+        assert(std::abs(aspect - std::numeric_limits<float>::epsilon()) > static_cast<float>(0));
+
+        float const tanHalfFovy = std::tan(fovy / static_cast<float>(2));
+
+        Matrix4x4f result(static_cast<float>(0));
+        result[0][0] = static_cast<float>(1) / (aspect * tanHalfFovy);
+        result[1][1] = static_cast<float>(1) / (tanHalfFovy);
+        result[2][2] = static_cast<float>(0);
+        result[2][3] = -static_cast<float>(1);
+        result[3][2] = -near;
+        return result;
+    }
 }

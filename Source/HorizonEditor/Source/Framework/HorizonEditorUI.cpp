@@ -959,7 +959,7 @@ namespace Horizon
                 ImGui::TextUnformatted("Fixed Pre-Exposure");
                 ImGui::NextColumn();
                 ImGui::PushItemWidth(-1);
-                if (ImGui::Checkbox("##FixedPreExposure", &renderSettings.fixedPreExposureEnabled))
+                if (ImGui::Checkbox("##FixedPreExposure", &renderSettings.enableFixedPreExposure))
                 {
 
                 }
@@ -1124,7 +1124,7 @@ namespace Horizon
                 ImGui::TextUnformatted("Denosing");
                 ImGui::NextColumn();
                 ImGui::PushItemWidth(-1);
-                if (ImGui::Checkbox("##SSRDenosing", &renderSettings.ssrSettings.denoisingEnabled))
+                if (ImGui::Checkbox("##SSRDenosing", &renderSettings.ssrSettings.enableDenoising))
                 {
 
                 }
@@ -1279,7 +1279,7 @@ namespace Horizon
                     ImGui::TextUnformatted("Frame Interpolation");
                     ImGui::NextColumn();
                     ImGui::PushItemWidth(-1);
-                    if (ImGui::Checkbox("##FrameInterpolation", &renderSettings.superSamplingSettings.frameInterpolationEnabled))
+                    if (ImGui::Checkbox("##FrameInterpolation", &renderSettings.superSamplingSettings.enableFrameInterpolation))
                     {
 
                     }
@@ -1320,7 +1320,7 @@ namespace Horizon
                     ImGui::TextUnformatted("Frame Interpolation");
                     ImGui::NextColumn();
                     ImGui::PushItemWidth(-1);
-                    if (ImGui::Checkbox("##FrameInterpolation", &renderSettings.superSamplingSettings.frameInterpolationEnabled))
+                    if (ImGui::Checkbox("##FrameInterpolation", &renderSettings.superSamplingSettings.enableFrameInterpolation))
                     {
 
                     }

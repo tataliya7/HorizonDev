@@ -116,7 +116,7 @@ namespace Horizon
         UpdateAutoExposureDataFromReadbackBuffer();
 
         preExposure = autoExposureData.adaptedExposure;
-        if (renderSettings.fixedPreExposureEnabled)
+        if (renderSettings.enableFixedPreExposure)
         {
             preExposure = renderSettings.fixedPreExposure;
         }

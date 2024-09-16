@@ -19,7 +19,7 @@ namespace Horizon
         SuperSamplingTechnique superSamplingTechnique = SuperSamplingTechnique::None;
         uint32 qualityMode = 0; // 0 means off.
         float desiredRenderResolutionPercentage = 1.0f;
-        bool frameInterpolationEnabled = false;
+        bool enableFrameInterpolation = false;
     };
 
     enum class ShadowsTechnique
@@ -62,7 +62,7 @@ namespace Horizon
 
     struct ScreenSpaceReflectionsSettings
     {
-        bool denoisingEnabled = true;
+        bool enableDenoising = true;
         ScreenSpaceReflectionsQuality quality = ScreenSpaceReflectionsQuality::High;
     };
 
@@ -87,7 +87,7 @@ namespace Horizon
     {
         RendererType rendererType;
         float upscaleRatio;
-        bool fixedPreExposureEnabled = false;
+        bool enableFixedPreExposure = false;
         float fixedPreExposure = 1.0f;
         Vector3 indirectLightingTint = Vector3(1.0f, 1.0f, 1.0f);
         float indirectLightingIntensity = 1.0f;
