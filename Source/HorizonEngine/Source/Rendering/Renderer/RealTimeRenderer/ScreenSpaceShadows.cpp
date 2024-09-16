@@ -51,7 +51,7 @@ namespace Horizon
             };
 
             // Project frustum corners into world space
-            glm::mat4 cameraProjectionMatrix = Math::PerspectiveReverseZ_RH_ZO(Math::DegreesToRadians(fieldOfView), aspectRatio, nearClip, farClip);
+            glm::mat4 cameraProjectionMatrix = Math::PerspectiveReverseZ_RH_ZO(fieldOfView, aspectRatio, nearClip, farClip);
             glm::mat4 inverseCameraProjectionMatrix = Math::InverseMatrix(cameraProjectionMatrix);
 
             glm::mat4 invCam = view.transformations.viewToWorldMatrix * inverseCameraProjectionMatrix;

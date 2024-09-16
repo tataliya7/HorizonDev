@@ -73,23 +73,20 @@ namespace Horizon
 
             nearClippingPlane = std::max(nearClippingPlane, MinNearClippingPlane);
 
-#if 0
+#if HORIZON_EXPERIMENTAL_INFINITE_PERSPECTIVE
             if (farClippingPlane == std::numeric_limits<float>::max())
             {
                 // Infinite far plane
-                // TODO:
-                // 1. ComputeCameraSpaceDepth
-                // 2. Motion vector caculation
                 viewToClipMatrix = glm::infinitePerspectiveRH_ZO(Math::DegreesToRadians(fieldOfView), aspectRatio, nearClippingPlane);
             }
             else
 #endif
             {
-                viewToClipMatrix = glm::perspectiveRH_ZO(Math::DegreesToRadians(fieldOfView), aspectRatio, farClippingPlane, nearClippingPlane);
-                nonJitteredViewToClipMatrix = viewToClipMatrix;
-                nonJitteredClipToViewMatrix = Math::InverseMatrix(nonJitteredViewToClipMatrix);
+                viewToClipMatrix = glm::perspectiveRH_ZO(fieldOfView, aspectRatio, farClippingPlane, nearClippingPlane);
             }
 
+            nonJitteredViewToClipMatrix = viewToClipMatrix;
+            nonJitteredClipToViewMatrix = Math::InverseMatrix(nonJitteredViewToClipMatrix);
             nonJitteredWorldToClipMatrix = viewToClipMatrix * worldToViewMatrix;
             nonJitteredClipToWorldMatrix = Math::InverseMatrix(nonJitteredWorldToClipMatrix);
         }

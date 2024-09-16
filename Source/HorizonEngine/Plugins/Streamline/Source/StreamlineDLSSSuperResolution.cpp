@@ -91,7 +91,7 @@ namespace Horizon
         slCommonConstants.cameraFwd = sl::float3(constants.cameraForwardVector.x, constants.cameraForwardVector.y, constants.cameraForwardVector.z);
         slCommonConstants.cameraNear = constants.cameraNearClippingPlane;
         slCommonConstants.cameraFar = constants.cameraFarClippingPlane;
-        slCommonConstants.cameraFOV = Math::DegreesToRadians(constants.cameraFovAngleVertical);
+        slCommonConstants.cameraFOV = constants.cameraFovAngleVertical;
         slCommonConstants.cameraAspectRatio = constants.cameraAspectRatio;
         slCommonConstants.motionVectorsInvalidValue = sl::INVALID_FLOAT;
         slCommonConstants.depthInverted = sl::Boolean::eTrue;

@@ -228,7 +228,7 @@ namespace Horizon
 
         editorCamera.position = Vector3(0.0f, 0.0f, 5.0f);
         editorCamera.rotation = Vector3(0.0f, 0.0f, 0.0f);
-        editorCamera.fieldOfView = 60.0f;
+        editorCamera.fieldOfView = Math::DegreesToRadians(60.0f);
         //editorCamera.aspectRatio = (float)swapChainWidth / (float)swapChainHeight;
         editorCamera.aspectRatio = 16.0f / 9.0f;
         editorCamera.nearClippingPlane = 0.1f;

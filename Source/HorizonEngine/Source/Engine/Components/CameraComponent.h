@@ -46,7 +46,7 @@ namespace Horizon
 
             invViewMatrix = Math::ComposeTransformMatrix(position, rotation * zUpQuat, Vector3(1.0f, 1.0f, 1.0f));
             viewMatrix = Math::InverseMatrix(invViewMatrix);
-            projectionMatrix = Math::PerspectiveReverseZ_RH_ZO(Math::DegreesToRadians(fieldOfView), aspectRatio, nearClippingPlane, farClippingPlane);
+            projectionMatrix = Math::PerspectiveReverseZ_RH_ZO(fieldOfView, aspectRatio, nearClippingPlane, farClippingPlane);
             invProjectionMatrix = Math::InverseMatrix(projectionMatrix);
 
             //rightVec    = Math::Normalize(Vector3(1.0f, 0.0f, 0.0f) * rotation);
@@ -61,7 +61,7 @@ namespace Horizon
             {
                 // Calculate camera far plane corners
                 float distance = farClippingPlane;
-                float halfFovRad = Math::DegreesToRadians(fieldOfView) * 0.5f;
+                float halfFovRad = fieldOfView * 0.5f;
                 float uLen = distance * Math::Tan(halfFovRad);
                 float rLen = uLen * aspectRatio;
                 Vector3 farCenterPoint = position + distance * forwardVec;

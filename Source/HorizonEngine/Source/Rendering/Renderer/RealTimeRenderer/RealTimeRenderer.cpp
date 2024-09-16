@@ -264,7 +264,7 @@ namespace Horizon
             tssConstants.motionVectorScale = Vector2(1.0f, 1.0f);
             tssConstants.cameraNearClippingPlane = view.nearClippingPlane;
             tssConstants.cameraFarClippingPlane = view.farClippingPlane;
-            tssConstants.cameraFovAngleVertical = Math::DegreesToRadians(view.fieldOfViewAngleVertical);
+            tssConstants.cameraFovAngleVertical = view.fieldOfViewAngleVertical;
             tssConstants.cameraAspectRatio = view.aspectRatio;
             tssConstants.cameraPosition = view.cameraPosition;
             tssConstants.cameraUpVector = view.cameraUpVector;
@@ -311,7 +311,7 @@ namespace Horizon
             perFrameShaderParameters.cameraUpVector = view.cameraUpVector;
             perFrameShaderParameters.cameraRightVector = view.cameraRightVector;
             perFrameShaderParameters.cameraForwardVector = view.cameraForwardVector;
-            perFrameShaderParameters.halfFovInRadians = Math::DegreesToRadians(view.fieldOfViewAngleVertical) * 0.5f;
+            perFrameShaderParameters.halfFovInRadians = view.fieldOfViewAngleVertical * 0.5f;
             perFrameShaderParameters.aspectRatio = view.aspectRatio;
             perFrameShaderParameters.nearClippingPlane = view.nearClippingPlane;
             perFrameShaderParameters.farClippingPlane = view.farClippingPlane;
