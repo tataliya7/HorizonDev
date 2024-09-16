@@ -73,7 +73,7 @@ namespace Horizon
 //        streamlineContext = new Streamline::StreamlineContext();
 //#endif
 //
-        //RenderDocPluginInit();
+        RenderDocPluginInit();
 //
 
         InitializeEngine();
