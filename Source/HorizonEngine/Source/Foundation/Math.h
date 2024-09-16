@@ -371,7 +371,7 @@ namespace Horizon::Math
         result[1][1] = static_cast<float>(1) / (tanHalfFovy);
         result[2][2] = static_cast<float>(0);
         result[2][3] = -static_cast<float>(1);
-        result[3][2] = -near;
+        result[3][2] = near;
         return result;
     }
 }
