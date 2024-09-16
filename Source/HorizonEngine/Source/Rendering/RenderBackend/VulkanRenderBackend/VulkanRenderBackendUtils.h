@@ -16,6 +16,7 @@ namespace Horizon
         else
         {
             LogError(GLogger, std::format("Vulkan function returns a runtime error. Code: {}. Function: {}. File: {}. Line: {}.", (int)result, vkFuntion, filename, line));
+            std::unreachable();
         }
     }
 

@@ -769,7 +769,15 @@ namespace Horizon
         const VkDebugUtilsMessengerCallbackDataEXT* callbackData,
         void* userData)
     {
-        if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT)
+        if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT)
+        {
+            LogWarning(GLogger, std::format("{}: {}", callbackData->messageIdNumber, callbackData->pMessage));
+        }
+        else if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT)
+        {
+            LogWarning(GLogger, std::format("{}: {}", callbackData->messageIdNumber, callbackData->pMessage));
+        }
+        else if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT)
         {
             LogWarning(GLogger, std::format("{} - {}: {}", callbackData->messageIdNumber, callbackData->pMessageIdName, callbackData->pMessage));
         }
@@ -1331,7 +1339,7 @@ namespace Horizon
 
             //requiredInstanceLayers.push_back("VK_LAYER_NV_nomad_release_public_2022_1_1");
             //requiredInstanceLayers.push_back("VK_LAYER_NV_GPU_Trace_release_public_2022_1_1");
-            requiredInstanceLayers.push_back("VK_LAYER_NV_optimus");
+            //requiredInstanceLayers.push_back("VK_LAYER_NV_optimus");
         }
 
         uint32 numInstanceLayerProperties = 0;
@@ -1418,17 +1426,17 @@ namespace Horizon
 
         VkDebugUtilsMessengerCreateInfoEXT debugUtilsMessengerInfo = {
             .sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT,
-            .messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT,
-            .messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT,
+            .messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT,
+            .messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_DEVICE_ADDRESS_BINDING_BIT_EXT,
             .pfnUserCallback = DebugUtilsMessengerCallback
         };
 
         VkApplicationInfo applicationInfo = {
             .sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
-            //.pApplicationName = ,
-            //.applicationVersion = ,
-            //.pEngineName = HE_ENGINE_NAME,
-            //.engineVersion = HE_ENGINE_VERSION,
+            .pApplicationName = "Horizon",
+            .applicationVersion = 0,
+            .pEngineName = "Horizon Engine",
+            .engineVersion = 0,
             .apiVersion = VK_API_VERSION_1_3,
         };
 
