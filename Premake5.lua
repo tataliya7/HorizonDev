@@ -109,7 +109,7 @@ filter "platforms:Win64"
         "_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING", --TODO: delete this
     }
     defines {
-        "HORIZON_ENBALE_STREAMLINE_SUPPORT=0",
+        "HORIZON_EXPERIMENTAL_STREAMLINE=1",
         "HORIZON_EXPERIMENTAL_INFINITE_PERSPECTIVE=1",
     }
     staticruntime "Off"

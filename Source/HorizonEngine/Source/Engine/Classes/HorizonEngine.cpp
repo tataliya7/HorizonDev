@@ -1,6 +1,7 @@
 #include "HorizonEngine.h"
 #include "RenderSystem.h"
 
+// TODO
 #include "Streamline.h"
 
 namespace Horizon
@@ -35,16 +36,16 @@ namespace Horizon
 
     void HorizonEngine::RegisterAndInitializeSubsystems()
     {
-        #if HORIZON_ENBALE_STREAMLINE_SUPPORT
+        #if HORIZON_EXPERIMENTAL_STREAMLINE
         // TODO:
-        StreamlineContext* streamlineContext = new StreamlineContext();
+        streamlineContext = new StreamlineContext();
         streamlineContext->Init();
         #endif
 
         RenderSystem* renderSystem = subsystemRegistry.RegisterSubsystem<RenderSystem>();
         renderSystem->Init();
 
-        #if HORIZON_ENBALE_STREAMLINE_SUPPORT
+        #if HORIZON_EXPERIMENTAL_STREAMLINE
         streamlineContext->Test(renderSystem->GetRenderBackend());
         #endif
     }

@@ -68,7 +68,6 @@ project "HorizonEditor"
         thirdpartypath("streamline/Streamline-2.4.15/include"),
         thirdpartypath("spdlog/include"),
         thirdpartypath("stb/include"),
-
         thirdpartypath("usd/include"),
         thirdpartypath("usd/include/boost-1_78"),
         thirdpartypath("usd/include/tbb"),

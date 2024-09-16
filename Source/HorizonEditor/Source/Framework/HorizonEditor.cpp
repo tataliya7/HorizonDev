@@ -5,9 +5,8 @@
 
 #include <optick.h>
 
-#include "Engine/Components/SkyLightComponent.h"
-
 #include "TextureImporter.h"
+#include "../Plugins/Streamline/Source/StreamlineModule.h"
 
 // TODO: delete this
 #define BIND_FUNCTION(func) [this](auto&&... args) -> decltype(auto) { return this->func(std::forward<decltype(args)> (args)...); }
@@ -69,14 +68,11 @@ namespace Horizon
 //        PhysXInit();
 //        Audio::AudioEngineInit();
 //
-//#if HE_ENBALE_STREAMLINE_SUPPORT
-//        streamlineContext = new Streamline::StreamlineContext();
-//#endif
-//
-        RenderDocPluginInit();
+        //RenderDocPluginInit();
 //
 
         InitializeEngine();
+        streamlineContext = HorizonEngine::GetInstance()->streamlineContext;
 
         engine = HorizonEngine::GetInstance();
         RenderSystem* renderSystem = engine->GetSubsystem<RenderSystem>();
@@ -283,6 +279,10 @@ namespace Horizon
             return;
         }
 
+#if HORIZON_EXPERIMENTAL_STREAMLINE
+        streamlineContext->ReflexSetMarkerRenderSubmitStart(frameIndex);
+#endif
+
         deltaTimeInSeconds = CalculateDeltaTime();
 
         //
@@ -305,20 +305,6 @@ namespace Horizon
             }
         }
 
-//#if HE_ENBALE_STREAMLINE_SUPPORT
-//        streamlineContext->ReflexSetMarkerSimulationStart();
-//#endif
-//
-//        OnUpdate(deltaTime);
-//
-//#if HE_ENBALE_STREAMLINE_SUPPORT
-//        streamlineContext->ReflexSetMarkerSimulationEnd();
-//#endif
-//
-//        GRenderBackend->Tick();
-//
-//        renderEngine->BeginDrawUI();
-//
         engine->GetSubsystem<RenderSystem>()->BeginDrawUI(imguiContext);
 
         OnDrawUI();
@@ -327,7 +313,15 @@ namespace Horizon
 
         editorCamera.Update(deltaTimeInSeconds);
 
+#if HORIZON_EXPERIMENTAL_STREAMLINE
+        streamlineContext->ReflexSetMarkerSimulationStart(frameIndex);
+#endif
+
         engine->Tick(deltaTimeInSeconds);
+
+#if HORIZON_EXPERIMENTAL_STREAMLINE
+        streamlineContext->ReflexSetMarkerSimulationEnd(frameIndex);
+#endif
 
         editorSceneManager->GetActiveScene()->Tick(deltaTimeInSeconds);
 
@@ -417,33 +411,19 @@ namespace Horizon
 
         delete commandList;
 
-//
-//        renderEngine->EndDrawUI();
-//
-//#if HE_ENBALE_STREAMLINE_SUPPORT
-//        streamlineContext->ReflexSetMarkerRenderSubmitStart();
-//#endif
-//
-//        OnRender(deltaTime);
-//
-//#if HE_ENBALE_STREAMLINE_SUPPORT
-//        streamlineContext->ReflexSetMarkerRenderSubmitEnd();
-//#endif
+#if HORIZON_EXPERIMENTAL_STREAMLINE
+        streamlineContext->ReflexSetMarkerRenderSubmitEnd(frameIndex);
+#endif
 
-        //
-        //#if HE_ENBALE_STREAMLINE_SUPPORT
-        //            streamlineContext->ReflexSetMarkerPresentStart();
-        //#endif
-        //
+#if HORIZON_EXPERIMENTAL_STREAMLINE
+        streamlineContext->ReflexSetMarkerPresentStart(frameIndex);
+#endif
+
         renderBackend->PresentSwapChain(swapChain);
-        //
-        //#if HE_ENBALE_STREAMLINE_SUPPORT
-        //            streamlineContext->ReflexSetMarkerPresentEnd();
-        //#endif
-        //
-        //            GArena->Reset();
-        //
-        //            frameCounter++;
+
+#if HORIZON_EXPERIMENTAL_STREAMLINE
+        streamlineContext->ReflexSetMarkerPresentEnd(frameIndex);
+#endif
 
         frameIndex++;
     }
@@ -453,14 +433,14 @@ namespace Horizon
         while (!IsExitRequested())
         {
             OPTICK_FRAME("MainThread");
-//
-//#if HE_ENBALE_STREAMLINE_SUPPORT
-//            streamlineContext->GetNewFrameToken();
-//            streamlineContext->ReflexSleep();
-//            streamlineContext->ReflexSetMarkerInputSample();
-//#endif
+
+#if HORIZON_EXPERIMENTAL_STREAMLINE
+            //streamlineContext->ReflexSleep(frameIndex);
+            streamlineContext->ReflexSetMarkerControllerInputSample(frameIndex);
+#endif
+
             window->ProcessEvents();
-//
+
             if (window->ShouldClose())
             {
                 SetExitRequest(true);

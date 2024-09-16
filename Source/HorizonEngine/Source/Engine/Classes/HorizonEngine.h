@@ -29,6 +29,9 @@ namespace Horizon
             return subsystemRegistry.GetSubsystem<SubsystemType>();
         }
 
+        // TODO
+        class StreamlineContext* streamlineContext = nullptr;
+
     private:
 
         friend void InitializeEngine();

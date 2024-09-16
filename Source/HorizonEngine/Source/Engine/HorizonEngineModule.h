@@ -15,3 +15,5 @@
 #include "Engine/Classes/RenderSystem.h"
 #include "Engine/Classes/HorizonEngine.h"
 #include "Engine/HorizonEngineVersion.h"
+
+#include "../Plugins/Streamline/Source/StreamlineModule.h"

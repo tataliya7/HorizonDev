@@ -1,4 +1,5 @@
 #include "Streamline.h"
+#include "StreamlineUtils.h"
 
 #include <vulkan/vulkan.h>
 
@@ -27,92 +28,110 @@ namespace Horizon
     //    return dllPath;
     //}
 
-    // void StreamlineContext::GetNewFrameToken()
-    // {
-    //     STREAMLINE_CHECK(slGetNewFrameToken(currentFrameToken, nullptr));
-    // }
-    //
-    // bool StreamlineContext::ReflexSetOptions(const sl::ReflexOptions& options)
-    // {
-    //     if (!IsInitialized() || !CheckReflexSupport())
-    //     {
-    //         return false;
-    //     }
-    //     STREAMLINE_CHECK(slReflexSetOptions(options));
-    //     return true;
-    // }
-    //
-    // void StreamlineContext::ReflexSleep()
-    // {
-    //     if (CheckReflexSupport())
-    //     {
-    //         STREAMLINE_CHECK(slReflexSleep(*currentFrameToken));
-    //     }
-    // }
-    //
-    // void StreamlineContext::ReflexSetMarkerControllerInputSample()
-    // {
-    //     if (CheckReflexSupport())
-    //     {
-    //         STREAMLINE_CHECK(slPCLSetMarker(sl::PCLMarker::eControllerInputSample, *currentFrameToken));
-    //     }
-    // }
-    //
-    // void StreamlineContext::ReflexSetMarkerSimulationStart()
-    // {
-    //     if (CheckReflexSupport())
-    //     {
-    //         STREAMLINE_CHECK(slPCLSetMarker(sl::PCLMarker::eSimulationStart, *currentFrameToken));
-    //     }
-    // }
-    //
-    // void StreamlineContext::ReflexSetMarkerSimulationEnd()
-    // {
-    //     if (CheckReflexSupport())
-    //     {
-    //         STREAMLINE_CHECK(slPCLSetMarker(sl::PCLMarker::eSimulationEnd, *currentFrameToken));
-    //     }
-    // }
-    //
-    // void StreamlineContext::ReflexSetMarkerRenderSubmitStart()
-    // {
-    //     if (CheckReflexSupport())
-    //     {
-    //         STREAMLINE_CHECK(slPCLSetMarker(sl::PCLMarker::eRenderSubmitStart, *currentFrameToken));
-    //     }
-    // }
-    //
-    // void StreamlineContext::ReflexSetMarkerRenderSubmitEnd()
-    // {
-    //     if (CheckReflexSupport())
-    //     {
-    //         STREAMLINE_CHECK(slPCLSetMarker(sl::PCLMarker::eRenderSubmitEnd, *currentFrameToken));
-    //     }
-    // }
-    //
-    // void StreamlineContext::ReflexSetMarkerPresentStart()
-    // {
-    //     if (CheckReflexSupport())
-    //     {
-    //         STREAMLINE_CHECK(slPCLSetMarker(sl::PCLMarker::ePresentStart, *currentFrameToken));
-    //     }
-    // }
-    //
-    // void StreamlineContext::ReflexSetMarkerPresentEnd()
-    // {
-    //     if (CheckReflexSupport())
-    //     {
-    //         STREAMLINE_CHECK(slPCLSetMarker(sl::PCLMarker::ePresentEnd, *currentFrameToken));
-    //     }
-    // }
-    //
-    // void StreamlineContext::ReflexSetMarkerPCLatencyPing()
-    // {
-    //     if (CheckReflexSupport())
-    //     {
-    //         STREAMLINE_CHECK(slPCLSetMarker(sl::PCLMarker::ePCLatencyPing, *currentFrameToken));
-    //     }
-    // }
+     void StreamlineContext::GetFrameToken(uint32 frameIndex)
+     {
+         //STREAMLINE_CHECK(slGetNewFrameToken(currentFrameToken, &frameIndex));
+     }
+    
+     //bool StreamlineContext::ReflexSetOptions(const sl::ReflexOptions& options)
+     //{
+     //    if (!IsInitialized() || !CheckReflexSupport())
+     //    {
+     //        return false;
+     //    }
+     //    STREAMLINE_CHECK(slReflexSetOptions(options));
+     //    return true;
+     //}
+    
+     void StreamlineContext::ReflexSleep(uint32 frameIndex)
+     {
+         if (CheckReflexSupport())
+         {
+             sl::FrameToken* currentFrameToken = nullptr;
+             STREAMLINE_CHECK(slGetNewFrameToken(currentFrameToken, &frameIndex));
+             STREAMLINE_CHECK(slReflexSleep(*currentFrameToken));
+         }
+     }
+    
+     void StreamlineContext::ReflexSetMarkerControllerInputSample(uint32 frameIndex)
+     {
+         if (CheckReflexSupport())
+         {
+             sl::FrameToken* currentFrameToken = nullptr;
+             STREAMLINE_CHECK(slGetNewFrameToken(currentFrameToken, &frameIndex));
+             STREAMLINE_CHECK(slPCLSetMarker(sl::PCLMarker::eControllerInputSample, *currentFrameToken));
+         }
+     }
+    
+     void StreamlineContext::ReflexSetMarkerSimulationStart(uint32 frameIndex)
+     {
+         if (CheckReflexSupport())
+         {
+             sl::FrameToken* currentFrameToken = nullptr;
+             STREAMLINE_CHECK(slGetNewFrameToken(currentFrameToken, &frameIndex));
+             STREAMLINE_CHECK(slPCLSetMarker(sl::PCLMarker::eSimulationStart, *currentFrameToken));
+         }
+     }
+    
+     void StreamlineContext::ReflexSetMarkerSimulationEnd(uint32 frameIndex)
+     {
+         if (CheckReflexSupport())
+         {
+             sl::FrameToken* currentFrameToken = nullptr;
+             STREAMLINE_CHECK(slGetNewFrameToken(currentFrameToken, &frameIndex));
+             STREAMLINE_CHECK(slPCLSetMarker(sl::PCLMarker::eSimulationEnd, *currentFrameToken));
+         }
+     }
+    
+     void StreamlineContext::ReflexSetMarkerRenderSubmitStart(uint32 frameIndex)
+     {
+         if (CheckReflexSupport())
+         {
+             sl::FrameToken* currentFrameToken = nullptr;
+             STREAMLINE_CHECK(slGetNewFrameToken(currentFrameToken, &frameIndex));
+             STREAMLINE_CHECK(slPCLSetMarker(sl::PCLMarker::eRenderSubmitStart, *currentFrameToken));
+         }
+     }
+    
+     void StreamlineContext::ReflexSetMarkerRenderSubmitEnd(uint32 frameIndex)
+     {
+         if (CheckReflexSupport())
+         {
+             sl::FrameToken* currentFrameToken = nullptr;
+             STREAMLINE_CHECK(slGetNewFrameToken(currentFrameToken, &frameIndex));
+             STREAMLINE_CHECK(slPCLSetMarker(sl::PCLMarker::eRenderSubmitEnd, *currentFrameToken));
+         }
+     }
+    
+     void StreamlineContext::ReflexSetMarkerPresentStart(uint32 frameIndex)
+     {
+         if (CheckReflexSupport())
+         {
+             sl::FrameToken* currentFrameToken = nullptr;
+             STREAMLINE_CHECK(slGetNewFrameToken(currentFrameToken, &frameIndex));
+             STREAMLINE_CHECK(slPCLSetMarker(sl::PCLMarker::ePresentStart, *currentFrameToken));
+         }
+     }
+    
+     void StreamlineContext::ReflexSetMarkerPresentEnd(uint32 frameIndex)
+     {
+         if (CheckReflexSupport())
+         {
+             sl::FrameToken* currentFrameToken = nullptr;
+             STREAMLINE_CHECK(slGetNewFrameToken(currentFrameToken, &frameIndex));
+             STREAMLINE_CHECK(slPCLSetMarker(sl::PCLMarker::ePresentEnd, *currentFrameToken));
+         }
+     }
+    
+     void StreamlineContext::ReflexSetMarkerPCLatencyPing(uint32 frameIndex)
+     {
+         if (CheckReflexSupport())
+         {
+             sl::FrameToken* currentFrameToken = nullptr;
+             STREAMLINE_CHECK(slGetNewFrameToken(currentFrameToken, &frameIndex));
+             STREAMLINE_CHECK(slPCLSetMarker(sl::PCLMarker::ePCLatencyPing, *currentFrameToken));
+         }
+     }
 
     static void StreamlineLogMessageCallback(sl::LogType type, const char* msg)
     {
@@ -133,7 +152,7 @@ namespace Horizon
 
     void StreamlineContext::Init()
     {
-        std::vector<sl::Feature> features = { };
+        std::vector<sl::Feature> features = { sl::kFeatureReflex };
 
         if (true)
         {
@@ -213,10 +232,24 @@ namespace Horizon
             vulkanInfo.opticalFlowQueueIndex = renderBackendVulkanInfo.opticalFlowQueueIndex;
             vulkanInfo.opticalFlowQueueFamily = renderBackendVulkanInfo.opticalFlowQueueFamily;
             sl::Result slResult = slSetVulkanInfo(vulkanInfo);
+
+            if (true)
+            {
+                // Set reflex options to a default configuration. This can be changed at runtime in the UI.
+                sl::ReflexOptions reflexOptions = {};
+                reflexOptions.mode = sl::ReflexMode::eLowLatency;
+                reflexOptions.frameLimitUs = 0;
+                reflexOptions.useMarkersToOptimize = true;
+                //reflexOptions.virtualKey = VK_F13;
+                if (SL_FAILED(result, slReflexSetOptions(reflexOptions)))
+                {
+                    LogError(GLogger, std::format("slReflexSetOptions, error code: {}", (int32)result));
+                }
+            }
         }
     }
 
-    // void FeatureSupport()
+    // void QueryFeatureRequirements()
     // {
     //     sl::Feature feature =
     //     if (IsStreamlineSupported())
