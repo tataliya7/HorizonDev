@@ -242,7 +242,7 @@ namespace Horizon
         renderSettings.superSamplingSettings.superSamplingTechnique = SuperSamplingTechnique::FSR;
         renderSettings.superSamplingSettings.qualityMode = 5;
         renderSettings.superSamplingSettings.desiredRenderResolutionPercentage = 1.0f;
-//
+
 //        ShaderGraphSystemInit();
 //
 //        selectionManager = new SelectionManager();
@@ -349,7 +349,7 @@ namespace Horizon
         Vector3 cameraForwardVector = Math::Normalize(cameraOrientation * Vector3(0.0f, 1.0f, 0.0f));
         Vector3 cameraUpVector      = Math::Normalize(cameraOrientation * Vector3(0.0f, 0.0f, 1.0f));
 
-        SceneView sceneView;
+        SceneView sceneView = {};
         sceneView.frameIndex = frameIndex;
         sceneView.deltaTimeInSeconds = deltaTimeInSeconds;
         sceneView.scene = editorSceneManager->GetActiveScene()->GetRenderScene();
@@ -363,7 +363,7 @@ namespace Horizon
         sceneView.cameraForwardVector = cameraForwardVector;
         sceneView.fieldOfViewAngleVertical = editorCamera.fieldOfView;
         sceneView.aspectRatio = editorCamera.aspectRatio;
-        sceneView.nearClippingPlane = editorCamera.nearClippingPlane;
+        sceneView.nearClippingPlane = std::max(editorCamera.nearClippingPlane, MinNearClippingPlane);
         sceneView.farClippingPlane = editorCamera.farClippingPlane;
         sceneView.backgroundColor = Vector3(0.0f, 0.0f, 0.0f);
         sceneView.targetWidth = swapChainWidth;

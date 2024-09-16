@@ -260,7 +260,6 @@ namespace Horizon
 
         // Begin Scene View Window
         uint32 frameIndex = 0;
-        SceneView* sceneView;
         SceneViewDebugVisualizationMode currentDebugVisualizationMode;
         EditorCamera editorCamera;
         Point2D currentMousePosition;

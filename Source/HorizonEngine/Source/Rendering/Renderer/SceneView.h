@@ -71,8 +71,6 @@ namespace Horizon
             worldToViewMatrix = glm::transpose(glm::mat4_cast(glm::normalize(cameraOrientation * zUpQuat))) * glm::translate(glm::mat4(1), -position);
             //viewToWorldMatrix = Math::InverseMatrix(worldToViewMatrix);
 
-            nearClippingPlane = std::max(nearClippingPlane, MinNearClippingPlane);
-
 #if HORIZON_EXPERIMENTAL_INFINITE_PERSPECTIVE
             if (true)
             {
