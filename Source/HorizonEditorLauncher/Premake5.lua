@@ -82,12 +82,6 @@ project "HorizonEditorLauncher"
             thirdpartypath("physx/lib/debug/PVDRuntime_64.lib"),
             thirdpartypath("physx/lib/debug/SceneQuery_static_64.lib"),
 
-            thirdpartypath("python/310/libs/python310.lib"),
-
-            thirdpartypath("ffx-fsr2/lib/ffx_fsr2_api_dx12_x64d.lib"),
-            thirdpartypath("ffx-fsr2/lib/ffx_fsr2_api_vk_x64d.lib"),
-            thirdpartypath("ffx-fsr2/lib/ffx_fsr2_api_x64d.lib"),
-
             thirdpartypath("usd/lib/debug/usd_ms.lib"),
             thirdpartypath("usd/lib/debug/tbb_debug.lib"),
             thirdpartypath("usd/lib/debug/tbbmalloc_debug.lib"),
@@ -103,6 +97,12 @@ project "HorizonEditorLauncher"
             thirdpartypath("usd/lib/debug/MaterialXRenderGlsl.lib"),
             thirdpartypath("usd/lib/debug/MaterialXRenderHw.lib"),
             thirdpartypath("usd/lib/debug/MaterialXRenderOsl.lib"),
+
+            thirdpartypath("python/310/libs/python310.lib"),
+
+            thirdpartypath("ffx-fsr2/lib/ffx_fsr2_api_dx12_x64d.lib"),
+            thirdpartypath("ffx-fsr2/lib/ffx_fsr2_api_vk_x64d.lib"),
+            thirdpartypath("ffx-fsr2/lib/ffx_fsr2_api_x64d.lib"),
         }
         postbuildcommands {
             "{COPY} %{wks.location}/ThirdParty/physx/lib/debug/PhysX_64.dll %{cfg.targetdir}",
@@ -110,12 +110,6 @@ project "HorizonEditorLauncher"
             "{COPY} %{wks.location}/ThirdParty/physx/lib/debug/PhysXCommon_64.dll %{cfg.targetdir}",
             "{COPY} %{wks.location}/ThirdParty/physx/lib/debug/PhysXCooking_64.dll %{cfg.targetdir}",
             "{COPY} %{wks.location}/ThirdParty/physx/lib/debug/PVDRuntime_64.dll %{cfg.targetdir}",
-
-            "{COPY} %{wks.location}/ThirdParty/python/310/bin/python3.dll %{cfg.targetdir}",
-            "{COPY} %{wks.location}/ThirdParty/python/310/bin/python310.dll %{cfg.targetdir}",
-            "{COPY} %{wks.location}/ThirdParty/python/310/bin %{cfg.targetdir}/python310/bin",
-            "{COPY} %{wks.location}/ThirdParty/python/310/lib %{cfg.targetdir}/python310/lib",
-            "{COPY} %{wks.location}/ThirdParty/python/310/DLLs %{cfg.targetdir}/python310/DLLs",
 
             "{COPY} %{wks.location}/ThirdParty/usd/lib/debug/usd %{cfg.targetdir}/usd",
             "{COPY} %{wks.location}/ThirdParty/usd/lib/debug/usd_ms.dll %{cfg.targetdir}",
@@ -133,6 +127,12 @@ project "HorizonEditorLauncher"
             "{COPY} %{wks.location}/ThirdParty/usd/bin/debug/MaterialXRenderGlsl.dll %{cfg.targetdir}",
             "{COPY} %{wks.location}/ThirdParty/usd/bin/debug/MaterialXRenderHw.dll %{cfg.targetdir}",
             "{COPY} %{wks.location}/ThirdParty/usd/bin/debug/MaterialXRenderOsl.dll %{cfg.targetdir}",
+
+            "{COPY} %{wks.location}/ThirdParty/python/310/bin/python3.dll %{cfg.targetdir}",
+            "{COPY} %{wks.location}/ThirdParty/python/310/bin/python310.dll %{cfg.targetdir}",
+            "{COPY} %{wks.location}/ThirdParty/python/310/bin %{cfg.targetdir}/python310/bin",
+            "{COPY} %{wks.location}/ThirdParty/python/310/lib %{cfg.targetdir}/python310/lib",
+            "{COPY} %{wks.location}/ThirdParty/python/310/DLLs %{cfg.targetdir}/python310/DLLs",
 
             "{COPY} %{wks.location}/ThirdParty/ffx-fsr2/lib/ffx_fsr2_api_dx12_x64d.dll %{cfg.targetdir}",
             "{COPY} %{wks.location}/ThirdParty/ffx-fsr2/lib/ffx_fsr2_api_vk_x64d.dll %{cfg.targetdir}",
@@ -165,12 +165,6 @@ project "HorizonEditorLauncher"
             thirdpartypath("physx/lib/release/PVDRuntime_64.lib"),
             thirdpartypath("physx/lib/release/SceneQuery_static_64.lib"),
 
-            thirdpartypath("python/310/libs/python310.lib"),
-
-            thirdpartypath("ffx-fsr2/lib/ffx_fsr2_api_dx12_x64.lib"),
-            thirdpartypath("ffx-fsr2/lib/ffx_fsr2_api_vk_x64.lib"),
-            thirdpartypath("ffx-fsr2/lib/ffx_fsr2_api_x64.lib"),
-
             thirdpartypath("usd/lib/release/usd_ms.lib"),
             thirdpartypath("usd/lib/release/tbb.lib"),
             thirdpartypath("usd/lib/release/tbbmalloc.lib"),
@@ -186,6 +180,12 @@ project "HorizonEditorLauncher"
             thirdpartypath("usd/lib/release/MaterialXRenderGlsl.lib"),
             thirdpartypath("usd/lib/release/MaterialXRenderHw.lib"),
             thirdpartypath("usd/lib/release/MaterialXRenderOsl.lib"),
+
+            thirdpartypath("python/310/libs/python310.lib"),
+
+            thirdpartypath("ffx-fsr2/lib/ffx_fsr2_api_dx12_x64.lib"),
+            thirdpartypath("ffx-fsr2/lib/ffx_fsr2_api_vk_x64.lib"),
+            thirdpartypath("ffx-fsr2/lib/ffx_fsr2_api_x64.lib"),
         }
         postbuildcommands {
             "{COPY} %{wks.location}/ThirdParty/physx/lib/release/PhysX_64.dll %{cfg.targetdir}",
@@ -193,12 +193,6 @@ project "HorizonEditorLauncher"
             "{COPY} %{wks.location}/ThirdParty/physx/lib/release/PhysXCommon_64.dll %{cfg.targetdir}",
             "{COPY} %{wks.location}/ThirdParty/physx/lib/release/PhysXCooking_64.dll %{cfg.targetdir}",
             "{COPY} %{wks.location}/ThirdParty/physx/lib/release/PVDRuntime_64.dll %{cfg.targetdir}",
-
-            "{COPY} %{wks.location}/ThirdParty/python/310/bin/python3.dll %{cfg.targetdir}",
-            "{COPY} %{wks.location}/ThirdParty/python/310/bin/python310.dll %{cfg.targetdir}",
-            "{COPY} %{wks.location}/ThirdParty/python/310/bin %{cfg.targetdir}/python310/bin",
-            "{COPY} %{wks.location}/ThirdParty/python/310/lib %{cfg.targetdir}/python310/lib",
-            "{COPY} %{wks.location}/ThirdParty/python/310/DLLs %{cfg.targetdir}/python310/DLLs",
 
             "{COPY} %{wks.location}/ThirdParty/usd/lib/release/usd %{cfg.targetdir}/usd",
             "{COPY} %{wks.location}/ThirdParty/usd/lib/release/usd_ms.dll %{cfg.targetdir}",
@@ -216,6 +210,12 @@ project "HorizonEditorLauncher"
             "{COPY} %{wks.location}/ThirdParty/usd/bin/release/MaterialXRenderGlsl.dll %{cfg.targetdir}",
             "{COPY} %{wks.location}/ThirdParty/usd/bin/release/MaterialXRenderHw.dll %{cfg.targetdir}",
             "{COPY} %{wks.location}/ThirdParty/usd/bin/release/MaterialXRenderOsl.dll %{cfg.targetdir}",
+
+            "{COPY} %{wks.location}/ThirdParty/python/310/bin/python3.dll %{cfg.targetdir}",
+            "{COPY} %{wks.location}/ThirdParty/python/310/bin/python310.dll %{cfg.targetdir}",
+            "{COPY} %{wks.location}/ThirdParty/python/310/bin %{cfg.targetdir}/python310/bin",
+            "{COPY} %{wks.location}/ThirdParty/python/310/lib %{cfg.targetdir}/python310/lib",
+            "{COPY} %{wks.location}/ThirdParty/python/310/DLLs %{cfg.targetdir}/python310/DLLs",
 
             "{COPY} %{wks.location}/ThirdParty/ffx-fsr2/lib/ffx_fsr2_api_dx12_x64.dll %{cfg.targetdir}",
             "{COPY} %{wks.location}/ThirdParty/ffx-fsr2/lib/ffx_fsr2_api_vk_x64.dll %{cfg.targetdir}",

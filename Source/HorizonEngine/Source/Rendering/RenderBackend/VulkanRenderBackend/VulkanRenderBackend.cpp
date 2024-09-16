@@ -141,7 +141,9 @@ namespace Horizon
         VkPhysicalDeviceDescriptorIndexingFeatures descriptorIndexingFeatures;
         VkPhysicalDeviceBufferDeviceAddressFeatures bufferDeviceAddressFeatures;
         VkPhysicalDeviceSynchronization2Features synchronization2Features;
-        VkPhysicalDeviceMaintenance4Features maintenance4Features;
+        VkPhysicalDeviceMaintenance4FeaturesKHR maintenance4Features;
+        VkPhysicalDeviceMaintenance5FeaturesKHR maintenance5Features;
+        VkPhysicalDeviceMaintenance6FeaturesKHR maintenance6Features;
         VkPhysicalDeviceAccelerationStructureFeaturesKHR accelerationStructureFeatures;
         VkPhysicalDeviceRayTracingPipelineFeaturesKHR rayTracingPipelineFeatures;
         VkPhysicalDeviceRayQueryFeaturesKHR rayQueryFeatures;
@@ -996,9 +998,17 @@ namespace Horizon
                 .pNext = &physicalDevice.maintenance4Features
             };
             physicalDevice.maintenance4Features = {
-                .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_4_FEATURES,
+                .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_4_FEATURES_KHR,
                 .pNext = &physicalDevice.float16StorageFeatures
             };
+            // physicalDevice.maintenance5Features = {
+            //     .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_5_FEATURES_KHR,
+            //     .pNext = &physicalDevice.maintenance6Features
+            // };
+            // physicalDevice.maintenance6Features = {
+            //     .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_6_FEATURES_KHR,
+            //     .pNext = &physicalDevice.float16StorageFeatures
+            // };
             physicalDevice.float16StorageFeatures = {
                 .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_16BIT_STORAGE_FEATURES_KHR,
                 .pNext = &physicalDevice.shaderFloat16Int8Features
@@ -3886,8 +3896,8 @@ namespace Horizon
             requiredDeviceExtensions.push_back(VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
             requiredDeviceExtensions.push_back(VK_KHR_MAINTENANCE_3_EXTENSION_NAME);
             requiredDeviceExtensions.push_back(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
-            requiredDeviceExtensions.push_back(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
-            requiredDeviceExtensions.push_back(VK_KHR_MAINTENANCE_6_EXTENSION_NAME);
+            //requiredDeviceExtensions.push_back(VK_KHR_MAINTENANCE_5_EXTENSION_NAME); // RenderDoc currently don't support this extension.
+            //requiredDeviceExtensions.push_back(VK_KHR_MAINTENANCE_6_EXTENSION_NAME); // RenderDoc currently don't support this extension.
             requiredDeviceExtensions.push_back(VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME);
             requiredDeviceExtensions.push_back(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
             requiredDeviceExtensions.push_back(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
@@ -3934,7 +3944,6 @@ namespace Horizon
             {
                 requiredDeviceExtensions.push_back(VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME);
                 requiredDeviceExtensions.push_back(VK_KHR_PIPELINE_LIBRARY_EXTENSION_NAME);
-                requiredDeviceExtensions.push_back(VK_KHR_MAINTENANCE3_EXTENSION_NAME);
                 requiredDeviceExtensions.push_back(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
                 requiredDeviceExtensions.push_back(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
                 requiredDeviceExtensions.push_back(VK_KHR_RAY_QUERY_EXTENSION_NAME);
