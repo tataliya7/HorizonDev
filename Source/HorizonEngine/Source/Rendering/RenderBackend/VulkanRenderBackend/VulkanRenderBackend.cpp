@@ -986,10 +986,6 @@ namespace Horizon
                 };
             }
 
-            physicalDevice.vulkan12Features = {
-                .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES,
-                .pNext = &physicalDevice.bufferDeviceAddressFeatures
-            };
             physicalDevice.bufferDeviceAddressFeatures = {
                 .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES,
                 .pNext = &physicalDevice.descriptorIndexingFeatures
@@ -1012,7 +1008,7 @@ namespace Horizon
             };
             physicalDevice.maintenance4Features = {
                 .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_4_FEATURES_KHR,
-                .pNext = &physicalDevice.float16StorageFeatures
+                .pNext = &physicalDevice.shaderFloat16Int8Features
             };
             // physicalDevice.maintenance5Features = {
             //     .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_5_FEATURES_KHR,
@@ -1020,11 +1016,11 @@ namespace Horizon
             // };
             // physicalDevice.maintenance6Features = {
             //     .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_6_FEATURES_KHR,
-            //     .pNext = &physicalDevice.float16StorageFeatures
+            //     .pNext = &physicalDevice.shaderFloat16Int8Features
             // };
             physicalDevice.shaderFloat16Int8Features = {
                 .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_FLOAT16_INT8_FEATURES,
-                .pNext = &physicalDevice.shaderFloat16Int8Features,
+                .pNext = &physicalDevice.float16StorageFeatures,
             };
             physicalDevice.float16StorageFeatures = {
                 .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_16BIT_STORAGE_FEATURES_KHR,
@@ -1072,7 +1068,7 @@ namespace Horizon
             }
             else
             {
-                physicalDevice.featuresEntry = (void*)&physicalDevice.vulkan12Features;
+                physicalDevice.featuresEntry = (void*)&physicalDevice.bufferDeviceAddressFeatures;
             }
 
             VkPhysicalDeviceFeatures2 deviceFeatures2 = {
