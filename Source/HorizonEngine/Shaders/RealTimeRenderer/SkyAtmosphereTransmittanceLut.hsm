@@ -63,7 +63,7 @@ void SkyAtmosphereTransmittanceLutCS(uint3 dispatchThreadID : SV_DispatchThreadI
     const float transmittanceLutSampleCount = skyAtmosphereParameters.transmittanceLutSampleCount;
     const float minSampleCount = 0.0f;
     const float maxSampleCount = 0.0f;
-    const float depthBufferValue = FarClipPlaneDepthValue;
+    const float depthBufferValue = FAR_CLIPPING_PLANE_DEPTH_VALUE;
     const float4 planetTranslatedWorldCenterAndViewHeight = float4(0.0f, 0.0f, 0.0f, 0.0f);
     const bool mieRayPhase = false;
     const float3 lightDirection = float3(0.0f, 0.0f, -1.0f);

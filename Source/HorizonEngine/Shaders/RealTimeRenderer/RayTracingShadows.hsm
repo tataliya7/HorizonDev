@@ -39,7 +39,7 @@ void RayTracingShadowsRayGen()
 
     // Skip background pixels
     const float depth = sceneDepth[pixelCoord].r;
-    if (depth == FarClipPlaneDepthValue)
+    if (depth == FAR_CLIPPING_PLANE_DEPTH_VALUE)
     {
         shadowMask[pixelCoord] = 1.0;
         rayDistance[pixelCoord] = -1.0;

@@ -70,7 +70,7 @@ void SkyAtmosphereMultipleScatteringLutCS(uint3 dispatchThreadID : SV_DispatchTh
     const float minSampleCount = 0.0f;
     const float maxSampleCount = 0.0f;
     const bool mieRayPhase = false;
-    const float depthBufferValue = FarClipPlaneDepthValue;
+    const float depthBufferValue = FAR_CLIPPING_PLANE_DEPTH_VALUE;
     // When building the scattering factor, we assume light illuminance is 1 to compute a transfert function relative to identity illuminance of 1.
     // This make the scattering factor independent of the light. It is now only linked to the atmosphere properties.
     const float3 oneIlluminance = float3(1.0f, 1.0f, 1.0f);

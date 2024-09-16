@@ -138,13 +138,13 @@ void SkyAtmosphereRayMarchingPS(float4 position : SV_Position, out float4 outLum
     float3 skyLuminanceFactor = frameShaderParameters.skyAtmosphereSkyLuminanceFactor;
     float3 preExposedL = 0.0f;
 
-    if (deviceDepth == FarClipPlaneDepthValue)
+    if (deviceDepth == FAR_CLIPPING_PLANE_DEPTH_VALUE)
     {
         preExposedL += GetLightDiskLuminance(frameShaderParameters, transmittanceLutTexture, worldPos, worldDir, skyAtmosphereParameters.bottomRadius, skyAtmosphereParameters.topRadius);
     }
 
     float viewHeight = length(worldPos);
-    if ((viewHeight < (skyAtmosphereParameters.topRadius + 0.01f)) && (deviceDepth == FarClipPlaneDepthValue))
+    if ((viewHeight < (skyAtmosphereParameters.topRadius + 0.01f)) && (deviceDepth == FAR_CLIPPING_PLANE_DEPTH_VALUE))
     {
         float2 texCoord;
 

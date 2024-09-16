@@ -35,13 +35,17 @@ namespace Horizon
 
     void HorizonEngine::RegisterAndInitializeSubsystems()
     {
+        #if HORIZON_ENBALE_STREAMLINE_SUPPORT
         // TODO:
         StreamlineContext* streamlineContext = new StreamlineContext();
         streamlineContext->Init();
+        #endif
 
         RenderSystem* renderSystem = subsystemRegistry.RegisterSubsystem<RenderSystem>();
         renderSystem->Init();
 
+        #if HORIZON_ENBALE_STREAMLINE_SUPPORT
         streamlineContext->Test(renderSystem->GetRenderBackend());
+        #endif
     }
 }

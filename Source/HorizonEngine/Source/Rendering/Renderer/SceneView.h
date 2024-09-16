@@ -74,7 +74,7 @@ namespace Horizon
             nearClippingPlane = std::max(nearClippingPlane, MinNearClippingPlane);
 
 #if HORIZON_EXPERIMENTAL_INFINITE_PERSPECTIVE
-            if (farClippingPlane == std::numeric_limits<float>::max())
+            if (true)
             {
                 // Infinite far plane and reversed-z
                 viewToClipMatrix = Math::InfinitePerspectiveReversedZ_RH(fieldOfView, aspectRatio, nearClippingPlane);

@@ -16,8 +16,8 @@ struct TextureSlot
     int bindlessTexture2DIndex;
 };
 
-#define NearClipPlaneDepthValue 1.0f
-#define FarClipPlaneDepthValue 0.0f
+#define NEAR_CLIPPING_PLANE_DEPTH_VALUE 1.0f
+#define FAR_CLIPPING_PLANE_DEPTH_VALUE 0.0f
 
 #define MAX_MATERIAL_TEXTURE_SLOT_COUNT 16
 #define DEFAULT_MATERIAL_TEXTURE_SLOT_BASE_COLOR_MAP 0

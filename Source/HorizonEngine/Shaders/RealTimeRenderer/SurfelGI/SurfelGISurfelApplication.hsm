@@ -59,7 +59,7 @@ void SurfelGISurfelApplicationCS(
 
     uint2 pixelCoord = dispatchThreadID.xy;
     float depth = sceneDepth[pixelCoord];
-    if (depth == FarClipPlaneDepthValue)
+    if (depth == FAR_CLIPPING_PLANE_DEPTH_VALUE)
     {
         return;
     }

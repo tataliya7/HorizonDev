@@ -55,7 +55,7 @@ void SurfelGIGapFillingCS(
 
     // Early exit.
     float sceneDepth = sceneDepthTexture.SampleLevel(GlobalSamplerPointClamp, uv, 0).r;
-    if (sceneDepth == FarClipPlaneDepthValue)
+    if (sceneDepth == FAR_CLIPPING_PLANE_DEPTH_VALUE)
     {
         return;
     }

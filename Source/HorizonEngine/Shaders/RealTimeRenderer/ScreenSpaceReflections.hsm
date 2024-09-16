@@ -48,7 +48,7 @@ float ValidateHit(float2 originUV, float3 worldSpaceRayDirection, float3 hit, fl
     // }
 
     // Don't lookup radiance from the background.
-    if (surfaceDepth == FarClipPlaneDepthValue)
+    if (surfaceDepth == FAR_CLIPPING_PLANE_DEPTH_VALUE)
     {
         return 0;
     }

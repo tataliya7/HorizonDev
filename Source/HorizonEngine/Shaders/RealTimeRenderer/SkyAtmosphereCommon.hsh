@@ -468,7 +468,7 @@ SingleScatteringResult IntegrateSingleScatteredLuminance(
 
 #if RELATED_TO_VIEW
     // TODO: review this part
-    if (DepthBufferValue != FarClipPlaneDepthValue)
+    if (DepthBufferValue != FAR_CLIPPING_PLANE_DEPTH_VALUE)
     {
         const float3 DepthBufferTranslatedWorldPosKm = GetWorldSpacePositionFromUvAndDepth(PixPos, DepthBufferValue, frameShaderParameters.clipToWorldMatrix).xyz * M_TO_KM;
         const float3 TraceStartTranslatedWorldPosKm = WorldPos + float3(0.0f, 0.0f, -Atmosphere.bottomRadius) - frameShaderParameters.cameraPosition * M_TO_KM;

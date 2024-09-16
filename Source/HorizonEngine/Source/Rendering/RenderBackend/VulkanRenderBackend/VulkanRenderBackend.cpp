@@ -3919,8 +3919,7 @@ namespace Horizon
             requiredDeviceExtensions.push_back(VK_EXT_SHADER_VIEWPORT_INDEX_LAYER_EXTENSION_NAME);
             requiredDeviceExtensions.push_back(VK_EXT_SHADER_DEMOTE_TO_HELPER_INVOCATION_EXTENSION_NAME);
 
-            // TODO
-#if 1
+#if HORIZON_ENBALE_STREAMLINE_SUPPORT // TODO
             requiredDeviceExtensions.push_back(VK_NVX_IMAGE_VIEW_HANDLE_EXTENSION_NAME);
             requiredDeviceExtensions.push_back(VK_NVX_BINARY_IMPORT_EXTENSION_NAME);
             requiredDeviceExtensions.push_back(VK_NV_LOW_LATENCY_EXTENSION_NAME);

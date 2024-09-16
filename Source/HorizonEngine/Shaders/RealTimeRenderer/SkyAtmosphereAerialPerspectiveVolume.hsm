@@ -111,7 +111,7 @@ void SkyAtmosphereAerialPerspectiveVolumeCS(uint3 dispatchThreadID : SV_Dispatch
     const float aerialPerspectiveVolumeSampleCount = max(1.0f, float(pixelCoord.z + 1.0f) * 2.0f);
     const float minSampleCount = 0.0f;
     const float maxSampleCount = 0.0f;
-    const float depthBufferValue = FarClipPlaneDepthValue;
+    const float depthBufferValue = FAR_CLIPPING_PLANE_DEPTH_VALUE;
     const bool mieRayPhase = true;
     const float3 lightDirection = frameShaderParameters.atmosphericLightDirection;
     const float3 lightIlluminance = frameShaderParameters.atmosphericLightOuterSpaceIlluminance;

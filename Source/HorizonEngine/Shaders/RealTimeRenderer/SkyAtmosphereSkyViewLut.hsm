@@ -122,7 +122,7 @@ void SkyAtmosphereSkyViewLutCS(uint3 dispatchThreadID : SV_DispatchThreadID)
     const float invalidSampleCount = 0.0f;
     const float minSampleCount = skyAtmosphereParameters.rayMarchingMinSampleCount;
     const float maxSampleCount = skyAtmosphereParameters.rayMarchingMaxSampleCount;
-    const float depthBufferValue = FarClipPlaneDepthValue;
+    const float depthBufferValue = FAR_CLIPPING_PLANE_DEPTH_VALUE;
     const bool mieRayPhase = true;
     const float3 lightIlluminance = frameShaderParameters.atmosphericLightOuterSpaceIlluminance;
 

@@ -42,7 +42,7 @@ void SurfelGIVisualizationCS(
 
     float4 sceneColor = sceneColorTexture.SampleLevel(GlobalSamplerPointClamp, uv, 0);
     float sceneDepth = sceneDepthTexture.SampleLevel(GlobalSamplerPointClamp, uv, 0).r;
-    if (sceneDepth == FarClipPlaneDepthValue)
+    if (sceneDepth == FAR_CLIPPING_PLANE_DEPTH_VALUE)
     {
         outputTexture[pixelCoord] = sceneColor;
         return;
