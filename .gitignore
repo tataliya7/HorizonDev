@@ -83,12 +83,6 @@
 /Assets/*
 /Download
 
-# TODO: remove this
-!/Assets/Fonts
-!/Assets/Icons
-!/Assets/HDRIs
-!/Assets/Textures
-
 /ThirdParty/dxc
 /ThirdParty/glfw
 /ThirdParty/optick
@@ -97,3 +91,10 @@
 /ThirdParty/imgui/imgui-1.89.9-docking
 /ThirdParty/googletest/googletest-1.14.0
 /ThirdParty/meshoptimizer/meshoptimizer-0.20
+
+
+# TODO: remove this
+!/Assets/Fonts
+!/Assets/Icons
+!/Assets/HDRIs
+!/Assets/Textures

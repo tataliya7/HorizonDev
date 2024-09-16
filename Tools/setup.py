@@ -39,9 +39,9 @@ def download_url(url, dir, force = False):
                     os.remove(filename)
 
                 if os.path.exists(filename):
-                    print("Info: {0} already exists, skipping download".format(os.path.abspath(filename)))
+                    print("Info: {0} already exists, skipping download.".format(os.path.abspath(filename)))
                 else:
-                    print("Info: Downloading {0} to {1}".format(url, os.path.abspath(filename)))
+                    print("Info: Downloading {0} to {1}.".format(url, os.path.abspath(filename)))
 
                     tmpfile = filename + ".tmp"
                     if os.path.exists(tmpfile):
@@ -53,11 +53,11 @@ def download_url(url, dir, force = False):
                     shutil.move(tmpfile, filename)
                 break
             except Exception as e:
-                print("Error: Retrying download due to error: {0}, Number of attempts remaining: {1}\n".format(e, max_retries - i - 1))
+                print("Error: Retrying download due to error: {0}, Number of attempts remaining: {1}.".format(e, max_retries - i - 1))
                 last_error = e
         else:
             msg = str(last_error)
-            raise RuntimeError("Failed to download {0}: {1}".format(url, msg))
+            raise RuntimeError("Failed to download {0}: {1}.".format(url, msg))
         return os.path.abspath(filename)
 
 def extract_zip_file(src_path, dst_dir, new_folder, force = False):
@@ -67,7 +67,7 @@ def extract_zip_file(src_path, dst_dir, new_folder, force = False):
         if zipfile.is_zipfile(src_path):
             archive = zipfile.ZipFile(src_path)
         else:
-            raise RuntimeError("Unrecognized archive file type")
+            raise RuntimeError("Unrecognized archive file type.")
 
         with archive:
             if new_folder != "":
@@ -79,9 +79,9 @@ def extract_zip_file(src_path, dst_dir, new_folder, force = False):
                 shutil.rmtree(dst_path)
 
             if os.path.isdir(dst_path):
-                print("Info: Directory {0} already exists, skipping extract".format(dst_path))
+                print("Info: Directory {0} already exists, skipping extract.".format(dst_path))
             else:
-                print("Info: Extracting archive to {0}".format(dst_path))
+                print("Info: Extracting archive to {0}.".format(dst_path))
 
                 if new_folder != "":
                     tmp_path = os.path.join(os.path.dirname(src_path), new_folder)
@@ -97,7 +97,7 @@ def extract_zip_file(src_path, dst_dir, new_folder, force = False):
             return dst_path
     except Exception as e:
         shutil.move(src_path, src_path + ".corrupt")
-        raise RuntimeError("Failed to extract archive {0}: {1}".format(src_path, e))
+        raise RuntimeError("Failed to extract archive {0}: {1}.".format(src_path, e))
 
 class dependency(object):
     def __init__(self, name, install, url, dst_dir, folder, args = None):
@@ -251,11 +251,28 @@ try:
         dep = manager.dependencies[dependency_name]
         print("Installing {0}...".format(dep.name))
         if manager.install_dependency(dep.name) == False:
-            print("Failed to install {0}...".format(dep.name))
+            print("Failed to install {0}.".format(dep.name))
 except Exception as e:
     traceback.print_exc()
-    print ("Error:", str(e))
+    print ("Error: {}.".format(str(e)))
     sys.exit(1)
+
+vulkan_sdk_version = "1.3.290.0"
+vulkan_sdk_path = os.path.join("C:/VulkanSDK", vulkan_sdk_version)
+
+# Copy Vulkan SDK
+def CopyVulkanSDK():
+    if not os.path.exists(vulkan_sdk_path):
+        print("Error: failed to find Vulkan SDK. Please install Vulkan SDK.")
+        sys.exit(1)
+    else:
+        print("Found Vulkan SDK: {}.".format(vulkan_sdk_path))
+    dst_dir = os.path.abspath(os.path.join(manager.install_dir, "vulkan", vulkan_sdk_version))
+    if not os.path.exists(dst_dir):
+        print("Installing Vulkan SDK...")
+        shutil.copytree(vulkan_sdk_path, dst_dir)
+
+CopyVulkanSDK()
 
 # def unzip_file(filename, path):
 #     try:
