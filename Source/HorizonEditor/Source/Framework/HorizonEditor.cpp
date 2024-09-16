@@ -232,8 +232,11 @@ namespace Horizon
         //editorCamera.aspectRatio = (float)swapChainWidth / (float)swapChainHeight;
         editorCamera.aspectRatio = 16.0f / 9.0f;
         editorCamera.nearClippingPlane = 0.1f;
-        //editorCamera.farClippingPlane = std::numeric_limits<float>::max();
+#if HORIZON_EXPERIMENTAL_INFINITE_PERSPECTIVE
+        editorCamera.farClippingPlane = std::numeric_limits<float>::max();
+#else
         editorCamera.farClippingPlane = 100.0f;
+#endif
         editorCamera.cameraSpeed = 1.0f;
         editorCamera.overrideAspectRatio = false;
 
