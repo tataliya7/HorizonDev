@@ -364,14 +364,15 @@ namespace Horizon::Math
     {
         assert(std::abs(aspect - std::numeric_limits<float>::epsilon()) > static_cast<float>(0));
 
+        float const epsilon = std::numeric_limits<float>::epsilon();
         float const tanHalfFovy = std::tan(fovy / static_cast<float>(2));
 
         Matrix4x4f result(static_cast<float>(0));
         result[0][0] = static_cast<float>(1) / (aspect * tanHalfFovy);
         result[1][1] = static_cast<float>(1) / (tanHalfFovy);
-        result[2][2] = static_cast<float>(0);
+        result[2][2] = epsilon + static_cast<float>(0);
         result[2][3] = -static_cast<float>(1);
-        result[3][2] = near;
+        result[3][2] = (epsilon + static_cast<float>(1)) * near;
         return result;
     }
 }
