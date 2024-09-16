@@ -138,12 +138,13 @@ namespace Horizon
         VkPhysicalDeviceAccelerationStructurePropertiesKHR accelerationStructureProperties;
         VkPhysicalDeviceFragmentShaderBarycentricPropertiesKHR fragmentShaderBarycentricProperties;
 
-        VkPhysicalDeviceDescriptorIndexingFeatures descriptorIndexingFeatures;
-        VkPhysicalDeviceBufferDeviceAddressFeatures bufferDeviceAddressFeatures;
-        VkPhysicalDeviceSynchronization2Features synchronization2Features;
+        VkPhysicalDeviceVulkan12Features vulkan12Features;
         VkPhysicalDeviceMaintenance4FeaturesKHR maintenance4Features;
         VkPhysicalDeviceMaintenance5FeaturesKHR maintenance5Features;
         VkPhysicalDeviceMaintenance6FeaturesKHR maintenance6Features;
+        VkPhysicalDeviceDescriptorIndexingFeatures descriptorIndexingFeatures;
+        VkPhysicalDeviceBufferDeviceAddressFeatures bufferDeviceAddressFeatures;
+        VkPhysicalDeviceSynchronization2Features synchronization2Features;
         VkPhysicalDeviceAccelerationStructureFeaturesKHR accelerationStructureFeatures;
         VkPhysicalDeviceRayTracingPipelineFeaturesKHR rayTracingPipelineFeatures;
         VkPhysicalDeviceRayQueryFeaturesKHR rayQueryFeatures;
@@ -159,7 +160,7 @@ namespace Horizon
         VkPhysicalDeviceMeshShaderFeaturesEXT meshShaderFeaturesEXT;
 
         void* featuresEntry;
-        VkPhysicalDeviceFeatures enabledFeatures;
+        VkPhysicalDeviceFeatures2 enabledFeatures;
         std::vector<VkLayerProperties> layerProperties;
         std::vector<VkExtensionProperties> extensionProperties;
         std::vector<VkQueueFamilyProperties> queueFamilyProperties;
@@ -973,10 +974,14 @@ namespace Horizon
                 };
                 physicalDevice.rayQueryFeatures = {
                     .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_QUERY_FEATURES_KHR,
-                    .pNext = &physicalDevice.bufferDeviceAddressFeatures
+                    .pNext = &physicalDevice.vulkan12Features
                 };
             }
 
+            physicalDevice.vulkan12Features = {
+                .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES,
+                .pNext = &physicalDevice.bufferDeviceAddressFeatures
+            };
             physicalDevice.bufferDeviceAddressFeatures = {
                 .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES,
                 .pNext = &physicalDevice.descriptorIndexingFeatures
@@ -1009,12 +1014,12 @@ namespace Horizon
             //     .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_6_FEATURES_KHR,
             //     .pNext = &physicalDevice.float16StorageFeatures
             // };
-            physicalDevice.float16StorageFeatures = {
-                .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_16BIT_STORAGE_FEATURES_KHR,
-                .pNext = &physicalDevice.shaderFloat16Int8Features
-            };
             physicalDevice.shaderFloat16Int8Features = {
                 .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_FLOAT16_INT8_FEATURES,
+                .pNext = &physicalDevice.shaderFloat16Int8Features,
+            };
+            physicalDevice.float16StorageFeatures = {
+                .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_16BIT_STORAGE_FEATURES_KHR,
                 .pNext = &physicalDevice.hostQueryResetFeatures,
             };
             physicalDevice.hostQueryResetFeatures = {
@@ -1059,7 +1064,7 @@ namespace Horizon
             }
             else
             {
-                physicalDevice.featuresEntry = (void*)&physicalDevice.bufferDeviceAddressFeatures;
+                physicalDevice.featuresEntry = (void*)&physicalDevice.vulkan12Features;
             }
 
             VkPhysicalDeviceFeatures2 deviceFeatures2 = {
@@ -1067,7 +1072,7 @@ namespace Horizon
                 .pNext = physicalDevice.featuresEntry
             };
             vkGetPhysicalDeviceFeatures2(physicalDevice.handle, &deviceFeatures2);
-            physicalDevice.enabledFeatures = deviceFeatures2.features;
+            physicalDevice.enabledFeatures = deviceFeatures2;
 
             // TODO
             physicalDevice.meshShaderFeaturesEXT.primitiveFragmentShadingRateMeshShader = false;
@@ -3907,8 +3912,9 @@ namespace Horizon
             requiredDeviceExtensions.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
             requiredDeviceExtensions.push_back(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
             requiredDeviceExtensions.push_back(VK_KHR_STORAGE_BUFFER_STORAGE_CLASS_EXTENSION_NAME);
-            requiredDeviceExtensions.push_back(VK_KHR_16BIT_STORAGE_EXTENSION_NAME);
             requiredDeviceExtensions.push_back(VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME);
+            //requiredDeviceExtensions.push_back(VK_KHR_8BIT_STORAGE_EXTENSION_NAME);
+            requiredDeviceExtensions.push_back(VK_KHR_16BIT_STORAGE_EXTENSION_NAME);
             requiredDeviceExtensions.push_back(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
             requiredDeviceExtensions.push_back(VK_KHR_DEVICE_GROUP_EXTENSION_NAME);
             requiredDeviceExtensions.push_back(VK_KHR_FRAGMENT_SHADER_BARYCENTRIC_EXTENSION_NAME);
@@ -3993,12 +3999,12 @@ namespace Horizon
 
             VkDeviceCreateInfo deviceInfo = {
                 .sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
-                .pNext = physicalDevice->featuresEntry, // Vulkan 1.2
+                .pNext = &physicalDevice->enabledFeatures,
                 .queueCreateInfoCount = (uint32)(queueInfos.size()),
                 .pQueueCreateInfos = queueInfos.data(),
                 .enabledExtensionCount = (uint32)(enabledDeviceExtensions.size()),
                 .ppEnabledExtensionNames = enabledDeviceExtensions.data(),
-                .pEnabledFeatures = nullptr // If the pNext chain includes a VkPhysicalDeviceFeatures2 structure, then pEnabledFeatures must be NULL
+                .pEnabledFeatures = nullptr // If the pNext chain includes a VkPhysicalDeviceFeatures2 structure, then pEnabledFeatures must be NULL.
             };
 
             VK_CHECK(vkCreateDevice(physicalDevice->handle, &deviceInfo, VULKAN_ALLOCATION_CALLBACKS, &handle));
