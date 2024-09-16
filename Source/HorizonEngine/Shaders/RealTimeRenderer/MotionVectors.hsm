@@ -64,7 +64,7 @@ void MotionVectorsCS(uint3 dispatchThreadID : SV_DispatchThreadID)
     uint geometryID = visibilityID.r;
     uint primitiveID = visibilityID.g;
 
-    float4 unprojected = mul(frameShaderParameters.clipToWorldMatrix, float4(UVSpaceToClipSpace(uv), 0.0, 1.0));
+    float4 unprojected = mul(frameShaderParameters.clipToWorldMatrix, float4(UVSpaceToClipSpace(uv), sceneDepth, 1.0f));
     unprojected.xyz /= unprojected.w;
     float3 cameraRayOrigin = frameShaderParameters.cameraPosition;
     float3 cameraRayDirection = normalize(unprojected.xyz - cameraRayOrigin);
@@ -94,11 +94,11 @@ void MotionVectorsCS(uint3 dispatchThreadID : SV_DispatchThreadID)
         float4x4 worldTransform = instanceData.localToWorldMatrix;
         float4x4 previousWorldTransform = instanceData.previousLocalToWorldMatrix;
 
-        float3 worldPosition0 = mul(worldTransform, float4(vertex0, 1.0)).xyz;
-        float3 worldPosition1 = mul(worldTransform, float4(vertex1, 1.0)).xyz;
-        float3 worldPosition2 = mul(worldTransform, float4(vertex2, 1.0)).xyz;
+        float3 worldPosition0 = mul(worldTransform, float4(vertex0, 1.0f)).xyz;
+        float3 worldPosition1 = mul(worldTransform, float4(vertex1, 1.0f)).xyz;
+        float3 worldPosition2 = mul(worldTransform, float4(vertex2, 1.0f)).xyz;
 
-        float t = 0.0;
+        float t = 0.0f;
         float3 bary = RayTriangleIntersectionBarycentrics3D(cameraRayOrigin, cameraRayDirection, worldPosition0, worldPosition1, worldPosition2, t);
 
         float3 previousVertex0 = vertex0;
@@ -108,15 +108,17 @@ void MotionVectorsCS(uint3 dispatchThreadID : SV_DispatchThreadID)
 #if 0
         if (geometry.previousVertexBuffer0 >= 0) // Skinned mesh
         {
-            previousVertex0 = GetRWByteAddressBuffer(geometry.previousVertexBuffer0).Load<float3>((/*geometry.baseVertex + */index0) * sizeof(float3));
-            previousVertex1 = GetRWByteAddressBuffer(geometry.previousVertexBuffer0).Load<float3>((/*geometry.baseVertex + */index1) * sizeof(float3));
-            previousVertex2 = GetRWByteAddressBuffer(geometry.previousVertexBuffer0).Load<float3>((/*geometry.baseVertex + */index2) * sizeof(float3));
+            ByteAddressBuffer previousVertexBuffer0 = GetByteAddressBuffer(geometry.previousVertexBuffer0);
+
+            previousVertex0 = previousVertexBuffer0.Load<float3>((/*geometry.baseVertex + */index0) * sizeof(float3));
+            previousVertex1 = previousVertexBuffer0.Load<float3>((/*geometry.baseVertex + */index1) * sizeof(float3));
+            previousVertex2 = previousVertexBuffer0.Load<float3>((/*geometry.baseVertex + */index2) * sizeof(float3));
         }
 #endif
 
-        float3 previousWorldPosition0 = mul(previousWorldTransform, float4(previousVertex0, 1.0)).xyz;
-        float3 previousWorldPosition1 = mul(previousWorldTransform, float4(previousVertex1, 1.0)).xyz;
-        float3 previousWorldPosition2 = mul(previousWorldTransform, float4(previousVertex2, 1.0)).xyz;
+        float3 previousWorldPosition0 = mul(previousWorldTransform, float4(previousVertex0, 1.0f)).xyz;
+        float3 previousWorldPosition1 = mul(previousWorldTransform, float4(previousVertex1, 1.0f)).xyz;
+        float3 previousWorldPosition2 = mul(previousWorldTransform, float4(previousVertex2, 1.0f)).xyz;
 
         previousHitPointWorldPosition = BarycentricInterpolation(previousWorldPosition0, previousWorldPosition1, previousWorldPosition2, bary);
 
@@ -124,25 +126,25 @@ void MotionVectorsCS(uint3 dispatchThreadID : SV_DispatchThreadID)
         // motionVectorTexture[pixelCoord] = float4(curw, t);
         // return;
 
-        float2 currentPosition = uv;
-        float4 previousClipPosition = mul(frameShaderParameters.previousWorldToClipMatrix, float4(previousHitPointWorldPosition, 1.0f));
-        float2 previousPosition = ClipSpaceToUVSpace(previousClipPosition.xy / previousClipPosition.w);
-        float2 motionVector = previousPosition - currentPosition;
+        float2 screenSpacePosition = uv;
+        float4 previousClipSpacePosition = mul(frameShaderParameters.previousWorldToClipMatrix, float4(previousHitPointWorldPosition, 1.0f));
+        float2 previousScreenSpacePosition = ClipSpaceToUVSpace(previousClipSpacePosition.xy / previousClipSpacePosition.w);
+        float2 motionVector = previousScreenSpacePosition - screenSpacePosition;
         motionVector -= motionVectorJitterCancellation;
-        if (isnan(motionVector.x) || isnan(motionVector.y))
-        {
-            // motionVector = float2(1.0, 1.0);
-            motionVector = 0;
-        }
+        // if (isnan(motionVector.x) || isnan(motionVector.y))
+        // {
+        //     // motionVector = float2(1.0, 1.0);
+        //     motionVector = 0;
+        // }
         motionVectorTexture[pixelCoord] = motionVector;
     }
     else
     {
+        float2 screenSpacePosition = uv;
         float4 clipSpacePosition = float4(UVSpaceToClipSpace(uv), 0.0f, 1.0f);
-        float4 previousiousClipSpacePosition = mul(frameShaderParameters.currentClipToPreviousClipMatrix, clipSpacePosition);
-        float2 previousPosition = ClipSpaceToUVSpace(previousiousClipSpacePosition.xy / previousiousClipSpacePosition.w);
-        float2 currentPosition = uv;
-        float2 motionVector = previousPosition - currentPosition;
+        float4 previousClipSpacePosition = mul(frameShaderParameters.currentClipToPreviousClipMatrix, clipSpacePosition);
+        float2 previousScreenSpacePosition = ClipSpaceToUVSpace(previousClipSpacePosition.xy / previousClipSpacePosition.w);
+        float2 motionVector = previousScreenSpacePosition - screenSpacePosition;
         //motionVector -= motionVectorJitterCancellation;
 
         motionVectorTexture[pixelCoord] = motionVector;
