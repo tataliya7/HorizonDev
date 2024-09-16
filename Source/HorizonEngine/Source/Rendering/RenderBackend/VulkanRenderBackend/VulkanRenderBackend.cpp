@@ -771,11 +771,11 @@ namespace Horizon
     {
         if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT)
         {
-            LogWarning(GLogger, std::format("{}: {}", callbackData->messageIdNumber, callbackData->pMessage));
+            LogVerbose(GLogger, std::format("{}: {}", callbackData->messageIdNumber, callbackData->pMessage));
         }
         else if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT)
         {
-            LogWarning(GLogger, std::format("{}: {}", callbackData->messageIdNumber, callbackData->pMessage));
+            LogInfo(GLogger, std::format("{}: {}", callbackData->messageIdNumber, callbackData->pMessage));
         }
         else if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT)
         {
@@ -3986,10 +3986,10 @@ namespace Horizon
             for (uint32 family = 0; family < RenderBackendQueueFamilyCount; family++)
             {
                 // don't support optical flow
-                if (family == RenderBackendQueueFamilyCount - 1)
-                {
-                    continue;
-                }
+                //if (family == RenderBackendQueueFamilyCount - 1)
+                //{
+                //    continue;
+                //}
 
                 const uint32 queueCount = numCommandQueues[family];
                 // Set all priorities to 1.0 for now.
