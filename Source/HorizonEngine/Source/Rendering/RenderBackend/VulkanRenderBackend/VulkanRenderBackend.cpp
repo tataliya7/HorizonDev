@@ -4088,14 +4088,15 @@ namespace Horizon
             return;
         }
 
-        VkDebugUtilsObjectNameInfoEXT nameInfo = {
+        VkDebugUtilsObjectNameInfoEXT objectNameInfo = 
+        {
             .sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT,
             .objectType = type,
             .objectHandle = handle,
             .pObjectName = name
         };
 
-        VK_CHECK(backend->vulkanFunctions.vkSetDebugUtilsObjectNameEXT(this->handle, &nameInfo));
+        VK_CHECK(backend->vulkanFunctions.vkSetDebugUtilsObjectNameEXT(this->handle, &objectNameInfo));
     }
 
     bool VulkanDevice::CreateBindlessDescriptorManager(const VulkanBindlessConfig& bindlessConfig)
