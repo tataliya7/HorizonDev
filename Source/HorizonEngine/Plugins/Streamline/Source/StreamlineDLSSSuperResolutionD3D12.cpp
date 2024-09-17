@@ -83,9 +83,15 @@ namespace Horizon
         //    slSetTag(viewport, inputs, _countof(inputs), cmdList);
         //}
 
+        sl::FrameToken* frameToken = nullptr;
+        if (SL_FAILED(result, slGetNewFrameToken(frameToken, &(dlssContext->constants.frameIndex))))
+        {
+            LogError(GLogger, std::format("slGetNewFrameToken, error code: {}.", int32(result)));
+        }
+
         // Inform SL that DLSS should be injected at this point for the given viewport
         const sl::BaseStructure* inputs[] = { &viewport };
-        if (SL_FAILED(result, slEvaluateFeature(sl::kFeatureDLSS, *(dlssContext->frameToken), inputs, _countof(inputs), commandList)))
+        if (SL_FAILED(result, slEvaluateFeature(sl::kFeatureDLSS, *frameToken, inputs, _countof(inputs), commandList)))
         {
             LogError(GLogger, std::format("slEvaluateFeature, error code: {}.", int32(result)));
             return false;

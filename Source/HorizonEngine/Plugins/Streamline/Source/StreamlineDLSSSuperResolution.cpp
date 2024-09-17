@@ -63,7 +63,7 @@ namespace Horizon
         dlssOptions.balancedPreset = sl::DLSSPreset::ePresetC;
         dlssOptions.performancePreset = sl::DLSSPreset::ePresetD;
         dlssOptions.ultraPerformancePreset = sl::DLSSPreset::ePresetE;
-        dlssOptions.useAutoExposure = sl::Boolean::eFalse; // We don't use DLSS's own auto-exposure. 
+        dlssOptions.useAutoExposure = sl::Boolean::eFalse; // We don't use DLSS's own auto-exposure.
         if (SL_FAILED(result, slDLSSSetOptions(viewport, dlssOptions)))
         {
             LogError(GLogger, std::format("slDLSSSetOptions, error code: {}.", int32(result)));
@@ -102,6 +102,7 @@ namespace Horizon
         slCommonConstants.motionVectorsDilated = sl::Boolean::eFalse;
         slCommonConstants.motionVectorsJittered = sl::Boolean::eFalse;
 
+        sl::FrameToken* frameToken = nullptr;
         if (SL_FAILED(result, slGetNewFrameToken(frameToken, &constants.frameIndex)))
         {
             LogError(GLogger, std::format("slGetNewFrameToken, error code: {}.", int32(result)));

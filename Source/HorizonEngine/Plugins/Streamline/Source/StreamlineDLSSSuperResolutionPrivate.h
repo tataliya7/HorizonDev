@@ -48,7 +48,6 @@ namespace Horizon
         RenderBackend* renderBackend;
         //DLSSSuperResolutionAPI api;
         sl::DLSSOptions options;
-        sl::FrameToken* frameToken = nullptr;
         TemporalSuperSamplingConstants constants;
     };
 
