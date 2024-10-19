@@ -5,8 +5,8 @@
 SHADER_CONSTANTS_STRUCT_BEGIN();
 SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferSRV);
 SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(1, VolumetricFogShaderParameters, VolumetricFogShaderParameterBufferSRV);
-SHADER_CONSTANTS_TEXTURE_3D_SRV(2, float4, VolumetricFogScatteringAndExtinctionTextureSRV);
-SHADER_CONSTANTS_TEXTURE_3D_UAV(3, float4, VolumetricFogIntegratedLightScatteringTextureUAV);
+SHADER_CONSTANTS_TEXTURE_3D_SRV(2, float4, VolumetricFogLightScatteringTextureSRV);
+SHADER_CONSTANTS_TEXTURE_3D_UAV(3, float4, VolumetricFogFinalIntegrationTextureUAV);
 SHADER_CONSTANTS_STRUCT_END();
 
 [shader("compute")]
@@ -15,8 +15,8 @@ void VolumetricFogFinalIntegrationCS(uint3 groupID : SV_GroupID, uint3 groupThre
 {
     StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
     StructuredBuffer<VolumetricFogShaderParameters> volumetricFogShaderParameterBuffer = ShaderConstants.GetVolumetricFogShaderParameterBufferSRV();
-    Texture3D<float4> scatteringAndExtinctionTexture = ShaderConstants.GetVolumetricFogScatteringAndExtinctionTextureSRV();
-    RWTexture3D<float4> integratedLightScatteringTextureUAV = ShaderConstants.GetVolumetricFogIntegratedLightScatteringTextureUAV();
+    Texture3D<float4> lightScatteringTexture = ShaderConstants.GetVolumetricFogLightScatteringTextureSRV();
+    RWTexture3D<float4> finalIntegrationTexture = ShaderConstants.GetVolumetricFogFinalIntegrationTextureUAV();
 
     PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
     VolumetricFogShaderParameters volumetricFogShaderParameters = volumetricFogShaderParameterBuffer[0];
@@ -28,29 +28,34 @@ void VolumetricFogFinalIntegrationCS(uint3 groupID : SV_GroupID, uint3 groupThre
 
     float3 previousVoxelCenterWorldPosition = ComputeVoxelWorldPosition(frameShaderParameters, volumetricFogShaderParameters, uint3(dispatchThreadID.xy, 0), float3(0.5f, 0.5f, 0.5f));
 
-    float4 accumulatedScatteringAndTransmittance = float4(0.0f, 0.0f, 0.0f, 1.0f);
+    float3 accumulatedRadiance = float3(0.0f, 0.0f, 0.0f);
+    float accumulatedTransmittance = 1.0f;
     for (uint sliceIndex = 0; sliceIndex < volumetricFogShaderParameters.volumeResolution.z; sliceIndex++)
     {
         uint3 voxelCoordinate = uint3(dispatchThreadID.xy, sliceIndex);
-        float4 scatteringAndExtinction = scatteringAndExtinctionTexture[voxelCoordinate];
+        float4 lightScatteringTextureData = lightScatteringTexture[voxelCoordinate];
+        float3 sourceTerm = lightScatteringTextureData.xyz;
+        float extinction = lightScatteringTextureData.w;
 
 		float3 voxelCenterWorldPosition = ComputeVoxelWorldPosition(frameShaderParameters, volumetricFogShaderParameters, voxelCoordinate, float3(0.5f, 0.5f, 0.5f));
-		float stepLength = length(voxelCenterWorldPosition - previousVoxelCenterWorldPosition);
+		float d = max(length(voxelCenterWorldPosition - previousVoxelCenterWorldPosition), 0.0f);
 		previousVoxelCenterWorldPosition = voxelCenterWorldPosition;
 
-        stepLength = 1;
-        float transmittance = exp(-scatteringAndExtinction.w * stepLength);
+        float rho_t = extinction;
+
+        float transmittance = exp(-rho_t * d); // Beer's law
 
         #if 1 // Wrong
             // Integrating scattering and then transmittance is not energy-conservative.
-            accumulatedScatteringAndTransmittance.xyz += scatteringAndExtinction.xyz * accumulatedScatteringAndTransmittance.w;
-            accumulatedScatteringAndTransmittance.w *= transmittance;
+            accumulatedRadiance += sourceTerm * accumulatedTransmittance;
+            accumulatedTransmittance *= transmittance;
         #else // Energy-conserving integration
-			float3 t = (scatteringAndExtinction.rgb - scatteringAndExtinction.rgb * transmittance) / max(scatteringAndExtinction.w, 0.00001f);
-			accumulatedScatteringAndTransmittance.xyz += t * accumulatedScatteringAndTransmittance.w;
-            accumulatedScatteringAndTransmittance.w *= transmittance;
+            // The analytical integration of constant scattered light over a definite range according to one extinction sample can be reduced this equation.
+			float3 t = (sourceTerm - sourceTerm * transmittance) / max(rho_t, 0.00001f);
+			accumulatedRadiance += t * accumulatedTransmittance;
+            accumulatedTransmittance *= transmittance;
         #endif
 
-        integratedLightScatteringTextureUAV[voxelCoordinate] = accumulatedScatteringAndTransmittance;
+        finalIntegrationTexture[voxelCoordinate] = float4(accumulatedRadiance, accumulatedTransmittance);
     }
 }

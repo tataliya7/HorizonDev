@@ -278,6 +278,9 @@ namespace Horizon
         ~LocalFogVolumeRenderObject();
 
         Matrix4x4 transform;
+
+        Vector3 scattering;
+        Vector3 absorption;
         Vector3 emission;
     };
 

@@ -263,5 +263,10 @@ namespace Horizon
                         threadGroupCountZ);
                 };
             });
+
+        RealTimeRendererSceneTextures& sceneTextures = renderGraph.blackboard.Get<RealTimeRendererSceneTextures>();
+        sceneTextures.cascadedShadowMapDataBuffer = cascadedShadowMapDataBuffer;
+        sceneTextures.shadowMapTexture = shadowMapTexture;
+        sceneTextures.shadowMaskTexture = screenSpaceShadowMaskTexture;
     }
 }

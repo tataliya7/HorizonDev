@@ -6,8 +6,8 @@ SHADER_CONSTANTS_STRUCT_BEGIN();
 SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferSRV);
 SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(1, VolumetricFogShaderParameters, VolumetricFogShaderParameterBufferSRV);
 SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(2, LocalFogVolumeInstanceData, LocalFogVolumeInstanceDataBufferSRV);
-SHADER_CONSTANTS_TEXTURE_3D_UAV(3, float4, VolumetricFogParticipatingMediaPropertyTextureAUAV);
-SHADER_CONSTANTS_TEXTURE_3D_UAV(4, float4, VolumetricFogParticipatingMediaPropertyTextureBUAV);
+SHADER_CONSTANTS_TEXTURE_3D_UAV(3, float4, VolumetricFogParticipatingMediaPropertiesDataATextureUAV);
+SHADER_CONSTANTS_TEXTURE_3D_UAV(4, float4, VolumetricFogParticipatingMediaPropertiesDataBTextureUAV);
 SHADER_CONSTANTS_STRUCT_END();
 
 [shader("compute")]
@@ -16,21 +16,21 @@ void VolumetricFogVoxelizationCS(uint3 groupID : SV_GroupID, uint3 groupThreadID
 {
     StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
     StructuredBuffer<VolumetricFogShaderParameters> volumetricFogShaderParameterBuffer = ShaderConstants.GetVolumetricFogShaderParameterBufferSRV();
-    RWTexture3D<float4> participatingMediaPropertyTextureA = ShaderConstants.GetVolumetricFogParticipatingMediaPropertyTextureAUAV();
-    RWTexture3D<float4> participatingMediaPropertyTextureB = ShaderConstants.GetVolumetricFogParticipatingMediaPropertyTextureBUAV();
+    RWTexture3D<float4> participatingMediaPropertiesDataATexture = ShaderConstants.GetVolumetricFogParticipatingMediaPropertiesDataATextureUAV();
+    RWTexture3D<float4> participatingMediaPropertiesDataBTexture = ShaderConstants.GetVolumetricFogParticipatingMediaPropertiesDataBTextureUAV();
 
     PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
     VolumetricFogShaderParameters volumetricFogShaderParameters = volumetricFogShaderParameterBuffer[0];
 
-    uint3 voxelCoordinate = dispatchThreadID;
+    const uint3 voxelCoordinate = dispatchThreadID;
 
     if (any(voxelCoordinate >= volumetricFogShaderParameters.volumeResolution))
     {
         return;
     }
 
-    float3 scattering = float3(1.0f, 1.0f, 1.0f);
-    float extinction = 0.0f;
+    float3 scattering = float3(0.0f, 0.0f, 0.0f);
+    float3 absorption = float3(0.0f, 0.0f, 0.0f);
     float3 emission = float3(0.0f, 0.0f, 0.0f);
     float phaseG = 0.0f;
 
@@ -43,10 +43,14 @@ void VolumetricFogVoxelizationCS(uint3 groupID : SV_GroupID, uint3 groupThreadID
         {
             LocalFogVolumeInstanceData instanceData = localFogVolumeInstanceDataBuffer.Load(localFogVolumeInstanceIndex);
 
+            scattering += instanceData.scattering;
+            absorption += instanceData.absorption;
             emission += instanceData.emission;
         }
     }
 
-    participatingMediaPropertyTextureA[voxelCoordinate] = float4(scattering, extinction);
-    participatingMediaPropertyTextureB[voxelCoordinate] = float4(emission, phaseG);
+    float extinction = max(RelativeLuminance(scattering) + RelativeLuminance(absorption), 0.0f);
+
+    participatingMediaPropertiesDataATexture[voxelCoordinate] = float4(scattering, extinction);
+    participatingMediaPropertiesDataBTexture[voxelCoordinate] = float4(emission, phaseG);
 }

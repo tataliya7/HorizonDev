@@ -94,6 +94,10 @@ namespace Horizon
 
         RenderGraphBufferHandle irradianceEnvironmentMapBuffer;
         RenderGraphTextureHandle convolvedEnvironmentMapTexture;
+
+        RenderBackendBufferHandle cascadedShadowMapDataBuffer;
+        RenderGraphTextureHandle shadowMapTexture;
+        RenderGraphTextureHandle shadowMaskTexture;
     };
 
     struct RealTimeRendererLightGridData
@@ -530,6 +534,7 @@ namespace Horizon
             RenderGraphPersistentBuffer* autoExposureBuffer;
             RenderGraphPersistentTexture* sceneDepthTexture;
             RenderGraphPersistentTexture* ambientOcclusionTexture;
+            RenderGraphPersistentTexture* volumetricFogLightScatteringTexture;
             RenderGraphPersistentTexture* temporalSuperSamplingTexture;
         };
 

@@ -39,6 +39,9 @@ namespace Horizon
         if (renderObject)
         {
             renderObject->transform = transform;
+
+            renderObject->scattering = scattering;
+            renderObject->absorption = absorption;
             renderObject->emission = emission;
         }
     }

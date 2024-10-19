@@ -61,6 +61,8 @@ namespace Horizon
         RenderBackendBufferDesc autoExposureBufferDesc = RenderBackendBufferDesc::Create(sizeof(AutoExposureData), 1, RenderBackendBufferCreateFlags::ShaderResource | RenderBackendBufferCreateFlags::UnorderedAccess);
         RenderBackendBufferHandle autoExposureBuffer = renderBackend->CreateBuffer(&autoExposureBufferDesc, &defaultAutoExposureData, "AutoExposureBuffer");
         historyFrame.autoExposureBuffer = resourcePool->CacheBuffer(autoExposureBuffer, autoExposureBufferDesc, "AutoExposureBuffer");
+
+        historyFrame.volumetricFogLightScatteringTexture = nullptr;
     }
 
     bool RealTimeRenderer::IsBloomEnabled() const

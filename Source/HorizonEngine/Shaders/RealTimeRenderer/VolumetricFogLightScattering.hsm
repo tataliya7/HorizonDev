@@ -1,15 +1,54 @@
 #include "../ShaderCommon.hsh"
 #include "RealTimeRendererCommon.hsh"
 #include "VolumetricFogCommon.hsh"
+#include "ShadowMapCommon.hsh"
+#include "GPUScene.hsh"
 
 SHADER_CONSTANTS_STRUCT_BEGIN();
 SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferSRV);
 SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(1, VolumetricFogShaderParameters, VolumetricFogShaderParameterBufferSRV);
-SHADER_CONSTANTS_TEXTURE_3D_SRV(2, float4, PreviousVolumetricFogScatteringAndExtinctionTextureSRV);
-SHADER_CONSTANTS_TEXTURE_3D_SRV(3, float4, VolumetricFogParticipatingMediaPropertyTextureASRV);
-SHADER_CONSTANTS_TEXTURE_3D_SRV(4, float4, VolumetricFogParticipatingMediaPropertyTextureBSRV);
-SHADER_CONSTANTS_TEXTURE_3D_UAV(5, float4, VolumetricFogScatteringAndExtinctionTextureUAV);
+SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(2, DistantLightData, DistantLightDataBufferSRV);
+SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(3, CascadedShadowMapShaderParameters, CascadedShadowMapShaderParameterBufferSRV);
+SHADER_CONSTANTS_TEXTURE_2D_ARRAY_DEFAULT_SRV(4, ShadowMapTextureSRV);
+SHADER_CONSTANTS_TEXTURE_3D_SRV(5, float4, PreviousVolumetricFogLightScatteringTextureSRV);
+SHADER_CONSTANTS_TEXTURE_3D_SRV(6, float4, VolumetricFogParticipatingMediaPropertiesDataATextureSRV);
+SHADER_CONSTANTS_TEXTURE_3D_SRV(7, float4, VolumetricFogParticipatingMediaPropertiesDataBTextureSRV);
+SHADER_CONSTANTS_TEXTURE_3D_UAV(8, float4, VolumetricFogLightScatteringTextureUAV);
 SHADER_CONSTANTS_STRUCT_END();
+
+#define SAMPLE_COUNT_PER_VOXEL 1
+
+float ComputeDistantLightShadowFactorCSM(
+    in PerFrameShaderParameters frameShaderParameters,
+    in CascadedShadowMapShaderParameters cascadedShadowMapParameters,
+    in Texture2DArray shadowMapTexture,
+    in float3 worldSpacePosition)
+{
+    float shadowFactor = 1.0f;
+
+    float4 viewSpacePosition = mul(frameShaderParameters.worldToViewMatrix, float4(worldSpacePosition, 1.0f));
+	const uint cascadeCount = cascadedShadowMapParameters.cascadeCount;
+	const uint cascadeIndex = CalculateCascadeIndex(viewSpacePosition.z, cascadedShadowMapParameters);
+
+    if (cascadeIndex < cascadeCount)
+    {
+        float4 shadowMapTextureCoord = mul(cascadedShadowMapParameters.worldToClipMatrix[cascadeIndex], float4(worldSpacePosition, 1.0f));
+        shadowMapTextureCoord /= shadowMapTextureCoord.w;
+        shadowMapTextureCoord.x = (1.0f + shadowMapTextureCoord.x) * 0.5f;
+        shadowMapTextureCoord.y = (1.0f - shadowMapTextureCoord.y) * 0.5f;
+        //shadowMapTextureCoord.xy = ClipSpaceToUVSpace(shadowMapTextureCoord.xy);
+
+        if (shadowMapTextureCoord.x > 0.0 && shadowMapTextureCoord.x < 1.0 &&
+            shadowMapTextureCoord.y > 0.0 && shadowMapTextureCoord.y < 1.0 &&
+            shadowMapTextureCoord.z > 0.0 && shadowMapTextureCoord.z < 1.0)
+        {
+            float shadowMapDepthValue = shadowMapTexture.SampleLevel(GlobalSamplerPointClamp, float3(shadowMapTextureCoord.xy, cascadeIndex), 0).r;
+            shadowFactor = (shadowMapTextureCoord.z > shadowMapDepthValue) ? 1.0f : 0.0f;
+        }
+    }
+
+	return shadowFactor;
+}
 
 [shader("compute")]
 [numthreads(4, 4, 4)]
@@ -17,13 +56,18 @@ void VolumetricFogLightScatteringCS(uint3 groupID : SV_GroupID, uint3 groupThrea
 {
     StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
     StructuredBuffer<VolumetricFogShaderParameters> volumetricFogShaderParameterBuffer = ShaderConstants.GetVolumetricFogShaderParameterBufferSRV();
-    Texture3D<float4> previousScatteringAndExtinctionTexture = ShaderConstants.GetPreviousVolumetricFogScatteringAndExtinctionTextureSRV();
-    Texture3D<float4> participatingMediaPropertyTextureA = ShaderConstants.GetVolumetricFogParticipatingMediaPropertyTextureASRV();
-    Texture3D<float4> participatingMediaPropertyTextureB = ShaderConstants.GetVolumetricFogParticipatingMediaPropertyTextureBSRV();
-    RWTexture3D<float4> scatteringAndExtinctionTextureUAV = ShaderConstants.GetVolumetricFogScatteringAndExtinctionTextureUAV();
+    StructuredBuffer<DistantLightData> distantLightDataBuffer = ShaderConstants.GetDistantLightDataBufferSRV();
+    StructuredBuffer<CascadedShadowMapShaderParameters> cascadedShadowMapShaderParameterBuffer = ShaderConstants.GetCascadedShadowMapShaderParameterBufferSRV();
+    Texture2DArray shadowMapTexture = ShaderConstants.GetShadowMapTextureSRV();
+    Texture3D<float4> previousLightScatteringTexture = ShaderConstants.GetPreviousVolumetricFogLightScatteringTextureSRV();
+    Texture3D<float4> participatingMediaPropertiesDataATexture = ShaderConstants.GetVolumetricFogParticipatingMediaPropertiesDataATextureSRV();
+    Texture3D<float4> participatingMediaPropertiesDataBTexture = ShaderConstants.GetVolumetricFogParticipatingMediaPropertiesDataBTextureSRV();
+    RWTexture3D<float4> lightScatteringTexture = ShaderConstants.GetVolumetricFogLightScatteringTextureUAV();
 
     PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
     VolumetricFogShaderParameters volumetricFogShaderParameters = volumetricFogShaderParameterBuffer[0];
+    DistantLightData distantLightData = distantLightDataBuffer[0];
+    CascadedShadowMapShaderParameters cascadedShadowMapParameters = cascadedShadowMapShaderParameterBuffer[0];
 
     uint3 voxelCoordinate = dispatchThreadID;
 
@@ -32,11 +76,35 @@ void VolumetricFogLightScatteringCS(uint3 groupID : SV_GroupID, uint3 groupThrea
         return;
     }
 
-    float4 pmScatteringAndExtinction = participatingMediaPropertyTextureA[voxelCoordinate];
-    float4 pmEmissionAndPhaseG = participatingMediaPropertyTextureB[voxelCoordinate];
+    float4 pmScatteringAndExtinction = participatingMediaPropertiesDataATexture[voxelCoordinate];
+    float4 pmEmissionAndPhaseG = participatingMediaPropertiesDataBTexture[voxelCoordinate];
 
-    float3 scattering = frameShaderParameters.preExposure * pmEmissionAndPhaseG.xyz;
-    float extinction = 1.0f;
+    float3 scattering = pmScatteringAndExtinction.xyz;
+    float extinction = pmScatteringAndExtinction.w;
+    float3 emission = pmEmissionAndPhaseG.xyz;
+    float phaseG = 0.0f;
 
-    scatteringAndExtinctionTextureUAV[voxelCoordinate] = float4(scattering, extinction);
+    const bool isDistantLightValid = true;
+    const float3 distantLightColor = distantLightData.color;
+    const float3 distantLightDirection = distantLightData.direction;
+
+    float3 radiance = 0.0f;
+    for (uint sampleIndex = 0; sampleIndex < SAMPLE_COUNT_PER_VOXEL; sampleIndex++)
+    {
+        float3 worldSpacePosition = ComputeVoxelWorldPosition(frameShaderParameters, volumetricFogShaderParameters, voxelCoordinate, float3(0.5f, 0.5f, 0.5f));
+        float3 w = normalize(frameShaderParameters.cameraPosition - worldSpacePosition);
+
+        [branch]
+        if (isDistantLightValid)
+        {
+            float distantLightShadowFactor = ComputeDistantLightShadowFactorCSM(frameShaderParameters, cascadedShadowMapParameters, shadowMapTexture, worldSpacePosition);
+
+            radiance += distantLightColor * distantLightShadowFactor * HenyeyGreensteinPhaseFunction(phaseG, dot(distantLightDirection, w));
+        }
+    }
+	radiance /= (float)SAMPLE_COUNT_PER_VOXEL;
+
+    float3 sourceTerm = frameShaderParameters.preExposure * (scattering * radiance + emission);
+
+    lightScatteringTexture[voxelCoordinate] = float4(sourceTerm, extinction);
 }

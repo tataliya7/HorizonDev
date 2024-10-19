@@ -19,6 +19,8 @@ namespace Horizon
     struct LocalFogVolumeInstanceData
     {
         Matrix4x4f localToWorldMatrix;
+        Vector3f scattering;
+        Vector3f absorption;
         Vector3f emission;
     };
 
@@ -49,6 +51,8 @@ namespace Horizon
 
             LocalFogVolumeInstanceData& instanceData = renderData.instanceData[index];
             instanceData.localToWorldMatrix = localFogVolume->transform;
+            instanceData.scattering = localFogVolume->scattering;
+            instanceData.absorption = localFogVolume->absorption;
             instanceData.emission = localFogVolume->emission;
         }
 
@@ -96,7 +100,6 @@ namespace Horizon
         const uint32 volumetricFogTileCountY = CeilDiv(renderResolution.height, volumetricFogTileSize);
         const uint32 volumetricFogDepthSliceCount = VolumetricFogDepthSliceCount;
 
-
         uint32 volumetricFogShaderParameterBufferSize = sizeof(VolumetricFogShaderParameters);
 
         VolumetricFogShaderParameters volumetricFogShaderParameters = {};
@@ -115,6 +118,8 @@ namespace Horizon
 
         RenderGraphBufferDesc volumetricFogShaderParameterBufferDesc = RenderGraphBufferDesc::CreateStructured(volumetricFogShaderParameterBufferSize, 1);
         RenderGraphBufferHandle volumetricFogShaderParameterBuffer = renderGraph.CreateBuffer(volumetricFogShaderParameterBufferDesc, "VolumetricFogShaderParameterBuffer");
+
+        RealTimeRendererSceneTextures& sceneTextures = renderGraph.blackboard.Get<RealTimeRendererSceneTextures>();
 
         renderGraph.AddPass(
             std::format("UpdateVolumetricFog"),
@@ -139,16 +144,16 @@ namespace Horizon
             RenderBackendTextureFormat::R16G16B16A16Float,
             RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::UnorderedAccess);
 
-        RenderGraphTextureHandle volumetricFogParticipatingMediaPropertyTextureA = renderGraph.CreateTexture(volumetricFogCommonTextureDesc, "VolumetricFogParticipatingMediaPropertyTextureA");
-        RenderGraphTextureHandle volumetricFogParticipatingMediaPropertyTextureB = renderGraph.CreateTexture(volumetricFogCommonTextureDesc, "VolumetricFogParticipatingMediaPropertyTextureB");
+        RenderGraphTextureHandle volumetricFogParticipatingMediaPropertiesDataATexture = renderGraph.CreateTexture(volumetricFogCommonTextureDesc, "VolumetricFogParticipatingPropertiesDataATexture");
+        RenderGraphTextureHandle volumetricFogParticipatingMediaPropertiesDataBTexture = renderGraph.CreateTexture(volumetricFogCommonTextureDesc, "VolumetricFogParticipatingPropertiesDataBTexture");
 
         renderGraph.AddPass(
              std::format("VolumetricFogVoxelization (Compute, {}x{}x{})", volumetricFogTileCountX, volumetricFogTileCountY, volumetricFogDepthSliceCount),
              RenderGraphPassFlags::Compute,
              [&](RenderGraphBuilder& builder)
              {
-                 volumetricFogParticipatingMediaPropertyTextureA = builder.WriteTexture(volumetricFogParticipatingMediaPropertyTextureA, RenderBackendResourceState::UnorderedAccess);
-                 volumetricFogParticipatingMediaPropertyTextureB = builder.WriteTexture(volumetricFogParticipatingMediaPropertyTextureB, RenderBackendResourceState::UnorderedAccess);
+                 volumetricFogParticipatingMediaPropertiesDataATexture = builder.WriteTexture(volumetricFogParticipatingMediaPropertiesDataATexture, RenderBackendResourceState::UnorderedAccess);
+                 volumetricFogParticipatingMediaPropertiesDataBTexture = builder.WriteTexture(volumetricFogParticipatingMediaPropertiesDataBTexture, RenderBackendResourceState::UnorderedAccess);
 
                  return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
                  {
@@ -160,8 +165,8 @@ namespace Horizon
                      shaderConstants.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
                      shaderConstants.BindBufferSRV(1, registry.GetBufferSRVBindlessResourceDescriptorIndex(volumetricFogShaderParameterBuffer));
                      shaderConstants.BindBufferSRV(2, registry.GetBufferSRVBindlessResourceDescriptorIndex(localFogVolumeInstanceDataBuffer));
-                     shaderConstants.BindTextureUAV(3, registry.GetTextureUAVBindlessResourceDescriptorIndex(volumetricFogParticipatingMediaPropertyTextureA, 0));
-                     shaderConstants.BindTextureUAV(4, registry.GetTextureUAVBindlessResourceDescriptorIndex(volumetricFogParticipatingMediaPropertyTextureB, 0));
+                     shaderConstants.BindTextureUAV(3, registry.GetTextureUAVBindlessResourceDescriptorIndex(volumetricFogParticipatingMediaPropertiesDataATexture, 0));
+                     shaderConstants.BindTextureUAV(4, registry.GetTextureUAVBindlessResourceDescriptorIndex(volumetricFogParticipatingMediaPropertiesDataBTexture, 0));
 
                      RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::VolumetricFogVoxelization);
 
@@ -174,17 +179,24 @@ namespace Horizon
                  };
              });
 
-        RenderGraphTextureHandle volumetricFogScatteringAndExtinctionTexture = renderGraph.CreateTexture(volumetricFogCommonTextureDesc, "VolumetricFogScatteringAndExtinctionTexture");
+        RenderGraphTextureHandle previousVolumetricFogLightScatteringTexture = defaultResources->ImportBlackDummyTexture2D(renderGraph);
+        if (historyFrame.volumetricFogLightScatteringTexture != nullptr)
+        {
+            previousVolumetricFogLightScatteringTexture = renderGraph.ImportExternalTexture(historyFrame.volumetricFogLightScatteringTexture, "PreviousVolumetricFogLightScatteringTexture");
+        }
+
+        RenderGraphTextureHandle volumetricFogLightScatteringTexture = renderGraph.CreateTexture(volumetricFogCommonTextureDesc, "VolumetricFogLightScatteringTexture");
 
         renderGraph.AddPass(
             std::format("VolumetricFogLightScattering (Compute, {}x{}x{})", volumetricFogTileCountX, volumetricFogTileCountY, volumetricFogDepthSliceCount),
             RenderGraphPassFlags::Compute,
             [&](RenderGraphBuilder& builder)
             {
-                volumetricFogParticipatingMediaPropertyTextureA = builder.ReadTexture(volumetricFogParticipatingMediaPropertyTextureA, RenderBackendResourceState::ShaderResource);
-                volumetricFogParticipatingMediaPropertyTextureB = builder.ReadTexture(volumetricFogParticipatingMediaPropertyTextureB, RenderBackendResourceState::ShaderResource);
-                //volumetricFogScatteringAndExtinctionTexture = builder.ReadTexture(volumetricFogScatteringAndExtinctionTexture, RenderBackendResourceState::ShaderResource);
-                volumetricFogScatteringAndExtinctionTexture = builder.WriteTexture(volumetricFogScatteringAndExtinctionTexture, RenderBackendResourceState::UnorderedAccess);
+                RenderGraphTextureHandle shadowMapTexture = builder.ReadTexture(sceneTextures.shadowMapTexture, RenderBackendResourceState::ShaderResource);
+                volumetricFogParticipatingMediaPropertiesDataATexture = builder.ReadTexture(volumetricFogParticipatingMediaPropertiesDataATexture, RenderBackendResourceState::ShaderResource);
+                volumetricFogParticipatingMediaPropertiesDataBTexture = builder.ReadTexture(volumetricFogParticipatingMediaPropertiesDataBTexture, RenderBackendResourceState::ShaderResource);
+                previousVolumetricFogLightScatteringTexture = builder.ReadTexture(previousVolumetricFogLightScatteringTexture, RenderBackendResourceState::ShaderResource);
+                volumetricFogLightScatteringTexture = builder.WriteTexture(volumetricFogLightScatteringTexture, RenderBackendResourceState::UnorderedAccess);
 
                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
                 {
@@ -195,10 +207,13 @@ namespace Horizon
                     RenderBackendShaderConstants shaderConstants = {};
                     shaderConstants.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
                     shaderConstants.BindBufferSRV(1, registry.GetBufferSRVBindlessResourceDescriptorIndex(volumetricFogShaderParameterBuffer));
-                    shaderConstants.BindTextureSRV(2, registry.GetTextureSRVBindlessResourceDescriptorIndex(volumetricFogParticipatingMediaPropertyTextureA));
-                    shaderConstants.BindTextureSRV(3, registry.GetTextureSRVBindlessResourceDescriptorIndex(volumetricFogParticipatingMediaPropertyTextureA));
-                    shaderConstants.BindTextureSRV(4, registry.GetTextureSRVBindlessResourceDescriptorIndex(volumetricFogParticipatingMediaPropertyTextureB));
-                    shaderConstants.BindTextureUAV(5, registry.GetTextureUAVBindlessResourceDescriptorIndex(volumetricFogScatteringAndExtinctionTexture, 0));
+                    shaderConstants.BindBufferSRV(2, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(view.scene->distantLightDataBuffer));
+                    shaderConstants.BindBufferSRV(3, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(sceneTextures.cascadedShadowMapDataBuffer));
+                    shaderConstants.BindTextureSRV(4, registry.GetTextureSRVBindlessResourceDescriptorIndex(shadowMapTexture));
+                    shaderConstants.BindTextureSRV(5, registry.GetTextureSRVBindlessResourceDescriptorIndex(previousVolumetricFogLightScatteringTexture));
+                    shaderConstants.BindTextureSRV(6, registry.GetTextureSRVBindlessResourceDescriptorIndex(volumetricFogParticipatingMediaPropertiesDataATexture));
+                    shaderConstants.BindTextureSRV(7, registry.GetTextureSRVBindlessResourceDescriptorIndex(volumetricFogParticipatingMediaPropertiesDataBTexture));
+                    shaderConstants.BindTextureUAV(8, registry.GetTextureUAVBindlessResourceDescriptorIndex(volumetricFogLightScatteringTexture, 0));
 
                     RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::VolumetricFogLightScattering);
 
@@ -211,15 +226,15 @@ namespace Horizon
                 };
             });
 
-        RenderGraphTextureHandle volumetricFogIntegratedLightScatteringTexture = renderGraph.CreateTexture(volumetricFogCommonTextureDesc, "VolumetricFogIntegratedLightScatteringTexture");
+        RenderGraphTextureHandle volumetricFogFinalIntegrationTexture = renderGraph.CreateTexture(volumetricFogCommonTextureDesc, "VolumetricFogFinalIntegrationTexture");
 
         renderGraph.AddPass(
             std::format("VolumetricFogFinalIntegration (Compute, {}x{}x1)", volumetricFogTileCountX, volumetricFogTileCountY),
             RenderGraphPassFlags::Compute,
             [&](RenderGraphBuilder& builder)
             {
-                volumetricFogScatteringAndExtinctionTexture = builder.ReadTexture(volumetricFogScatteringAndExtinctionTexture, RenderBackendResourceState::ShaderResource);
-                volumetricFogIntegratedLightScatteringTexture = builder.WriteTexture(volumetricFogIntegratedLightScatteringTexture, RenderBackendResourceState::UnorderedAccess);
+                volumetricFogLightScatteringTexture = builder.ReadTexture(volumetricFogLightScatteringTexture, RenderBackendResourceState::ShaderResource);
+                volumetricFogFinalIntegrationTexture = builder.WriteTexture(volumetricFogFinalIntegrationTexture, RenderBackendResourceState::UnorderedAccess);
 
                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
                 {
@@ -230,8 +245,8 @@ namespace Horizon
                     RenderBackendShaderConstants shaderConstants = {};
                     shaderConstants.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
                     shaderConstants.BindBufferSRV(1, registry.GetBufferSRVBindlessResourceDescriptorIndex(volumetricFogShaderParameterBuffer));
-                    shaderConstants.BindTextureSRV(2, registry.GetTextureSRVBindlessResourceDescriptorIndex(volumetricFogScatteringAndExtinctionTexture));
-                    shaderConstants.BindTextureUAV(3, registry.GetTextureUAVBindlessResourceDescriptorIndex(volumetricFogIntegratedLightScatteringTexture, 0));
+                    shaderConstants.BindTextureSRV(2, registry.GetTextureSRVBindlessResourceDescriptorIndex(volumetricFogLightScatteringTexture));
+                    shaderConstants.BindTextureUAV(3, registry.GetTextureUAVBindlessResourceDescriptorIndex(volumetricFogFinalIntegrationTexture, 0));
 
                     RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::VolumetricFogFinalIntegration);
 
@@ -249,9 +264,7 @@ namespace Horizon
             RenderGraphPassFlags::Graphics,
             [&](RenderGraphBuilder& builder)
             {
-                RealTimeRendererSceneTextures& sceneTextures = renderGraph.blackboard.Get<RealTimeRendererSceneTextures>();
-
-                volumetricFogIntegratedLightScatteringTexture = builder.ReadTexture(volumetricFogIntegratedLightScatteringTexture, RenderBackendResourceState::ShaderResource);
+                volumetricFogFinalIntegrationTexture = builder.ReadTexture(volumetricFogFinalIntegrationTexture, RenderBackendResourceState::ShaderResource);
                 RenderGraphTextureHandle sceneDepthTexture = builder.ReadTexture(sceneTextures.sceneDepthTexture, RenderBackendResourceState::ShaderResource);
                 RenderGraphTextureHandle sceneColorTexture = sceneTextures.sceneColorTexture = builder.WriteTexture(sceneTextures.sceneColorTexture, RenderBackendResourceState::RenderTarget);
 
@@ -274,7 +287,7 @@ namespace Horizon
                     RenderBackendShaderConstants shaderConstants = {};
                     shaderConstants.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
                     shaderConstants.BindBufferSRV(1, registry.GetBufferSRVBindlessResourceDescriptorIndex(volumetricFogShaderParameterBuffer));
-                    shaderConstants.BindTextureSRV(2, registry.GetTextureSRVBindlessResourceDescriptorIndex(volumetricFogIntegratedLightScatteringTexture));
+                    shaderConstants.BindTextureSRV(2, registry.GetTextureSRVBindlessResourceDescriptorIndex(volumetricFogFinalIntegrationTexture));
                     shaderConstants.BindTextureSRV(3, registry.GetTextureSRVBindlessResourceDescriptorIndex(sceneDepthTexture));
 
                     RenderBackendShaderHandle vertexShader = shaderLibrary->GetShader(ShaderID::FullScreenQuadVS);

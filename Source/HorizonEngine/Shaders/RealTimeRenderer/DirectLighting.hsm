@@ -2,10 +2,10 @@
 #include "../BRDFCommon.hsh"
 #include "../PrincipledBSDF.hsh"
 #include "RealTimeRendererCommon.hsh"
+#include "GPUScene.hsh"
 //#include "LightingCommon.hsh"
 #include "ShadowMapCommon.hsh"
 #include "SkyAtmosphereCommon.hsh"
-#include "GPUScene.hsh"
 #include "ManyLightRenderingCommon.hsh"
 
 SHADER_CONSTANTS_STRUCT_BEGIN();

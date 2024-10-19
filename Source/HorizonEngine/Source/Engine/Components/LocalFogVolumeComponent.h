@@ -24,6 +24,8 @@ namespace Horizon
 
         void UpdateRenderObject(const Matrix4x4f& transform);
 
+        Vector3 scattering;
+        Vector3 absorption;
         Vector3 emission;
 
     private:
