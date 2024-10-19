@@ -161,7 +161,7 @@ float4 ComputeClipSpacePosition(float2 uv, float depth)
 
 float ConvertViewSpaceDepthToNDCSpaceDepth(float viewSpaceDepth, float2 transform)
 {
-    return -(transform.x  + transform.y / viewSpaceDepth);
+    return -(transform.x + transform.y / viewSpaceDepth);
 }
 
 float3 ReconstructWorldSpacePositionFromDepth(float2 uv, float depth, float4x4 clipToWorldMatrix)

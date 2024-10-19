@@ -104,5 +104,5 @@ void VolumetricFogLightScatteringCS(uint3 groupID : SV_GroupID, uint3 groupThrea
 
     float3 sourceTerm = frameShaderParameters.preExposure * (scattering * radiance + emission);
 
-    lightScatteringTexture[voxelCoordinate] = float4(sourceTerm, 1);
+    lightScatteringTexture[voxelCoordinate] = float4(sourceTerm, extinction);
 }

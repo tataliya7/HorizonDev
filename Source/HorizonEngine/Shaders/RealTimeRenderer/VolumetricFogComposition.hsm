@@ -28,7 +28,7 @@ void VolumetricFogCompositionPS(float4 position : SV_Position, out float4 result
     // TODO
     float3 worldSpacePosition = ReconstructWorldSpacePositionFromDepth(uv, sceneDepth, frameShaderParameters.clipToWorldMatrix);
     float4 cameraSpacePosition = mul(frameShaderParameters.worldToViewMatrix, float4(worldSpacePosition, 1.0f));
-    float zSlice = cameraSpacePosition.z;
+    float zSlice = -cameraSpacePosition.z;
 
     float sliceUV = ComputeDepthSliceUV(zSlice, volumetricFogShaderParameters.sliceCountAndInverseSliceCount.x, frameShaderParameters.nearClippingPlane, 60.0f);
 

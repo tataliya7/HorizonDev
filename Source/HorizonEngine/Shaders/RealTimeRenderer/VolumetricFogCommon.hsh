@@ -23,26 +23,25 @@ DECLARE_ALIASED_ARRAY_STRUCTURED_BUFFER_SRV(LocalFogVolumeInstanceData);
 float ComputeViewSpaceDepth(float slice, float sliceCount, float near, float far)
 {
     // Logarithmical depth distribution
-    float ZSlice = near * pow(far / near, slice / sliceCount);
+    //float ZSlice = near * pow(far / near, slice / sliceCount);
+    float ZSlice = near + slice / sliceCount * 50.0f;
     return ZSlice;
 }
 
 float ComputeDepthSliceUV(float ZSlice, float sliceCount, float near, float far)
 {
-    float sliceUV = log2(ZSlice / near) / log2(far / near);
-    return sliceUV;
+    //float sliceUV = log2(ZSlice / near) / log2(far / near);
+    float sliceUV = (ZSlice - near) / 50.0f * sliceCount;
+    return saturate(sliceUV);
 }
 
 float3 ComputeVoxelWorldPosition(PerFrameShaderParameters frameShaderParameters, VolumetricFogShaderParameters volumetricFogShaderParameters, uint3 voxelCoordinate, float3 offset)
 {
     float viewDepth = ComputeViewSpaceDepth(voxelCoordinate.z + offset.z, volumetricFogShaderParameters.sliceCountAndInverseSliceCount.x, frameShaderParameters.nearClippingPlane, 60.0f);
-
-    float4 centerPosition = float4(0.0f, viewDepth, 0.0f, 1.0f);
-    centerPosition = mul(frameShaderParameters.viewToClipMatrix, centerPosition);
-    centerPosition /= centerPosition.w;
+    float ndcDepth = ConvertViewSpaceDepthToNDCSpaceDepth(-viewDepth, frameShaderParameters.viewSpaceDepthToNDCSpaceDepthTransform);
 
     float2 uv = (voxelCoordinate.xy + offset.xy) * volumetricFogShaderParameters.tileCountAndInverseTileCount.zw;
-    float4 clipPosition = float4(UVSpaceToClipSpace(uv), centerPosition.z, 1.0f);
+    float4 clipPosition = float4(UVSpaceToClipSpace(uv), ndcDepth, 1.0f);
     float4 worldPosition = mul(frameShaderParameters.nonJitteredClipToWorldMatrix, clipPosition);
     worldPosition /= worldPosition.w;
 

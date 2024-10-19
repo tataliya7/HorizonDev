@@ -45,7 +45,7 @@ void VolumetricFogFinalIntegrationCS(uint3 groupID : SV_GroupID, uint3 groupThre
 
         float transmittance = exp(-rho_t * d); // Beer's law
 
-        #if 1 // Wrong
+        #if 0 // Wrong
             // Integrating scattering and then transmittance is not energy-conservative.
             accumulatedRadiance += sourceTerm * accumulatedTransmittance;
             accumulatedTransmittance *= transmittance;
