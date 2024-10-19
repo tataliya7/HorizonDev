@@ -39,6 +39,7 @@ namespace Horizon
             , nonJitteredClipToViewMatrix(IdentityMatrix4x4)
             , nonJitteredWorldToClipMatrix(IdentityMatrix4x4)
             , nonJitteredClipToWorldMatrix(IdentityMatrix4x4)
+            , viewSpaceDepthToNDCSpaceDepthTransform(Vector2(0.0f, 0.0f))
         {
 
         }
@@ -55,6 +56,7 @@ namespace Horizon
             nonJitteredClipToViewMatrix = IdentityMatrix4x4;
             nonJitteredWorldToClipMatrix = IdentityMatrix4x4;
             nonJitteredClipToWorldMatrix = IdentityMatrix4x4;
+            viewSpaceDepthToNDCSpaceDepthTransform = Vector2(0.0f, 0.0f);
         }
 
         void Update(const Vector3& position, const Vector3& rotation, float fieldOfView, float aspectRatio, float nearClippingPlane, float farClippingPlane)
@@ -105,13 +107,7 @@ namespace Horizon
             viewToClipMatrix[2][1] += -offset.y;
         }
 
-        void Finalize()
-        {
-            viewToWorldMatrix = Math::InverseMatrix(worldToViewMatrix);
-            clipToViewMatrix = Math::InverseMatrix(viewToClipMatrix);
-            worldToClipMatrix = viewToClipMatrix * worldToViewMatrix;
-            clipToWorldMatrix = viewToWorldMatrix * clipToViewMatrix;
-        }
+        void Finalize();
 
         //
         // CameraTransformations(
@@ -204,6 +200,7 @@ namespace Horizon
         Matrix4x4 nonJitteredClipToViewMatrix;
         Matrix4x4 nonJitteredWorldToClipMatrix;
         Matrix4x4 nonJitteredClipToWorldMatrix;
+        Vector2 viewSpaceDepthToNDCSpaceDepthTransform;
     };
 
     /**

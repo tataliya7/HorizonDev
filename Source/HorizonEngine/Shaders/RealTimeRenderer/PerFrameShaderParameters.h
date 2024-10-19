@@ -57,8 +57,7 @@ struct PerFrameShaderParameters
     float preExposureCorrection;
 
     float2 motionVectorScale;
-    float padding4;
-    float padding5;
+    float2 viewSpaceDepthToNDCSpaceDepthTransform;
 
     float4x4 worldToViewMatrix;
     float4x4 viewToWorldMatrix;

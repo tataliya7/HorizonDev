@@ -323,6 +323,8 @@ namespace Horizon
             perFrameShaderParameters.previousCameraPosition = historyFrame.cameraPosition;
             perFrameShaderParameters.previousCameraJitterOffset = historyFrame.cameraJitterOffset;
 
+            perFrameShaderParameters.viewSpaceDepthToNDCSpaceDepthTransform = view.transformations.viewSpaceDepthToNDCSpaceDepthTransform;
+
             perFrameShaderParameters.worldToViewMatrix = view.transformations.worldToViewMatrix;
             perFrameShaderParameters.viewToWorldMatrix = view.transformations.viewToWorldMatrix;
             perFrameShaderParameters.viewToClipMatrix = view.transformations.viewToClipMatrix;
