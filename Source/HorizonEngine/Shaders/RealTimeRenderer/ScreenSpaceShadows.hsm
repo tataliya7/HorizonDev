@@ -41,8 +41,7 @@ void ScreenSpaceShadowsForDistantLightCS(uint3 dispatchThreadID : SV_DispatchThr
 
     float4 shadowMapTextureCoord = mul(cascadedShadowMapShaderParameters.worldToClipMatrix[cascadeIndex], float4(worldSpacePosition, 1.0f));
     shadowMapTextureCoord /= shadowMapTextureCoord.w;
-    shadowMapTextureCoord.x = (1.0 + shadowMapTextureCoord.x) * 0.5;
-    shadowMapTextureCoord.y = (1.0 - shadowMapTextureCoord.y) * 0.5;
+    shadowMapTextureCoord.xy = ClipSpaceToUVSpace(shadowMapTextureCoord.xy);
 
     float visibility = 1.0;
     if (shadowMapTextureCoord.x > 0.0 && shadowMapTextureCoord.x < 1.0 &&
@@ -52,7 +51,7 @@ void ScreenSpaceShadowsForDistantLightCS(uint3 dispatchThreadID : SV_DispatchThr
         uint randSeed = RandInit(pixelCoord.x + pixelCoord.y * width, frameShaderParameters.frameIndex);
         float random = Rand(randSeed);
 
-        float rotationAngle = random * 3.1415926;
+        float rotationAngle = random * 3.1415926f;
         float2 rotation = float2(cos(rotationAngle), sin(rotationAngle));
 
 #if 0
