@@ -2,7 +2,7 @@
 
 uint GetLightGridCellIndex(uint3 coordinate, uint3 gridSize)
 {
-	return (coordinate.z * gridSize.y + coordinate.y) * gridSize.x + coordinate.x;
+    return (coordinate.z * gridSize.y + coordinate.y) * gridSize.x + coordinate.x;
 }
 
 struct LightGridCellData
@@ -15,11 +15,11 @@ LightGridCellData GetLightGridCellData(StructuredBuffer<uint2> lightGridCellData
 {
     uint2 rawData = lightGridCellDataBuffer[cellIndex];
 
-	LightGridCellData result = (LightGridCellData)0;
+    LightGridCellData result = (LightGridCellData)0;
     result.lightCount = rawData.x;
     result.startOffset = rawData.y;
 
-	return result;
+    return result;
 }
 
 struct LocalLightData
@@ -39,6 +39,6 @@ DECLARE_ALIASED_ARRAY_STRUCTURED_BUFFER_SRV(LocalLightData);
 
 LocalLightData GetLocalLightData(StructuredBuffer<LocalLightData> localLightDataBuffer, uint lightIndex)
 {
-	LocalLightData result = localLightDataBuffer[lightIndex];
-	return result;
+    LocalLightData result = localLightDataBuffer[lightIndex];
+    return result;
 }

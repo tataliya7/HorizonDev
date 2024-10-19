@@ -8,12 +8,12 @@
 // Sample IES Profile
 float ComputeNormalizedIESProfileMultiplier(int bindlessResourceIndex, float3 wi, float3x3 worldToLight)
 {
-	float multiplier = 1.0f;
-	if (bindlessResourceIndex >= 0)
-	{
+    float multiplier = 1.0f;
+    if (bindlessResourceIndex >= 0)
+    {
         Texture2D iesTexture = GetBindlessResourceTexture2D(bindlessResourceIndex);
 
-		// Transform the negative direction of the incoming light from world space to light space
+        // Transform the negative direction of the incoming light from world space to light space
         float3 iesTextureSampleDirection = mul(worldToLight, wi);
 
         // Cartesian to spherical: https://en.wikipedia.org/wiki/Spherical_coordinate_system
@@ -24,7 +24,7 @@ float ComputeNormalizedIESProfileMultiplier(int bindlessResourceIndex, float3 wi
         float3 iesTextureCoord = float3(coordX, coordY);
 
         // TODO: use texture array?
-		multiplier = iesTexture.SampleLevel(GlobalSamplerLinearClamp, iesTextureCoord, 0).r;
-	}
-	return multiplier;
+        multiplier = iesTexture.SampleLevel(GlobalSamplerLinearClamp, iesTextureCoord, 0).r;
+    }
+    return multiplier;
 }

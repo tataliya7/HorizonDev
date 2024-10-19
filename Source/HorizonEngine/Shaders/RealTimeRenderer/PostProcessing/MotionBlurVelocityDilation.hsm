@@ -50,7 +50,7 @@ void MotionBlurVelocityDilationScatterVS(
     uint2 pixelCoord = uint2(quadIndex % width, quadIndex / width);
     float2 pixelPosition = float2(pixelCoord) + 0.5f;
 
-	float4 velocityRange = velocityRangeTexture[pixelCoord];
+    float4 velocityRange = velocityRangeTexture[pixelCoord];
     float2 maxVelocity = velocityRange.zw;
 
     velocity = velocityRange;
@@ -59,11 +59,11 @@ void MotionBlurVelocityDilationScatterVS(
 
     // Perform early-exit when the length of velocity is less than or equal to 0.5 tiles.
     bool earlyExit = maxVelocityLengthSqaure <= ((MOTION_BLUR_TILE_SIZE * 0.5f) * (MOTION_BLUR_TILE_SIZE * 0.5f));
-	if (earlyExit)
-	{
+    if (earlyExit)
+    {
         float2 vertexPosition = pixelPosition + QuadCornerOffsets[vertexIndex] * 0.5f;
         position = float4(vertexPosition.xy / float2(width, height) * 2.0f - 1.0f, 0.0f, 1.0f);
-	}
+    }
     else
     {
         float maxVelocityLength = sqrt(maxVelocityLengthSqaure);

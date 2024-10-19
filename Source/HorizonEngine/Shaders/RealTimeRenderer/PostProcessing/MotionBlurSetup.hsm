@@ -15,14 +15,14 @@ float4 CombineVelocityRange(float4 r0, float4 r1)
 {
     float2 minLengthVelocityVector = r0.x < r1.x ? r0.xy : r1.xy;
     float2 maxLengthVelocityVector = r0.z > r1.z ? r0.zw : r1.zw;
-	return float4(minLengthVelocityVector, maxLengthVelocityVector);
+    return float4(minLengthVelocityVector, maxLengthVelocityVector);
 }
 
 float2 EncodeVelocity(float2 velocity)
 {
     // Normalize the polar angle from (-π, π] to (0, 1].
-	float2 encodedVelocity = float2(velocity.x, velocity.y * INV_PI * 0.5f + 0.5f);
-	return encodedVelocity;
+    float2 encodedVelocity = float2(velocity.x, velocity.y * INV_PI * 0.5f + 0.5f);
+    return encodedVelocity;
 }
 
 groupshared float4 SharedTileData[MOTION_BLUR_TILE_SIZE * MOTION_BLUR_TILE_SIZE];
@@ -46,30 +46,30 @@ void MotionBlurSetupCS(uint3 dispatchThreadID : SV_DispatchThreadID, uint3 Group
     float2 velocityScale = frameShaderParameters.motionVectorScale;
 
     velocity *= velocityScale;
-	velocity = CartesianToPolar(velocity);
-	if (any(isnan(velocity)))
-	{
-		velocity = float2(0.0f, 0.0f);
-	}
-	velocity.x = min(velocity.x, frameShaderParameters.motionBlurMaxVelocityLengthInPixels);
+    velocity = CartesianToPolar(velocity);
+    if (any(isnan(velocity)))
+    {
+        velocity = float2(0.0f, 0.0f);
+    }
+    velocity.x = min(velocity.x, frameShaderParameters.motionBlurMaxVelocityLengthInPixels);
 
     float4 velocityRange = float4(velocity, velocity);
 
     // Write the velocity range to LDS.
-	SharedTileData[GroupIndex] = velocityRange;
-	GroupMemoryBarrierWithGroupSync();
+    SharedTileData[GroupIndex] = velocityRange;
+    GroupMemoryBarrierWithGroupSync();
 
-	if (GroupIndex < 128)
+    if (GroupIndex < 128)
     {
         SharedTileData[GroupIndex] = CombineVelocityRange(SharedTileData[GroupIndex], SharedTileData[GroupIndex + 128]);
     }
-	GroupMemoryBarrierWithGroupSync();
-	if (GroupIndex < 64)
+    GroupMemoryBarrierWithGroupSync();
+    if (GroupIndex < 64)
     {
         SharedTileData[GroupIndex] = CombineVelocityRange(SharedTileData[GroupIndex], SharedTileData[GroupIndex + 64]);
     }
     GroupMemoryBarrierWithGroupSync();
-	if (GroupIndex < 32)
+    if (GroupIndex < 32)
     {
         SharedTileData[GroupIndex] = CombineVelocityRange(SharedTileData[GroupIndex], SharedTileData[GroupIndex + 32]);
     }

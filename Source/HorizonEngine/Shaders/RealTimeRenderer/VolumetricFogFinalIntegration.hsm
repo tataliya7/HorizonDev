@@ -37,9 +37,9 @@ void VolumetricFogFinalIntegrationCS(uint3 groupID : SV_GroupID, uint3 groupThre
         float3 sourceTerm = lightScatteringTextureData.xyz;
         float extinction = lightScatteringTextureData.w;
 
-		float3 voxelCenterWorldPosition = ComputeVoxelWorldPosition(frameShaderParameters, volumetricFogShaderParameters, voxelCoordinate, float3(0.5f, 0.5f, 0.5f));
-		float d = max(length(voxelCenterWorldPosition - previousVoxelCenterWorldPosition), 0.0f);
-		previousVoxelCenterWorldPosition = voxelCenterWorldPosition;
+        float3 voxelCenterWorldPosition = ComputeVoxelWorldPosition(frameShaderParameters, volumetricFogShaderParameters, voxelCoordinate, float3(0.5f, 0.5f, 0.5f));
+        float d = max(length(voxelCenterWorldPosition - previousVoxelCenterWorldPosition), 0.0f);
+        previousVoxelCenterWorldPosition = voxelCenterWorldPosition;
 
         float rho_t = extinction;
 
@@ -51,8 +51,8 @@ void VolumetricFogFinalIntegrationCS(uint3 groupID : SV_GroupID, uint3 groupThre
             accumulatedTransmittance *= transmittance;
         #else // Energy-conserving integration
             // The analytical integration of constant scattered light over a definite range according to one extinction sample can be reduced this equation.
-			float3 t = (sourceTerm - sourceTerm * transmittance) / max(rho_t, 0.00001f);
-			accumulatedRadiance += t * accumulatedTransmittance;
+            float3 t = (sourceTerm - sourceTerm * transmittance) / max(rho_t, 0.00001f);
+            accumulatedRadiance += t * accumulatedTransmittance;
             accumulatedTransmittance *= transmittance;
         #endif
 

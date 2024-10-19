@@ -53,6 +53,6 @@ float InterleavedGradientNoise(float2 pixelPosition)
 float InterleavedGradientNoiseEx(float2 pixelPosition, uint frameIndex)
 {
     const float2 magic = float2(7.639f, 2.764f);
-	float2 position = pixelPosition + frameIndex * magic;
+    float2 position = pixelPosition + frameIndex * magic;
     return InterleavedGradientNoise(position);
 }

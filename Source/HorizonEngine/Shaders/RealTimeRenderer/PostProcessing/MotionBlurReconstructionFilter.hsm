@@ -13,18 +13,18 @@ SHADER_CONSTANTS_STRUCT_END();
 
 float2 DecodeVelocity(float2 encodedVelocity)
 {
-	float2 velocity = float2(encodedVelocity.x, (encodedVelocity.y * 2.0f - 1.0f) * PI);
-	return velocity;
+    float2 velocity = float2(encodedVelocity.x, (encodedVelocity.y * 2.0f - 1.0f) * PI);
+    return velocity;
 }
 
 float2 DepthCmp(float centerDepth, float sampleDepth, float depthScale)
 {
-	return saturate(0.5f + float2(depthScale, -depthScale) * (sampleDepth - centerDepth));
+    return saturate(0.5f + float2(depthScale, -depthScale) * (sampleDepth - centerDepth));
 }
 
 float2 SpreadCmp(float offsetLength, float2 spreadLength, float pixelToSampleUnitsScale)
 {
-	return saturate(pixelToSampleUnitsScale * spreadLength - max(offsetLength - 1.0f, 0.0f));
+    return saturate(pixelToSampleUnitsScale * spreadLength - max(offsetLength - 1.0f, 0.0f));
 }
 
 float SampleWeight(
@@ -32,9 +32,9 @@ float SampleWeight(
     float sampleDepth, float sampleSpreadLength,
     float offsetLength, float pixelToSampleUnitsScale, float depthScale)
 {
-	float2 depthCmp = DepthCmp(centerDepth, sampleDepth, depthScale);
-	float2 spreadCmp = SpreadCmp(offsetLength, float2(centerSpreadLength, sampleSpreadLength), pixelToSampleUnitsScale);
-	return dot(depthCmp, spreadCmp);
+    float2 depthCmp = DepthCmp(centerDepth, sampleDepth, depthScale);
+    float2 spreadCmp = SpreadCmp(offsetLength, float2(centerSpreadLength, sampleSpreadLength), pixelToSampleUnitsScale);
+    return dot(depthCmp, spreadCmp);
 }
 
 [shader("compute")]
@@ -53,7 +53,7 @@ void MotionBlurReconstructionFilterCS(uint3 dispatchThreadID : SV_DispatchThread
 
     float3 centerColor = colorTexture.SampleLevel(GlobalSamplerPointClamp, centerUV, 0).xyz;
 
-	float4 velocityRange = dilatedVelocityRangeTexture.SampleLevel(GlobalSamplerPointClamp, centerUV, 0);
+    float4 velocityRange = dilatedVelocityRangeTexture.SampleLevel(GlobalSamplerPointClamp, centerUV, 0);
 
     float3 velocityAndDepth = velocityAndDepthTexture.SampleLevel(GlobalSamplerPointClamp, centerUV, 0).xyz;
     float2 centerVelocity = DecodeVelocity(velocityAndDepth.xy);
@@ -69,9 +69,9 @@ void MotionBlurReconstructionFilterCS(uint3 dispatchThreadID : SV_DispatchThread
 
     const uint maxSampleCount = frameShaderParameters.motionBlurMaxSampleCount;
     const uint sampleCount = 16;
-	const uint stepCount = sampleCount / 2;
+    const uint stepCount = sampleCount / 2;
 
-	float pixelToSampleUnitsScale = stepCount * rsqrt(dot(maxVelocity, maxVelocity));
+    float pixelToSampleUnitsScale = stepCount * rsqrt(dot(maxVelocity, maxVelocity));
 
     float4 sum = 0.0f;
     float3 outputColor = 0.0f;

@@ -8,15 +8,15 @@
 
 float2 CartesianToPolar(float2 c)
 {
-	float r = length(c); // r is the distance from the origin.
-	float theta = r > 0.0f ? atan2(c.y, c.x) : 0.0f; // theta is the counterclockwise angle in radians from the positive x-axis.
-	return float2(r, theta);
+    float r = length(c); // r is the distance from the origin.
+    float theta = r > 0.0f ? atan2(c.y, c.x) : 0.0f; // theta is the counterclockwise angle in radians from the positive x-axis.
+    return float2(r, theta);
 }
 
 float2 PolarToCartesian(float2 c)
 {
-	float r = c.x; // r is the distance from the origin.
-	float theta = c.y; // theta is the counterclockwise angle in radians from the positive x-axis.
-	sincos(theta, c.y, c.x);
-	return r * c;
+    float r = c.x; // r is the distance from the origin.
+    float theta = c.y; // theta is the counterclockwise angle in radians from the positive x-axis.
+    sincos(theta, c.y, c.x);
+    return r * c;
 }

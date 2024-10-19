@@ -37,10 +37,10 @@ struct LocalFogVolumeVSOutput
 
 [shader("vertex")]
 void LocalFogVolumeVS(
-	in uint vertexID : SV_VertexID,
-	in uint instanceID : SV_InstanceID,
-	out LocalFogVolumeVSOutput output,
-	out float4 position : SV_Position)
+    in uint vertexID : SV_VertexID,
+    in uint instanceID : SV_InstanceID,
+    out LocalFogVolumeVSOutput output,
+    out float4 position : SV_Position)
 {
     StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
     PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];

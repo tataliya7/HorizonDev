@@ -14,12 +14,12 @@ float Luma4(float3 color)
 
 float HdrWeight4(float3 color)
 {
-	return rcp(Luma4(color) + 4.0f);
+    return rcp(Luma4(color) + 4.0f);
 }
 
 float HdrWeightInv4(float3 Color)
 {
-	return 4.0f * rcp(1.0f - Luma4(Color));
+    return 4.0f * rcp(1.0f - Luma4(Color));
 }
 
 [shader("compute")]
@@ -57,7 +57,7 @@ void BuildColorPyramidCS(uint3 dispatchThreadID : SV_DispatchThreadID)
     color3 *= HdrWeight4(color3);
 
     float3 result = (color0 * 0.25f) + (color1 * 0.25f) + (color2 * 0.25f) + (color3 * 0.25f);
-	result *= HdrWeightInv4(result);
+    result *= HdrWeightInv4(result);
 
     outputTexture[pixelCoord] = max(result, 0.0f);
 }

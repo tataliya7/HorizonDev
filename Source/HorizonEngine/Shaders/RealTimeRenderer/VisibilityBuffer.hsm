@@ -11,7 +11,7 @@ SHADER_CONSTANTS_STRUCT_END();
 struct VisibilityBufferVSOutput
 {
     float2 textureCoord0 : TEXCOORD0;
-	nointerpolation uint instanceID : TEXCOORD1;
+    nointerpolation uint instanceID : TEXCOORD1;
 };
 
 [shader("vertex")]

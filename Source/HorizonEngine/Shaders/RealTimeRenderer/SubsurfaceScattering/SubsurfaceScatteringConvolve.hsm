@@ -13,10 +13,10 @@ BIND_TEXTURE_2D_UAV(5, float4, OutputTexture);
 
 struct SubsurfaceScatteringSample
 {
-	float radius; // expressed in millimeters
-	float pdf;
-	float cosTheta;
-	float sinTheta;
+    float radius; // expressed in millimeters
+    float pdf;
+    float cosTheta;
+    float sinTheta;
 };
 
 [shader("compute")]

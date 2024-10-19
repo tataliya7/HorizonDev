@@ -62,19 +62,19 @@ void SubsurfaceScatteringComputeVarianceCS(uint3 GroupID : SV_GroupID, uint Grou
 #if 0
 
 #else
-	uint2 Pos = DT_ID.xy*SUBSURFACE_GROUP_SIZE / THREAD_SIZE_1D + Output_ViewportMin;
+    uint2 Pos = DT_ID.xy*SUBSURFACE_GROUP_SIZE / THREAD_SIZE_1D + Output_ViewportMin;
 
-	UNROLL for (uint i = 0; i < LOCALGROUP_RATIO; ++i)
-	{
-		UNROLL for (uint j = 0; j < LOCALGROUP_RATIO; ++j)
-		{
-			uint2 TargetGridPos = Pos + uint2(i, j);
-			float2 uv = ConvertGridPos2UV(TargetGridPos);
-			// We perform quality   thread-wise in the second pass
-			float4 SurfaceColor = Texture2DSample(SubsurfaceInput0_Texture, GlobalSamplerLinearBorder, uv);
+    UNROLL for (uint i = 0; i < LOCALGROUP_RATIO; ++i)
+    {
+        UNROLL for (uint j = 0; j < LOCALGROUP_RATIO; ++j)
+        {
+            uint2 TargetGridPos = Pos + uint2(i, j);
+            float2 uv = ConvertGridPos2UV(TargetGridPos);
+            // We perform quality   thread-wise in the second pass
+            float4 SurfaceColor = Texture2DSample(SubsurfaceInput0_Texture, GlobalSamplerLinearBorder, uv);
             HistoryUAV[TargetGridPos] = UpdateQualityVariance(SurfaceColor, uv);
             SSSColorUAV[TargetGridPos] = float4(SurfaceColor.rgb, 1.0f);
-		}
-	}
+        }
+    }
 #endif
 }

@@ -27,8 +27,8 @@ float ComputeDistantLightShadowFactorCSM(
     float shadowFactor = 1.0f;
 
     float4 viewSpacePosition = mul(frameShaderParameters.worldToViewMatrix, float4(worldSpacePosition, 1.0f));
-	const uint cascadeCount = cascadedShadowMapParameters.cascadeCount;
-	const uint cascadeIndex = CalculateCascadeIndex(viewSpacePosition.z, cascadedShadowMapParameters);
+    const uint cascadeCount = cascadedShadowMapParameters.cascadeCount;
+    const uint cascadeIndex = CalculateCascadeIndex(viewSpacePosition.z, cascadedShadowMapParameters);
 
     if (cascadeIndex < cascadeCount)
     {
@@ -47,7 +47,7 @@ float ComputeDistantLightShadowFactorCSM(
         }
     }
 
-	return shadowFactor;
+    return shadowFactor;
 }
 
 [shader("compute")]
@@ -102,9 +102,9 @@ void VolumetricFogLightScatteringCS(uint3 groupID : SV_GroupID, uint3 groupThrea
             radiance += distantLightColor * distantLightShadowFactor * HenyeyGreensteinPhaseFunction(phaseG, dot(distantLightDirection, w));
         }
     }
-	radiance /= (float)SAMPLE_COUNT_PER_VOXEL;
+    radiance /= (float)SAMPLE_COUNT_PER_VOXEL;
 
     float3 sourceTerm = frameShaderParameters.preExposure * (scattering * radiance + emission);
 
-    lightScatteringTexture[voxelCoordinate] = float4(sourceTerm, extinction);
+    lightScatteringTexture[voxelCoordinate] = float4(sourceTerm, 1);
 }

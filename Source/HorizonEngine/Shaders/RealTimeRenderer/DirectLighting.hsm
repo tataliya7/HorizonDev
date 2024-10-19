@@ -198,14 +198,14 @@ float3 ComputeLocalLightDirectLightingContribution(PerFrameShaderParameters fram
     const uint3 lightGridSize = uint3(ShaderConstants.GetLightGridSizeX(), ShaderConstants.GetLightGridSizeY(), ShaderConstants.GetLightGridSizeZ());
 
     const uint lightGridCellIndex = GetLightGridCellIndex(0, lightGridSize);
-	const LightGridCellData lightGridCellData = GetLightGridCellData(lightGridCellDataBuffer, lightGridCellIndex);
+    const LightGridCellData lightGridCellData = GetLightGridCellData(lightGridCellDataBuffer, lightGridCellIndex);
     const uint relevantLocalLightCount = lightGridCellData.lightCount;
 
-	// Early out if there are no lights in the cell.
-	if (relevantLocalLightCount == 0)
-	{
-		return 0.0f;
-	}
+    // Early out if there are no lights in the cell.
+    if (relevantLocalLightCount == 0)
+    {
+        return 0.0f;
+    }
 
     float3 result = 0.0f;
 
@@ -213,7 +213,7 @@ float3 ComputeLocalLightDirectLightingContribution(PerFrameShaderParameters fram
     for (uint lightIndex = 0; lightIndex < relevantLocalLightCount; lightIndex++)
     {
         const uint localLightID = lightGridLightListBuffer[lightGridCellData.startOffset + lightIndex];
-		const LocalLightData localLightData = GetLocalLightData(localLightDataBuffer, localLightID);
+        const LocalLightData localLightData = GetLocalLightData(localLightDataBuffer, localLightID);
 
         float3 lightColor = localLightData.data3.xyz;
         float3 lightPosition = localLightData.data0.xyz;
