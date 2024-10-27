@@ -74,8 +74,6 @@ namespace Horizon
     {
         SkyLightRenderObject* skyLight = view.scene->skyLights[0];
 
-        RealTimeRendererSceneTextures& sceneTextures = renderGraph.blackboard.Get<RealTimeRendererSceneTextures>();
-
         const uint32 environmentMapTextureSize = skyLight->cubemapSize;
         const uint32 environmentMapTextureMipLevelCount = Math::MaxMipLevelCount(environmentMapTextureSize);
 
@@ -85,6 +83,8 @@ namespace Horizon
             RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::UnorderedAccess,
             environmentMapTextureMipLevelCount);
         RenderGraphTextureHandle capturedEnvironmentMapTexture = renderGraph.CreateTexture(capturedEnvironmentMapTextureDesc, "CapturedEnvironmentMapTexture");
+
+        RealTimeRendererSceneTextures& sceneTextures = renderGraph.blackboard.Get<RealTimeRendererSceneTextures>();
 
         // test
         capturedEnvironmentMapTexture = renderGraph.ImportExternalTexture(&skyLight->environmentMapTexture, "TestEnvironmentMapTexture");

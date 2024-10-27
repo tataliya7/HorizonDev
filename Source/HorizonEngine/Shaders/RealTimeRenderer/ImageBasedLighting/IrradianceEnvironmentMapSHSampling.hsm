@@ -39,6 +39,8 @@ void IrradianceEnvironmentMapSHSamplingCS(uint3 dispatchThreadID : SV_DispatchTh
         SharedSHCoefficients = SHCoefficientsRGBAdd(shCoefficientsRGB, sampleSHCoefficientsRGB);
     }
 
+    // TODO: use wave intrinsics to optimize this.
+
     // All of the threads in the same wave are naturally at the same instruction.
     // Thus, it is safe to omit some group synchronizations when the group thread count is larger than the GPU's wave size.
 
