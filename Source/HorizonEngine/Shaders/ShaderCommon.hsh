@@ -12,6 +12,11 @@ static const float HALF_POS_INF = 65504.0;
 #define FLOAT_MIN    1.175494351e-38f
 #define FLOAT_MAX    3.402823466e+38f
 
+// The allowed wave sizes that an HLSL shader may specify are the powers of 2 between 4 and 128, inclusive.
+#ifndef MIN_WAVE_SIZE_SUPPORTED
+#define MIN_WAVE_SIZE_SUPPORTED 32
+#endif
+
 // @see https://en.wikipedia.org/wiki/Middle_gray for more infomation.
 static const float MiddleGray = 0.18f;
 

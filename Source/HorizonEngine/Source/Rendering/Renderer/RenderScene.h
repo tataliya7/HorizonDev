@@ -2,7 +2,7 @@
 
 #include "RendererCommon.h"
 #include "RenderStatistics.h"
-
+#include "ShaderLibrary.h"
 #include "RendererPrivate.h" // TODO
 
 namespace Horizon
@@ -265,6 +265,8 @@ namespace Horizon
         SkyLightRenderObject();
         virtual ~SkyLightRenderObject();
 
+        uint32 cubemapSize = 0;
+
         RenderGraphPersistentTexture environmentMapTexture;
 
     private:
@@ -399,7 +401,7 @@ namespace Horizon
     {
     public:
 
-        RenderScene(RenderBackend* renderBackend);
+        RenderScene(RenderBackend* renderBackend, ShaderLibrary* shaderLibrary);
 
         virtual ~RenderScene();
 
@@ -475,6 +477,8 @@ namespace Horizon
 
         RenderBackend* renderBackend;
 
+        ShaderLibrary* shaderLibrary;
+
         std::vector<MeshRenderObject*> meshes;
 
         std::vector<LightRenderObject*> lights;
@@ -543,11 +547,12 @@ namespace Horizon
         RenderBackendBufferHandle localLightShadowMapBuffer;
         RenderBackendBufferHandle localLightShadowMapUploadBuffer;
 
-        // Environment
-        // RenderBackendTextureHandle environmentMap;
-        // RenderBackendTextureHandle irradianceEnvironmentMap;
-        // RenderBackendBufferHandle irradianceEnvironmentMapSH;
-        // RenderBackendTextureHandle filteredEnvironmentMap;
+        // Environment maps
+        RenderBackendTextureHandle environmentMapTexture;
+        RenderBackendTextureHandle convolvedEnvironmentMapTexture;
+        RenderBackendTextureHandle irradianceEnvironmentMapTexture;
+        RenderBackendBufferHandle irradianceEnvironmentMapBuffer;
+        RenderBackendBufferHandle irradianceEnvironmentMapBufferFast;
 
         // Debug draw
         // std::vector<Vector3> debugDrawLinesVertices;

@@ -7,8 +7,8 @@
 #define DOF_SHADER_INPUT_TEXTURE_SRV_SLOT    2
 #define DOF_SHADER_OUTPUT_TEXTURE_UAV_SLOT   3
 
-// @see: https://blog.tuxedolabs.com/2018/05/04/bokeh-depth-of-field-in-single-pass.html
-// @see: https://github.com/Erfan-Ahmadi/BokehDepthOfField/blob/master/src/29_DepthOfField/Shaders/Vulkan/singlepass/dof.frag
+// https://blog.tuxedolabs.com/2018/05/04/bokeh-depth-of-field-in-single-pass.html
+// https://github.com/Erfan-Ahmadi/BokehDepthOfField/blob/master/src/29_DepthOfField/Shaders/Vulkan/singlepass/dof.frag
 static const float GOLDEN_ANGLE = 2.39996323;
 static const float MAX_BLUR_SIZE = 20.0;
 static const float RADIUS_SCALE = 1.5; // Smaller = nicer blur, larger = faster

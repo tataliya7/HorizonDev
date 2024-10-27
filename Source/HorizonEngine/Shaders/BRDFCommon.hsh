@@ -15,7 +15,7 @@ float RadicalInverse_VdC(uint bits)
     return float(bits) * 2.3283064365386963e-10;
 }
 
-float2 Hammersley2D(uint index, uint samples)
+float2 HammersleySequence2D(uint index, uint samples)
 {
     return float2(float(index) / float(samples), RadicalInverse_VdC(index));
 }

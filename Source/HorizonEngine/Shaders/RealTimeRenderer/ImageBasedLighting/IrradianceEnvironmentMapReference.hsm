@@ -1,5 +1,5 @@
-#include "ShaderCommon.hsh"
-#include "BRDFCommon.hsh"
+#include "../../ShaderCommon.hsh"
+#include "../../BRDFCommon.hsh"
 
 SHADER_CONSTANTS_STRUCT_BEGIN();
 SHADER_CONSTANTS_TEXTURE_CUBE_DEFAULT_SRV(0, EnvironmentMapTextureSRV);
@@ -7,11 +7,11 @@ SHADER_CONSTANTS_TEXTURE_2D_ARRAY_UAV(1, float4, IrradianceEnvironmentMapTexture
 SHADER_CONSTANTS_SCALAR(2, uint, SourceMipLevel);
 SHADER_CONSTANTS_STRUCT_END();
 
-static const uint NumSamples = 1024;
+static const uint SampleCount = 1024;
 
 [shader("compute")]
 [numthreads(8, 8, 6)]
-void ComputeEnvironmentIrradianceCS(uint3 dispatchThreadID : SV_DispatchThreadID)
+void IrradianceEnvironmentMapReferenceCS(uint3 dispatchThreadID : SV_DispatchThreadID)
 {
     RWTexture2DArray<float4> irradianceEnvironmentMapTexture = ShaderConstants.GetIrradianceEnvironmentMapTextureUAV();
 
@@ -35,9 +35,9 @@ void ComputeEnvironmentIrradianceCS(uint3 dispatchThreadID : SV_DispatchThreadID
 
     // Monte carlo integration of hemispherical irradiance
     float3 irradiance = 0.0f;
-    for (uint i = 0; i < NumSamples; i++)
+    for (uint i = 0; i < SampleCount; i++)
     {
-        float2 Xi = Hammersley2D(i, NumSamples);
+        float2 Xi = HammersleySequence2D(i, SampleCount);
         float3 L = TangentToWorld(UniformSampleHemisphere(Xi), T, B, N);
         float NdotL = dot(N, L);
         if (NdotL > 0.0f)
@@ -47,7 +47,7 @@ void ComputeEnvironmentIrradianceCS(uint3 dispatchThreadID : SV_DispatchThreadID
     }
 
     // pdf = 1.0 / (2.0 * PI)
-    irradiance = irradiance * 2.0f * PI / float(NumSamples);
+    irradiance = irradiance * 2.0f * PI / float(SampleCount);
 
     irradianceEnvironmentMapTexture[pixelCoord] = float4(irradiance, 1.0f);
 }

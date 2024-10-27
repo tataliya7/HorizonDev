@@ -1,0 +1,27 @@
+#include "../../ShaderCommon.hsh"
+#include "../../SphericalHarmonics.hsh"
+
+SHADER_CONSTANTS_STRUCT_BEGIN();
+SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_SRV(0, IrradianceEnvironmentMapSHCoefficientsRGBBufferSRV);
+SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_UAV(1, IrradianceEnvironmentMapBufferUAV);
+SHADER_CONSTANTS_SCALAR(2, uint, SHCoefficientsRGBCount);
+SHADER_CONSTANTS_STRUCT_END();
+
+[shader("compute")]
+[numthreads(1, 1, 1)]
+void IrradianceEnvironmentMapSHIntegrationCS(uint3 dispatchThreadID : SV_DispatchThreadID)
+{
+    ByteAddressBuffer irradianceEnvironmentMapSHCoefficientsRGBBuffer = ShaderConstants.GetIrradianceEnvironmentMapSHCoefficientsRGBBufferSRV();
+    RWByteAddressBuffer irradianceEnvironmentMapBuffer = ShaderConstants.GetIrradianceEnvironmentMapBufferUAV();
+    uint shCoefficientsRGBCount = ShaderConstants.GetSHCoefficientsRGBCount();
+
+    SH3CoefficientsRGB result = (SH3CoefficientsRGB)0;
+
+    for (uint i = 0; i < shCoefficientsRGBCount; i++)
+    {
+        SH3CoefficientsRGB shCoefficientsRGB = irradianceEnvironmentMapSHCoefficientsRGBBuffer.Load<SH3CoefficientsRGB>(sizeof(SH3CoefficientsRGB) * shCoefficientsRGBCount);
+        result = SHCoefficientsRGBAdd(result, shCoefficientsRGB);
+    }
+
+    irradianceEnvironmentMapBuffer.Store<SH3CoefficientsRGB>(0, result);
+}

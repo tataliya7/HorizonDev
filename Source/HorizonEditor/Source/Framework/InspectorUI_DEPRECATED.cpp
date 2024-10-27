@@ -35,6 +35,12 @@ namespace Horizon
                     bool dirty = DrawComponentUI_LightComponent("Light Component", lightComponent);
                 }
 
+                if (editorSceneManager->GetActiveScene()->GetEntityManager()->HasComponent<SkyLightComponent>(selectedEntity))
+                {
+                    SkyLightComponent& skyLightComponent = editorSceneManager->GetActiveScene()->GetEntityManager()->GetComponent<SkyLightComponent>(selectedEntity);
+                    bool dirty = DrawComponentUI_SkyLightComponent("Sky Light Component", skyLightComponent);
+                }
+
                 if (editorSceneManager->GetActiveScene()->GetEntityManager()->HasComponent<SkyAtmosphereComponent>(selectedEntity))
                 {
                     SkyAtmosphereComponent& skyAtmosphereComponent = editorSceneManager->GetActiveScene()->GetEntityManager()->GetComponent<SkyAtmosphereComponent>(selectedEntity);
@@ -368,6 +374,36 @@ namespace Horizon
                 ImGui::PopItemWidth();
                 ImGui::NextColumn();
             }
+
+            ImGui::Columns(1);
+            ImGui::Separator();
+            ImGui::PopStyleVar();
+        }
+        return dirty;
+    }
+
+    bool DrawComponentUI_SkyLightComponent(const char* lable, SkyLightComponent& component)
+    {
+        bool dirty = false;
+        if (ImGui::CollapsingHeader(lable, ImGuiTreeNodeFlags_DefaultOpen))
+        {
+            ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(2, 2));
+            ImGui::Columns(2);
+            ImGui::Separator();
+
+            int cubemapSize = int(component.cubemapSize);
+
+            ImGui::AlignTextToFramePadding();
+            ImGui::TextUnformatted("Cubemap Size");
+            ImGui::NextColumn();
+            ImGui::PushItemWidth(-1);
+            if (ImGui::InputInt("##SkyLightCubemapSize", &cubemapSize))
+            {
+                component.cubemapSize = uint32(cubemapSize);
+                dirty = true;
+            }
+            ImGui::PopItemWidth();
+            ImGui::NextColumn();
 
             ImGui::Columns(1);
             ImGui::Separator();

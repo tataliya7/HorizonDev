@@ -21,7 +21,7 @@ namespace Horizon
         uint32 mip0Width = targetResolution.width / 2;
         uint32 mip0Height = targetResolution.height / 2;
 
-        uint32 numPasses = std::min(6u, Math::MaxNumMipLevels(mip0Width, mip0Height));
+        uint32 numPasses = std::min(6u, Math::MaxMipLevelCount(mip0Width, mip0Height));
         if (numPasses < 1)
         {
             // TODO

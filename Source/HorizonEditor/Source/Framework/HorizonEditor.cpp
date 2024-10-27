@@ -110,7 +110,7 @@ namespace Horizon
         targetTexture = renderGraphResourcePool->AllocateTexture(targetTextureDesc, "SceneViewTexture");
 
         const uint32 environmentMapTextureSize = 128;
-        const uint32 environmentMapTextureMipLevelCount = Math::MaxNumMipLevels(environmentMapTextureSize);
+        const uint32 environmentMapTextureMipLevelCount = Math::MaxMipLevelCount(environmentMapTextureSize);
         RenderBackendTextureHandle environmentMapTextureLatLong = LoadTextureFromHDRFile(renderBackend, "../../../Assets/HDRIs/HDR_029_Sky_Cloudy_Ref.hdr");
         RenderBackendTextureDesc environmentMapTextureDesc = RenderBackendTextureDesc::CreateCube(
             environmentMapTextureSize,
@@ -191,6 +191,7 @@ namespace Horizon
             EntityHandle skyDome = scene->CreateEntity("SkyDome");
             {
                 SkyLightComponent& skyLightComponent = scene->GetEntityManager()->AddComponent<SkyLightComponent>(skyDome);
+                skyLightComponent.cubemapSize = environmentMapTextureSize;
                 skyLightComponent.environmentMapTexture = RenderGraphPersistentTexture("EnvironmentMapTexture", environmentMapTextureDesc, environmentMapTexture);
                 skyLightComponent.CreateRenderObject(scene->GetRenderScene());
             }

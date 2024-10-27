@@ -4,22 +4,23 @@
 
 namespace Horizon
 {
-    uint32 GPreIntegratedBrdfLutSize = 256;
+    uint32 GEnvironmentBrdfLutTextureSize = 256;
+
     uint32 GIrradianceEnvironmentMapSize = 32;
 
-    void RenderPreIntegratedBrdfLut(RenderBackend* renderBackend, ShaderLibrary* shaderLibrary, RenderBackendCommandList& commandList, RenderBackendTextureHandle preIntegratedBrdfLut)
+    void RenderEnvironmentBrdfLut(RenderBackend* renderBackend, ShaderLibrary* shaderLibrary, RenderBackendCommandList& commandList, RenderBackendTextureHandle environmentBrdfLutTexture)
     {
-        RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::PreIntegratedBRDF);
+        RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::EnvironmentBRDFIntegration);
 
-        RenderBackendBarrier transition(preIntegratedBrdfLut, RenderBackendTextureSubresourceRange::All, RenderBackendResourceState::Undefined, RenderBackendResourceState::UnorderedAccess);
+        RenderBackendBarrier transition(environmentBrdfLutTexture, RenderBackendTextureSubresourceRange::All, RenderBackendResourceState::Undefined, RenderBackendResourceState::UnorderedAccess);
         commandList.Transitions(&transition, 1);
 
-        uint32 threadGroupCountX = CeilDiv(GPreIntegratedBrdfLutSize, 8);
-        uint32 threadGroupCountY = CeilDiv(GPreIntegratedBrdfLutSize, 8);
+        uint32 threadGroupCountX = CeilDiv(GEnvironmentBrdfLutTextureSize, 8);
+        uint32 threadGroupCountY = CeilDiv(GEnvironmentBrdfLutTextureSize, 8);
         uint32 threadGroupCountZ = 1;
 
         RenderBackendShaderConstants shaderConstants = {};
-        shaderConstants.BindTextureUAV(0, renderBackend->GetTextureUAVBindlessResourceDescriptorIndex(preIntegratedBrdfLut, 0));
+        shaderConstants.BindTextureUAV(0, renderBackend->GetTextureUAVBindlessResourceDescriptorIndex(environmentBrdfLutTexture, 0));
 
         commandList.Dispatch(
             computeShader,
@@ -28,7 +29,7 @@ namespace Horizon
             threadGroupCountY,
             threadGroupCountZ);
 
-        transition = RenderBackendBarrier(preIntegratedBrdfLut, RenderBackendTextureSubresourceRange::All, RenderBackendResourceState::UnorderedAccess, RenderBackendResourceState::ShaderResource);
+        transition = RenderBackendBarrier(environmentBrdfLutTexture, RenderBackendTextureSubresourceRange::All, RenderBackendResourceState::UnorderedAccess, RenderBackendResourceState::ShaderResource);
         commandList.Transitions(&transition, 1);
     }
 
@@ -66,9 +67,9 @@ namespace Horizon
         commandList.Transitions(&transition, 1);
     }
 
-    void ComputeEnvironmentIrradiance(RenderBackend* renderBackend, ShaderLibrary* shaderLibrary, RenderBackendCommandList& commandList, RenderBackendTextureHandle environmentMap, uint32 mipLevel, RenderBackendTextureHandle irradianceEnvironmentMap)
+    void ComputeEnvironmentIrradianceMap(RenderBackend* renderBackend, ShaderLibrary* shaderLibrary, RenderBackendCommandList& commandList, RenderBackendTextureHandle environmentMap, uint32 mipLevel, RenderBackendTextureHandle irradianceEnvironmentMap)
     {
-        RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::ComputeEnvironmentIrradiance);
+        RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::IrradianceEnvironmentMapReference);
 
         RenderBackendBarrier transition(irradianceEnvironmentMap, RenderBackendTextureSubresourceRange(0, 1, 0, 6), RenderBackendResourceState::Undefined, RenderBackendResourceState::UnorderedAccess);
         commandList.Transitions(&transition, 1);
@@ -93,16 +94,54 @@ namespace Horizon
         commandList.Transitions(&transition, 1);
     }
 
-    void ComputeEnvironmentIrradianceSH(RenderBackend* renderBackend, ShaderLibrary* shaderLibrary, RenderBackendCommandList& commandList, RenderBackendTextureHandle environmentMap, uint32 environmentMapSize, RenderBackendBufferHandle irradianceEnvironmentMapSH)
+    void ComputeEnvironmentIrradianceMapSH(RenderBackend* renderBackend, ShaderLibrary* shaderLibrary, RenderBackendCommandList& commandList, RenderBackendTextureHandle environmentMap, uint32 environmentMapSize, RenderBackendBufferHandle irradianceEnvironmentMapBuffer)
+    {
+        /*static const uint32 log2_16 = 4;
+        uint32 sourceMipLevel = uint32(std::log2(float(environmentMapSize))) - log2_16;
+
+        {
+            RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::IrradianceEnvironmentMapSHSampling);
+
+            RenderBackendShaderConstants shaderConstants = {};
+            shaderConstants.BindTextureSRV(0, renderBackend->GetTextureSRVBindlessResourceDescriptorIndex(environmentMap));
+            shaderConstants.BindBufferUAV(1, renderBackend->GetBufferUAVBindlessResourceDescriptorIndex(irradianceEnvironmentMapSHCoefficientsRGBBuffer));
+            shaderConstants.BindScalar(2, sourceMipLevel);
+
+            commandList.Dispatch(
+                computeShader,
+                shaderConstants,
+                1,
+                1,
+                1);
+        }
+
+        {
+            RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::IrradianceEnvironmentMapSHIntegration);
+
+            RenderBackendShaderConstants shaderConstants = {};
+            shaderConstants.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(irradianceEnvironmentMapSHCoefficientsRGBBuffer));
+            shaderConstants.BindBufferUAV(1, renderBackend->GetBufferUAVBindlessResourceDescriptorIndex(irradianceEnvironmentMapBuffer));
+            shaderConstants.BindScalar(2, shCoefficientsRGBCount);
+
+            commandList.Dispatch(
+                computeShader,
+                shaderConstants,
+                1,
+                1,
+                1);
+        }*/
+    }
+
+    void ComputeEnvironmentIrradianceMapSHFast(RenderBackend* renderBackend, ShaderLibrary* shaderLibrary, RenderBackendCommandList& commandList, RenderBackendTextureHandle environmentMap, uint32 environmentMapSize, RenderBackendBufferHandle irradianceEnvironmentMapBuffer)
     {
         static const uint32 log2_16 = 4;
         uint32 sourceMipLevel = uint32(std::log2(float(environmentMapSize))) - log2_16;
 
-        RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::GenerateIrradianceEnvironmentMapCS);
+        RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::IrradianceEnvironmentMapSHOnePass);
 
         RenderBackendShaderConstants shaderConstants = {};
         shaderConstants.BindTextureSRV(0, renderBackend->GetTextureSRVBindlessResourceDescriptorIndex(environmentMap));
-        shaderConstants.BindBufferUAV(1, renderBackend->GetBufferUAVBindlessResourceDescriptorIndex(irradianceEnvironmentMapSH));
+        shaderConstants.BindBufferUAV(1, renderBackend->GetBufferUAVBindlessResourceDescriptorIndex(irradianceEnvironmentMapBuffer));
         shaderConstants.BindScalar(2, sourceMipLevel);
 
         commandList.Dispatch(
@@ -113,11 +152,11 @@ namespace Horizon
             1);
     }
 
-    void FilterEnvironmentMap(RenderBackend* renderBackend, ShaderLibrary* shaderLibrary, RenderBackendCommandList& commandList, RenderBackendTextureHandle environmentMap, uint32 numMipLevels, RenderBackendTextureHandle filteredEnvironmentMap)
+    void ConvolveEnvironmentMap(RenderBackend* renderBackend, ShaderLibrary* shaderLibrary, RenderBackendCommandList& commandList, RenderBackendTextureHandle environmentMap, uint32 numMipLevels, RenderBackendTextureHandle convolvedEnvironmentMap)
     {
-        RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::FilterEnvironmentMap);
+        RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::EnvironmentMapConvolution);
 
-        RenderBackendBarrier transition(filteredEnvironmentMap, RenderBackendTextureSubresourceRange(0, RenderBackendTextureSubresourceRange::RemainingMipLevels, 0, RenderBackendTextureSubresourceRange::RemainingArrayLayers), RenderBackendResourceState::Undefined, RenderBackendResourceState::UnorderedAccess);
+        RenderBackendBarrier transition(convolvedEnvironmentMap, RenderBackendTextureSubresourceRange(0, RenderBackendTextureSubresourceRange::RemainingMipLevels, 0, RenderBackendTextureSubresourceRange::RemainingArrayLayers), RenderBackendResourceState::Undefined, RenderBackendResourceState::UnorderedAccess);
         commandList.Transitions(&transition, 1);
 
         for (uint32 mipLevel = 0; mipLevel < numMipLevels; mipLevel++)
@@ -130,7 +169,7 @@ namespace Horizon
 
             RenderBackendShaderConstants shaderConstants = {};
             shaderConstants.BindTextureSRV(0, renderBackend->GetTextureSRVBindlessResourceDescriptorIndex(environmentMap));
-            shaderConstants.BindTextureUAV(1, renderBackend->GetTextureUAVBindlessResourceDescriptorIndex(filteredEnvironmentMap, mipLevel));
+            shaderConstants.BindTextureUAV(1, renderBackend->GetTextureUAVBindlessResourceDescriptorIndex(convolvedEnvironmentMap, mipLevel));
             shaderConstants.BindScalar(2, roughness);
 
             commandList.Dispatch(
@@ -141,24 +180,34 @@ namespace Horizon
                 threadGroupCountZ);
         }
 
-        transition = RenderBackendBarrier(filteredEnvironmentMap, RenderBackendTextureSubresourceRange(0, RenderBackendTextureSubresourceRange::RemainingMipLevels, 0, RenderBackendTextureSubresourceRange::RemainingArrayLayers), RenderBackendResourceState::UnorderedAccess, RenderBackendResourceState::ShaderResource);
+        transition = RenderBackendBarrier(convolvedEnvironmentMap, RenderBackendTextureSubresourceRange(0, RenderBackendTextureSubresourceRange::RemainingMipLevels, 0, RenderBackendTextureSubresourceRange::RemainingArrayLayers), RenderBackendResourceState::UnorderedAccess, RenderBackendResourceState::ShaderResource);
         commandList.Transitions(&transition, 1);
     }
 
-    void ComputeEnvironmentCubemaps(RenderBackend* renderBackend, ShaderLibrary* shaderLibrary, RenderBackendCommandList& commandList, RenderBackendTextureHandle environmentMap, uint32 cubemapSize, RenderBackendTextureHandle irradianceEnvironmentMap, RenderBackendBufferHandle irradianceEnvironmentMapSH, RenderBackendTextureHandle filteredEnvironmentMap)
+    void PrecomputeEnvironmentMaps(
+        RenderBackend* renderBackend,
+        ShaderLibrary* shaderLibrary,
+        RenderBackendCommandList& commandList,
+        uint32 cubemapSize,
+        RenderBackendTextureHandle environmentMapTexture,
+        RenderBackendTextureHandle convolvedEnvironmentMap,
+        RenderBackendTextureHandle irradianceEnvironmentMapTexture,
+        RenderBackendBufferHandle irradianceEnvironmentMapBuffer,
+        RenderBackendBufferHandle irradianceEnvironmentMapBufferFast)
     {
-        const uint32 numMipLevels = Math::MaxNumMipLevels(cubemapSize);
+        const uint32 mipLevelCount = Math::MaxMipLevelCount(cubemapSize);
 
-        GenerateCubemapMips(renderBackend, shaderLibrary, commandList, environmentMap, numMipLevels);
+        GenerateCubemapMips(renderBackend, shaderLibrary, commandList, environmentMapTexture, mipLevelCount);
 
-        const uint32 numIrradianceEnvironmentMapMipLevels = Math::MaxNumMipLevels(GIrradianceEnvironmentMapSize);
-        const uint32 sourceMipLevel = Math::Max<uint32>(0, numMipLevels - numIrradianceEnvironmentMapMipLevels);
+        const uint32 irradianceEnvironmentMapMipLevelCount = Math::MaxMipLevelCount(GIrradianceEnvironmentMapSize);
+        const uint32 sourceMipLevel = Math::Max<uint32>(0, mipLevelCount - irradianceEnvironmentMapMipLevelCount);
 
-        ComputeEnvironmentIrradiance(renderBackend, shaderLibrary, commandList, environmentMap, sourceMipLevel, irradianceEnvironmentMap);
+        ComputeEnvironmentIrradianceMap(renderBackend, shaderLibrary, commandList, environmentMapTexture, sourceMipLevel, irradianceEnvironmentMapTexture);
 
-        ComputeEnvironmentIrradianceSH(renderBackend, shaderLibrary, commandList, environmentMap, cubemapSize, irradianceEnvironmentMapSH);
+        ComputeEnvironmentIrradianceMapSH(renderBackend, shaderLibrary, commandList, environmentMapTexture, cubemapSize, irradianceEnvironmentMapBuffer);
+        ComputeEnvironmentIrradianceMapSHFast(renderBackend, shaderLibrary, commandList, environmentMapTexture, cubemapSize, irradianceEnvironmentMapBufferFast);
 
-        FilterEnvironmentMap(renderBackend, shaderLibrary, commandList, environmentMap, numMipLevels, filteredEnvironmentMap);
+        ConvolveEnvironmentMap(renderBackend, shaderLibrary, commandList, environmentMapTexture, mipLevelCount, convolvedEnvironmentMap);
     }
 
     void ConvertLatLongToCubemap(RenderBackend* renderBackend, ShaderLibrary* shaderLibrary, RenderBackendCommandList& commandList, RenderBackendTextureHandle latLongTexture, RenderBackendTextureHandle cubemapTexture, uint32 cubemapTextureSize)
@@ -183,40 +232,4 @@ namespace Horizon
             threadGroupCountY,
             threadGroupCountZ);
     }
-
-    // void RenderSystem::UpdateSkyLight(EnvironmentLightComponent& skyLight)
-    // {
-    //     uint32 deviceMask = ~0u;
-    //     uint32 cubemapSize = skyLight.GetCubemapResolution();
-    //     RenderBackendTextureHandle equirectangular = LoadTextureFromHDRFile(renderBackend, skyLight.GetCubemap().c_str());
-    //     RenderBackendTextureDesc cubemapDesc = RenderBackendTextureDesc::CreateCube(
-    //         cubemapSize,
-    //         RenderBackendTextureFormat::RGBA16Float,
-    //         RenderBackendTextureCreateFlags::UnorderedAccess | RenderBackendTextureCreateFlags::ShaderResource,
-    //         Math::MaxNumMipLevels(cubemapSize));
-    //     skyLight.environmentMap = renderBackend->CreateTexture(deviceMask, &cubemapDesc, nullptr, "EnvironmentMap");
-    //
-    //     RenderBackendTextureDesc irradianceEnvironmentMapDesc = RenderBackendTextureDesc::CreateCube(
-    //         GIrradianceEnvironmentMapSize,
-    //         RenderBackendTextureFormat::RGBA16Float,
-    //         RenderBackendTextureCreateFlags::UnorderedAccess | RenderBackendTextureCreateFlags::ShaderResource);
-    //     skyLight.irradianceEnvironmentMap = renderBackend->CreateTexture(deviceMask, &irradianceEnvironmentMapDesc, nullptr, "IrradianceEnvironmentMap");
-    //
-    //     RenderBackendBufferDesc irradianceEnvironmentMapSHDesc = RenderBackendBufferDesc::CreateByteAddress(sizeof(float) * 27);
-    //     skyLight.irradianceEnvironmentMapSH = renderBackend->CreateBuffer(deviceMask, &irradianceEnvironmentMapSHDesc, nullptr, "IrradianceEnvironmentMapSH");
-    //
-    //     skyLight.filteredEnvironmentMap = renderBackend->CreateTexture(deviceMask, &cubemapDesc, nullptr, "FilteredEnvironmentMap");
-    //
-    //     RenderBackendCommandList* commandList = new RenderBackendCommandList(GArena);
-    //
-    //     ConvertLatLongToCubemap(shaderLibrary, *commandList, equirectangular, skyLight.environmentMap, cubemapSize);
-    //
-    //     ComputeEnvironmentCubemaps(shaderLibrary, *commandList, skyLight.environmentMap, cubemapSize, skyLight.irradianceEnvironmentMap, skyLight.irradianceEnvironmentMapSH, skyLight.filteredEnvironmentMap);
-    //
-    //     renderBackend->SubmitCommandLists(&commandList, 1, RenderBackendSwapChainHandle::Null);
-    //
-    //     delete commandList;
-    //
-    //     skyLight.SetDirty(false);
-    // }
 }

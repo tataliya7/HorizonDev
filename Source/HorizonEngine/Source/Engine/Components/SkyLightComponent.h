@@ -17,6 +17,8 @@ namespace Horizon
         void DestroyRenderObject(RenderScene* scene);
         void UpdateRenderObject();
 
+        uint32 cubemapSize = 128;
+
         RenderGraphPersistentTexture environmentMapTexture;
 
     private:

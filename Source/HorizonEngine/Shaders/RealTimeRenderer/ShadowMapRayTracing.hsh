@@ -1,0 +1,10 @@
+
+float CastShadowRay(
+    uint steps)
+{
+    // TODO: [unroll]
+    for (uint i = 0; i < steps; i++)
+    {
+        float3 sample = ;
+    }
+}

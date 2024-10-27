@@ -37,12 +37,12 @@ namespace Horizon
         RenderBackendTextureHandle whiteDummyTexture2DHandle = renderBackend->CreateTexture(&dummyTextureDesc, &whiteColor, "WhiteDummyTexture2D");
         whiteDummyTexture2D = renderGraphResourcePool->CacheTexture(whiteDummyTexture2DHandle, dummyTextureDesc, "WhiteDummyTexture2D");
 
-        RenderBackendTextureDesc preIntegratedBrdfLutDesc = RenderBackendTextureDesc::Create2D(
-            GPreIntegratedBrdfLutSize,
-            GPreIntegratedBrdfLutSize,
+        RenderBackendTextureDesc environmentBrdfLutTextureDesc = RenderBackendTextureDesc::Create2D(
+            GEnvironmentBrdfLutTextureSize,
+            GEnvironmentBrdfLutTextureSize,
             RenderBackendTextureFormat::R16G16Float,
             RenderBackendTextureCreateFlags::UnorderedAccess | RenderBackendTextureCreateFlags::ShaderResource);
-        preIntegratedBrdfLut = renderBackend->CreateTexture(&preIntegratedBrdfLutDesc, nullptr, "PreIntegratedBrdfLut");
+        environmentBrdfLutTexture = renderBackend->CreateTexture(&environmentBrdfLutTextureDesc, nullptr, "EnvironmentBrdfLut");
 
         // TODO: refactor this
         {
@@ -66,7 +66,7 @@ namespace Horizon
             globalSamplerComparisonLessLinearClamp = renderBackend->CreateSampler(&globalSamplerComparisonLessLinearClampDesc, "GlobalSamplerComparisonLessLinearClamp");
         }
 
-        RenderPreIntegratedBrdfLut(renderBackend, shaderLibrary, commandList, preIntegratedBrdfLut);
+        RenderEnvironmentBrdfLut(renderBackend, shaderLibrary, commandList, environmentBrdfLutTexture);
 
         initialized = true;
     }
@@ -76,14 +76,14 @@ namespace Horizon
         assert(initialized);
         renderBackend->FlushRenderDevices();
 
-        renderBackend->DestroyTexture(preIntegratedBrdfLut);
+        renderBackend->DestroyTexture(environmentBrdfLutTexture);
 
         initialized = false;
     }
 
-    RenderBackendTextureHandle RendererDefaultResources::GetPreIntegratedBrdfLut() const
+    RenderBackendTextureHandle RendererDefaultResources::GetEnvironmentBrdfLutTexture() const
     {
-        return preIntegratedBrdfLut;
+        return environmentBrdfLutTexture;
     }
 
     RenderGraphPersistentTexture* RendererDefaultResources::GetBlackDummyTexture2D() const

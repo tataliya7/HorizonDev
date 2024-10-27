@@ -276,8 +276,10 @@ namespace Horizon
         RenderBackendViewport viewport(0.0f, 0.0f, (float)fbWidth, (float)fbHeight);
         commandList.SetViewports(&viewport, 1);
 
-        RenderBackendRenderPassInfo renderPass = {
-            .renderTargets = { {.texture = output, .mipLevel = 0, .arrayLayer = 0, .loadOp = RenderBackendRenderPassBeginningAccessType::Clear, .storeOp = RenderBackendRenderPassEndingAccessType::Preserve } },
+        RenderBackendRenderPassInfo renderPass =
+        {
+            .renderTargets =
+                { {.texture = output, .mipLevel = 0, .arrayLayer = 0, .loadOp = RenderBackendRenderPassBeginningAccessType::Clear, .storeOp = RenderBackendRenderPassEndingAccessType::Preserve } },
         };
         commandList.BeginRenderPass(renderPass);
 

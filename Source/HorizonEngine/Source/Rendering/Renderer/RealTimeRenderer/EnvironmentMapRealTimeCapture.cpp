@@ -76,8 +76,8 @@ namespace Horizon
 
         RealTimeRendererSceneTextures& sceneTextures = renderGraph.blackboard.Get<RealTimeRendererSceneTextures>();
 
-        const uint32 environmentMapTextureSize = 128;
-        const uint32 environmentMapTextureMipLevelCount = Math::MaxNumMipLevels(environmentMapTextureSize);
+        const uint32 environmentMapTextureSize = skyLight->cubemapSize;
+        const uint32 environmentMapTextureMipLevelCount = Math::MaxMipLevelCount(environmentMapTextureSize);
 
         RenderGraphTextureDesc capturedEnvironmentMapTextureDesc = RenderGraphTextureDesc::CreateCube(
             environmentMapTextureSize,
@@ -87,7 +87,7 @@ namespace Horizon
         RenderGraphTextureHandle capturedEnvironmentMapTexture = renderGraph.CreateTexture(capturedEnvironmentMapTextureDesc, "CapturedEnvironmentMapTexture");
 
         // test
-        capturedEnvironmentMapTexture = renderGraph.ImportExternalTexture(&skyLight->environmentMapTexture, "TTT");
+        capturedEnvironmentMapTexture = renderGraph.ImportExternalTexture(&skyLight->environmentMapTexture, "TestEnvironmentMapTexture");
 
         if (IsSkyAtmosphereRenderingEnabled())
         {
@@ -187,7 +187,7 @@ namespace Horizon
 
                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
                 {
-                    static const uint32 log2_16 = 4;
+                    constexpr uint32 log2_16 = 4;
                     uint32 sourceMipLevel = uint32(std::log2(float(environmentMapTextureSize))) - log2_16;
 
                     RenderBackendShaderConstants shaderConstants = {};
@@ -195,7 +195,7 @@ namespace Horizon
                     shaderConstants.BindBufferUAV(1, registry.GetBufferUAVBindlessResourceDescriptorIndex(irradianceEnvironmentMapBuffer));
                     shaderConstants.BindScalar(2, sourceMipLevel);
 
-                    RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::GenerateIrradianceEnvironmentMapCS);
+                    RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::IrradianceEnvironmentMapSHOnePass);
 
                     commandList.Dispatch(
                         computeShader,
@@ -218,7 +218,7 @@ namespace Horizon
 
                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
                 {
-                    RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::FilterEnvironmentMap);
+                    RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::EnvironmentMapConvolution);
 
                     for (uint32 targetMipLevel = 0; targetMipLevel < environmentMapTextureMipLevelCount; targetMipLevel++)
                     {

@@ -29,7 +29,7 @@ namespace Horizon
 
         uint32 width = std::max(1u, ComputeWorkGroupCount(targetResolution.width, downsampleFactor));
         uint32 height = std::max(1u, ComputeWorkGroupCount(targetResolution.height, downsampleFactor));
-        uint32 mipLevels = Math::MaxNumMipLevels(width, height);
+        uint32 mipLevels = Math::MaxMipLevelCount(width, height);
 
         coarsestMipLevel = std::clamp(coarsestMipLevel, 0, (int)mipLevels - 1);
         displayMipLevel = std::clamp(std::min(displayMipLevel, coarsestMipLevel), 0, (int)mipLevels - 1);

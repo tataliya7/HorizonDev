@@ -9,6 +9,7 @@ namespace Horizon
         if (renderObject == nullptr)
         {
             renderObject = new SkyLightRenderObject();
+            renderObject->cubemapSize = cubemapSize;
             renderObject->environmentMapTexture = environmentMapTexture;
             scene->AddSkyLight(renderObject);
         }

@@ -19,7 +19,7 @@ namespace Horizon
 
         void Release();
 
-        RenderBackendTextureHandle GetPreIntegratedBrdfLut() const;
+        RenderBackendTextureHandle GetEnvironmentBrdfLutTexture() const;
 
         RenderGraphTextureHandle ImportBlackDummyTexture2D(RenderGraph& renderGraph) const;
 
@@ -36,7 +36,7 @@ namespace Horizon
         ShaderLibrary* shaderLibrary;
         bool initialized;
 
-        RenderBackendTextureHandle preIntegratedBrdfLut;
+        RenderBackendTextureHandle environmentBrdfLutTexture;
 
         RenderBackendSamplerHandle globalSamplerLinearWarp;
         RenderBackendSamplerHandle globalSamplerLinearClamp;

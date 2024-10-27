@@ -172,7 +172,7 @@ namespace Horizon
 
             stbi_image_free(data);
 
-            uint32 mipLeveles = autoMipmaps ? Math::MaxNumMipLevels(iw, ih) : 1;
+            uint32 mipLeveles = autoMipmaps ? Math::MaxMipLevelCount(iw, ih) : 1;
 
             RenderBackendTextureDesc desc = RenderBackendTextureDesc::CreateTexture2D(
                 iw,

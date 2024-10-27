@@ -618,7 +618,7 @@ namespace Horizon
         // Hierarchical z-buffer must be aligned quad tree
         uint32 hzbWidth = Math::Max(Math::RoundUpToPowerOfTwo(renderResolution.width) >> 1, 1u);
         uint32 hzbHeight = Math::Max(Math::RoundUpToPowerOfTwo(renderResolution.height) >> 1, 1u);
-        uint32 hzbMipLevels = Math::MaxNumMipLevels(hzbWidth, hzbHeight);
+        uint32 hzbMipLevels = Math::MaxMipLevelCount(hzbWidth, hzbHeight);
 
         RenderGraphTextureDesc hzbDesc = RenderGraphTextureDesc::Create2D(
             hzbWidth,

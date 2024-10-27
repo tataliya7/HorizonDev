@@ -1,0 +1,94 @@
+#include "../../ShaderCommon.hsh"
+#include "../../SphericalHarmonics.hsh"
+
+SHADER_CONSTANTS_STRUCT_BEGIN();
+SHADER_CONSTANTS_TEXTURE_CUBE_DEFAULT_SRV(0, EnvironmentMapTextureSRV);
+SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_UAV(1, IrradianceEnvironmentMapBufferUAV);
+SHADER_CONSTANTS_SCALAR(2, uint, SourceMipLevel);
+SHADER_CONSTANTS_SCALAR(3, uint, TotalSampleCount);
+SHADER_CONSTANTS_SCALAR(4, uint, SampleCountPerThread);
+SHADER_CONSTANTS_STRUCT_END();
+
+static const uint THREAD_GROUP_SIZE = 8;
+
+groupshared SH3CoefficientsRGB SharedSHCoefficients[THREAD_GROUP_SIZE * THREAD_GROUP_SIZE];
+
+[shader("compute")]
+[numthreads(THREAD_GROUP_SIZE, THREAD_GROUP_SIZE, 1)]
+void IrradianceEnvironmentMapSHSamplingCS(uint3 dispatchThreadID : SV_DispatchThreadID)
+{
+    TextureCube environmentMapTexture = ShaderConstants.GetEnvironmentMapTextureSRV();
+    RWByteAddressBuffer irradianceEnvironmentMapBuffer = ShaderConstants.GetIrradianceEnvironmentMapBufferUAV();
+    const uint environmentMapMipLevel = ShaderConstants.GetSourceMipLevel();
+    const uint totalSampleCount = ShaderConstants.GetTotalSampleCount();
+    const uint sampleCountPerThread = ShaderConstants.GetSampleCountPerThread();
+
+    const uint threadIndex = dispatchThreadID.x;
+
+    SharedSHCoefficients[threadIndex] = (SH3CoefficientsRGB)0;
+
+    for (uint i = 0; i < sampleCountPerThread; i++)
+    {
+        uint sampleIndex = threadIndex * sampleCountPerThread + i;
+        float2 lowDiscrepancyPoint2D = HammersleySequence2D(sampleIndex, totalSampleCount);
+        float3 sampleDirection = UniformSampleSphere((float2(dispatchThreadID.xy) + 0.5f) / float2(THREAD_GROUP_SIZE, THREAD_GROUP_SIZE));
+        float3 sampleColor = environmentMapTexture.SampleLevel(GlobalSamplerLinearClamp, sampleDirection, environmentMapMipLevel).rgb;
+        float weight = 4.0f * PI / float(SampleCount);
+
+        SH3CoefficientsRGB sampleSHCoefficientsRGB = SampleSHCoefficientsRGB(sampleColor, sampleDirection, weight);
+        SharedSHCoefficients = SHCoefficientsRGBAdd(shCoefficientsRGB, sampleSHCoefficientsRGB);
+    }
+
+    // All of the threads in the same wave are naturally at the same instruction.
+    // Thus, it is safe to omit some group synchronizations when the group thread count is larger than the GPU's wave size.
+
+#if MIN_WAVE_SIZE_SUPPORTED < 64
+    GroupMemoryBarrierWithGroupSync();
+#endif
+
+    if (threadIndex < 32)
+    {
+        SharedSHCoefficients[threadIndex] = SHCoefficientsRGBAdd(SharedSHCoefficients[threadIndex], SharedSHCoefficients[threadIndex + 32]);
+    }
+
+#if MIN_WAVE_SIZE_SUPPORTED < 32
+    GroupMemoryBarrierWithGroupSync();
+#endif
+
+    if (threadIndex < 16)
+    {
+        SharedSHCoefficients[threadIndex] = SHCoefficientsRGBAdd(SharedSHCoefficients[threadIndex], SharedSHCoefficients[threadIndex + 16]);
+    }
+
+#if MIN_WAVE_SIZE_SUPPORTED < 16
+    GroupMemoryBarrierWithGroupSync();
+#endif
+
+    if (threadIndex < 8)
+    {
+        SharedSHCoefficients[threadIndex] = SHCoefficientsRGBAdd(SharedSHCoefficients[threadIndex], SharedSHCoefficients[threadIndex + 8]);
+    }
+
+#if MIN_WAVE_SIZE_SUPPORTED < 8
+    GroupMemoryBarrierWithGroupSync();
+#endif
+
+    if (threadIndex < 4)
+    {
+        SharedSHCoefficients[threadIndex] = SHCoefficientsRGBAdd(SharedSHCoefficients[threadIndex], SharedSHCoefficients[threadIndex + 4]);
+    }
+    if (threadIndex < 2)
+    {
+        SharedSHCoefficients[threadIndex] = SHCoefficientsRGBAdd(SharedSHCoefficients[threadIndex], SharedSHCoefficients[threadIndex + 2]);
+    }
+    if (threadIndex < 1)
+    {
+        SharedSHCoefficients[threadIndex] = SHCoefficientsRGBAdd(SharedSHCoefficients[threadIndex], SharedSHCoefficients[threadIndex + 1]);
+    }
+
+    if (threadIndex == 0)
+    {
+        SH3CoefficientsRGB result = SharedSHCoefficients[threadIndex];
+        irradianceEnvironmentMapBuffer.Store<SH3CoefficientsRGB>(0, result);
+    }
+}

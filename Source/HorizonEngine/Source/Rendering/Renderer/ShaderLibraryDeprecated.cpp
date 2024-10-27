@@ -48,10 +48,6 @@ namespace Horizon
             shaderLibrary->LoadShader(ShaderID::FullScreenQuadVS, shaderDesc);
         }
         {
-            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/PreIntegratedBRDF.hsm", "PreIntegratedBRDFCS");
-            shaderLibrary->LoadShader(ShaderID::PreIntegratedBRDF, shaderDesc);
-        }
-        {
             ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/LatLongToCubemap.hsm", "LatLongToCubemapCS");
             shaderLibrary->LoadShader(ShaderID::LatLongToCubemap, shaderDesc);
         }
@@ -72,13 +68,29 @@ namespace Horizon
             shaderLibrary->LoadShader(ShaderID::DownsampleTexture2DPS, shaderDesc);
         }
         {
-            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/ComputeEnvironmentIrradiance.hsm", "ComputeEnvironmentIrradianceCS");
-            shaderLibrary->LoadShader(ShaderID::ComputeEnvironmentIrradiance, shaderDesc);
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/ImageBasedLighting/EnvironmentBRDFIntegration.hsm", "EnvironmentBRDFIntegrationCS");
+            shaderLibrary->LoadShader(ShaderID::EnvironmentBRDFIntegration, shaderDesc);
         }
         {
-            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/FilterEnvironmentMap.hsm", "FilterEnvironmentMapCS");
-            shaderLibrary->LoadShader(ShaderID::FilterEnvironmentMap, shaderDesc);
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/ImageBasedLighting/EnvironmentMapConvolution.hsm", "EnvironmentMapConvolutionCS");
+            shaderLibrary->LoadShader(ShaderID::EnvironmentMapConvolution, shaderDesc);
         }
+        {
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/ImageBasedLighting/IrradianceEnvironmentMapReference.hsm", "IrradianceEnvironmentMapReferenceCS");
+            shaderLibrary->LoadShader(ShaderID::IrradianceEnvironmentMapReference, shaderDesc);
+        }
+        {
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/ImageBasedLighting/IrradianceEnvironmentMapSHOnePass.hsm", "IrradianceEnvironmentMapSHOnePassCS");
+            shaderLibrary->LoadShader(ShaderID::IrradianceEnvironmentMapSHOnePass, shaderDesc);
+        }
+        // {
+        //     ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/ImageBasedLighting/IrradianceEnvironmentMapSHSampling.hsm", "IrradianceEnvironmentMapSHSamplingCS");
+        //     shaderLibrary->LoadShader(ShaderID::IrradianceEnvironmentMapSHSampling, shaderDesc);
+        // }
+        // {
+        //     ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/ImageBasedLighting/IrradianceEnvironmentMapSHIntegration.hsm", "IrradianceEnvironmentMapSHIntegrationCS");
+        //     shaderLibrary->LoadShader(ShaderID::IrradianceEnvironmentMapSHIntegration, shaderDesc);
+        // }
         {
             ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/GPUFFT.hsm", "SharedMemoryComplexFFTCS");
             shaderLibrary->LoadShader(ShaderID::SharedMemoryComplexFFT, shaderDesc);
@@ -98,10 +110,6 @@ namespace Horizon
         {
             ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/GPUFFT.hsm", "SharedMemoryComplexFFTConvolutionCS");
             shaderLibrary->LoadShader(ShaderID::SharedMemoryComplexFFTConvolution, shaderDesc);
-        }
-        {
-            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/IrradianceEnvironmentMap.hsm", "GenerateIrradianceEnvironmentMapCS");
-            shaderLibrary->LoadShader(ShaderID::GenerateIrradianceEnvironmentMapCS, shaderDesc);
         }
         {
             ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Vertex, "Shaders/RealTimeRenderer/VisibilityBuffer.hsm", "VisibilityBufferVS");

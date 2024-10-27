@@ -6,13 +6,40 @@ namespace Horizon
 {
     class ShaderLibrary;
 
-    extern uint32 GPreIntegratedBrdfLutSize;
+    extern uint32 GEnvironmentBrdfLutTextureSize;
 
     extern uint32 GIrradianceEnvironmentMapSize;
 
-    extern void RenderPreIntegratedBrdfLut(RenderBackend* renderBackend, ShaderLibrary* shaderLibrary, RenderBackendCommandList& commandList, RenderBackendTextureHandle preIntegratedBrdfLut);
+    extern void RenderEnvironmentBrdfLut(
+        RenderBackend* renderBackend,
+        ShaderLibrary* shaderLibrary,
+        RenderBackendCommandList& commandList,
+        RenderBackendTextureHandle environmentBrdfLutTexture);
 
     // TODO: move to other place
-    extern void ConvertLatLongToCubemap(RenderBackend* renderBackend, ShaderLibrary* shaderLibrary, RenderBackendCommandList& commandList, RenderBackendTextureHandle latLongTexture, RenderBackendTextureHandle cubemapTexture, uint32 cubemapTextureSize);
-    extern void GenerateCubemapMips(RenderBackend* renderBackend, ShaderLibrary* shaderLibrary, RenderBackendCommandList& commandList, RenderBackendTextureHandle cubemap, uint32 numMipLevels);
+    extern void ConvertLatLongToCubemap(
+        RenderBackend* renderBackend,
+        ShaderLibrary* shaderLibrary,
+        RenderBackendCommandList& commandList,
+        RenderBackendTextureHandle latLongTexture,
+        RenderBackendTextureHandle cubemapTexture,
+        uint32 cubemapTextureSize);
+
+    extern void GenerateCubemapMips(
+        RenderBackend* renderBackend,
+        ShaderLibrary* shaderLibrary,
+        RenderBackendCommandList& commandList,
+        RenderBackendTextureHandle cubemap,
+        uint32 numMipLevels);
+
+    extern void PrecomputeEnvironmentMaps(
+        RenderBackend* renderBackend,
+        ShaderLibrary* shaderLibrary,
+        RenderBackendCommandList& commandList,
+        uint32 cubemapSize,
+        RenderBackendTextureHandle environmentMapTexture,
+        RenderBackendTextureHandle convolvedEnvironmentMap,
+        RenderBackendTextureHandle irradianceEnvironmentMapTexture,
+        RenderBackendBufferHandle irradianceEnvironmentMapBuffer,
+        RenderBackendBufferHandle irradianceEnvironmentMapBufferFast);
 }

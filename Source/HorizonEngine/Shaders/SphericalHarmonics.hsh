@@ -1,44 +1,44 @@
 #pragma once
 
-struct OneBandSHCoefficients
+struct SH1Coefficients
 {
-    float coeff;
+    float c;
 };
 
-struct OneBandSHCoefficientsRGB
+struct SH1CoefficientsRGB
 {
-    OneBandSHCoefficients r;
-    OneBandSHCoefficients g;
-    OneBandSHCoefficients b;
+    SH1Coefficients r;
+    SH1Coefficients g;
+    SH1Coefficients b;
 };
 
-struct TwoBandSHCoefficients
+struct SH2Coefficients
 {
-    float4 coeff;
+    float4 c;
 };
 
-struct TwoBandSHCoefficientsRGB
+struct SH2CoefficientsRGB
 {
-    TwoBandSHCoefficients r;
-    TwoBandSHCoefficients g;
-    TwoBandSHCoefficients b;
+    SH2Coefficients r;
+    SH2Coefficients g;
+    SH2Coefficients b;
 };
 
-struct ThreeBandSHCoefficients
+struct SH3Coefficients
 {
-    float4 coeff0;
-    float4 coeff1;
-    float  coeff2;
+    float4 c0;
+    float4 c1;
+    float  c2;
 };
 
-struct ThreeBandSHCoefficientsRGB
+struct SH3CoefficientsRGB
 {
-    ThreeBandSHCoefficients r;
-    ThreeBandSHCoefficients g;
-    ThreeBandSHCoefficients b;
+    SH3Coefficients r;
+    SH3Coefficients g;
+    SH3Coefficients b;
 };
 
-ThreeBandSHCoefficientsRGB SampleSHCoefficientsRGB(float3 l, float3 n, float w)
+SH3CoefficientsRGB SampleSHCoefficientsRGB(float3 l, float3 n, float w)
 {
     float y0 =  0.282095f;
     float y1 = -0.488603f * n.y;
@@ -50,38 +50,38 @@ ThreeBandSHCoefficientsRGB SampleSHCoefficientsRGB(float3 l, float3 n, float w)
     float y7 = -1.092548f * n.x * n.z;
     float y8 =  0.546274f * (n.x * n.x - n.y * n.y);
 
-    ThreeBandSHCoefficientsRGB result;
-    result.r.coeff0.x = w * l.r * y0;
-    result.r.coeff0.y = w * l.r * y1;
-    result.r.coeff0.z = w * l.r * y2;
-    result.r.coeff0.w = w * l.r * y3;
-    result.r.coeff1.x = w * l.r * y4;
-    result.r.coeff1.y = w * l.r * y5;
-    result.r.coeff1.z = w * l.r * y6;
-    result.r.coeff1.w = w * l.r * y7;
-    result.r.coeff2   = w * l.r * y8;
-    result.g.coeff0.x = w * l.g * y0;
-    result.g.coeff0.y = w * l.g * y1;
-    result.g.coeff0.z = w * l.g * y2;
-    result.g.coeff0.w = w * l.g * y3;
-    result.g.coeff1.x = w * l.g * y4;
-    result.g.coeff1.y = w * l.g * y5;
-    result.g.coeff1.z = w * l.g * y6;
-    result.g.coeff1.w = w * l.g * y7;
-    result.g.coeff2   = w * l.g * y8;
-    result.b.coeff0.x = w * l.b * y0;
-    result.b.coeff0.y = w * l.b * y1;
-    result.b.coeff0.z = w * l.b * y2;
-    result.b.coeff0.w = w * l.b * y3;
-    result.b.coeff1.x = w * l.b * y4;
-    result.b.coeff1.y = w * l.b * y5;
-    result.b.coeff1.z = w * l.b * y6;
-    result.b.coeff1.w = w * l.b * y7;
-    result.b.coeff2   = w * l.b * y8;
+    SH3CoefficientsRGB result;
+    result.r.c0.x = w * l.r * y0;
+    result.r.c0.y = w * l.r * y1;
+    result.r.c0.z = w * l.r * y2;
+    result.r.c0.w = w * l.r * y3;
+    result.r.c1.x = w * l.r * y4;
+    result.r.c1.y = w * l.r * y5;
+    result.r.c1.z = w * l.r * y6;
+    result.r.c1.w = w * l.r * y7;
+    result.r.c2   = w * l.r * y8;
+    result.g.c0.x = w * l.g * y0;
+    result.g.c0.y = w * l.g * y1;
+    result.g.c0.z = w * l.g * y2;
+    result.g.c0.w = w * l.g * y3;
+    result.g.c1.x = w * l.g * y4;
+    result.g.c1.y = w * l.g * y5;
+    result.g.c1.z = w * l.g * y6;
+    result.g.c1.w = w * l.g * y7;
+    result.g.c2   = w * l.g * y8;
+    result.b.c0.x = w * l.b * y0;
+    result.b.c0.y = w * l.b * y1;
+    result.b.c0.z = w * l.b * y2;
+    result.b.c0.w = w * l.b * y3;
+    result.b.c1.x = w * l.b * y4;
+    result.b.c1.y = w * l.b * y5;
+    result.b.c1.z = w * l.b * y6;
+    result.b.c1.w = w * l.b * y7;
+    result.b.c2   = w * l.b * y8;
     return result;
 }
 
-float3 EvaluateSHCosineWeighted(ThreeBandSHCoefficientsRGB sh, float3 n)
+float3 EvaluateSHCosineWeighted(SH3CoefficientsRGB sh, float3 n)
 {
     float y0 =  0.282095f;
     float y1 = -0.488603f * n.y;
@@ -93,74 +93,114 @@ float3 EvaluateSHCosineWeighted(ThreeBandSHCoefficientsRGB sh, float3 n)
     float y7 = -1.092548f * n.x * n.z;
     float y8 =  0.546274f * (n.x * n.x - n.y * n.y);
 
-#if 1
-    float L0ScalingFactor =    PI;
-    float L1ScalingFactor =    2.0 * PI / 3.0;
-    float L2ScalingFactor = PI / 4.0;
-#else
-    float L0ScalingFactor =    1;
-    float L1ScalingFactor =    1;
-    float L2ScalingFactor = 1;
-#endif
+    float L0ScalingFactor = PI;
+    float L1ScalingFactor = 2.0f * PI / 3.0f;
+    float L2ScalingFactor = PI / 4.0f;
 
-    float3 result = 0;
+    float3 result;
     result.r =
-        sh.r.coeff0.x * y0 * L0ScalingFactor +
-        sh.r.coeff0.y * y1 * L1ScalingFactor +
-        sh.r.coeff0.z * y2 * L1ScalingFactor +
-        sh.r.coeff0.w * y3 * L1ScalingFactor +
-        sh.r.coeff1.x * y4 * L2ScalingFactor +
-        sh.r.coeff1.y * y5 * L2ScalingFactor +
-        sh.r.coeff1.z * y6 * L2ScalingFactor +
-        sh.r.coeff1.w * y7 * L2ScalingFactor +
-        sh.r.coeff2   * y8 * L2ScalingFactor;
+        sh.r.c0.x * y0 * L0ScalingFactor +
+        sh.r.c0.y * y1 * L1ScalingFactor +
+        sh.r.c0.z * y2 * L1ScalingFactor +
+        sh.r.c0.w * y3 * L1ScalingFactor +
+        sh.r.c1.x * y4 * L2ScalingFactor +
+        sh.r.c1.y * y5 * L2ScalingFactor +
+        sh.r.c1.z * y6 * L2ScalingFactor +
+        sh.r.c1.w * y7 * L2ScalingFactor +
+        sh.r.c2   * y8 * L2ScalingFactor;
     result.g =
-        sh.g.coeff0.x * y0 * L0ScalingFactor +
-        sh.g.coeff0.y * y1 * L1ScalingFactor +
-        sh.g.coeff0.z * y2 * L1ScalingFactor +
-        sh.g.coeff0.w * y3 * L1ScalingFactor +
-        sh.g.coeff1.x * y4 * L2ScalingFactor +
-        sh.g.coeff1.y * y5 * L2ScalingFactor +
-        sh.g.coeff1.z * y6 * L2ScalingFactor +
-        sh.g.coeff1.w * y7 * L2ScalingFactor +
-        sh.g.coeff2   * y8 * L2ScalingFactor;
+        sh.g.c0.x * y0 * L0ScalingFactor +
+        sh.g.c0.y * y1 * L1ScalingFactor +
+        sh.g.c0.z * y2 * L1ScalingFactor +
+        sh.g.c0.w * y3 * L1ScalingFactor +
+        sh.g.c1.x * y4 * L2ScalingFactor +
+        sh.g.c1.y * y5 * L2ScalingFactor +
+        sh.g.c1.z * y6 * L2ScalingFactor +
+        sh.g.c1.w * y7 * L2ScalingFactor +
+        sh.g.c2   * y8 * L2ScalingFactor;
     result.b =
-        sh.b.coeff0.x * y0 * L0ScalingFactor +
-        sh.b.coeff0.y * y1 * L1ScalingFactor +
-        sh.b.coeff0.z * y2 * L1ScalingFactor +
-        sh.b.coeff0.w * y3 * L1ScalingFactor +
-        sh.b.coeff1.x * y4 * L2ScalingFactor +
-        sh.b.coeff1.y * y5 * L2ScalingFactor +
-        sh.b.coeff1.z * y6 * L2ScalingFactor +
-        sh.b.coeff1.w * y7 * L2ScalingFactor +
-        sh.b.coeff2   * y8 * L2ScalingFactor;
+        sh.b.c0.x * y0 * L0ScalingFactor +
+        sh.b.c0.y * y1 * L1ScalingFactor +
+        sh.b.c0.z * y2 * L1ScalingFactor +
+        sh.b.c0.w * y3 * L1ScalingFactor +
+        sh.b.c1.x * y4 * L2ScalingFactor +
+        sh.b.c1.y * y5 * L2ScalingFactor +
+        sh.b.c1.z * y6 * L2ScalingFactor +
+        sh.b.c1.w * y7 * L2ScalingFactor +
+        sh.b.c2   * y8 * L2ScalingFactor;
 
     return result;
 }
 
-ThreeBandSHCoefficients SHCoefficientsAdd(ThreeBandSHCoefficients a, ThreeBandSHCoefficients b)
+SH1Coefficients SHCoefficientsAdd(SH1Coefficients a, SH1Coefficients b)
 {
-    ThreeBandSHCoefficients result;
-    result.coeff0 = a.coeff0 + b.coeff0;
-    result.coeff1 = a.coeff1 + b.coeff1;
-    result.coeff2 = a.coeff2 + b.coeff2;
+    SH1Coefficients result;
+    result.c = a.c + b.c;
     return result;
 }
 
-ThreeBandSHCoefficientsRGB SHCoefficientsAdd(ThreeBandSHCoefficientsRGB a, ThreeBandSHCoefficientsRGB b)
+SH2Coefficients SHCoefficientsAdd(SH2Coefficients a, SH2Coefficients b)
 {
-    ThreeBandSHCoefficientsRGB result;
+    SH2Coefficients result;
+    result.c = a.c + b.c;
+    return result;
+}
+
+SH3Coefficients SHCoefficientsAdd(SH3Coefficients a, SH3Coefficients b)
+{
+    SH3Coefficients result;
+    result.c0 = a.c0 + b.c0;
+    result.c1 = a.c1 + b.c1;
+    result.c2 = a.c2 + b.c2;
+    return result;
+}
+
+SH1CoefficientsRGB SHCoefficientsRGBAdd(SH1CoefficientsRGB a, SH1CoefficientsRGB b)
+{
+    SH1CoefficientsRGB result;
     result.r = SHCoefficientsAdd(a.r, b.r);
     result.g = SHCoefficientsAdd(a.g, b.g);
     result.b = SHCoefficientsAdd(a.b, b.b);
     return result;
 }
 
-ThreeBandSHCoefficients SHCoefficientsMultiply(ThreeBandSHCoefficients sh, float value)
+SH2CoefficientsRGB SHCoefficientsRGBAdd(SH2CoefficientsRGB a, SH2CoefficientsRGB b)
 {
-    ThreeBandSHCoefficients result;
-    result.coeff0 = sh.coeff0 * value;
-    result.coeff1 = sh.coeff1 * value;
-    result.coeff2 = sh.coeff2 * value;
+    SH2CoefficientsRGB result;
+    result.r = SHCoefficientsAdd(a.r, b.r);
+    result.g = SHCoefficientsAdd(a.g, b.g);
+    result.b = SHCoefficientsAdd(a.b, b.b);
+    return result;
+}
+
+SH3CoefficientsRGB SHCoefficientsRGBAdd(SH3CoefficientsRGB a, SH3CoefficientsRGB b)
+{
+    SH3CoefficientsRGB result;
+    result.r = SHCoefficientsAdd(a.r, b.r);
+    result.g = SHCoefficientsAdd(a.g, b.g);
+    result.b = SHCoefficientsAdd(a.b, b.b);
+    return result;
+}
+
+SH1Coefficients SHCoefficientsMultiply(SH1Coefficients sh, float value)
+{
+    SH1Coefficients result;
+    result.c = sh.c * value;
+    return result;
+}
+
+SH2Coefficients SHCoefficientsMultiply(SH2Coefficients sh, float value)
+{
+    SH2Coefficients result;
+    result.c = sh.c * value;
+    return result;
+}
+
+SH3Coefficients SHCoefficientsMultiply(SH3Coefficients sh, float value)
+{
+    SH3Coefficients result;
+    result.c0 = sh.c0 * value;
+    result.c1 = sh.c1 * value;
+    result.c2 = sh.c2 * value;
     return result;
 }

@@ -359,6 +359,7 @@ namespace Horizon
                     shaderConstants.BindTextureSRV(3, registry.GetTextureSRVBindlessResourceDescriptorIndex(gbuffer2));
                     shaderConstants.BindTextureSRV(4, registry.GetTextureSRVBindlessResourceDescriptorIndex(ambientOcclusionTexture));
                     shaderConstants.BindBufferSRV(5, registry.GetBufferSRVBindlessResourceDescriptorIndex(irradianceEnvironmentMapBuffer));
+                    shaderConstants.BindBufferSRV(6, renderBackend->GetTextureSRVBindlessResourceDescriptorIndex(view.scene->irradianceEnvironmentMapTexture));
 
                     RenderBackendShaderHandle vertexShader = shaderLibrary->GetShader(ShaderID::FullScreenQuadVS);
                     RenderBackendShaderHandle pixelShader = shaderLibrary->GetShader(ShaderID::IndirectLightingDiffuse);
@@ -378,7 +379,7 @@ namespace Horizon
         RenderGraph& renderGraph,
         const SceneView& view)
     {
-        RenderBackendTextureHandle preIntegratedBrdfLutTexture = defaultResources->GetPreIntegratedBrdfLut();
+        RenderBackendTextureHandle environmentBrdfLutTexture = defaultResources->GetEnvironmentBrdfLutTexture();
 
         renderGraph.AddPass(std::format("IndirectLightingSpecular (Graphics, {}x{})", renderResolution.width, renderResolution.height), RenderGraphPassFlags::Graphics,
             [&](RenderGraphBuilder& builder)
@@ -411,7 +412,7 @@ namespace Horizon
                     shaderConstants.BindTextureSRV(3, registry.GetTextureSRVBindlessResourceDescriptorIndex(gbuffer2));
                     shaderConstants.BindTextureSRV(4, registry.GetTextureSRVBindlessResourceDescriptorIndex(sceneDepthTexture));
                     shaderConstants.BindTextureSRV(5, registry.GetTextureSRVBindlessResourceDescriptorIndex(ambientOcclusionTexture));
-                    shaderConstants.BindTextureSRV(6, renderBackend->GetTextureSRVBindlessResourceDescriptorIndex(preIntegratedBrdfLutTexture));
+                    shaderConstants.BindTextureSRV(6, renderBackend->GetTextureSRVBindlessResourceDescriptorIndex(environmentBrdfLutTexture));
                     shaderConstants.BindTextureSRV(7, registry.GetTextureSRVBindlessResourceDescriptorIndex(convolvedEnvironmentMapTexture));
 
                     RenderBackendShaderHandle vertexShader = shaderLibrary->GetShader(ShaderID::FullScreenQuadVS);

@@ -2,6 +2,11 @@
 
 #include <optick.h>
 
+
+#include "ImageBasedLighting.h"
+#include "ShaderLibrary.h"
+#include "Engine/Classes/RenderSystem.h"
+
 namespace Horizon
 {
     LightRenderObject::LightRenderObject(const LightRenderObjectDescription& description)
@@ -59,8 +64,9 @@ namespace Horizon
 
     }
 
-    RenderScene::RenderScene(RenderBackend* renderBackend)
+    RenderScene::RenderScene(RenderBackend* renderBackend, ShaderLibrary* shaderLibrary)
         : renderBackend(renderBackend)
+        , shaderLibrary(shaderLibrary)
         , atmosphericLight(nullptr)
         , activeSkyAtmosphere(nullptr)
     {
@@ -335,6 +341,44 @@ namespace Horizon
             // };
             // commandList->Transitions(barrier, 1);
         }
+
+        static int first = 0;
+        SkyLightRenderObject* skyLight = skyLights[0];
+        if (first == 0)
+        {
+            first = 1;
+
+            uint32 cubemapSize = skyLight->cubemapSize;
+
+            RenderBackendTextureDesc convolvedEnvironmentMapTextureDesc = RenderBackendTextureDesc::CreateCube(
+                cubemapSize,
+                RenderBackendTextureFormat::R16G16B16A16Float,
+                RenderBackendTextureCreateFlags::UnorderedAccess | RenderBackendTextureCreateFlags::ShaderResource,
+                Math::MaxMipLevelCount(cubemapSize));
+            convolvedEnvironmentMapTexture = renderBackend->CreateTexture(&convolvedEnvironmentMapTextureDesc, nullptr, "ConvolvedEnvironmentMapTexture");
+
+            RenderBackendTextureDesc irradianceEnvironmentMapTextureDesc = RenderBackendTextureDesc::CreateCube(
+                GIrradianceEnvironmentMapSize,
+                RenderBackendTextureFormat::R16G16B16A16Float,
+                RenderBackendTextureCreateFlags::UnorderedAccess | RenderBackendTextureCreateFlags::ShaderResource);
+            irradianceEnvironmentMapTexture = renderBackend->CreateTexture(&irradianceEnvironmentMapTextureDesc, nullptr, "IrradianceEnvironmentMapTexture");
+
+            RenderBackendBufferDesc irradianceEnvironmentMapBufferDesc = RenderBackendBufferDesc::CreateByteAddress(sizeof(float) * 27);
+            irradianceEnvironmentMapBuffer = renderBackend->CreateBuffer(&irradianceEnvironmentMapBufferDesc, nullptr, "IrradianceEnvironmentMapBuffer");
+            irradianceEnvironmentMapBufferFast = renderBackend->CreateBuffer(&irradianceEnvironmentMapBufferDesc, nullptr, "IrradianceEnvironmentMapBufferFast");
+
+            PrecomputeEnvironmentMaps(
+                renderBackend,
+                shaderLibrary,
+                *commandList,
+                skyLight->cubemapSize,
+                skyLight->environmentMapTexture.GetHandle(),
+                convolvedEnvironmentMapTexture,
+                irradianceEnvironmentMapTexture,
+                irradianceEnvironmentMapBuffer,
+                irradianceEnvironmentMapBufferFast);
+        }
+
     }
 
 #if 0

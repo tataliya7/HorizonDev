@@ -12,11 +12,10 @@ SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(2, GBuffer1SRV);
 SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(3, GBuffer2SRV);
 SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(4, SceneDepthTextureSRV);
 SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(5, AmbientOcclusionTextureSRV);
-SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(6, PreIntegratedBrdfLutTextureSRV);
+SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(6, EnvironmentBrdfLutTextureSRV);
 SHADER_CONSTANTS_TEXTURE_CUBE_DEFAULT_SRV(7, ConvolvedEnvironmentMapTextureSRV);
 SHADER_CONSTANTS_STRUCT_END();
 
-// IBL
 float3 ComputeImageBasedLightingSpecular(Surface surface)
 {
     float3 color = 0;
@@ -33,12 +32,12 @@ float3 ComputeImageBasedLightingSpecular(Surface surface)
     float specular = surface.specular;
     float specularOcculusion = surface.specularOcclusion;
 
-    float dielectricSpecular = 0.08 * specular;
+    float dielectricSpecular = 0.08f * specular;
     float3 F0 = lerp(dielectricSpecular, baseColor, metallic);
     //float3 F90 = saturate(50.0 * dot(F0, 0.33));
     //float3 F = FresnelSchlick1994(F0, F90, NdotV);
 
-    Texture2D preIntegratedBrdfLutTexture = ShaderConstants.GetPreIntegratedBrdfLutTextureSRV();
+    Texture2D environmentBrdfLutTexture = ShaderConstants.GetEnvironmentBrdfLutTextureSRV();
     TextureCube convolvedEnvironmentMapTexture = ShaderConstants.GetConvolvedEnvironmentMapTextureSRV();
 
     float3 F = F_SchlickR(F0, NdotV, roughness);
@@ -51,7 +50,7 @@ float3 ComputeImageBasedLightingSpecular(Surface surface)
     float3 prefilteredColor = convolvedEnvironmentMapTexture.SampleLevel(GlobalSamplerLinearWarp, R, mipLevel).rgb;
 
     // @note: When loading the texture, use CLAMP_TO_EDGE to ensure that values are read correctly.
-    float2 brdfLutValue = preIntegratedBrdfLutTexture.SampleLevel(GlobalSamplerLinearClamp, float2(NdotV, roughness), 0).rg;
+    float2 brdfLutValue = environmentBrdfLutTexture.SampleLevel(GlobalSamplerLinearClamp, float2(NdotV, roughness), 0).rg;
     color += (F * brdfLutValue.x + brdfLutValue.y) * prefilteredColor * specularOcculusion;
 
     return color;

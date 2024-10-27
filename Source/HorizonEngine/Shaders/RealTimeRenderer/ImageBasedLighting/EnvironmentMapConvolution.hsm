@@ -1,14 +1,14 @@
-#include "ShaderCommon.hsh"
-#include "BRDFCommon.hsh"
+#include "../../ShaderCommon.hsh"
+#include "../../BRDFCommon.hsh"
 
 SHADER_CONSTANTS_STRUCT_BEGIN();
 SHADER_CONSTANTS_TEXTURE_CUBE_DEFAULT_SRV(0, EnvironmentMapTextureSRV);
-SHADER_CONSTANTS_TEXTURE_2D_ARRAY_UAV(1, float4, FilteredEnvironmentMapTextureUAV);
+SHADER_CONSTANTS_TEXTURE_2D_ARRAY_UAV(1, float4, ConvolvedEnvironmentMapTextureUAV);
 SHADER_CONSTANTS_SCALAR(2, float, Roughness);
 SHADER_CONSTANTS_STRUCT_END();
 
-// Filtering based on https://placeholderart.wordpress.com/2015/07/28/implementation-notes-runtime-environment-map-filtering-for-image-based-lighting/
-float3 FilterEnvironmentMap(TextureCube environmentMapTexture, float3 N, float roughness, uint numSamples)
+// Based on https://placeholderart.wordpress.com/2015/07/28/implementation-notes-runtime-environment-map-filtering-for-image-based-lighting/
+float3 ConvolveEnvironmentMap(TextureCube environmentMapTexture, float3 N, float roughness, uint numSamples)
 {
     float3 T; float3 B;
     CreateOrthonormalBasis(T, B, N);
@@ -20,28 +20,28 @@ float3 FilterEnvironmentMap(TextureCube environmentMapTexture, float3 N, float r
     uint cubemapSize = 32;
 
     // Convolve environment map using GGX NDF importance sampling
-    float weight = 0.0;
-    float3 radiance = 0.0;
+    float weight = 0.0f;
+    float3 radiance = 0.0f;
     for (uint i = 0; i < numSamples; i++)
     {
-        float2 Xi = Hammersley2D(i, numSamples);
+        float2 Xi = HammersleySequence2D(i, numSamples);
         float3 H = TangentToWorld(ImportanceSampleGGX(Xi, roughness), T, B, N);
-        float3 L = normalize(2.0 * dot(V, H) * H - V);
+        float3 L = normalize(2.0f * dot(V, H) * H - V);
 
         float NdotL = dot(N, L);
-        if (NdotL > 0.0)
+        if (NdotL > 0.0f)
         {
             float NdotH = max(1e-8, dot(N, H));
             float VdotH = max(1e-8, dot(V, H));
 
             // Probability Distribution Function
-            float pdf = D_GGX(NdotH, roughness) * NdotH / (4.0 * VdotH) + 0.00001;
+            float pdf = D_GGX(NdotH, roughness) * NdotH / (4.0f * VdotH) + 0.00001f;
 
             // Solid angle of current sample
-            float omegaS = 1.0 / (float(numSamples) * pdf);
-            float omegaP = 4.0 * PI / (6.0 * cubemapSize * cubemapSize);
+            float omegaS = 1.0f / (float(numSamples) * pdf);
+            float omegaP = 4.0f * PI / (6.0f * cubemapSize * cubemapSize);
 
-            float mipLevel = 0.5 * log2(omegaS / omegaP);
+            float mipLevel = 0.5f * log2(omegaS / omegaP);
 
             float3 color = environmentMapTexture.SampleLevel(GlobalSamplerLinearWarp, L, mipLevel).rgb;
 
@@ -55,12 +55,12 @@ float3 FilterEnvironmentMap(TextureCube environmentMapTexture, float3 N, float r
 
 [shader("compute")]
 [numthreads(8, 8, 6)]
-void FilterEnvironmentMapCS(uint3 dispatchThreadID : SV_DispatchThreadID)
+void EnvironmentMapConvolutionCS(uint3 dispatchThreadID : SV_DispatchThreadID)
 {
-    RWTexture2DArray<float4> filteredEnvironmentMapTexture = ShaderConstants.GetFilteredEnvironmentMapTextureUAV();
+    RWTexture2DArray<float4> convolvedEnvironmentMapTexture = ShaderConstants.GetConvolvedEnvironmentMapTextureUAV();
 
     uint width, height, faces;
-    filteredEnvironmentMapTexture.GetDimensions(width, height, faces);
+    convolvedEnvironmentMapTexture.GetDimensions(width, height, faces);
     if (dispatchThreadID.x >= width || dispatchThreadID.y >= height)
     {
         return;
@@ -75,14 +75,14 @@ void FilterEnvironmentMapCS(uint3 dispatchThreadID : SV_DispatchThreadID)
 
     if (roughness < 0.01f)
     {
-        filteredEnvironmentMapTexture[coord] = environmentMapTexture.SampleLevel(GlobalSamplerLinearWarp, N, 0);
+        convolvedEnvironmentMapTexture[coord] = environmentMapTexture.SampleLevel(GlobalSamplerLinearWarp, N, 0);
         return;
     }
 
-    const uint NumSamples = 256;
-    //const uint NumSamples = roughness < 0.1 ? 32 : 64;
+    const uint sampleCount = 256;
+    //const uint sampleCount = roughness < 0.1 ? 32 : 64;
 
-    float3 result = FilterEnvironmentMap(environmentMapTexture, N, roughness, NumSamples);
+    float3 result = ConvolveEnvironmentMap(environmentMapTexture, N, roughness, sampleCount);
 
-    filteredEnvironmentMapTexture[coord] = float4(result, 1.0f);
+    convolvedEnvironmentMapTexture[coord] = float4(result, 1.0f);
 }

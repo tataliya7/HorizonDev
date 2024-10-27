@@ -24,9 +24,11 @@ namespace Horizon
 
         //physicsScene = new PhysicsScene();
 
-        RenderBackend* renderBackend = HorizonEngine::GetInstance()->GetSubsystem<RenderSystem>()->GetRenderBackend();
+        RenderSystem* renderSystem = HorizonEngine::GetInstance()->GetSubsystem<RenderSystem>();
+        RenderBackend* renderBackend = renderSystem->GetRenderBackend();
+        ShaderLibrary* shaderLibrary = renderSystem->GetShaderLibrary();
 
-        renderScene = new RenderScene(renderBackend);
+        renderScene = new RenderScene(renderBackend, shaderLibrary);
     }
 
     Scene::~Scene()
