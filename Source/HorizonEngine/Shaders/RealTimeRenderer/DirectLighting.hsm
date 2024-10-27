@@ -5,8 +5,8 @@
 #include "GPUScene.hsh"
 //#include "LightingCommon.hsh"
 #include "ShadowMapCommon.hsh"
-#include "SkyAtmosphereCommon.hsh"
 #include "ManyLightRenderingCommon.hsh"
+#include "SkyAtmosphere/SkyAtmosphereCommon.hsh"
 
 SHADER_CONSTANTS_STRUCT_BEGIN();
 SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferSRV);

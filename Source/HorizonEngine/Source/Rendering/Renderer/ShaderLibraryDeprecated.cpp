@@ -5,27 +5,27 @@ namespace Horizon
     static void LoadSkyAtmosphereShaders_Deprecated(ShaderLibrary* shaderLibrary)
     {
         {
-            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/SkyAtmosphereTransmittanceLut.hsm", "SkyAtmosphereTransmittanceLutCS");
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/SkyAtmosphere/SkyAtmosphereTransmittanceLut.hsm", "SkyAtmosphereTransmittanceLutCS");
             shaderDesc.AddDefine("SKY_ATMOSPHERE_TRANSMITTANCE_LUT_PASS", 1);
             shaderLibrary->LoadShader(ShaderID::SkyAtmosphereTransmittanceLut, shaderDesc);
         }
         {
-            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/SkyAtmosphereMultipleScatteringLut.hsm", "SkyAtmosphereMultipleScatteringLutCS");
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/SkyAtmosphere/SkyAtmosphereMultipleScatteringLut.hsm", "SkyAtmosphereMultipleScatteringLutCS");
             shaderDesc.AddDefine("SKY_ATMOSPHERE_MULTIPLE_SCATTERING_LUT_PASS", 1);
             shaderLibrary->LoadShader(ShaderID::SkyAtmosphereMultipleScatteringLut, shaderDesc);
         }
         {
-            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/SkyAtmosphereSkyViewLut.hsm", "SkyAtmosphereSkyViewLutCS");
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/SkyAtmosphere/SkyAtmosphereSkyViewLut.hsm", "SkyAtmosphereSkyViewLutCS");
             shaderDesc.AddDefine("SKY_ATMOSPHERE_SKY_VIEW_LUT_PASS", 1);
             shaderLibrary->LoadShader(ShaderID::SkyAtmosphereSkyViewLut, shaderDesc);
         }
         {
-            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/SkyAtmosphereAerialPerspectiveVolume.hsm", "SkyAtmosphereAerialPerspectiveVolumeCS");
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/SkyAtmosphere/SkyAtmosphereAerialPerspectiveVolume.hsm", "SkyAtmosphereAerialPerspectiveVolumeCS");
             shaderDesc.AddDefine("SKY_ATMOSPHERE_AERIAL_PERSPECTIVE_VOLUME_PASS", 1);
             shaderLibrary->LoadShader(ShaderID::SkyAtmosphereAerialPerspectiveVolume, shaderDesc);
         }
         {
-            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Pixel, "Shaders/RealTimeRenderer/SkyAtmosphereRayMarching.hsm", "SkyAtmosphereRayMarchingPS");
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Pixel, "Shaders/RealTimeRenderer/SkyAtmosphere/SkyAtmosphereRayMarching.hsm", "SkyAtmosphereRayMarchingPS");
             shaderDesc.AddDefine("SKY_ATMOSPHERE_RAY_MARCHING_PASS", 1);
             shaderLibrary->LoadShader(ShaderID::SkyAtmosphereRayMarching, shaderDesc);
         }
