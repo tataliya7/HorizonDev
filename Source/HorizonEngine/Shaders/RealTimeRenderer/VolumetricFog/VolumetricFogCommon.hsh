@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../VolumitricRenderingCommon.hsh"
+#include "../VolumetricRenderingCommon.hsh"
 
 struct VolumetricFogShaderParameters
 {
