@@ -11,6 +11,59 @@ SHADER_CONSTANTS_TEXTURE_2D_ARRAY_DEFAULT_SRV(3, ShadowMapTextureSRV);
 SHADER_CONSTANTS_TEXTURE_2D_UAV(4, float4, ShadowMaskTextureUAV);
 SHADER_CONSTANTS_STRUCT_END();
 
+float ScreenSpaceShadowRayCast(
+    PerFrameShaderParameters frameShaderParameters,
+    Texture2D depthTexture,
+    float3 rayOrigin,
+    float3 rayDirection,
+    float rayLength,
+    float dither)
+{
+    float3 worldSpaceRayStart = rayOrigin;
+    float3 worldSpaceRayEnd = rayOrigin + rayDirection * rayLength;
+
+    float4 clipSpaceRayStart = mul(frameShaderParameters.worldToClipMatrix, float4(worldSpaceRayStart, 1.0f));
+    float4 clipSpaceRayEnd = mul(frameShaderParameters.worldToClipMatrix, float4(worldSpaceRayEnd, 1.0f));
+
+    float3 ndcSpaceRayStart = clipSpaceRayStart.xyz / clipSpaceRayStart.w;
+    float3 ndcSpaceRayEnd = clipSpaceRayEnd.xyz / clipSpaceRayEnd.w;
+
+    float3 rayStartUVZ = float3(ClipSpaceToUVSpace(ndcSpaceRayStart.xy), ndcSpaceRayStart.z);
+    float3 rayStartToEndUVZ = float3(ClipSpaceToUVSpace(ndcSpaceRayEnd.xy) - ClipSpaceToUVSpace(ndcSpaceRayStart.xy), ndcSpaceRayEnd.z - ndcSpaceRayStart.z);
+
+    const uint sampleCount = 4;
+    const float step = 1.0f / float(sampleCount);
+
+    float offset = (dither - 0.5f) * step;
+    float t = step + offset;
+    float shadowFactor = 1.0f;
+
+    [unroll]
+    for (uint i = 0; i < sampleCount; i++)
+    {
+        float3 sampleUVZ = rayStartUVZ + rayStartToEndUVZ * t;
+
+        if (any(sampleUVZ.xy < 0) || any(sampleUVZ.xy > 1) || (sampleUVZ.z <= 0) || (sampleUVZ.z >= 1))
+        {
+            break;
+        }
+
+        float referenceDepth = depthTexture.SampleLevel(GlobalSamplerPointClamp, sampleUVZ.xy, 0).r;
+
+        float deltaDepth = referenceDepth - sampleUVZ.z;
+
+        if (deltaDepth > 0.0f)
+        {
+            shadowFactor = 0.0f;
+            break;
+        }
+
+        t += step;
+    }
+
+    return shadowFactor;
+}
+
 [shader("compute")]
 [numthreads(8, 8, 1)]
 void ScreenSpaceShadowsForDistantLightCS(uint3 dispatchThreadID : SV_DispatchThreadID)
@@ -39,11 +92,13 @@ void ScreenSpaceShadowsForDistantLightCS(uint3 dispatchThreadID : SV_DispatchThr
     float4 cameraSpacePosition = mul(frameShaderParameters.worldToViewMatrix, float4(worldSpacePosition, 1.0f));
     uint cascadeIndex = CalculateCascadeIndex(cameraSpacePosition.z, cascadedShadowMapShaderParameters);
 
+	const float noise = InterleavedGradientNoiseEx(pixelCoord, frameShaderParameters.frameIndexMod8);
+
     float4 shadowMapTextureCoord = mul(cascadedShadowMapShaderParameters.worldToClipMatrix[cascadeIndex], float4(worldSpacePosition, 1.0f));
     shadowMapTextureCoord /= shadowMapTextureCoord.w;
     shadowMapTextureCoord.xy = ClipSpaceToUVSpace(shadowMapTextureCoord.xy);
 
-    float visibility = 1.0;
+    float shadowFactor = 1.0;
     if (shadowMapTextureCoord.x > 0.0 && shadowMapTextureCoord.x < 1.0 &&
         shadowMapTextureCoord.y > 0.0 && shadowMapTextureCoord.y < 1.0 &&
         shadowMapTextureCoord.z > 0.0 && shadowMapTextureCoord.z < 1.0)
@@ -56,9 +111,9 @@ void ScreenSpaceShadowsForDistantLightCS(uint3 dispatchThreadID : SV_DispatchThr
 
 #if 0
         float shadowMapDepth = shadowMapTexture.SampleLevel(GlobalSamplerPointClamp, float3(shadowMapTextureCoord.xy, cascadeIndex), 0).r;
-        visibility = (shadowMapDepth > shadowMapTextureCoord.z) ? 0 : 1;
+        shadowFactor = (shadowMapDepth > shadowMapTextureCoord.z) ? 0 : 1;
 #else
-        visibility = PCF(
+        shadowFactor = PCF(
             shadowMapTexture,
             shadowMapTextureCoord.xy,
             cascadeIndex,
@@ -67,7 +122,25 @@ void ScreenSpaceShadowsForDistantLightCS(uint3 dispatchThreadID : SV_DispatchThr
             1.0 / 4096,//cascadedShadowMapShaderParameters.shadowMapInvSize,
             rotation);
 #endif
+        shadowFactor = PCFSoftShadowsCorrection(shadowFactor);
     }
 
-    shadowMaskTexture[pixelCoord] = float4(visibility, 0.0, 0.0, 1.0);
+    float3 shadowRayOrigin = worldSpacePosition;
+    float3 shadowRayDirection = -normalize(frameShaderParameters.atmosphericLightDirection);
+    float shadowRayLength = 0.05;
+
+    if (shadowRayLength > 0.0f)
+    {
+        float screenSpaceShadow = ScreenSpaceShadowRayCast(
+            frameShaderParameters,
+            sceneDepthTexture,
+            shadowRayOrigin,
+            shadowRayDirection,
+            shadowRayLength,
+            noise);
+
+        shadowFactor = screenSpaceShadow * shadowFactor;
+    }
+
+    shadowMaskTexture[pixelCoord] = float4(shadowFactor, 0.0, 0.0, 1.0);
 }

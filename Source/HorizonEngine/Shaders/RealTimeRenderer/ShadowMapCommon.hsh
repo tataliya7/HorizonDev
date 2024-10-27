@@ -97,3 +97,8 @@ float PCF(Texture2DArray shadowMapTexture, float2 shadowMapPosition, uint cascad
     return sum / samples;
 #endif
 }
+
+float PCFSoftShadowsCorrection(float shadowFactor)
+{
+    return shadowFactor * shadowFactor;
+}
