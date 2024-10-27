@@ -1,6 +1,6 @@
-#include "../ShaderCommon.hsh"
-#include "RealTimeRendererCommon.hsh"
-#include "ManyLightRenderingCommon.hsh"
+#include "../../ShaderCommon.hsh"
+#include "../RealTimeRendererCommon.hsh"
+#include "LightGridCommon.hsh"
 
 SHADER_CONSTANTS_STRUCT_BEGIN();
 SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferSRV);
@@ -21,7 +21,7 @@ static uint relevantLocalLights[LIGHT_GRID_MAX_LIGHT_COUNT_PER_CELL];
 
 [shader("compute")]
 [numthreads(LOCAL_LIGHT_CULLING_THREAD_GROUP_SIZE, LOCAL_LIGHT_CULLING_THREAD_GROUP_SIZE, LOCAL_LIGHT_CULLING_THREAD_GROUP_SIZE)]
-void LocalLightCullingCS(
+void LightGridLocalLightCullingCS(
     uint3 dispatchThreadID : SV_DispatchThreadID,
     uint GroupThreadID : SV_GroupThreadID,
     uint GroupID : SV_GroupID)

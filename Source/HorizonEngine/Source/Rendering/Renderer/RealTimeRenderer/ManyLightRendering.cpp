@@ -101,7 +101,7 @@ namespace Horizon
         RenderGraphBufferHandle lightListStartOffsetBuffer = renderGraph.CreateBuffer(lightListStartOffsetBufferDesc, "LightGridLightListStartOffsetBuffer");
 
         renderGraph.AddPass(
-            std::format("LocalLightCullingClearBuffer (Compute, {} bytes)", lightListStartOffsetBufferDesc.size),
+            std::format("LightGridBufferInitialization (Compute, {} bytes)", lightListStartOffsetBufferDesc.size),
             RenderGraphPassFlags::Compute,
             [&](RenderGraphBuilder& builder)
             {
@@ -112,7 +112,7 @@ namespace Horizon
                     RenderBackendShaderConstants shaderConstants = {};
                     shaderConstants.BindTextureUAV(0, registry.GetBufferUAVBindlessResourceDescriptorIndex(lightListStartOffsetBuffer));
 
-                    RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::LocalLightCullingClearBuffer);
+                    RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::LightGridBufferInitialization);
 
                     commandList.Dispatch(
                         computeShader,
@@ -124,7 +124,7 @@ namespace Horizon
             });
 
         renderGraph.AddPass(
-            std::format("LocalLightCulling (Compute, {}x{}x{})", lightGridSizeX, lightGridSizeY, lightGridSizeZ),
+            std::format("LightGridLocalLightCulling (Compute, {}x{}x{})", lightGridSizeX, lightGridSizeY, lightGridSizeZ),
             RenderGraphPassFlags::Compute,
             [&](RenderGraphBuilder& builder)
             {
@@ -151,7 +151,7 @@ namespace Horizon
                     shaderConstants.BindScalar(7, lightGridSizeY);
                     shaderConstants.BindScalar(8, lightGridSizeZ);
 
-                    RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::LocalLightCulling);
+                    RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::LightGridLocalLightCulling);
 
                     commandList.Dispatch(
                         computeShader,

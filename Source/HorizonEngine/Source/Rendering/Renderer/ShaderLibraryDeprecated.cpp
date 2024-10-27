@@ -144,16 +144,16 @@ namespace Horizon
             shaderLibrary->LoadShader(ShaderID::GBuffer, shaderDesc);
         }
         {
-            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/LocalLightCullingClearBuffer.hsm", "LocalLightCullingClearBufferCS");
-            shaderLibrary->LoadShader(ShaderID::LocalLightCullingClearBuffer, shaderDesc);
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/LightGrid/LightGridBufferInitialization.hsm", "LightGridBufferInitializationCS");
+            shaderLibrary->LoadShader(ShaderID::LightGridBufferInitialization, shaderDesc);
         }
         {
-            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/LocalLightCulling.hsm", "LocalLightCullingCS");
-            shaderLibrary->LoadShader(ShaderID::LocalLightCulling, shaderDesc);
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/LightGrid/LightGridLocalLightCulling.hsm", "LightGridLocalLightCullingCS");
+            shaderLibrary->LoadShader(ShaderID::LightGridLocalLightCulling, shaderDesc);
         }
         {
-            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/LocalLightCullingDebug.hsm", "LocalLightCullingDebugCS");
-            shaderLibrary->LoadShader(ShaderID::LocalLightCullingDebug, shaderDesc);
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/LightGrid/LightGridDebugVisualization.hsm", "LightGridDebugVisualizationCS");
+            shaderLibrary->LoadShader(ShaderID::LightGridDebugVisualization, shaderDesc);
         }
         {
             ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Vertex, "Shaders/RealTimeRenderer/CascadedShadowMap.hsm", "CascadedShadowMapVS");
