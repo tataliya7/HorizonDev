@@ -356,7 +356,7 @@ namespace Horizon
             shaderLibrary->LoadShader(ShaderID::MotionBlurReconstructionFilterCS, shaderDesc);
         }
         {
-            //ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/TemporalSuperSampling.hsm", "TemporalSuperSamplingCS");
+            //ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/TemporalSuperSampling/TemporalSuperSampling.hsm", "TemporalSuperSamplingCS");
             //shaderLibrary->LoadShader(ShaderID::TemporalSuperSampling, shaderDesc);
         }
         {
