@@ -1,5 +1,5 @@
-#include "../ShaderCommon.hsh"
-#include "RealTimeRendererCommon.hsh"
+#include "../../ShaderCommon.hsh"
+#include "../RealTimeRendererCommon.hsh"
 #include "VolumetricFogCommon.hsh"
 
 SHADER_CONSTANTS_STRUCT_BEGIN();

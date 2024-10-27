@@ -1,8 +1,8 @@
-#include "../ShaderCommon.hsh"
-#include "RealTimeRendererCommon.hsh"
+#include "../../ShaderCommon.hsh"
+#include "../RealTimeRendererCommon.hsh"
+#include "../ShadowMapCommon.hsh"
+#include "../GPUScene.hsh"
 #include "VolumetricFogCommon.hsh"
-#include "ShadowMapCommon.hsh"
-#include "GPUScene.hsh"
 
 SHADER_CONSTANTS_STRUCT_BEGIN();
 SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferSRV);
