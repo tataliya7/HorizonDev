@@ -118,12 +118,12 @@ void SSRTileClassificationVerticalCS(uint3 dispatchThreadID : SV_DispatchThreadI
     const uint tileCoord = (dispatchThreadID.x & 0xFFFF) | ((dispatchThreadID.y & 0xFFFF) << 16);
 
     uint tileIndex = 0;
-    if (minRoughness < SSRRoughnessCheap)
+    if (minRoughness < SSR_ROUGHNESS_THRESHOLD_CHEAP_RAY)
     {
         rayAllocationBuffer.InterlockedAdd(SSR_RAY_ALLOCATION_BUFFER_OFFSET_EXPENSIVE_TILES_COUNT, 1, tileIndex);
         //expensiveTilesBuffer[uint2(tileIndex, 0)] = tileCoord;
     }
-    else if (maxRoughness > SSRRoughnessCheap && minRoughness < SSRRoughnessCutoff)
+    else if (maxRoughness > SSR_ROUGHNESS_THRESHOLD_CHEAP_RAY && minRoughness < SSR_ROUGHNESS_THRESHOLD_EARLY_EXIT)
     {
         rayAllocationBuffer.InterlockedAdd(SSR_RAY_ALLOCATION_BUFFER_OFFSET_CHEAP_TILES_COUNT, 1, tileIndex);
         //cheapTilesBuffer[uint2(tileIndex, 0)] = tileCoord;

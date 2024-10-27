@@ -36,7 +36,7 @@ void SSRSpatialFilteringCS(uint3 dispatchThreadID : SV_DispatchThreadID)
     const float linearDepth = ComputeCameraSpaceDepth(depth, frameShaderParameters.nearClippingPlane, frameShaderParameters.farClippingPlane);
     const float variance = resolveVariance[coord].r;
 
-    if (!NeedReflection(roughness, depth, SSRRoughnessCutoff))
+    if (!NeedReflection(roughness, depth, SSR_ROUGHNESS_THRESHOLD_EARLY_EXIT))
     {
         outputTexture[coord] = inputTexture[coord];
         return;
@@ -75,7 +75,7 @@ void SSRSpatialFilteringCS(uint3 dispatchThreadID : SV_DispatchThreadID)
                 float3 sampleP = ReconstructWorldSpacePositionFromDepth(sampleUV, sampleDepth, frameShaderParameters.clipToWorldMatrix);
 
                 // Don't let invalid roughness samples interfere
-                if (NeedReflection(sampleRoughness, sampleDepth, SSRRoughnessCutoff))
+                if (NeedReflection(sampleRoughness, sampleDepth, SSR_ROUGHNESS_THRESHOLD_EARLY_EXIT))
                 {
                     float3 dq = P - sampleP;
                     float planeError = max(abs(dot(dq, sampleN)), abs(dot(dq, N)));

@@ -4,8 +4,8 @@
 #define SSR_DOWNSAMPLE_FACTOR 1
 #endif
 
-static const float SSRRoughnessCutoff = 0.6f;
-static const float SSRRoughnessCheap = 0.35f;
+static const float SSR_ROUGHNESS_THRESHOLD_EARLY_EXIT = 0.6f;
+static const float SSR_ROUGHNESS_THRESHOLD_CHEAP_RAY = 0.35f;
 
 static const uint SSR_THREAD_GROUP_SIZE = 8;
 static const uint SSR_TILE_SIZE = 32;

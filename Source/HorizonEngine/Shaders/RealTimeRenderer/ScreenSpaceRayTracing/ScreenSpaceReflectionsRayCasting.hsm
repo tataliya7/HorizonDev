@@ -125,7 +125,7 @@ void ScreenSpaceReflectionsRayCastingCS(uint3 GroupID : SV_GroupID, uint3 GroupT
     float depth = depthPyramid.SampleLevel(GlobalSamplerPointClamp, jitteredUV, 0).r;
     float roughness = gbuffer1[jitteredPixel].w;
 
-    if (!NeedReflection(roughness, depth, SSRRoughnessCutoff))
+    if (!NeedReflection(roughness, depth, SSR_ROUGHNESS_THRESHOLD_EARLY_EXIT))
     {
         rayIndirectSpecular[pixelCoord] = 0.0;
         rayDirectionPDF[pixelCoord] = 0.0;
