@@ -706,20 +706,12 @@ namespace Horizon
         //     RenderBackendTextureCreateFlags::UnorderedAccess | RenderBackendTextureCreateFlags::ShaderResource),
         //     "SSRDebugOutputTexture");
         //
-        // if (settings.reflectionsTechnique == ReflectionsTechnique::ScreenSpaceReflections)
-        // {
-        //   /*  RenderScreenSpaceReflections(
-        //         renderGraph,
-        //         view,
-        //         hzbWidth,
-        //         hzbHeight,
-        //         closestHZBTexture,
-        //         historySceneColor,
-        //         historyInfo.historySceneDepth,
-        //         ssrRayAllocationBuffer,
-        //         reflectionsTexture,
-        //         ssrDebugOutputTexture);*/
-        // }
+        if (view.renderSettings.reflectionsTechnique == ReflectionsTechnique::ScreenSpaceReflections)
+        {
+            RenderScreenSpaceReflections(
+               renderGraph,
+               view);
+        }
         // else if (settings.reflectionsTechnique == ReflectionsTechnique::RayTracingReflections)
         // {
         //     //RenderRayTracingReflections();

@@ -81,7 +81,7 @@ uint2 GetReflectionIndirectDispatchCoord(uint3 GroupID, uint3 GroupThreadID, Tex
 
 [shader("compute")]
 [numthreads(SSR_THREAD_GROUP_SIZE * SSR_THREAD_GROUP_SIZE, 1, 1)]
-void ScreenSpaceReflectionsCS(uint3 GroupID : SV_GroupID, uint3 GroupThreadID : SV_GroupThreadID)
+void ScreenSpaceReflectionsRayCastingCS(uint3 GroupID : SV_GroupID, uint3 GroupThreadID : SV_GroupThreadID)
 {
     StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
     PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];

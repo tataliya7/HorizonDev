@@ -176,13 +176,16 @@ namespace Horizon
             ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/ScreenSpaceShadows.hsm", "ScreenSpaceShadowsForDistantLightCS");
             shaderLibrary->LoadShader(ShaderID::ScreenSpaceShadowsForDistantLight, shaderDesc);
         }
-        //{
-        //    {ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/ScreenSpaceReflectionsTileClassification.hsm", "SSRTileClassificationHorizontalCS");
-        //    shaderLibrary->LoadShader(ShaderID::SSRTileClassificationHorizontal, shaderDesc);
-
-        //    {ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/ScreenSpaceReflectionsTileClassification.hsm", "SSRTileClassificationVerticalCS");
-        //    shaderLibrary->LoadShader(ShaderID::SSRTileClassificationVertical, shaderDesc);
-
+        {
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/ScreenSpaceRayTracing/ScreenSpaceReflectionsTileClassification.hsm", "SSRTileClassificationHorizontalCS");
+            shaderDesc.AddDefine("SSR_TILE_CLASSIFICATION_HORIZONTAL_PASS", 1);
+            shaderLibrary->LoadShader(ShaderID::SSRTileClassificationHorizontal, shaderDesc);
+        }
+        {
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/ScreenSpaceRayTracing/ScreenSpaceReflectionsTileClassification.hsm", "SSRTileClassificationVerticalCS");
+            shaderDesc.AddDefine("SSR_TILE_CLASSIFICATION_VERTICAL_PASS", 1);
+            shaderLibrary->LoadShader(ShaderID::SSRTileClassificationVertical, shaderDesc);
+        }
         //    {ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/ScreenSpaceReflectionsRayAllocation.hsm", "SSRRayAllocationCS");
         //    shaderLibrary->LoadShader(ShaderID::SSRRayAllocation, shaderDesc);
 

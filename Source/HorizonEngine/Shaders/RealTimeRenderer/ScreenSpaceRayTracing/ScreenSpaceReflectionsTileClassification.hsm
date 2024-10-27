@@ -1,69 +1,91 @@
-#include "../ShaderCommon.hsh"
-#include "RealTimeRendererCommon.hsh"
+#include "../../ShaderCommon.hsh"
+#include "../RealTimeRendererCommon.hsh"
+//#include "ScreenSpaceRayTracingCommon.hsh"
 #include "ScreenSpaceReflectionsCommon.hsh"
 
-BIND_TEXTURE_2D_SRV(0, SceneDepth);
-BIND_TEXTURE_2D_SRV(1, GBuffer1);
-BIND_TEXTURE_2D_SRV(2, TileClassificationHorizontalBuffer);
-BIND_TEXTURE_2D_UAV(3, float2, TileClassificationHorizontalBuffer);
-BIND_TEXTURE_2D_UAV(4, float2, TileClassificationBuffer);
-BIND_TEXTURE_2D_UAV(5, uint, EarlyExitTilesBuffer);
-BIND_TEXTURE_2D_UAV(6, uint, CheapTilesBuffer);
-BIND_TEXTURE_2D_UAV(7, uint, ExpensiveTilesBuffer);
-BIND_BYTE_ADDRESS_BUFFER_UAV(8, RayAllocationBuffer);
-
-struct SSRTTileInfo
-{
-    uint2 coord;
-};
+#if SSR_TILE_CLASSIFICATION_HORIZONTAL_PASS
+SHADER_CONSTANTS_STRUCT_BEGIN();
+SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferSRV);
+SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(1, SceneDepthTextureSRV);
+SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(2, GBuffer1SRV);
+SHADER_CONSTANTS_TEXTURE_2D_UAV(3, float2, SSRTileClassificationHorizontalTextureUAV);
+SHADER_CONSTANTS_STRUCT_END();
 
 [shader("compute")]
 [numthreads(SSR_THREAD_GROUP_SIZE, SSR_THREAD_GROUP_SIZE, 1)]
 void SSRTileClassificationHorizontalCS(uint3 dispatchThreadID : SV_DispatchThreadID)
 {
+    StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
+    Texture2D sceneDepthTexture = ShaderConstants.GetSceneDepthTextureSRV();
+    Texture2D gbuffer1 = ShaderConstants.GetGBuffer1SRV();
+    RWTexture2D<float2> tileClassificationHorizontalTexture = ShaderConstants.GetSSRTileClassificationHorizontalTextureUAV();
+
+    PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
+
+    uint width, height;
+    tileClassificationHorizontalTexture.GetDimensions(width, height);
+
+    if (dispatchThreadID.x >= width || dispatchThreadID.y >= height)
+    {
+        return;
+    }
+
     const uint2 tileUpperLeftCoord = uint2(dispatchThreadID.x * SSR_TILE_SIZE, dispatchThreadID.y);
 
-    Texture2D sceneDepth = GetSceneDepthSRV();
-    Texture2D gbuffer1 = GetGBuffer1SRV();
-
-    uint depthBufferWidth, depthBufferHeight;
-    sceneDepth.GetDimensions(depthBufferWidth, depthBufferHeight);
-
-    float minRoughness = 1.0;
-    float maxRoughness = 0.0;
+    float minRoughness = 1.0f;
+    float maxRoughness = 0.0f;
 
     [loop]
     for (uint i = 0; i < SSR_TILE_SIZE; i++)
     {
-        const uint2 coord = uint2(tileUpperLeftCoord.x + i, tileUpperLeftCoord.y);
-        if (coord.x >= 0 && coord.y >= 0 && coord.x < depthBufferWidth && coord.y < depthBufferHeight)
+        const uint2 pixelCoord = uint2(tileUpperLeftCoord.x + i, tileUpperLeftCoord.y);
+        if (pixelCoord.x >= 0 &&
+            pixelCoord.y >= 0 &&
+            pixelCoord.x < frameShaderParameters.renderWidth &&
+            pixelCoord.y < frameShaderParameters.renderHeight)
         {
-            float depth = sceneDepth[coord].r;
-            if (depth == 0.0) // inversed-z
+            float depth = sceneDepthTexture[pixelCoord].r;
+            if (depth != FAR_CLIPPING_PLANE_DEPTH_VALUE)
             {
-                maxRoughness = max(maxRoughness, 1.0);
-                minRoughness = min(minRoughness, 1.0);
-            }
-            else
-            {
-                float roughness = gbuffer1[coord].w;
+                float roughness = gbuffer1[pixelCoord].w;
+                roughness = saturate(roughness);
+
                 maxRoughness = max(maxRoughness, roughness);
                 minRoughness = min(minRoughness, roughness);
             }
         }
     }
 
-    RWTexture2D<float2> tileClassificationHorizontalBuffer = GetTileClassificationHorizontalBufferUAV();
-    tileClassificationHorizontalBuffer[dispatchThreadID.xy] = float2(minRoughness, maxRoughness);
+    tileClassificationHorizontalTexture[dispatchThreadID.xy] = float2(minRoughness, maxRoughness);
 }
+#endif // SSR_TILE_CLASSIFICATION_HORIZONTAL_PASS
+
+#if SSR_TILE_CLASSIFICATION_VERTICAL_PASS
+SHADER_CONSTANTS_STRUCT_BEGIN();
+SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferSRV);
+SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(1, SceneDepthTextureSRV);
+SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(2, GBuffer1SRV);
+SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(3, SSRTileClassificationHorizontalTextureSRV);
+SHADER_CONSTANTS_TEXTURE_2D_UAV(4, float2, SSRTileClassificationTextureUAV);
+SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_UAV(5, SSRRayAllocationBufferUAV);
+SHADER_CONSTANTS_STRUCT_END();
 
 [shader("compute")]
 [numthreads(SSR_THREAD_GROUP_SIZE, SSR_THREAD_GROUP_SIZE, 1)]
 void SSRTileClassificationVerticalCS(uint3 dispatchThreadID : SV_DispatchThreadID)
 {
-    RWTexture2D<float2> tileClassificationBuffer = GetTileClassificationBufferUAV();
+    StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
+    Texture2D sceneDepthTexture = ShaderConstants.GetSceneDepthTextureSRV();
+    Texture2D gbuffer1 = ShaderConstants.GetGBuffer1SRV();
+    Texture2D tileClassificationHorizontalTexture = ShaderConstants.GetSSRTileClassificationHorizontalTextureSRV();
+    RWTexture2D<float2> tileClassificationTexture = ShaderConstants.GetSSRTileClassificationTextureUAV();
+    RWByteAddressBuffer rayAllocationBuffer = ShaderConstants.GetSSRRayAllocationBufferUAV();
+
+    PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
+
     uint width, height;
-    tileClassificationBuffer.GetDimensions(width, height);
+    tileClassificationTexture.GetDimensions(width, height);
+
     if (dispatchThreadID.x >= width || dispatchThreadID.y >= height)
     {
         return;
@@ -71,48 +93,47 @@ void SSRTileClassificationVerticalCS(uint3 dispatchThreadID : SV_DispatchThreadI
 
     const uint2 tileUpperLeftCoord = uint2(dispatchThreadID.x, dispatchThreadID.y * SSR_TILE_SIZE);
 
-    RWByteAddressBuffer rayAllocationBuffer = GetRayAllocationBufferUAV();
-    Texture2D tileClassificationHorizontalBuffer = GetTileClassificationHorizontalBufferSRV();
-    uint tileClassificationHorizontalBufferWidth, tileClassificationHorizontalBufferHeight;
-    tileClassificationHorizontalBuffer.GetDimensions(tileClassificationHorizontalBufferWidth, tileClassificationHorizontalBufferHeight);
+    uint tileClassificationHorizontalTextureWidth, tileClassificationHorizontalTextureHeight;
+    tileClassificationHorizontalTexture.GetDimensions(tileClassificationHorizontalTextureWidth, tileClassificationHorizontalTextureHeight);
 
-    float minRoughness = 1.0;
-    float maxRoughness = 0.0;
+    float minRoughness = 1.0f;
+    float maxRoughness = 0.0f;
 
     [loop]
     for (uint i = 0; i < SSR_TILE_SIZE; i++)
     {
-        const uint2 coord = uint2(tileUpperLeftCoord.x, tileUpperLeftCoord.y + i);
-        if (coord.x >= 0 && coord.y >= 0 && coord.x < tileClassificationHorizontalBufferWidth && coord.y < tileClassificationHorizontalBufferHeight)
+        const uint2 pixelCoord = uint2(tileUpperLeftCoord.x, tileUpperLeftCoord.y + i);
+        if (pixelCoord.x >= 0 &&
+            pixelCoord.y >= 0 &&
+            pixelCoord.x < tileClassificationHorizontalTextureWidth &&
+            pixelCoord.y < tileClassificationHorizontalTextureHeight)
         {
-            float2 minMaxRoughness = tileClassificationHorizontalBuffer[coord].xy;
-            minRoughness = min(minRoughness, minMaxRoughness.r);
-            maxRoughness = max(maxRoughness, minMaxRoughness.g);
+            float2 roughnessMinMax = tileClassificationHorizontalTexture[pixelCoord].xy;
+
+            minRoughness = min(minRoughness, roughnessMinMax.x);
+            maxRoughness = max(maxRoughness, roughnessMinMax.y);
         }
     }
-
-    RWTexture2D<uint> earlyExitTilesBuffer = GetEarlyExitTilesBufferUAV();
-    RWTexture2D<uint> cheapTilesBuffer = GetCheapTilesBufferUAV();
-    RWTexture2D<uint> expensiveTilesBuffer = GetExpensiveTilesBufferUAV();
 
     const uint tileCoord = (dispatchThreadID.x & 0xFFFF) | ((dispatchThreadID.y & 0xFFFF) << 16);
 
     uint tileIndex = 0;
     if (minRoughness < SSRRoughnessCheap)
     {
-        rayAllocationBuffer.InterlockedAdd(RAY_ALLOCATION_BUFFER_OFFSET_EXPENSIVE_TILES_COUNT, 1, tileIndex);
-        expensiveTilesBuffer[uint2(tileIndex, 0)] = tileCoord;
+        rayAllocationBuffer.InterlockedAdd(SSR_RAY_ALLOCATION_BUFFER_OFFSET_EXPENSIVE_TILES_COUNT, 1, tileIndex);
+        //expensiveTilesBuffer[uint2(tileIndex, 0)] = tileCoord;
     }
     else if (maxRoughness > SSRRoughnessCheap && minRoughness < SSRRoughnessCutoff)
     {
-        rayAllocationBuffer.InterlockedAdd(RAY_ALLOCATION_BUFFER_OFFSET_CHEAP_TILES_COUNT, 1, tileIndex);
-        cheapTilesBuffer[uint2(tileIndex, 0)] = tileCoord;
+        rayAllocationBuffer.InterlockedAdd(SSR_RAY_ALLOCATION_BUFFER_OFFSET_CHEAP_TILES_COUNT, 1, tileIndex);
+        //cheapTilesBuffer[uint2(tileIndex, 0)] = tileCoord;
     }
     else
     {
-        rayAllocationBuffer.InterlockedAdd(RAY_ALLOCATION_BUFFER_OFFSET_EARLY_EXIT_TILES_COUNT, 1, tileIndex);
-        earlyExitTilesBuffer[uint2(tileIndex, 0)] = tileCoord;
+        rayAllocationBuffer.InterlockedAdd(SSR_RAY_ALLOCATION_BUFFER_OFFSET_EARLY_EXIT_TILES_COUNT, 1, tileIndex);
+        //earlyExitTilesBuffer[uint2(tileIndex, 0)] = tileCoord;
     }
 
-    tileClassificationBuffer[dispatchThreadID.xy] = float2(minRoughness, maxRoughness);
+    tileClassificationTexture[dispatchThreadID.xy] = float2(minRoughness, maxRoughness);
 }
+#endif // SSR_TILE_CLASSIFICATION_VERTICAL_PASS
