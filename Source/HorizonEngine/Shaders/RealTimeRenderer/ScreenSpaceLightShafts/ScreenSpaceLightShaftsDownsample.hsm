@@ -6,7 +6,7 @@ BIND_TEXTURE_2D_SRV(1, SceneColorTexture);
 BIND_TEXTURE_2D_SRV(2, SceneDepthTexture);
 BIND_TEXTURE_2D_UAV(3, float3, OutputTexture);
 
-struct LightShaftsDownsapmpleShaderArguments
+struct ScreenSpaceLightShaftsDownsapmpleShaderArguments
 {
    float2 AspectRatioAndInvAspectRatio;
    float2 TextureSpaceBlurOrigin;
@@ -16,7 +16,7 @@ struct LightShaftsDownsapmpleShaderArguments
 
 [shader("compute")]
 [numthreads(8, 8, 1)]
-void LightShaftsDownsampleCS(uint3 dispatchThreadID : SV_DispatchThreadID)
+void ScreenSpaceLightShaftsDownsampleCS(uint3 dispatchThreadID : SV_DispatchThreadID)
 {
     StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
     PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
@@ -24,7 +24,7 @@ void LightShaftsDownsampleCS(uint3 dispatchThreadID : SV_DispatchThreadID)
     Texture2D sceneDepthTexture = GetSceneDepthTextureSRV();
     RWTexture2D<float3> outputTexture = GetOutputTextureUAV();
 
-    LightShaftsDownsapmpleShaderArguments parameters = (LightShaftsDownsapmpleShaderArguments)0;
+    ScreenSpaceLightShaftsDownsapmpleShaderArguments parameters = (ScreenSpaceLightShaftsDownsapmpleShaderArguments)0;
     // parameters.AspectRatioAndInvAspectRatio = (2);
     // parameters.TextureSpaceBlurOrigin;
     // parameters.BloomTintAndThreshold;

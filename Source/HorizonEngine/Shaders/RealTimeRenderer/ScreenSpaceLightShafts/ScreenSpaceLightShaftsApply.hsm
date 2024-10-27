@@ -11,7 +11,7 @@ void LightShaftsApplyVS(uint vertexID : SV_VertexID, out float4 outPosition : SV
 }
 
 [shader("pixel")]
-void LightShaftsApplyPS(float4 position : SV_Position, out float4 outColor : SV_Target0)
+void ScreenSpaceLightShaftsApplyPS(float4 position : SV_Position, out float4 outColor : SV_Target0)
 {
     StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
     PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];

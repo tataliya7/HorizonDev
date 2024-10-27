@@ -6,11 +6,11 @@ BIND_TEXTURE_2D_SRV(1, InputTexture);
 BIND_TEXTURE_2D_UAV(2, float3, OutputTexture);
 
 // TODO: Promote to parameter
-static const uint NumSamples = 16;
+static const uint SampleCount = 16;
 
 [shader("compute")]
 [numthreads(8, 8, 1)]
-void LightShaftsRadialBlurCS(uint3 dispatchThreadID : SV_DispatchThreadID)
+void ScreenSpaceLightShaftsRadialBlurCS(uint3 dispatchThreadID : SV_DispatchThreadID)
 {
     StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
     PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
@@ -29,7 +29,7 @@ void LightShaftsRadialBlurCS(uint3 dispatchThreadID : SV_DispatchThreadID)
     textureSpaceBlurOrigin.y = (3);
 
     float passIndex = (4);
-    float passScale = pow(0.4f * NumSamples, passIndex);
+    float passScale = pow(0.4f * SampleCount, passIndex);
 
     uint2 pixelCoord = dispatchThreadID.xy;
     float2 uv = (pixelCoord + 0.5f) * float2(1.0 / width, 1.0 / height);
@@ -43,16 +43,16 @@ void LightShaftsRadialBlurCS(uint3 dispatchThreadID : SV_DispatchThreadID)
     float3 blurredColor = 0;
 
     [unroll]
-    for (uint sampleIndex = 0; sampleIndex < NumSamples; sampleIndex++)
+    for (uint sampleIndex = 0; sampleIndex < SampleCount; sampleIndex++)
     {
-        float2 sampleOffset = blurDirection * sampleIndex / ((float)NumSamples);
+        float2 sampleOffset = blurDirection * sampleIndex / float(SampleCount);
         float2 sampleUV = centerUV + sampleOffset;
         float3 sampleColor = inputTexture.SampleLevel(GlobalSamplerLinearClamp, sampleUV, 0).rgb;
 
         blurredColor += sampleColor;
     }
 
-    blurredColor /= (float)NumSamples;
+    blurredColor /= float(SampleCount);
 
     outputTexture[pixelCoord] = blurredColor;
 }
