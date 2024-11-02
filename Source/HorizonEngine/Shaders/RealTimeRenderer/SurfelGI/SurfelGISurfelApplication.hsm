@@ -69,7 +69,7 @@ void SurfelGISurfelApplicationCS(
 
     // Once a certain amount of coverage is achieved, no more surfels are spawned in that tile.
     float coverage = 0;
-    float3 worldSpacePosition = ReconstructWorldSpacePositionFromDepth(uv, depth, frameShaderParameters.clipToWorldMatrix);
+    float3 worldSpacePosition = ReconstructWorldSpacePositionFromUVZ(uv, depth, frameShaderParameters.clipToWorldMatrix);
 
     // Find surfel grid cell.
     int3 cellID = CalculateUniformGridCellID(worldSpacePosition);

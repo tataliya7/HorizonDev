@@ -55,12 +55,12 @@ void ToneMappingCS(uint3 dispatchThreadID : SV_DispatchThreadID)
     {
         float chromaticAberrationOffset = frameShaderParameters.chromaticAberrationOffset;
 
-        float2 lensUV = UVSpaceToClipSpace(uv);
+        float2 lensUV = ScreenSpaceUVToNDCSpaceXY(uv);
 
         float4 chromaticAberrationUV;
         chromaticAberrationUV = lensUV.xyxy - sign(lensUV).xyxy * saturate(abs(lensUV) - chromaticAberrationOffset).xyxy * chromaticAberrationScale.xxyy;
-        chromaticAberrationUV.xy = ClipSpaceToUVSpace(chromaticAberrationUV.xy);
-        chromaticAberrationUV.zw = ClipSpaceToUVSpace(chromaticAberrationUV.zw);
+        chromaticAberrationUV.xy = NDCSpaceXYToScreenSpaceUV(chromaticAberrationUV.xy);
+        chromaticAberrationUV.zw = NDCSpaceXYToScreenSpaceUV(chromaticAberrationUV.zw);
 
         sceneColor.r = sceneColorTexture.SampleLevel(GlobalSamplerLinearClamp, chromaticAberrationUV.xy, 0).r;
         sceneColor.g = sceneColorTexture.SampleLevel(GlobalSamplerLinearClamp, chromaticAberrationUV.zw, 0).g;

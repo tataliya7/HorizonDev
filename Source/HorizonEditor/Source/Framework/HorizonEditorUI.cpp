@@ -1113,7 +1113,7 @@ namespace Horizon
                 ImGui::PushItemWidth(-1);
 
                 const char* items[] = { "None", "Screen Space Reflections", "Ray Tracing Reflections" };
-                static int item = 0;
+                int item = int(renderSettings.reflectionsTechnique);
                 ImGui::Combo("##ReflectionsTechnique", &item, items, IM_ARRAYSIZE(items));
                 renderSettings.reflectionsTechnique = (ReflectionsTechnique)item;
 

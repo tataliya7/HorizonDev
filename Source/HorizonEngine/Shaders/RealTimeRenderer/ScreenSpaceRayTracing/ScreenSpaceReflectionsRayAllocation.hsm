@@ -1,25 +1,28 @@
-#include "../ShaderCommon.hsh"
-#include "RealTimeRendererCommon.hsh"
+#include "../../ShaderCommon.hsh"
+#include "../RealTimeRendererCommon.hsh"
 #include "ScreenSpaceReflectionsCommon.hsh"
 
-BIND_BYTE_ADDRESS_BUFFER_UAV(0, RayAllocationBuffer);
+SHADER_CONSTANTS_STRUCT_BEGIN();
+SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_UAV(0, SSRRayAllocationBufferUAV);
+SHADER_CONSTANTS_STRUCT_END();
 
 [shader("compute")]
 [numthreads(1, 1, 1)]
 void SSRRayAllocationCS(uint3 dispatchThreadID : SV_DispatchThreadID)
 {
-    RWByteAddressBuffer rayAllocationBuffer = GetRayAllocationBufferUAV();
+    RWByteAddressBuffer rayAllocationBuffer = ShaderConstants.GetSSRRayAllocationBufferUAV();
 
-    const uint earlyExitTilesCount = rayAllocationBuffer.Load(SSR_RAY_ALLOCATION_BUFFER_OFFSET_EARLY_EXIT_TILES_COUNT);
-    const uint cheapTilesCount     = rayAllocationBuffer.Load(SSR_RAY_ALLOCATION_BUFFER_OFFSET_CHEAP_TILES_COUNT);
-    const uint expensiveTilesCount = rayAllocationBuffer.Load(SSR_RAY_ALLOCATION_BUFFER_OFFSET_EXPENSIVE_TILES_COUNT);
+    const uint earlyExitTilesCount = rayAllocationBuffer.Load(SSR_RAY_ALLOCATION_BUFFER_OFFSET_EARLY_EXIT_TILE_COUNT);
+    const uint cheapRayTracingTilesCount = rayAllocationBuffer.Load(SSR_RAY_ALLOCATION_BUFFER_OFFSET_CHEAP_RAY_TRACING_TILE_COUNT);
+    const uint expensiveRayTracingTilesCount = rayAllocationBuffer.Load(SSR_RAY_ALLOCATION_BUFFER_OFFSET_EXPENSIVE_RAY_TRACING_TILE_COUNT);
 
-    rayAllocationBuffer.Store(SSR_RAY_ALLOCATION_BUFFER_OFFSET_EARLY_EXIT_TILES_COUNT, 0);
-    rayAllocationBuffer.Store(SSR_RAY_ALLOCATION_BUFFER_OFFSET_CHEAP_TILES_COUNT,      0);
-    rayAllocationBuffer.Store(SSR_RAY_ALLOCATION_BUFFER_OFFSET_EXPENSIVE_TILES_COUNT,  0);
+    rayAllocationBuffer.Store(SSR_RAY_ALLOCATION_BUFFER_OFFSET_EARLY_EXIT_TILE_COUNT, 0);
+    rayAllocationBuffer.Store(SSR_RAY_ALLOCATION_BUFFER_OFFSET_CHEAP_RAY_TRACING_TILE_COUNT, 0);
+    rayAllocationBuffer.Store(SSR_RAY_ALLOCATION_BUFFER_OFFSET_EXPENSIVE_RAY_TRACING_TILE_COUNT, 0);
 
-    const uint numRaysPerTile = (SSR_TILE_SIZE / SSR_DOWN_SAMPLE_FACTOR / SSR_THREAD_GROUP_SIZE) * (SSR_TILE_SIZE / SSR_DOWN_SAMPLE_FACTOR / SSR_THREAD_GROUP_SIZE);
-    rayAllocationBuffer.Store3(SSR_RAY_ALLOCATION_BUFFER_OFFSET_INDIRECT_ARGUMENTS_EARLY_EXIT_RAYS, uint3(earlyExitTilesCount * numRaysPerTile, 1, 1));
-    rayAllocationBuffer.Store3(SSR_RAY_ALLOCATION_BUFFER_OFFSET_INDIRECT_ARGUMENTS_CHEAP_RAYS,      uint3(cheapTilesCount     * numRaysPerTile, 1, 1));
-    rayAllocationBuffer.Store3(SSR_RAY_ALLOCATION_BUFFER_OFFSET_INDIRECT_ARGUMENTS_EXPENSIVE_RAYS,  uint3(expensiveTilesCount * numRaysPerTile, 1, 1));
+    // Allocate ray count per tile.
+    const uint rayCountPerTile = (SSR_TILE_SIZE / SSR_DOWNSAMPLE_FACTOR / SSR_THREAD_GROUP_SIZE) * (SSR_TILE_SIZE / SSR_DOWNSAMPLE_FACTOR / SSR_THREAD_GROUP_SIZE);
+    rayAllocationBuffer.Store3(SSR_RAY_ALLOCATION_BUFFER_OFFSET_INDIRECT_ARGUMENTS_EARLY_EXIT_PASS, uint3(earlyExitTilesCount * rayCountPerTile, 1, 1));
+    rayAllocationBuffer.Store3(SSR_RAY_ALLOCATION_BUFFER_OFFSET_INDIRECT_ARGUMENTS_CHEAP_RAY_TRACING_PASS, uint3(cheapRayTracingTilesCount * rayCountPerTile, 1, 1));
+    rayAllocationBuffer.Store3(SSR_RAY_ALLOCATION_BUFFER_OFFSET_INDIRECT_ARGUMENTS_EXPENSIVE_RAY_TRACING_PASS, uint3(expensiveRayTracingTilesCount * rayCountPerTile, 1, 1));
 }

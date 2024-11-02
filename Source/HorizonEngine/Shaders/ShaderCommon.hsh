@@ -1,16 +1,7 @@
 #pragma once
 
 #include "BindlessResources.hsh"
-
-const static float PI = 3.1415926535897932f;
-
-#define INV_PI       0.3183098861837067
-
-#define HALF_POS_MIN 6.103515625e-5  // 2^-14, the same value for 10, 11 and 16-bit: https://www.khronos.org/opengl/wiki/Small_Float_Formats
-static const float HALF_POS_INF = 65504.0;
-
-#define FLOAT_MIN    1.175494351e-38f
-#define FLOAT_MAX    3.402823466e+38f
+#include "MathUtils.hsh"
 
 // The allowed wave sizes that an HLSL shader may specify are the powers of 2 between 4 and 128, inclusive.
 #ifndef MIN_WAVE_SIZE_SUPPORTED
@@ -20,16 +11,27 @@ static const float HALF_POS_INF = 65504.0;
 // @see https://en.wikipedia.org/wiki/Middle_gray for more infomation.
 static const float MiddleGray = 0.18f;
 
-float Square(float x)
+/**
+ * Building an orthonormal basis from a 3D unit vector.
+ *
+ * @see Tom Duff, James Burgess, Per Christensen, Christophe Hery, Andrew Kensler, Max Liani, and Ryusuke Villemin, Building an Orthonormal Basis, Revisited, Journal of Computer Graphics Techniques (JCGT), vol. 6, no. 1, 1-8, 2017
+ */
+void BuildOrthonormalBasis(in float3 n, out float3 b1, out float3 b2)
 {
-    return x * x;
+    const float sign = n.z >= 0.0f ? 1.0f : -1.0f;
+    const float a = -1.0f / (sign + n.z);
+    const float b = n.x * n.y * a;
+    b1 = float3(1.0f + sign * n.x * n.x * a, sign * b, -sign * n.x);
+    b2 = float3(b, sign + n.y * n.y * a, -n.y);
 }
 
-void CreateOrthonormalBasis(inout float3 T, inout float3 B, float3 N)
+float3x3 CreateTangentSpaceBasis(float3 n)
 {
-    float3 up = abs(N.z) < 0.999 ? float3(0.0, 0.0, 1.0) : float3(1.0, 0.0, 0.0);
-    T = normalize(cross(up, N));
-    B = normalize(cross(N, T));
+    float3 t, b;
+    BuildOrthonormalBasis(n, t, b);
+
+    float3x3 tangentToWorld = transpose(float3x3(t, b, n));
+    return tangentToWorld;
 }
 
 static const float3x3 CUBE_ROTATIONS[6] =
@@ -58,18 +60,18 @@ float3 CalculateCubemapVector(float2 uv, uint face)
     return 0;
 }
 
-float3 TangentToWorld(const float3 vec, const float3 T, const float3 B, const float3 N)
+float3 TangentToWorld(float3 vec, float3 T, float3 B, float3 N)
 {
     return normalize(T * vec.x + B * vec.y + N * vec.z);
 }
 
-float2 UVSpaceToClipSpace(float2 uv)
+float2 ScreenSpaceUVToNDCSpaceXY(float2 uv)
 {
     float2 xy = uv * float2(2.0f, -2.0f) + float2(-1.0f, 1.0f);
     return xy;
 }
 
-float2 ClipSpaceToUVSpace(float2 xy)
+float2 NDCSpaceXYToScreenSpaceUV(float2 xy)
 {
     float2 uv = xy * float2(0.5f, -0.5f) + float2(0.5f, 0.5f);
     return uv;
@@ -212,9 +214,9 @@ float2 RaySphereIntersection(float3 r0, float3 rd, float3 s0, float sR)
 
 float3 UniformSampleSphere(float2 Xi)
 {
-    float phi = 2.0 * PI * Xi.y;
-    float cosTheta = 1.0 - 2.0 * Xi.x;
-    float sinTheta = sqrt(1.0 - cosTheta * cosTheta);
+    float phi = 2.0f * PI * Xi.y;
+    float cosTheta = 1.0f - 2.0f * Xi.x;
+    float sinTheta = sqrt(1.0f - cosTheta * cosTheta);
     return float3(cos(phi) * sinTheta, sin(phi) * sinTheta, cosTheta);
 }
 
@@ -222,6 +224,14 @@ float3 UniformSampleHemisphere(float2 Xi)
 {
     float phi = 2.0 * PI * Xi.y;
     float cosTheta = Xi.x;
+    float sinTheta = sqrt(1.0f - cosTheta * cosTheta);
+    return float3(cos(phi) * sinTheta, sin(phi) * sinTheta, cosTheta);
+}
+
+float3 CosineSampleHemisphere(float2 Xi)
+{
+    float phi = 2.0 * PI * Xi.y;
+    float cosTheta = sqrt(Xi.x);
     float sinTheta = sqrt(1.0 - cosTheta * cosTheta);
     return float3(cos(phi) * sinTheta, sin(phi) * sinTheta, cosTheta);
 }

@@ -41,7 +41,7 @@ float3 ComputeVoxelWorldPosition(PerFrameShaderParameters frameShaderParameters,
     float ndcDepth = ConvertViewSpaceDepthToNDCSpaceDepth(-viewDepth, frameShaderParameters.viewSpaceDepthToNDCSpaceDepthTransform);
 
     float2 uv = (voxelCoordinate.xy + offset.xy) * volumetricFogShaderParameters.tileCountAndInverseTileCount.zw;
-    float4 clipPosition = float4(UVSpaceToClipSpace(uv), ndcDepth, 1.0f);
+    float4 clipPosition = float4(ScreenSpaceUVToNDCSpaceXY(uv), ndcDepth, 1.0f);
     float4 worldPosition = mul(frameShaderParameters.nonJitteredClipToWorldMatrix, clipPosition);
     worldPosition /= worldPosition.w;
 

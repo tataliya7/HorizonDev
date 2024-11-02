@@ -34,7 +34,7 @@ float ComputeDistantLightShadowFactorCSM(
     {
         float4 shadowMapTextureCoord = mul(cascadedShadowMapParameters.worldToClipMatrix[cascadeIndex], float4(worldSpacePosition, 1.0f));
         shadowMapTextureCoord /= shadowMapTextureCoord.w;
-        shadowMapTextureCoord.xy = ClipSpaceToUVSpace(shadowMapTextureCoord.xy);
+        shadowMapTextureCoord.xy = NDCSpaceXYToScreenSpaceUV(shadowMapTextureCoord.xy);
 
         if (shadowMapTextureCoord.x > 0.0 && shadowMapTextureCoord.x < 1.0 &&
             shadowMapTextureCoord.y > 0.0 && shadowMapTextureCoord.y < 1.0 &&

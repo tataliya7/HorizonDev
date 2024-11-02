@@ -1,6 +1,6 @@
 #pragma once
 
-static const uint  RayCastingMaxNumIterations = 128; // primary ray march step count (higher will find more in distance, but slower)
+#if 0
 static const float RayCastingRayStep = 0.5f; // primary ray march step increase (higher will travel more distance, but can miss details)
 static const uint  RayCastingMaxNumBinarySearchIterations = 2; // binary step count (higher is nicer but slower)
 static const float RayCastingCompareTolerance = 0.000002; // early exit factor for binary search (smaller is nicer but slower)
@@ -69,51 +69,40 @@ bool crossedCellBoundary(float2 oldCellIndex, float2 newCellIndex)
     return (oldCellIndex.x != newCellIndex.x) || (oldCellIndex.y != newCellIndex.y);
 }
 
-struct ScreenSpaceRay
-{
-    float3 rayStartUVZ;
-    float3 rayStepUVZ;
-    float compareTolerance;
-};
-
-// @note worldSpaceRayDirection must be normalized
 ScreenSpaceRay CreateScreenSpaceRay(
     float3 worldSpaceRayOrigin,
-    float3 worldSpaceRayDirection,
-    float worldSpaceMaxDistance,
-    float4x4 worldSpaceToClipSpace,
-    float SceneDepth,
-    float SlopeCompareToleranceScale,
-    bool extendRayToScreenBorder,
-    out bool bRayWasClipped)
+    float3 worldSpaceRayDirection, // must be normalized
+    float worldSpaceRayMaxDistance,
+    float4x4 worldToClipMatrix)
 {
-    worldSpaceMaxDistance = min(worldSpaceMaxDistance, 1000000);
+    float3 worldSpaceRayStart = worldSpaceRayOrigin;
+    float3 worldSpaceRayEnd = worldSpaceRayOrigin + worldSpaceRayDirection * worldSpaceRayMaxDistance;
 
-    float3 worldSpaceRayEnd = worldSpaceRayOrigin + worldSpaceRayDirection * worldSpaceMaxDistance;
+    float4 clipSpaceRayStart = mul(worldToClipMatrix, float4(worldSpaceRayOrigin, 1.0f));
+    float4 clipSpaceRayEnd = mul(worldToClipMatrix, float4(worldSpaceRayEnd, 1.0f));
 
-    float4 clipSpaceRayStart = mul(worldSpaceToClipSpace, float4(worldSpaceRayOrigin, 1.0));
-    float4 clipSpaceRayEnd = mul(worldSpaceToClipSpace, float4(worldSpaceRayEnd, 1.0));
-
+#if 0
     float3 ndcSpaceRayStart = clipSpaceRayStart.xyz * rcp(clipSpaceRayStart.w);
     float3 ndcSpaceRayEnd = clipSpaceRayEnd.xyz * rcp(clipSpaceRayEnd.w);
+#else
+    float3 ndcSpaceRayStart = clipSpaceRayStart.xyz / clipSpaceRayStart.w;
+    float3 ndcSpaceRayEnd = clipSpaceRayEnd.xyz / clipSpaceRayEnd.w;
+#endif
 
-    float3 rayStartUVZ = float3(ndcSpaceRayStart.xy * float2(0.5, -0.5) + float2(0.5, 0.5), ndcSpaceRayStart.z);
-    float3 rayEndUVZ = float3(ndcSpaceRayEnd.xy * float2(0.5, -0.5) + float2(0.5, 0.5), ndcSpaceRayEnd.z);
+    float3 rayStartUVZ = float3(NDCSpaceXYToScreenSpaceUV(ndcSpaceRayStart.xy), ndcSpaceRayStart.z);
+    float3 rayEndUVZ = float3(NDCSpaceXYToScreenSpaceUV(ndcSpaceRayEnd.xy), ndcSpaceRayEnd.z);
 
-    float3 rayStepUVZ = rayEndUVZ - rayStartUVZ;
-
-    float rayStepFactor = 1;
+    float3 rayStartToEndUVZ = rayEndUVZ - rayStartUVZ;
 
     ScreenSpaceRay ray;
     ray.rayStartUVZ = rayStartUVZ;
-    ray.rayStepUVZ = rayStepFactor * rayStepUVZ;
-    // ray.compareTolerance = max(abs(ray.rayStep.z), (screenSpaceRayStart.z - RayDepthScreen.z) * SlopeCompareToleranceScale);
+    ray.rayStartToEndUVZ = rayStartToEndUVZ;
 
     return ray;
 }
 
 // Requires origin and direction of the ray to be in screen space [0, 1] x [0, 1]
-void CastScreenSpaceRayHZB(
+void CastScreenSapceRay_HierarchicalTracing(
     Texture2D hiz,
     float startMipLevel,
     float maxMipLevel,
@@ -254,104 +243,52 @@ void CastScreenSpaceRayHZB(
     hit = ray;
     foundHit = (mipLevel < 0);
 }
+#endif
 
-void CastScreenSpaceRayLinear(
-    Texture2D depthBuffer,
-    float3 rayStartUVZ,
-    float3 rayStepUVZ,
-    float rayStepOffset,
-    // float roughness,
-    bool debug,
-    RWTexture2D<float4> debugOutput,
-    inout float3 outHitUVZ,
-    inout bool outFoundHit)
+struct ScreenSpaceRay
 {
-    uint maxNumIterations = RayCastingMaxNumIterations;
+    float3 rayStartUVZ;
+    float3 rayStartToEndUVZ;
+};
 
-    rayStepUVZ /= maxNumIterations;
-    rayStepUVZ *= 3;
+void CastScreenSapceRay_LinearTracing(
+    in Texture2D depthTexture,
+    in ScreenSpaceRay ray,
+    in uint stepCount,
+    in float dither,
+    out bool foundHit,
+    out float3 hitPointUVZ)
+{
+    const float3 rayStartUVZ = ray.rayStartUVZ;
+	const float3 rayStartToEndUVZ = ray.rayStartToEndUVZ;
 
-    float3 rayUVZ = rayStartUVZ + rayStepUVZ * rayStepOffset;
+    const float step = 1.0f / float(stepCount);
 
-    if (debug)
-    {
-        PrintSample(debugOutput, rayStartUVZ.xy, float4(1, 0, 0, 1));
-        PrintSample(debugOutput, rayUVZ.xy, float4(0, 0, 1, 1));
-    }
+    float offset = (dither - 0.5f) * step;
+    float t = step + offset;
 
-    float thickness = 0.01;
-
-    float4 deltaDepth;
-    bool4 anyHit;
-
-    uint i, j;
     [loop]
-    for (i = 0; i < maxNumIterations; i += 4)
+    for (uint i = 0; i < stepCount; i++)
     {
-        float2 samplesUV[4];
-        float4 samplesZ;
-        float4 samplesMip;
+        float3 sampleUVZ = rayStartUVZ + rayStartToEndUVZ * t;
 
-        for (j = 0; j < 4; j++)
-        {
-            samplesUV[j] = rayUVZ.xy + (float(i) + float(j + 1)) * rayStepUVZ.xy;
-            samplesZ[j] = rayUVZ.z + (float(i) + float(j + 1)) * rayStepUVZ.z;
-
-            samplesMip[j] = 0;
-
-            if (debug)
-            {
-                PrintSample(debugOutput, samplesUV[j].xy, float4(0, 1, 0, 1));
-            }
-        }
-
-        float4 surfacesZ;
-
-        for (j = 0; j < 4; j++)
-        {
-            surfacesZ[j] = depthBuffer.SampleLevel(GlobalSamplerPointClamp, samplesUV[j], samplesMip[j]).r;
-        }
-
-        deltaDepth = samplesZ - surfacesZ;
-        anyHit = abs(deltaDepth + thickness) < thickness;
-
-        for (j = 0; j < 4; j++)
-        {
-            outFoundHit = outFoundHit || anyHit[j];
-        }
-
-        [branch]
-        if (outFoundHit)
+        if (any(sampleUVZ.xy < 0) || any(sampleUVZ.xy > 1) || (sampleUVZ.z <= 0) || (sampleUVZ.z >= 1))
         {
             break;
         }
-    }
 
-    if (outFoundHit)
-    {
-        float t = float(i);
+        float referenceDepth = depthTexture.SampleLevel(GlobalSamplerPointClamp, sampleUVZ.xy, 0).r;
 
-        if (anyHit[0])
+        float deltaDepth = referenceDepth - sampleUVZ.z;
+
+        foundHit = deltaDepth > 0;
+
+        if (foundHit)
         {
-            t += 0.0;
-        }
-        if (anyHit[1])
-        {
-            t += 1.0;
-        }
-        if (anyHit[2])
-        {
-            t += 2.0;
-        }
-        if (anyHit[3])
-        {
-            t += 3.0;
+            hitPointUVZ = sampleUVZ;
+            break;
         }
 
-        outHitUVZ = rayUVZ + rayStepUVZ * t;
-    }
-    else
-    {
-        outHitUVZ = rayUVZ + rayStepUVZ * float(i);
+        t += step;
     }
 }

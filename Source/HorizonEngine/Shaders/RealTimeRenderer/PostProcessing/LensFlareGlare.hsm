@@ -122,7 +122,7 @@ void LensFlareGlareVS(uint instanceID : SV_InstanceID, uint vertexID : SV_Vertex
         float2 vertexUV = LensFlareGlareQuadUVs[vertexID];
 
         //float2 uuv = (tileID + LensFlareGlareQuadUVs[vertexID]) * 2.0f * lensFlareTextureInvSize;
-        //output.position = float4(UVSpaceToClipSpace(uuv), 0.0f, 1.0f);
+        //output.position = float4(ScreenSpaceUVToNDCSpaceXY(uuv), 0.0f, 1.0f);
         output.position = LensFlareGlareComputeVertexPosition(quadPosition, quadAngle, quadScale, vertexUV, float2(lensFlareTextureWidth, lensFlareTextureHeight));
         output.color = quadColor;
         output.uv = vertexUV;

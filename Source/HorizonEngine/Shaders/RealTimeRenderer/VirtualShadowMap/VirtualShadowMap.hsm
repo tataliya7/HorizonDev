@@ -1,0 +1,10 @@
+[shader("compute")]
+[numthreads(8, 8, 1)]
+void VirtualShadowMapCS(uint2 dispatchThreadID : SV_DispatchThreadID, uint GroupIndex : SV_GroupIndex)
+{
+    float depth = ;
+
+    float3 worldPosition = ;
+
+
+}

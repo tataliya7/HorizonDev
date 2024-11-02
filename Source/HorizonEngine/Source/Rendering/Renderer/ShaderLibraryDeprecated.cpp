@@ -177,6 +177,10 @@ namespace Horizon
             shaderLibrary->LoadShader(ShaderID::ScreenSpaceShadowsForDistantLight, shaderDesc);
         }
         {
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/ScreenSpaceRayTracing/ScreenSpaceIndirectDiffuse.hsm", "ScreenSpaceIndirectDiffuseCS");
+            shaderLibrary->LoadShader(ShaderID::ScreenSpaceIndirectDiffuse, shaderDesc);
+        }
+        {
             ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/ScreenSpaceRayTracing/ScreenSpaceReflectionsTileClassification.hsm", "SSRTileClassificationHorizontalCS");
             shaderDesc.AddDefine("SSR_TILE_CLASSIFICATION_HORIZONTAL_PASS", 1);
             shaderLibrary->LoadShader(ShaderID::SSRTileClassificationHorizontal, shaderDesc);
@@ -186,22 +190,23 @@ namespace Horizon
             shaderDesc.AddDefine("SSR_TILE_CLASSIFICATION_VERTICAL_PASS", 1);
             shaderLibrary->LoadShader(ShaderID::SSRTileClassificationVertical, shaderDesc);
         }
-        //    {ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/ScreenSpaceReflectionsRayAllocation.hsm", "SSRRayAllocationCS");
-        //    shaderLibrary->LoadShader(ShaderID::SSRRayAllocation, shaderDesc);
-
+        {
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/ScreenSpaceRayTracing/ScreenSpaceReflectionsRayAllocation.hsm", "SSRRayAllocationCS");
+            shaderLibrary->LoadShader(ShaderID::SSRRayAllocation, shaderDesc);
+        }
         //    {ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/ScreenSpaceReflections.hsm", "ScreenSpaceReflectionsCS");
         //    shaderDesc.AddDefine(HE_TEXT("SSR_EARLY_EXIT_RAYS"));
-        //    shaderLibrary->LoadShader(ShaderID::SSRDispatchEarlyExitRays, shaderDesc);
+        //    shaderLibrary->LoadShader(ShaderID::SSRRayTracingEarlyExit, shaderDesc);
 
         //    {ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/ScreenSpaceReflections.hsm", "ScreenSpaceReflectionsCS");
         //    shaderDesc.AddDefine(HE_TEXT("SSR_CHEAP_RAYS"));
-        //    shaderLibrary->LoadShader(ShaderID::SSRDispatchCheapRays, shaderDesc);
+        //    shaderLibrary->LoadShader(ShaderID::SSRRayTracingCheap, shaderDesc);
 
         //    {ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/ScreenSpaceReflections.hsm", "ScreenSpaceReflectionsCS");
-        //    shaderLibrary->LoadShader(ShaderID::SSRDispatchExpensiveRays, shaderDesc);
+        //    shaderLibrary->LoadShader(ShaderID::SSRRayTracingExpensive, shaderDesc);
 
         //    {ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/ScreenSpaceReflectionsResolve.hsm", "ScreenSpaceReflectionsResolveCS");
-        //    shaderLibrary->LoadShader(ShaderID::SSRResolve, shaderDesc);
+        //    shaderLibrary->LoadShader(ShaderID::SSRColorResolve, shaderDesc);
 
         //    {ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/ScreenSpaceReflectionsTemporalFiltering.hsm", "SSRTemporalFilteringCS");
         //    shaderLibrary->LoadShader(ShaderID::SSRTemporalFiltering, shaderDesc);

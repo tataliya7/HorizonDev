@@ -194,7 +194,8 @@ namespace Horizon
 
         assert(!texture->IsImported());
 
-        RenderGraphExportedTexture exportedTexture = {
+        RenderGraphExportedTexture exportedTexture =
+        {
             .source = texture,
             .target = persistentTexture,
         };
@@ -209,7 +210,8 @@ namespace Horizon
 
         assert(!buffer->IsImported());
 
-        RenderGraphExportedBuffer exportedBuffer = {
+        RenderGraphExportedBuffer exportedBuffer =
+        {
             .source = buffer,
             .target = persistentBuffer,
         };

@@ -1,5 +1,25 @@
 #pragma once
 
+#define PI               3.1415926535897932f
+#define INV_PI           0.3183098861837067f
+
+#define FLOAT_MIN        1.175494351e-38f
+#define FLOAT_MAX        3.402823466e+38f
+
+#define HALF_POS_MIN     6.103515625e-5  // 2^-14, the same value for 10, 11 and 16-bit: https://www.khronos.org/opengl/wiki/Small_Float_Formats
+#define HALF_POS_INF     65504.0
+
+float square(float x)
+{
+    return x * x;
+}
+
+float pow5(float x)
+{
+    float xx = x * x;
+    return xx * xx * x;
+}
+
 float mean(float3 v)
 {
     return dot(v, float3(1.0f / 3.0f, 1.0f / 3.0f, 1.0f / 3.0f));

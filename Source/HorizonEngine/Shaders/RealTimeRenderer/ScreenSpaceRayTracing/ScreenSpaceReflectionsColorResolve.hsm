@@ -61,7 +61,7 @@ float2 Hammersley2D_Random(uint index, uint samples, uint2 random)
 
 [shader("compute")]
 [numthreads(SSR_THREAD_GROUP_SIZE, SSR_THREAD_GROUP_SIZE, 1)]
-void ScreenSpaceReflectionsResolveCS(uint3 dispatchThreadID : SV_DispatchThreadID)
+void ScreenSpaceReflectionsColorResolveCS(uint3 dispatchThreadID : SV_DispatchThreadID)
 {
     StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
     PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
@@ -77,12 +77,12 @@ void ScreenSpaceReflectionsResolveCS(uint3 dispatchThreadID : SV_DispatchThreadI
 
     const uint2 coord = dispatchThreadID.xy;
     const float2 uv = (coord + 0.5f) * (1.0 / frameShaderParameters.renderWidth, 1.0 / frameShaderParameters.renderHeight); // Full resolution
-    const uint2 tracingCoord = coord / SSR_DOWN_SAMPLE_FACTOR;
+    const uint2 tracingCoord = coord / SSR_DOWNSAMPLE_FACTOR;
 
     const float depth = sceneDepth[coord].r;
     const float roughness = gbuffer1[coord].a;
 
-    if (!NeedReflection(roughness, depth, SSR_ROUGHNESS_THRESHOLD_EARLY_EXIT))
+    if (!NeedReflection(roughness, depth, SSR_ROUGHNESS_THRESHOLD_CHEAP_RAY_TRACING))
     {
         resolveTexture[coord] = rayIndirectSpecular[tracingCoord];
         resolveVarianceTexture[coord] = 0.0;
@@ -90,7 +90,7 @@ void ScreenSpaceReflectionsResolveCS(uint3 dispatchThreadID : SV_DispatchThreadI
         return;
     }
 
-    const float3 P = ReconstructWorldSpacePositionFromDepth(uv, depth, frameShaderParameters.clipToWorldMatrix);
+    const float3 P = ReconstructWorldSpacePositionFromUVZ(uv, depth, frameShaderParameters.clipToWorldMatrix);
     const float3 N = gbuffer1[coord].rgb;
     const float3 V = normalize(frameShaderParameters.cameraPosition - P);
     const float NdotV = saturate(dot(N, V));
@@ -107,6 +107,10 @@ void ScreenSpaceReflectionsResolveCS(uint3 dispatchThreadID : SV_DispatchThreadI
     float S = 0.0;
     float4 result = 0.0;
     float weightSum = 0.0;
+
+    // Ray reuse
+    // We assume that the visibility of rays from neighboring pixels is the same.
+    // We pretend the neighboring rays were shot from the local pixel, and use their intersection points.
     for (int i = 0; i < sampleCount; i++)
     {
         float2 offset = (Hammersley2D_Random(i, sampleCount, random) - 0.5) * resolveSpatialSize;

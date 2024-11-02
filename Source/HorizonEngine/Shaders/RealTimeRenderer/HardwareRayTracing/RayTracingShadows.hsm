@@ -49,7 +49,7 @@ void RayTracingShadowsRayGen()
     // Reconstruct world position from the depth buffer
     float2 pixelCenter = pixelCoord + 0.5;
     float2 uv = pixelCenter / float2(launchDimensions.xy);
-    float3 worldSpacePosition = ReconstructWorldSpacePositionFromDepth(uv, depth, frameShaderParameters.clipToWorldMatrix);
+    float3 worldSpacePosition = ReconstructWorldSpacePositionFromUVZ(uv, depth, frameShaderParameters.clipToWorldMatrix);
 
     uint randSeed = RandInit(launchIndex.x + launchIndex.y * launchDimensions.x, frameShaderParameters.frameIndex);
 
@@ -63,12 +63,8 @@ void RayTracingShadowsRayGen()
     //float3 B = GetPerpendicularVector(N);
     //float3 T = cross(B, N);
 
-    float3 T; float3 B;
-    CreateOrthonormalBasis(T, B, N);
-
-    float3x3 TBN = float3x3(T, B, N);
-    TBN = transpose(TBN);
-    randDirection = mul(TBN, randDirection);
+    float3x3 tangentToWorld = CreateTangentSpaceBasis(N);
+    randDirection = mul(tangentToWorld, randDirection);
     //randDirection = N;
 
     // Prepare a shadow ray.

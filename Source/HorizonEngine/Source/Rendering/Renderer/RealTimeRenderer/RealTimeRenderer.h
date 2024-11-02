@@ -251,6 +251,10 @@ namespace Horizon
             RenderGraph& renderGraph,
             const SceneView& view);
 
+        void RenderScreenSpaceIndirectDiffuse(
+            RenderGraph& renderGraph,
+            const SceneView& view);
+
         void RenderScreenSpaceReflections(
             RenderGraph& renderGraph,
             const SceneView& view);
@@ -535,7 +539,7 @@ namespace Horizon
             RenderGraphPersistentTexture* sceneDepthTexture;
             RenderGraphPersistentTexture* ambientOcclusionTexture;
             RenderGraphPersistentTexture* volumetricFogLightScatteringTexture;
-            RenderGraphPersistentTexture* temporalSuperSamplingTexture;
+            RenderGraphPersistentTexture* temporalSuperSamplingOutputTexture;
         };
 
         HistoryFrame historyFrame;

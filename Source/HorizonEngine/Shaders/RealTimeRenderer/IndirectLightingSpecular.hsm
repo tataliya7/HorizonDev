@@ -76,7 +76,7 @@ void IndirectLightingSpecularPS(in float4 position : SV_Position, out float4 out
     float sceneDepth = sceneDepthTexture[pixelCoord].r;
     float ambientOcclusion = ambientOcclusionTexture[pixelCoord].r;
 
-    float3 worldPosition = ReconstructWorldSpacePositionFromDepth(uv, sceneDepth, frameShaderParameters.clipToWorldMatrix);
+    float3 worldPosition = ReconstructWorldSpacePositionFromUVZ(uv, sceneDepth, frameShaderParameters.clipToWorldMatrix);
     float3 normal = DecodeNormalFromGBuffer(gbuffer0Data.xyz);
     float metallic = gbuffer1Data.x;
     float specular = gbuffer1Data.y;

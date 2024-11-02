@@ -89,7 +89,7 @@ void LensFlareGhostPS(in float4 position : SV_Position, out float3 result : SV_T
     haloMask = pow(1.0f - haloMask, 5.0f);
 #endif
 
-    float2 ndcPos = UVSpaceToClipSpace(uv);
+    float2 ndcPos = ScreenSpaceUVToNDCSpaceXY(uv);
     float vignette = Vignette(ndcPos);
     vignette *= Vignette(ndcPos * 0.8f);
     vignette = vignette * 0.95 + 0.05;

@@ -59,7 +59,7 @@ namespace Horizon
         const float a = -1.0f / (sign + n.z);
         const float b = n.x * n.y * a;
         b1 = Vector3(1.0f + sign * n.x * n.x * a, sign * b, -sign * n.x);
-        b2 = Vector3(b, sign + n.y * n.y* a, -n.y);
+        b2 = Vector3(b, sign + n.y * n.y * a, -n.y);
     }
 
     void SetupSkyAtmosphereViewRelatedParameters(SkyAtmosphereViewRelatedParameters& outParameters, const SkyAtmosphereRenderObject& renderObject, const Vector3& worldSpaceCameraPosition, const Vector3& cameraForwardVector)

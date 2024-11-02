@@ -63,6 +63,7 @@ namespace Horizon
         historyFrame.autoExposureBuffer = resourcePool->CacheBuffer(autoExposureBuffer, autoExposureBufferDesc, "AutoExposureBuffer");
 
         historyFrame.volumetricFogLightScatteringTexture = nullptr;
+        historyFrame.temporalSuperSamplingOutputTexture = nullptr;
     }
 
     bool RealTimeRenderer::IsBloomEnabled() const
@@ -689,6 +690,8 @@ namespace Horizon
         // {
         //     sceneTextures.ambientOcclusionTexture = RenderRayTracingAmbientOcclusion(renderGraph, view);
         // }
+
+        RenderScreenSpaceIndirectDiffuse(renderGraph, view);
 
         AddIndirectLightingDiffusePass(renderGraph, view);
 

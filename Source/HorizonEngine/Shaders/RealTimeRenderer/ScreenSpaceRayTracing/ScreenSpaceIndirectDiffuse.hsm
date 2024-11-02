@@ -1,0 +1,85 @@
+#include "../../ShaderCommon.hsh"
+#include "../../Random.hsh"
+#include "../RealTimeRendererCommon.hsh"
+#include "ScreenSpaceRayTracingCommon.hsh"
+
+SHADER_CONSTANTS_STRUCT_BEGIN();
+SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferSRV);
+SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(1, GBuffer0SRV);
+SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(2, GBuffer1SRV);
+SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(3, SceneDepthTextureSRV);
+SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(4, DepthPyramidTextureSRV);
+SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(5, MotionVectorTextureSRV);
+SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(6, PreviousSceneColorTextureSRV);
+SHADER_CONSTANTS_TEXTURE_2D_UAV(7, float4, SreenSpaceIndirectDiffuseTextureUAV);
+SHADER_CONSTANTS_STRUCT_END();
+
+[shader("compute")]
+[numthreads(8, 8, 1)]
+void ScreenSpaceIndirectDiffuseCS(uint3 GroupID : SV_GroupID, uint3 GroupThreadID : SV_GroupThreadID, uint3 dispatchThreadID : SV_DispatchThreadID)
+{
+    StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
+    Texture2D gbuffer0 = ShaderConstants.GetGBuffer0SRV();
+    Texture2D gbuffer1 = ShaderConstants.GetGBuffer1SRV();
+    Texture2D sceneDepthTexture = ShaderConstants.GetSceneDepthTextureSRV();
+    Texture2D depthPyramidTexture = ShaderConstants.GetDepthPyramidTextureSRV();
+    Texture2D motionVectorTexture = ShaderConstants.GetMotionVectorTextureSRV();
+    Texture2D previousSceneColorTexture = ShaderConstants.GetPreviousSceneColorTextureSRV();
+    RWTexture2D<float4> indirectDiffuseTexture = ShaderConstants.GetSreenSpaceIndirectDiffuseTextureUAV();
+
+    PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
+
+    uint width = frameShaderParameters.renderWidth;
+    uint height = frameShaderParameters.renderHeight;
+    if (dispatchThreadID.x >= width || dispatchThreadID.y >= height)
+    {
+        return;
+    }
+
+    uint2 pixelCoord = dispatchThreadID.xy;
+    float2 uv = (pixelCoord + 0.5f) / float2(width, height);
+
+    float4 gbuffer0Data = gbuffer0.SampleLevel(GlobalSamplerPointClamp, uv, 0);
+    float4 gbuffer1Data = gbuffer1.SampleLevel(GlobalSamplerPointClamp, uv, 0);
+    float depth = sceneDepthTexture.SampleLevel(GlobalSamplerPointClamp, uv, 0).r;
+
+    float3 normal = DecodeNormalFromGBuffer(gbuffer0Data.xyz);
+    float metallic = gbuffer1Data.x;
+    float specular = gbuffer1Data.y;
+    float roughness = gbuffer1Data.z;
+
+    float3 worldSpacePosition = ReconstructWorldSpacePositionFromUVZ(uv, depth, frameShaderParameters.clipToWorldMatrix);
+
+	const float noise = InterleavedGradientNoiseEX(pixelCoord, frameShaderParameters.frameIndexMod8);
+
+    float3x3 tbn = CreateTangentSpaceBasis(normal);
+
+    // float2 lowDiscrepancyPoint2D = HammersleySequence2D(i, SampleCount);
+    // float3 L = TangentToWorld(UniformSampleHemisphere(lowDiscrepancyPoint2D), T, B, N);
+
+    // float3 rayOrigin = worldSpacePosition;
+    // float3 rayDirection = ;
+    // float maxDistance = ;
+
+    // ScreenSpaceRay ray = CreateScreenSpaceRay(
+    //     rayOrigin,
+    //     rayDirection,
+    //     maxDistance,
+    //     noise,
+    //     frameShaderParameters.worldToClipMatrix);
+
+    // const uint stepCount = 8;
+
+    // bool foundHit = false;
+    // float3 hitPointUVZ;
+
+    // CastScreenSapceRay_LinearTracing(
+    //     sceneDepthTexture,
+    //     ray,
+    //     stepCount,
+    //     noise,
+    //     foundHit,
+    //     hitPointUVZ);
+
+    // indirectDiffuseTexture[pixelCoord] = ;
+}

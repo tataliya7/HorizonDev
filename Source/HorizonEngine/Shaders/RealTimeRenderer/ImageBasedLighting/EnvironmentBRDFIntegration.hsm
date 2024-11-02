@@ -11,16 +11,14 @@ float2 IntegrateBRDF(float NdotV, float roughness)
 {
     float3 V = float3(sqrt(1.0f - NdotV * NdotV), 0.0f, NdotV);
 
-    float3 T = 0.0f;
-    float3 B = 0.0f;
     float3 N = float3(0.0f, 0.0f, 1.0f);
-    CreateOrthonormalBasis(T, B, N);
+    float3x3 tangentToWorld = CreateTangentSpaceBasis(N);
 
     float2 result = 0.0f;
     for (uint sampleIndex = 0; sampleIndex < SampleCount; sampleIndex++)
     {
         float2 Xi = HammersleySequence2D(sampleIndex, SampleCount);
-        float3 H = TangentToWorld(ImportanceSampleGGX(Xi, roughness), T, B, N);
+        float3 H = mul(tangentToWorld, ImportanceSampleGGX(Xi, roughness));
         float3 L = 2.0f * dot(V, H) * H - V;
 
         float NdotL = clamp(dot(N, L), 0.0f, 1.0f);

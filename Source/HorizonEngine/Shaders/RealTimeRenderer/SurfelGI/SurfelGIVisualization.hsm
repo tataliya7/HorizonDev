@@ -48,7 +48,7 @@ void SurfelGIVisualizationCS(
         return;
     }
 
-    float3 worldSpacePosition = ReconstructWorldSpacePositionFromDepth(uv, sceneDepth, frameShaderParameters.clipToWorldMatrix);
+    float3 worldSpacePosition = ReconstructWorldSpacePositionFromUVZ(uv, sceneDepth, frameShaderParameters.clipToWorldMatrix);
 
     int cellIndex = GetUniformGridCellIndex(worldSpacePosition, frameShaderParameters.cameraPosition);
     if (cellIndex < 0)

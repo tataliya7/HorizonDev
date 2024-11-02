@@ -64,7 +64,7 @@ void MotionVectorsCS(uint3 dispatchThreadID : SV_DispatchThreadID)
     uint geometryID = visibilityID.r;
     uint primitiveID = visibilityID.g;
 
-    float4 unprojected = mul(frameShaderParameters.clipToWorldMatrix, float4(UVSpaceToClipSpace(uv), sceneDepth, 1.0f));
+    float4 unprojected = mul(frameShaderParameters.clipToWorldMatrix, float4(ScreenSpaceUVToNDCSpaceXY(uv), sceneDepth, 1.0f));
     unprojected.xyz /= unprojected.w;
     float3 cameraRayOrigin = frameShaderParameters.cameraPosition;
     float3 cameraRayDirection = normalize(unprojected.xyz - cameraRayOrigin);
@@ -128,7 +128,7 @@ void MotionVectorsCS(uint3 dispatchThreadID : SV_DispatchThreadID)
 
         float2 screenSpacePosition = uv;
         float4 previousClipSpacePosition = mul(frameShaderParameters.previousWorldToClipMatrix, float4(previousHitPointWorldPosition, 1.0f));
-        float2 previousScreenSpacePosition = ClipSpaceToUVSpace(previousClipSpacePosition.xy / previousClipSpacePosition.w);
+        float2 previousScreenSpacePosition = NDCSpaceXYToScreenSpaceUV(previousClipSpacePosition.xy / previousClipSpacePosition.w);
         float2 motionVector = previousScreenSpacePosition - screenSpacePosition;
         motionVector -= motionVectorJitterCancellation;
         // if (isnan(motionVector.x) || isnan(motionVector.y))
@@ -141,9 +141,9 @@ void MotionVectorsCS(uint3 dispatchThreadID : SV_DispatchThreadID)
     else
     {
         float2 screenSpacePosition = uv;
-        float4 clipSpacePosition = float4(UVSpaceToClipSpace(uv), 0.0f, 1.0f);
+        float4 clipSpacePosition = float4(ScreenSpaceUVToNDCSpaceXY(uv), 0.0f, 1.0f);
         float4 previousClipSpacePosition = mul(frameShaderParameters.currentClipToPreviousClipMatrix, clipSpacePosition);
-        float2 previousScreenSpacePosition = ClipSpaceToUVSpace(previousClipSpacePosition.xy / previousClipSpacePosition.w);
+        float2 previousScreenSpacePosition = NDCSpaceXYToScreenSpaceUV(previousClipSpacePosition.xy / previousClipSpacePosition.w);
         float2 motionVector = previousScreenSpacePosition - screenSpacePosition;
         //motionVector -= motionVectorJitterCancellation;
 

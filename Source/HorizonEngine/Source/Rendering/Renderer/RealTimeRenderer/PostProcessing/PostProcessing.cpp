@@ -37,7 +37,7 @@ namespace Horizon
             sceneColorTexture = DispatchDepthOfField(renderGraph, view, sceneColorTexture);
         }
 
-        if (IsSuperResolutionEnabled())
+        if (IsSuperResolutionEnabled()) // TODO
         {
             RenderGraphTextureHandle exposureTexture = AddCopyExposurePass(renderGraph, view, autoExposureBuffer);
 
@@ -48,6 +48,8 @@ namespace Horizon
             tssDispatchDescription.motionVectorTexture = motionVectorTexture;
             tssDispatchDescription.exposureTexture = exposureTexture;
             sceneColorTexture = DispatchCustomTemporalSuperSampling(temporalSuperSamplingInterface, renderGraph, view, tssDispatchDescription);
+
+            renderGraph.ExportTextureDeferred(sceneColorTexture, &historyFrame.temporalSuperSamplingOutputTexture);
         }
 
         if (IsMotionBlurEnabled())

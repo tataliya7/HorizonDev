@@ -164,7 +164,7 @@ float ConvertViewSpaceDepthToNDCSpaceDepth(float viewSpaceDepth, float2 transfor
     return -(transform.x + transform.y / viewSpaceDepth);
 }
 
-float3 ReconstructWorldSpacePositionFromDepth(float2 uv, float depth, float4x4 clipToWorldMatrix)
+float3 ReconstructWorldSpacePositionFromUVZ(float2 uv, float depth, float4x4 clipToWorldMatrix)
 {
     float2 xy = float2(uv.x * 2.0 - 1.0, (1.0 - uv.y) * 2.0 - 1.0);
     float4 clipSpacePosition = float4(xy, depth, 1.0);
@@ -182,7 +182,7 @@ float3 ReconstructViewSpacePositionFromDepth(float2 uv, float depth, float4x4 cl
 
 float CalculateScreenEdgeVignette(float2 uv, float fadeFactor)
 {
-    float2 ndc = UVSpaceToClipSpace(uv);
+    float2 ndc = ScreenSpaceUVToNDCSpaceXY(uv);
     float2 attenuation = saturate(abs(ndc) * fadeFactor - (fadeFactor - 1.0f));
     float vignette = saturate(1.0 - dot(attenuation, attenuation));
     return vignette;
@@ -221,6 +221,39 @@ float3 DecodeNormalFromGBuffer(float3 n)
 {
     return n * 2.0f - 1.0f;
 }
+
+// struct GBufferData
+// {
+//     float3 baseColor;
+//     float metallic;
+//     float roughness;
+//     float specular;
+//     float3 normal;
+// };
+
+// void EncodeGBufferData(
+//     in GBufferData gbufferData,
+//     out float4 gbuffer0Data,
+//     out float4 gbuffer1Data,
+//     out float4 gbuffer2Data)
+// {
+//     gbuffer0Data = float4(EncodeNormalToGBuffer(gbufferData.normal), 0/* unsued */);
+//     gbuffer1Data = float4(gbufferData.metallic, gbufferData.specular, gbufferData.roughness, 0/* unsued */);
+//     gbuffer2Data = float4(gbufferData.baseColor.rgb, 1/* unsued */);
+// }
+
+// void DecodeGBufferData(
+//     out GBufferData gbufferData,
+//     in float4 gbuffer0Data,
+//     in float4 gbuffer1Data,
+//     in float4 gbuffer2Data)
+// {
+//     gbufferData.normal = DecodeNormalFromGBuffer(gbuffer0Data.xyz);
+//     gbufferData.metallic = gbuffer1Data.x;
+//     gbufferData.specular = gbuffer1Data.y;
+//     gbufferData.roughness = gbuffer1Data.z;
+//     gbufferData.baseColor = gbuffer2Data.xyz;
+// }
 
 float3 CalculatePerspectiveCorrectBarycentric(float4 clip0, float4 clip1, float4 clip2, float2 pixelNDC)
 {

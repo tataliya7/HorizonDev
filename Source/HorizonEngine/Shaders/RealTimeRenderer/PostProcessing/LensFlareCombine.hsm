@@ -67,7 +67,7 @@ void LensFlareCombinePS(float4 position : SV_Position, out float3 result : SV_Ta
     haloMask = smoothstep(0.5f, 1.0f, haloMask);
     haloMask = 0;
 
-    float2 ndcPos = UVSpaceToClipSpace(uv);
+    float2 ndcPos = ScreenSpaceUVToNDCSpaceXY(uv);
     float vignette = Vignette(ndcPos);
     vignette *= Vignette(ndcPos * 0.8f);
     vignette = vignette * 0.95 + 0.05;

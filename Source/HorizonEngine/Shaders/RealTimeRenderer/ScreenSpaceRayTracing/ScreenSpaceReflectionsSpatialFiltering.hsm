@@ -36,7 +36,7 @@ void SSRSpatialFilteringCS(uint3 dispatchThreadID : SV_DispatchThreadID)
     const float linearDepth = ComputeCameraSpaceDepth(depth, frameShaderParameters.nearClippingPlane, frameShaderParameters.farClippingPlane);
     const float variance = resolveVariance[coord].r;
 
-    if (!NeedReflection(roughness, depth, SSR_ROUGHNESS_THRESHOLD_EARLY_EXIT))
+    if (!NeedReflection(roughness, depth, SSR_ROUGHNESS_THRESHOLD_CHEAP_RAY_TRACING))
     {
         outputTexture[coord] = inputTexture[coord];
         return;
@@ -54,7 +54,7 @@ void SSRSpatialFilteringCS(uint3 dispatchThreadID : SV_DispatchThreadID)
     float4 result = inputTexture[coord];
     if (variance > varianceExitThreshold && effectiveRadius > 0)
     {
-        float3 P = ReconstructWorldSpacePositionFromDepth(uv, depth, frameShaderParameters.clipToWorldMatrix);
+        float3 P = ReconstructWorldSpacePositionFromUVZ(uv, depth, frameShaderParameters.clipToWorldMatrix);
         float3 N = gbuffer1[coord].xyz;
 
         float4 sum = 0;
@@ -72,10 +72,10 @@ void SSRSpatialFilteringCS(uint3 dispatchThreadID : SV_DispatchThreadID)
                 const float sampleRoughness = gbuffer1[sampleCoord].w;
 
                 float2 sampleUV = (sampleCoord + 0.5) * (1.0 / resolution.x, 1.0 / resolution.y);
-                float3 sampleP = ReconstructWorldSpacePositionFromDepth(sampleUV, sampleDepth, frameShaderParameters.clipToWorldMatrix);
+                float3 sampleP = ReconstructWorldSpacePositionFromUVZ(sampleUV, sampleDepth, frameShaderParameters.clipToWorldMatrix);
 
                 // Don't let invalid roughness samples interfere
-                if (NeedReflection(sampleRoughness, sampleDepth, SSR_ROUGHNESS_THRESHOLD_EARLY_EXIT))
+                if (NeedReflection(sampleRoughness, sampleDepth, SSR_ROUGHNESS_THRESHOLD_CHEAP_RAY_TRACING))
                 {
                     float3 dq = P - sampleP;
                     float planeError = max(abs(dot(dq, sampleN)), abs(dot(dq, N)));

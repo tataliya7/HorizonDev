@@ -118,20 +118,20 @@ void SSRTileClassificationVerticalCS(uint3 dispatchThreadID : SV_DispatchThreadI
     const uint tileCoord = (dispatchThreadID.x & 0xFFFF) | ((dispatchThreadID.y & 0xFFFF) << 16);
 
     uint tileIndex = 0;
-    if (minRoughness < SSR_ROUGHNESS_THRESHOLD_CHEAP_RAY)
+    if ((minRoughness > maxRoughness) || (minRoughness > SSR_ROUGHNESS_THRESHOLD_CHEAP_RAY_TRACING))
     {
-        rayAllocationBuffer.InterlockedAdd(SSR_RAY_ALLOCATION_BUFFER_OFFSET_EXPENSIVE_TILES_COUNT, 1, tileIndex);
-        //expensiveTilesBuffer[uint2(tileIndex, 0)] = tileCoord;
+        rayAllocationBuffer.InterlockedAdd(SSR_RAY_ALLOCATION_BUFFER_OFFSET_EARLY_EXIT_TILE_COUNT, 1, tileIndex);
+        //earlyExitTilesBuffer[uint2(tileIndex, 0)] = tileCoord;
     }
-    else if (maxRoughness > SSR_ROUGHNESS_THRESHOLD_CHEAP_RAY && minRoughness < SSR_ROUGHNESS_THRESHOLD_EARLY_EXIT)
+    else if (minRoughness < SSR_ROUGHNESS_THRESHOLD_EXPENSIVE_RAY_TRACING)
     {
-        rayAllocationBuffer.InterlockedAdd(SSR_RAY_ALLOCATION_BUFFER_OFFSET_CHEAP_TILES_COUNT, 1, tileIndex);
-        //cheapTilesBuffer[uint2(tileIndex, 0)] = tileCoord;
+        rayAllocationBuffer.InterlockedAdd(SSR_RAY_ALLOCATION_BUFFER_OFFSET_EXPENSIVE_RAY_TRACING_TILE_COUNT, 1, tileIndex);
+        //expensiveTilesBuffer[uint2(tileIndex, 0)] = tileCoord;
     }
     else
     {
-        rayAllocationBuffer.InterlockedAdd(SSR_RAY_ALLOCATION_BUFFER_OFFSET_EARLY_EXIT_TILES_COUNT, 1, tileIndex);
-        //earlyExitTilesBuffer[uint2(tileIndex, 0)] = tileCoord;
+        rayAllocationBuffer.InterlockedAdd(SSR_RAY_ALLOCATION_BUFFER_OFFSET_CHEAP_RAY_TRACING_TILE_COUNT, 1, tileIndex);
+        //cheapTilesBuffer[uint2(tileIndex, 0)] = tileCoord;
     }
 
     tileClassificationTexture[dispatchThreadID.xy] = float2(minRoughness, maxRoughness);

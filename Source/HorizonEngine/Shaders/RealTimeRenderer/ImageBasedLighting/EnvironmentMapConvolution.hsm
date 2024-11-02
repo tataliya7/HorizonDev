@@ -10,11 +10,10 @@ SHADER_CONSTANTS_STRUCT_END();
 // Based on https://placeholderart.wordpress.com/2015/07/28/implementation-notes-runtime-environment-map-filtering-for-image-based-lighting/
 float3 ConvolveEnvironmentMap(TextureCube environmentMapTexture, float3 N, float roughness, uint numSamples)
 {
-    float3 T; float3 B;
-    CreateOrthonormalBasis(T, B, N);
-
     float3 R = N;
     float3 V = R;
+
+    float3x3 tangentToWorld = CreateTangentSpaceBasis(N);
 
     // Solid angle of 1 pixel across all cube faces
     uint cubemapSize = 32;
@@ -25,7 +24,7 @@ float3 ConvolveEnvironmentMap(TextureCube environmentMapTexture, float3 N, float
     for (uint i = 0; i < numSamples; i++)
     {
         float2 Xi = HammersleySequence2D(i, numSamples);
-        float3 H = TangentToWorld(ImportanceSampleGGX(Xi, roughness), T, B, N);
+        float3 H = mul(tangentToWorld, ImportanceSampleGGX(Xi, roughness));
         float3 L = normalize(2.0f * dot(V, H) * H - V);
 
         float NdotL = dot(N, L);

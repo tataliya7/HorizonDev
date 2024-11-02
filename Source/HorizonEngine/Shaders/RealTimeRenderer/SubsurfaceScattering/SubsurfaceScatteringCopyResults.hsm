@@ -23,7 +23,7 @@ void SubsurfaceScatteringCopyResultsVS(uint VertexID : SV_VertexID, uint Instanc
     uint2 vertexPosition = tileIndex * SUBSURFACE_SCATTERING_TILE_SIZE + SubsurfaceScatteringTileVertexPositionOffsets[VertexID];
 
     vsOutput.uv = float2(vertexPosition) * frameShaderParameters.renderResolution.zw;
-    vsOutput.position = float4(UVSpaceToClipSpace(vsOutput.uv), 0.0f, 1.0f);
+    vsOutput.position = float4(ScreenSpaceUVToNDCSpaceXY(vsOutput.uv), 0.0f, 1.0f);
 }
 
 [shader("pixel")]

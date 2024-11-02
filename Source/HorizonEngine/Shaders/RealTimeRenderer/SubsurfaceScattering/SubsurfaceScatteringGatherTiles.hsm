@@ -47,7 +47,7 @@ void SubsurfaceScatteringGatherTilesCS(uint3 dispatchThreadID : SV_DispatchThrea
         float3 diffuse = sceneColor.rgb * ratioOfDiffuse;
 
         float linearSceneDepth = LinearDepth01(sceneDepth, frameShaderParameters.nearClippingPlane, frameShaderParameters.farClippingPlane);
-        //float noise = InterleavedGradientNoiseEx(pixelPosition, frameShaderParameters.frameIndexMod8);
+        //float noise = InterleavedGradientNoiseEX(pixelPosition, frameShaderParameters.frameIndexMod8);
         //float depth = linearSceneDepth + noise * (linearSceneDepth / 1024.0f);
 
         outputColor = float4(diffuse, linearSceneDepth);
