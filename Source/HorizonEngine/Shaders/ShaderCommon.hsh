@@ -30,6 +30,7 @@ float3x3 CreateTangentSpaceBasis(float3 n)
     float3 t, b;
     BuildOrthonormalBasis(n, t, b);
 
+    // TODO: remove transpose
     float3x3 tangentToWorld = transpose(float3x3(t, b, n));
     return tangentToWorld;
 }
@@ -58,11 +59,6 @@ float3 CalculateCubemapVector(float2 uv, uint face)
     case 5: return normalize(float3(-uv.x, -uv.y,  -1.0));
     }
     return 0;
-}
-
-float3 TangentToWorld(float3 vec, float3 T, float3 B, float3 N)
-{
-    return normalize(T * vec.x + B * vec.y + N * vec.z);
 }
 
 float2 ScreenSpaceUVToNDCSpaceXY(float2 uv)
