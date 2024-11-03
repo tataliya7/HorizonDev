@@ -20,6 +20,7 @@ namespace Horizon
         , shadowCascadeCount(description.shadowCascadeCount)
         , shadowCascadeSplitLambda(description.shadowCascadeSplitLambda)
         , maxShadowDistance(description.maxShadowDistance)
+        , shadowFadeoutFactor(description.shadowFadeoutFactor)
         , shadowMapDepthBiasConstantFactor(description.shadowMapDepthBiasConstantFactor)
         , shadowMapDepthBiasSlopeFactor(description.shadowMapDepthBiasSlopeFactor)
         , usedAsAtmosphericLight(description.usedAsAtmosphericLight)

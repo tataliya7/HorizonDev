@@ -140,6 +140,7 @@ namespace Horizon
         uint32 shadowCascadeCount;
         float shadowCascadeSplitLambda;
         float maxShadowDistance;
+        float shadowFadeoutFactor;
         float shadowMapDepthBiasConstantFactor;
         float shadowMapDepthBiasSlopeFactor;
         bool usedAsAtmosphericLight;
@@ -252,6 +253,7 @@ namespace Horizon
         uint32 shadowCascadeCount;
         float shadowCascadeSplitLambda;
         float maxShadowDistance;
+        float shadowFadeoutFactor;
         float shadowMapDepthBiasConstantFactor;
         float shadowMapDepthBiasSlopeFactor;
         bool usedAsAtmosphericLight;

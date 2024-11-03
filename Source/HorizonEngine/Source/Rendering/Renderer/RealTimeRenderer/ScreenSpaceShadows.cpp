@@ -4,6 +4,16 @@ namespace Horizon
 {
     static void SetupCascadedShadowMapShaderParameters(CascadedShadowMapShaderParameters& outCascades, const SceneView& view, const LightRenderObject& light)
     {
+        for (uint32 i = 0; i < RendererMaxShadowMapCascadeCount; i++)
+        {
+            outCascades.viewProjectionMatrix[i] = Matrix4x4f(1.0f);
+            outCascades.cascadeEndDistance[i] = std::numeric_limits<float>::max();
+            outCascades.transitionStartDistance[i] = std::numeric_limits<float>::max();
+        }
+        outCascades.shadowFadeoutParameters = Vector2(0.0f, 1.0f);
+        outCascades.useTransition = false;
+        outCascades.cascadeCount = 0;
+
         const Vector3& lightDirection = light.GetDirection();
         const uint32 shadowCascadeCount = light.GetShadowCascadeCount();
         const float maxShadowDistance = light.GetMaxShadowDistance();
@@ -24,7 +34,7 @@ namespace Horizon
         float ratio = maxZ / minZ;
 
         // Calculate split plane based on method presented in https://developer.nvidia.com/gpugems/GPUGems3/gpugems3_ch10.html
-        for (uint32_t i = 0; i < shadowCascadeCount; i++)
+        for (uint32 i = 0; i < shadowCascadeCount; i++)
         {
             float p = (i + 1) / static_cast<float>(shadowCascadeCount);
             float log = minZ * std::pow(ratio, p);
@@ -35,11 +45,12 @@ namespace Horizon
 
         // Calculate orthographic projection matrix for each cascade
         float lastSplitDist = 0.0;
-        for (uint32_t cascadeIndex = 0; cascadeIndex < shadowCascadeCount; cascadeIndex++)
+        for (uint32 cascadeIndex = 0; cascadeIndex < shadowCascadeCount; cascadeIndex++)
         {
             float splitDist = cascadeSplits[cascadeIndex];
 
-            glm::vec3 frustumCorners[8] = {
+            glm::vec3 frustumCorners[8] =
+            {
                 glm::vec3(-1.0f,  1.0f,  1.0f),
                 glm::vec3(1.0f,  1.0f,  1.0f),
                 glm::vec3(1.0f, -1.0f,  1.0f),
@@ -55,13 +66,14 @@ namespace Horizon
             glm::mat4 inverseCameraProjectionMatrix = Math::InverseMatrix(cameraProjectionMatrix);
 
             glm::mat4 invCam = view.transformations.viewToWorldMatrix * inverseCameraProjectionMatrix;
-            for (uint32_t i = 0; i < 8; i++)
+            for (uint32 i = 0; i < 8; i++)
             {
                 glm::vec4 invCorner = invCam * glm::vec4(frustumCorners[i], 1.0f);
                 frustumCorners[i] = invCorner / invCorner.w;
             }
 
-            for (uint32_t i = 0; i < 4; i++) {
+            for (uint32 i = 0; i < 4; i++)
+            {
                 glm::vec3 dist = frustumCorners[i + 4] - frustumCorners[i];
                 frustumCorners[i + 4] = frustumCorners[i] + (dist * splitDist);
                 frustumCorners[i] = frustumCorners[i] + (dist * lastSplitDist);
@@ -69,14 +81,14 @@ namespace Horizon
 
             // Get frustum center
             glm::vec3 frustumCenter = glm::vec3(0.0f);
-            for (uint32_t i = 0; i < 8; i++)
+            for (uint32 i = 0; i < 8; i++)
             {
                 frustumCenter += frustumCorners[i];
             }
             frustumCenter /= 8.0f;
 
             float radius = 0.0f;
-            for (uint32_t i = 0; i < 8; i++)
+            for (uint32 i = 0; i < 8; i++)
             {
                 float distance = glm::length(frustumCorners[i] - frustumCenter);
                 radius = glm::max(radius, distance);
@@ -86,16 +98,28 @@ namespace Horizon
             glm::vec3 maxExtents = glm::vec3(radius);
             glm::vec3 minExtents = -maxExtents;
 
-
             glm::mat viewMatrix = glm::lookAt(frustumCenter - lightDirection * -minExtents.z, frustumCenter, glm::vec3(0.0f, 1.0f, 0.0f));
             glm::mat projectionMatrix = glm::ortho(minExtents.x, maxExtents.x, minExtents.y, maxExtents.y, maxExtents.z - minExtents.z, 0.0f);
 
             lastSplitDist = cascadeSplits[cascadeIndex];
 
+            float cascadeEndDistance = nearClip + splitDist * clipRange;
+            float transitionRange = cascadeIndex > 0 ? cascadeEndDistance - outCascades.cascadeEndDistance[cascadeIndex - 1] : splitDist * clipRange;
+            transitionRange *= 0.2f;
+
             outCascades.viewProjectionMatrix[cascadeIndex] = projectionMatrix * viewMatrix;
-            outCascades.splitDepth[cascadeIndex] = (nearClip + splitDist * clipRange) * -1.0f;
-            outCascades.cascadeCount = shadowCascadeCount;
+            outCascades.cascadeEndDistance[cascadeIndex] = cascadeEndDistance;
+            outCascades.transitionStartDistance[cascadeIndex] = cascadeEndDistance - transitionRange;
+            outCascades.inverseTransitionRange[cascadeIndex] = 1.0f / transitionRange;
         }
+
+        float shadowFadeoutRange = clipRange * light.shadowFadeoutFactor;
+        float shadowFadeoutStartDistance = maxShadowDistance - shadowFadeoutRange;
+
+        outCascades.shadowMapSize = Vector2(float(light.shadowMapSize), 1.0f / float(light.shadowMapSize));
+        outCascades.shadowFadeoutParameters = Vector2(shadowFadeoutStartDistance, 1.0f / shadowFadeoutRange);
+        outCascades.useTransition = 1;
+        outCascades.cascadeCount = shadowCascadeCount;
     }
 
     void RealTimeRenderer::DispatchCascadedShadowMapPassDrawCommands(RenderBackendCommandList& commandList, const LightRenderObject& light, uint32 cascadeIndex, RenderBackendBufferHandle cascadeShadowMapDataBuffer)
@@ -230,7 +254,7 @@ namespace Horizon
         }
 
         renderGraph.AddPass(
-            std::format("ScreenSpaceShadows (Compute, {}x{})", renderResolution.width, renderResolution.height),
+            std::format("ShadowMapProjection (Compute, {}x{})", renderResolution.width, renderResolution.height),
             RenderGraphPassFlags::Compute,
             [&](RenderGraphBuilder& builder)
             {

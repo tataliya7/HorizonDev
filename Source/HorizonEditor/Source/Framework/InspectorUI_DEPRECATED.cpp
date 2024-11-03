@@ -340,6 +340,17 @@ namespace Horizon
             ImGui::NextColumn();
 
             ImGui::AlignTextToFramePadding();
+            ImGui::TextUnformatted("Shadow Fadeout Factor");
+            ImGui::NextColumn();
+            ImGui::PushItemWidth(-1);
+            if (ImGui::DragFloat("##shadowFadeoutFactor", &component.shadowFadeoutFactor, 0.01f, 0.0f, 1.0f))
+            {
+
+            }
+            ImGui::PopItemWidth();
+            ImGui::NextColumn();
+
+            ImGui::AlignTextToFramePadding();
             ImGui::TextUnformatted("Shadow Map Depth Bias Constant Factor");
             ImGui::NextColumn();
             ImGui::PushItemWidth(-1);

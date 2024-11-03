@@ -44,13 +44,15 @@ namespace Horizon
         bool castShadows = true;
 
         // Cascade Shadow Maps
-        uint32 shadowCascadeCount = 3;
+        uint32 shadowCascadeCount = 4;
 
-        uint32 shadowMapSize = 4096;
+        uint32 shadowMapSize = 2048;
 
         float shadowCascadeSplitLambda = 0.6f;
 
         float maxShadowDistance = 100.0f;
+
+        float shadowFadeoutFactor = 0.0f;
 
         float shadowMapDepthBiasConstantFactor = -1.0f;
 

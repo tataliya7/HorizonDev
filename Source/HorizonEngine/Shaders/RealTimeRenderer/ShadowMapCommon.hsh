@@ -5,9 +5,13 @@
 struct CascadedShadowMapShaderParameters
 {
     float4x4 worldToClipMatrix[MAX_SHADOW_CASCADE_COUNT];
-    float splitDepth[MAX_SHADOW_CASCADE_COUNT];
+    float cascadeEndDistance[MAX_SHADOW_CASCADE_COUNT];
+    float transitionStartDistance[MAX_SHADOW_CASCADE_COUNT];
+    float inverseTransitionRange[MAX_SHADOW_CASCADE_COUNT];
+    float2 shadowMapSize;
+    float2 shadowFadeoutParameters;
+    uint useTransition;
     uint cascadeCount;
-    // float shadowMapInvSize;
 };
 DECLARE_ALIASED_ARRAY_STRUCTURED_BUFFER_SRV(CascadedShadowMapShaderParameters);
 
@@ -54,8 +58,8 @@ static const float2 PoissonOffsets[32] = {
 uint CalculateCascadeIndex(float cameraSpacePositionZ, CascadedShadowMapShaderParameters parameters)
 {
     float4 depths = cameraSpacePositionZ.xxxx;
-    float4 farPlanes = float4(parameters.splitDepth[0], parameters.splitDepth[1], parameters.splitDepth[2], parameters.splitDepth[3]);
-    float4 count = float4(depths <= farPlanes); // TODO: >=
+    float4 distances = float4(parameters.cascadeEndDistance[0], parameters.cascadeEndDistance[1], parameters.cascadeEndDistance[2], parameters.cascadeEndDistance[3]);
+    float4 count = float4(depths >= distances);
 	uint cascadeIndex = uint(count.x + count.y + count.z + count.w);
     return cascadeIndex;
 }
@@ -66,7 +70,7 @@ float PCF3x3(Texture2DArray shadowMapTexture, float2 shadowMapPosition, uint cas
     float2 offset = offsetScale;
     offset = float2(offset.x * offsetRotation.x - offset.y * offsetRotation.y, offset.y * offsetRotation.x + offset.x * offsetRotation.y);
 
-    float shadowFactor = 0;
+    float shadowFactor = 0.0f;
     shadowFactor += shadowMapTexture.SampleCmpLevelZero(GlobalSamplerComparisonLessLinearClamp, float3(shadowMapPosition + offset, cascadeIndex), sceneDepth, int2(-2, -2)).r;
     shadowFactor += shadowMapTexture.SampleCmpLevelZero(GlobalSamplerComparisonLessLinearClamp, float3(shadowMapPosition + offset, cascadeIndex), sceneDepth, int2(-2,  0)).r;
     shadowFactor += shadowMapTexture.SampleCmpLevelZero(GlobalSamplerComparisonLessLinearClamp, float3(shadowMapPosition + offset, cascadeIndex), sceneDepth, int2(-2,  2)).r;
@@ -76,9 +80,9 @@ float PCF3x3(Texture2DArray shadowMapTexture, float2 shadowMapPosition, uint cas
     shadowFactor += shadowMapTexture.SampleCmpLevelZero(GlobalSamplerComparisonLessLinearClamp, float3(shadowMapPosition + offset, cascadeIndex), sceneDepth, int2( 2, -2)).r;
     shadowFactor += shadowMapTexture.SampleCmpLevelZero(GlobalSamplerComparisonLessLinearClamp, float3(shadowMapPosition + offset, cascadeIndex), sceneDepth, int2( 2,  0)).r;
     shadowFactor += shadowMapTexture.SampleCmpLevelZero(GlobalSamplerComparisonLessLinearClamp, float3(shadowMapPosition + offset, cascadeIndex), sceneDepth, int2( 2,  2)).r;
-    shadowFactor /= 9.0;
+    shadowFactor /= 9.0f;
 
-    return (1 - shadowFactor);
+    return (1.0f - shadowFactor);
 #else
     float sum = 0.0;
     uint samples = 32;
