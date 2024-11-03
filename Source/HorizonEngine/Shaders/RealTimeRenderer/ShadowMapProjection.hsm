@@ -72,13 +72,20 @@ void ShadowMapProjectionForDistantLightCS(uint3 dispatchThreadID : SV_DispatchTh
     RWTexture2D<float4> shadowMaskTexture = ShaderConstants.GetShadowMaskTextureUAV();
 
     CascadedShadowMapShaderParameters cascadedShadowMapShaderParameters = cascadedShadowMapDataBuffer[0];
-    float sceneDepth = sceneDepthTexture.SampleLevel(GlobalSamplerPointClamp, uv, 0).r;
-    float3 worldSpacePosition = ReconstructWorldSpacePositionFromUVZ(uv, sceneDepth, frameShaderParameters.clipToWorldMatrix);
+    float depth = sceneDepthTexture.SampleLevel(GlobalSamplerPointClamp, uv, 0).r;
+    float3 worldSpacePosition = ReconstructWorldSpacePositionFromUVZ(uv, depth, frameShaderParameters.clipToWorldMatrix);
     float4 cameraSpacePosition = mul(frameShaderParameters.worldToViewMatrix, float4(worldSpacePosition, 1.0f));
 
 	const float noise = InterleavedGradientNoiseEX(pixelCoord, frameShaderParameters.frameIndexMod8);
 
     float cameraSpaceDepth = -cameraSpacePosition.z;
+
+    if (depth == FAR_CLIPPING_PLANE_DEPTH_VALUE)
+    {
+        shadowMaskTexture[pixelCoord] = float4(1.0f, 0.0f, 0.0f, 0.0f);
+        return;
+    }
+
     uint cascadeIndex = CalculateCascadeIndex(cameraSpaceDepth, cascadedShadowMapShaderParameters);
 
     uint randSeed = RandInit(pixelCoord.x + pixelCoord.y * width, frameShaderParameters.frameIndex);
@@ -135,5 +142,5 @@ void ShadowMapProjectionForDistantLightCS(uint3 dispatchThreadID : SV_DispatchTh
     float fadeout = saturate((cameraSpaceDepth - cascadedShadowMapShaderParameters.shadowFadeoutParameters.x) * cascadedShadowMapShaderParameters.shadowFadeoutParameters.y);
     shadowFactor = lerp(shadowFactor, 1.0f, fadeout * fadeout);
 
-    shadowMaskTexture[pixelCoord] = float4(shadowFactor, 0.0f, 0.0f, 1.0f);
+    shadowMaskTexture[pixelCoord] = float4(shadowFactor, 0.0f, 0.0f, 0.0f);
 }
