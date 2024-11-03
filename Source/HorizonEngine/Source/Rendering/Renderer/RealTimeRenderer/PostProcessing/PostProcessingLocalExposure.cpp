@@ -29,10 +29,10 @@ namespace Horizon
 
         uint32 width = std::max(1u, ComputeWorkGroupCount(targetResolution.width, downsampleFactor));
         uint32 height = std::max(1u, ComputeWorkGroupCount(targetResolution.height, downsampleFactor));
-        uint32 mipLevels = Math::MaxMipLevelCount(width, height);
+        uint32 mipLevelCount = Math::MaxMipLevelCount(width, height);
 
-        coarsestMipLevel = std::clamp(coarsestMipLevel, 0, (int)mipLevels - 1);
-        displayMipLevel = std::clamp(std::min(displayMipLevel, coarsestMipLevel), 0, (int)mipLevels - 1);
+        coarsestMipLevel = std::clamp(coarsestMipLevel, 0, (int)mipLevelCount - 1);
+        displayMipLevel = std::clamp(std::min(displayMipLevel, coarsestMipLevel), 0, (int)mipLevelCount - 1);
 
         RenderGraphTextureDesc localExposureLuminancesDesc = RenderGraphTextureDesc::Create2D(
             width,
@@ -40,7 +40,7 @@ namespace Horizon
             RenderBackendTextureFormat::RGBA16Float,
             RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::UnorderedAccess,
             RenderBackendTextureClearValue::Black,
-            mipLevels);
+            mipLevelCount);
         RenderGraphTextureHandle localExposureLuminances = renderGraph.CreateTexture(localExposureLuminancesDesc, "LocalExposureLuminances");
 
         RenderGraphTextureHandle localExposureWeights = renderGraph.CreateTexture(localExposureLuminancesDesc, "LocalExposureWeights");
@@ -117,7 +117,7 @@ namespace Horizon
                         uint32 h = height;
                         RenderBackendTextureHandle textureHandle = registry.GetRenderBackendTextureHandle(localExposureLuminances);
                         RenderBackendShaderHandle downsampleTexture2DCS = renderEngine->GetShaderLibrary()->GetShader((uint32)ShaderPipelineID::DownsampleTexture2D);
-                        for (uint32 mipLevel = 1; mipLevel < mipLevels; mipLevel++)
+                        for (uint32 mipLevel = 1; mipLevel < mipLevelCount; mipLevel++)
                         {
                             if (mipLevel == 1)
                             {
@@ -154,7 +154,7 @@ namespace Horizon
                                 threadGroupCountX,
                                 groupCountY);
                         }
-                        RenderBackendBarrier transition = RenderBackendBarrier(textureHandle, RenderBackendTextureSubresourceRange(mipLevels - 1, RenderBackendTextureSubresourceRange::RemainingMipLevels, 0, RenderBackendTextureSubresourceRange::RemainingArrayLayers), RenderBackendResourceState::UnorderedAccess, RenderBackendResourceState::ShaderResource);
+                        RenderBackendBarrier transition = RenderBackendBarrier(textureHandle, RenderBackendTextureSubresourceRange(mipLevelCount - 1, RenderBackendTextureSubresourceRange::RemainingMipLevels, 0, RenderBackendTextureSubresourceRange::RemainingArrayLayers), RenderBackendResourceState::UnorderedAccess, RenderBackendResourceState::ShaderResource);
                         commandList.Transitions(&transition, 1);
                     };
             });
@@ -173,7 +173,7 @@ namespace Horizon
                         uint32 h = height;
                         RenderBackendTextureHandle textureHandle = registry.GetRenderBackendTextureHandle(localExposureWeights);
                         RenderBackendShaderHandle downsampleTexture2DCS = renderEngine->GetShaderLibrary()->GetShader((uint32)ShaderPipelineID::DownsampleTexture2D);
-                        for (uint32 mipLevel = 1; mipLevel < mipLevels; mipLevel++)
+                        for (uint32 mipLevel = 1; mipLevel < mipLevelCount; mipLevel++)
                         {
                             if (mipLevel == 1)
                             {
@@ -210,7 +210,7 @@ namespace Horizon
                                 threadGroupCountX,
                                 groupCountY);
                         }
-                        RenderBackendBarrier transition = RenderBackendBarrier(textureHandle, RenderBackendTextureSubresourceRange(mipLevels - 1, RenderBackendTextureSubresourceRange::RemainingMipLevels, 0, RenderBackendTextureSubresourceRange::RemainingArrayLayers), RenderBackendResourceState::UnorderedAccess, RenderBackendResourceState::ShaderResource);
+                        RenderBackendBarrier transition = RenderBackendBarrier(textureHandle, RenderBackendTextureSubresourceRange(mipLevelCount - 1, RenderBackendTextureSubresourceRange::RemainingMipLevels, 0, RenderBackendTextureSubresourceRange::RemainingArrayLayers), RenderBackendResourceState::UnorderedAccess, RenderBackendResourceState::ShaderResource);
                         commandList.Transitions(&transition, 1);
                     };
             });
@@ -291,7 +291,7 @@ namespace Horizon
                                 groupCountY);
                         }
 
-                        if ((coarsestMipLevel - displayMipLevel > 0) && (coarsestMipLevel < (int)mipLevels - 1))
+                        if ((coarsestMipLevel - displayMipLevel > 0) && (coarsestMipLevel < (int)mipLevelCount - 1))
                         {
                             RenderBackendBarrier transitions[] =
                             {

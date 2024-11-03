@@ -928,8 +928,8 @@ namespace Horizon
                 .Alignment = 0,
                 .Width = desc->width,
                 .Height = desc->height,
-                .DepthOrArraySize = (UINT16)((desc->type == RenderBackendTextureType::Texture3D) ? desc->depth : desc->arrayLayers),
-                .MipLevels = (UINT16)desc->mipLevels,
+                .DepthOrArraySize = (UINT16)((desc->type == RenderBackendTextureType::Texture3D) ? desc->depth : desc->arrayLayerCount),
+                .MipLevels = (UINT16)desc->mipLevelCount,
                 .Format = ConvertToDXGIFormat(desc->format),
                 .SampleDesc = {
                     .Count = 1,
@@ -970,8 +970,8 @@ namespace Horizon
             texture->width = desc->width;
             texture->height = desc->height;
             texture->depth = desc->depth;
-            texture->mipLevels = desc->mipLevels;
-            texture->arraySize = desc->arrayLayers;
+            texture->mipLevels = desc->mipLevelCount;
+            texture->arraySize = desc->arrayLayerCount;
             texture->format = resourceDesc.Format;
             texture->initialState = desc->initialState;
             texture->isSwapChainBuffer = false;
@@ -980,7 +980,7 @@ namespace Horizon
             // Temp
             texture->debugName = name;
 
-            uint32 numSubresources = desc->arrayLayers * std::max(1u, desc->mipLevels);
+            uint32 numSubresources = desc->arrayLayerCount * std::max(1u, desc->mipLevelCount);
             texture->totalSize = 0;
             texture->footprints.resize(numSubresources);
             texture->rowSizesInBytes.resize(numSubresources);
@@ -2031,7 +2031,8 @@ namespace Horizon
         void GetTextureReadbackData(RenderBackendTextureHandle texture, void** data) override;
         //RenderBackendTextureSRVHandle CreateTextureSRV(const RenderBackendTextureSRVDesc* desc, const char* name) override;
         //RenderBackendTextureUAVHandle CreateTextureUAV(const RenderBackendTextureUAVDesc* desc, const char* name) override;
-        int32 GetTextureSRVBindlessResourceDescriptorIndex(RenderBackendTextureHandle srv, const RenderBackendTextureSubresourceRange& subresourceRange = RenderBackendTextureSubresourceRange::All) override;
+        int32 GetTextureSRVBindlessResourceDescriptorIndex(RenderBackendTextureHandle srv) override;
+        int32 GetTextureSRVBindlessResourceDescriptorIndex(RenderBackendTextureHandle srv, uint32 mipLevel) override;
         int32 GetTextureUAVBindlessResourceDescriptorIndex(RenderBackendTextureHandle uav, uint32 mipLevel) override;
         int32 GetBufferCBVBindlessResourceDescriptorIndex(RenderBackendBufferHandle uav) override;
         int32 GetBufferSRVBindlessResourceDescriptorIndex(RenderBackendBufferHandle uav) override;
@@ -2406,9 +2407,9 @@ namespace Horizon
 
                 D3D12_BARRIER_SUBRESOURCE_RANGE subresourceRange = {
                     .IndexOrFirstMipLevel = transition.textureRange.firstLevel,
-                    .NumMipLevels = (transition.textureRange.mipLevels == RenderBackendTextureSubresourceRange::RemainingMipLevels) ? (texture->mipLevels - transition.textureRange.firstLevel) : transition.textureRange.mipLevels,
+                    .NumMipLevels = (transition.textureRange.mipLevelCount == RenderBackendTextureSubresourceRange::RemainingMipLevels) ? (texture->mipLevelCount - transition.textureRange.firstLevel) : transition.textureRange.mipLevelCount,
                     .FirstArraySlice = transition.textureRange.firstLayer,
-                    .NumArraySlices = (transition.textureRange.arrayLayers == RenderBackendTextureSubresourceRange::RemainingArrayLayers) ? (texture->arrayLayers - transition.textureRange.firstLayer) : transition.textureRange.arrayLayers,
+                    .NumArraySlices = (transition.textureRange.arrayLayerCount == RenderBackendTextureSubresourceRange::RemainingArrayLayers) ? (texture->arrayLayerCount - transition.textureRange.firstLayer) : transition.textureRange.arrayLayerCount,
                     .FirstPlane = 0,
                     .NumPlanes = 1
                 };
@@ -3298,7 +3299,7 @@ namespace Horizon
     //    return RenderBackendTextureUAVHandle::Null;
     //}
 
-    int32 D3D12RenderBackend::GetTextureSRVBindlessResourceDescriptorIndex(RenderBackendTextureHandle handle, const RenderBackendTextureSubresourceRange& subresourceRange)
+    int32 D3D12RenderBackend::GetTextureSRVBindlessResourceDescriptorIndex(RenderBackendTextureHandle handle)
     {
         D3D12Device* device = devices[0];
         uint32 textureIndex = 0;
@@ -3308,6 +3309,18 @@ namespace Horizon
         }
         D3D12Texture* texture = device->textures[textureIndex];
         return texture->shaderResourceView->bindlessIndex;
+    }
+
+    int32 D3D12RenderBackend::GetTextureSRVBindlessResourceDescriptorIndex(RenderBackendTextureHandle handle, uint32 mipLevel)
+    {
+        D3D12Device* device = devices[0];
+        uint32 textureIndex = 0;
+        if (!device->TryGetRenderBackendHandleRepresentation(handle.GetIndex(), &textureIndex))
+        {
+            return 0;
+        }
+        D3D12Texture* texture = device->textures[textureIndex];
+        return texture->shaderResourceViews[mipLevel]->bindlessIndex;
     }
 
     int32 D3D12RenderBackend::GetTextureUAVBindlessResourceDescriptorIndex(RenderBackendTextureHandle handle, uint32 mipLevel)

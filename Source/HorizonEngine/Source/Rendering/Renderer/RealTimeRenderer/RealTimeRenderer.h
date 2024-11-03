@@ -82,9 +82,11 @@ namespace Horizon
         RenderGraphTextureHandle gbuffer0;
         RenderGraphTextureHandle gbuffer1;
         RenderGraphTextureHandle gbuffer2;
-        RenderGraphTextureHandle depthPyramidTexture;
         RenderGraphTextureHandle sceneColorTexture;
         RenderGraphTextureHandle sceneDepthTexture;
+        RenderGraphTextureDesc depthPyramidTextureDesc;
+        RenderGraphTextureHandle minDepthPyramidTexture;
+        RenderGraphTextureHandle maxDepthPyramidTexture;
         RenderGraphTextureHandle motionVectorTexture;
         RenderGraphTextureHandle ambientOcclusionTexture;
         RenderGraphTextureHandle hudLessColorTexture;
@@ -269,12 +271,7 @@ namespace Horizon
 
         void RenderDepthPyramid(
             RenderGraph& renderGraph,
-            const SceneView& view,
-            uint32 hzbWidth,
-            uint32 hzbHeight,
-            uint32 hzbMipLevels,
-            RenderGraphTextureHandle& closestHZBTexture,
-            RenderGraphTextureHandle& furthestHZBTexture);
+            const SceneView& view);
 
         void AddDirectLightingPass(
             RenderGraph& renderGraph,

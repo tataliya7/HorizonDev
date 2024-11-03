@@ -51,12 +51,16 @@ namespace Horizon
         return GetBuffer(handle)->GetRenderBackendBufferHandle();
     }
 
-    int32 RenderGraphRegistry::GetTextureSRVBindlessResourceDescriptorIndex(
-        RenderGraphTextureHandle handle,
-        const RenderBackendTextureSubresourceRange& subresourceRange) const
+    int32 RenderGraphRegistry::GetTextureSRVBindlessResourceDescriptorIndex(RenderGraphTextureHandle handle) const
     {
         RenderBackendTextureHandle renderBackendTextureHandle = GetRenderBackendTextureHandle(handle);
-        return renderGraph->renderBackend->GetTextureSRVBindlessResourceDescriptorIndex(renderBackendTextureHandle, subresourceRange);
+        return renderGraph->renderBackend->GetTextureSRVBindlessResourceDescriptorIndex(renderBackendTextureHandle);
+    }
+
+    int32 RenderGraphRegistry::GetTextureSRVBindlessResourceDescriptorIndex(RenderGraphTextureHandle handle, uint32 mipLevel) const
+    {
+        RenderBackendTextureHandle renderBackendTextureHandle = GetRenderBackendTextureHandle(handle);
+        return renderGraph->renderBackend->GetTextureSRVBindlessResourceDescriptorIndex(renderBackendTextureHandle, mipLevel);
     }
 
     int32 RenderGraphRegistry::GetTextureUAVBindlessResourceDescriptorIndex(

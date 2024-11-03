@@ -601,6 +601,22 @@ namespace Horizon
             RenderBackendResourceState::DepthStencil);
         sceneTextures.sceneDepthTexture = renderGraph.CreateTexture(sceneDepthTextureDesc, "SceneDepthTexture");
 
+        // Hierarchical z-buffer must be aligned quad tree.
+        uint32 depthPyramidTextureWidth = Math::Max(Math::RoundUpToPowerOfTwo(renderResolution.width) >> 1, 1u);
+        uint32 depthPyramidTextureHeight = Math::Max(Math::RoundUpToPowerOfTwo(renderResolution.height) >> 1, 1u);
+        uint32 depthPyramidTextureMipLevelCount = Math::MaxMipLevelCount(depthPyramidTextureWidth, depthPyramidTextureHeight);
+
+        RenderGraphTextureDesc depthPyramidTextureDesc = RenderGraphTextureDesc::Create2D(
+            depthPyramidTextureWidth,
+            depthPyramidTextureHeight,
+            RenderBackendTextureFormat::R32Float,
+            RenderBackendTextureCreateFlags::UnorderedAccess | RenderBackendTextureCreateFlags::ShaderResource,
+            RenderBackendTextureClearValue::DepthZero,
+            depthPyramidTextureMipLevelCount);
+        sceneTextures.depthPyramidTextureDesc = depthPyramidTextureDesc;
+        sceneTextures.minDepthPyramidTexture = renderGraph.CreateTexture(depthPyramidTextureDesc, "MinDepthPyramidTexture");
+        sceneTextures.maxDepthPyramidTexture = renderGraph.CreateTexture(depthPyramidTextureDesc, "MaxDepthPyramidTexture");
+
         RenderGraphTextureDesc motionVectorTextureDesc = RenderGraphTextureDesc::Create2D(
             renderResolution.width,
             renderResolution.height,
@@ -616,22 +632,7 @@ namespace Horizon
 
         RenderMotionVectors(renderGraph, view);
 
-        // Hierarchical z-buffer must be aligned quad tree
-        uint32 hzbWidth = Math::Max(Math::RoundUpToPowerOfTwo(renderResolution.width) >> 1, 1u);
-        uint32 hzbHeight = Math::Max(Math::RoundUpToPowerOfTwo(renderResolution.height) >> 1, 1u);
-        uint32 hzbMipLevels = Math::MaxMipLevelCount(hzbWidth, hzbHeight);
-
-        RenderGraphTextureDesc hzbDesc = RenderGraphTextureDesc::Create2D(
-            hzbWidth,
-            hzbHeight,
-            RenderBackendTextureFormat::R16Float,
-            RenderBackendTextureCreateFlags::UnorderedAccess | RenderBackendTextureCreateFlags::ShaderResource,
-            RenderBackendTextureClearValue::DepthZero,
-            hzbMipLevels);
-        RenderGraphTextureHandle closestHZBTexture = renderGraph.CreateTexture(hzbDesc, "ClosestHZBTexture");
-        RenderGraphTextureHandle furthestHZBTexture = renderGraph.CreateTexture(hzbDesc, "FurthestHZBTexture");
-
-        RenderDepthPyramid(renderGraph, view, hzbWidth, hzbHeight, hzbMipLevels, closestHZBTexture, furthestHZBTexture);
+        RenderDepthPyramid(renderGraph, view);
 
         if (IsSkyAtmosphereRenderingEnabled())
         {

@@ -216,6 +216,7 @@ namespace Horizon
         uint32 arrayLayers;
         uint32 mipLevels;
         VkFormat format;
+
         VkImageType type;
         VkImageCreateInfo info;
         uint64 sparsePageSize;
@@ -223,10 +224,13 @@ namespace Horizon
         RenderBackendTextureCreateFlags flags;
         VkImageAspectFlags aspectMask;
         VkClearValue clearValue;
-        VkImageView srv = VK_NULL_HANDLE;
-        std::vector<VkImageView> rtv;
-        std::vector<VkImageView> dsv;
+
+        VkImageView defaultView = VK_NULL_HANDLE;
         int32 srvIndex = -1;
+
+        std::vector<VkImageView> renderTargetViews;
+
+        std::vector<VkImageView> depthStencilViews;
 
         bool IsArray() const
         {
@@ -469,7 +473,8 @@ namespace Horizon
         void DestroyTexture(uint32 index);
         uint32 CreateTextureSRV(uint32 textureIndex, const RenderBackendTextureSRVDesc* desc, const char* name);
         uint32 CreateTextureUAV(uint32 textureIndex, const RenderBackendTextureUAVDesc* desc, const char* name);
-        int32 GetTextureSRVBindlessResourceDescriptorIndex(uint32 textureIndex, const RenderBackendTextureSubresourceRange& subresourceRange);
+        int32 GetTextureSRVBindlessResourceDescriptorIndex(uint32 textureIndex);
+        int32 GetTextureSRVBindlessResourceDescriptorIndex(uint32 textureIndex, uint32 mipLevel);
         int32 GetTextureUAVBindlessResourceDescriptorIndex(uint32 textureIndex, uint32 mipLevel);
         int32 GetBufferCBVBindlessResourceDescriptorIndex(uint32 bufferIndex);
         int32 GetBufferSRVBindlessResourceDescriptorIndex(uint32 bufferIndex);
@@ -850,7 +855,8 @@ namespace Horizon
         void GetTextureReadbackData(RenderBackendTextureHandle texture, void** data) override;
         //RenderBackendTextureSRVHandle CreateTextureSRV(const RenderBackendTextureSRVDesc* desc, const char* name) override;
         //RenderBackendTextureUAVHandle CreateTextureUAV(const RenderBackendTextureUAVDesc* desc, const char* name) override;
-        int32 GetTextureSRVBindlessResourceDescriptorIndex(RenderBackendTextureHandle handle, const RenderBackendTextureSubresourceRange& subresourceRange = RenderBackendTextureSubresourceRange::All) override;
+        int32 GetTextureSRVBindlessResourceDescriptorIndex(RenderBackendTextureHandle handle) override;
+        int32 GetTextureSRVBindlessResourceDescriptorIndex(RenderBackendTextureHandle handle, uint32 mipLevel) override;
         int32 GetTextureUAVBindlessResourceDescriptorIndex(RenderBackendTextureHandle handle, uint32 mipLevel) override;
         int32 GetBufferCBVBindlessResourceDescriptorIndex(RenderBackendBufferHandle handle) override;
         int32 GetBufferSRVBindlessResourceDescriptorIndex(RenderBackendBufferHandle handle) override;
@@ -1654,7 +1660,7 @@ namespace Horizon
             VkRenderingAttachmentInfo& attachmentInfo = outRenderingInfo->colorAttachments[outRenderingInfo->numColorAttachments];
             attachmentInfo.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
             attachmentInfo.pNext = nullptr;
-            attachmentInfo.imageView = texture->rtv[mipLevel]; // TODO: specify mip level
+            attachmentInfo.imageView = texture->renderTargetViews[mipLevel]; // TODO: specify mip level
             attachmentInfo.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
             //attachmentInfo.imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL;
             //attachmentInfo.resolveImageView = VK_NULL_HANDLE;
@@ -1694,7 +1700,7 @@ namespace Horizon
             VkRenderingAttachmentInfo& attachmentInfo = outRenderingInfo->depthStencilAttachment;
             attachmentInfo.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
             attachmentInfo.pNext = nullptr;
-            attachmentInfo.imageView = texture->dsv[arrayLayer]; // TODO: specify mip level
+            attachmentInfo.imageView = texture->depthStencilViews[arrayLayer]; // TODO: specify mip level
             attachmentInfo.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
             //attachmentInfo.imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL;
             //attachmentInfo.resolveImageView = VK_NULL_HANDLE;
@@ -2048,8 +2054,8 @@ namespace Horizon
             .width = desc->width,
             .height = desc->height,
             .depth = desc->depth,
-            .arrayLayers = desc->arrayLayers,
-            .mipLevels = desc->mipLevels,
+            .arrayLayers = desc->arrayLayerCount,
+            .mipLevels = desc->mipLevelCount,
             .format = format,
             .type = ConvertToVkImageType(desc->type),
             .t = desc->type,
@@ -2067,7 +2073,7 @@ namespace Horizon
             uint32 height = texture.height;
             uint32 depth = texture.depth;
             uint64 size = 0;
-            for (uint32 mipLevel = 0; mipLevel < desc->mipLevels; mipLevel++)
+            for (uint32 mipLevel = 0; mipLevel < desc->mipLevelCount; mipLevel++)
             {
                 uint32 mipSize = width * height * depth * stride;
                 texture.cpuReadbackBuffer->mipOffsets[mipLevel] = size;
@@ -2185,11 +2191,11 @@ namespace Horizon
                 .components = { VK_COMPONENT_SWIZZLE_R, VK_COMPONENT_SWIZZLE_G, VK_COMPONENT_SWIZZLE_B, VK_COMPONENT_SWIZZLE_A },
                 .subresourceRange = { texture.aspectMask, 0, VK_REMAINING_MIP_LEVELS, 0, VK_REMAINING_ARRAY_LAYERS }
             };
-            VK_CHECK(vkCreateImageView(handle, &imageViewInfo, VULKAN_ALLOCATION_CALLBACKS, &texture.srv));
+            VK_CHECK(vkCreateImageView(handle, &imageViewInfo, VULKAN_ALLOCATION_CALLBACKS, &texture.defaultView));
 
             uint32 index = bindlessDescriptorManager.AllocateSampledImageIndex();
             VkDescriptorImageInfo descriptorImageInfo = {
-                .imageView = texture.srv,
+                .imageView = texture.defaultView,
                 .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
             };
             VkWriteDescriptorSet write = {
@@ -2270,7 +2276,7 @@ namespace Horizon
         }
         if (EnumClassHasFlags(desc->flags, RenderBackendTextureCreateFlags::RenderTarget))
         {
-            texture.rtv.resize(texture.mipLevels);
+            texture.renderTargetViews.resize(texture.mipLevels);
             for (uint32 i = 0; i < texture.mipLevels; i++)
             {
                 VkImageViewCreateInfo imageViewInfo = {
@@ -2281,7 +2287,7 @@ namespace Horizon
                     .components = { VK_COMPONENT_SWIZZLE_R, VK_COMPONENT_SWIZZLE_G, VK_COMPONENT_SWIZZLE_B, VK_COMPONENT_SWIZZLE_A },
                     .subresourceRange = { texture.aspectMask, i, 1, 0, 1 }
                 };
-                VK_CHECK(vkCreateImageView(handle, &imageViewInfo, VULKAN_ALLOCATION_CALLBACKS, &texture.rtv[i]));
+                VK_CHECK(vkCreateImageView(handle, &imageViewInfo, VULKAN_ALLOCATION_CALLBACKS, &texture.renderTargetViews[i]));
             }
         }
         if (EnumClassHasFlags(desc->flags, RenderBackendTextureCreateFlags::DepthStencil))
@@ -2298,7 +2304,7 @@ namespace Horizon
                     .subresourceRange = { texture.aspectMask, 0, 1, i, 1 }
                 };
                 VK_CHECK(vkCreateImageView(handle, &imageViewInfo, VULKAN_ALLOCATION_CALLBACKS, &dsv));
-                texture.dsv.push_back(dsv);
+                texture.depthStencilViews.push_back(dsv);
             }
         }
 
@@ -2311,12 +2317,12 @@ namespace Horizon
             std::vector<VkBufferImageCopy> copyRegions;
             VkDeviceSize copyOffset = 0;
             uint64 dataOffset = 0;
-            for (uint32 layer = 0; layer < desc->arrayLayers; layer++)
+            for (uint32 layer = 0; layer < desc->arrayLayerCount; layer++)
             {
                 uint32 width = imageInfo.extent.width;
                 uint32 height = imageInfo.extent.height;
                 uint32 depth = imageInfo.extent.depth;
-                for (uint32 level = 0; level < desc->mipLevels; level++)
+                for (uint32 level = 0; level < desc->mipLevelCount; level++)
                 {
                     uint64 copySize = width * height * depth * RenderBackendGetTextureFormatDesc(desc->format).bytes;
                     uint8* copyDst = (uint8*)uploadBuffer.mappedData + copyOffset;
@@ -2571,11 +2577,11 @@ namespace Horizon
             .components = { VK_COMPONENT_SWIZZLE_R, VK_COMPONENT_SWIZZLE_G, VK_COMPONENT_SWIZZLE_B, VK_COMPONENT_SWIZZLE_A },
             .subresourceRange = { texture.aspectMask, desc->subresourceRange.firstLevel, desc->subresourceRange.mipLevels, desc->subresourceRange.firstLayer, desc->subresourceRange.arrayLayers }
         };
-        VK_CHECK(vkCreateImageView(handle, &imageViewInfo, VULKAN_ALLOCATION_CALLBACKS, &texture.srv));
+        VK_CHECK(vkCreateImageView(handle, &imageViewInfo, VULKAN_ALLOCATION_CALLBACKS, &texture.defaultView));
 
         uint32 index = bindlessDescriptorManager.AllocateSampledImageIndex();
         VkDescriptorImageInfo descriptorImageInfo = {
-            .imageView = texture.srv,
+            .imageView = texture.defaultView,
             .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
         };
         VkWriteDescriptorSet write = {
@@ -2624,10 +2630,16 @@ namespace Horizon
         return index;
     }
 
-    int32 VulkanDevice::GetTextureSRVBindlessResourceDescriptorIndex(uint32 textureIndex, const RenderBackendTextureSubresourceRange& subresourceRange)
+    int32 VulkanDevice::GetTextureSRVBindlessResourceDescriptorIndex(uint32 textureIndex)
     {
         VulkanTexture& texture = textures[textureIndex];
         return texture.srvIndex;
+    }
+
+    int32 VulkanDevice::GetTextureSRVBindlessResourceDescriptorIndex(uint32 textureIndex, uint32 mipLevel)
+    {
+        VulkanTexture& texture = textures[textureIndex];
+        return texture.srvs[mipLevel].srvIndex;
     }
 
     int32 VulkanDevice::GetTextureUAVBindlessResourceDescriptorIndex(uint32 textureIndex, uint32 mipLevel)
@@ -3303,7 +3315,7 @@ namespace Horizon
             uint32 arrayLayer = renderPassInfo.renderTargets[index].arrayLayer;
 
             framebuffer.images[index] = texture->handle;
-            framebuffer.attachments[index] = texture->rtv[mipLevel];
+            framebuffer.attachments[index] = texture->renderTargetViews[mipLevel];
         }
         if (renderPassDesc.hasDepthStencil)
         {
@@ -3316,7 +3328,7 @@ namespace Horizon
             bool hasStencil = IsStencilFormat(texture->format);
 
             framebuffer.images[numAttachments] = texture->handle;
-            framebuffer.attachments[numAttachments] = texture->dsv[arrayLayer];
+            framebuffer.attachments[numAttachments] = texture->depthStencilViews[arrayLayer];
             numAttachments++;
         }
         framebuffer.numColorAttachments = renderPassDesc.numColorAttachments;
@@ -5112,7 +5124,7 @@ namespace Horizon
             RenderBackendTextureResource textureResource = {};
             textureResource.texture = texture->handle;
             textureResource.memory = texture->allocation->GetMemory();
-            textureResource.view = uav ? texture->uavs[0].uav : texture->srv;
+            textureResource.view = uav ? texture->uavs[0].uav : texture->defaultView;
             textureResource.width = texture->width;
             textureResource.height = texture->height;
             textureResource.mipLevels = texture->mipLevels;
@@ -5478,7 +5490,7 @@ namespace Horizon
 
                 const VulkanTexture& texture = device.textures[index];
                 assert(texture.mipLevels == data.data.size());
-                // for (uint32 level = 0; level < texture.mipLevels; level++)
+                // for (uint32 level = 0; level < texture.mipLevelCount; level++)
                 {
                     VkImageMemoryBarrier barrier = {
                         .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
@@ -5801,14 +5813,24 @@ namespace Horizon
     //    return handle;
     //}
 
-    int32 VulkanRenderBackend::GetTextureSRVBindlessResourceDescriptorIndex(RenderBackendTextureHandle handle, const RenderBackendTextureSubresourceRange& subresourceRange)
+    int32 VulkanRenderBackend::GetTextureSRVBindlessResourceDescriptorIndex(RenderBackendTextureHandle handle)
     {
         uint32 textureIndex = 0;
         if (!device.TryGetRenderBackendHandleRepresentation(handle.GetIndex(), &textureIndex))
         {
             return -1;
         }
-        return device.GetTextureSRVBindlessResourceDescriptorIndex(textureIndex, subresourceRange);
+        return device.GetTextureSRVBindlessResourceDescriptorIndex(textureIndex);
+    }
+
+    int32 VulkanRenderBackend::GetTextureSRVBindlessResourceDescriptorIndex(RenderBackendTextureHandle handle, uint32 mipLevel)
+    {
+        uint32 textureIndex = 0;
+        if (!device.TryGetRenderBackendHandleRepresentation(handle.GetIndex(), &textureIndex))
+        {
+            return -1;
+        }
+        return device.GetTextureSRVBindlessResourceDescriptorIndex(textureIndex, mipLevel);
     }
 
     int32 VulkanRenderBackend::GetTextureUAVBindlessResourceDescriptorIndex(RenderBackendTextureHandle handle, uint32 mipLevel)

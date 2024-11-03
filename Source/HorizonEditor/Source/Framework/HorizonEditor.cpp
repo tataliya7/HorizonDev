@@ -68,7 +68,7 @@ namespace Horizon
 //        PhysXInit();
 //        Audio::AudioEngineInit();
 //
-        //RenderDocPluginInit();
+        RenderDocPluginInit();
 //
 
         InitializeEngine();

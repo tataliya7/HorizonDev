@@ -659,9 +659,9 @@ namespace Horizon
             : width(1)
             , height(1)
             , depth(1)
-            , mipLevels(1)
-            , arrayLayers(1)
-            , samples(1)
+            , mipLevelCount(1)
+            , arrayLayerCount(1)
+            , sampleCount(1)
             , type(RenderBackendTextureType::Texture2D)
             , format(RenderBackendTextureFormat::Unknown)
             , flags(RenderBackendTextureCreateFlags::None)
@@ -686,9 +686,9 @@ namespace Horizon
             : width(width)
             , height(height)
             , depth(depth)
-            , mipLevels(mipLevels)
-            , arrayLayers(arraySize)
-            , samples(samples)
+            , mipLevelCount(mipLevels)
+            , arrayLayerCount(arraySize)
+            , sampleCount(samples)
             , type(type)
             , format(format)
             , flags(flags)
@@ -700,9 +700,9 @@ namespace Horizon
             return width == rhs.width
                 && height == rhs.height
                 && depth == rhs.depth
-                && mipLevels == rhs.mipLevels
-                && arrayLayers == rhs.arrayLayers
-                && samples == rhs.samples
+                && mipLevelCount == rhs.mipLevelCount
+                && arrayLayerCount == rhs.arrayLayerCount
+                && sampleCount == rhs.sampleCount
                 && type == rhs.type
                 && format == rhs.format
                 && flags == rhs.flags
@@ -713,9 +713,9 @@ namespace Horizon
         uint32 width;
         uint32 height;
         uint32 depth;
-        uint32 mipLevels;
-        uint32 arrayLayers;
-        uint32 samples;
+        uint32 mipLevelCount;
+        uint32 arrayLayerCount;
+        uint32 sampleCount;
         RenderBackendTextureType type;
         RenderBackendTextureFormat format;
         RenderBackendTextureCreateFlags flags;

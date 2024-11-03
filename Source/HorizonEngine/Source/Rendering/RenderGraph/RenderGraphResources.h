@@ -110,7 +110,7 @@ namespace Horizon
         RenderGraphTexture(const char* name, const RenderGraphTextureDesc& desc)
             : RenderGraphResource(name, RenderGraphResourceType::Texture)
             , desc(desc)
-            , subresourceLayout(desc.mipLevels, desc.arrayLayers) {}
+            , subresourceLayout(desc.mipLevelCount, desc.arrayLayerCount) {}
         const RenderGraphTextureDesc& GetDesc() const
         {
             return desc;
