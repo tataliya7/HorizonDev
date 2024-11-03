@@ -292,3 +292,66 @@ void CastScreenSapceRay_LinearTracing(
         t += step;
     }
 }
+
+#define SCREEN_SPACE_SHADOW_RAY_FIXED_STEP_COUNT 4
+
+float CastScreenSpaceShadowRay(
+    Texture2D depthTexture,
+    float3 rayOrigin,
+    float3 rayDirection,
+    float rayLength,
+    float4x4 worldToClipMatrix,
+    float4x4 viewToClipMatrix,
+    float dither)
+{
+    float3 worldSpaceRayStart = rayOrigin;
+    float3 worldSpaceRayEnd = rayOrigin + rayDirection * rayLength;
+
+    float4 clipSpaceRayStart = mul(worldToClipMatrix, float4(worldSpaceRayStart, 1.0f));
+    float4 clipSpaceRayEnd = mul(worldToClipMatrix, float4(worldSpaceRayEnd, 1.0f));
+
+    float3 ndcSpaceRayStart = clipSpaceRayStart.xyz / clipSpaceRayStart.w;
+    float3 ndcSpaceRayEnd = clipSpaceRayEnd.xyz / clipSpaceRayEnd.w;
+
+    float3 rayStartUVZ = float3(NDCSpaceXYToScreenSpaceUV(ndcSpaceRayStart.xy), ndcSpaceRayStart.z);
+    float3 rayEndUVZ = float3(NDCSpaceXYToScreenSpaceUV(ndcSpaceRayEnd.xy), ndcSpaceRayEnd.z);
+    float3 rayStartToEndUVZ = rayEndUVZ - rayStartUVZ;
+
+	float4 auxiliaryRayEnd = clipSpaceRayStart + mul(viewToClipMatrix, float4(0.0f, 0.0f, rayLength, 0.0f));
+	auxiliaryRayEnd = auxiliaryRayEnd / auxiliaryRayEnd.w;
+
+    const uint stepCount = SCREEN_SPACE_SHADOW_RAY_FIXED_STEP_COUNT;
+    const float step = 1.0f / float(stepCount);
+    const float compareThreshold = abs(auxiliaryRayEnd.z - ndcSpaceRayStart.z) * step;
+
+    float offset = (dither - 0.5f) * step;
+    float t = step + offset;
+    float shadowFactor = 1.0f;
+
+#ifdef SCREEN_SPACE_SHADOW_RAY_FIXED_STEP_COUNT
+    [unroll]
+#endif
+    for (uint i = 0; i < stepCount; i++)
+    {
+        float3 sampleUVZ = rayStartUVZ + rayStartToEndUVZ * t;
+
+        if (any(sampleUVZ.xy < 0) || any(sampleUVZ.xy > 1) || (sampleUVZ.z <= 0) || (sampleUVZ.z >= 1))
+        {
+            break;
+        }
+
+        float referenceDepth = depthTexture.SampleLevel(GlobalSamplerPointClamp, sampleUVZ.xy, 0).r;
+
+        float deltaDepth = referenceDepth - sampleUVZ.z;
+
+        if (deltaDepth > 0.0f && deltaDepth < compareThreshold)
+        {
+            shadowFactor = 0.0f;
+            break;
+        }
+
+        t += step;
+    }
+
+    return shadowFactor;
+}

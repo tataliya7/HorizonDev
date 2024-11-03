@@ -253,7 +253,7 @@ namespace Horizon
                     shaderConstants.BindTextureSRV(3, registry.GetTextureSRVBindlessResourceDescriptorIndex(shadowMapTexture));
                     shaderConstants.BindTextureUAV(4, registry.GetTextureUAVBindlessResourceDescriptorIndex(screenSpaceShadowMaskTexture, 0));
 
-                    RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::ScreenSpaceShadowsForDistantLight);
+                    RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::ShadowMapProjectionForDistantLight);
 
                     commandList.Dispatch(
                         computeShader,
