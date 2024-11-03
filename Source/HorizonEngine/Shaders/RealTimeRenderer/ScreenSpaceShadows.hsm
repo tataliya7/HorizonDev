@@ -11,6 +11,8 @@ SHADER_CONSTANTS_TEXTURE_2D_ARRAY_DEFAULT_SRV(3, ShadowMapTextureSRV);
 SHADER_CONSTANTS_TEXTURE_2D_UAV(4, float4, ShadowMaskTextureUAV);
 SHADER_CONSTANTS_STRUCT_END();
 
+#define SCREEN_SPACE_SHADOW_RAY_FIXED_STEP_COUNT 4
+
 float ScreenSpaceShadowRayCast(
     PerFrameShaderParameters frameShaderParameters,
     Texture2D depthTexture,
@@ -31,15 +33,21 @@ float ScreenSpaceShadowRayCast(
     float3 rayStartUVZ = float3(NDCSpaceXYToScreenSpaceUV(ndcSpaceRayStart.xy), ndcSpaceRayStart.z);
     float3 rayStartToEndUVZ = float3(NDCSpaceXYToScreenSpaceUV(ndcSpaceRayEnd.xy) - NDCSpaceXYToScreenSpaceUV(ndcSpaceRayStart.xy), ndcSpaceRayEnd.z - ndcSpaceRayStart.z);
 
-    const uint sampleCount = 4;
-    const float step = 1.0f / float(sampleCount);
+	float4 auxiliaryRayEnd = clipSpaceRayStart + mul(frameShaderParameters.viewToClipMatrix, float4(0.0f, 0.0f, rayLength, 0.0f));
+	auxiliaryRayEnd = auxiliaryRayEnd / auxiliaryRayEnd.w;
+
+    const uint stepCount = SCREEN_SPACE_SHADOW_RAY_FIXED_STEP_COUNT;
+    const float step = 1.0f / float(stepCount);
+    const float compareThreshold = abs(auxiliaryRayEnd.z - ndcSpaceRayStart.z) * step;
 
     float offset = (dither - 0.5f) * step;
     float t = step + offset;
     float shadowFactor = 1.0f;
 
+#ifdef SCREEN_SPACE_SHADOW_RAY_FIXED_STEP_COUNT
     [unroll]
-    for (uint i = 0; i < sampleCount; i++)
+#endif
+    for (uint i = 0; i < stepCount; i++)
     {
         float3 sampleUVZ = rayStartUVZ + rayStartToEndUVZ * t;
 
@@ -52,7 +60,7 @@ float ScreenSpaceShadowRayCast(
 
         float deltaDepth = referenceDepth - sampleUVZ.z;
 
-        if (deltaDepth > 0.0f)
+        if (deltaDepth > 0.0f && deltaDepth < compareThreshold)
         {
             shadowFactor = 0.0f;
             break;
@@ -127,7 +135,7 @@ void ScreenSpaceShadowsForDistantLightCS(uint3 dispatchThreadID : SV_DispatchThr
 
     float3 shadowRayOrigin = worldSpacePosition;
     float3 shadowRayDirection = -normalize(frameShaderParameters.atmosphericLightDirection);
-    float shadowRayLength = 0.05;
+    float shadowRayLength = 0.1f;
 
     if (shadowRayLength > 0.0f)
     {
