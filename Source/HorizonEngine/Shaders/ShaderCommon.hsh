@@ -30,9 +30,18 @@ float3x3 CreateTangentSpaceBasis(float3 n)
     float3 t, b;
     BuildOrthonormalBasis(n, t, b);
 
-    // TODO: remove transpose
-    float3x3 tangentToWorld = transpose(float3x3(t, b, n));
-    return tangentToWorld;
+    float3x3 tbn = float3x3(t, b, n);
+    return tbn;
+}
+
+float3 WorldToTangent(float3 v, float3x3 tbn)
+{
+    return mul(tbn, v);
+}
+
+float3 TangentToWorld(float3 v, float3x3 tbn)
+{
+    return mul(v, tbn);
 }
 
 static const float3x3 CUBE_ROTATIONS[6] =

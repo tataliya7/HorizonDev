@@ -227,12 +227,12 @@ namespace Horizon
         //     shaderLibrary->LoadShader(ShaderID::GTAOTemporalFiltering, shaderDesc);
         // }
         {
-            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Pixel, "Shaders/RealTimeRenderer/IndirectLightingDiffuse.hsm", "IndirectLightingDiffusePS");
-            shaderLibrary->LoadShader(ShaderID::IndirectLightingDiffuse, shaderDesc);
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Pixel, "Shaders/RealTimeRenderer/IndirectDiffuseComposition.hsm", "IndirectDiffuseCompositionPS");
+            shaderLibrary->LoadShader(ShaderID::IndirectDiffuseComposition, shaderDesc);
         }
         {
-            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Pixel, "Shaders/RealTimeRenderer/IndirectLightingSpecular.hsm", "IndirectLightingSpecularPS");
-            shaderLibrary->LoadShader(ShaderID::IndirectLightingSpecular, shaderDesc);
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Pixel, "Shaders/RealTimeRenderer/IndirectSpecularComposition.hsm", "IndirectSpecularCompositionPS");
+            shaderLibrary->LoadShader(ShaderID::IndirectSpecularComposition, shaderDesc);
         }
         {
             ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Pixel, "Shaders/RealTimeRenderer/DirectLighting.hsm", "DirectLightingPS");

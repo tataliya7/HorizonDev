@@ -29,14 +29,14 @@ void IrradianceEnvironmentMapReferenceCS(uint3 dispatchThreadID : SV_DispatchThr
     float2 uv = (pixelCoord.xy + 0.5f) / float2(width, height);
 
     float3 N = CalculateCubemapVector(uv, pixelCoord.z);
-    float3x3 tangentToWorld = CreateTangentSpaceBasis(N);
+    float3x3 TBN = CreateTangentSpaceBasis(N);
 
     // Monte carlo integration of hemispherical irradiance
     float3 irradiance = 0.0f;
     for (uint i = 0; i < SampleCount; i++)
     {
         float2 Xi = HammersleySequence2D(i, SampleCount);
-        float3 L = mul(tangentToWorld, UniformSampleHemisphere(Xi));
+        float3 L = TangentToWorld(UniformSampleHemisphere(Xi), TBN);
         float NdotL = dot(N, L);
         if (NdotL > 0.0f)
         {
@@ -44,7 +44,7 @@ void IrradianceEnvironmentMapReferenceCS(uint3 dispatchThreadID : SV_DispatchThr
         }
     }
 
-    // pdf = 1.0 / (2.0 * PI)
+    // pdf = 1.0f / (2.0f * PI)
     irradiance = irradiance * 2.0f * PI / float(SampleCount);
 
     irradianceEnvironmentMapTexture[pixelCoord] = float4(irradiance, 1.0f);

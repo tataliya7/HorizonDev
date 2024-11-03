@@ -141,10 +141,10 @@ void ScreenSpaceReflectionsRayTracingCS(uint3 GroupID : SV_GroupID, uint3 GroupT
     float3 L;
     if (roughness > 0.05f)
     {
-        float3x3 tangentToWorld = CreateTangentSpaceBasis(N);
+        float3x3 TBN = CreateTangentSpaceBasis(N);
 
         // World to tangent
-        float3 tangentV = mul(V, tangentToWorld);
+        float3 tangentV = WorldToTangent(V, tangentToWorld);
 
         const float2 blueNoise = BlueNoise(pixelCoord, frameShaderParameters.blueNoisePhase).xy;
         float2 Xi = blueNoise.xy;
@@ -152,7 +152,7 @@ void ScreenSpaceReflectionsRayTracingCS(uint3 GroupID : SV_GroupID, uint3 GroupT
         H = ImportanceSampleVisibleGGX(SampleDisk(Xi), roughness, tangentV);
 
         // Tangent to world
-        H.xyz = mul(tangentToWorld, H.xyz);
+        H.xyz = TangentToWorld(tangentToWorld, H.xyz);
 
         L = reflect(-V, H.xyz);
     }

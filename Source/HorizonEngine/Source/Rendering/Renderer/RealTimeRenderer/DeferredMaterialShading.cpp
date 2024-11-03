@@ -318,7 +318,7 @@ namespace Horizon
         const SceneView& view)
     {
         renderGraph.AddPass(
-            std::format("IndirectLightingDiffuse (Graphics, {}x{})", renderResolution.width, renderResolution.height),
+            std::format("IndirectDiffuseComposition (Graphics, {}x{})", renderResolution.width, renderResolution.height),
             RenderGraphPassFlags::Graphics,
             [&](RenderGraphBuilder& builder)
             {
@@ -362,7 +362,7 @@ namespace Horizon
                     shaderConstants.BindBufferSRV(6, renderBackend->GetTextureSRVBindlessResourceDescriptorIndex(view.scene->irradianceEnvironmentMapTexture));
 
                     RenderBackendShaderHandle vertexShader = shaderLibrary->GetShader(ShaderID::FullScreenQuadVS);
-                    RenderBackendShaderHandle pixelShader = shaderLibrary->GetShader(ShaderID::IndirectLightingDiffuse);
+                    RenderBackendShaderHandle pixelShader = shaderLibrary->GetShader(ShaderID::IndirectDiffuseComposition);
 
                     commandList.Draw(
                         vertexShader,
@@ -381,7 +381,7 @@ namespace Horizon
     {
         RenderBackendTextureHandle environmentBrdfLutTexture = defaultResources->GetEnvironmentBrdfLutTexture();
 
-        renderGraph.AddPass(std::format("IndirectLightingSpecular (Graphics, {}x{})", renderResolution.width, renderResolution.height), RenderGraphPassFlags::Graphics,
+        renderGraph.AddPass(std::format("IndirectSpecularComposition (Graphics, {}x{})", renderResolution.width, renderResolution.height), RenderGraphPassFlags::Graphics,
             [&](RenderGraphBuilder& builder)
             {
                 RealTimeRendererSceneTextures& sceneTextures = renderGraph.blackboard.Get<RealTimeRendererSceneTextures>();
@@ -416,7 +416,7 @@ namespace Horizon
                     shaderConstants.BindTextureSRV(7, registry.GetTextureSRVBindlessResourceDescriptorIndex(convolvedEnvironmentMapTexture));
 
                     RenderBackendShaderHandle vertexShader = shaderLibrary->GetShader(ShaderID::FullScreenQuadVS);
-                    RenderBackendShaderHandle pixelShader = shaderLibrary->GetShader(ShaderID::IndirectLightingSpecular);
+                    RenderBackendShaderHandle pixelShader = shaderLibrary->GetShader(ShaderID::IndirectSpecularComposition);
 
                     commandList.Draw(
                         vertexShader,

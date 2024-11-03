@@ -63,8 +63,8 @@ void RayTracingShadowsRayGen()
     //float3 B = GetPerpendicularVector(N);
     //float3 T = cross(B, N);
 
-    float3x3 tangentToWorld = CreateTangentSpaceBasis(N);
-    randDirection = mul(tangentToWorld, randDirection);
+    float3x3 TBN = CreateTangentSpaceBasis(N);
+    randDirection = TangentToWorld(randDirection, TBN);
     //randDirection = N;
 
     // Prepare a shadow ray.
