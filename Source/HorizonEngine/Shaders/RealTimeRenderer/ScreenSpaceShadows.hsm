@@ -31,7 +31,8 @@ float ScreenSpaceShadowRayCast(
     float3 ndcSpaceRayEnd = clipSpaceRayEnd.xyz / clipSpaceRayEnd.w;
 
     float3 rayStartUVZ = float3(NDCSpaceXYToScreenSpaceUV(ndcSpaceRayStart.xy), ndcSpaceRayStart.z);
-    float3 rayStartToEndUVZ = float3(NDCSpaceXYToScreenSpaceUV(ndcSpaceRayEnd.xy) - NDCSpaceXYToScreenSpaceUV(ndcSpaceRayStart.xy), ndcSpaceRayEnd.z - ndcSpaceRayStart.z);
+    float3 rayEndUVZ = float3(NDCSpaceXYToScreenSpaceUV(ndcSpaceRayEnd.xy), ndcSpaceRayEnd.z);
+    float3 rayStartToEndUVZ = rayEndUVZ - rayStartUVZ;
 
 	float4 auxiliaryRayEnd = clipSpaceRayStart + mul(frameShaderParameters.viewToClipMatrix, float4(0.0f, 0.0f, rayLength, 0.0f));
 	auxiliaryRayEnd = auxiliaryRayEnd / auxiliaryRayEnd.w;
