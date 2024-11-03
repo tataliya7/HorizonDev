@@ -61,7 +61,7 @@ void ShadowMapProjectionForDistantLightCS(uint3 dispatchThreadID : SV_DispatchTh
         float shadowMapDepth = shadowMapTexture.SampleLevel(GlobalSamplerPointClamp, float3(shadowMapTextureCoord.xy, cascadeIndex), 0).r;
         shadowFactor = (shadowMapDepth > shadowMapTextureCoord.z) ? 0 : 1;
 #else
-        shadowFactor = PCF(
+        shadowFactor = PCF3x3(
             shadowMapTexture,
             shadowMapTextureCoord.xy,
             cascadeIndex,

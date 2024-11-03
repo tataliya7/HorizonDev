@@ -53,18 +53,14 @@ static const float2 PoissonOffsets[32] = {
 
 uint CalculateCascadeIndex(float cameraSpacePositionZ, CascadedShadowMapShaderParameters parameters)
 {
-    uint cascadeIndex = 0;
-    for (uint i = 0; i < parameters.cascadeCount - 1; i++)
-    {
-        if (cameraSpacePositionZ < parameters.splitDepth[i])
-        {
-            cascadeIndex = i + 1;
-        }
-    }
+    float4 depths = cameraSpacePositionZ.xxxx;
+    float4 farPlanes = float4(parameters.splitDepth[0], parameters.splitDepth[1], parameters.splitDepth[2], parameters.splitDepth[3]);
+    float4 count = float4(depths <= farPlanes); // TODO: >=
+	uint cascadeIndex = uint(count.x + count.y + count.z + count.w);
     return cascadeIndex;
 }
 
-float PCF(Texture2DArray shadowMapTexture, float2 shadowMapPosition, uint cascadeIndex, float sceneDepth, float filterSize, float offsetScale, float2 offsetRotation)
+float PCF3x3(Texture2DArray shadowMapTexture, float2 shadowMapPosition, uint cascadeIndex, float sceneDepth, float filterSize, float offsetScale, float2 offsetRotation)
 {
 #if 1
     float2 offset = offsetScale;
