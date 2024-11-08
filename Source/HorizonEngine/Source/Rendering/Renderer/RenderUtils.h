@@ -72,7 +72,7 @@ namespace Horizon
         return ((x + d - 1) / d);
     }
 
-    static inline Extent2D ComputeDownsampledExtent2D(Extent2D srcExtent, uint32 downsampleFactor)
+    static inline Extent2D DownsampleExtent2D(Extent2D srcExtent, uint32 downsampleFactor)
     {
         uint32 w = std::max(1u, ((srcExtent.width + downsampleFactor - 1u) / downsampleFactor));
         uint32 h = std::max(1u, ((srcExtent.height + downsampleFactor - 1u) / downsampleFactor));

@@ -2570,7 +2570,8 @@ namespace Horizon
         D3D12_VIEWPORT viewports[RenderBackendMaxViewportCount];
         for (uint32 i = 0; i < command.viewportCount; i++)
         {
-            viewports[i] = {
+            viewports[i] =
+            {
                 .TopLeftX = command.viewports[i].x,
                 .TopLeftY = command.viewports[i].y,
                 .Width    = command.viewports[i].width,
@@ -2589,7 +2590,8 @@ namespace Horizon
         D3D12_RECT scissors[RenderBackendMaxViewportCount];
         for (uint32 i = 0; i < command.scissorCount; i++)
         {
-            scissors[i] = {
+            scissors[i] =
+            {
                 .left   = command.scissors[i].left,
                 .top    = command.scissors[i].top,
                 .right  = command.scissors[i].left + (int32)command.scissors[i].width,
@@ -2630,11 +2632,10 @@ namespace Horizon
 
             const auto& texture = device->GetTexture(renderTarget.texture);
 
-            auto& renderTargetDesc = renderTargetDescs[numRenderTargets];
-
             uint32 mipSlice = renderTarget.mipLevel;
             uint32 arraySlice = renderTarget.arrayLayer;
 
+            D3D12_RENDER_PASS_RENDER_TARGET_DESC& renderTargetDesc = renderTargetDescs[numRenderTargets];
             renderTargetDesc.cpuDescriptor = texture->GetRenderTargetView(mipSlice)->descriptor;
             renderTargetDesc.BeginningAccess.Type = ConvertToD3D12RenderPassBeginningAccessType(renderTarget.loadOp);
             renderTargetDesc.BeginningAccess.Clear.ClearValue = texture->clearValue;

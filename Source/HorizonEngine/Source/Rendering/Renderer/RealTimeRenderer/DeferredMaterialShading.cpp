@@ -224,7 +224,6 @@ namespace Horizon
     void RealTimeRenderer::AddDirectLightingPass(
         RenderGraph& renderGraph,
         const SceneView& view,
-        RenderGraphTextureHandle screenSpaceShadowMaskTexture,
         RenderGraphTextureHandle localLightShadowMapAtlas)
     {
         RenderGraphTextureHandle skyAtmosphereTransmittanceLUT = defaultResources->ImportWhiteDummyTexture2D(renderGraph);
@@ -254,7 +253,7 @@ namespace Horizon
                 // TODO: which state should be?
                 //RenderGraphTextureHandle sceneDepthTexture = builder.ReadTexture(sceneTextures.sceneDepthTexture, RenderBackendResourceState::ShaderResource);
                 RenderGraphTextureHandle sceneDepthTexture = builder.ReadTexture(sceneTextures.sceneDepthTexture, RenderBackendResourceState::DepthStencilReadOnly);
-                screenSpaceShadowMaskTexture = builder.ReadTexture(screenSpaceShadowMaskTexture, RenderBackendResourceState::ShaderResource);
+                RenderGraphTextureHandle screenSpaceShadowMaskTexture = builder.ReadTexture(sceneTextures.shadowMaskTexture, RenderBackendResourceState::ShaderResource);
                 localLightShadowMapAtlas = builder.ReadTexture(localLightShadowMapAtlas, RenderBackendResourceState::ShaderResource);
                 skyAtmosphereTransmittanceLUT = builder.ReadTexture(skyAtmosphereTransmittanceLUT, RenderBackendResourceState::ShaderResource);
 

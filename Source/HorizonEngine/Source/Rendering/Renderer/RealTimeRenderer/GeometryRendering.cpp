@@ -8,6 +8,9 @@ namespace Horizon
         GeometryPassDrawCommandList& opaqueGeometryPassDrawCommandList = geometryPassDrawCommandLists[uint32(GeometryPassType::Opaque)];
         opaqueGeometryPassDrawCommandList.Clear();
 
+        GeometryPassDrawCommandList& virtualShadowMapPassDrawCommandList = geometryPassDrawCommandLists[uint32(GeometryPassType::VirtualShadowMap)];
+        virtualShadowMapPassDrawCommandList.Clear();
+
         GeometryPassDrawCommandList& cascadedShadowMapPassDrawCommandList = geometryPassDrawCommandLists[uint32(GeometryPassType::CascadedShadowMap)];
         cascadedShadowMapPassDrawCommandList.Clear();
 
@@ -27,6 +30,7 @@ namespace Horizon
             drawCommand.topology = RenderBackendPrimitiveTopology::TriangleList;
 
             opaqueGeometryPassDrawCommandList.AddDrawCommand(drawCommand);
+            virtualShadowMapPassDrawCommandList.AddDrawCommand(drawCommand);
             cascadedShadowMapPassDrawCommandList.AddDrawCommand(drawCommand);
         }
     }

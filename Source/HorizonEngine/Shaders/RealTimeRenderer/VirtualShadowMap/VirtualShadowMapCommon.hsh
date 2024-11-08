@@ -1,0 +1,7 @@
+#pragma once
+
+struct VirtualShadowMapShaderParameters
+{
+    float4x4 worldToClipMatrix;
+};
+DECLARE_ALIASED_ARRAY_STRUCTURED_BUFFER_SRV(VirtualShadowMapShaderParameters)

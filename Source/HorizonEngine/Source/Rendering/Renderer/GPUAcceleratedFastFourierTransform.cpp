@@ -12,7 +12,7 @@ namespace Horizon::GPUFFT
     {
         if (true) // N < 4096
         {
-            const uint32 numGroups = isHorizontal ? srcRect.GetHeight() : srcRect.GetWidth();
+            const uint32 numGroups = isHorizontal ? srcRect.height : srcRect.width;
 
             renderGraph.AddPass(
                 "FFT",
@@ -163,7 +163,7 @@ namespace Horizon::GPUFFT
     {
         if (true) // N < 4096
         {
-            const uint32 numGroups = isHorizontal ? srcRect.GetHeight() : srcRect.GetWidth();
+            const uint32 numGroups = isHorizontal ? srcRect.height : srcRect.width;
 
             renderGraph.AddPass(
                 "IFFT",

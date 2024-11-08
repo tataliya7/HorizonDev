@@ -18,6 +18,8 @@ namespace Horizon
         const uint32 shadowCascadeCount = light.GetShadowCascadeCount();
         const float maxShadowDistance = light.GetMaxShadowDistance();
 
+        //Matrix4x4f worldToLightMatrix = light.color;
+
         float cascadeSplits[RendererMaxShadowMapCascadeCount];
 
         float nearClip = view.nearClippingPlane;
@@ -261,7 +263,7 @@ namespace Horizon
                 RealTimeRendererSceneTextures& sceneTextures = renderGraph.blackboard.Get<RealTimeRendererSceneTextures>();
 
                 RenderGraphTextureHandle sceneDepthTexture = builder.ReadTexture(sceneTextures.sceneDepthTexture, RenderBackendResourceState::ShaderResource);
-                shadowMapTexture = builder.ReadTexture(shadowMapTexture, RenderBackendResourceState::ShaderResource);
+                shadowMapTexture = builder.ReadTexture(sceneTextures.shadowMapTexture, RenderBackendResourceState::ShaderResource);
                 screenSpaceShadowMaskTexture = builder.WriteTexture(screenSpaceShadowMaskTexture, RenderBackendResourceState::UnorderedAccess);
 
                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)

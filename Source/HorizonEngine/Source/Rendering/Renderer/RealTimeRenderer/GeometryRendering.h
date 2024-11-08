@@ -8,6 +8,7 @@ namespace Horizon
     {
         Opaque,
         Translucency,
+        VirtualShadowMap,
         CascadedShadowMap,
         EditorSelection,
         EditorPickingProxy,

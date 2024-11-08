@@ -378,6 +378,7 @@ namespace Horizon
                         .stencilStoreOp = pass->depthStencil.stencilStoreOp,
                     };
                 }
+                renderPass.renderArea = pass->renderArea;
                 commandList.BeginRenderPass(renderPass);
             }
 

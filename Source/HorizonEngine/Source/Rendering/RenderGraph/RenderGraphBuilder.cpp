@@ -104,4 +104,15 @@ namespace Horizon
             .stencilStoreOp = stencilStoreOp,
         };
     }
+
+    void RenderGraphBuilder::SetRenderArea(int32 x, int32 y, uint32 width, uint32 height)
+    {
+        pass->renderArea =
+        {
+            .x = x,
+            .y = y,
+            .width = width,
+            .height = height
+        };
+    }
 }

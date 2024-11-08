@@ -97,6 +97,9 @@ namespace Horizon
         RenderGraphBufferHandle irradianceEnvironmentMapBuffer;
         RenderGraphTextureHandle convolvedEnvironmentMapTexture;
 
+        RenderGraphBufferHandle virtualShadowMapShaderParameterBuffer;
+        RenderGraphTextureHandle virtualShadowMapDepthTexture;
+
         RenderBackendBufferHandle cascadedShadowMapDataBuffer;
         RenderGraphTextureHandle shadowMapTexture;
         RenderGraphTextureHandle shadowMaskTexture;
@@ -236,6 +239,14 @@ namespace Horizon
             RenderGraph& renderGraph,
             const SceneView& view);
 
+        void RenderVirtualShadowMapDepth(
+            RenderGraph& renderGraph,
+            const SceneView& view);
+
+        void RenderVirtualShadowMap(
+            RenderGraph& renderGraph,
+            const SceneView& view);
+
         void RenderScreenSpaceShadows(
             RenderGraph& renderGraph,
             const SceneView& view,
@@ -276,7 +287,6 @@ namespace Horizon
         void AddDirectLightingPass(
             RenderGraph& renderGraph,
             const SceneView& view,
-            RenderGraphTextureHandle screenSpaceShadowMaskTexture,
             RenderGraphTextureHandle localLightShadowMapAtlas);
 
         void AddIndirectLightingDiffusePass(
@@ -495,6 +505,9 @@ namespace Horizon
         RenderBackendBufferHandle localLightDataUploadBuffers[MaxNumFramesInFlight];
         RenderBackendBufferHandle localLightDataBuffers[MaxNumFramesInFlight];
 
+        RenderBackendBufferHandle virtualShadowMapShaderParameterUploadBuffers[MaxNumFramesInFlight];
+        RenderBackendBufferHandle virtualShadowMapShaderParameterBuffers[MaxNumFramesInFlight];
+
         RenderBackendBufferHandle cascadedShadowMapDataUploadBuffers[MaxNumFramesInFlight];
         RenderBackendBufferHandle cascadedShadowMapDataBuffers[MaxNumFramesInFlight];
 
@@ -506,6 +519,10 @@ namespace Horizon
 
         std::array<GeometryPassDrawCommandList, uint32(GeometryPassType::Count)> geometryPassDrawCommandLists;
         void DispatchOpaqueGeometryPassDrawCommands(RenderBackendCommandList& commandList);
+        void DispatchVirtualShadowMapPassDrawCommands(
+            RenderBackendCommandList& commandList,
+            RenderBackendBufferHandle virtualShadowMapShaderParameterBuffer,
+            RenderBackendTextureHandle virtualShadowMapDepthTexture);
         void DispatchCascadedShadowMapPassDrawCommands(RenderBackendCommandList& commandList, const LightRenderObject& light, uint32 cascadeIndex, RenderBackendBufferHandle cascadeShadowMapDataBuffer);
 
         struct AutoExposureData

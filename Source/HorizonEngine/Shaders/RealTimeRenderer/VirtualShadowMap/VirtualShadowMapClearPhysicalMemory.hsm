@@ -1,0 +1,21 @@
+#include "../../ShaderCommon.hsh"
+#include "../RealTimeRendererCommon.hsh"
+#include "VirtualShadowMapCommon.hsh"
+
+SHADER_CONSTANTS_STRUCT_BEGIN();
+SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferSRV);
+SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(1, VirtualShadowMapShaderParameters, VirtualShadowMapShaderParameterBufferSRV);
+SHADER_CONSTANTS_TEXTURE_2D_ARRAY_UAV(2, uint, VirtualShadowMapDepthTextureUAV);
+SHADER_CONSTANTS_STRUCT_END();
+
+[shader("compute")]
+[numthreads(8, 8, 1)]
+void VirtualShadowMapClearPhysicalMemoryCS(uint3 dispatchThreadID : SV_DispatchThreadID)
+{
+    StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
+    PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
+
+    RWTexture2DArray<uint> virtualShadowMapDepthTexture = ShaderConstants.GetVirtualShadowMapDepthTextureUAV();
+
+    virtualShadowMapDepthTexture[uint3(dispatchThreadID.x, dispatchThreadID.y, 0)] = 0;
+}

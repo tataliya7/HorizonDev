@@ -1,0 +1,55 @@
+#include "../../ShaderCommon.hsh"
+#include "../RealTimeRendererCommon.hsh"
+#include "../ShadowMapCommon.hsh"
+#include "../GPUScene.hsh"
+#include "VirtualShadowMapCommon.hsh"
+
+SHADER_CONSTANTS_STRUCT_BEGIN();
+SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferSRV);
+SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(1, VirtualShadowMapShaderParameters, VirtualShadowMapShaderParameterBufferSRV);
+SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_SRV(2, GeometryDataBufferSRV);
+SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_SRV(3, GeometryInstanceDataBufferSRV);
+SHADER_CONSTANTS_TEXTURE_2D_ARRAY_UAV(4, uint, VirtualShadowMapDepthTextureUAV);
+SHADER_CONSTANTS_STRUCT_END();
+
+[shader("vertex")]
+void VirtualShadowMapDepthVS(
+    in uint vertexID : SV_VertexID,
+    in uint instanceID : SV_InstanceID,
+    out float4 position : SV_Position)
+{
+    StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
+    StructuredBuffer<VirtualShadowMapShaderParameters> virtualShadowMapShaderParameterBuffer = ShaderConstants.GetVirtualShadowMapShaderParameterBufferSRV();
+    ByteAddressBuffer geometryDataBuffer = ShaderConstants.GetGeometryDataBufferSRV();
+    ByteAddressBuffer geometryInstanceDataBuffer = ShaderConstants.GetGeometryInstanceDataBufferSRV();
+
+    PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
+    VirtualShadowMapShaderParameters virtualShadowMapShaderParameter = virtualShadowMapShaderParameterBuffer[0];
+
+    GPUSceneGeometryInstanceData instanceData = GetGPUSceneGeometryInstanceData(geometryInstanceDataBuffer, instanceID);
+    GPUSceneGeometryData geometryData = GetGPUSceneGeometryData(geometryDataBuffer, instanceData.geometryID);
+
+    VertexAttributes vertexAttributes = GetVertexAttributes(geometryData, vertexID);
+
+    float3 worldSpaceVertexPosition = mul(instanceData.localToWorldMatrix, float4(vertexAttributes.position, 1.0f)).xyz;
+    float4 clipSpaceVertexPosition = mul(virtualShadowMapShaderParameter.worldToClipMatrix, float4(worldSpaceVertexPosition, 1.0f));
+
+    position = clipSpaceVertexPosition;
+
+    // TODO: apply depth bias
+    // float bias = ;
+    // float z = ;
+    // position.z = z;
+}
+
+[shader("pixel")]
+void VirtualShadowMapDepthPS(in float4 position : SV_Position)
+{
+    uint2 virtualAddress = uint2(position.x, position.y);
+    float depth = position.z;
+
+    RWTexture2DArray<uint> virtualShadowMapDepthTexture = ShaderConstants.GetVirtualShadowMapDepthTextureUAV();
+
+    uint3 physicalAddress = uint3(virtualAddress, 0);
+    InterlockedMax(virtualShadowMapDepthTexture[physicalAddress], asuint(depth));
+}

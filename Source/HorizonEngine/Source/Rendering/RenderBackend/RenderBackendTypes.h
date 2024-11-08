@@ -1250,6 +1250,7 @@ namespace Horizon
             RenderBackendRenderPassBeginningAccessType stencilLoadOp;
             RenderBackendRenderPassEndingAccessType stencilStoreOp;
         };
+        Rect renderArea;
         RenderTargetDesc renderTargets[RenderBackendMaxRenderTargetCount];
         DepthStencilDesc depthStencil;
     };

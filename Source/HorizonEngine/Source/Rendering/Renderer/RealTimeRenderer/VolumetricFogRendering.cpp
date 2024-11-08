@@ -34,6 +34,7 @@ namespace Horizon
         RenderGraph& renderGraph,
         const SceneView& view)
     {
+        return;
         uint32 localFogVolumeInstanceCount = uint32(view.scene->localFogVolumes.size());
 
         if (localFogVolumeInstanceCount == 0)

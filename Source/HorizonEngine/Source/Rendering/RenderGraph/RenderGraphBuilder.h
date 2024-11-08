@@ -44,6 +44,7 @@ namespace Horizon
             RenderBackendRenderPassEndingAccessType stencilStoreOp,
             uint32 mipLevel = 0,
             uint32 arraylayer = 0);
+        void SetRenderArea(int32 x, int32 y, uint32 width, uint32 height);
     private:
         RenderGraph* const renderGraph;
         RenderGraphPass* const pass;

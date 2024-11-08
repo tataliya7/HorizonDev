@@ -24,29 +24,26 @@ namespace Horizon
 
     struct Point2D
     {
-        int x;
-        int y;
+        int32 x;
+        int32 y;
     };
 
     struct Point3D
     {
-        int x;
-        int y;
-        int z;
+        int32 x;
+        int32 y;
+        int32 z;
     };
 
     struct Rect
     {
-        int left;
-        int top;
-        int right;
-        int bottom;
+        // offset
+        int32 x;
+        int32 y;
 
-        Rect() : left(0), top(0), right(0), bottom(0) {}
-        explicit Rect(int x0, int y0, int x1, int y1) : left(x0), top(y0), right(x1), bottom(y1) {}
-
-        uint32 GetWidth() const { return right - left; }
-        uint32 GetHeight() const { return bottom - top; }
+        // extent
+        uint32 width;
+        uint32 height;
     };
 
     class Box

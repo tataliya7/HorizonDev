@@ -626,6 +626,8 @@ namespace Horizon
 
         DispatchLocalLightCulling(renderGraph, view);
 
+        RenderVirtualShadowMapDepth(renderGraph, view);
+
         RenderVisibilityBuffer(renderGraph, view);
 
         RenderGBuffer(renderGraph, view);
@@ -771,7 +773,7 @@ namespace Horizon
                 // }
                 // else
                 {
-                    RenderScreenSpaceShadows(renderGraph, view, *lightRenderObject, screenSpaceShadowMaskTexture);
+                    //RenderScreenSpaceShadows(renderGraph, view, *lightRenderObject, screenSpaceShadowMaskTexture);
                 }
                 //if (true)
                 //{
@@ -808,9 +810,11 @@ namespace Horizon
             }
         }
 
+        RenderVirtualShadowMap(renderGraph, view);
+
         RenderGraphTextureHandle localLightShadowMapAtlas = RenderLocalLightShadows(renderGraph, view);
 
-        AddDirectLightingPass(renderGraph, view, screenSpaceShadowMaskTexture, localLightShadowMapAtlas);
+        AddDirectLightingPass(renderGraph, view, localLightShadowMapAtlas);
 
         if (IsSubsurfaceScatteringEnabled())
         {

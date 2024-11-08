@@ -32,7 +32,7 @@ namespace Horizon
         //     }
         // }
         //
-        // Extent2D lightShaftsTextureSize = ComputeDownsampledExtent2D(renderResolution, ScreenSpaceLightShaftsDownsampleFactor);
+        // Extent2D lightShaftsTextureSize = DownsampleExtent2D(renderResolution, ScreenSpaceLightShaftsDownsampleFactor);
         //
         // Vector2 aspectRatio = Vector2((float)lightShaftsTextureSize.width / (float)lightShaftsTextureSize.height, (float)lightShaftsTextureSize.height / (float)lightShaftsTextureSize.width);
         //

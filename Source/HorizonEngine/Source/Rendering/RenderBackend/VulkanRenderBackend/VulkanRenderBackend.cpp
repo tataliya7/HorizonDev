@@ -347,7 +347,7 @@ namespace Horizon
         bool hasDepthStencil;
         VkExtent3D extent;
         VkRenderingInfo renderingInfo;
-        uint32 numColorAttachments;
+        uint32 colorAttachmentCount;
         VkFormat colorAttachmentFormats[RenderBackendMaxRenderTargetCount];
         VkRenderingAttachmentInfo colorAttachments[RenderBackendMaxRenderTargetCount];
         VkFormat depthStencilAttachmentFormat;
@@ -392,8 +392,8 @@ namespace Horizon
         uint32 width;
         uint32 height;
         uint32 layers;
-        uint32 numAttachments;
-        uint32 numColorAttachments;
+        uint32 attachmentCount;
+        uint32 colorAttachmentCount;
         VkImage images[RenderBackendMaxRenderTargetCount + 1];
         VkImageView attachments[RenderBackendMaxRenderTargetCount + 1];
     };
@@ -404,8 +404,8 @@ namespace Horizon
         bool hasDepthStencil;
         uint32 renderPassCompatibleHash;
         uint32 renderPassFullHash;
-        uint32 numAttachmentDescriptions;
-        uint32 numColorAttachments;
+        uint32 attachmentDescriptionCount;
+        uint32 colorAttachmentCount;
         VkAttachmentDescription attachmentDescriptions[RenderBackendMaxRenderTargetCount + 1];
         VkAttachmentReference colorReferences[RenderBackendMaxRenderTargetCount];
         VkAttachmentReference depthStencilReference;
@@ -420,7 +420,7 @@ namespace Horizon
 
     struct RenderPassCompatibleHashInfo
     {
-        uint8 numAttachments;
+        uint8 attachmentCount;
         VkFormat formats[RenderBackendMaxRenderTargetCount + 1];
     };
 
@@ -1551,7 +1551,7 @@ namespace Horizon
                 assert(outRenderPassDesc->extent.depth == texture->depth);
             }
 
-            VkAttachmentDescription& attachmentDesc = outRenderPassDesc->attachmentDescriptions[outRenderPassDesc->numAttachmentDescriptions];
+            VkAttachmentDescription& attachmentDesc = outRenderPassDesc->attachmentDescriptions[outRenderPassDesc->attachmentDescriptionCount];
             attachmentDesc.samples = VK_SAMPLE_COUNT_1_BIT;
             attachmentDesc.format = texture->format;
             attachmentDesc.loadOp = ConvertToVkAttachmentLoadOp(colorRenderTarget.loadOp);
@@ -1561,18 +1561,18 @@ namespace Horizon
             attachmentDesc.initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
             attachmentDesc.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
-            VkAttachmentReference& colorReference = outRenderPassDesc->colorReferences[outRenderPassDesc->numColorAttachments];
-            colorReference.attachment = outRenderPassDesc->numAttachmentDescriptions;
+            VkAttachmentReference& colorReference = outRenderPassDesc->colorReferences[outRenderPassDesc->colorAttachmentCount];
+            colorReference.attachment = outRenderPassDesc->attachmentDescriptionCount;
             colorReference.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
-            compatibleHashInfo.numAttachments++;
-            compatibleHashInfo.formats[outRenderPassDesc->numColorAttachments] = attachmentDesc.format;
-            fullHashInfo.loadOps[outRenderPassDesc->numColorAttachments] = attachmentDesc.loadOp;
-            fullHashInfo.storeOps[outRenderPassDesc->numColorAttachments] = attachmentDesc.storeOp;
+            compatibleHashInfo.attachmentCount++;
+            compatibleHashInfo.formats[outRenderPassDesc->colorAttachmentCount] = attachmentDesc.format;
+            fullHashInfo.loadOps[outRenderPassDesc->colorAttachmentCount] = attachmentDesc.loadOp;
+            fullHashInfo.storeOps[outRenderPassDesc->colorAttachmentCount] = attachmentDesc.storeOp;
 
-            outClearValues[outRenderPassDesc->numAttachmentDescriptions].color = texture->clearValue.color;
-            outRenderPassDesc->numAttachmentDescriptions++;
-            outRenderPassDesc->numColorAttachments++;
+            outClearValues[outRenderPassDesc->attachmentDescriptionCount].color = texture->clearValue.color;
+            outRenderPassDesc->attachmentDescriptionCount++;
+            outRenderPassDesc->colorAttachmentCount++;
         }
 
         if (renderPassInfo.depthStencil.texture)
@@ -1594,7 +1594,7 @@ namespace Horizon
                 outRenderPassDesc->extent.height = std::min(outRenderPassDesc->extent.height, texture->height);
             }
 
-            VkAttachmentDescription& attachmentDesc = outRenderPassDesc->attachmentDescriptions[outRenderPassDesc->numAttachmentDescriptions];
+            VkAttachmentDescription& attachmentDesc = outRenderPassDesc->attachmentDescriptions[outRenderPassDesc->attachmentDescriptionCount];
             attachmentDesc.samples = VK_SAMPLE_COUNT_1_BIT;
             attachmentDesc.format = texture->format;
             attachmentDesc.loadOp = ConvertToVkAttachmentLoadOp(depthStencilRenderTarget.depthLoadOp);
@@ -1604,7 +1604,7 @@ namespace Horizon
             attachmentDesc.initialLayout = depthStencilLayout;
             attachmentDesc.finalLayout = depthStencilLayout;
 
-            outRenderPassDesc->depthStencilReference.attachment = outRenderPassDesc->numAttachmentDescriptions;
+            outRenderPassDesc->depthStencilReference.attachment = outRenderPassDesc->attachmentDescriptionCount;
             outRenderPassDesc->depthStencilReference.layout = depthStencilLayout;
 
             compatibleHashInfo.formats[RenderBackendMaxRenderTargetCount] = attachmentDesc.format;
@@ -1613,9 +1613,9 @@ namespace Horizon
             fullHashInfo.loadOps[RenderBackendMaxRenderTargetCount + 1] = attachmentDesc.stencilLoadOp;
             fullHashInfo.storeOps[RenderBackendMaxRenderTargetCount + 1] = attachmentDesc.stencilStoreOp;
 
-            outClearValues[outRenderPassDesc->numAttachmentDescriptions].depthStencil = texture->clearValue.depthStencil;
+            outClearValues[outRenderPassDesc->attachmentDescriptionCount].depthStencil = texture->clearValue.depthStencil;
             outRenderPassDesc->hasDepthStencil = true;
-            outRenderPassDesc->numAttachmentDescriptions++;
+            outRenderPassDesc->attachmentDescriptionCount++;
         }
 
         outRenderPassDesc->depthStencilLayout = depthStencilLayout;
@@ -1657,7 +1657,7 @@ namespace Horizon
                 assert(outRenderingInfo->extent.depth == texture->depth);
             }
 
-            VkRenderingAttachmentInfo& attachmentInfo = outRenderingInfo->colorAttachments[outRenderingInfo->numColorAttachments];
+            VkRenderingAttachmentInfo& attachmentInfo = outRenderingInfo->colorAttachments[outRenderingInfo->colorAttachmentCount];
             attachmentInfo.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
             attachmentInfo.pNext = nullptr;
             attachmentInfo.imageView = texture->renderTargetViews[mipLevel]; // TODO: specify mip level
@@ -1670,9 +1670,8 @@ namespace Horizon
             attachmentInfo.storeOp = ConvertToVkAttachmentStoreOp(colorRenderTarget.storeOp);
             attachmentInfo.clearValue.color = texture->clearValue.color;
 
-            outRenderingInfo->colorAttachmentFormats[outRenderingInfo->numColorAttachments] = texture->format;
-
-            outRenderingInfo->numColorAttachments++;
+            outRenderingInfo->colorAttachmentFormats[outRenderingInfo->colorAttachmentCount] = texture->format;
+            outRenderingInfo->colorAttachmentCount++;
         }
 
         if (renderPassInfo.depthStencil.texture)
@@ -1711,27 +1710,37 @@ namespace Horizon
             attachmentInfo.clearValue.depthStencil = texture->clearValue.depthStencil;
 
             outRenderingInfo->depthStencilAttachmentFormat = texture->format;
-
             outRenderingInfo->hasDepthStencil = true;
         }
 
-        VkRenderingInfo renderingInfo = {
+        VkRect2D renderArea = { 0, 0, outRenderingInfo->extent.width, outRenderingInfo->extent.height };
+        if (outRenderingInfo->colorAttachmentCount == 0 && !outRenderingInfo->hasDepthStencil)
+        {
+            renderArea.offset.x = renderPassInfo.renderArea.x;
+            renderArea.offset.y = renderPassInfo.renderArea.y;
+            renderArea.extent.width = renderPassInfo.renderArea.width;
+            renderArea.extent.height = renderPassInfo.renderArea.height;
+        }
+
+        VkRenderingInfo renderingInfo =
+        {
             .sType = VK_STRUCTURE_TYPE_RENDERING_INFO_KHR,
             .pNext = nullptr,
             .flags = 0,
-            .renderArea = { 0, 0, outRenderingInfo->extent.width, outRenderingInfo->extent.height },
+            .renderArea = renderArea,
             .layerCount = 1,
-            .colorAttachmentCount = outRenderingInfo->numColorAttachments,
+            .colorAttachmentCount = outRenderingInfo->colorAttachmentCount,
             .pColorAttachments = outRenderingInfo->colorAttachments,
             .pDepthAttachment = outRenderingInfo->hasDepthStencil ? &outRenderingInfo->depthStencilAttachment : nullptr,
             .pStencilAttachment = nullptr // TODO: add stencil attachment
             //.pStencilAttachment = &outRenderingInfo->depthStencilAttachment
         };
 
-        VkPipelineRenderingCreateInfo pipelineRenderingInfo = {
+        VkPipelineRenderingCreateInfo pipelineRenderingInfo =
+        {
             .sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO,
             .pNext = nullptr,
-            .colorAttachmentCount = outRenderingInfo->numColorAttachments,
+            .colorAttachmentCount = outRenderingInfo->colorAttachmentCount,
             .pColorAttachmentFormats = outRenderingInfo->colorAttachmentFormats,
             .depthAttachmentFormat = outRenderingInfo->depthStencilAttachmentFormat,
             //.stencilAttachmentFormat = outRenderingInfo->depthStencilAttachmentFormat
@@ -3213,13 +3222,13 @@ namespace Horizon
 
             VkSubpassDescription subpassDesc = {
                 .pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS,
-                .colorAttachmentCount = renderPassDesc.numColorAttachments,
+                .colorAttachmentCount = renderPassDesc.colorAttachmentCount,
                 .pColorAttachments = renderPassDesc.colorReferences,
                 .pDepthStencilAttachment = renderPassDesc.hasDepthStencil ? &renderPassDesc.depthStencilReference : nullptr,
             };
             VkRenderPassCreateInfo renderPassInfo = {
                 .sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO,
-                .attachmentCount = renderPassDesc.numAttachmentDescriptions,
+                .attachmentCount = renderPassDesc.attachmentDescriptionCount,
                 .pAttachments = renderPassDesc.attachmentDescriptions,
                 .subpassCount = 1,
                 .pSubpasses = &subpassDesc,
@@ -3235,12 +3244,12 @@ namespace Horizon
 
     bool Matches(VulkanDevice* device, const VulkanFramebuffer& framebuffer, const RenderBackendRenderPassInfo& renderPassInfo, uint32 numColorAttachments)
     {
-        if (framebuffer.numColorAttachments != numColorAttachments)
+        if (framebuffer.colorAttachmentCount != numColorAttachments)
         {
             return false;
         }
 
-        for (uint32 index = 0; index < framebuffer.numColorAttachments; index++)
+        for (uint32 index = 0; index < framebuffer.colorAttachmentCount; index++)
         {
             VkImage image1 = framebuffer.images[index];
             VkImage image2 = device->GetTexture(renderPassInfo.renderTargets[index].texture)->handle;
@@ -3250,9 +3259,9 @@ namespace Horizon
             }
         }
 
-        if ((framebuffer.numAttachments != framebuffer.numColorAttachments) && renderPassInfo.depthStencil.texture)
+        if ((framebuffer.attachmentCount != framebuffer.colorAttachmentCount) && renderPassInfo.depthStencil.texture)
         {
-            VkImage image1 = framebuffer.images[framebuffer.numColorAttachments];
+            VkImage image1 = framebuffer.images[framebuffer.colorAttachmentCount];
             VkImage image2 = device->GetTexture(renderPassInfo.depthStencil.texture)->handle;
             if (image1 != image2)
             {
@@ -3281,7 +3290,7 @@ namespace Horizon
             framebufferList = &cachedFramebuffers[framebufferHash];
             for (uint64 index = 0; index < framebufferList->framebuffers.size(); index++)
             {
-                if (Matches(this, framebufferList->framebuffers[index], renderPassInfo, renderPassDesc.numColorAttachments))
+                if (Matches(this, framebufferList->framebuffers[index], renderPassInfo, renderPassDesc.colorAttachmentCount))
                 {
                     return &framebufferList->framebuffers[index];
                 }
@@ -3304,7 +3313,7 @@ namespace Horizon
             .layers = layers,
         };
 
-        uint32 numAttachments = renderPassDesc.numColorAttachments;
+        uint32 numAttachments = renderPassDesc.colorAttachmentCount;
 
         for (uint32 index = 0; index < numAttachments; index++)
         {
@@ -3331,8 +3340,8 @@ namespace Horizon
             framebuffer.attachments[numAttachments] = texture->depthStencilViews[arrayLayer];
             numAttachments++;
         }
-        framebuffer.numColorAttachments = renderPassDesc.numColorAttachments;
-        framebuffer.numAttachments = numAttachments;
+        framebuffer.colorAttachmentCount = renderPassDesc.colorAttachmentCount;
+        framebuffer.attachmentCount = numAttachments;
 
         assert(layers != (uint32)-1 && layers != 0);
 
@@ -3498,7 +3507,7 @@ namespace Horizon
         bool useMeshShader = meshShader != nullptr;
         assert(useMeshShader ? vertexShader == nullptr : taskShader == nullptr);
 
-        uint32 colorAttachmentCount = useDynamicRendering ? renderingInfo->numColorAttachments : activeColorAttachmentCount;
+        uint32 colorAttachmentCount = useDynamicRendering ? renderingInfo->colorAttachmentCount : activeColorAttachmentCount;
 
         VulkanGraphicsPipelineStateDesc pipelineStateDesc = {};
         InitializeVkPipelineRasterizationStateCreateInfo(pipelineState.rasterizationState, pipelineStateDesc.rasterizationStateCreateInfo);
@@ -5056,9 +5065,10 @@ namespace Horizon
         VkRect2D scissors[RenderBackendMaxViewportCount];
         for (uint32 i = 0; i < command.scissorCount; i++)
         {
-            scissors[i] = {
-                .offset = {.x = command.scissors[i].left, .y = command.scissors[i].top },
-                .extent = {.width = command.scissors[i].width, .height = command.scissors[i].height }
+            scissors[i] =
+            {
+                .offset = { .x = command.scissors[i].left, .y = command.scissors[i].top },
+                .extent = { .width = command.scissors[i].width, .height = command.scissors[i].height }
             };
         }
         vkCmdSetScissor(commandBuffer, 0, command.scissorCount, scissors);

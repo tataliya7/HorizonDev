@@ -156,6 +156,22 @@ namespace Horizon
             shaderLibrary->LoadShader(ShaderID::LightGridDebugVisualization, shaderDesc);
         }
         {
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/VirtualShadowMap/VirtualShadowMapClearPhysicalMemory.hsm", "VirtualShadowMapClearPhysicalMemoryCS");
+            shaderLibrary->LoadShader(ShaderID::VirtualShadowMapClearPhysicalMemory, shaderDesc);
+        }
+        {
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Vertex, "Shaders/RealTimeRenderer/VirtualShadowMap/VirtualShadowMapDepth.hsm", "VirtualShadowMapDepthVS");
+            shaderLibrary->LoadShader(ShaderID::VirtualShadowMapDepthVS, shaderDesc);
+        }
+        {
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Pixel, "Shaders/RealTimeRenderer/VirtualShadowMap/VirtualShadowMapDepth.hsm", "VirtualShadowMapDepthPS");
+            shaderLibrary->LoadShader(ShaderID::VirtualShadowMapDepthPS, shaderDesc);
+        }
+        {
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/VirtualShadowMap/VirtualShadowMapProjection.hsm", "VirtualShadowMapProjectionCS");
+            shaderLibrary->LoadShader(ShaderID::VirtualShadowMapProjection, shaderDesc);
+        }
+        {
             ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Vertex, "Shaders/RealTimeRenderer/CascadedShadowMap.hsm", "CascadedShadowMapVS");
             shaderLibrary->LoadShader(ShaderID::CascadedShadowMapVS, shaderDesc);
         }
