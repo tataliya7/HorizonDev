@@ -521,6 +521,7 @@ namespace Horizon
         void DispatchOpaqueGeometryPassDrawCommands(RenderBackendCommandList& commandList);
         void DispatchVirtualShadowMapPassDrawCommands(
             RenderBackendCommandList& commandList,
+            const LightRenderObject& light,
             RenderBackendBufferHandle virtualShadowMapShaderParameterBuffer,
             RenderBackendTextureHandle virtualShadowMapDepthTexture);
         void DispatchCascadedShadowMapPassDrawCommands(RenderBackendCommandList& commandList, const LightRenderObject& light, uint32 cascadeIndex, RenderBackendBufferHandle cascadeShadowMapDataBuffer);

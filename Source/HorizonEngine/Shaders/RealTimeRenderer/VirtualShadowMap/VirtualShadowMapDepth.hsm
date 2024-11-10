@@ -35,11 +35,6 @@ void VirtualShadowMapDepthVS(
     float4 clipSpaceVertexPosition = mul(virtualShadowMapShaderParameter.worldToClipMatrix, float4(worldSpaceVertexPosition, 1.0f));
 
     position = clipSpaceVertexPosition;
-
-    // TODO: apply depth bias
-    // float bias = ;
-    // float z = ;
-    // position.z = z;
 }
 
 [shader("pixel")]

@@ -217,6 +217,15 @@ float2 RaySphereIntersection(float3 r0, float3 rd, float3 s0, float sR)
     return sol;
 }
 
+// @see UniformSampleCone in [pbrt]
+float3 UniformSampleCone(float2 Xi, float cosThetaMax)
+{
+    float cosTheta = (1.0 - Xi.x) + Xi.x * cosThetaMax;
+    float sinTheta = sqrt(1.0 - cosTheta * cosTheta);
+    float phi = Xi.y * 2.0 * PI;
+    return float3(cos(phi) * sinTheta, sin(phi) * sinTheta, cosTheta);
+}
+
 float3 UniformSampleSphere(float2 Xi)
 {
     float phi = 2.0f * PI * Xi.y;

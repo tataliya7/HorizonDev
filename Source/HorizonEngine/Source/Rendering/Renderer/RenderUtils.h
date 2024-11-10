@@ -53,17 +53,25 @@ namespace Horizon
 
     static inline uint32 asuint(float x)
     {
+#if !_HAS_CXX20
         uint32 ret = {};
-        static_assert(sizeof(x) == sizeof(ret));
         memcpy(&ret, &x, sizeof(x));
+        static_assert(sizeof(x) == sizeof(ret));
+#else
+        uint32 ret = std::bit_cast<uint32>(x);
+#endif
         return ret;
     }
 
     static inline float asfloat(uint32 x)
     {
-        float ret = {};
-        static_assert(sizeof(ret) == sizeof(x));
+#if !_HAS_CXX20
+        uint32 ret = {};
         memcpy(&ret, &x, sizeof(x));
+        static_assert(sizeof(ret) == sizeof(x));
+#else
+        float ret = std::bit_cast<float>(x);
+#endif
         return ret;
     }
 

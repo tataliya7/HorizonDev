@@ -7,6 +7,7 @@ namespace Horizon
 
     void RealTimeRenderer::DispatchVirtualShadowMapPassDrawCommands(
         RenderBackendCommandList& commandList,
+        const LightRenderObject& light,
         RenderBackendBufferHandle virtualShadowMapShaderParameterBuffer,
         RenderBackendTextureHandle virtualShadowMapDepthTexture)
     {
@@ -23,6 +24,8 @@ namespace Horizon
             RenderBackendGraphicsPipelineState graphicsPipelineState = {};
             graphicsPipelineState.rasterizationState.cullMode = RenderBackendRasterizationCullMode::Back;
             graphicsPipelineState.rasterizationState.fillMode = RenderBackendRasterizationFillMode::Solid;
+            graphicsPipelineState.rasterizationState.depthBiasConstantFactor = light.shadowMapDepthBiasConstantFactor;
+            graphicsPipelineState.rasterizationState.depthBiasSlopeFactor = light.shadowMapDepthBiasSlopeFactor;
             // Disable hardware depth testing
             graphicsPipelineState.depthStencilState.depthTestEnable = false;
             graphicsPipelineState.depthStencilState.depthWriteEnable = false;
@@ -257,7 +260,7 @@ namespace Horizon
                    RenderBackendScissor scissor(0, 0, virtualShadowMapSize, virtualShadowMapSize);
                    commandList.SetScissors(&scissor, 1);
 
-                   DispatchVirtualShadowMapPassDrawCommands(commandList, virtualShadowMapShaderParameterBuffer, registry.GetRenderBackendTextureHandle(virtualShadowMapDepthTexture));
+                   DispatchVirtualShadowMapPassDrawCommands(commandList, *light, virtualShadowMapShaderParameterBuffer, registry.GetRenderBackendTextureHandle(virtualShadowMapDepthTexture));
 
                    {
                        RenderBackendViewport viewport(0.0f, 0.0f, float(renderResolution.width), float(renderResolution.height));

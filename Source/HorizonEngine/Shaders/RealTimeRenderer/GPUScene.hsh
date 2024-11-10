@@ -46,6 +46,8 @@ GPUSceneGeometryInstanceData GetGPUSceneGeometryInstanceData(ByteAddressBuffer g
 struct VertexAttributes
 {
     float3 position;
+    float3 normal;
+    float3 tangent;
     float2 textureCoord0;
 };
 
@@ -59,6 +61,8 @@ VertexAttributes GetVertexAttributes(GPUSceneGeometryData geometryData, uint ver
 
     VertexAttributes vertexAttributes = (VertexAttributes)0;
     vertexAttributes.position = vertexBuffer0.Load<float3>(vertexIndex * sizeof(float3));
+    vertexAttributes.normal = vertexBuffer1.Load<float3>(vertexIndex * sizeof(float3));
+    vertexAttributes.tangent = vertexBuffer2.Load<float3>(vertexIndex * sizeof(float3));
     vertexAttributes.textureCoord0 = vertexBuffer3.Load<float2>(vertexIndex * sizeof(float2));
     return vertexAttributes;
 }

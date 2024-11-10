@@ -191,7 +191,7 @@ void CastScreenSapceRay_HierarchicalTracing(
             currentMipResolutionInv *= skippedTile ? 2.0 : 0.5;
         }
 #else
-         float3 tmp_ray = ray;
+        float3 tmp_ray = ray;
         float3 v = rayDirection;
         float2 cross_step = crossStep;
         float2 cross_offset = crossOffset;
@@ -272,7 +272,9 @@ void CastScreenSapceRay_LinearTracing(
     {
         float3 sampleUVZ = rayStartUVZ + rayStartToEndUVZ * t;
 
-        if (any(sampleUVZ.xy < 0) || any(sampleUVZ.xy > 1) || (sampleUVZ.z <= 0) || (sampleUVZ.z >= 1))
+        bool invalidSample = any(sampleUVZ.xy < 0) || any(sampleUVZ.xy > 1) || (sampleUVZ.z <= 0) || (sampleUVZ.z >= 1);
+
+        if (invalidSample)
         {
             break;
         }
@@ -335,7 +337,9 @@ float CastScreenSpaceShadowRay(
     {
         float3 sampleUVZ = rayStartUVZ + rayStartToEndUVZ * t;
 
-        if (any(sampleUVZ.xy < 0) || any(sampleUVZ.xy > 1) || (sampleUVZ.z <= 0) || (sampleUVZ.z >= 1))
+        bool invalidSample = any(sampleUVZ.xy < 0) || any(sampleUVZ.xy > 1) || (sampleUVZ.z <= 0) || (sampleUVZ.z >= 1);
+
+        if (invalidSample)
         {
             break;
         }

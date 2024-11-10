@@ -43,6 +43,11 @@ void CascadedShadowMapVS(
 
     output.position = clipSpaceVertexPosition;
     output.textureCoord0 = vertexAttributes.textureCoord0;
+
+    // TODO: apply depth bias
+    // float bias = ;
+    // float z = ;
+    // position.z = z;
 }
 
 [shader("pixel")]

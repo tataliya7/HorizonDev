@@ -13,14 +13,6 @@ struct ShadowRayPayload
     float visibility;
 };
 
-float3 UniformSampleCone(float2 randVal, float cosThetaMax)
-{
-    float cosTheta = (1.0 - randVal.x) + randVal.x * cosThetaMax;
-    float sinTheta = sqrt(1.0 - cosTheta * cosTheta);
-    float phi = randVal.y * 2.0 * PI;
-    return float3(cos(phi) * sinTheta, sin(phi) * sinTheta, cosTheta);
-}
-
 [shader("raygeneration")]
 void RayTracingShadowsRayGen()
 {
@@ -55,7 +47,6 @@ void RayTracingShadowsRayGen()
 
     float cosThetaMax = 0.999;
     // Generate a random direction based on the cone angle.
-    // @see UniformSampleCone in [pbrt]
     float3 randDirection = UniformSampleCone(float2(Rand(randSeed), Rand(randSeed)), cosThetaMax);
 
     float3 N = -normalize(float3((0), (1), (2)));

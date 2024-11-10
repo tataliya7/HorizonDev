@@ -102,3 +102,42 @@ float PCFSoftShadowsCorrection(float shadowFactor)
 {
     return shadowFactor * shadowFactor;
 }
+
+#if 0
+/**
+ * Normal offset
+ *
+ * Holbert, Daniel, "Saying `Goodbye' to Shadow Acne," Game Developers Conference poster, Mar. 2011.
+ *
+ * @param
+ * @param
+ * @param
+ *
+ * @return
+ */
+float4 ShadowMapPositionWithNormalOffset(float3 P, float3 N, float3 L, float4x4 VP, float shadowMapTexelSize)
+{
+#if 0 // TODO
+    // Scale normal offset by shadow depth when using perspective shadows.
+    float4 = ;
+    float shadowMapFOVFactor = max();
+    shadowMapTexelSize *= abs() * shadowMapFOVFactor;
+#endif
+    float cosLightAngle = dot(N, L);
+
+    float normalOffsetSlopeScale = saturate(1.0f - cosLightAngle);
+    float normalOffsetScale = * normalOffsetSlopeScale * shadowMapTexelSize;
+    float3 normalOffset = N * normalOffsetScale;
+#if 1 // 2D (UV-only) normal offset
+    float3 virtualSurfacePosition = P + normalOffset;
+    float4 shadowMapPositionWith3DNormalOffset = mul(VP, float4(virtualSurfacePosition, 1.0f));
+
+    float4 shadowMapPosition = mul(VP, float4(P, 1.0f));
+    shadowMapPosition.xy = shadowMapPositionWith3DNormalOffset.xy;
+#else // 3D normal offset
+    float3 virtualSurfacePosition = P + normalOffset;
+    float4 shadowMapPosition = mul(VP, float4(virtualSurfacePosition, 1.0f));
+#endif
+    return shadowMapPosition;
+}
+#endif
