@@ -2,6 +2,14 @@
 
 struct VirtualShadowMapShaderParameters
 {
+    uint physicalPageCount;
     float4x4 worldToClipMatrix;
 };
-DECLARE_ALIASED_ARRAY_STRUCTURED_BUFFER_SRV(VirtualShadowMapShaderParameters)
+DECLARE_ALIASED_ARRAY_STRUCTURED_BUFFER_SRV(VirtualShadowMapShaderParameters);
+
+#define VIRTUAL_SHADOW_MAP_PHYSICAL_PAGE_DATA_FLAG_BIT_USED 0x00000001u
+
+struct VirtualShadowMapPhysicalPageData
+{
+    uint flags;
+};

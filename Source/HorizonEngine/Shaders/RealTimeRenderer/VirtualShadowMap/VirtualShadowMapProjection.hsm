@@ -175,7 +175,7 @@ void VirtualShadowMapProjectionCS(uint3 dispatchThreadID : SV_DispatchThreadID)
     for (uint i = 0; i < rayCount; i++)
     {
         uint randSeed = RandInit(pixelCoord.x + pixelCoord.y * width, frameShaderParameters.frameIndex + i);
-        float cosThetaMax = 0.99;
+        float cosThetaMax = 0.995;
         float3 randomDirection = UniformSampleCone(float2(Rand(randSeed), Rand(randSeed)), cosThetaMax);
 
         float3 rayOrigin = worldSpacePosition;

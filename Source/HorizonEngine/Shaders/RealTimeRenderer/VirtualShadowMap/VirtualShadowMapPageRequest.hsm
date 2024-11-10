@@ -1,0 +1,57 @@
+#include "../../ShaderCommon.hsh"
+#include "../RealTimeRendererCommon.hsh"
+#include "VirtualShadowMapCommon.hsh"
+
+SHADER_CONSTANTS_STRUCT_BEGIN();
+SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferSRV);
+SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(1, VirtualShadowMapShaderParameters, VirtualShadowMapShaderParameterBufferSRV);
+SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(2, SceneDepthTextureSRV);
+SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_UAV(3, VirtualShadowMapPageRequestBufferUAV);
+SHADER_CONSTANTS_STRUCT_END();
+
+[shader("compute")]
+[numthreads(8, 8, 1)]
+void VirtualShadowMapPageRequestCS(uint3 dispatchThreadID : SV_DispatchThreadID)
+{
+    StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
+    StructuredBuffer<VirtualShadowMapShaderParameters> virtualShadowMapShaderParameterBuffer = ShaderConstants.GetVirtualShadowMapShaderParameterBufferSRV();
+    Texture2D sceneDepthTexture = ShaderConstants.GetSceneDepthTextureSRV();
+    RWByteAddressBuffer virtualShadowMapPageRequestBuffer = ShaderConstants.GetVirtualShadowMapPageRequestBufferUAV();
+    PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
+    VirtualShadowMapShaderParameters virtualShadowMapShaderParameters = virtualShadowMapShaderParameterBuffer[0];
+
+    uint width = frameShaderParameters.renderWidth;
+    uint height = frameShaderParameters.renderHeight;
+    if (dispatchThreadID.x >= width || dispatchThreadID.y >= height)
+    {
+        return;
+    }
+
+    uint2 pixelCoord = dispatchThreadID.xy;
+    float2 uv = (pixelCoord + 0.5f) * frameShaderParameters.renderResolution.zw;
+
+    float depth = sceneDepthTexture.SampleLevel(GlobalSamplerPointClamp, uv, 0).r;
+
+    if (depth == FAR_CLIPPING_PLANE_DEPTH_VALUE)
+    {
+        return;
+    }
+
+    float3 worldSpacePosition = ReconstructWorldSpacePositionFromUVZ(uv, depth, frameShaderParameters.clipToWorldMatrix);
+
+    float4 shadowMapTextureCoord = mul(virtualShadowMapShaderParameters.worldToClipMatrix, float4(worldSpacePosition, 1.0f));
+    shadowMapTextureCoord /= shadowMapTextureCoord.w;
+    shadowMapTextureCoord.xy = NDCSpaceXYToScreenSpaceUV(shadowMapTextureCoord.xy);
+
+    bool valid = shadowMapTextureCoord.x > 0.0f && shadowMapTextureCoord.x < 1.0f &&
+                 shadowMapTextureCoord.y > 0.0f && shadowMapTextureCoord.y < 1.0f &&
+                 shadowMapTextureCoord.z > 0.0f && shadowMapTextureCoord.z < 1.0f;
+
+    if (valid)
+    {
+        uint2 physicalPageCoordinate2D = uint2(shadowMapTextureCoord.x * 128, shadowMapTextureCoord.y * 128);
+        uint physicalPageIndex = physicalPageCoordinate2D.x * 128 + physicalPageCoordinate2D.y;
+
+        virtualShadowMapPageRequestBuffer.Store<uint>(physicalPageIndex * sizeof(uint), 1);
+    }
+}

@@ -626,8 +626,6 @@ namespace Horizon
 
         DispatchLocalLightCulling(renderGraph, view);
 
-        RenderVirtualShadowMapDepth(renderGraph, view);
-
         RenderVisibilityBuffer(renderGraph, view);
 
         RenderGBuffer(renderGraph, view);
@@ -635,6 +633,8 @@ namespace Horizon
         RenderMotionVectors(renderGraph, view);
 
         RenderDepthPyramid(renderGraph, view);
+
+        RenderVirtualShadowMapDepth(renderGraph, view);
 
         if (IsSkyAtmosphereRenderingEnabled())
         {

@@ -1,0 +1,18 @@
+#include "../../ShaderCommon.hsh"
+#include "../RealTimeRendererCommon.hsh"
+#include "VirtualShadowMapCommon.hsh"
+
+SHADER_CONSTANTS_STRUCT_BEGIN();
+SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_UAV(0, VirtualShadowMapIndirectArgumentBufferUAV);
+SHADER_CONSTANTS_STRUCT_END();
+
+[shader("compute")]
+[numthreads(1, 1, 1)]
+void VirtualShadowMapClearIndirectArgumentBufferCS(uint3 dispatchThreadID : SV_DispatchThreadID)
+{
+    RWByteAddressBuffer virtualShadowMapIndirectArgumentBuffer = ShaderConstants.GetVirtualShadowMapIndirectArgumentBufferUAV();
+
+    virtualShadowMapIndirectArgumentBuffer.Store<uint>(0 * sizeof(uint), 0);
+    virtualShadowMapIndirectArgumentBuffer.Store<uint>(1 * sizeof(uint), 1);
+    virtualShadowMapIndirectArgumentBuffer.Store<uint>(2 * sizeof(uint), 1);
+}

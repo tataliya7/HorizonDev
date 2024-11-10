@@ -156,6 +156,18 @@ namespace Horizon
             shaderLibrary->LoadShader(ShaderID::LightGridDebugVisualization, shaderDesc);
         }
         {
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/VirtualShadowMap/VirtualShadowMapPageRequest.hsm", "VirtualShadowMapPageRequestCS");
+            shaderLibrary->LoadShader(ShaderID::VirtualShadowMapPageRequest, shaderDesc);
+        }
+        {
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/VirtualShadowMap/VirtualShadowMapClearIndirectArgumentBuffer.hsm", "VirtualShadowMapClearIndirectArgumentBufferCS");
+            shaderLibrary->LoadShader(ShaderID::VirtualShadowMapClearIndirectArgumentBuffer, shaderDesc);
+        }
+        {
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/VirtualShadowMap/VirtualShadowMapPhysicalMemoryAllocation.hsm", "VirtualShadowMapPhysicalMemoryAllocationCS");
+            shaderLibrary->LoadShader(ShaderID::VirtualShadowMapPhysicalMemoryAllocation, shaderDesc);
+        }
+        {
             ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/VirtualShadowMap/VirtualShadowMapClearPhysicalMemory.hsm", "VirtualShadowMapClearPhysicalMemoryCS");
             shaderLibrary->LoadShader(ShaderID::VirtualShadowMapClearPhysicalMemory, shaderDesc);
         }

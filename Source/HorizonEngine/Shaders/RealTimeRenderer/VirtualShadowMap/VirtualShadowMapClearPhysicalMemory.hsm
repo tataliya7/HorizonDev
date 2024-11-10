@@ -3,19 +3,30 @@
 #include "VirtualShadowMapCommon.hsh"
 
 SHADER_CONSTANTS_STRUCT_BEGIN();
-SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferSRV);
-SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(1, VirtualShadowMapShaderParameters, VirtualShadowMapShaderParameterBufferSRV);
+SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, VirtualShadowMapShaderParameters, VirtualShadowMapShaderParameterBufferSRV);
+SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_SRV(1, VirtualShadowMapActivePhysicalPageIndexBufferSRV);
 SHADER_CONSTANTS_TEXTURE_2D_ARRAY_UAV(2, uint, VirtualShadowMapDepthTextureUAV);
 SHADER_CONSTANTS_STRUCT_END();
 
 [shader("compute")]
-[numthreads(8, 8, 1)]
+[numthreads(1, 1, 1)]
 void VirtualShadowMapClearPhysicalMemoryCS(uint3 dispatchThreadID : SV_DispatchThreadID)
 {
-    StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
-    PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
-
+    StructuredBuffer<VirtualShadowMapShaderParameters> virtualShadowMapShaderParameterBuffer = ShaderConstants.GetVirtualShadowMapShaderParameterBufferSRV();
+    ByteAddressBuffer virtualShadowMapActivePhysicalPageIndexBuffer = ShaderConstants.GetVirtualShadowMapActivePhysicalPageIndexBufferSRV();
     RWTexture2DArray<uint> virtualShadowMapDepthTexture = ShaderConstants.GetVirtualShadowMapDepthTextureUAV();
+    VirtualShadowMapShaderParameters virtualShadowMapShaderParameters = virtualShadowMapShaderParameterBuffer[0];
 
-    virtualShadowMapDepthTexture[uint3(dispatchThreadID.x, dispatchThreadID.y, 0)] = 0;
+    uint physicalPageIndex = virtualShadowMapActivePhysicalPageIndexBuffer.Load<uint>(dispatchThreadID.x * sizeof(uint));
+
+    uint2 physicalPageCoordinate2D = uint2(physicalPageIndex / 128, physicalPageIndex % 128);
+    uint2 basePhysicalAddress = physicalPageCoordinate2D * 128;
+
+    for (uint i = 0; i < 128; i++)
+    {
+        for (uint j = 0; j < 128; j++)
+        {
+            virtualShadowMapDepthTexture[uint3(basePhysicalAddress.x + i, basePhysicalAddress.y + j, 0)] = 0;
+        }
+    }
 }
