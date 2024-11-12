@@ -110,7 +110,7 @@ filter "platforms:Win64"
     }
     defines {
         "HORIZON_EXPERIMENTAL_STREAMLINE=0",
-        "HORIZON_EXPERIMENTAL_INFINITE_PERSPECTIVE=1",
+        "HORIZON_EXPERIMENTAL_INFINITE_PERSPECTIVE=0",
     }
     staticruntime "Off"
     architecture "x64"
