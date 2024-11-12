@@ -1,5 +1,6 @@
 #include "../../ShaderCommon.hsh"
 #include "../../BRDFCommon.hsh"
+#include "../../Random.hsh"
 
 SHADER_CONSTANTS_STRUCT_BEGIN();
 SHADER_CONSTANTS_TEXTURE_CUBE_DEFAULT_SRV(0, EnvironmentMapTextureSRV);
@@ -23,8 +24,8 @@ float3 ConvolveEnvironmentMap(TextureCube environmentMapTexture, float3 N, float
     float3 radiance = 0.0f;
     for (uint i = 0; i < numSamples; i++)
     {
-        float2 Xi = HammersleySequence2D(i, numSamples);
-        float3 H = TangentToWorld(ImportanceSampleGGX(Xi, roughness), TBN);
+        float2 lowDiscrepancyPoint2D = HammersleySequence2D(i, numSamples);
+        float3 H = TangentToWorld(ImportanceSampleGGX(lowDiscrepancyPoint2D, roughness), TBN);
         float3 L = normalize(2.0f * dot(V, H) * H - V);
 
         float NdotL = dot(N, L);

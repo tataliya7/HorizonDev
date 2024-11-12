@@ -42,6 +42,7 @@ void ScreenSpaceIndirectDiffuseCS(uint3 GroupID : SV_GroupID, uint3 GroupThreadI
     float4 gbuffer0Data = gbuffer0.SampleLevel(GlobalSamplerPointClamp, uv, 0);
     float4 gbuffer1Data = gbuffer1.SampleLevel(GlobalSamplerPointClamp, uv, 0);
     float depth = sceneDepthTexture.SampleLevel(GlobalSamplerPointClamp, uv, 0).r;
+    float2 motionVector = motionVectorTexture.SampleLevel(GlobalSamplerPointClamp, uv, 0).rg;
 
     float3 normal = DecodeNormalFromGBuffer(gbuffer0Data.xyz);
     float metallic = gbuffer1Data.x;
@@ -49,37 +50,63 @@ void ScreenSpaceIndirectDiffuseCS(uint3 GroupID : SV_GroupID, uint3 GroupThreadI
     float roughness = gbuffer1Data.z;
 
     float3 worldSpacePosition = ReconstructWorldSpacePositionFromUVZ(uv, depth, frameShaderParameters.clipToWorldMatrix);
+    float4 cameraSpacePosition = mul(frameShaderParameters.worldToViewMatrix, float4(worldSpacePosition, 1.0f));
+    float cameraSpaceDepth = -cameraSpacePosition.z;
 
 	const float noise = InterleavedGradientNoiseEX(pixelCoord, frameShaderParameters.frameIndexMod8);
 
     float3x3 TBN = CreateTangentSpaceBasis(normal);
 
-    // float2 lowDiscrepancyPoint2D = HammersleySequence2D(i, SampleCount);
-    // float3 L = TangentToWorld(UniformSampleHemisphere(lowDiscrepancyPoint2D), T, B, N);
+    float3 N = normal;
+    float3 V = frameShaderParameters.cameraPosition - worldSpacePosition;
+    float3 R = reflect(-V, N);
 
-    // float3 rayOrigin = worldSpacePosition;
-    // float3 rayDirection = ;
-    // float maxDistance = ;
+    float4 radiance = 0;
 
-    // ScreenSpaceRay ray = CreateScreenSpaceRay(
-    //     rayOrigin,
-    //     rayDirection,
-    //     maxDistance,
-    //     noise,
-    //     frameShaderParameters.worldToClipMatrix);
+    uint sampleCount = 2;
 
-    // const uint stepCount = 8;
+    for (uint i = 0; i < sampleCount; i++)
+    {
+        float2 lowDiscrepancyPoint2D = HammersleySequence2D(i, sampleCount);
+        float3 L = TangentToWorld(UniformSampleHemisphere(lowDiscrepancyPoint2D), TBN);
 
-    // bool foundHit = false;
-    // float3 hitPointUVZ;
+        float3 rayOrigin = worldSpacePosition;
+        float3 rayDirection = R;
+        float tMax = cameraSpaceDepth;
 
-    // CastScreenSapceRay_LinearTracing(
-    //     sceneDepthTexture,
-    //     ray,
-    //     stepCount,
-    //     noise,
-    //     foundHit,
-    //     hitPointUVZ);
+        ScreenSpaceRay ray = CreateScreenSpaceRay(
+            rayOrigin,
+            rayDirection,
+            tMax,
+            frameShaderParameters.worldToClipMatrix,
+            frameShaderParameters.viewToClipMatrix);
 
-    // indirectDiffuseTexture[pixelCoord] = ;
+        const uint stepCount = 8;
+
+        bool foundHit = false;
+        float3 hitPointUVZ;
+
+        CastScreenSapceRay_LinearTracing(
+            sceneDepthTexture,
+            ray,
+            stepCount,
+            noise,
+            foundHit,
+            hitPointUVZ);
+
+        if (foundHit)
+        {
+            float2 hitPointUV = hitPointUVZ.xy + motionVector;
+            float4 hitPointColor = previousSceneColorTexture.SampleLevel(GlobalSamplerPointClamp, hitPointUV, 0);
+
+            float vignettingIntensity = 1.0f;
+            float vignetting = CalculateScreenEdgeVignette(hitPointUV, vignettingIntensity);
+
+            radiance.xyz += hitPointColor.xyz * vignetting;
+        }
+    }
+
+    radiance.xyz /= float(sampleCount) * 0.2;
+
+    indirectDiffuseTexture[pixelCoord] = radiance;
 }

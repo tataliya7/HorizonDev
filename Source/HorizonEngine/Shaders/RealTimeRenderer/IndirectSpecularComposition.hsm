@@ -11,9 +11,10 @@ SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(1, GBuffer0SRV);
 SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(2, GBuffer1SRV);
 SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(3, GBuffer2SRV);
 SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(4, SceneDepthTextureSRV);
-SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(5, AmbientOcclusionTextureSRV);
-SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(6, EnvironmentBrdfLutTextureSRV);
-SHADER_CONSTANTS_TEXTURE_CUBE_DEFAULT_SRV(7, ConvolvedEnvironmentMapTextureSRV);
+SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(5, ScreenSpaceReflectionTextureSRV);
+SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(6, AmbientOcclusionTextureSRV);
+SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(7, EnvironmentBrdfLutTextureSRV);
+SHADER_CONSTANTS_TEXTURE_CUBE_DEFAULT_SRV(8, ConvolvedEnvironmentMapTextureSRV);
 SHADER_CONSTANTS_STRUCT_END();
 
 float3 ComputeImageBasedLightingSpecular(Surface surface)
@@ -65,6 +66,7 @@ void IndirectSpecularCompositionPS(in float4 position : SV_Position, out float4 
     Texture2D gbuffer1 = ShaderConstants.GetGBuffer1SRV();
     Texture2D gbuffer2 = ShaderConstants.GetGBuffer2SRV();
     Texture2D sceneDepthTexture = ShaderConstants.GetSceneDepthTextureSRV();
+    Texture2D screenSpaceReflectionTexture = ShaderConstants.GetScreenSpaceReflectionTextureSRV();
     Texture2D ambientOcclusionTexture = ShaderConstants.GetAmbientOcclusionTextureSRV();
 
     const uint2 pixelCoord = uint2(position.xy);
@@ -74,6 +76,7 @@ void IndirectSpecularCompositionPS(in float4 position : SV_Position, out float4 
     float4 gbuffer1Data = gbuffer1[pixelCoord];
     float4 gbuffer2Data = gbuffer2[pixelCoord];
     float sceneDepth = sceneDepthTexture[pixelCoord].r;
+    //float4 indirectSpecular = screenSpaceReflectionTexture[pixelCoord];
     float ambientOcclusion = ambientOcclusionTexture[pixelCoord].r;
 
     float3 worldPosition = ReconstructWorldSpacePositionFromUVZ(uv, sceneDepth, frameShaderParameters.clipToWorldMatrix);
@@ -108,6 +111,8 @@ void IndirectSpecularCompositionPS(in float4 position : SV_Position, out float4 
     float3 indirectSpecular = ComputeImageBasedLightingSpecular(surface);
     indirectSpecular *= frameShaderParameters.indirectLightingMultiplier;
     indirectSpecular *= frameShaderParameters.preExposure;
+
+    // Multiply by FG after temporal filtering
 
     outputColor = 0;
     outputColor.rgb += indirectSpecular;

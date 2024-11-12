@@ -89,6 +89,8 @@ namespace Horizon
         RenderGraphTextureHandle maxDepthPyramidTexture;
         RenderGraphTextureHandle motionVectorTexture;
         RenderGraphTextureHandle ambientOcclusionTexture;
+        RenderGraphTextureHandle indirectDiffuseTexture;
+        RenderGraphTextureHandle screenSpaceReflectionTexture;
         RenderGraphTextureHandle hudLessColorTexture;
         //RenderGraphTextureHandle uiColorAndAlphaTexture;
         //RenderGraphTextureHandle targetTexture;

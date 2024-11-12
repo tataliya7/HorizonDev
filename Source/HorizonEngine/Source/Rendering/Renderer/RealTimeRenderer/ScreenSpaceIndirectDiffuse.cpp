@@ -60,5 +60,7 @@ namespace Horizon
                         threadGroupCountZ);
                 };
             });
+
+        sceneTextures.indirectDiffuseTexture = indirectDiffuseTexture;
     }
 }

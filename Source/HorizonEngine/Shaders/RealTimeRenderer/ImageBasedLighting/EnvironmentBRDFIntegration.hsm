@@ -1,8 +1,9 @@
 #include "../../ShaderCommon.hsh"
 #include "../../BRDFCommon.hsh"
+#include "../../Random.hsh"
 
 SHADER_CONSTANTS_STRUCT_BEGIN();
-SHADER_CONSTANTS_TEXTURE_2D_UAV(0, float2, EnvironmentBRDFLutTextureUAV);
+SHADER_CONSTANTS_TEXTURE_2D_UAV(0, float2, environmentBrdfLutTextureUAV);
 SHADER_CONSTANTS_STRUCT_END();
 
 static const uint SampleCount = 1024;
@@ -16,8 +17,8 @@ float2 IntegrateBRDF(float NdotV, float roughness)
     float2 result = 0.0f;
     for (uint sampleIndex = 0; sampleIndex < SampleCount; sampleIndex++)
     {
-        float2 Xi = HammersleySequence2D(sampleIndex, SampleCount);
-        float3 H = TangentToWorld(ImportanceSampleGGX(Xi, roughness), TBN);
+        float2 lowDiscrepancyPoint2D = HammersleySequence2D(sampleIndex, SampleCount);
+        float3 H = TangentToWorld(ImportanceSampleGGX(lowDiscrepancyPoint2D, roughness), TBN);
         float3 L = 2.0f * dot(V, H) * H - V;
 
         float NdotL = clamp(dot(N, L), 0.0f, 1.0f);
@@ -39,10 +40,10 @@ float2 IntegrateBRDF(float NdotV, float roughness)
 [numthreads(8, 8, 1)]
 void EnvironmentBRDFIntegrationCS(uint3 dispatchThreadID : SV_DispatchThreadID)
 {
-    RWTexture2D<float2> environmentBRDFLutTexture = ShaderConstants.GetEnvironmentBRDFLutTextureUAV();
+    RWTexture2D<float2> environmentBrdfLutTexture = ShaderConstants.GetenvironmentBrdfLutTextureUAV();
 
     uint width, height;
-    environmentBRDFLutTexture.GetDimensions(width, height);
+    environmentBrdfLutTexture.GetDimensions(width, height);
     if (dispatchThreadID.x >= width || dispatchThreadID.y >= height)
     {
         return;
@@ -52,5 +53,5 @@ void EnvironmentBRDFIntegrationCS(uint3 dispatchThreadID : SV_DispatchThreadID)
     float2 uv = (pixelCoord + 0.5f) / float2(width, height);
     float2 brdf = IntegrateBRDF(uv.x, uv.y);
 
-    environmentBRDFLutTexture[pixelCoord] = brdf;
+    environmentBrdfLutTexture[pixelCoord] = brdf;
 }

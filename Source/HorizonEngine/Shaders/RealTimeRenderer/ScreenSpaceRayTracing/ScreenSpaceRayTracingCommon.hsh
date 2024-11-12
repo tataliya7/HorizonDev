@@ -69,63 +69,33 @@ bool crossedCellBoundary(float2 oldCellIndex, float2 newCellIndex)
     return (oldCellIndex.x != newCellIndex.x) || (oldCellIndex.y != newCellIndex.y);
 }
 
-ScreenSpaceRay CreateScreenSpaceRay(
-    float3 worldSpaceRayOrigin,
-    float3 worldSpaceRayDirection, // must be normalized
-    float worldSpaceRayMaxDistance,
-    float4x4 worldToClipMatrix)
-{
-    float3 worldSpaceRayStart = worldSpaceRayOrigin;
-    float3 worldSpaceRayEnd = worldSpaceRayOrigin + worldSpaceRayDirection * worldSpaceRayMaxDistance;
-
-    float4 clipSpaceRayStart = mul(worldToClipMatrix, float4(worldSpaceRayOrigin, 1.0f));
-    float4 clipSpaceRayEnd = mul(worldToClipMatrix, float4(worldSpaceRayEnd, 1.0f));
-
-#if 0
-    float3 ndcSpaceRayStart = clipSpaceRayStart.xyz * rcp(clipSpaceRayStart.w);
-    float3 ndcSpaceRayEnd = clipSpaceRayEnd.xyz * rcp(clipSpaceRayEnd.w);
-#else
-    float3 ndcSpaceRayStart = clipSpaceRayStart.xyz / clipSpaceRayStart.w;
-    float3 ndcSpaceRayEnd = clipSpaceRayEnd.xyz / clipSpaceRayEnd.w;
-#endif
-
-    float3 rayStartUVZ = float3(NDCSpaceXYToScreenSpaceUV(ndcSpaceRayStart.xy), ndcSpaceRayStart.z);
-    float3 rayEndUVZ = float3(NDCSpaceXYToScreenSpaceUV(ndcSpaceRayEnd.xy), ndcSpaceRayEnd.z);
-
-    float3 rayStartToEndUVZ = rayEndUVZ - rayStartUVZ;
-
-    ScreenSpaceRay ray;
-    ray.rayStartUVZ = rayStartUVZ;
-    ray.rayStartToEndUVZ = rayStartToEndUVZ;
-
-    return ray;
-}
-
-// Requires origin and direction of the ray to be in screen space [0, 1] x [0, 1]
 void CastScreenSapceRay_HierarchicalTracing(
-    Texture2D hiz,
+    Texture2D minDepthPyramidTexture,
     float startMipLevel,
     float maxMipLevel,
-    float3 rayStartUVz,
+    float3 rayOrigin,
     float3 rayDirection,
-    uint numSteps,
+    float tMax,
+    float4x4 worldToClipMatrix,
+    float4x4 viewToClipMatrix,
+    uint stepCount,
+    float dither,
     float4 hzbSizeAndInvSize,
     float4 hzbUVFactorAndInvFactor,
-    bool debug,
-    RWTexture2D<float4> debugOutput,
     out float3 hit,
     out float mipLevel,
     out bool foundHit,
     out bool uncertain)
 {
     // Start on mip with highest detail.
-    mipLevel = startMipLevel;
+    currentMipLevel = startMipLevel;
 
-    float2 currentMipResolution = hzbSizeAndInvSize.xy * pow(0.5, mipLevel);
-    float2 currentMipResolutionInv = rcp(currentMipResolution);
+    hzbSizeAndInvSize.xy * pow(0.5f, mipLevel);
+
+    float4 currentMipResolution = float4(, );
 
     float2 crossStep = float2(rayDirection.x >= 0 ? 1.0 : -1.0, rayDirection.y >= 0 ? 1.0 : -1.0);
-    float2 crossOffset = crossStep * currentMipResolutionInv * 0.01;
+    float2 crossOffset = crossStep * currentMipResolution.zw * 0.01;
     crossStep = saturate(crossStep);
 
     float2 startCellCount = currentMipResolution;
@@ -150,13 +120,10 @@ void CastScreenSapceRay_HierarchicalTracing(
     foundHit = false;
     uncertain = false;
 
-    uint maxNumIterations = numSteps;
-
-    uint i;
     [loop]
-    for (i = 0; i < maxNumIterations; i++)
+    for (uint i = 0; i < stepCount; i++)
     {
-        if (mipLevel < 0)
+        if (currentMipLevel < 0)
         {
             break;
         }
@@ -166,29 +133,32 @@ void CastScreenSapceRay_HierarchicalTracing(
             break;
         }
 
+        float t = ;
+        float3 sampleUVZ = rayStartUVZ + rayStartToEndUVZ * t;
+
+        float referenceMinDepth = minDepthPyramidTexture.SampleLevel(GlobalSamplerPointClamp, sampleUVZ.xy, mipLevel).r;
+
         const float2 cellCount = currentMipResolution;
         const float2 oldCellIdx = getCell(ray.xy, cellCount);
-
-        float cell_minZ = hiz.SampleLevel(GlobalSamplerPointClamp, (oldCellIdx + 0.5f) / cellCount, mipLevel).r;
-
 #if 1
         float3 tmpRay = ((cell_minZ < ray.z) && !isBackwardRay) ? intersectDepthPlane(o, d, (cell_minZ - minZ) / deltaZ) : ray;
 
         const float2 newCellIdx = getCell(tmpRay.xy, cellCount);
         float thickness = 0;
 
-        float MAX_THICKNESS = 0.0001;
-        bool skippedTile = (isBackwardRay && (cell_minZ < ray.z)) || (thickness > (MAX_THICKNESS)) || crossedCellBoundary(oldCellIdx, newCellIdx);
-        ray = skippedTile ? intersectCellBoundary(o, d, oldCellIdx, cellCount, crossStep, crossOffset) : tmpRay;
-        mipLevel += skippedTile ? 1.0 : -1.0;
-        if (mipLevel > maxMipLevel)
+        float MAX_THICKNESS = 0.0001f;
+        bool skip = (isBackwardRay && (cell_minZ < ray.z)) || (thickness > (MAX_THICKNESS)) || crossedCellBoundary(oldCellIdx, newCellIdx);
+
+        sampleUVZ = skip ? intersectCellBoundary(o, d, oldCellIdx, cellCount, crossStep, crossOffset) : tmpRay;
+        currentMipLevel += skip ? 1.0f : -1.0f;
+
+        if (currentMipLevel > maxMipLevel)
         {
-            mipLevel = maxMipLevel;
+            currentMipLevel = maxMipLevel;
         }
         else
         {
-            currentMipResolution *= skippedTile ? 0.5 : 2.0;
-            currentMipResolutionInv *= skippedTile ? 2.0 : 0.5;
+            currentMipLevelSize *= skip ? float4(0.5f, 0.5f, 2.0f, 2.0f) : float4(2.0f, 2.0f, 0.5f, 0.5f);
         }
 #else
         float3 tmp_ray = ray;
@@ -249,7 +219,45 @@ struct ScreenSpaceRay
 {
     float3 rayStartUVZ;
     float3 rayStartToEndUVZ;
+    float tolerance;
 };
+
+ScreenSpaceRay CreateScreenSpaceRay(
+    float3 worldSpaceRayOrigin,
+    float3 worldSpaceRayDirection, // must be normalized
+    float tMax,
+    float4x4 worldToClipMatrix,
+    float4x4 viewToClipMatrix)
+{
+    float3 worldSpaceRayStart = worldSpaceRayOrigin;
+    float3 worldSpaceRayEnd = worldSpaceRayOrigin + worldSpaceRayDirection * tMax;
+
+    float4 clipSpaceRayStart = mul(worldToClipMatrix, float4(worldSpaceRayOrigin, 1.0f));
+    float4 clipSpaceRayEnd = mul(worldToClipMatrix, float4(worldSpaceRayEnd, 1.0f));
+
+#if 0
+    float3 ndcSpaceRayStart = clipSpaceRayStart.xyz * rcp(clipSpaceRayStart.w);
+    float3 ndcSpaceRayEnd = clipSpaceRayEnd.xyz * rcp(clipSpaceRayEnd.w);
+#else
+    float3 ndcSpaceRayStart = clipSpaceRayStart.xyz / clipSpaceRayStart.w;
+    float3 ndcSpaceRayEnd = clipSpaceRayEnd.xyz / clipSpaceRayEnd.w;
+#endif
+
+    float3 rayStartUVZ = float3(NDCSpaceXYToScreenSpaceUV(ndcSpaceRayStart.xy), ndcSpaceRayStart.z);
+    float3 rayEndUVZ = float3(NDCSpaceXYToScreenSpaceUV(ndcSpaceRayEnd.xy), ndcSpaceRayEnd.z);
+
+    float3 rayStartToEndUVZ = rayEndUVZ - rayStartUVZ;
+
+	float4 auxiliaryRayEnd = clipSpaceRayStart + mul(viewToClipMatrix, float4(0.0f, 0.0f, tMax, 0.0f));
+	auxiliaryRayEnd = auxiliaryRayEnd / auxiliaryRayEnd.w;
+
+    ScreenSpaceRay ray;
+    ray.rayStartUVZ = rayStartUVZ;
+    ray.rayStartToEndUVZ = rayStartToEndUVZ;
+    ray.tolerance = abs(auxiliaryRayEnd.z - ndcSpaceRayStart.z);
+
+    return ray;
+}
 
 void CastScreenSapceRay_LinearTracing(
     in Texture2D depthTexture,
@@ -259,10 +267,8 @@ void CastScreenSapceRay_LinearTracing(
     out bool foundHit,
     out float3 hitPointUVZ)
 {
-    const float3 rayStartUVZ = ray.rayStartUVZ;
-	const float3 rayStartToEndUVZ = ray.rayStartToEndUVZ;
-
     const float step = 1.0f / float(stepCount);
+    const float compareThreshold = 0.001;//ray.tolerance * step;
 
     float offset = (dither - 0.5f) * step;
     float t = step + offset;
@@ -270,7 +276,7 @@ void CastScreenSapceRay_LinearTracing(
     [loop]
     for (uint i = 0; i < stepCount; i++)
     {
-        float3 sampleUVZ = rayStartUVZ + rayStartToEndUVZ * t;
+        float3 sampleUVZ = ray.rayStartUVZ + ray.rayStartToEndUVZ * t;
 
         bool invalidSample = any(sampleUVZ.xy < 0) || any(sampleUVZ.xy > 1) || (sampleUVZ.z <= 0) || (sampleUVZ.z >= 1);
 
@@ -283,7 +289,7 @@ void CastScreenSapceRay_LinearTracing(
 
         float deltaDepth = referenceDepth - sampleUVZ.z;
 
-        foundHit = deltaDepth > 0;
+        foundHit = deltaDepth > 0.0f && deltaDepth < compareThreshold;
 
         if (foundHit)
         {
@@ -301,13 +307,13 @@ float CastScreenSpaceShadowRay(
     Texture2D depthTexture,
     float3 rayOrigin,
     float3 rayDirection,
-    float rayLength,
+    float tMax,
     float4x4 worldToClipMatrix,
     float4x4 viewToClipMatrix,
     float dither)
 {
     float3 worldSpaceRayStart = rayOrigin;
-    float3 worldSpaceRayEnd = rayOrigin + rayDirection * rayLength;
+    float3 worldSpaceRayEnd = rayOrigin + rayDirection * tMax;
 
     float4 clipSpaceRayStart = mul(worldToClipMatrix, float4(worldSpaceRayStart, 1.0f));
     float4 clipSpaceRayEnd = mul(worldToClipMatrix, float4(worldSpaceRayEnd, 1.0f));
@@ -319,7 +325,7 @@ float CastScreenSpaceShadowRay(
     float3 rayEndUVZ = float3(NDCSpaceXYToScreenSpaceUV(ndcSpaceRayEnd.xy), ndcSpaceRayEnd.z);
     float3 rayStartToEndUVZ = rayEndUVZ - rayStartUVZ;
 
-	float4 auxiliaryRayEnd = clipSpaceRayStart + mul(viewToClipMatrix, float4(0.0f, 0.0f, rayLength, 0.0f));
+	float4 auxiliaryRayEnd = clipSpaceRayStart + mul(viewToClipMatrix, float4(0.0f, 0.0f, tMax, 0.0f));
 	auxiliaryRayEnd = auxiliaryRayEnd / auxiliaryRayEnd.w;
 
     const uint stepCount = SCREEN_SPACE_SHADOW_RAY_FIXED_STEP_COUNT;

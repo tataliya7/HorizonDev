@@ -1,5 +1,6 @@
 #include "../../ShaderCommon.hsh"
 #include "../../SphericalHarmonics.hsh"
+#include "../../Random.hsh"
 
 SHADER_CONSTANTS_STRUCT_BEGIN();
 SHADER_CONSTANTS_TEXTURE_CUBE_DEFAULT_SRV(0, EnvironmentMapTextureSRV);

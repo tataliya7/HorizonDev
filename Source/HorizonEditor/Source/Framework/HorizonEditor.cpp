@@ -237,7 +237,7 @@ namespace Horizon
         editorCamera.cameraSpeed = 1.0f;
         editorCamera.overrideAspectRatio = false;
 
-        renderSettings.indirectLightingIntensity = 1000.0f;
+        renderSettings.indirectLightingIntensity = 1.0f;
         renderSettings.reflectionsTechnique = ReflectionsTechnique::ScreenSpaceReflections;
         renderSettings.superSamplingSettings.superSamplingTechnique = SuperSamplingTechnique::FSR;
         renderSettings.superSamplingSettings.qualityMode = 5;
