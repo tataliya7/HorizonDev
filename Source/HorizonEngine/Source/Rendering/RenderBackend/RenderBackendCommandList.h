@@ -55,6 +55,7 @@ namespace Horizon
 
         void CopyTexture2D(RenderBackendTextureHandle srcTexture, const Offset2D& srcOffset, uint32 srcMipLevel, RenderBackendTextureHandle dstTexture, const Offset2D& dstOffset, uint32 dstMipLevel, const Extent2D extent);
 
+        void ClearBufferUAV(RenderBackendBufferHandle buffer, uint32 data);
         void ClearTextureUAV(const RenderBackendTextureUAVDesc& uav, const RenderBackendTextureClearValue& clearColor);
 
         void Transitions(const RenderBackendBarrier* transitions, uint32 transitionCount);

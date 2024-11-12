@@ -248,6 +248,20 @@ namespace Horizon
         RenderGraphTextureHandle virtualShadowMapDepthTexture = sceneTextures.virtualShadowMapDepthTexture = renderGraph.CreateTexture(virtualShadowMapDepthTextureDesc, "VirtualShadowMapDepthTexture");
 
         renderGraph.AddPass(
+            std::format("VirtualShadowMapClearPageDataBuffer ({} bytes)", virtualShadowMapPhysicalPageDataBufferDesc.size),
+            RenderGraphPassFlags::Compute,
+            [&](RenderGraphBuilder& builder)
+            {
+                virtualShadowMapPhysicalPageDataBuffer = builder.WriteBuffer(virtualShadowMapPhysicalPageDataBuffer, RenderBackendResourceState::CopyDst);
+                //virtualShadowMapPhysicalPageDataBuffer = builder.WriteBuffer(virtualShadowMapPhysicalPageDataBuffer, RenderBackendResourceState::UnorderedAccess);
+
+                return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
+                {
+                    commandList.ClearBufferUAV(registry.GetRenderBackendBufferHandle(virtualShadowMapPhysicalPageDataBuffer), 0);
+                };
+            });
+
+        renderGraph.AddPass(
             std::format("VirtualShadowMapPageRequest (Compute, {}x{})", renderResolution.width, renderResolution.height),
             RenderGraphPassFlags::Compute,
             [&](RenderGraphBuilder& builder)
@@ -325,6 +339,7 @@ namespace Horizon
                     shaderConstants.BindBufferSRV(1, registry.GetBufferSRVBindlessResourceDescriptorIndex(virtualShadowMapPhysicalPageDataBuffer));
                     shaderConstants.BindBufferUAV(2, registry.GetBufferUAVBindlessResourceDescriptorIndex(virtualShadowMapIndirectArgumentBuffer));
                     shaderConstants.BindBufferUAV(3, registry.GetBufferUAVBindlessResourceDescriptorIndex(virtualShadowMapActivePhysicalPageIndexBuffer));
+                    shaderConstants.BindScalar(4, 0);
 
                     RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::VirtualShadowMapPhysicalMemoryAllocation);
 

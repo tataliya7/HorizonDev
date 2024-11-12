@@ -63,7 +63,7 @@ void IndirectDiffuseCompositionPS(in float4 position : SV_Position, out float4 o
 #endif
     //irradiance *= frameShaderParameters.inversePreExposure;
 
-    float3 indirectDiffuse = diffuseBRDF * (irradiance * 1000 + indirectDiffuseColor) * ambientOcclusion;
+    float3 indirectDiffuse = diffuseBRDF * (irradiance * 500 + indirectDiffuseColor) * ambientOcclusion;
     indirectDiffuse *= frameShaderParameters.indirectLightingMultiplier;
     indirectDiffuse *= frameShaderParameters.preExposure;
 

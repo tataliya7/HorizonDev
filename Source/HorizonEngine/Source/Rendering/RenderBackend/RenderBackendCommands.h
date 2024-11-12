@@ -22,6 +22,7 @@ namespace Horizon
         CopyTexture,
         UpdateBuffer,
         UpdateTexture,
+        ClearBuffer,
         ClearTexture,
         Barriers,
         Transitions,
@@ -91,6 +92,12 @@ namespace Horizon
     struct RenderBackendCommandBarriers : RenderBackendCommand<RenderBackendCommandType::Barriers, RenderBackendCommandQueueType::All>
     {
         uint32 numBarriers;
+    };
+
+    struct RenderBackendCommandClearBufferUAV : RenderBackendCommand<RenderBackendCommandType::ClearBuffer, RenderBackendCommandQueueType::All>
+    {
+        RenderBackendBufferHandle buffer;
+        uint32 data;
     };
 
     struct RenderBackendCommandClearTextureUAV : RenderBackendCommand<RenderBackendCommandType::ClearTexture, RenderBackendCommandQueueType::All>

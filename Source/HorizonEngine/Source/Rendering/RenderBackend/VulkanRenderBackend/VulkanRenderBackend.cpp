@@ -4418,6 +4418,7 @@ namespace Horizon
         bool CompileRenderBackendCommand(const RenderBackendCommandCopyTexture& command);
         bool CompileRenderBackendCommand(const RenderBackendCommandUpdateBuffer& command);
         bool CompileRenderBackendCommand(const RenderBackendCommandUpdateTexture& command);
+        bool CompileRenderBackendCommand(const RenderBackendCommandClearBufferUAV& command);
         bool CompileRenderBackendCommand(const RenderBackendCommandClearTextureUAV& command);
         bool CompileRenderBackendCommand(const RenderBackendCommandBarriers& command);
         bool CompileRenderBackendCommand(const RenderBackendCommandTransitions& command);
@@ -4540,8 +4541,10 @@ namespace Horizon
 
     bool VulkanRenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandUpdateBuffer& command)
     {
-        const auto& buffer = device->GetBuffer(command.buffer);
+        const VulkanBuffer* buffer = device->GetBuffer(command.buffer);
+
         vkCmdUpdateBuffer(commandBuffer, buffer->handle, command.offset, command.size, command.data);
+
         return true;
     }
 
@@ -4550,9 +4553,23 @@ namespace Horizon
         return true;
     }
 
+    bool VulkanRenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandClearBufferUAV& command)
+    {
+        const VulkanBuffer* buffer = device->GetBuffer(command.buffer);
+
+        vkCmdFillBuffer(
+            commandBuffer,
+            buffer->handle,
+            0,
+            buffer->size,
+            command.data);
+
+        return true;
+    }
+
     bool VulkanRenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandClearTextureUAV& command)
     {
-        const auto& texture = device->GetTexture(command.uav.texture);
+        const VulkanTexture* texture = device->GetTexture(command.uav.texture);
 
         VkClearColorValue color = {};
         color.uint32[0] = command.clearValue.colorValue.uint32[0];
@@ -5229,6 +5246,7 @@ namespace Horizon
             COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandCopyTexture);
             COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandUpdateBuffer);
             COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandUpdateTexture);
+            COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandClearBufferUAV);
             COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandClearTextureUAV);
             COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandBarriers);
             COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandTransitions);

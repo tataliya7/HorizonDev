@@ -215,6 +215,7 @@ namespace Horizon
         void* mappedData;
 
         D3D12_CPU_DESCRIPTOR_HANDLE descriptor;
+
         int bindlessResourceDescriptorIndexCBV;
         int bindlessResourceDescriptorIndexSRV;
         int bindlessResourceDescriptorIndexUAV;
@@ -2088,6 +2089,7 @@ namespace Horizon
         bool CompileRenderBackendCommand(const RenderBackendCommandCopyTexture& command);
         bool CompileRenderBackendCommand(const RenderBackendCommandUpdateBuffer& command);
         bool CompileRenderBackendCommand(const RenderBackendCommandUpdateTexture& command);
+        bool CompileRenderBackendCommand(const RenderBackendCommandClearBufferUAV& command);
         bool CompileRenderBackendCommand(const RenderBackendCommandClearTextureUAV& command);
         bool CompileRenderBackendCommand(const RenderBackendCommandBarriers& command);
         bool CompileRenderBackendCommand(const RenderBackendCommandTransitions& command);
@@ -2142,6 +2144,7 @@ namespace Horizon
                 COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandCopyTexture);
                 COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandUpdateBuffer);
                 COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandUpdateTexture);
+                COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandClearBufferUAV);
                 COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandClearTextureUAV);
                 COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandBarriers);
                 COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandTransitions);
@@ -2220,6 +2223,27 @@ namespace Horizon
         return true;
     }
 
+    bool D3D12RenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandClearBufferUAV& command)
+    {
+        D3D12Buffer* buffer = device->GetBuffer(command.buffer);
+
+        const UINT clearValue[4] =
+        {
+            command.data,
+            command.data,
+            command.data,
+            command.data
+        };
+
+        D3D12_GPU_DESCRIPTOR_HANDLE viewGPUHandle = device->resourceDescriptorHeap->gpuDescriptorHandle;
+        viewGPUHandle.ptr += buffer->bindlessResourceDescriptorIndexUAV * device->device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+        D3D12_CPU_DESCRIPTOR_HANDLE viewCPUHandle = buffer->descriptor;
+
+        commandList->GetID3D12GraphicsCommandList()->ClearUnorderedAccessViewUint(viewGPUHandle, viewCPUHandle, buffer->GetID3D12Resource(), clearValue, 0, nullptr);
+
+        return true;
+    }
+
     bool D3D12RenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandClearTextureUAV& command)
     {
         D3D12Texture* texture = device->GetTexture(command.uav.texture);
@@ -2232,37 +2256,37 @@ namespace Horizon
             command.clearValue.colorValue.uint32[3]
         };
 
-    if (!command.clearValue.test)
-    {
-        D3D12UnorderedAccessView* uav = texture->GetUnorderedAccessView(command.uav.mipLevel);
-
-        D3D12_GPU_DESCRIPTOR_HANDLE viewGPUHandle = device->resourceDescriptorHeap->gpuDescriptorHandle;
-        viewGPUHandle.ptr += uav->bindlessIndex * device->device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-        D3D12_CPU_DESCRIPTOR_HANDLE viewCPUHandle = uav->descriptor;
-
-        commandList->GetID3D12GraphicsCommandList()->ClearUnorderedAccessViewUint(viewGPUHandle, viewCPUHandle, texture->GetID3D12Resource(), clearValue, 0, nullptr);
-    }
-    else
-    {
-        const FLOAT clearRGBA[4] =
+        if (!command.clearValue.test)
         {
-            command.clearValue.colorValue.float32[0],
-            command.clearValue.colorValue.float32[1],
-            command.clearValue.colorValue.float32[2],
-            command.clearValue.colorValue.float32[3]
-        };
+            D3D12UnorderedAccessView* uav = texture->GetUnorderedAccessView(command.uav.mipLevel);
 
-        D3D12RenderTargetView* rtv = texture->GetRenderTargetView(0);
-        D3D12_CPU_DESCRIPTOR_HANDLE viewCPUHandle = rtv->descriptor;
-        D3D12_RECT rect =
+            D3D12_GPU_DESCRIPTOR_HANDLE viewGPUHandle = device->resourceDescriptorHeap->gpuDescriptorHandle;
+            viewGPUHandle.ptr += uav->bindlessIndex * device->device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+            D3D12_CPU_DESCRIPTOR_HANDLE viewCPUHandle = uav->descriptor;
+
+            commandList->GetID3D12GraphicsCommandList()->ClearUnorderedAccessViewUint(viewGPUHandle, viewCPUHandle, texture->GetID3D12Resource(), clearValue, 0, nullptr);
+        }
+        else
         {
-            .left = 0,
-            .top = 0,
-            .right = LONG(texture->width),
-            .bottom = LONG(texture->height)
-        };
-        commandList->GetID3D12GraphicsCommandList()->ClearRenderTargetView(viewCPUHandle, clearRGBA, 1, &rect);
-    }
+            const FLOAT clearRGBA[4] =
+            {
+                command.clearValue.colorValue.float32[0],
+                command.clearValue.colorValue.float32[1],
+                command.clearValue.colorValue.float32[2],
+                command.clearValue.colorValue.float32[3]
+            };
+
+            D3D12RenderTargetView* rtv = texture->GetRenderTargetView(0);
+            D3D12_CPU_DESCRIPTOR_HANDLE viewCPUHandle = rtv->descriptor;
+            D3D12_RECT rect =
+            {
+                .left = 0,
+                .top = 0,
+                .right = LONG(texture->width),
+                .bottom = LONG(texture->height)
+            };
+            commandList->GetID3D12GraphicsCommandList()->ClearRenderTargetView(viewCPUHandle, clearRGBA, 1, &rect);
+        }
 
         return true;
     }

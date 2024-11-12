@@ -69,6 +69,15 @@ namespace Horizon
     //     command->size = size;
     // }
 
+    void RenderBackendCommandList::ClearBufferUAV(
+        RenderBackendBufferHandle buffer,
+        uint32 data)
+    {
+        RenderBackendCommandClearBufferUAV* command = AllocateCommand<RenderBackendCommandClearBufferUAV>(RenderBackendCommandClearBufferUAV::Type);
+        command->buffer = buffer;
+        command->data = data;
+    }
+
     void RenderBackendCommandList::ClearTextureUAV(
         const RenderBackendTextureUAVDesc& uav,
         const RenderBackendTextureClearValue& clearColor)
