@@ -247,6 +247,7 @@ namespace Horizon
 
         RenderGraphTextureHandle virtualShadowMapDepthTexture = sceneTextures.virtualShadowMapDepthTexture = renderGraph.CreateTexture(virtualShadowMapDepthTextureDesc, "VirtualShadowMapDepthTexture");
 
+#if 1
         renderGraph.AddPass(
             std::format("VirtualShadowMapClearPageDataBuffer ({} bytes)", virtualShadowMapPhysicalPageDataBufferDesc.size),
             RenderGraphPassFlags::Compute,
@@ -377,6 +378,22 @@ namespace Horizon
                         0);
                 };
             });
+#else
+        renderGraph.AddPass(
+            std::format("VirtualShadowMapClearPhysicalMemory (Compute, Indirect)"),
+            RenderGraphPassFlags::Compute,
+            [&](RenderGraphBuilder& builder)
+            {
+                virtualShadowMapDepthTexture = builder.WriteTexture(sceneTextures.virtualShadowMapDepthTexture, RenderBackendResourceState::UnorderedAccess);
+
+                return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
+                {
+                    commandList.ClearTextureUAV(
+                        RenderBackendTextureUAVDesc(registry.GetRenderBackendTextureHandle(virtualShadowMapDepthTexture), 0),
+                        RenderBackendTextureClearValue::Black);
+                };
+            });
+#endif
 
         renderGraph.AddPass(
            std::format("VirtualShadowMapDepth (Graphics, {}x{})", virtualShadowMapSize, virtualShadowMapSize),

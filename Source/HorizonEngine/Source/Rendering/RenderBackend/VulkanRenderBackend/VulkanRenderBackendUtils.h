@@ -920,7 +920,7 @@ namespace Horizon
                 *outNewLayout = VK_IMAGE_LAYOUT_GENERAL;
             }
             *outDstStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
-            *outDstAccessMask = VK_ACCESS_2_SHADER_READ_BIT | VK_ACCESS_2_SHADER_WRITE_BIT;
+            *outDstAccessMask = VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_SHADER_READ_BIT | VK_ACCESS_2_SHADER_WRITE_BIT;
             break;
         case RenderBackendResourceState::IndirectArgument:
             if (outNewLayout)
