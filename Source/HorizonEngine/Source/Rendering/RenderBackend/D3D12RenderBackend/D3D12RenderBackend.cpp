@@ -1182,6 +1182,72 @@ namespace Horizon
                         device->CopyDescriptorsSimple(1, rangeStart, texture->shaderResourceView->descriptor, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
                     }
                 }
+
+                texture->shaderResourceViews.resize(texture->mipLevels);
+                for (uint32 mipLevel = 0; mipLevel < texture->mipLevels; mipLevel++)
+                {
+                    switch (desc->type)
+                    {
+                    case RenderBackendTextureType::Texture1D:
+                    {
+                        if (texture->arraySize == 1)
+                        {
+                            srvDesc.Texture1D.MostDetailedMip = mipLevel;
+                            srvDesc.Texture1D.MipLevels = 1;
+                        }
+                        else
+                        {
+                            srvDesc.Texture1DArray.MostDetailedMip = mipLevel;
+                            srvDesc.Texture1DArray.MipLevels = 1;
+                        }
+                    } break;
+                    case RenderBackendTextureType::Texture2D:
+                    {
+                        uint32 planeSlice = 0;
+                        if (texture->arraySize == 1)
+                        {
+                            srvDesc.Texture2D.MostDetailedMip = mipLevel;
+                            srvDesc.Texture2D.MipLevels = 1;
+                        }
+                        else
+                        {
+                            srvDesc.Texture2DArray.MostDetailedMip = mipLevel;
+                            srvDesc.Texture2DArray.MipLevels = 1;
+                        }
+                    } break;
+                    case RenderBackendTextureType::Texture3D:
+                    {
+                        srvDesc.Texture3D.MostDetailedMip = mipLevel;
+                        srvDesc.Texture3D.MipLevels = 1;
+                    } break;
+                    case RenderBackendTextureType::TextureCube:
+                    {
+                        if (texture->arraySize == 6)
+                        {
+                            srvDesc.TextureCube.MostDetailedMip = mipLevel;
+                            srvDesc.TextureCube.MipLevels = 1;
+                        }
+                        else
+                        {
+                            srvDesc.TextureCubeArray.MostDetailedMip = mipLevel;
+                            srvDesc.TextureCubeArray.MipLevels = 1;
+                        }
+                    } break;
+                    }
+
+                    texture->shaderResourceViews[mipLevel] = new D3D12ShaderResourceView();
+                    texture->shaderResourceViews[mipLevel]->descriptor = resourceDescriptorAllocator.Allocate();
+                    device->CreateShaderResourceView(texture->GetID3D12Resource(), &srvDesc, texture->shaderResourceViews[mipLevel]->descriptor);
+
+                    texture->shaderResourceViews[mipLevel]->bindlessIndex = AllocateResourceDescriptorIndex();
+                    if (texture->shaderResourceViews[mipLevel]->bindlessIndex >= 0)
+                    {
+                        assert(texture->shaderResourceViews[mipLevel]->bindlessIndex < D3D12_BINDLESS_MAX_NUM_RESOURCE_DESCRIPTOERS);
+                        D3D12_CPU_DESCRIPTOR_HANDLE rangeStart = resourceDescriptorHeap->cpuDescriptorHandle;
+                        rangeStart.ptr += texture->shaderResourceViews[mipLevel]->bindlessIndex * device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+                        device->CopyDescriptorsSimple(1, rangeStart, texture->shaderResourceViews[mipLevel]->descriptor, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+                    }
+                }
             }
 
             if (EnumClassHasFlags(desc->flags, RenderBackendTextureCreateFlags::RenderTarget))
