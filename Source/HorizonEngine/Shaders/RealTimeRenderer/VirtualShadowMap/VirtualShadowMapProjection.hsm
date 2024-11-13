@@ -164,6 +164,7 @@ void VirtualShadowMapProjectionCS(uint3 dispatchThreadID : SV_DispatchThreadID)
         shadowFactor = (shadowMapTextureCoord.z > shadowMapDepth) ? 1.0f : 0.0f;
     }
 
+#if 1
     float3 L = -frameShaderParameters.atmosphericLightDirection;
     float3x3 TBN = CreateTangentSpaceBasis(L);
 
@@ -201,6 +202,7 @@ void VirtualShadowMapProjectionCS(uint3 dispatchThreadID : SV_DispatchThreadID)
     }
 
     shadowFactor = float(rayMissCount) / float(rayCount);
+#endif
 
     shadowMaskTexture[pixelCoord] = float4(shadowFactor, 0.0f, 0.0f, 0.0f);
 }
