@@ -2136,41 +2136,7 @@ namespace Horizon
 
         if (EnumClassHasFlags(desc->flags, RenderBackendTextureCreateFlags::Sparse))
         {
-            //flags |= VK_IMAGE_CREATE_SPARSE_BINDING_BIT;
-            //flags |= VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT;
-            //// flags |= VK_IMAGE_CREATE_SPARSE_ALIASED_BIT;
 
-            //VK_CHECK(vkCreateImage(handle, &imageInfo, VULKAN_ALLOCATION_CALLBACKS, &texture.handle));
-
-            //VkMemoryRequirements memoryRequirements = {};
-            //vkGetImageMemoryRequirements(handle, texture.handle, &memoryRequirements);
-            //texture.sparsePageSize = memoryRequirements.alignment;
-
-            //uint32 sparseMemoryRequirementCount = 0;
-            //vkGetImageSparseMemoryRequirements(handle, texture.handle, &sparseMemoryRequirementCount, nullptr);
-            //std::vector<VkSparseImageMemoryRequirements> sparseImageMemoryRequirements(sparseMemoryRequirementCount);
-            //vkGetImageSparseMemoryRequirements(handle, texture.handle, &sparseMemoryRequirementCount, sparseImageMemoryRequirements.data());
-
-            //texture->sparse_properties = &texture->sparse_texture_properties;
-
-            //SparseTextureProperties& out_sparse = internal_state->sparse_texture_properties;
-            //out_sparse.total_tile_count = uint32_t(memory_requirements.size / memory_requirements.alignment);
-
-            //for (size_t i = 0; i < sparse_requirements.size(); ++i)
-            //{
-            //    const VkSparseImageMemoryRequirements& in_sparse = sparse_requirements[i];
-            //    if (i == 0)
-            //    {
-            //        // These should be common for all subresources right? Like in DX12?
-            //        out_sparse.tile_width = in_sparse.formatProperties.imageGranularity.width;
-            //        out_sparse.tile_height = in_sparse.formatProperties.imageGranularity.height;
-            //        out_sparse.tile_depth = in_sparse.formatProperties.imageGranularity.depth;
-            //        out_sparse.packed_mip_start = in_sparse.imageMipTailFirstLod;
-            //        out_sparse.packed_mip_count = texture->desc.mip_levels - in_sparse.imageMipTailFirstLod;
-            //        out_sparse.packed_mip_tile_offset = uint32_t(in_sparse.imageMipTailOffset / memory_requirements.alignment);
-            //        out_sparse.packed_mip_tile_count = uint32_t(in_sparse.imageMipTailSize / memory_requirements.alignment);
-            //    }
-            //}
         }
         else
         {

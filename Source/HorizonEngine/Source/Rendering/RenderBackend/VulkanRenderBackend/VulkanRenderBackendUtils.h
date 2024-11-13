@@ -777,7 +777,7 @@ namespace Horizon
                 *outOldLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
             }
             *outSrcStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
-            *outSrcAccessMask = VK_ACCESS_2_SHADER_READ_BIT;
+            *outSrcAccessMask = VK_ACCESS_2_SHADER_READ_BIT | VK_ACCESS_2_MEMORY_READ_BIT;
             break;
         case RenderBackendResourceState::Present:
             if (outOldLayout)
@@ -833,14 +833,16 @@ namespace Horizon
                 *outOldLayout = VK_IMAGE_LAYOUT_GENERAL;
             }
             *outSrcStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
-            *outSrcAccessMask = VK_ACCESS_2_SHADER_READ_BIT | VK_ACCESS_2_SHADER_WRITE_BIT;
+            *outSrcAccessMask = VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_SHADER_READ_BIT | VK_ACCESS_2_SHADER_WRITE_BIT;
             break;
         case RenderBackendResourceState::IndirectArgument:
             if (outOldLayout)
             {
                 *outOldLayout = VK_IMAGE_LAYOUT_GENERAL;
             }
-            *outSrcStageMask = VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT;
+            //*outSrcStageMask = VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT;
+            //*outSrcAccessMask = VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT;
+            *outSrcStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
             *outSrcAccessMask = VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT;
             break;
         default: std::unreachable(); return;
@@ -864,7 +866,7 @@ namespace Horizon
                 *outNewLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
             }
             *outDstStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
-            *outDstAccessMask = VK_ACCESS_2_SHADER_READ_BIT | VK_ACCESS_2_SHADER_WRITE_BIT;
+            *outDstAccessMask = VK_ACCESS_2_SHADER_READ_BIT | VK_ACCESS_2_MEMORY_READ_BIT;
             break;
         case RenderBackendResourceState::Present:
             if (outNewLayout)
@@ -927,7 +929,9 @@ namespace Horizon
             {
                 *outNewLayout = VK_IMAGE_LAYOUT_GENERAL;
             }
-            *outDstStageMask = VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT;
+            //*outDstStageMask = VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT;
+            //*outDstAccessMask = VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT;
+            *outDstStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
             *outDstAccessMask = VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT;
             break;
         default: std::unreachable();
