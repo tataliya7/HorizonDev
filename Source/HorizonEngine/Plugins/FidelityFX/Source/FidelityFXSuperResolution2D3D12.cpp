@@ -65,8 +65,8 @@ namespace Horizon
             fsr2ContextDescription.flags |= FFX_FSR2_ENABLE_DEPTH_INFINITE;
 #endif
 
-            //We never use FSR2's own auto-exposure.
-            //fsr2ContextDescription.flags |= enableAutoExposure ? FFX_FSR2_ENABLE_AUTO_EXPOSURE : 0;
+            // We never use FSR2's own auto-exposure.
+            // fsr2ContextDescription.flags |= enableAutoExposure ? FFX_FSR2_ENABLE_AUTO_EXPOSURE : 0;
 
 #if !HORIZON_CONFIGURATION_RELEASE
             //if (device->fsr2EnableDebugCheck)
@@ -151,8 +151,8 @@ namespace Horizon
         fsr2DispatchDescription.commandList = ffxGetCommandListDX12(static_cast<ID3D12CommandList*>(commandList));
         fsr2DispatchDescription.jitterOffset.x = constants.jitterOffset.x;
         fsr2DispatchDescription.jitterOffset.y = constants.jitterOffset.y;
-        fsr2DispatchDescription.motionVectorScale.x = constants.motionVectorScale.x;
-        fsr2DispatchDescription.motionVectorScale.y = constants.motionVectorScale.y;
+        fsr2DispatchDescription.motionVectorScale.x = constants.motionVectorScale.x * float(constants.renderWidth);
+        fsr2DispatchDescription.motionVectorScale.y = constants.motionVectorScale.y * float(constants.renderHeight);
         fsr2DispatchDescription.reset = constants.reset;
         fsr2DispatchDescription.enableSharpening = constants.sharpness > 0.0f;
         fsr2DispatchDescription.sharpness = constants.sharpness;
