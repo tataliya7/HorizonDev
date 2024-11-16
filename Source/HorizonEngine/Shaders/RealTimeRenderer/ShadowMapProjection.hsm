@@ -80,7 +80,7 @@ void ShadowMapProjectionForDistantLightCS(uint3 dispatchThreadID : SV_DispatchTh
 
     float cameraSpaceDepth = -cameraSpacePosition.z;
 
-    if (depth == FAR_CLIPPING_PLANE_DEPTH_VALUE)
+    if ((depth == FAR_CLIPPING_PLANE_DEPTH_VALUE) || (cameraSpaceDepth > cascadedShadowMapShaderParameters.maxShadowDistance))
     {
         shadowMaskTexture[pixelCoord] = float4(1.0f, 0.0f, 0.0f, 0.0f);
         return;
@@ -104,7 +104,7 @@ void ShadowMapProjectionForDistantLightCS(uint3 dispatchThreadID : SV_DispatchTh
     float transitionStartDistance = cascadedShadowMapShaderParameters.transitionStartDistance[cascadeIndex];
     float inverseTransitionRange = cascadedShadowMapShaderParameters.inverseTransitionRange[cascadeIndex];
 
-    bool transition = (cascadedShadowMapShaderParameters.useTransition > 0) &&
+    bool transition = /*(cascadedShadowMapShaderParameters.useTransition > 0) &&*/
         (cameraSpaceDepth > transitionStartDistance) &&
         ((cascadeIndex + 1) < cascadedShadowMapShaderParameters.cascadeCount);
 
@@ -139,8 +139,8 @@ void ShadowMapProjectionForDistantLightCS(uint3 dispatchThreadID : SV_DispatchTh
         shadowFactor = screenSpaceShadow * shadowFactor;
     }
 
-    float fadeout = saturate((cameraSpaceDepth - cascadedShadowMapShaderParameters.shadowFadeoutParameters.x) * cascadedShadowMapShaderParameters.shadowFadeoutParameters.y);
-    shadowFactor = lerp(shadowFactor, 1.0f, fadeout * fadeout);
+    float fadeOut = saturate((cameraSpaceDepth - cascadedShadowMapShaderParameters.shadowFadeOutParameters.x) * cascadedShadowMapShaderParameters.shadowFadeOutParameters.y);
+    shadowFactor = lerp(shadowFactor, 1.0f, fadeOut * fadeOut);
 
     shadowMaskTexture[pixelCoord] = float4(shadowFactor, 0.0f, 0.0f, 0.0f);
 }

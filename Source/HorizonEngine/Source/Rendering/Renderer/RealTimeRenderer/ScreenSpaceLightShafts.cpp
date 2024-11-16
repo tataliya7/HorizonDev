@@ -25,7 +25,7 @@ namespace Horizon
         //         Vector3 dir = light->GetDirection();
         //         dir = Vector3(sceneViewShaderParameters.atmosphericLightDirection.width, sceneViewShaderParameters.atmosphericLightDirection.height, sceneViewShaderParameters.atmosphericLightDirection.z);
         //         Vector3 lightShaftsPostion = sceneViewShaderParameters.cameraPosition - dir;
-        //         Vector4 clippos = sceneViewShaderParameters.viewProjectionMatrix * Vector4(lightShaftsPostion.width, lightShaftsPostion.height, lightShaftsPostion.z, 1.0f);
+        //         Vector4 clippos = sceneViewShaderParameters.worldToClipMatrix * Vector4(lightShaftsPostion.width, lightShaftsPostion.height, lightShaftsPostion.z, 1.0f);
         //         lightShaftsCenter = Vector2(clippos.width / clippos.w, clippos.height / clippos.w);
         //         lightShaftsCenter = lightShaftsCenter * Vector2(0.5f, -0.5f) + 0.5f;
         //         break;

@@ -1,9 +1,5 @@
 #include "RealTimeRenderer.h"
 
-// TODO
-#define NearClipPlaneDepthValue 1.0f
-#define FarClipPlaneDepthValue 0.0f
-
 namespace Horizon
 {
     RenderGraphTextureHandle RealTimeRenderer::RenderLocalLightShadows(
@@ -20,7 +16,7 @@ namespace Horizon
             RenderBackendTextureFormat::D32Float,
             RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::DepthStencil,
             2,
-            RenderBackendTextureClearValue::CreateDepthValue(FarClipPlaneDepthValue));
+            RenderBackendTextureClearValue::CreateDepthValue(FAR_CLIPPING_PLANE_DEPTH_VALUE));
         RenderGraphTextureHandle localLightShadowMapAtlas = renderGraph.CreateTexture(localLightShadowMapAtlasDesc, "LocalLightShadowMapAtlas");
 
         // uint32 numViewports = renderEngine->numCubeShadowMaps * 6;

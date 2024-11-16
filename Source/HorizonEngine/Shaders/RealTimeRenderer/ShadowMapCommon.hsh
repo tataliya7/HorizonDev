@@ -9,8 +9,8 @@ struct CascadedShadowMapShaderParameters
     float transitionStartDistance[MAX_SHADOW_CASCADE_COUNT];
     float inverseTransitionRange[MAX_SHADOW_CASCADE_COUNT];
     float2 shadowMapSize;
-    float2 shadowFadeoutParameters;
-    uint useTransition;
+    float2 shadowFadeOutParameters;
+    float maxShadowDistance;
     uint cascadeCount;
 };
 DECLARE_ALIASED_ARRAY_STRUCTURED_BUFFER_SRV(CascadedShadowMapShaderParameters);

@@ -294,10 +294,10 @@ namespace Horizon
             ImGui::NextColumn();
 
             ImGui::AlignTextToFramePadding();
-            ImGui::TextUnformatted("Cast Shadows");
+            ImGui::TextUnformatted("Cast Dynamic Shadows");
             ImGui::NextColumn();
             ImGui::PushItemWidth(-1);
-            if (ImGui::Checkbox("##CastShadows", &component.castShadows))
+            if (ImGui::Checkbox("##CastDynamicShadows", &component.castDynamicShadows))
             {
 
             }
@@ -329,6 +329,28 @@ namespace Horizon
             ImGui::NextColumn();
 
             ImGui::AlignTextToFramePadding();
+            ImGui::TextUnformatted("Shadow Cascade Split Lambda");
+            ImGui::NextColumn();
+            ImGui::PushItemWidth(-1);
+            if (ImGui::DragFloat("##shadowCascadeSplitLambda", &component.shadowCascadeSplitLambda, 0.01f, 0.0f, 1.0f))
+            {
+
+            }
+            ImGui::PopItemWidth();
+            ImGui::NextColumn();
+
+            ImGui::AlignTextToFramePadding();
+            ImGui::TextUnformatted("Shadow Cascade Transition Scale");
+            ImGui::NextColumn();
+            ImGui::PushItemWidth(-1);
+            if (ImGui::DragFloat("##shadowCascadeTransitionScale", &component.shadowCascadeTransitionScale, 0.01f, 0.0f, 1.0f))
+            {
+
+            }
+            ImGui::PopItemWidth();
+            ImGui::NextColumn();
+
+            ImGui::AlignTextToFramePadding();
             ImGui::TextUnformatted("Max Shadow Distance");
             ImGui::NextColumn();
             ImGui::PushItemWidth(-1);
@@ -340,10 +362,21 @@ namespace Horizon
             ImGui::NextColumn();
 
             ImGui::AlignTextToFramePadding();
-            ImGui::TextUnformatted("Shadow Fadeout Factor");
+            ImGui::TextUnformatted("Max Shadow Distance");
             ImGui::NextColumn();
             ImGui::PushItemWidth(-1);
-            if (ImGui::DragFloat("##shadowFadeoutFactor", &component.shadowFadeoutFactor, 0.01f, 0.0f, 1.0f))
+            if (ImGui::DragFloat("##maxShadowDistance", &component.maxShadowDistance, 0.01f, 0.0f, 1000.0f))
+            {
+
+            }
+            ImGui::PopItemWidth();
+            ImGui::NextColumn();
+
+            ImGui::AlignTextToFramePadding();
+            ImGui::TextUnformatted("Shadow Fade Out Factor");
+            ImGui::NextColumn();
+            ImGui::PushItemWidth(-1);
+            if (ImGui::DragFloat("##shadowFadeOutFactor", &component.shadowFadeOutFactor, 0.01f, 0.0f, 1.0f))
             {
 
             }

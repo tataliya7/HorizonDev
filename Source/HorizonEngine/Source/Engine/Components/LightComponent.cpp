@@ -13,15 +13,16 @@ namespace Horizon
             description.position = position;
             description.direction = direction;
             description.radius = radius;
-            description.castRayTracingShadows = castShadows;
+            description.castDynamicShadows = castDynamicShadows;
             description.usedAsAtmosphericLight = usedAsAtmosphericLight;
             description.halfApexAngleInRadians = GetHalfApexAngleInRadians();
             description.atmosphericLightDiskColorFactor = atmosphericLightDiskColorFactor;
             description.shadowMapSize = shadowMapSize;
             description.shadowCascadeCount = shadowCascadeCount;
             description.shadowCascadeSplitLambda = shadowCascadeSplitLambda;
+            description.shadowCascadeTransitionScale = shadowCascadeTransitionScale;
             description.maxShadowDistance = maxShadowDistance;
-            description.shadowFadeoutFactor = shadowFadeoutFactor;
+            description.shadowFadeOutFactor = shadowFadeOutFactor;
             description.shadowMapDepthBiasConstantFactor = shadowMapDepthBiasConstantFactor;
             description.shadowMapDepthBiasSlopeFactor = shadowMapDepthBiasSlopeFactor;
 
@@ -56,15 +57,16 @@ namespace Horizon
             renderObject->position = position;
             renderObject->direction = direction;
             renderObject->radius = radius;
-            renderObject->castRayTracingShadows = castShadows;
+            renderObject->castDynamicShadows = castDynamicShadows;
             renderObject->usedAsAtmosphericLight = usedAsAtmosphericLight;
             renderObject->halfApexAngleInRadians = GetHalfApexAngleInRadians();
             renderObject->atmosphericLightDiskColorFactor = atmosphericLightDiskColorFactor;
             renderObject->shadowMapSize = shadowMapSize;
             renderObject->shadowCascadeCount = shadowCascadeCount;
             renderObject->shadowCascadeSplitLambda = shadowCascadeSplitLambda;
+            renderObject->shadowCascadeTransitionScale = shadowCascadeTransitionScale;
             renderObject->maxShadowDistance = maxShadowDistance;
-            renderObject->shadowFadeoutFactor = shadowFadeoutFactor;
+            renderObject->shadowFadeOutFactor = shadowFadeOutFactor;
             renderObject->shadowMapDepthBiasConstantFactor = shadowMapDepthBiasConstantFactor;
             renderObject->shadowMapDepthBiasSlopeFactor = shadowMapDepthBiasSlopeFactor;
 

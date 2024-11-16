@@ -151,7 +151,7 @@ namespace Horizon
                 lightComponent.color = Vector3(1.0f, 1.0f, 1.0f);
                 lightComponent.luminousIntensity = 120000.0f;
                 lightComponent.apexAngleInDegrees = 0.5357f;
-                lightComponent.castShadows = true;
+                lightComponent.castDynamicShadows = true;
                 lightComponent.useColorTemperature = true;
                 lightComponent.colorTemperature = 6500.0f;
                 lightComponent.usedAsAtmosphericLight = true;
@@ -169,7 +169,7 @@ namespace Horizon
                 lightComponent.color = Vector4(255.0f / 255.0f, 41.0f / 255.0f, 0.0f / 255.0f, 1.0f);
                 lightComponent.luminousIntensity = 500.0f;
                 lightComponent.radius = 3.0f;
-                lightComponent.castShadows = true;
+                lightComponent.castDynamicShadows = true;
                 lightComponent.CreateRenderObject(scene->GetRenderScene());
             }
 
@@ -184,7 +184,7 @@ namespace Horizon
                 lightComponent.color = Vector4(0.0f, 7.0f / 255.0f, 255.0f / 255.0f, 1.0f);
                 lightComponent.luminousIntensity = 500.0f;
                 lightComponent.radius = 3.0f;
-                lightComponent.castShadows = true;
+                lightComponent.castDynamicShadows = true;
                 lightComponent.CreateRenderObject(scene->GetRenderScene());
             }
 
@@ -238,6 +238,7 @@ namespace Horizon
         editorCamera.overrideAspectRatio = false;
 
         renderSettings.indirectLightingIntensity = 1.0f;
+        renderSettings.shadowsTechnique = ShadowsTechnique::ShadowMap;
         renderSettings.reflectionsTechnique = ReflectionsTechnique::ScreenSpaceReflections;
         renderSettings.superSamplingSettings.superSamplingTechnique = SuperSamplingTechnique::FSR;
         renderSettings.superSamplingSettings.qualityMode = 5;
@@ -359,7 +360,7 @@ namespace Horizon
         sceneView.cameraUpVector = cameraUpVector;
         sceneView.cameraRightVector = cameraRightVector;
         sceneView.cameraForwardVector = cameraForwardVector;
-        sceneView.fieldOfViewAngleVertical = editorCamera.fieldOfView;
+        sceneView.verticalFOV = editorCamera.fieldOfView;
         sceneView.aspectRatio = editorCamera.aspectRatio;
         sceneView.nearClippingPlane = std::max(editorCamera.nearClippingPlane, MinNearClippingPlane);
         sceneView.farClippingPlane = editorCamera.farClippingPlane;
@@ -370,7 +371,7 @@ namespace Horizon
         sceneView.displayWidth = swapChainWidth;
         sceneView.displayHeight = swapChainHeight;
 
-        sceneView.transformations.Update(sceneView.cameraPosition, sceneView.cameraRotation, sceneView.fieldOfViewAngleVertical, sceneView.aspectRatio, sceneView.nearClippingPlane, sceneView.farClippingPlane);
+        sceneView.transformations.Update(sceneView.cameraPosition, sceneView.cameraRotation, sceneView.verticalFOV, sceneView.aspectRatio, sceneView.nearClippingPlane, sceneView.farClippingPlane);
 
         viewMatrix_deprecated = sceneView.transformations.worldToViewMatrix;
         projectionMatrix_deprecated = sceneView.transformations.viewToClipMatrix;

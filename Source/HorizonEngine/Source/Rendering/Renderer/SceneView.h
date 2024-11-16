@@ -68,7 +68,7 @@ namespace Horizon
             Quaternion cameraOrientation = Math::QuaternionFromEulerAngles(Math::DegreesToRadians(rotation));
 
             // TODO: calculate worldToViewMatrix first
-            // viewToWorldMatrix = Math::ComposeTransformMatrix(position, cameraOrientation * zUpQuat, Vector3(1.0f, 1.0f, 1.0f));
+            // viewToWorldMatrix = Math::ComposeTransformationMatrix(position, cameraOrientation * zUpQuat, Vector3(1.0f, 1.0f, 1.0f));
             // worldToViewMatrix = Math::InverseMatrix(viewToWorldMatrix);
             worldToViewMatrix = glm::transpose(glm::mat4_cast(glm::normalize(cameraOrientation * zUpQuat))) * glm::translate(glm::mat4(1), -position);
             //viewToWorldMatrix = Math::InverseMatrix(worldToViewMatrix);
@@ -95,7 +95,7 @@ namespace Horizon
 
         void ApplyJitterOffset(const Vector2& jitterOffset, uint32 renderWidth, uint32 renderHeight)
         {
-            // -y for clip space to uv space
+            // -y for clip space to screen space
             Vector2 offset = { jitterOffset.x * 2.0f / float(renderWidth), -jitterOffset.y * 2.0f / float(renderHeight) };
 
             /*
@@ -111,14 +111,14 @@ namespace Horizon
 
         //
         // CameraTransformations(
-        //     const Matrix4x4& viewMatrix,
-        //     const Matrix4x4& projectionMatrix)
+        //     const Matrix4x4& worldToViewMatrix,
+        //     const Matrix4x4& viewToClipMatrix)
         // {
-        //     worldToViewMatrix = viewMatrix;
-        //     viewToWorldMatrix = Math::InverseMatrix(viewMatrix);
-        //     viewToClipMatrix = projectionMatrix;
-        //     clipToViewMatrix = Math::InverseMatrix(projectionMatrix);
-        //     nonJitteredViewToClipMatrix = projectionMatrix;
+        //     worldToViewMatrix = worldToViewMatrix;
+        //     viewToWorldMatrix = Math::InverseMatrix(worldToViewMatrix);
+        //     viewToClipMatrix = viewToClipMatrix;
+        //     clipToViewMatrix = Math::InverseMatrix(viewToClipMatrix);
+        //     nonJitteredViewToClipMatrix = viewToClipMatrix;
         //     worldToClipMatrix = viewToClipMatrix * worldToViewMatrix;
         //     clipToWorldMatrix = viewToWorldMatrix * clipToViewMatrix;
         //     cameraJitterOffset = ZeroVector2;
@@ -126,19 +126,19 @@ namespace Horizon
         // }
         //
         // CameraTransformations(
-        //     const Matrix4x4& viewMatrix,
-        //     const Matrix4x4& projectionMatrix,
+        //     const Matrix4x4& worldToViewMatrix,
+        //     const Matrix4x4& viewToClipMatrix,
         //     const Vector2& jitterOffset)
         // {
-        //     Matrix4x4 jitteredProjectionMatrix = projectionMatrix;
+        //     Matrix4x4 jitteredProjectionMatrix = viewToClipMatrix;
         //     jitteredProjectionMatrix[2][0] += -jitterOffset.x;
         //     jitteredProjectionMatrix[2][1] += -jitterOffset.y;
         //
-        //     worldToViewMatrix = viewMatrix;
-        //     viewToWorldMatrix = Math::InverseMatrix(viewMatrix);
+        //     worldToViewMatrix = worldToViewMatrix;
+        //     viewToWorldMatrix = Math::InverseMatrix(worldToViewMatrix);
         //     viewToClipMatrix = jitteredProjectionMatrix;
         //     clipToViewMatrix = Math::InverseMatrix(jitteredProjectionMatrix);
-        //     nonJitteredViewToClipMatrix = projectionMatrix;
+        //     nonJitteredViewToClipMatrix = viewToClipMatrix;
         //     worldToClipMatrix = viewToClipMatrix * worldToViewMatrix;
         //     clipToWorldMatrix = viewToWorldMatrix * clipToViewMatrix;
         //     cameraJitterOffset = jitterOffset;
@@ -272,7 +272,7 @@ namespace Horizon
 
         float GetFieldOfView() const
         {
-            return fieldOfViewAngleVertical;
+            return verticalFOV;
         }
 
         float GetAspectRatio() const
@@ -297,18 +297,18 @@ namespace Horizon
 
         // void UpdateTransformations(const CameraComponent& camera)
         // {
-        //     perFrameShaderParameters.viewMatrix = view.camera.viewMatrix;
+        //     perFrameShaderParameters.worldToViewMatrix = view.camera.worldToViewMatrix;
         //     perFrameShaderParameters.invViewMatrix = view.camera.invViewMatrix;
-        //     perFrameShaderParameters.projectionMatrix = jitteredProjectionMatrix;
+        //     perFrameShaderParameters.viewToClipMatrix = jitteredProjectionMatrix;
         //     perFrameShaderParameters.inverseProjectionMatrix = jitteredInvProjectionMatrix;
-        //     perFrameShaderParameters.viewProjectionMatrix = jitteredProjectionMatrix * view.camera.viewMatrix;
+        //     perFrameShaderParameters.worldToClipMatrix = jitteredProjectionMatrix * view.camera.worldToViewMatrix;
         //     perFrameShaderParameters.invViewProjectionMatrix = view.camera.invViewMatrix * jitteredInvProjectionMatrix;
         //     perFrameShaderParameters.prevProjectionMatrix = jitteredPrevProjectionMatrix;
         //     perFrameShaderParameters.prevViewProjectionMatrix = jitteredPrevViewProjectionMatrix;
         //     perFrameShaderParameters.prevInvViewProjectionMatrix = jitteredPrevInvViewProjectionMatrix;
-        //     perFrameShaderParameters.nonJitteredProjectionMatrix = view.camera.projectionMatrix;
+        //     perFrameShaderParameters.nonJitteredProjectionMatrix = view.camera.viewToClipMatrix;
         //     perFrameShaderParameters.nonJitteredInvProjectionMatrix = view.camera.invProjectionMatrix;
-        //     perFrameShaderParameters.nonJitteredViewProjectionMatrix = view.camera.projectionMatrix * view.camera.viewMatrix;
+        //     perFrameShaderParameters.nonJitteredViewProjectionMatrix = view.camera.viewToClipMatrix * view.camera.worldToViewMatrix;
         //     perFrameShaderParameters.nonJitteredInvViewProjectionMatrix = view.camera.invViewMatrix * view.camera.invProjectionMatrix;
         //     perFrameShaderParameters.nonJitteredPrevProjectionMatrix = nonJitteredPrevProjectionMatrix;
         //     perFrameShaderParameters.nonJitteredPrevViewProjectionMatrix = nonJitteredPrevViewProjectionMatrix;
@@ -371,7 +371,7 @@ namespace Horizon
         /**
          * Vertical field of view in degrees.
          */
-        float fieldOfViewAngleVertical;
+        float verticalFOV;
 
         /**
          * The aspect ratio of the scene color texture (expressed as a ratio of width to height).
@@ -387,6 +387,8 @@ namespace Horizon
          * The far plane of the view frustum.
          */
         float farClippingPlane;
+
+        float tanHalfVerticalFOV;
 
         /**
          * The color used to clear the scene color texture.

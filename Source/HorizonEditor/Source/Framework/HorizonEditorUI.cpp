@@ -1088,8 +1088,8 @@ namespace Horizon
                 ImGui::NextColumn();
                 ImGui::PushItemWidth(-1);
 
-                const char* items[] = { "None", "Screen Space Shadows", "Ray Tracing Shadows" };
-                static int item = 0;
+                const char* items[] = { "None", "Shadow Map", "Virtual Shadow Map", "Ray Tracing Shadows" };
+                int item = (int)renderSettings.shadowsTechnique;
                 ImGui::Combo("##ShadowsTechnique", &item, items, IM_ARRAYSIZE(items));
                 renderSettings.shadowsTechnique = (ShadowsTechnique)item;
 

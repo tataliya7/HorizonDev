@@ -59,18 +59,6 @@ namespace Horizon
     //    },
     //};
 
-    struct CascadedShadowMapShaderParameters
-    {
-        Matrix4x4 viewProjectionMatrix[RendererMaxShadowMapCascadeCount];
-        float cascadeEndDistance[RendererMaxShadowMapCascadeCount];
-        float transitionStartDistance[RendererMaxShadowMapCascadeCount];
-        float inverseTransitionRange[RendererMaxShadowMapCascadeCount];
-        Vector2 shadowMapSize;
-        Vector2 shadowFadeoutParameters;
-        uint32 useTransition;
-        uint32 cascadeCount;
-    };
-
     struct CubeShadowMapShaderParameters
     {
         Matrix4x4 viewProjectionMatrix[6];

@@ -135,12 +135,13 @@ namespace Horizon
         Vector3 position;
         Vector3 direction;
         float radius;
-        bool castRayTracingShadows;
+        bool castDynamicShadows;
         uint32 shadowMapSize;
         uint32 shadowCascadeCount;
         float shadowCascadeSplitLambda;
+        float shadowCascadeTransitionScale;
         float maxShadowDistance;
-        float shadowFadeoutFactor;
+        float shadowFadeOutFactor;
         float shadowMapDepthBiasConstantFactor;
         float shadowMapDepthBiasSlopeFactor;
         bool usedAsAtmosphericLight;
@@ -211,9 +212,9 @@ namespace Horizon
             return atmosphericLightDiskColorFactor;
         }
 
-        bool CastRayTracingShadows() const
+        bool CastDynamicShadows() const
         {
-            return castRayTracingShadows;
+            return castDynamicShadows;
         }
 
         bool IsUsedAsAtmosphericLight() const
@@ -248,12 +249,13 @@ namespace Horizon
         Vector3 direction;
         Vector3 tangent;
         float radius;
-        bool castRayTracingShadows;
+        bool castDynamicShadows;
         uint32 shadowMapSize;
         uint32 shadowCascadeCount;
         float shadowCascadeSplitLambda;
+        float shadowCascadeTransitionScale;
         float maxShadowDistance;
-        float shadowFadeoutFactor;
+        float shadowFadeOutFactor;
         float shadowMapDepthBiasConstantFactor;
         float shadowMapDepthBiasSlopeFactor;
         bool usedAsAtmosphericLight;
@@ -528,17 +530,6 @@ namespace Horizon
         RenderBackendBufferHandle transformUploadBuffer;
         RenderBackendBufferHandle previousTransformBuffer;
         RenderBackendBufferHandle transformBufferRowMajor;
-
-        // Lights
-        // uint32 numLights;
-        // LightShaderParameters lightData[RendererMaxLightCount];
-        // LightInfo lightInfo[RendererMaxLightCount];
-        // uint32 numCascadedShadowMaps = 0;
-        // CascadedShadowMapShaderParameters cascadedShadowMapData[RendererMaxCascadedShadowMapCount];
-        // uint32 numCubeShadowMaps = 0;
-        // CubeShadowMapShaderParameters cubeShadowMapData[RendererMaxCubeShadowMapCount];
-        // uint32 cubeShadowMapIndexToLightIndex[RendererMaxCubeShadowMapCount];
-        // uint32 cascadedShadowMapIndexToLightIndex[RendererMaxCascadedShadowMapCount];
 
         RenderBackendBufferHandle lightDataBuffer;
         RenderBackendBufferHandle lightDataUploadBuffer;

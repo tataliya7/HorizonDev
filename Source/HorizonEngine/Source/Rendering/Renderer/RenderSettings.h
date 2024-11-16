@@ -25,7 +25,8 @@ namespace Horizon
     enum class ShadowsTechnique
     {
         None,
-        ScreenSpaceShadows,
+        ShadowMap,
+        VirtualShadowMap,
         RayTracingShadows,
     };
 

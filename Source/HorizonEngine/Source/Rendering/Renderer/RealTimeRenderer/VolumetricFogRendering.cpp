@@ -193,7 +193,7 @@ namespace Horizon
             RenderGraphPassFlags::Compute,
             [&](RenderGraphBuilder& builder)
             {
-                RenderGraphTextureHandle shadowMapTexture = builder.ReadTexture(sceneTextures.shadowMapTexture, RenderBackendResourceState::ShaderResource);
+                RenderGraphTextureHandle shadowMapTexture = builder.ReadTexture(sceneTextures.cascadedShadowMapDepthTexture, RenderBackendResourceState::ShaderResource);
                 volumetricFogParticipatingMediaPropertiesDataATexture = builder.ReadTexture(volumetricFogParticipatingMediaPropertiesDataATexture, RenderBackendResourceState::ShaderResource);
                 volumetricFogParticipatingMediaPropertiesDataBTexture = builder.ReadTexture(volumetricFogParticipatingMediaPropertiesDataBTexture, RenderBackendResourceState::ShaderResource);
                 previousVolumetricFogLightScatteringTexture = builder.ReadTexture(previousVolumetricFogLightScatteringTexture, RenderBackendResourceState::ShaderResource);
@@ -209,7 +209,7 @@ namespace Horizon
                     shaderConstants.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
                     shaderConstants.BindBufferSRV(1, registry.GetBufferSRVBindlessResourceDescriptorIndex(volumetricFogShaderParameterBuffer));
                     shaderConstants.BindBufferSRV(2, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(view.scene->distantLightDataBuffer));
-                    shaderConstants.BindBufferSRV(3, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(sceneTextures.cascadedShadowMapDataBuffer));
+                    shaderConstants.BindBufferSRV(3, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(sceneTextures.cascadedShadowMapShaderParameterBuffer));
                     shaderConstants.BindTextureSRV(4, registry.GetTextureSRVBindlessResourceDescriptorIndex(shadowMapTexture));
                     shaderConstants.BindTextureSRV(5, registry.GetTextureSRVBindlessResourceDescriptorIndex(previousVolumetricFogLightScatteringTexture));
                     shaderConstants.BindTextureSRV(6, registry.GetTextureSRVBindlessResourceDescriptorIndex(volumetricFogParticipatingMediaPropertiesDataATexture));

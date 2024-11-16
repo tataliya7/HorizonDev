@@ -70,7 +70,7 @@ namespace Horizon
 
         float nearClip = view.nearClippingPlane;
         float farClip = maxShadowDistance;//camera.farClippingPlane;
-        float fieldOfView = view.fieldOfViewAngleVertical;
+        float fieldOfView = view.verticalFOV;
         float aspectRatio = view.aspectRatio;
 
         float clipRange = farClip - nearClip;
@@ -110,7 +110,7 @@ namespace Horizon
             };
 
             // Project frustum corners into world space
-            glm::mat4 cameraProjectionMatrix = Math::PerspectiveReverseZ_RH_ZO(fieldOfView, aspectRatio, nearClip, farClip);
+            glm::mat4 cameraProjectionMatrix = Math::PerspectiveProjection_ReverseZ_RH_ZO(fieldOfView, aspectRatio, nearClip, farClip);
             glm::mat4 inverseCameraProjectionMatrix = Math::InverseMatrix(cameraProjectionMatrix);
 
             glm::mat4 invCam = view.transformations.viewToWorldMatrix * inverseCameraProjectionMatrix;
@@ -143,18 +143,12 @@ namespace Horizon
             }
             radius = std::ceil(radius);
 
-            glm::vec3 maxOrtho = frustumCenter + glm::vec3(radius);
-            glm::vec3 minOrtho = frustumCenter - glm::vec3(radius);
+            glm::mat viewMatrix = glm::lookAt(frustumCenter, frustumCenter + lightDirection, glm::vec3(0.0f, 1.0f, 0.0f));
 
-            glm::mat viewMatrix = glm::lookAt(frustumCenter - lightDirection, frustumCenter, glm::vec3(0.0f, 1.0f, 0.0f));
+            float far = radius;
+            float near = -radius;
 
-            maxOrtho = glm::vec3(viewMatrix * glm::vec4(maxOrtho, 1.0f));
-            minOrtho = glm::vec3(viewMatrix * glm::vec4(minOrtho, 1.0f));
-
-            float far = maxOrtho.z;
-            float near = minOrtho.z;
-
-            glm::mat projectionMatrix = glm::ortho(minOrtho.x, maxOrtho.x, minOrtho.y, maxOrtho.y, far, near);
+            glm::mat projectionMatrix = glm::ortho(-radius, radius, -radius, radius, far, near);
 
             glm::mat4 shadowMatrix = projectionMatrix * viewMatrix;
             glm::vec4 shadowOrigin = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
@@ -425,7 +419,7 @@ namespace Horizon
            });
     }
 
-    void RealTimeRenderer::RenderVirtualShadowMap(RenderGraph& renderGraph, const SceneView& view)
+    void RealTimeRenderer::DispatchVirtualShadowMapProjection(RenderGraph& renderGraph, const SceneView& view)
     {
         RealTimeRendererSceneTextures& sceneTextures = renderGraph.blackboard.Get<RealTimeRendererSceneTextures>();
 

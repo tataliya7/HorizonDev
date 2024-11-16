@@ -66,7 +66,7 @@ namespace Horizon::USDImporter
         Vector3 transformPosition;
         Vector3 transformRotation;
         Vector3 transformScale;
-        Math::Decompose(transform, transformPosition, transformRotation, transformScale);
+        Math::DecomposeTransformationMatrix(transform, transformPosition, transformRotation, transformScale);
 
         TransformComponent& transformComponent = scene->GetEntityManager()->GetComponent<TransformComponent>(entity);
         transformComponent.position = transformPosition;

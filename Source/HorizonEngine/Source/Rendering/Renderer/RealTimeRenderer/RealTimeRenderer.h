@@ -5,9 +5,11 @@
 #include "ManyLightRendering.h"
 #include "PostProcessing/PostProcessing.h"
 #include "PerFrameShaderParameters.h"
+#include "ShadowMapping.h"
 
-#define NearClipPlaneDepthValue 1.0f
-#define FarClipPlaneDepthValue 0.0f
+// todo
+#define NEAR_CLIPPING_PLANE_DEPTH_VALUE 1.0f
+#define FAR_CLIPPING_PLANE_DEPTH_VALUE 0.0f
 
 namespace Horizon
 {
@@ -102,8 +104,9 @@ namespace Horizon
         RenderGraphBufferHandle virtualShadowMapShaderParameterBuffer;
         RenderGraphTextureHandle virtualShadowMapDepthTexture;
 
-        RenderBackendBufferHandle cascadedShadowMapDataBuffer;
-        RenderGraphTextureHandle shadowMapTexture;
+        RenderBackendBufferHandle cascadedShadowMapShaderParameterBuffer;
+        RenderGraphTextureHandle cascadedShadowMapDepthTexture;
+
         RenderGraphTextureHandle shadowMaskTexture;
     };
 
@@ -195,6 +198,10 @@ namespace Horizon
 
         void UpdatePerFrameDataBuffer();
 
+        void CreateDynamicShadowData();
+
+        void DispatchDynamicShadowSetupJobs();
+
         // bool ShouldApplyCameraJittering() const
         // {
         //     if (settings.forceEnableSubpixelJittering)
@@ -241,19 +248,21 @@ namespace Horizon
             RenderGraph& renderGraph,
             const SceneView& view);
 
+        void RenderShadowMapDepth(
+            RenderGraph& renderGraph,
+            const SceneView& view);
+
+        void DispatchShadowMapProjection(
+            RenderGraph& renderGraph,
+            const SceneView& view);
+
         void RenderVirtualShadowMapDepth(
             RenderGraph& renderGraph,
             const SceneView& view);
 
-        void RenderVirtualShadowMap(
+        void DispatchVirtualShadowMapProjection(
             RenderGraph& renderGraph,
             const SceneView& view);
-
-        void RenderScreenSpaceShadows(
-            RenderGraph& renderGraph,
-            const SceneView& view,
-            const LightRenderObject& light,
-            RenderGraphTextureHandle& screenSpaceShadowMaskTexture);
 
         void RenderRayTracingShadows(
             RenderGraph& renderGraph,
@@ -510,8 +519,8 @@ namespace Horizon
         RenderBackendBufferHandle virtualShadowMapShaderParameterUploadBuffers[MaxNumFramesInFlight];
         RenderBackendBufferHandle virtualShadowMapShaderParameterBuffers[MaxNumFramesInFlight];
 
-        RenderBackendBufferHandle cascadedShadowMapDataUploadBuffers[MaxNumFramesInFlight];
-        RenderBackendBufferHandle cascadedShadowMapDataBuffers[MaxNumFramesInFlight];
+        RenderBackendBufferHandle cascadedShadowMapShaderParameterUploadBuffers[MaxNumFramesInFlight];
+        RenderBackendBufferHandle cascadedShadowMapShaderParameterBuffers[MaxNumFramesInFlight];
 
         RenderBackendBufferHandle GetCurrentPerFrameConstantBuffer() const;
 
@@ -545,6 +554,9 @@ namespace Horizon
 
         RenderBackendBufferHandle localFogVolumeInstanceDataBufferUpload;
         uint64 localFogVolumeInstanceDataBufferSize = 0;
+
+        // TODO
+        CascadedShadowMapRenderData cascadedShadowMapRenderData;
 
         struct HistoryFrame
         {

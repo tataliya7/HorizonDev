@@ -318,24 +318,29 @@ namespace Horizon::Math
         return glm::inverse(matrix);
     }
 
-    FORCEINLINE Matrix4x4f PerspectiveReverseZ_RH_ZO(float fovy, float aspect, float zNear, float zFar)
+    FORCEINLINE Matrix4x4f PerspectiveProjection_ReverseZ_RH_ZO(float fovy, float aspect, float zNear, float zFar)
     {
         return glm::perspectiveRH_ZO(fovy, aspect, zFar, zNear);
     };
 
-    FORCEINLINE Matrix4x4f ComposeTransformMatrix(const Vector3f& translation, const Quaternion& rotation, const Vector3f& scale)
+    FORCEINLINE Matrix4x4f OrthographicProjection_ReverseZ_ZO(float left, float right, float bottom, float top, float zNear, float zFar)
+    {
+        return glm::orthoRH_ZO(left, right, bottom, top, zFar, zNear);
+    }
+
+    FORCEINLINE Matrix4x4f ComposeTransformationMatrix(const Vector3f& translation, const Quaternion& rotation, const Vector3f& scale)
     {
         return glm::translate(glm::mat4(1), translation) * glm::mat4_cast(glm::normalize(rotation)) * glm::scale(glm::mat4(1.0f), scale);
     }
 
-    FORCEINLINE void Decompose(const Matrix4x4f& matrix, Vector3f& outTranslation, Quaternion& outQuat, Vector3f& outScale)
+    FORCEINLINE void DecomposeTransformationMatrix(const Matrix4x4f& matrix, Vector3f& outTranslation, Quaternion& outQuat, Vector3f& outScale)
     {
         Vector3f skew;
         Vector4f perspective;
         glm::decompose(matrix, outScale, outQuat, outTranslation, skew, perspective);
     }
 
-    FORCEINLINE void Decompose(const Matrix4x4f& matrix, Vector3f& outTranslation, Vector3f& outRotation, Vector3f& outScale)
+    FORCEINLINE void DecomposeTransformationMatrix(const Matrix4x4f& matrix, Vector3f& outTranslation, Vector3f& outRotation, Vector3f& outScale)
     {
         Vector3f skew;
         Vector4f perspective;

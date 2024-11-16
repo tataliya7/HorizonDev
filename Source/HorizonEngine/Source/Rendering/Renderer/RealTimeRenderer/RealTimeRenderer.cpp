@@ -267,7 +267,7 @@ namespace Horizon
             tssConstants.motionVectorScale = Vector2(1.0f, 1.0f);
             tssConstants.cameraNearClippingPlane = view.nearClippingPlane;
             tssConstants.cameraFarClippingPlane = view.farClippingPlane;
-            tssConstants.cameraFovAngleVertical = view.fieldOfViewAngleVertical;
+            tssConstants.cameraFovAngleVertical = view.verticalFOV;
             tssConstants.cameraAspectRatio = view.aspectRatio;
             tssConstants.cameraPosition = view.cameraPosition;
             tssConstants.cameraUpVector = view.cameraUpVector;
@@ -283,7 +283,45 @@ namespace Horizon
             temporalSuperSamplingInterface->SetConstants(tssConstants);
         }
 
+        DispatchDynamicShadowSetupJobs();
+
         SetupGeometryPasses();
+    }
+
+    void RealTimeRenderer::DispatchDynamicShadowSetupJobs()
+    {
+        CreateDynamicShadowData();
+        // GatherDynamicShadowCasters();
+    }
+
+    void RealTimeRenderer::CreateDynamicShadowData()
+    {
+        const SceneView& view = *sceneView;
+        const RenderScene* scene = view.scene;
+        const RenderSettings& renderSettings = view.renderSettings;
+
+         for (LightRenderObject* light : scene->lights)
+         {
+             const bool castDynamicShadows = light->castDynamicShadows;
+             if (!castDynamicShadows)
+             {
+                 continue;
+             }
+
+             // todo: visible
+             const bool useCascadedShadowMap = (renderSettings.shadowsTechnique == ShadowsTechnique::ShadowMap) && (light->lightType == LightType::DistantLight);
+             const bool useVirtualShadowMap = (renderSettings.shadowsTechnique == ShadowsTechnique::VirtualShadowMap) && (light->lightType == LightType::DistantLight);
+
+             if (useCascadedShadowMap)
+             {
+                 SetupViewDependentCascadedShadowMapRenderDataForLight(cascadedShadowMapRenderData, view, *light);
+             }
+
+             if (useVirtualShadowMap)
+             {
+
+             }
+         }
     }
 
     void RealTimeRenderer::UpdatePerFrameDataBuffer()
@@ -314,7 +352,7 @@ namespace Horizon
             perFrameShaderParameters.cameraUpVector = view.cameraUpVector;
             perFrameShaderParameters.cameraRightVector = view.cameraRightVector;
             perFrameShaderParameters.cameraForwardVector = view.cameraForwardVector;
-            perFrameShaderParameters.halfFovInRadians = view.fieldOfViewAngleVertical * 0.5f;
+            perFrameShaderParameters.halfFovInRadians = view.verticalFOV * 0.5f;
             perFrameShaderParameters.aspectRatio = view.aspectRatio;
             perFrameShaderParameters.nearClippingPlane = view.nearClippingPlane;
             perFrameShaderParameters.farClippingPlane = view.farClippingPlane;
@@ -491,7 +529,7 @@ namespace Horizon
 #endif
 
     RenderBackendTextureClearValue clearColor = RenderBackendTextureClearValue::Black;
-    RenderBackendTextureClearValue clearDepth = RenderBackendTextureClearValue::CreateDepthValue(FarClipPlaneDepthValue);
+    RenderBackendTextureClearValue clearDepth = RenderBackendTextureClearValue::CreateDepthValue(FAR_CLIPPING_PLANE_DEPTH_VALUE);
     RenderBackendTextureClearValue clearVisibilityBufferColor = RenderBackendTextureClearValue::CreateColorValueUnit4(0x0FFFFFFF, 0x0FFFFFFF, 0x0FFFFFFF, 0x0FFFFFFF);
 
     void RealTimeRenderer::Render(RenderGraph& renderGraph)
@@ -634,7 +672,14 @@ namespace Horizon
 
         RenderDepthPyramid(renderGraph, view);
 
-        RenderVirtualShadowMapDepth(renderGraph, view);
+        if (view.renderSettings.shadowsTechnique == ShadowsTechnique::ShadowMap)
+        {
+            RenderShadowMapDepth(renderGraph, view);
+        }
+        else if (view.renderSettings.shadowsTechnique == ShadowsTechnique::VirtualShadowMap)
+        {
+            RenderVirtualShadowMapDepth(renderGraph, view);
+        }
 
         if (IsSkyAtmosphereRenderingEnabled())
         {
@@ -762,55 +807,14 @@ namespace Horizon
             RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::UnorderedAccess);
         RenderGraphTextureHandle rayDistance = renderGraph.CreateTexture(screenSpaceShadowMaskTextureDesc, "RayTracingShadowsRayDistance");
 
-        for (uint32 lightIndex = 0; lightIndex < uint32(view.scene->lights.size()); lightIndex++)
+        if (view.renderSettings.shadowsTechnique == ShadowsTechnique::ShadowMap)
         {
-            const LightRenderObject* lightRenderObject = view.scene->lights[lightIndex];
-            if (lightRenderObject->lightType == LightType::DistantLight)
-            {
-                // if (ShouldRenderRayTracingShadowsForLight(*renderEngine->lightInfo[lightIndex].component))
-                // {
-                //     RenderRayTracingShadows(renderGraph, view, lightRenderObject, screenSpaceShadowMaskTexture, rayDistance);
-                // }
-                // else
-                {
-                    //RenderScreenSpaceShadows(renderGraph, view, *lightRenderObject, screenSpaceShadowMaskTexture);
-                }
-                //if (true)
-                //{
-                //    auto filteredShadowMask = renderGraph->CreateTexture(shadowMaskDesc, "FilteredShadowMask");
-                //    DenoiseShadowMaskSSD(*renderGraph, blackboard, *view, filteredShadowMask, shadowMask);
-                //}
-                // if (view.visualizationMode == SceneViewVisualizationMode::ShadowMask)
-                // {
-                //     auto& debugViewModeTextures = renderGraph.blackboard.Get<RealTimeRendererDebugViewModeTextures>();
-                //
-                //     renderGraph.AddPass("CopyScreenSpaceShadowMaskTexture", RenderGraphPassFlags::Copy,
-                //         [&](RenderGraphBuilder& builder)
-                //         {
-                //             builder.ReadTexture(screenSpaceShadowMaskTexture, RenderBackendResourceState::CopySrc);
-                //             auto screenSpaceShadowMaskTextureCopy = debugViewModeTextures.screenSpaceShadowMaskTexture = builder.WriteTexture(debugViewModeTextures.screenSpaceShadowMaskTexture, RenderBackendResourceState::CopyDst);
-                //
-                //             return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
-                //             {
-                //                 Offset2D offset = { 0, 0 };
-                //                 Extent2D extent = { debugViewModeTextures.screenSpaceShadowMaskTextureDesc.width, debugViewModeTextures.screenSpaceShadowMaskTextureDesc.height };
-                //
-                //                 commandList.CopyTexture2D(
-                //                     registry.GetRenderBackendTextureHandle(screenSpaceShadowMaskTexture),
-                //                     offset,
-                //                     0,
-                //                     registry.GetRenderBackendTextureHandle(screenSpaceShadowMaskTextureCopy),
-                //                     offset,
-                //                     0,
-                //                     extent);
-                //             };
-                //         });
-                // }
-                break;
-            }
+            DispatchShadowMapProjection(renderGraph, view);
         }
-
-        RenderVirtualShadowMap(renderGraph, view);
+        else if (view.renderSettings.shadowsTechnique == ShadowsTechnique::VirtualShadowMap)
+        {
+            DispatchVirtualShadowMapProjection(renderGraph, view);
+        }
 
         RenderGraphTextureHandle localLightShadowMapAtlas = RenderLocalLightShadows(renderGraph, view);
 

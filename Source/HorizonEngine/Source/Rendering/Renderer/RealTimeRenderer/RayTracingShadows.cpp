@@ -4,10 +4,10 @@ namespace Horizon
 {
     bool ShouldRenderRayTracingShadowsForLight(const LightRenderObject& light)
     {
-        if (light.CastRayTracingShadows())
-        {
-            return true;
-        }
+        //if (light.CastDynamicShadows())
+        //{
+        //    return true;
+        //}
         return false;
     }
 

@@ -41,18 +41,20 @@ namespace Horizon
 
         bool useRayTracingShadows = false;
 
-        bool castShadows = true;
+        bool castDynamicShadows = true;
 
         // Cascade Shadow Maps
         uint32 shadowCascadeCount = 4;
 
         uint32 shadowMapSize = 2048;
 
-        float shadowCascadeSplitLambda = 0.6f;
+        float shadowCascadeSplitLambda = 0.5f;
+
+        float shadowCascadeTransitionScale = 0.1f;
 
         float maxShadowDistance = 100.0f;
 
-        float shadowFadeoutFactor = 0.0f;
+        float shadowFadeOutFactor = 0.0f;
 
         float shadowMapDepthBiasConstantFactor = -1.0f;
 
@@ -118,9 +120,9 @@ namespace Horizon
             return 0.5f * apexAngleInDegrees * std::numbers::pi_v<float> / 180.0f;
         }
 
-        bool CastShadows() const
+        bool CastDynamicShadows() const
         {
-            return castShadows;
+            return castDynamicShadows;
         }
 
         bool UseRayTracingShadows() const

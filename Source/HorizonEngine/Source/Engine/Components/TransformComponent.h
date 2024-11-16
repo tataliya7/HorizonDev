@@ -19,7 +19,7 @@ namespace Horizon
 
         void Update()
         {
-            relativeTransform = Math::ComposeTransformMatrix(position, Quaternion(Math::DegreesToRadians(rotation)), scale);
+            relativeTransform = Math::ComposeTransformationMatrix(position, Quaternion(Math::DegreesToRadians(rotation)), scale);
         }
 
         bool operator==(const TransformComponent& other) const
