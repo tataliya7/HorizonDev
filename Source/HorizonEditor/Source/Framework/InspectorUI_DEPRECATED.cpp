@@ -316,6 +316,17 @@ namespace Horizon
             ImGui::NextColumn();
 
             ImGui::AlignTextToFramePadding();
+            ImGui::TextUnformatted("Max Shadow Distance");
+            ImGui::NextColumn();
+            ImGui::PushItemWidth(-1);
+            if (ImGui::DragFloat("##maxShadowDistance", &component.maxShadowDistance, 0.01f, 0.0f, 1000.0f))
+            {
+
+            }
+            ImGui::PopItemWidth();
+            ImGui::NextColumn();
+
+            ImGui::AlignTextToFramePadding();
             ImGui::TextUnformatted("Shadow Cascade Count");
             ImGui::NextColumn();
             ImGui::PushItemWidth(-1);
@@ -344,28 +355,6 @@ namespace Horizon
             ImGui::NextColumn();
             ImGui::PushItemWidth(-1);
             if (ImGui::DragFloat("##shadowCascadeTransitionScale", &component.shadowCascadeTransitionScale, 0.01f, 0.0f, 1.0f))
-            {
-
-            }
-            ImGui::PopItemWidth();
-            ImGui::NextColumn();
-
-            ImGui::AlignTextToFramePadding();
-            ImGui::TextUnformatted("Max Shadow Distance");
-            ImGui::NextColumn();
-            ImGui::PushItemWidth(-1);
-            if (ImGui::DragFloat("##maxShadowDistance", &component.maxShadowDistance, 0.01f, 0.0f, 1000.0f))
-            {
-
-            }
-            ImGui::PopItemWidth();
-            ImGui::NextColumn();
-
-            ImGui::AlignTextToFramePadding();
-            ImGui::TextUnformatted("Max Shadow Distance");
-            ImGui::NextColumn();
-            ImGui::PushItemWidth(-1);
-            if (ImGui::DragFloat("##maxShadowDistance", &component.maxShadowDistance, 0.01f, 0.0f, 1000.0f))
             {
 
             }

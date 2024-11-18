@@ -118,7 +118,11 @@ namespace Horizon
         // TODO: initialize buffer
         UpdateAutoExposureDataFromReadbackBuffer();
 
-        preExposure = autoExposureData.adaptedExposure;
+        // TODO
+        if (view.frameIndex >= 3)
+        {
+            preExposure = autoExposureData.adaptedExposure;
+        }
         if (renderSettings.enableFixedPreExposure)
         {
             preExposure = renderSettings.fixedPreExposure;

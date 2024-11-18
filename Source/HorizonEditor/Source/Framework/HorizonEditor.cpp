@@ -362,6 +362,7 @@ namespace Horizon
         sceneView.cameraForwardVector = cameraForwardVector;
         sceneView.verticalFOV = editorCamera.fieldOfView;
         sceneView.aspectRatio = editorCamera.aspectRatio;
+        sceneView.tanHalfVerticalFOV = std::tan(editorCamera.fieldOfView * 0.5f);
         sceneView.nearClippingPlane = std::max(editorCamera.nearClippingPlane, MinNearClippingPlane);
         sceneView.farClippingPlane = editorCamera.farClippingPlane;
         sceneView.backgroundColor = Vector3(0.0f, 0.0f, 0.0f);

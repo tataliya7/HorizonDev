@@ -43,6 +43,8 @@ namespace Horizon
 
         bool castDynamicShadows = true;
 
+        float maxShadowDistance = 100.0f;
+
         // Cascade Shadow Maps
         uint32 shadowCascadeCount = 4;
 
@@ -52,9 +54,7 @@ namespace Horizon
 
         float shadowCascadeTransitionScale = 0.1f;
 
-        float maxShadowDistance = 100.0f;
-
-        float shadowFadeOutFactor = 0.0f;
+        float shadowFadeOutFactor = 0.1f;
 
         float shadowMapDepthBiasConstantFactor = -1.0f;
 

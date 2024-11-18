@@ -266,10 +266,10 @@ namespace Horizon
 
         D3D12_CLEAR_VALUE clearValue;
 
-        D3D12DepthStencilView* depthStencilViews[1];
-        std::vector<D3D12RenderTargetView*> renderTargetViews;
-
         D3D12ShaderResourceView* shaderResourceView;
+
+        std::vector<D3D12RenderTargetView*> renderTargetViews;
+        D3D12DepthStencilView* depthStencilViews[1];
         std::vector<D3D12ShaderResourceView*> shaderResourceViews;
         std::vector<D3D12UnorderedAccessView*> unorderedAccessViews;
 
@@ -2720,13 +2720,10 @@ namespace Horizon
                 continue;
             }
 
-            const auto& texture = device->GetTexture(renderTarget.texture);
-
-            uint32 mipSlice = renderTarget.mipLevel;
-            uint32 arraySlice = renderTarget.arrayLayer;
+            D3D12Texture* texture  = device->GetTexture(renderTarget.texture);
 
             D3D12_RENDER_PASS_RENDER_TARGET_DESC& renderTargetDesc = renderTargetDescs[numRenderTargets];
-            renderTargetDesc.cpuDescriptor = texture->GetRenderTargetView(mipSlice)->descriptor;
+            renderTargetDesc.cpuDescriptor = texture->GetRenderTargetView(renderTarget.mipLevel)->descriptor;
             renderTargetDesc.BeginningAccess.Type = ConvertToD3D12RenderPassBeginningAccessType(renderTarget.loadOp);
             renderTargetDesc.BeginningAccess.Clear.ClearValue = texture->clearValue;
             renderTargetDesc.EndingAccess.Type = ConvertToD3D12RenderPassEndingAccessType(renderTarget.storeOp);
@@ -2739,21 +2736,21 @@ namespace Horizon
 
         if (command.renderPassInfo.depthStencil.texture)
         {
-            const auto& depthStencilRenderTarget = command.renderPassInfo.depthStencil;
+            const auto& depthStencil = command.renderPassInfo.depthStencil;
 
-            D3D12Texture* depthStencil = device->GetTexture(depthStencilRenderTarget.texture);
+            D3D12Texture* texture = device->GetTexture(depthStencil.texture);
 
-            depthStencilDesc.cpuDescriptor = depthStencil->GetDepthStencilView()->descriptor;
-            depthStencilDesc.DepthBeginningAccess.Type = ConvertToD3D12RenderPassBeginningAccessType(depthStencilRenderTarget.depthLoadOp);
-            depthStencilDesc.DepthBeginningAccess.Clear.ClearValue = depthStencil->clearValue;
-            depthStencilDesc.DepthEndingAccess.Type = ConvertToD3D12RenderPassEndingAccessType(depthStencilRenderTarget.depthStoreOp);
-            depthStencilDesc.StencilBeginningAccess.Type = ConvertToD3D12RenderPassBeginningAccessType(depthStencilRenderTarget.stencilLoadOp);
-            depthStencilDesc.StencilEndingAccess.Type = ConvertToD3D12RenderPassEndingAccessType(depthStencilRenderTarget.stencilStoreOp);
+            depthStencilDesc.cpuDescriptor = texture->GetDepthStencilView()->descriptor;
+            depthStencilDesc.DepthBeginningAccess.Type = ConvertToD3D12RenderPassBeginningAccessType(depthStencil.depthLoadOp);
+            depthStencilDesc.DepthBeginningAccess.Clear.ClearValue = texture->clearValue;
+            depthStencilDesc.DepthEndingAccess.Type = ConvertToD3D12RenderPassEndingAccessType(depthStencil.depthStoreOp);
+            depthStencilDesc.StencilBeginningAccess.Type = ConvertToD3D12RenderPassBeginningAccessType(depthStencil.stencilLoadOp);
+            depthStencilDesc.StencilEndingAccess.Type = ConvertToD3D12RenderPassEndingAccessType(depthStencil.stencilStoreOp);
 
             hasDepthStencil = true;
 
             activeRenderPass.hasDepthStencil = true;
-            activeRenderPass.depthStencilViewFormat = depthStencil->format;
+            activeRenderPass.depthStencilViewFormat = texture->format;
         }
 
         commandList->GetID3D12GraphicsCommandList6()->BeginRenderPass(numRenderTargets, renderTargetDescs, hasDepthStencil ? &depthStencilDesc : nullptr, flags);

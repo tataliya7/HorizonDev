@@ -61,41 +61,39 @@ namespace Horizon
 
         RenderGraphTextureHandle cascadedShadowMapDepthTexture = renderGraph.CreateTexture(cascadedShadowMapDepthTextureDesc, "CascadedShadowMapDepthTexture");
 
-        {
-            for (uint32 cascadeIndex = 0; cascadeIndex < shadowCascadeCount; cascadeIndex++)
+        renderGraph.AddPass(
+            std::format("CascadedShadowMapDepth (Graphics, {}x{})", shadowMapSize, shadowMapSize),
+            RenderGraphPassFlags::Graphics,
+            [&](RenderGraphBuilder& builder)
             {
-                renderGraph.AddPass(
-                    std::format("CascadedShadowMapDepth (Graphics, {}x{}, cascade={})", shadowMapSize, shadowMapSize, cascadeIndex),
-                    RenderGraphPassFlags::Graphics,
-                    [&](RenderGraphBuilder& builder)
+                cascadedShadowMapDepthTexture = builder.WriteTexture(cascadedShadowMapDepthTexture, RenderBackendResourceState::DepthStencil);
+
+                builder.BindDepthStencil(cascadedShadowMapDepthTexture, RenderBackendRenderPassBeginningAccessType::Clear, RenderBackendRenderPassEndingAccessType::Preserve);
+
+                return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
+                {
                     {
-                        cascadedShadowMapDepthTexture = builder.WriteTexture(cascadedShadowMapDepthTexture, RenderBackendResourceState::DepthStencil);
+                        RenderBackendViewport viewport(0.0f, 0.0f, float(shadowMapSize), float(shadowMapSize));
+                        commandList.SetViewports(&viewport, 1);
 
-                        builder.BindDepthStencil(cascadedShadowMapDepthTexture, RenderBackendRenderPassBeginningAccessType::Clear, RenderBackendRenderPassEndingAccessType::Preserve, 0, cascadeIndex);
+                        RenderBackendScissor scissor(0, 0, shadowMapSize, shadowMapSize);
+                        commandList.SetScissors(&scissor, 1);
+                    }
 
-                        return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
-                        {
-                            {
-                                RenderBackendViewport viewport(0.0f, 0.0f, float(shadowMapSize), float(shadowMapSize));
-                                commandList.SetViewports(&viewport, 1);
+                    for (uint32 cascadeIndex = 0; cascadeIndex < shadowCascadeCount; cascadeIndex++)
+                    {
+                        DispatchCascadedShadowMapPassDrawCommands(commandList, light, cascadeIndex, cascadedShadowMapDataBuffer);
+                    }
 
-                                RenderBackendScissor scissor(0, 0, shadowMapSize, shadowMapSize);
-                                commandList.SetScissors(&scissor, 1);
-                            }
+                    {
+                        RenderBackendViewport viewport(0.0f, 0.0f, float(renderResolution.width), float(renderResolution.height));
+                        commandList.SetViewports(&viewport, 1);
 
-                            DispatchCascadedShadowMapPassDrawCommands(commandList, light, cascadeIndex, cascadedShadowMapDataBuffer);
-
-                            {
-                                RenderBackendViewport viewport(0.0f, 0.0f, float(renderResolution.width), float(renderResolution.height));
-                                commandList.SetViewports(&viewport, 1);
-
-                                RenderBackendScissor scissor(0, 0, renderResolution.width, renderResolution.height);
-                                commandList.SetScissors(&scissor, 1);
-                            }
-                        };
-                    });
-            }
-        }
+                        RenderBackendScissor scissor(0, 0, renderResolution.width, renderResolution.height);
+                        commandList.SetScissors(&scissor, 1);
+                    }
+                };
+            });
 
         RealTimeRendererSceneTextures& sceneTextures = renderGraph.blackboard.Get<RealTimeRendererSceneTextures>();
         sceneTextures.cascadedShadowMapShaderParameterBuffer = cascadedShadowMapDataBuffer;

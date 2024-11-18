@@ -11,17 +11,12 @@ SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_SRV(3, GeometryInstanceDataBufferSRV);
 SHADER_CONSTANTS_SCALAR(4, uint, CascadeIndex);
 SHADER_CONSTANTS_STRUCT_END();
 
-struct CascadedShadowMapVSToPS
-{
-    float4 position : SV_Position;
-    float2 textureCoord0 : TEXCOORD0;
-};
-
 [shader("vertex")]
 void CascadedShadowMapVS(
     in uint vertexID : SV_VertexID,
     in uint instanceID : SV_InstanceID,
-    out CascadedShadowMapVSToPS output)
+	out uint arrayIndex : SV_RenderTargetArrayIndex,
+    out  float4 position : SV_Position)
 {
     StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
     PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
@@ -41,8 +36,8 @@ void CascadedShadowMapVS(
     float3 worldSpaceVertexPosition = mul(instanceData.localToWorldMatrix, float4(vertexAttributes.position, 1.0f)).xyz;
     float4 clipSpaceVertexPosition = mul(worldToClipMatrix, float4(worldSpaceVertexPosition, 1.0f));
 
-    output.position = clipSpaceVertexPosition;
-    output.textureCoord0 = vertexAttributes.textureCoord0;
+    arrayIndex = cascadeIndex;
+    position = clipSpaceVertexPosition;
 
     // TODO: apply depth bias
     // float bias = ;
@@ -52,7 +47,6 @@ void CascadedShadowMapVS(
 
 [shader("pixel")]
 void CascadedShadowMapPS(
-    in CascadedShadowMapVSToPS input,
     in uint primitiveID : SV_PrimitiveID)
 {
 #if 0
@@ -75,7 +69,7 @@ void CascadedShadowMapPS(
         baseColor = baseColorMap.Sample(GlobalSamplerLinearWarp, texCoord0);
     }
 
-    float alphaCutoff = 0.2;
+    float alphaCutoff = 0.2f;
     clip(baseColor.a - alphaCutoff);
 #endif
 }

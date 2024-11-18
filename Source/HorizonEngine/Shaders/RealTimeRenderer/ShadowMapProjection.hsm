@@ -33,12 +33,12 @@ float CSMShadow(
 
         if (valid)
         {
-            shadowFactor = PCF3x3(
+            shadowFactor = PCFPoissonSampling(
                 shadowMapTexture,
-                shadowMapTextureCoord.xy,
                 cascadeIndex,
+                shadowMapTextureCoord.xy,
                 shadowMapTextureCoord.z,
-                5,
+                3.0f,
                 cascadedShadowMapShaderParameters.shadowMapSize.y,
                 rotation);
 
@@ -76,11 +76,11 @@ void ShadowMapProjectionForDistantLightCS(uint3 dispatchThreadID : SV_DispatchTh
     float3 worldSpacePosition = ReconstructWorldSpacePositionFromUVZ(uv, depth, frameShaderParameters.clipToWorldMatrix);
     float4 cameraSpacePosition = mul(frameShaderParameters.worldToViewMatrix, float4(worldSpacePosition, 1.0f));
 
-	const float noise = InterleavedGradientNoiseEX(pixelCoord, frameShaderParameters.frameIndexMod8);
-
+    // TODO
     float cameraSpaceDepth = -cameraSpacePosition.z;
 
-    if ((depth == FAR_CLIPPING_PLANE_DEPTH_VALUE) || (cameraSpaceDepth > cascadedShadowMapShaderParameters.maxShadowDistance))
+    if ((depth == FAR_CLIPPING_PLANE_DEPTH_VALUE) ||
+        (cameraSpaceDepth > cascadedShadowMapShaderParameters.maxShadowDistance))
     {
         shadowMaskTexture[pixelCoord] = float4(1.0f, 0.0f, 0.0f, 0.0f);
         return;
@@ -88,11 +88,27 @@ void ShadowMapProjectionForDistantLightCS(uint3 dispatchThreadID : SV_DispatchTh
 
     uint cascadeIndex = CalculateCascadeIndex(cameraSpaceDepth, cascadedShadowMapShaderParameters);
 
+    const float noise = InterleavedGradientNoiseEX(pixelCoord, frameShaderParameters.frameIndexMod8);
     uint randSeed = RandInit(pixelCoord.x + pixelCoord.y * width, frameShaderParameters.frameIndex);
     float random = Rand(randSeed);
 
     float rotationAngle = random * 3.1415926f;
     float2 rotation = float2(cos(rotationAngle), sin(rotationAngle));
+
+    float transitionStartDistance = cascadedShadowMapShaderParameters.transitionStartDistance[cascadeIndex];
+    float inverseTransitionRange = cascadedShadowMapShaderParameters.inverseTransitionRange[cascadeIndex];
+
+#if 0
+    bool useDitherTransition = /*(cascadedShadowMapShaderParameters.useTransition > 0) &&*/
+        (cameraSpaceDepth > transitionStartDistance) &&
+        ((cascadeIndex + 1) < cascadedShadowMapShaderParameters.cascadeCount);
+
+    if (useDitherTransition)
+    {
+        float transitionFactor = saturate((cameraSpaceDepth - transitionStartDistance) * inverseTransitionRange);
+        cascadeIndex = (random < transitionFactor) ? cascadeIndex + 1 : cascadeIndex;
+    }
+#endif
 
     float shadowFactor = CSMShadow(
         cascadedShadowMapShaderParameters,
@@ -101,12 +117,10 @@ void ShadowMapProjectionForDistantLightCS(uint3 dispatchThreadID : SV_DispatchTh
         worldSpacePosition,
         rotation);
 
-    float transitionStartDistance = cascadedShadowMapShaderParameters.transitionStartDistance[cascadeIndex];
-    float inverseTransitionRange = cascadedShadowMapShaderParameters.inverseTransitionRange[cascadeIndex];
-
+#if 0
     bool transition = /*(cascadedShadowMapShaderParameters.useTransition > 0) &&*/
-        (cameraSpaceDepth > transitionStartDistance) &&
-        ((cascadeIndex + 1) < cascadedShadowMapShaderParameters.cascadeCount);
+       (cameraSpaceDepth > transitionStartDistance) &&
+       ((cascadeIndex + 1) < cascadedShadowMapShaderParameters.cascadeCount);
 
     if (transition)
     {
@@ -120,6 +134,7 @@ void ShadowMapProjectionForDistantLightCS(uint3 dispatchThreadID : SV_DispatchTh
         float transitionFactor = saturate((cameraSpaceDepth - transitionStartDistance) * inverseTransitionRange);
         shadowFactor = lerp(shadowFactor, secondaryShadowFactor, transitionFactor);
     }
+#endif
 
     float3 shadowRayOrigin = worldSpacePosition;
     float3 shadowRayDirection = -normalize(frameShaderParameters.atmosphericLightDirection);

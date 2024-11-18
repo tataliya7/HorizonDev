@@ -36,7 +36,7 @@ namespace Horizon
         float boundingSphereCenterDistance = f;
         float boundingSphereRadius = f * k;
 
-        if ((k * k) >= ((f - n) / (f + n)))
+        if ((k * k) < ((f - n) / (f + n)))
         {
             boundingSphereCenterDistance = 0.5f * (f + n) * (1.0f + k * k);
             boundingSphereRadius = 0.5f * std::sqrt(
@@ -45,14 +45,14 @@ namespace Horizon
                 (f + n) * (f + n) * k * k * k * k);
         }
 
-        return Vector4f(0.0f, 0.0f, boundingSphereCenterDistance, boundingSphereRadius);
+        return Vector4f(0.0f, 0.0f, -boundingSphereCenterDistance, boundingSphereRadius);
     }
 
     void InitializeCascadedShadowMapShaderParameters(CascadedShadowMapShaderParameters& outParameters)
     {
         for (uint32 i = 0; i < RendererMaxShadowMapCascadeCount; i++)
         {
-            outParameters.viewProjectionMatrix[i] = Matrix4x4f(1.0f);
+            outParameters.worldToClipMatrix[i] = Matrix4x4f(1.0f);
             outParameters.cascadeEndDistance[i] = std::numeric_limits<float>::max();
             outParameters.transitionStartDistance[i] = std::numeric_limits<float>::max();
             outParameters.inverseTransitionRange[i] = 0.0f;
@@ -68,10 +68,10 @@ namespace Horizon
 
         for (uint32 cascadeIndex = 0; cascadeIndex < data.cascadeCount; cascadeIndex++)
         {
-            outParameters.viewProjectionMatrix[cascadeIndex] = data.cascadeData[cascadeIndex].viewToClipMatrix;
+            outParameters.worldToClipMatrix[cascadeIndex] = data.cascadeData[cascadeIndex].worldToClipMatrix;
             outParameters.cascadeEndDistance[cascadeIndex] = data.cascadeData[cascadeIndex].endDistance;
             outParameters.transitionStartDistance[cascadeIndex] = data.cascadeData[cascadeIndex].endDistance - data.cascadeData[cascadeIndex].transitionRange;
-            outParameters.inverseTransitionRange[cascadeIndex] = 1.0f / data.cascadeData[cascadeIndex].transitionRange;
+            outParameters.inverseTransitionRange[cascadeIndex] = 1.0f / std::max(data.cascadeData[cascadeIndex].transitionRange, 0.0001f);
         }
 
         float shadowRange = light.maxShadowDistance - view.nearClippingPlane;
@@ -79,7 +79,7 @@ namespace Horizon
         float shadowFadeOutStartDistance = light.maxShadowDistance - shadowFadeOutRange;
 
         outParameters.shadowMapSize = Vector2f(float(data.resolution), 1.0f / float(data.resolution));
-        outParameters.shadowFadeOutParameters = Vector2f(shadowFadeOutStartDistance, 1.0f / shadowFadeOutRange);
+        outParameters.shadowFadeOutParameters = Vector2f(shadowFadeOutStartDistance, 1.0f / std::max(shadowFadeOutRange, 0.0001f));
         outParameters.maxShadowDistance = light.maxShadowDistance;
         outParameters.cascadeCount = data.cascadeCount;
     }
@@ -109,6 +109,7 @@ namespace Horizon
 
             float transitionRange = (cascadeEndDistance - cascadeStartDistance) * shadowCascadeTransitionScale;
 
+#if 0
             float halfCascadeFrustumNearPlaneExtentX = cascadeStartDistance * tanHalfVerticalFOV * aspectRatio;
             float halfCascadeFrustumNearPlaneExtentY = cascadeStartDistance * tanHalfVerticalFOV;
 
@@ -117,36 +118,48 @@ namespace Horizon
 
             Vector4f cascadeFrustumCorners[8] =
             {
-                Vector4f( halfCascadeFrustumNearPlaneExtentX,  halfCascadeFrustumNearPlaneExtentY, cascadeStartDistance, 1.0f),
-                Vector4f( halfCascadeFrustumNearPlaneExtentX, -halfCascadeFrustumNearPlaneExtentY, cascadeStartDistance, 1.0f),
-                Vector4f(-halfCascadeFrustumNearPlaneExtentX,  halfCascadeFrustumNearPlaneExtentY, cascadeStartDistance, 1.0f),
-                Vector4f(-halfCascadeFrustumNearPlaneExtentX, -halfCascadeFrustumNearPlaneExtentY, cascadeStartDistance, 1.0f),
-                Vector4f( halfCascadeFrustumFarPlaneExtentX,  halfCascadeFrustumFarPlaneExtentY, cascadeEndDistance, 1.0f),
-                Vector4f( halfCascadeFrustumFarPlaneExtentX, -halfCascadeFrustumFarPlaneExtentY, cascadeEndDistance, 1.0f),
-                Vector4f(-halfCascadeFrustumFarPlaneExtentX,  halfCascadeFrustumFarPlaneExtentY, cascadeEndDistance, 1.0f),
-                Vector4f(-halfCascadeFrustumFarPlaneExtentX, -halfCascadeFrustumFarPlaneExtentY, cascadeEndDistance, 1.0f)
+                Vector4f( halfCascadeFrustumNearPlaneExtentX,  halfCascadeFrustumNearPlaneExtentY, -cascadeStartDistance, 1.0f), // top right
+                Vector4f( halfCascadeFrustumNearPlaneExtentX, -halfCascadeFrustumNearPlaneExtentY, -cascadeStartDistance, 1.0f), // bottom right
+                Vector4f(-halfCascadeFrustumNearPlaneExtentX,  halfCascadeFrustumNearPlaneExtentY, -cascadeStartDistance, 1.0f), // top left
+                Vector4f(-halfCascadeFrustumNearPlaneExtentX, -halfCascadeFrustumNearPlaneExtentY, -cascadeStartDistance, 1.0f), // bottom left
+                Vector4f( halfCascadeFrustumFarPlaneExtentX,  halfCascadeFrustumFarPlaneExtentY, -cascadeEndDistance, 1.0f), // top right
+                Vector4f( halfCascadeFrustumFarPlaneExtentX, -halfCascadeFrustumFarPlaneExtentY, -cascadeEndDistance, 1.0f), // bottom right
+                Vector4f(-halfCascadeFrustumFarPlaneExtentX,  halfCascadeFrustumFarPlaneExtentY, -cascadeEndDistance, 1.0f), // top left
+                Vector4f(-halfCascadeFrustumFarPlaneExtentX, -halfCascadeFrustumFarPlaneExtentY, -cascadeEndDistance, 1.0f)  // bottom left
             };
 
+            Vector3f boundingSphereCenter = Vector3f(0.0f, 0.0f, 0.0f);
             for (uint32 i = 0; i < 8; i++)
             {
                 cascadeFrustumCorners[i] = inverseViewMatrix * cascadeFrustumCorners[i];
+                boundingSphereCenter += Vector3f(cascadeFrustumCorners[i].x, cascadeFrustumCorners[i].y, cascadeFrustumCorners[i].z);
             }
+            boundingSphereCenter /= 8.0f;
 
+            float boundingSphereRadius = 0.0f;
+            for (uint32 i = 0; i < 8; i++)
+            {
+                float distance = glm::length(Vector3f(cascadeFrustumCorners[i].x, cascadeFrustumCorners[i].y, cascadeFrustumCorners[i].z) - boundingSphereCenter);
+                boundingSphereRadius = glm::max(boundingSphereRadius, distance);
+            }
+            boundingSphereRadius = std::ceil(boundingSphereRadius); // Use the ceilling function to increase stability.
+
+            Vector4f boundingSphere = Vector4f(boundingSphereCenter.x, boundingSphereCenter.y, boundingSphereCenter.z, boundingSphereRadius);
+#else
             Vector4f viewSpaceBoundingSphere = ComputeViewSpaceShadowCascadeMinimumBoundingSphere(cascadeStartDistance, cascadeEndDistance, tanHalfVerticalFOV, aspectRatio);
+            float boundingSphereRadius = std::ceil(viewSpaceBoundingSphere.w); // Use the ceilling function to increase stability.
 
-            Vector4f boundingSphere = inverseViewMatrix * viewSpaceBoundingSphere;
-            boundingSphere.w = std::ceil(viewSpaceBoundingSphere.w); // Use the ceilling function to increase stability.
+            Vector4f viewSpaceBoundingSphereCenter = Vector4f(viewSpaceBoundingSphere.x, viewSpaceBoundingSphere.y, viewSpaceBoundingSphere.z, 1.0f);
+
+            Vector4f boundingSphere = inverseViewMatrix * viewSpaceBoundingSphereCenter;
+            boundingSphere.w = boundingSphereRadius;
+
+            Vector3f boundingSphereCenter = Vector3f(boundingSphere.x, boundingSphere.y, boundingSphere.z);
 
             // Scene Independent Projection
             // GPU Gems 3. Chapter 10. Parallel-Split Shadow Maps on Programmable GPUs
             // {
-                Vector3f boundingSphereCenter = Vector3f(boundingSphere.x, boundingSphere.y, boundingSphere.z);
-                float boundingSphereRadius = boundingSphere.w;
-
                 //Vector4f viewSpaceBoundingSphereCenter = ;
-
-                float minZ = -boundingSphereRadius;
-                float maxZ = boundingSphereRadius;
 
                 // To avoid shimmering caused by camera movements, create a "stable" projection using the method described in the article "Stable Cascaded Shadow Maps" from ShaderX6.
                 // 1. Using a bounding sphere instead of a bounding box to guarantee the projection is rotation-invariant.
@@ -156,7 +169,11 @@ namespace Horizon
                 //float snapY = std::fmodf(, 2.0f / shadowMapSize);
             // }
 
-            Matrix4x4f viewMatrix = glm::lookAt(boundingSphereCenter, boundingSphereCenter + lightDirection, Vector3f(0.0f, 1.0f, 0.0f));;
+#endif
+            float minZ = -100.0f;//-boundingSphereRadius;
+            float maxZ = boundingSphereRadius;
+
+            Matrix4x4f viewMatrix = glm::lookAt(boundingSphereCenter, boundingSphereCenter + lightDirection, Vector3f(0.0f, 1.0f, 0.0f));
             Matrix4x4f projectionMatrix = Math::OrthographicProjection_ReverseZ_ZO(-boundingSphereRadius, boundingSphereRadius, -boundingSphereRadius, boundingSphereRadius, minZ, maxZ);
 
             cascadeData.cascadeIndex = cascadeIndex;
@@ -194,7 +211,7 @@ namespace Horizon
 
             RenderBackendShaderConstants shaderConstants = {};
             shaderConstants.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
-            shaderConstants.BindBufferCBV(1, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(cascadeShadowMapDataBuffer));
+            shaderConstants.BindBufferSRV(1, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(cascadeShadowMapDataBuffer));
             shaderConstants.BindBufferSRV(2, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(gpuScene->geometryDataBuffer));
             shaderConstants.BindBufferSRV(3, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(gpuScene->geometryInstanceDataBuffer));
             shaderConstants.BindScalar(4, cascadeIndex);

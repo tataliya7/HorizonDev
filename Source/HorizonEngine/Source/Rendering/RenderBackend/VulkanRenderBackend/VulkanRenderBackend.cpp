@@ -230,7 +230,7 @@ namespace Horizon
 
         std::vector<VkImageView> renderTargetViews;
 
-        std::vector<VkImageView> depthStencilViews;
+        VkImageView depthStencilViews[1];
 
         bool IsArray() const
         {
@@ -1699,7 +1699,7 @@ namespace Horizon
             VkRenderingAttachmentInfo& attachmentInfo = outRenderingInfo->depthStencilAttachment;
             attachmentInfo.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
             attachmentInfo.pNext = nullptr;
-            attachmentInfo.imageView = texture->depthStencilViews[arrayLayer]; // TODO: specify mip level
+            attachmentInfo.imageView = texture->depthStencilViews[0]; // TODO: specify mip level
             attachmentInfo.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
             //attachmentInfo.imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL;
             //attachmentInfo.resolveImageView = VK_NULL_HANDLE;
@@ -2267,19 +2267,20 @@ namespace Horizon
         }
         if (EnumClassHasFlags(desc->flags, RenderBackendTextureCreateFlags::DepthStencil))
         {
-            for (uint32 i = 0; i < texture.arrayLayers; i++)
+            //for (uint32 i = 0; i < texture.arrayLayers; i++)
             {
                 VkImageView dsv = VK_NULL_HANDLE;
-                VkImageViewCreateInfo imageViewInfo = {
+                VkImageViewCreateInfo imageViewInfo =
+                {
                     .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
                     .image = texture.handle,
                     .viewType = ConvertToVkImageViewType(desc->type, false),
                     .format = texture.format,
                     .components = { VK_COMPONENT_SWIZZLE_R, VK_COMPONENT_SWIZZLE_G, VK_COMPONENT_SWIZZLE_B, VK_COMPONENT_SWIZZLE_A },
-                    .subresourceRange = { texture.aspectMask, 0, 1, i, 1 }
+                    .subresourceRange = { texture.aspectMask, 0, 1, 0, texture.arrayLayers }
                 };
                 VK_CHECK(vkCreateImageView(handle, &imageViewInfo, VULKAN_ALLOCATION_CALLBACKS, &dsv));
-                texture.depthStencilViews.push_back(dsv);
+                texture.depthStencilViews[0] = dsv;
             }
         }
 
