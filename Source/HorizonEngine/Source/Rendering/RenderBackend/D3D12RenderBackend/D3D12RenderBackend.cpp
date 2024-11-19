@@ -6,41 +6,40 @@
 
 #include <wrl/client.h>
 
+//#include <dxgi1_3.h>
+//#include <dxgi1_4.h>
+//#include <dxgi1_5.h>
 #include <dxgi1_6.h>
-
-#include <directx/dxgicommon.h>
-#include <directx/dxgiformat.h>
-
-#include <directx/dxcore.h>
-#include <directx/dxcore_interface.h>
-
-#include <directx/d3d12.h>
-#include <directx/d3d12video.h>
-#include <directx/d3d12sdklayers.h>
-
-#include <directx/d3dx12.h>
-#include <directx/d3dx12_core.h>
-#include <directx/d3dx12_default.h>
-#include <directx/d3dx12_barriers.h>
-#include <directx/d3dx12_render_pass.h>
-#include <directx/d3dx12_state_object.h>
-#include <directx/d3dx12_root_signature.h>
-#include <directx/d3dx12_resource_helpers.h>
-#include <directx/d3dx12_pipeline_state_stream.h>
-#include <directx/d3dx12_property_format_table.h>
-#include <directx/d3dx12_check_feature_support.h>
-
-#include <dxguids/dxguids.h>
-
 //#ifdef _DEBUG
 #include <dxgidebug.h>
 //#endif
 
+#include <d3dcommon.h>
+#include <dxgiformat.h>
+
+#include <d3d12.h>
+#include <d3d12compatibility.h>
+#include <d3d12sdklayers.h>
+#include <d3d12shader.h>
+#include <d3d12video.h>
+
+#include <d3dx12/d3dx12.h>
+#include <d3dx12/d3dx12_core.h>
+#include <d3dx12/d3dx12_default.h>
+#include <d3dx12/d3dx12_barriers.h>
+#include <d3dx12/d3dx12_render_pass.h>
+#include <d3dx12/d3dx12_state_object.h>
+#include <d3dx12/d3dx12_root_signature.h>
+#include <d3dx12/d3dx12_resource_helpers.h>
+#include <d3dx12/d3dx12_pipeline_state_stream.h>
+#include <d3dx12/d3dx12_property_format_table.h>
+#include <d3dx12/d3dx12_check_feature_support.h>
+
 #include "D3D12MemAlloc.h"
 
-#pragma comment(lib,"dxguid.lib")
-#pragma comment(lib,"d3d12.lib")
 #pragma comment(lib,"dxgi.lib")
+#pragma comment(lib,"d3d12.lib")
+#pragma comment(lib,"dxguid.lib")
 
 #include <dxcapi.h>
 #include <pix.h>
@@ -104,7 +103,9 @@ namespace Horizon
     struct D3D12Adapter
     {
         Microsoft::WRL::ComPtr<IDXGIAdapter> dxgiAdapter;
+
         uint32 adapterIndex;
+
         DXGI_ADAPTER_DESC1 desc;
 
         IDXGIAdapter* GetIDXGIAdapter()
@@ -306,6 +307,11 @@ namespace Horizon
         }
     };
 
+    class D3D12BindlessDescriptorAllocator
+    {
+
+    };
+
     struct D3D12RenderPass
     {
         bool hasDepthStencil;
@@ -379,6 +385,7 @@ namespace Horizon
 
     struct D3D12SwapChain
     {
+        
         Microsoft::WRL::ComPtr<IDXGISwapChain1> dxgiSwapChain1;
         Microsoft::WRL::ComPtr<IDXGISwapChain2> dxgiSwapChain2;
         Microsoft::WRL::ComPtr<IDXGISwapChain3> dxgiSwapChain3;
@@ -3725,9 +3732,11 @@ namespace Horizon
             D3D_SHADER_MODEL_6_0,
         };
 
-        D3D12_FEATURE_DATA_SHADER_MODEL featureShaderModel = {
+        D3D12_FEATURE_DATA_SHADER_MODEL featureShaderModel =
+        {
             .HighestShaderModel = D3D_SHADER_MODEL_6_0
         };
+
         for (const D3D_SHADER_MODEL shaderModel : shaderModelsToCheck)
         {
             featureShaderModel.HighestShaderModel = shaderModel;
@@ -3829,49 +3838,54 @@ namespace Horizon
             commandQueues[(uint32)queueType] = commandQueue;
         }
 
+        // Create command signatures
         {
-            D3D12_INDIRECT_ARGUMENT_DESC dispatchIndirectArugumentDesc;
-            dispatchIndirectArugumentDesc.Type = D3D12_INDIRECT_ARGUMENT_TYPE_DISPATCH;
-            D3D12_COMMAND_SIGNATURE_DESC commandSignatureDesc = {
+            D3D12_INDIRECT_ARGUMENT_DESC dispatchIndirectArgumentDesc;
+            dispatchIndirectArgumentDesc.Type = D3D12_INDIRECT_ARGUMENT_TYPE_DISPATCH;
+
+            D3D12_COMMAND_SIGNATURE_DESC commandSignatureDesc =
+            {
                 .ByteStride = sizeof(RenderBackendDispatchIndirectArguments),
                 .NumArgumentDescs = 1,
-                .pArgumentDescs = &dispatchIndirectArugumentDesc,
+                .pArgumentDescs = &dispatchIndirectArgumentDesc,
             };
-            hr = device->CreateCommandSignature(&commandSignatureDesc, nullptr, IID_PPV_ARGS(&dispatchIndirectCommandSignature));
-            assert(SUCCEEDED(hr));
+            D3D12_CHECK(device->CreateCommandSignature(&commandSignatureDesc, nullptr, IID_PPV_ARGS(&dispatchIndirectCommandSignature)));
         }
         {
-            D3D12_INDIRECT_ARGUMENT_DESC drawIndirectArugumentDesc;
-            drawIndirectArugumentDesc.Type = D3D12_INDIRECT_ARGUMENT_TYPE_DRAW;
-            D3D12_COMMAND_SIGNATURE_DESC commandSignatureDesc = {
+            D3D12_INDIRECT_ARGUMENT_DESC drawIndirectArgumentDesc;
+            drawIndirectArgumentDesc.Type = D3D12_INDIRECT_ARGUMENT_TYPE_DRAW;
+
+            D3D12_COMMAND_SIGNATURE_DESC commandSignatureDesc =
+            {
                 .ByteStride = sizeof(RenderBackendDrawIndirectArguments),
                 .NumArgumentDescs = 1,
-                .pArgumentDescs = &drawIndirectArugumentDesc,
+                .pArgumentDescs = &drawIndirectArgumentDesc,
             };
-            hr = device->CreateCommandSignature(&commandSignatureDesc, nullptr, IID_PPV_ARGS(&drawIndirectCommandSignature));
-            assert(SUCCEEDED(hr));
+            D3D12_CHECK(device->CreateCommandSignature(&commandSignatureDesc, nullptr, IID_PPV_ARGS(&drawIndirectCommandSignature)));
         }
         {
-            D3D12_INDIRECT_ARGUMENT_DESC drawIndexedIndirectArugumentDesc;
-            drawIndexedIndirectArugumentDesc.Type = D3D12_INDIRECT_ARGUMENT_TYPE_DRAW_INDEXED;
-            D3D12_COMMAND_SIGNATURE_DESC commandSignatureDesc = {
+            D3D12_INDIRECT_ARGUMENT_DESC drawIndexedIndirectArgumentDesc;
+            drawIndexedIndirectArgumentDesc.Type = D3D12_INDIRECT_ARGUMENT_TYPE_DRAW_INDEXED;
+
+            D3D12_COMMAND_SIGNATURE_DESC commandSignatureDesc =
+            {
                 .ByteStride = sizeof(RenderBackendDrawIndexedIndirectArguments),
                 .NumArgumentDescs = 1,
-                .pArgumentDescs = &drawIndexedIndirectArugumentDesc,
+                .pArgumentDescs = &drawIndexedIndirectArgumentDesc,
             };
-            hr = device->CreateCommandSignature(&commandSignatureDesc, nullptr, IID_PPV_ARGS(&drawIndexedIndirectCommandSignature));
-            assert(SUCCEEDED(hr));
+            D3D12_CHECK(device->CreateCommandSignature(&commandSignatureDesc, nullptr, IID_PPV_ARGS(&drawIndexedIndirectCommandSignature)));
         }
         {
-            D3D12_INDIRECT_ARGUMENT_DESC dispatchMeshIndirectArugumentDesc;
-            dispatchMeshIndirectArugumentDesc.Type = D3D12_INDIRECT_ARGUMENT_TYPE_DISPATCH_MESH;
-            D3D12_COMMAND_SIGNATURE_DESC commandSignatureDesc = {
+            D3D12_INDIRECT_ARGUMENT_DESC dispatchMeshIndirectArgumentDesc;
+            dispatchMeshIndirectArgumentDesc.Type = D3D12_INDIRECT_ARGUMENT_TYPE_DISPATCH_MESH;
+
+            D3D12_COMMAND_SIGNATURE_DESC commandSignatureDesc =
+            {
                 .ByteStride = sizeof(RenderBackendDispatchMeshIndirectArguments),
                 .NumArgumentDescs = 1,
-                .pArgumentDescs = &dispatchMeshIndirectArugumentDesc,
+                .pArgumentDescs = &dispatchMeshIndirectArgumentDesc,
             };
-            hr = device->CreateCommandSignature(&commandSignatureDesc, nullptr, IID_PPV_ARGS(&dispatchMeshIndirectCommandSignature));
-            assert(SUCCEEDED(hr));
+            D3D12_CHECK(device->CreateCommandSignature(&commandSignatureDesc, nullptr, IID_PPV_ARGS(&dispatchMeshIndirectCommandSignature)));
         }
 
         resourceDescriptorAllocator.Init(this, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 8192);

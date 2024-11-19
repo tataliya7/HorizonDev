@@ -2,7 +2,7 @@
 
 #include "D3D12RenderBackendCommon.h"
 
-#include <directx/d3dx12.h>
+#include <d3dx12/d3dx12.h>
 
 namespace Horizon
 {
