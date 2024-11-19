@@ -43,6 +43,9 @@ project "HorizonEditorLauncher"
 
         "{COPY} %{wks.location}/ThirdParty/dxc/dxc_2024_07_31/bin/x64/dxcompiler.dll %{cfg.targetdir}",
         "{COPY} %{wks.location}/ThirdParty/dxc/dxc_2024_07_31/bin/x64/dxil.dll %{cfg.targetdir}",
+
+        "{COPY} %{wks.location}/ThirdParty/D3D12SDK/bin/x64/D3D12Core.dll %{cfg.targetdir}",
+        "{COPY} %{wks.location}/ThirdParty/D3D12SDK/bin/x64/d3d12SDKLayers.dll %{cfg.targetdir}",
     }
 
     includedirs {
