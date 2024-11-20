@@ -3,6 +3,7 @@
 #include "D3D12RenderBackendUtils.h"
 
 #include <optick.h>
+#include <pix.h>
 
 #include <wrl/client.h>
 
@@ -40,9 +41,6 @@
 #pragma comment(lib,"dxgi.lib")
 #pragma comment(lib,"d3d12.lib")
 #pragma comment(lib,"dxguid.lib")
-
-#include <dxcapi.h>
-#include <pix.h>
 
 static void D3D12MessageCallback(
     D3D12_MESSAGE_CATEGORY Category,
@@ -385,7 +383,6 @@ namespace Horizon
 
     struct D3D12SwapChain
     {
-        
         Microsoft::WRL::ComPtr<IDXGISwapChain1> dxgiSwapChain1;
         Microsoft::WRL::ComPtr<IDXGISwapChain2> dxgiSwapChain2;
         Microsoft::WRL::ComPtr<IDXGISwapChain3> dxgiSwapChain3;
@@ -2946,8 +2943,36 @@ namespace Horizon
         return true;
     }
 
+// Whether to set redist parameters by exporting constant data via well known symbols.
+// This feature requires Window 10 version 1909 (19H2) or newer.
+// For more details about D3D12 Redistributable, please refer to DirectX-Specs.
+#define EXPORT_D3D12_REDIST_CONSTANT_DATA (_WIN64 && 1)
+
+#if EXPORT_D3D12_REDIST_CONSTANT_DATA
+// D3D12SDKVersion declares the SDK version of the D3D12 redistributable that the Application is targeting.
+extern "C" { _declspec(dllexport) extern const UINT D3D12SDKVersion = 614; }
+// D3D12SDKPath is a UTF-8 string that declares that D3D12Core.dll, D3D12SDKLayers.dll, and other D3D12 redist binaries are located in the subfolder D3D12 relative to the exe.
+extern "C" { _declspec(dllexport) extern const char* D3D12SDKPath = /*u8*/".\\D3D12\\"; }
+#endif
+
     bool D3D12RenderBackend::Init(const D3D12RenderBackendDesc* desc)
     {
+        if (false)
+        {
+#if !HORIZON_CONFIGURATION_RELEASE
+            const UUID experimentalFeatures[] =
+            {
+                D3D12ExperimentalShaderModels
+            };
+            if (SUCCEEDED(D3D12EnableExperimentalFeatures(_countof(experimentalFeatures), experimentalFeatures, nullptr, nullptr)))
+            {
+                LogInfo(GLogger, std::format("Agility SDK not found."));
+            }
+#else
+            LogWarning(GLogger, std::format("Try to enable experimental features in the release build, ignored."));
+#endif
+        }
+
         DWORD dxgiFactoryFlags = 0;
 
         useDebugLayers = desc->useDebugLayers;
@@ -3617,7 +3642,7 @@ namespace Horizon
 
     bool D3D12Device::Init(D3D12RenderBackend* backend, D3D12Adapter* adapter)
     {
-        D3D_FEATURE_LEVEL minimumFeatureLevel = D3D_FEATURE_LEVEL_12_2;
+        D3D_FEATURE_LEVEL minimumFeatureLevel = D3D_FEATURE_LEVEL_12_2; // aka DirectX 12 Ultimate
 
         HRESULT hr = D3D12CreateDevice(adapter->GetIDXGIAdapter(), minimumFeatureLevel, IID_PPV_ARGS(&device));
         if (FAILED(hr))
@@ -3633,22 +3658,6 @@ namespace Horizon
 
         CD3DX12FeatureSupport features;
         D3D12_CHECK(features.Init(device.Get()));
-
-        D3D12_FEATURE_DATA_D3D12_OPTIONS12 options12 = {};
-        if (SUCCEEDED(device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS12, reinterpret_cast<void*>(&options12), sizeof(options12))))
-        {
-
-        }
-
-        D3D12_FEATURE_DATA_D3D12_OPTIONS7 options7 = {};
-        if (SUCCEEDED(device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS7, reinterpret_cast<void*>(&options7), sizeof(options7))))
-        {
-            if (options7.MeshShaderTier == D3D12_MESH_SHADER_TIER_NOT_SUPPORTED)
-            {
-                LogInfo(GLogger, std::format("Mesh shader feature is not supported."));
-                return false;
-            }
-        }
 
         if (backend->useDebugLayers)
         {
@@ -3699,77 +3708,122 @@ namespace Horizon
 
         D3D_FEATURE_LEVEL maxSupportedFeatureLevel = minimumFeatureLevel;
 
-        const D3D_FEATURE_LEVEL featureLevels[] =
+        constexpr D3D_FEATURE_LEVEL allFeatureLevels[] =
         {
             D3D_FEATURE_LEVEL_12_2,
             D3D_FEATURE_LEVEL_12_1,
             D3D_FEATURE_LEVEL_12_0,
             D3D_FEATURE_LEVEL_11_1,
-            D3D_FEATURE_LEVEL_11_0
+            D3D_FEATURE_LEVEL_11_0,
+            D3D_FEATURE_LEVEL_10_1,
+            D3D_FEATURE_LEVEL_10_0,
+            D3D_FEATURE_LEVEL_9_3,
+            D3D_FEATURE_LEVEL_9_2,
+            D3D_FEATURE_LEVEL_9_1,
+            D3D_FEATURE_LEVEL_1_0_CORE,
+            D3D_FEATURE_LEVEL_1_0_GENERIC
         };
 
-        D3D12_FEATURE_DATA_FEATURE_LEVELS featureSupportData = {
-            .NumFeatureLevels = _countof(featureLevels),
-            .pFeatureLevelsRequested = featureLevels,
+        D3D12_FEATURE_DATA_FEATURE_LEVELS featureSupportData =
+        {
+            .NumFeatureLevels = _countof(allFeatureLevels),
+            .pFeatureLevelsRequested = allFeatureLevels,
         };
 
         if (SUCCEEDED(device->CheckFeatureSupport(D3D12_FEATURE_FEATURE_LEVELS, &featureSupportData, sizeof(featureSupportData))))
         {
             maxSupportedFeatureLevel = featureSupportData.MaxSupportedFeatureLevel;
         }
+
         LogInfo(GLogger, std::format(L"Max supported feature level {}.", GetD3DFeatureLevelWCHAR(maxSupportedFeatureLevel)));
 
-        const D3D_SHADER_MODEL shaderModelsToCheck[] =
+
+        D3D12_FEATURE_DATA_SHADER_MODEL featureDataShaderModel =
         {
+            .HighestShaderModel = D3D_SHADER_MODEL_NONE
+        };
+
+        constexpr D3D_SHADER_MODEL allShaderModels[] =
+        {
+            D3D_SHADER_MODEL_6_9,
             D3D_SHADER_MODEL_6_8,
             D3D_SHADER_MODEL_6_7,
             D3D_SHADER_MODEL_6_6,
-            D3D_SHADER_MODEL_6_5,
-            D3D_SHADER_MODEL_6_4,
-            D3D_SHADER_MODEL_6_3,
-            D3D_SHADER_MODEL_6_2,
-            D3D_SHADER_MODEL_6_1,
-            D3D_SHADER_MODEL_6_0,
+            //D3D_SHADER_MODEL_6_5,
+            //D3D_SHADER_MODEL_6_4,
+            //D3D_SHADER_MODEL_6_3,
+            //D3D_SHADER_MODEL_6_2,
+            //D3D_SHADER_MODEL_6_1,
+            //D3D_SHADER_MODEL_6_0,
+            //D3D_SHADER_MODEL_5_1,
         };
 
-        D3D12_FEATURE_DATA_SHADER_MODEL featureShaderModel =
+        for (const D3D_SHADER_MODEL shaderModel : allShaderModels)
         {
-            .HighestShaderModel = D3D_SHADER_MODEL_6_0
-        };
-
-        for (const D3D_SHADER_MODEL shaderModel : shaderModelsToCheck)
-        {
-            featureShaderModel.HighestShaderModel = shaderModel;
-            if (SUCCEEDED(device->CheckFeatureSupport(D3D12_FEATURE_SHADER_MODEL, &featureShaderModel, sizeof(featureShaderModel))))
+            featureDataShaderModel.HighestShaderModel = shaderModel;
+            if (SUCCEEDED(device->CheckFeatureSupport(D3D12_FEATURE_SHADER_MODEL, &featureDataShaderModel, sizeof(featureDataShaderModel))))
             {
                 break;
             }
         }
-        LogInfo(GLogger, std::format(L"Max supported shader model {}.", GetD3DShaderModelWCHAR(featureShaderModel.HighestShaderModel)));
+
+        if (featureDataShaderModel.HighestShaderModel == D3D_SHADER_MODEL_NONE)
+        {
+            // TODO
+        }
+
+        LogInfo(GLogger, std::format(L"Max supported shader model {}.", GetD3DShaderModelWCHAR(featureDataShaderModel.HighestShaderModel)));
 
         D3D12_FEATURE_DATA_D3D12_OPTIONS options = {};
-        device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS, &options, sizeof(options));
+        D3D12_CHECK(device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS, &options, sizeof(options)));
 
         // See: https://microsoft.github.io/DirectX-Specs/d3d/HLSL_SM_6_6_DynamicResources.html
         // ResourceDescriptorHeap/SamplerDescriptorHeap must be supported on devices that support both D3D12_RESOURCE_BINDING_TIER_3 and D3D_SHADER_MODEL_6_6
-        if (featureShaderModel.HighestShaderModel >= D3D_SHADER_MODEL_6_6 && options.ResourceBindingTier >= D3D12_RESOURCE_BINDING_TIER_3)
+        if (options.ResourceBindingTier >= D3D12_RESOURCE_BINDING_TIER_3 && featureDataShaderModel.HighestShaderModel >= D3D_SHADER_MODEL_6_6)
         {
-            LogInfo(GLogger, std::format(L"Bindless resources are supported."));
+            LogInfo(GLogger, std::format("Bindless resources are supported."));
         }
 
         D3D12_FEATURE_DATA_D3D12_OPTIONS5 options5 = {};
-        if (SUCCEEDED(device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS5, &options5, sizeof(options5))))
-        {
-
-        }
+        D3D12_CHECK(device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS5, &options5, sizeof(options5)));
 
         if (options5.RaytracingTier == D3D12_RAYTRACING_TIER_NOT_SUPPORTED)
         {
-            LogInfo(GLogger, std::format(L"DirectX Raytracing is not supported."));
+            LogInfo(GLogger, std::format("DirectX Raytracing is not supported."));
         }
         else
         {
-            LogInfo(GLogger, std::format(L"DirectX Raytracing is supported. Tier: {}.", (int)options5.RaytracingTier));
+            LogInfo(GLogger, std::format("DirectX Raytracing is supported. Tier: {}.", (int)options5.RaytracingTier));
+        }
+
+        D3D12_FEATURE_DATA_D3D12_OPTIONS7 options7 = {};
+        D3D12_CHECK(device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS7, &options7, sizeof(options7)));
+
+        if (options7.MeshShaderTier == D3D12_MESH_SHADER_TIER_NOT_SUPPORTED)
+        {
+            LogInfo(GLogger, std::format("Mesh shader is not supported."));
+        }
+        else
+        {
+            LogInfo(GLogger, std::format("Mesh shader is supported. Tier: {}.", (int)options7.MeshShaderTier));
+        }
+
+        D3D12_FEATURE_DATA_D3D12_OPTIONS9 options9 = {};
+        D3D12_CHECK(device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS9, &options9, sizeof(options9)));
+
+        D3D12_FEATURE_DATA_D3D12_OPTIONS11 options11 = {};
+        D3D12_CHECK(device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS11, &options11, sizeof(options11)));
+
+        D3D12_FEATURE_DATA_D3D12_OPTIONS21 options21 = {};
+        D3D12_CHECK(device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS21, &options21, sizeof(options21)));
+
+        if (options21.WorkGraphsTier == D3D12_WORK_GRAPHS_TIER_NOT_SUPPORTED)
+        {
+            LogInfo(GLogger, std::format("Work graphs are not supported."));
+        }
+        else
+        {
+            LogInfo(GLogger, std::format("Work graphs are supported. Tier: {}.", (int)options21.WorkGraphsTier));
         }
 
         for (uint32 i = 0; i < (uint32)D3D12CommandQueueType::Count; i++)
