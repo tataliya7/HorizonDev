@@ -3010,7 +3010,7 @@ extern "C" { _declspec(dllexport) extern const char* D3D12SDKPath = /*u8*/".\\D3
 
                     DXGI_INFO_QUEUE_MESSAGE_ID hide[] =
                     {
-                        80 /* IDXGISwapChain::GetContainingOutput: The swapchain's adapter does not control the output on which the swapchain's window resides. */,
+                        80 /* IDXGISwapChain::GetContainingOutput: The swap chain's adapter does not control the output on which the swap chain's window resides. */,
                     };
                     DXGI_INFO_QUEUE_FILTER filter = {};
                     filter.DenyList.NumIDs = _countof(hide);
@@ -3785,7 +3785,7 @@ extern "C" { _declspec(dllexport) extern const char* D3D12SDKPath = /*u8*/".\\D3
         }
 
         D3D12_FEATURE_DATA_D3D12_OPTIONS5 options5 = {};
-        D3D12_CHECK(device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS5, &options5, sizeof(options5)));
+        device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS5, &options5, sizeof(options5));
 
         if (options5.RaytracingTier == D3D12_RAYTRACING_TIER_NOT_SUPPORTED)
         {
@@ -3797,7 +3797,7 @@ extern "C" { _declspec(dllexport) extern const char* D3D12SDKPath = /*u8*/".\\D3
         }
 
         D3D12_FEATURE_DATA_D3D12_OPTIONS7 options7 = {};
-        D3D12_CHECK(device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS7, &options7, sizeof(options7)));
+        device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS7, &options7, sizeof(options7));
 
         if (options7.MeshShaderTier == D3D12_MESH_SHADER_TIER_NOT_SUPPORTED)
         {
@@ -3809,13 +3809,13 @@ extern "C" { _declspec(dllexport) extern const char* D3D12SDKPath = /*u8*/".\\D3
         }
 
         D3D12_FEATURE_DATA_D3D12_OPTIONS9 options9 = {};
-        D3D12_CHECK(device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS9, &options9, sizeof(options9)));
+        device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS9, &options9, sizeof(options9));
 
         D3D12_FEATURE_DATA_D3D12_OPTIONS11 options11 = {};
-        D3D12_CHECK(device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS11, &options11, sizeof(options11)));
+        device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS11, &options11, sizeof(options11));
 
         D3D12_FEATURE_DATA_D3D12_OPTIONS21 options21 = {};
-        D3D12_CHECK(device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS21, &options21, sizeof(options21)));
+        device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS21, &options21, sizeof(options21));
 
         if (options21.WorkGraphsTier == D3D12_WORK_GRAPHS_TIER_NOT_SUPPORTED)
         {
