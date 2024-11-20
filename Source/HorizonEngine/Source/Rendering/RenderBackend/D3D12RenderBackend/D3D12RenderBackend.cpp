@@ -401,6 +401,11 @@ namespace Horizon
         RenderBackendTextureHandle buffers[RenderBackendMaxSwapChainBufferCount];
         Microsoft::WRL::ComPtr<ID3D12Fence> frameFences[RenderBackendMaxSwapChainBufferCount];
 
+        IDXGISwapChain1* GetIDXGISwapChain1()
+        {
+            return dxgiSwapChain1.Get();
+        }
+
         IDXGISwapChain2* GetIDXGISwapChain2()
         {
             return dxgiSwapChain2.Get();
@@ -3234,7 +3239,7 @@ extern "C" { _declspec(dllexport) extern const char* D3D12SDKPath = /*u8*/".\\D3
             swapChain->buffers[i] = backend->handleManager.Allocate<RenderBackendTextureHandle>(~0u);
             SetRenderBackendHandleRepresentation(swapChain->buffers[i].GetIndex(), textureIndex);
 
-            D3D12_CHECK(device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&swapChain->frameFences[i])));
+            D3D12_CHECK(device->CreateFence(1, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&swapChain->frameFences[i])));
         }
 
         uint32 index = (uint32)swapChains.size();
@@ -3305,15 +3310,13 @@ extern "C" { _declspec(dllexport) extern const char* D3D12SDKPath = /*u8*/".\\D3
         D3D12Device* device = devices[0];
         D3D12SwapChain* swapChain = device->GetSwapChain(handle);
 
+        const UINT presentSyncInterval = swapChain->vsyncEnabled ? 1 : 0;
+
         UINT presentFlags = 0;
-        if (IsTearingSupported() && !swapChain->vsyncEnabled && swapChain->windowed)
+        if (IsTearingSupported() && swapChain->windowed && presentSyncInterval == 0)
         {
             presentFlags |= DXGI_PRESENT_ALLOW_TEARING;
         }
-
-        UINT presentSyncInterval = swapChain->vsyncEnabled ? 1 : 0;
-
-        uint32 bufferIndex = swapChain->GetCurrentBackBufferIndex();
 
         HRESULT hr = swapChain->GetIDXGISwapChain4()->Present(presentSyncInterval, presentFlags);
         if (hr == DXGI_ERROR_DEVICE_REMOVED || hr == DXGI_ERROR_DEVICE_RESET)
@@ -3321,18 +3324,29 @@ extern "C" { _declspec(dllexport) extern const char* D3D12SDKPath = /*u8*/".\\D3
             return false;
         }
 
-        D3D12CommandQueue* commandQueue = device->GetCommandQueue(D3D12CommandQueueType::Direct);
-
-        ID3D12Fence* fence = swapChain->GetFrameFence(bufferIndex);
-        if (fence->GetCompletedValue() < 1)
+        UINT lastPresentCount = 0;
+        if (SUCCEEDED(swapChain->GetIDXGISwapChain4()->GetLastPresentCount(&lastPresentCount)))
         {
-            // If hEvent is a null handle, then this API will not return until the specified fence value(s) have been reached.
-            // See: https://learn.microsoft.com/en-us/windows/win32/api/d3d12/nf-d3d12-id3d12fence-seteventoncompletion#remarks
-            hr = fence->SetEventOnCompletion(1, NULL);
+        	//presentCounter = lastPresentCount;
+        }
+        else
+        {
+        	//presentCounter++;
+        }
+
+        // TODO: refactor this
+        {
+            uint32 bufferIndex = swapChain->GetCurrentBackBufferIndex();
+            ID3D12Fence* fence = swapChain->GetFrameFence(bufferIndex);
+            if (fence->GetCompletedValue() < 1)
+            {
+                // If hEvent is a null handle, then this API will not return until the specified fence value(s) have been reached.
+                hr = fence->SetEventOnCompletion(1, NULL);
+                assert(SUCCEEDED(hr));
+            }
+            hr = fence->Signal(0);
             assert(SUCCEEDED(hr));
         }
-        hr = fence->Signal(0);
-        assert(SUCCEEDED(hr));
 
         return true;
     }

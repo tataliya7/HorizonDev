@@ -49,7 +49,8 @@ namespace Horizon
         WindowCreateFlags windowFlags = HORIZON_WINDOW_CREATE_FLAG_BIT_RESIZABLE | HORIZON_WINDOW_CREATE_FLAG_BIT_MAXIMIZED;
 
         // Create main window
-        WindowCreateInfo windowInfo = {
+        WindowCreateInfo windowInfo =
+        {
             .width = initialWidth,
             .height = initialHeight,
             .title = applicationName.c_str(),
@@ -84,7 +85,8 @@ namespace Horizon
         std::string usdPluginsPath = executablePath.append("usd").string();
         USDInit(usdPluginsPath);
 
-        RenderBackendSwapChainDesc swapChainDesc = {
+        RenderBackendSwapChainDesc swapChainDesc =
+        {
             .width = window->GetWidth(),
             .height = window->GetHeight(),
             .windowHandle = (uint64)window->GetNativeHandle(),
