@@ -120,7 +120,7 @@ void SurfaceInit(inout Surface surface, PerFrameShaderParameters frameShaderPara
         {
             if (material.GetMetallicRoughnessMapIndex() >= 0)
             {
-                Texture2D metallicRoughnessMap =  GetTexture2DNonUniform(material.GetMetallicRoughnessMapIndex());
+                Texture2D metallicRoughnessMap = GetTexture2DNonUniform(material.GetMetallicRoughnessMapIndex());
                 uint textureWidth, textureHeight;
                 metallicRoughnessMap.GetDimensions(textureWidth, textureHeight);
                 float mipLod = ComputeTextureLODRayCones(baseTriangleLOD, textureWidth, textureHeight, rayConeWidth, surface.V, surfaceNormal);
@@ -133,7 +133,7 @@ void SurfaceInit(inout Surface surface, PerFrameShaderParameters frameShaderPara
         // {
         //    if (material.GetSpecularGlossinessMapIndex() >= 0)
         //    {
-        //        Texture2D specularMap =  GetTexture2DNonUniform(material.GetSpecularGlossinessMapIndex());
+        //        Texture2D specularMap = GetTexture2DNonUniform(material.GetSpecularGlossinessMapIndex());
         //        uint textureWidth, textureHeight;
         //        specularMap.GetDimensions(textureWidth, textureHeight);
         //        float mipLod = ComputeTextureLODRayCones(baseTriangleLOD, textureWidth, textureHeight, rayConeWidth, V, surfaceNormal);

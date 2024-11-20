@@ -22,8 +22,11 @@ Goals:
 * Fast Rendering Techniques Experimentation, eg. Hybrid Rendering with DXR or Vulkan Ray Tracing KHR
 
 ## Requirements
-
-* Windows 10 or 11
+* Operating System: Windows
+  Supported Windows Versions
+    Windows 11 (All versions)
+    Windows 10 Version 1909 and newer (Build 18363)
+    Windows 10 LTSC 2021 or newer
 * NIVIDIA Graphics Cards, and keep your graphics drivers up to date (https://www.nvidia.com/Download/index.aspx)
 * Vulkan SDK 1.3.280.0, this repository tries to always be up to date with the latest Vulkan SDK (https://vulkan.lunarg.com/sdk/home)
 * Visual Studio 2022, and make sure C++ Modules for v143 build tools (x64/x86 - experimental) is installed

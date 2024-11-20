@@ -38,14 +38,19 @@ project "HorizonEditorLauncher"
         thirdpartypath("streamline/Streamline-2.4.15/lib/x64/sl.interposer.lib"),
     }
 
+    prebuildcommands {
+        "{MKDIR} %{cfg.targetdir}/D3D12",
+        "{MKDIR} %{cfg.targetdir}/python310",
+    }
+
     postbuildcommands {
         "{COPY} %{wks.location}/ThirdParty/optick/Optick_1.4.0/lib/x64/release/OptickCore.dll %{cfg.targetdir}",
 
         "{COPY} %{wks.location}/ThirdParty/dxc/dxc_2024_07_31/bin/x64/dxcompiler.dll %{cfg.targetdir}",
         "{COPY} %{wks.location}/ThirdParty/dxc/dxc_2024_07_31/bin/x64/dxil.dll %{cfg.targetdir}",
 
-        "{COPY} %{wks.location}/ThirdParty/D3D12SDK/bin/x64/D3D12Core.dll %{cfg.targetdir}",
-        "{COPY} %{wks.location}/ThirdParty/D3D12SDK/bin/x64/d3d12SDKLayers.dll %{cfg.targetdir}",
+        "{COPY} %{wks.location}/ThirdParty/D3D12SDK/bin/x64/D3D12Core.dll %{cfg.targetdir}/D3D12",
+        "{COPY} %{wks.location}/ThirdParty/D3D12SDK/bin/x64/d3d12SDKLayers.dll %{cfg.targetdir}/D3D12",
     }
 
     includedirs {
@@ -216,6 +221,7 @@ project "HorizonEditorLauncher"
 
             "{COPY} %{wks.location}/ThirdParty/python/310/bin/python3.dll %{cfg.targetdir}",
             "{COPY} %{wks.location}/ThirdParty/python/310/bin/python310.dll %{cfg.targetdir}",
+
             "{COPY} %{wks.location}/ThirdParty/python/310/bin %{cfg.targetdir}/python310/bin",
             "{COPY} %{wks.location}/ThirdParty/python/310/lib %{cfg.targetdir}/python310/lib",
             "{COPY} %{wks.location}/ThirdParty/python/310/DLLs %{cfg.targetdir}/python310/DLLs",
