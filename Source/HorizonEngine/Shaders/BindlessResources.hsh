@@ -7,296 +7,296 @@
 #ifdef __spirv__ // Aliased descriptor arrays
 
 // It must match the values on the C++ side
-#define BINDLESS_RESOURCE_BINDING_SAMPLER                   0
-#define BINDLESS_RESOURCE_BINDING_TEXTURE_SRV               1
-#define BINDLESS_RESOURCE_BINDING_TEXTURE_UAV               2
-#define BINDLESS_RESOURCE_BINDING_BUFFER_CBV                3
-#define BINDLESS_RESOURCE_BINDING_BUFFER_SRV                4
-#define BINDLESS_RESOURCE_BINDING_BUFFER_UAV                4
-#define BINDLESS_RESOURCE_BINDING_ACCELERATION_STRUCTURE    5
+#define BINDLESS_RESOURCES_BINDING_SAMPLER                   0
+#define BINDLESS_RESOURCES_BINDING_TEXTURE_SRV               1
+#define BINDLESS_RESOURCES_BINDING_TEXTURE_UAV               2
+#define BINDLESS_RESOURCES_BINDING_BUFFER_CBV                3
+#define BINDLESS_RESOURCES_BINDING_BUFFER_SRV                4
+#define BINDLESS_RESOURCES_BINDING_BUFFER_UAV                4
+#define BINDLESS_RESOURCES_BINDING_ACCELERATION_STRUCTURE    5
 
 // Sampler
-[[vk::binding(BINDLESS_RESOURCE_BINDING_SAMPLER, 0)]] SamplerState              BindlessResource_SamplerState[];
-[[vk::binding(BINDLESS_RESOURCE_BINDING_SAMPLER, 0)]] SamplerComparisonState    BindlessResource_SamplerComparisonState[];
+[[vk::binding(BINDLESS_RESOURCES_BINDING_SAMPLER, 0)]] SamplerState              BindlessResources_SamplerState[];
+[[vk::binding(BINDLESS_RESOURCES_BINDING_SAMPLER, 0)]] SamplerComparisonState    BindlessResources_SamplerComparisonState[];
 
 // Texture SRV
-[[vk::binding(BINDLESS_RESOURCE_BINDING_TEXTURE_SRV, 0)]] Texture1D                BindlessResource_Texture1D[];
-[[vk::binding(BINDLESS_RESOURCE_BINDING_TEXTURE_SRV, 0)]] Texture1D<uint>          BindlessResource_Texture1D_uint[];
-[[vk::binding(BINDLESS_RESOURCE_BINDING_TEXTURE_SRV, 0)]] Texture1D<uint2>         BindlessResource_Texture1D_uint2[];
-[[vk::binding(BINDLESS_RESOURCE_BINDING_TEXTURE_SRV, 0)]] Texture1D<uint3>         BindlessResource_Texture1D_uint3[];
-[[vk::binding(BINDLESS_RESOURCE_BINDING_TEXTURE_SRV, 0)]] Texture1D<uint4>         BindlessResource_Texture1D_uint4[];
-[[vk::binding(BINDLESS_RESOURCE_BINDING_TEXTURE_SRV, 0)]] Texture1D<float>         BindlessResource_Texture1D_float[];
-[[vk::binding(BINDLESS_RESOURCE_BINDING_TEXTURE_SRV, 0)]] Texture1D<float2>        BindlessResource_Texture1D_float2[];
-[[vk::binding(BINDLESS_RESOURCE_BINDING_TEXTURE_SRV, 0)]] Texture1D<float3>        BindlessResource_Texture1D_float3[];
-[[vk::binding(BINDLESS_RESOURCE_BINDING_TEXTURE_SRV, 0)]] Texture1D<float4>        BindlessResource_Texture1D_float4[];
-[[vk::binding(BINDLESS_RESOURCE_BINDING_TEXTURE_SRV, 0)]] Texture2D                BindlessResource_Texture2D[];
-[[vk::binding(BINDLESS_RESOURCE_BINDING_TEXTURE_SRV, 0)]] Texture2D<uint>          BindlessResource_Texture2D_uint[];
-[[vk::binding(BINDLESS_RESOURCE_BINDING_TEXTURE_SRV, 0)]] Texture2D<uint2>         BindlessResource_Texture2D_uint2[];
-[[vk::binding(BINDLESS_RESOURCE_BINDING_TEXTURE_SRV, 0)]] Texture2D<uint3>         BindlessResource_Texture2D_uint3[];
-[[vk::binding(BINDLESS_RESOURCE_BINDING_TEXTURE_SRV, 0)]] Texture2D<uint4>         BindlessResource_Texture2D_uint4[];
-[[vk::binding(BINDLESS_RESOURCE_BINDING_TEXTURE_SRV, 0)]] Texture2D<float>         BindlessResource_Texture2D_float[];
-[[vk::binding(BINDLESS_RESOURCE_BINDING_TEXTURE_SRV, 0)]] Texture2D<float2>        BindlessResource_Texture2D_float2[];
-[[vk::binding(BINDLESS_RESOURCE_BINDING_TEXTURE_SRV, 0)]] Texture2D<float3>        BindlessResource_Texture2D_float3[];
-[[vk::binding(BINDLESS_RESOURCE_BINDING_TEXTURE_SRV, 0)]] Texture2D<float4>        BindlessResource_Texture2D_float4[];
-[[vk::binding(BINDLESS_RESOURCE_BINDING_TEXTURE_SRV, 0)]] Texture3D                BindlessResource_Texture3D[];
-[[vk::binding(BINDLESS_RESOURCE_BINDING_TEXTURE_SRV, 0)]] Texture3D<uint>          BindlessResource_Texture3D_uint[];
-[[vk::binding(BINDLESS_RESOURCE_BINDING_TEXTURE_SRV, 0)]] Texture3D<uint2>         BindlessResource_Texture3D_uint2[];
-[[vk::binding(BINDLESS_RESOURCE_BINDING_TEXTURE_SRV, 0)]] Texture3D<uint3>         BindlessResource_Texture3D_uint3[];
-[[vk::binding(BINDLESS_RESOURCE_BINDING_TEXTURE_SRV, 0)]] Texture3D<uint4>         BindlessResource_Texture3D_uint4[];
-[[vk::binding(BINDLESS_RESOURCE_BINDING_TEXTURE_SRV, 0)]] Texture3D<float>         BindlessResource_Texture3D_float[];
-[[vk::binding(BINDLESS_RESOURCE_BINDING_TEXTURE_SRV, 0)]] Texture3D<float2>        BindlessResource_Texture3D_float2[];
-[[vk::binding(BINDLESS_RESOURCE_BINDING_TEXTURE_SRV, 0)]] Texture3D<float3>        BindlessResource_Texture3D_float3[];
-[[vk::binding(BINDLESS_RESOURCE_BINDING_TEXTURE_SRV, 0)]] Texture3D<float4>        BindlessResource_Texture3D_float4[];
-[[vk::binding(BINDLESS_RESOURCE_BINDING_TEXTURE_SRV, 0)]] TextureCube              BindlessResource_TextureCube[];
-[[vk::binding(BINDLESS_RESOURCE_BINDING_TEXTURE_SRV, 0)]] TextureCube<uint>        BindlessResource_TextureCube_uint[];
-[[vk::binding(BINDLESS_RESOURCE_BINDING_TEXTURE_SRV, 0)]] TextureCube<uint2>       BindlessResource_TextureCube_uint2[];
-[[vk::binding(BINDLESS_RESOURCE_BINDING_TEXTURE_SRV, 0)]] TextureCube<uint3>       BindlessResource_TextureCube_uint3[];
-[[vk::binding(BINDLESS_RESOURCE_BINDING_TEXTURE_SRV, 0)]] TextureCube<uint4>       BindlessResource_TextureCube_uint4[];
-[[vk::binding(BINDLESS_RESOURCE_BINDING_TEXTURE_SRV, 0)]] TextureCube<float>       BindlessResource_TextureCube_float[];
-[[vk::binding(BINDLESS_RESOURCE_BINDING_TEXTURE_SRV, 0)]] TextureCube<float2>      BindlessResource_TextureCube_float2[];
-[[vk::binding(BINDLESS_RESOURCE_BINDING_TEXTURE_SRV, 0)]] TextureCube<float3>      BindlessResource_TextureCube_float3[];
-[[vk::binding(BINDLESS_RESOURCE_BINDING_TEXTURE_SRV, 0)]] TextureCube<float4>      BindlessResource_TextureCube_float4[];
-[[vk::binding(BINDLESS_RESOURCE_BINDING_TEXTURE_SRV, 0)]] Texture1DArray           BindlessResource_Texture1DArray[];
-[[vk::binding(BINDLESS_RESOURCE_BINDING_TEXTURE_SRV, 0)]] Texture1DArray<uint>     BindlessResource_Texture1DArray_uint[];
-[[vk::binding(BINDLESS_RESOURCE_BINDING_TEXTURE_SRV, 0)]] Texture1DArray<uint2>    BindlessResource_Texture1DArray_uint2[];
-[[vk::binding(BINDLESS_RESOURCE_BINDING_TEXTURE_SRV, 0)]] Texture1DArray<uint3>    BindlessResource_Texture1DArray_uint3[];
-[[vk::binding(BINDLESS_RESOURCE_BINDING_TEXTURE_SRV, 0)]] Texture1DArray<uint4>    BindlessResource_Texture1DArray_uint4[];
-[[vk::binding(BINDLESS_RESOURCE_BINDING_TEXTURE_SRV, 0)]] Texture1DArray<float>    BindlessResource_Texture1DArray_float[];
-[[vk::binding(BINDLESS_RESOURCE_BINDING_TEXTURE_SRV, 0)]] Texture1DArray<float2>   BindlessResource_Texture1DArray_float2[];
-[[vk::binding(BINDLESS_RESOURCE_BINDING_TEXTURE_SRV, 0)]] Texture1DArray<float3>   BindlessResource_Texture1DArray_float3[];
-[[vk::binding(BINDLESS_RESOURCE_BINDING_TEXTURE_SRV, 0)]] Texture1DArray<float4>   BindlessResource_Texture1DArray_float4[];
-[[vk::binding(BINDLESS_RESOURCE_BINDING_TEXTURE_SRV, 0)]] Texture2DArray           BindlessResource_Texture2DArray[];
-[[vk::binding(BINDLESS_RESOURCE_BINDING_TEXTURE_SRV, 0)]] Texture2DArray<uint>     BindlessResource_Texture2DArray_uint[];
-[[vk::binding(BINDLESS_RESOURCE_BINDING_TEXTURE_SRV, 0)]] Texture2DArray<uint2>    BindlessResource_Texture2DArray_uint2[];
-[[vk::binding(BINDLESS_RESOURCE_BINDING_TEXTURE_SRV, 0)]] Texture2DArray<uint3>    BindlessResource_Texture2DArray_uint3[];
-[[vk::binding(BINDLESS_RESOURCE_BINDING_TEXTURE_SRV, 0)]] Texture2DArray<uint4>    BindlessResource_Texture2DArray_uint4[];
-[[vk::binding(BINDLESS_RESOURCE_BINDING_TEXTURE_SRV, 0)]] Texture2DArray<float>    BindlessResource_Texture2DArray_float[];
-[[vk::binding(BINDLESS_RESOURCE_BINDING_TEXTURE_SRV, 0)]] Texture2DArray<float2>   BindlessResource_Texture2DArray_float2[];
-[[vk::binding(BINDLESS_RESOURCE_BINDING_TEXTURE_SRV, 0)]] Texture2DArray<float3>   BindlessResource_Texture2DArray_float3[];
-[[vk::binding(BINDLESS_RESOURCE_BINDING_TEXTURE_SRV, 0)]] Texture2DArray<float4>   BindlessResource_Texture2DArray_float4[];
-[[vk::binding(BINDLESS_RESOURCE_BINDING_TEXTURE_SRV, 0)]] TextureCubeArray         BindlessResource_TextureCubeArray[];
-[[vk::binding(BINDLESS_RESOURCE_BINDING_TEXTURE_SRV, 0)]] TextureCubeArray<uint>   BindlessResource_TextureCubeArray_uint[];
-[[vk::binding(BINDLESS_RESOURCE_BINDING_TEXTURE_SRV, 0)]] TextureCubeArray<uint2>  BindlessResource_TextureCubeArray_uint2[];
-[[vk::binding(BINDLESS_RESOURCE_BINDING_TEXTURE_SRV, 0)]] TextureCubeArray<uint3>  BindlessResource_TextureCubeArray_uint3[];
-[[vk::binding(BINDLESS_RESOURCE_BINDING_TEXTURE_SRV, 0)]] TextureCubeArray<uint4>  BindlessResource_TextureCubeArray_uint4[];
-[[vk::binding(BINDLESS_RESOURCE_BINDING_TEXTURE_SRV, 0)]] TextureCubeArray<float>  BindlessResource_TextureCubeArray_float[];
-[[vk::binding(BINDLESS_RESOURCE_BINDING_TEXTURE_SRV, 0)]] TextureCubeArray<float2> BindlessResource_TextureCubeArray_float2[];
-[[vk::binding(BINDLESS_RESOURCE_BINDING_TEXTURE_SRV, 0)]] TextureCubeArray<float3> BindlessResource_TextureCubeArray_float3[];
-[[vk::binding(BINDLESS_RESOURCE_BINDING_TEXTURE_SRV, 0)]] TextureCubeArray<float4> BindlessResource_TextureCubeArray_float4[];
+[[vk::binding(BINDLESS_RESOURCES_BINDING_TEXTURE_SRV, 0)]] Texture1D                BindlessResources_Texture1D[];
+[[vk::binding(BINDLESS_RESOURCES_BINDING_TEXTURE_SRV, 0)]] Texture1D<uint>          BindlessResources_Texture1D_uint[];
+[[vk::binding(BINDLESS_RESOURCES_BINDING_TEXTURE_SRV, 0)]] Texture1D<uint2>         BindlessResources_Texture1D_uint2[];
+[[vk::binding(BINDLESS_RESOURCES_BINDING_TEXTURE_SRV, 0)]] Texture1D<uint3>         BindlessResources_Texture1D_uint3[];
+[[vk::binding(BINDLESS_RESOURCES_BINDING_TEXTURE_SRV, 0)]] Texture1D<uint4>         BindlessResources_Texture1D_uint4[];
+[[vk::binding(BINDLESS_RESOURCES_BINDING_TEXTURE_SRV, 0)]] Texture1D<float>         BindlessResources_Texture1D_float[];
+[[vk::binding(BINDLESS_RESOURCES_BINDING_TEXTURE_SRV, 0)]] Texture1D<float2>        BindlessResources_Texture1D_float2[];
+[[vk::binding(BINDLESS_RESOURCES_BINDING_TEXTURE_SRV, 0)]] Texture1D<float3>        BindlessResources_Texture1D_float3[];
+[[vk::binding(BINDLESS_RESOURCES_BINDING_TEXTURE_SRV, 0)]] Texture1D<float4>        BindlessResources_Texture1D_float4[];
+[[vk::binding(BINDLESS_RESOURCES_BINDING_TEXTURE_SRV, 0)]] Texture2D                BindlessResources_Texture2D[];
+[[vk::binding(BINDLESS_RESOURCES_BINDING_TEXTURE_SRV, 0)]] Texture2D<uint>          BindlessResources_Texture2D_uint[];
+[[vk::binding(BINDLESS_RESOURCES_BINDING_TEXTURE_SRV, 0)]] Texture2D<uint2>         BindlessResources_Texture2D_uint2[];
+[[vk::binding(BINDLESS_RESOURCES_BINDING_TEXTURE_SRV, 0)]] Texture2D<uint3>         BindlessResources_Texture2D_uint3[];
+[[vk::binding(BINDLESS_RESOURCES_BINDING_TEXTURE_SRV, 0)]] Texture2D<uint4>         BindlessResources_Texture2D_uint4[];
+[[vk::binding(BINDLESS_RESOURCES_BINDING_TEXTURE_SRV, 0)]] Texture2D<float>         BindlessResources_Texture2D_float[];
+[[vk::binding(BINDLESS_RESOURCES_BINDING_TEXTURE_SRV, 0)]] Texture2D<float2>        BindlessResources_Texture2D_float2[];
+[[vk::binding(BINDLESS_RESOURCES_BINDING_TEXTURE_SRV, 0)]] Texture2D<float3>        BindlessResources_Texture2D_float3[];
+[[vk::binding(BINDLESS_RESOURCES_BINDING_TEXTURE_SRV, 0)]] Texture2D<float4>        BindlessResources_Texture2D_float4[];
+[[vk::binding(BINDLESS_RESOURCES_BINDING_TEXTURE_SRV, 0)]] Texture3D                BindlessResources_Texture3D[];
+[[vk::binding(BINDLESS_RESOURCES_BINDING_TEXTURE_SRV, 0)]] Texture3D<uint>          BindlessResources_Texture3D_uint[];
+[[vk::binding(BINDLESS_RESOURCES_BINDING_TEXTURE_SRV, 0)]] Texture3D<uint2>         BindlessResources_Texture3D_uint2[];
+[[vk::binding(BINDLESS_RESOURCES_BINDING_TEXTURE_SRV, 0)]] Texture3D<uint3>         BindlessResources_Texture3D_uint3[];
+[[vk::binding(BINDLESS_RESOURCES_BINDING_TEXTURE_SRV, 0)]] Texture3D<uint4>         BindlessResources_Texture3D_uint4[];
+[[vk::binding(BINDLESS_RESOURCES_BINDING_TEXTURE_SRV, 0)]] Texture3D<float>         BindlessResources_Texture3D_float[];
+[[vk::binding(BINDLESS_RESOURCES_BINDING_TEXTURE_SRV, 0)]] Texture3D<float2>        BindlessResources_Texture3D_float2[];
+[[vk::binding(BINDLESS_RESOURCES_BINDING_TEXTURE_SRV, 0)]] Texture3D<float3>        BindlessResources_Texture3D_float3[];
+[[vk::binding(BINDLESS_RESOURCES_BINDING_TEXTURE_SRV, 0)]] Texture3D<float4>        BindlessResources_Texture3D_float4[];
+[[vk::binding(BINDLESS_RESOURCES_BINDING_TEXTURE_SRV, 0)]] TextureCube              BindlessResources_TextureCube[];
+[[vk::binding(BINDLESS_RESOURCES_BINDING_TEXTURE_SRV, 0)]] TextureCube<uint>        BindlessResources_TextureCube_uint[];
+[[vk::binding(BINDLESS_RESOURCES_BINDING_TEXTURE_SRV, 0)]] TextureCube<uint2>       BindlessResources_TextureCube_uint2[];
+[[vk::binding(BINDLESS_RESOURCES_BINDING_TEXTURE_SRV, 0)]] TextureCube<uint3>       BindlessResources_TextureCube_uint3[];
+[[vk::binding(BINDLESS_RESOURCES_BINDING_TEXTURE_SRV, 0)]] TextureCube<uint4>       BindlessResources_TextureCube_uint4[];
+[[vk::binding(BINDLESS_RESOURCES_BINDING_TEXTURE_SRV, 0)]] TextureCube<float>       BindlessResources_TextureCube_float[];
+[[vk::binding(BINDLESS_RESOURCES_BINDING_TEXTURE_SRV, 0)]] TextureCube<float2>      BindlessResources_TextureCube_float2[];
+[[vk::binding(BINDLESS_RESOURCES_BINDING_TEXTURE_SRV, 0)]] TextureCube<float3>      BindlessResources_TextureCube_float3[];
+[[vk::binding(BINDLESS_RESOURCES_BINDING_TEXTURE_SRV, 0)]] TextureCube<float4>      BindlessResources_TextureCube_float4[];
+[[vk::binding(BINDLESS_RESOURCES_BINDING_TEXTURE_SRV, 0)]] Texture1DArray           BindlessResources_Texture1DArray[];
+[[vk::binding(BINDLESS_RESOURCES_BINDING_TEXTURE_SRV, 0)]] Texture1DArray<uint>     BindlessResources_Texture1DArray_uint[];
+[[vk::binding(BINDLESS_RESOURCES_BINDING_TEXTURE_SRV, 0)]] Texture1DArray<uint2>    BindlessResources_Texture1DArray_uint2[];
+[[vk::binding(BINDLESS_RESOURCES_BINDING_TEXTURE_SRV, 0)]] Texture1DArray<uint3>    BindlessResources_Texture1DArray_uint3[];
+[[vk::binding(BINDLESS_RESOURCES_BINDING_TEXTURE_SRV, 0)]] Texture1DArray<uint4>    BindlessResources_Texture1DArray_uint4[];
+[[vk::binding(BINDLESS_RESOURCES_BINDING_TEXTURE_SRV, 0)]] Texture1DArray<float>    BindlessResources_Texture1DArray_float[];
+[[vk::binding(BINDLESS_RESOURCES_BINDING_TEXTURE_SRV, 0)]] Texture1DArray<float2>   BindlessResources_Texture1DArray_float2[];
+[[vk::binding(BINDLESS_RESOURCES_BINDING_TEXTURE_SRV, 0)]] Texture1DArray<float3>   BindlessResources_Texture1DArray_float3[];
+[[vk::binding(BINDLESS_RESOURCES_BINDING_TEXTURE_SRV, 0)]] Texture1DArray<float4>   BindlessResources_Texture1DArray_float4[];
+[[vk::binding(BINDLESS_RESOURCES_BINDING_TEXTURE_SRV, 0)]] Texture2DArray           BindlessResources_Texture2DArray[];
+[[vk::binding(BINDLESS_RESOURCES_BINDING_TEXTURE_SRV, 0)]] Texture2DArray<uint>     BindlessResources_Texture2DArray_uint[];
+[[vk::binding(BINDLESS_RESOURCES_BINDING_TEXTURE_SRV, 0)]] Texture2DArray<uint2>    BindlessResources_Texture2DArray_uint2[];
+[[vk::binding(BINDLESS_RESOURCES_BINDING_TEXTURE_SRV, 0)]] Texture2DArray<uint3>    BindlessResources_Texture2DArray_uint3[];
+[[vk::binding(BINDLESS_RESOURCES_BINDING_TEXTURE_SRV, 0)]] Texture2DArray<uint4>    BindlessResources_Texture2DArray_uint4[];
+[[vk::binding(BINDLESS_RESOURCES_BINDING_TEXTURE_SRV, 0)]] Texture2DArray<float>    BindlessResources_Texture2DArray_float[];
+[[vk::binding(BINDLESS_RESOURCES_BINDING_TEXTURE_SRV, 0)]] Texture2DArray<float2>   BindlessResources_Texture2DArray_float2[];
+[[vk::binding(BINDLESS_RESOURCES_BINDING_TEXTURE_SRV, 0)]] Texture2DArray<float3>   BindlessResources_Texture2DArray_float3[];
+[[vk::binding(BINDLESS_RESOURCES_BINDING_TEXTURE_SRV, 0)]] Texture2DArray<float4>   BindlessResources_Texture2DArray_float4[];
+[[vk::binding(BINDLESS_RESOURCES_BINDING_TEXTURE_SRV, 0)]] TextureCubeArray         BindlessResources_TextureCubeArray[];
+[[vk::binding(BINDLESS_RESOURCES_BINDING_TEXTURE_SRV, 0)]] TextureCubeArray<uint>   BindlessResources_TextureCubeArray_uint[];
+[[vk::binding(BINDLESS_RESOURCES_BINDING_TEXTURE_SRV, 0)]] TextureCubeArray<uint2>  BindlessResources_TextureCubeArray_uint2[];
+[[vk::binding(BINDLESS_RESOURCES_BINDING_TEXTURE_SRV, 0)]] TextureCubeArray<uint3>  BindlessResources_TextureCubeArray_uint3[];
+[[vk::binding(BINDLESS_RESOURCES_BINDING_TEXTURE_SRV, 0)]] TextureCubeArray<uint4>  BindlessResources_TextureCubeArray_uint4[];
+[[vk::binding(BINDLESS_RESOURCES_BINDING_TEXTURE_SRV, 0)]] TextureCubeArray<float>  BindlessResources_TextureCubeArray_float[];
+[[vk::binding(BINDLESS_RESOURCES_BINDING_TEXTURE_SRV, 0)]] TextureCubeArray<float2> BindlessResources_TextureCubeArray_float2[];
+[[vk::binding(BINDLESS_RESOURCES_BINDING_TEXTURE_SRV, 0)]] TextureCubeArray<float3> BindlessResources_TextureCubeArray_float3[];
+[[vk::binding(BINDLESS_RESOURCES_BINDING_TEXTURE_SRV, 0)]] TextureCubeArray<float4> BindlessResources_TextureCubeArray_float4[];
 
 // Texture UAV
-[[vk::binding(BINDLESS_RESOURCE_BINDING_TEXTURE_UAV, 0)]] RWTexture1D<float>       BindlessResource_RWTexture1D_float[];
-[[vk::binding(BINDLESS_RESOURCE_BINDING_TEXTURE_UAV, 0)]] RWTexture1D<float2>      BindlessResource_RWTexture1D_float2[];
-[[vk::binding(BINDLESS_RESOURCE_BINDING_TEXTURE_UAV, 0)]] RWTexture1D<float3>      BindlessResource_RWTexture1D_float3[];
-[[vk::binding(BINDLESS_RESOURCE_BINDING_TEXTURE_UAV, 0)]] RWTexture1D<float4>      BindlessResource_RWTexture1D_float4[];
-[[vk::binding(BINDLESS_RESOURCE_BINDING_TEXTURE_UAV, 0)]] RWTexture1D<uint>        BindlessResource_RWTexture1D_uint[];
-[[vk::binding(BINDLESS_RESOURCE_BINDING_TEXTURE_UAV, 0)]] RWTexture1D<uint2>       BindlessResource_RWTexture1D_uint2[];
-[[vk::binding(BINDLESS_RESOURCE_BINDING_TEXTURE_UAV, 0)]] RWTexture1D<uint3>       BindlessResource_RWTexture1D_uint3[];
-[[vk::binding(BINDLESS_RESOURCE_BINDING_TEXTURE_UAV, 0)]] RWTexture1D<uint4>       BindlessResource_RWTexture1D_uint4[];
-[[vk::binding(BINDLESS_RESOURCE_BINDING_TEXTURE_UAV, 0)]] RWTexture2D<float>       BindlessResource_RWTexture2D_float[];
-[[vk::binding(BINDLESS_RESOURCE_BINDING_TEXTURE_UAV, 0)]] RWTexture2D<float2>      BindlessResource_RWTexture2D_float2[];
-[[vk::binding(BINDLESS_RESOURCE_BINDING_TEXTURE_UAV, 0)]] RWTexture2D<float3>      BindlessResource_RWTexture2D_float3[];
-[[vk::binding(BINDLESS_RESOURCE_BINDING_TEXTURE_UAV, 0)]] RWTexture2D<float4>      BindlessResource_RWTexture2D_float4[];
-[[vk::binding(BINDLESS_RESOURCE_BINDING_TEXTURE_UAV, 0)]] RWTexture2D<uint>        BindlessResource_RWTexture2D_uint[];
-[[vk::binding(BINDLESS_RESOURCE_BINDING_TEXTURE_UAV, 0)]] RWTexture2D<uint2>       BindlessResource_RWTexture2D_uint2[];
-[[vk::binding(BINDLESS_RESOURCE_BINDING_TEXTURE_UAV, 0)]] RWTexture2D<uint3>       BindlessResource_RWTexture2D_uint3[];
-[[vk::binding(BINDLESS_RESOURCE_BINDING_TEXTURE_UAV, 0)]] RWTexture2D<uint4>       BindlessResource_RWTexture2D_uint4[];
-[[vk::binding(BINDLESS_RESOURCE_BINDING_TEXTURE_UAV, 0)]] RWTexture3D<float>       BindlessResource_RWTexture3D_float[];
-[[vk::binding(BINDLESS_RESOURCE_BINDING_TEXTURE_UAV, 0)]] RWTexture3D<float2>      BindlessResource_RWTexture3D_float2[];
-[[vk::binding(BINDLESS_RESOURCE_BINDING_TEXTURE_UAV, 0)]] RWTexture3D<float3>      BindlessResource_RWTexture3D_float3[];
-[[vk::binding(BINDLESS_RESOURCE_BINDING_TEXTURE_UAV, 0)]] RWTexture3D<float4>      BindlessResource_RWTexture3D_float4[];
-[[vk::binding(BINDLESS_RESOURCE_BINDING_TEXTURE_UAV, 0)]] RWTexture3D<uint>        BindlessResource_RWTexture3D_uint[];
-[[vk::binding(BINDLESS_RESOURCE_BINDING_TEXTURE_UAV, 0)]] RWTexture3D<uint2>       BindlessResource_RWTexture3D_uint2[];
-[[vk::binding(BINDLESS_RESOURCE_BINDING_TEXTURE_UAV, 0)]] RWTexture3D<uint3>       BindlessResource_RWTexture3D_uint3[];
-[[vk::binding(BINDLESS_RESOURCE_BINDING_TEXTURE_UAV, 0)]] RWTexture3D<uint4>       BindlessResource_RWTexture3D_uint4[];
-[[vk::binding(BINDLESS_RESOURCE_BINDING_TEXTURE_UAV, 0)]] RWTexture1DArray<float>  BindlessResource_RWTexture1DArray_float[];
-[[vk::binding(BINDLESS_RESOURCE_BINDING_TEXTURE_UAV, 0)]] RWTexture1DArray<float2> BindlessResource_RWTexture1DArray_float2[];
-[[vk::binding(BINDLESS_RESOURCE_BINDING_TEXTURE_UAV, 0)]] RWTexture1DArray<float3> BindlessResource_RWTexture1DArray_float3[];
-[[vk::binding(BINDLESS_RESOURCE_BINDING_TEXTURE_UAV, 0)]] RWTexture1DArray<float4> BindlessResource_RWTexture1DArray_float4[];
-[[vk::binding(BINDLESS_RESOURCE_BINDING_TEXTURE_UAV, 0)]] RWTexture1DArray<uint>   BindlessResource_RWTexture1DArray_uint[];
-[[vk::binding(BINDLESS_RESOURCE_BINDING_TEXTURE_UAV, 0)]] RWTexture1DArray<uint2>  BindlessResource_RWTexture1DArray_uint2[];
-[[vk::binding(BINDLESS_RESOURCE_BINDING_TEXTURE_UAV, 0)]] RWTexture1DArray<uint3>  BindlessResource_RWTexture1DArray_uint3[];
-[[vk::binding(BINDLESS_RESOURCE_BINDING_TEXTURE_UAV, 0)]] RWTexture1DArray<uint4>  BindlessResource_RWTexture1DArray_uint4[];
-[[vk::binding(BINDLESS_RESOURCE_BINDING_TEXTURE_UAV, 0)]] RWTexture2DArray<float>  BindlessResource_RWTexture2DArray_float[];
-[[vk::binding(BINDLESS_RESOURCE_BINDING_TEXTURE_UAV, 0)]] RWTexture2DArray<float2> BindlessResource_RWTexture2DArray_float2[];
-[[vk::binding(BINDLESS_RESOURCE_BINDING_TEXTURE_UAV, 0)]] RWTexture2DArray<float3> BindlessResource_RWTexture2DArray_float3[];
-[[vk::binding(BINDLESS_RESOURCE_BINDING_TEXTURE_UAV, 0)]] RWTexture2DArray<float4> BindlessResource_RWTexture2DArray_float4[];
-[[vk::binding(BINDLESS_RESOURCE_BINDING_TEXTURE_UAV, 0)]] RWTexture2DArray<uint>   BindlessResource_RWTexture2DArray_uint[];
-[[vk::binding(BINDLESS_RESOURCE_BINDING_TEXTURE_UAV, 0)]] RWTexture2DArray<uint2>  BindlessResource_RWTexture2DArray_uint2[];
-[[vk::binding(BINDLESS_RESOURCE_BINDING_TEXTURE_UAV, 0)]] RWTexture2DArray<uint3>  BindlessResource_RWTexture2DArray_uint3[];
-[[vk::binding(BINDLESS_RESOURCE_BINDING_TEXTURE_UAV, 0)]] RWTexture2DArray<uint4>  BindlessResource_RWTexture2DArray_uint4[];
+[[vk::binding(BINDLESS_RESOURCES_BINDING_TEXTURE_UAV, 0)]] RWTexture1D<float>       BindlessResources_RWTexture1D_float[];
+[[vk::binding(BINDLESS_RESOURCES_BINDING_TEXTURE_UAV, 0)]] RWTexture1D<float2>      BindlessResources_RWTexture1D_float2[];
+[[vk::binding(BINDLESS_RESOURCES_BINDING_TEXTURE_UAV, 0)]] RWTexture1D<float3>      BindlessResources_RWTexture1D_float3[];
+[[vk::binding(BINDLESS_RESOURCES_BINDING_TEXTURE_UAV, 0)]] RWTexture1D<float4>      BindlessResources_RWTexture1D_float4[];
+[[vk::binding(BINDLESS_RESOURCES_BINDING_TEXTURE_UAV, 0)]] RWTexture1D<uint>        BindlessResources_RWTexture1D_uint[];
+[[vk::binding(BINDLESS_RESOURCES_BINDING_TEXTURE_UAV, 0)]] RWTexture1D<uint2>       BindlessResources_RWTexture1D_uint2[];
+[[vk::binding(BINDLESS_RESOURCES_BINDING_TEXTURE_UAV, 0)]] RWTexture1D<uint3>       BindlessResources_RWTexture1D_uint3[];
+[[vk::binding(BINDLESS_RESOURCES_BINDING_TEXTURE_UAV, 0)]] RWTexture1D<uint4>       BindlessResources_RWTexture1D_uint4[];
+[[vk::binding(BINDLESS_RESOURCES_BINDING_TEXTURE_UAV, 0)]] RWTexture2D<float>       BindlessResources_RWTexture2D_float[];
+[[vk::binding(BINDLESS_RESOURCES_BINDING_TEXTURE_UAV, 0)]] RWTexture2D<float2>      BindlessResources_RWTexture2D_float2[];
+[[vk::binding(BINDLESS_RESOURCES_BINDING_TEXTURE_UAV, 0)]] RWTexture2D<float3>      BindlessResources_RWTexture2D_float3[];
+[[vk::binding(BINDLESS_RESOURCES_BINDING_TEXTURE_UAV, 0)]] RWTexture2D<float4>      BindlessResources_RWTexture2D_float4[];
+[[vk::binding(BINDLESS_RESOURCES_BINDING_TEXTURE_UAV, 0)]] RWTexture2D<uint>        BindlessResources_RWTexture2D_uint[];
+[[vk::binding(BINDLESS_RESOURCES_BINDING_TEXTURE_UAV, 0)]] RWTexture2D<uint2>       BindlessResources_RWTexture2D_uint2[];
+[[vk::binding(BINDLESS_RESOURCES_BINDING_TEXTURE_UAV, 0)]] RWTexture2D<uint3>       BindlessResources_RWTexture2D_uint3[];
+[[vk::binding(BINDLESS_RESOURCES_BINDING_TEXTURE_UAV, 0)]] RWTexture2D<uint4>       BindlessResources_RWTexture2D_uint4[];
+[[vk::binding(BINDLESS_RESOURCES_BINDING_TEXTURE_UAV, 0)]] RWTexture3D<float>       BindlessResources_RWTexture3D_float[];
+[[vk::binding(BINDLESS_RESOURCES_BINDING_TEXTURE_UAV, 0)]] RWTexture3D<float2>      BindlessResources_RWTexture3D_float2[];
+[[vk::binding(BINDLESS_RESOURCES_BINDING_TEXTURE_UAV, 0)]] RWTexture3D<float3>      BindlessResources_RWTexture3D_float3[];
+[[vk::binding(BINDLESS_RESOURCES_BINDING_TEXTURE_UAV, 0)]] RWTexture3D<float4>      BindlessResources_RWTexture3D_float4[];
+[[vk::binding(BINDLESS_RESOURCES_BINDING_TEXTURE_UAV, 0)]] RWTexture3D<uint>        BindlessResources_RWTexture3D_uint[];
+[[vk::binding(BINDLESS_RESOURCES_BINDING_TEXTURE_UAV, 0)]] RWTexture3D<uint2>       BindlessResources_RWTexture3D_uint2[];
+[[vk::binding(BINDLESS_RESOURCES_BINDING_TEXTURE_UAV, 0)]] RWTexture3D<uint3>       BindlessResources_RWTexture3D_uint3[];
+[[vk::binding(BINDLESS_RESOURCES_BINDING_TEXTURE_UAV, 0)]] RWTexture3D<uint4>       BindlessResources_RWTexture3D_uint4[];
+[[vk::binding(BINDLESS_RESOURCES_BINDING_TEXTURE_UAV, 0)]] RWTexture1DArray<float>  BindlessResources_RWTexture1DArray_float[];
+[[vk::binding(BINDLESS_RESOURCES_BINDING_TEXTURE_UAV, 0)]] RWTexture1DArray<float2> BindlessResources_RWTexture1DArray_float2[];
+[[vk::binding(BINDLESS_RESOURCES_BINDING_TEXTURE_UAV, 0)]] RWTexture1DArray<float3> BindlessResources_RWTexture1DArray_float3[];
+[[vk::binding(BINDLESS_RESOURCES_BINDING_TEXTURE_UAV, 0)]] RWTexture1DArray<float4> BindlessResources_RWTexture1DArray_float4[];
+[[vk::binding(BINDLESS_RESOURCES_BINDING_TEXTURE_UAV, 0)]] RWTexture1DArray<uint>   BindlessResources_RWTexture1DArray_uint[];
+[[vk::binding(BINDLESS_RESOURCES_BINDING_TEXTURE_UAV, 0)]] RWTexture1DArray<uint2>  BindlessResources_RWTexture1DArray_uint2[];
+[[vk::binding(BINDLESS_RESOURCES_BINDING_TEXTURE_UAV, 0)]] RWTexture1DArray<uint3>  BindlessResources_RWTexture1DArray_uint3[];
+[[vk::binding(BINDLESS_RESOURCES_BINDING_TEXTURE_UAV, 0)]] RWTexture1DArray<uint4>  BindlessResources_RWTexture1DArray_uint4[];
+[[vk::binding(BINDLESS_RESOURCES_BINDING_TEXTURE_UAV, 0)]] RWTexture2DArray<float>  BindlessResources_RWTexture2DArray_float[];
+[[vk::binding(BINDLESS_RESOURCES_BINDING_TEXTURE_UAV, 0)]] RWTexture2DArray<float2> BindlessResources_RWTexture2DArray_float2[];
+[[vk::binding(BINDLESS_RESOURCES_BINDING_TEXTURE_UAV, 0)]] RWTexture2DArray<float3> BindlessResources_RWTexture2DArray_float3[];
+[[vk::binding(BINDLESS_RESOURCES_BINDING_TEXTURE_UAV, 0)]] RWTexture2DArray<float4> BindlessResources_RWTexture2DArray_float4[];
+[[vk::binding(BINDLESS_RESOURCES_BINDING_TEXTURE_UAV, 0)]] RWTexture2DArray<uint>   BindlessResources_RWTexture2DArray_uint[];
+[[vk::binding(BINDLESS_RESOURCES_BINDING_TEXTURE_UAV, 0)]] RWTexture2DArray<uint2>  BindlessResources_RWTexture2DArray_uint2[];
+[[vk::binding(BINDLESS_RESOURCES_BINDING_TEXTURE_UAV, 0)]] RWTexture2DArray<uint3>  BindlessResources_RWTexture2DArray_uint3[];
+[[vk::binding(BINDLESS_RESOURCES_BINDING_TEXTURE_UAV, 0)]] RWTexture2DArray<uint4>  BindlessResources_RWTexture2DArray_uint4[];
 
 // Buffer CBV
 #define DECLARE_ALIASED_ARRAY_CONSTANT_BUFFER_CBV(type) \
-    [[vk::binding(BINDLESS_RESOURCE_BINDING_BUFFER_CBV, 0)]] ConstantBuffer<type> BindlessResource_ConstantBuffer_##type[];
+    [[vk::binding(BINDLESS_RESOURCES_BINDING_BUFFER_CBV, 0)]] ConstantBuffer<type> BindlessResources_ConstantBuffer_##type[];
 
 // Buffer SRV
-[[vk::binding(BINDLESS_RESOURCE_BINDING_BUFFER_SRV, 0)]] ByteAddressBuffer BindlessResource_ByteAddressBuffer[];
+[[vk::binding(BINDLESS_RESOURCES_BINDING_BUFFER_SRV, 0)]] ByteAddressBuffer BindlessResources_ByteAddressBuffer[];
 #define DECLARE_ALIASED_ARRAY_STRUCTURED_BUFFER_SRV(type) \
-    [[vk::binding(BINDLESS_RESOURCE_BINDING_BUFFER_SRV, 0)]] StructuredBuffer<type> BindlessResource_StructuredBuffer_##type[];
+    [[vk::binding(BINDLESS_RESOURCES_BINDING_BUFFER_SRV, 0)]] StructuredBuffer<type> BindlessResources_StructuredBuffer_##type[];
 
-[[vk::binding(BINDLESS_RESOURCE_BINDING_BUFFER_SRV, 0)]] StructuredBuffer<float>  BindlessResource_StructuredBuffer_float[];
-[[vk::binding(BINDLESS_RESOURCE_BINDING_BUFFER_SRV, 0)]] StructuredBuffer<float2> BindlessResource_StructuredBuffer_float2[];
-[[vk::binding(BINDLESS_RESOURCE_BINDING_BUFFER_SRV, 0)]] StructuredBuffer<float3> BindlessResource_StructuredBuffer_float3[];
-[[vk::binding(BINDLESS_RESOURCE_BINDING_BUFFER_SRV, 0)]] StructuredBuffer<float4> BindlessResource_StructuredBuffer_float4[];
-[[vk::binding(BINDLESS_RESOURCE_BINDING_BUFFER_SRV, 0)]] StructuredBuffer<uint>   BindlessResource_StructuredBuffer_uint[];
-[[vk::binding(BINDLESS_RESOURCE_BINDING_BUFFER_SRV, 0)]] StructuredBuffer<uint2>  BindlessResource_StructuredBuffer_uint2[];
-[[vk::binding(BINDLESS_RESOURCE_BINDING_BUFFER_SRV, 0)]] StructuredBuffer<uint3>  BindlessResource_StructuredBuffer_uint3[];
-[[vk::binding(BINDLESS_RESOURCE_BINDING_BUFFER_SRV, 0)]] StructuredBuffer<uint4>  BindlessResource_StructuredBuffer_uint4[];
+[[vk::binding(BINDLESS_RESOURCES_BINDING_BUFFER_SRV, 0)]] StructuredBuffer<float>  BindlessResources_StructuredBuffer_float[];
+[[vk::binding(BINDLESS_RESOURCES_BINDING_BUFFER_SRV, 0)]] StructuredBuffer<float2> BindlessResources_StructuredBuffer_float2[];
+[[vk::binding(BINDLESS_RESOURCES_BINDING_BUFFER_SRV, 0)]] StructuredBuffer<float3> BindlessResources_StructuredBuffer_float3[];
+[[vk::binding(BINDLESS_RESOURCES_BINDING_BUFFER_SRV, 0)]] StructuredBuffer<float4> BindlessResources_StructuredBuffer_float4[];
+[[vk::binding(BINDLESS_RESOURCES_BINDING_BUFFER_SRV, 0)]] StructuredBuffer<uint>   BindlessResources_StructuredBuffer_uint[];
+[[vk::binding(BINDLESS_RESOURCES_BINDING_BUFFER_SRV, 0)]] StructuredBuffer<uint2>  BindlessResources_StructuredBuffer_uint2[];
+[[vk::binding(BINDLESS_RESOURCES_BINDING_BUFFER_SRV, 0)]] StructuredBuffer<uint3>  BindlessResources_StructuredBuffer_uint3[];
+[[vk::binding(BINDLESS_RESOURCES_BINDING_BUFFER_SRV, 0)]] StructuredBuffer<uint4>  BindlessResources_StructuredBuffer_uint4[];
 
 // Buffer UAV
-[[vk::binding(BINDLESS_RESOURCE_BINDING_BUFFER_UAV, 0)]] RWByteAddressBuffer BindlessResource_RWByteAddressBuffer[];
+[[vk::binding(BINDLESS_RESOURCES_BINDING_BUFFER_UAV, 0)]] RWByteAddressBuffer BindlessResources_RWByteAddressBuffer[];
 #define DECLARE_ALIASED_ARRAY_STRUCTURED_BUFFER_UAV(type) \
-    [[vk::binding(BINDLESS_RESOURCE_BINDING_BUFFER_UAV, 0)]] RWStructuredBuffer<type> BindlessResource_RWStructuredBuffer_##type[];
+    [[vk::binding(BINDLESS_RESOURCES_BINDING_BUFFER_UAV, 0)]] RWStructuredBuffer<type> BindlessResources_RWStructuredBuffer_##type[];
 
-[[vk::binding(BINDLESS_RESOURCE_BINDING_BUFFER_UAV, 0)]] RWStructuredBuffer<float>  BindlessResource_RWStructuredBuffer_float[];
-[[vk::binding(BINDLESS_RESOURCE_BINDING_BUFFER_UAV, 0)]] RWStructuredBuffer<float2> BindlessResource_RWStructuredBuffer_float2[];
-[[vk::binding(BINDLESS_RESOURCE_BINDING_BUFFER_UAV, 0)]] RWStructuredBuffer<float3> BindlessResource_RWStructuredBuffer_float3[];
-[[vk::binding(BINDLESS_RESOURCE_BINDING_BUFFER_UAV, 0)]] RWStructuredBuffer<float4> BindlessResource_RWStructuredBuffer_float4[];
-[[vk::binding(BINDLESS_RESOURCE_BINDING_BUFFER_UAV, 0)]] RWStructuredBuffer<uint>   BindlessResource_RWStructuredBuffer_uint[];
-[[vk::binding(BINDLESS_RESOURCE_BINDING_BUFFER_UAV, 0)]] RWStructuredBuffer<uint2>  BindlessResource_RWStructuredBuffer_uint2[];
-[[vk::binding(BINDLESS_RESOURCE_BINDING_BUFFER_UAV, 0)]] RWStructuredBuffer<uint3>  BindlessResource_RWStructuredBuffer_uint3[];
-[[vk::binding(BINDLESS_RESOURCE_BINDING_BUFFER_UAV, 0)]] RWStructuredBuffer<uint4>  BindlessResource_RWStructuredBuffer_uint4[];
+[[vk::binding(BINDLESS_RESOURCES_BINDING_BUFFER_UAV, 0)]] RWStructuredBuffer<float>  BindlessResources_RWStructuredBuffer_float[];
+[[vk::binding(BINDLESS_RESOURCES_BINDING_BUFFER_UAV, 0)]] RWStructuredBuffer<float2> BindlessResources_RWStructuredBuffer_float2[];
+[[vk::binding(BINDLESS_RESOURCES_BINDING_BUFFER_UAV, 0)]] RWStructuredBuffer<float3> BindlessResources_RWStructuredBuffer_float3[];
+[[vk::binding(BINDLESS_RESOURCES_BINDING_BUFFER_UAV, 0)]] RWStructuredBuffer<float4> BindlessResources_RWStructuredBuffer_float4[];
+[[vk::binding(BINDLESS_RESOURCES_BINDING_BUFFER_UAV, 0)]] RWStructuredBuffer<uint>   BindlessResources_RWStructuredBuffer_uint[];
+[[vk::binding(BINDLESS_RESOURCES_BINDING_BUFFER_UAV, 0)]] RWStructuredBuffer<uint2>  BindlessResources_RWStructuredBuffer_uint2[];
+[[vk::binding(BINDLESS_RESOURCES_BINDING_BUFFER_UAV, 0)]] RWStructuredBuffer<uint3>  BindlessResources_RWStructuredBuffer_uint3[];
+[[vk::binding(BINDLESS_RESOURCES_BINDING_BUFFER_UAV, 0)]] RWStructuredBuffer<uint4>  BindlessResources_RWStructuredBuffer_uint4[];
 
 // Acceleration Structure
 #if RAY_TRACING_ENABLED
-[[vk::binding(BINDLESS_RESOURCE_BINDING_ACCELERATION_STRUCTURE, 0)]] RaytracingAccelerationStructure BindlessResource_RaytracingAccelerationStructure[];
+[[vk::binding(BINDLESS_RESOURCES_BINDING_ACCELERATION_STRUCTURE, 0)]] RaytracingAccelerationStructure BindlessResources_RaytracingAccelerationStructure[];
 #endif
 
 ByteAddressBuffer GetByteAddressBuffer(int index)
 {
-    return BindlessResource_ByteAddressBuffer[index];
+    return BindlessResources_ByteAddressBuffer[index];
 }
 
 ByteAddressBuffer GetByteAddressBufferNonUniform(int index)
 {
-    return BindlessResource_ByteAddressBuffer[NonUniformResourceIndex(index)];
+    return BindlessResources_ByteAddressBuffer[NonUniformResourceIndex(index)];
 }
 
 RWByteAddressBuffer GetRWByteAddressBuffer(int index)
 {
-    return BindlessResource_RWByteAddressBuffer[index];
+    return BindlessResources_RWByteAddressBuffer[index];
 }
 
 RWByteAddressBuffer GetRWByteAddressBufferNonUniform(int index)
 {
-    return BindlessResource_RWByteAddressBuffer[NonUniformResourceIndex(index)];
+    return BindlessResources_RWByteAddressBuffer[NonUniformResourceIndex(index)];
 }
 
-Texture2D GetBindlessResourceTexture2D(int index)
+Texture2D GetTexture2D(int index)
 {
-    return BindlessResource_Texture2D[index];
+    return BindlessResources_Texture2D[index];
 }
 
 Texture2D GetTexture2DNonUniform(int index)
 {
-    return BindlessResource_Texture2D[NonUniformResourceIndex(index)];
+    return BindlessResources_Texture2D[NonUniformResourceIndex(index)];
 }
 
 #define BIND_BYTE_ADDRESS_BUFFER_SRV(slot, name) \
 ByteAddressBuffer Get##name##SRV() \
 { \
     uint bufferIndex = GetShaderConstantValue(slot); \
-    return BindlessResource_ByteAddressBuffer[bufferIndex]; \
+    return BindlessResources_ByteAddressBuffer[bufferIndex]; \
 }
 
 #define BIND_BYTE_ADDRESS_BUFFER_UAV(slot, name) \
 RWByteAddressBuffer Get##name##UAV() \
 { \
     uint bufferIndex = GetShaderConstantValue(slot); \
-    return BindlessResource_RWByteAddressBuffer[bufferIndex]; \
+    return BindlessResources_RWByteAddressBuffer[bufferIndex]; \
 }
 
 #define BIND_TEXTURE_1D_SRV(slot, name) \
 Texture1D Get##name##SRV() \
 { \
-    return BindlessResource_Texture1D[GetShaderConstantValue(slot)]; \
+    return BindlessResources_Texture1D[GetShaderConstantValue(slot)]; \
 }
 
 #define BIND_TEXTURE_1D_TYPED_SRV(slot, type, name) \
 Texture1D<type> Get##name##SRV() \
 { \
-    return BindlessResource_Texture1D_##type[GetShaderConstantValue(slot)]; \
+    return BindlessResources_Texture1D_##type[GetShaderConstantValue(slot)]; \
 }
 
 #define BIND_TEXTURE_2D_SRV(slot, name) \
 Texture2D Get##name##SRV() \
 { \
-    return BindlessResource_Texture2D[GetShaderConstantValue(slot)]; \
+    return BindlessResources_Texture2D[GetShaderConstantValue(slot)]; \
 }
 
 #define BIND_TEXTURE_2D_TYPED_SRV(slot, type, name) \
 Texture2D<type> Get##name##SRV() \
 { \
-    return BindlessResource_Texture2D_##type[GetShaderConstantValue(slot)]; \
+    return BindlessResources_Texture2D_##type[GetShaderConstantValue(slot)]; \
 }
 
 #define BIND_TEXTURE_3D_SRV(slot, name) \
 Texture3D Get##name##SRV() \
 { \
-    return BindlessResource_Texture3D[GetShaderConstantValue(slot)]; \
+    return BindlessResources_Texture3D[GetShaderConstantValue(slot)]; \
 }
 
 #define BIND_TEXTURE_3D_TYPED_SRV(slot, type, name) \
 Texture3D<type> Get##name##SRV() \
 { \
-    return BindlessResource_Texture3D_##type[GetShaderConstantValue(slot)]; \
+    return BindlessResources_Texture3D_##type[GetShaderConstantValue(slot)]; \
 }
 
 #define BIND_TEXTURE_CUBE_SRV(slot, name) \
 TextureCube Get##name##SRV() \
 { \
-    return BindlessResource_TextureCube[GetShaderConstantValue(slot)]; \
+    return BindlessResources_TextureCube[GetShaderConstantValue(slot)]; \
 }
 
 #define BIND_TEXTURE_CUBE_TYPED_SRV(slot, type, name) \
 TextureCube<type> Get##name##SRV() \
 { \
-    return BindlessResource_TextureCube_##type[GetShaderConstantValue(slot)]; \
+    return BindlessResources_TextureCube_##type[GetShaderConstantValue(slot)]; \
 }
 
 #define BIND_TEXTURE_2D_ARRAY_SRV(slot, name) \
 Texture2DArray Get##name##SRV() \
 { \
-    return BindlessResource_Texture2DArray[GetShaderConstantValue(slot)]; \
+    return BindlessResources_Texture2DArray[GetShaderConstantValue(slot)]; \
 }
 
 #define BIND_TEXTURE_2D_ARRAY_TYPED_SRV(slot, type, name) \
 Texture2DArray<type> Get##name##SRV() \
 { \
-    return BindlessResource_Texture2DArray_##type[GetShaderConstantValue(slot)]; \
+    return BindlessResources_Texture2DArray_##type[GetShaderConstantValue(slot)]; \
 }
 
 #define BIND_TEXTURE_2D_UAV(slot, type, name) \
 RWTexture2D<type> Get##name##UAV() \
 { \
-    return BindlessResource_RWTexture2D_##type[GetShaderConstantValue(slot)]; \
+    return BindlessResources_RWTexture2D_##type[GetShaderConstantValue(slot)]; \
 }
 
 #define BIND_TEXTURE_2D_ARRAY_UAV(slot, type, name) \
 RWTexture2DArray<type> Get##name##UAV() \
 { \
-    return BindlessResource_RWTexture2DArray_##type[GetShaderConstantValue(slot)]; \
+    return BindlessResources_RWTexture2DArray_##type[GetShaderConstantValue(slot)]; \
 }
 
 #define BIND_TEXTURE_3D_UAV(slot, type, name) \
 RWTexture3D<type> Get##name##UAV() \
 { \
-    return BindlessResource_RWTexture3D_##type[GetShaderConstantValue(slot)]; \
+    return BindlessResources_RWTexture3D_##type[GetShaderConstantValue(slot)]; \
 }
 #if RAY_TRACING_ENABLED
 #define BIND_TLAS_SRV(slot, name) \
 RaytracingAccelerationStructure Get##name() \
 { \
-    return BindlessResource_RaytracingAccelerationStructure[GetShaderConstantValue(slot)]; \
+    return BindlessResources_RaytracingAccelerationStructure[GetShaderConstantValue(slot)]; \
 }
 #endif
 
 #else
 
 // Sampler
-SamplerState           BindlessResource_SamplerState[]           : register(s0, space1);
-SamplerComparisonState BindlessResource_SamplerComparisonState[] : register(s0, space2);
+SamplerState           BindlessResources_SamplerState[]           : register(s0, space1);
+SamplerComparisonState BindlessResources_SamplerComparisonState[] : register(s0, space2);
 
 #define DECLARE_ALIASED_ARRAY_CONSTANT_BUFFER_CBV(type)
 #define DECLARE_ALIASED_ARRAY_STRUCTURED_BUFFER_SRV(type)
@@ -321,7 +321,7 @@ RWByteAddressBuffer GetRWByteAddressBufferNonUniform(int index)
     return ResourceDescriptorHeap[NonUniformResourceIndex(index)];
 }
 
-Texture2D GetBindlessResourceTexture2D(int index)
+Texture2D GetTexture2D(int index)
 {
     return ResourceDescriptorHeap[index];
 }
@@ -449,14 +449,14 @@ RWTexture3D<type> Get##name##UAV() \
 #endif
 
 #ifdef __spirv__
-#define GlobalSamplerPointWarp                                   BindlessResource_SamplerState[0]
-#define GlobalSamplerPointClamp                                  BindlessResource_SamplerState[1]
-#define GlobalSamplerPointBorder                                 BindlessResource_SamplerState[2]
-#define GlobalSamplerLinearWarp                                  BindlessResource_SamplerState[3]
-#define GlobalSamplerLinearClamp                                 BindlessResource_SamplerState[4]
-#define GlobalSamplerLinearBorder                                BindlessResource_SamplerState[5]
-#define GlobalSamplerComparisonGreaterLinearClamp                BindlessResource_SamplerComparisonState[6]
-#define GlobalSamplerComparisonLessLinearClamp                   BindlessResource_SamplerComparisonState[7]
+#define GlobalSamplerPointWarp                                   BindlessResources_SamplerState[0]
+#define GlobalSamplerPointClamp                                  BindlessResources_SamplerState[1]
+#define GlobalSamplerPointBorder                                 BindlessResources_SamplerState[2]
+#define GlobalSamplerLinearWarp                                  BindlessResources_SamplerState[3]
+#define GlobalSamplerLinearClamp                                 BindlessResources_SamplerState[4]
+#define GlobalSamplerLinearBorder                                BindlessResources_SamplerState[5]
+#define GlobalSamplerComparisonGreaterLinearClamp                BindlessResources_SamplerComparisonState[6]
+#define GlobalSamplerComparisonLessLinearClamp                   BindlessResources_SamplerComparisonState[7]
 #else // TODO: SamplerDescriptorHeap
 SamplerState GlobalSamplerPointWarp                              : register(s100, space0);
 SamplerState GlobalSamplerPointClamp                             : register(s101, space0);
@@ -484,178 +484,178 @@ SamplerComparisonState GlobalSamplerComparisonLessLinearClamp    : register(s107
 #if __spirv__ // SPIR-V
 
 #define SHADER_CONSTANTS_TEXTURE_1D_DEFAULT_SRV(slot, name) \
-    [[vk::offset(slot * 4)]] int BindlessResourceDescriptorIndex_##name; \
+    [[vk::offset(slot * 4)]] int BindlessResourcesDescriptorIndex_##name; \
     Texture1D Get##name() \
     { \
-        return BindlessResource_Texture1D[BindlessResourceDescriptorIndex_##name]; \
+        return BindlessResources_Texture1D[BindlessResourcesDescriptorIndex_##name]; \
     }
 
 #define SHADER_CONSTANTS_TEXTURE_1D_SRV(slot, type, name) \
-    [[vk::offset(slot * 4)]] int BindlessResourceDescriptorIndex_##name; \
+    [[vk::offset(slot * 4)]] int BindlessResourcesDescriptorIndex_##name; \
     Texture1D<type> Get##name() \
     { \
-        return BindlessResource_Texture1D_##type[BindlessResourceDescriptorIndex_##name]; \
+        return BindlessResources_Texture1D_##type[BindlessResourcesDescriptorIndex_##name]; \
     }
 
 #define SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(slot, name) \
-    [[vk::offset(slot * 4)]] int BindlessResourceDescriptorIndex_##name; \
+    [[vk::offset(slot * 4)]] int BindlessResourcesDescriptorIndex_##name; \
     Texture2D Get##name() \
     { \
-        return BindlessResource_Texture2D[BindlessResourceDescriptorIndex_##name]; \
+        return BindlessResources_Texture2D[BindlessResourcesDescriptorIndex_##name]; \
     }
 
 #define SHADER_CONSTANTS_TEXTURE_2D_SRV(slot, type, name) \
-    [[vk::offset(slot * 4)]] int BindlessResourceDescriptorIndex_##name; \
+    [[vk::offset(slot * 4)]] int BindlessResourcesDescriptorIndex_##name; \
     Texture2D<type> Get##name() \
     { \
-        return BindlessResource_Texture2D_##type[BindlessResourceDescriptorIndex_##name]; \
+        return BindlessResources_Texture2D_##type[BindlessResourcesDescriptorIndex_##name]; \
     }
 
 #define SHADER_CONSTANTS_TEXTURE_3D_DEFAULT_SRV(slot, name) \
-    [[vk::offset(slot * 4)]] int BindlessResourceDescriptorIndex_##name; \
+    [[vk::offset(slot * 4)]] int BindlessResourcesDescriptorIndex_##name; \
     Texture3D Get##name() \
     { \
-        return BindlessResource_Texture3D[BindlessResourceDescriptorIndex_##name]; \
+        return BindlessResources_Texture3D[BindlessResourcesDescriptorIndex_##name]; \
     }
 
 #define SHADER_CONSTANTS_TEXTURE_3D_SRV(slot, type, name) \
-    [[vk::offset(slot * 4)]] int BindlessResourceDescriptorIndex_##name; \
+    [[vk::offset(slot * 4)]] int BindlessResourcesDescriptorIndex_##name; \
     Texture3D<type> Get##name() \
     { \
-        return BindlessResource_Texture3D_##type[BindlessResourceDescriptorIndex_##name]; \
+        return BindlessResources_Texture3D_##type[BindlessResourcesDescriptorIndex_##name]; \
     }
 
 #define SHADER_CONSTANTS_TEXTURE_CUBE_DEFAULT_SRV(slot, name) \
-    [[vk::offset(slot * 4)]] int BindlessResourceDescriptorIndex_##name; \
+    [[vk::offset(slot * 4)]] int BindlessResourcesDescriptorIndex_##name; \
     TextureCube Get##name() \
     { \
-        return BindlessResource_TextureCube[BindlessResourceDescriptorIndex_##name]; \
+        return BindlessResources_TextureCube[BindlessResourcesDescriptorIndex_##name]; \
     }
 
 #define SHADER_CONSTANTS_TEXTURE_CUBE_SRV(slot, type, name) \
-    [[vk::offset(slot * 4)]] int BindlessResourceDescriptorIndex_##name; \
+    [[vk::offset(slot * 4)]] int BindlessResourcesDescriptorIndex_##name; \
     TextureCube<type> Get##name() \
     { \
-        return BindlessResource_TextureCube_##type[BindlessResourceDescriptorIndex_##name]; \
+        return BindlessResources_TextureCube_##type[BindlessResourcesDescriptorIndex_##name]; \
     }
 
 #define SHADER_CONSTANTS_TEXTURE_1D_ARRAY_DEFAULT_SRV(slot, name) \
-    [[vk::offset(slot * 4)]] int BindlessResourceDescriptorIndex_##name; \
+    [[vk::offset(slot * 4)]] int BindlessResourcesDescriptorIndex_##name; \
     Texture1DArray Get##name() \
     { \
-        return BindlessResource_Texture1DArray[BindlessResourceDescriptorIndex_##name]; \
+        return BindlessResources_Texture1DArray[BindlessResourcesDescriptorIndex_##name]; \
     }
 
 #define SHADER_CONSTANTS_TEXTURE_1D_ARRAY_SRV(slot, type, name) \
-    [[vk::offset(slot * 4)]] int BindlessResourceDescriptorIndex_##name; \
+    [[vk::offset(slot * 4)]] int BindlessResourcesDescriptorIndex_##name; \
     Texture1DArray<type> Get##name() \
     { \
-        return BindlessResource_Texture1DArray_##type[BindlessResourceDescriptorIndex_##name]; \
+        return BindlessResources_Texture1DArray_##type[BindlessResourcesDescriptorIndex_##name]; \
     }
 
 #define SHADER_CONSTANTS_TEXTURE_2D_ARRAY_DEFAULT_SRV(slot, name) \
-    [[vk::offset(slot * 4)]] int BindlessResourceDescriptorIndex_##name; \
+    [[vk::offset(slot * 4)]] int BindlessResourcesDescriptorIndex_##name; \
     Texture2DArray Get##name() \
     { \
-        return BindlessResource_Texture2DArray[BindlessResourceDescriptorIndex_##name]; \
+        return BindlessResources_Texture2DArray[BindlessResourcesDescriptorIndex_##name]; \
     }
 
 #define SHADER_CONSTANTS_TEXTURE_2D_ARRAY_SRV(slot, type, name) \
-    [[vk::offset(slot * 4)]] int BindlessResourceDescriptorIndex_##name; \
+    [[vk::offset(slot * 4)]] int BindlessResourcesDescriptorIndex_##name; \
     Texture2DArray<type> Get##name() \
     { \
-        return BindlessResource_Texture2DArray_##type[BindlessResourceDescriptorIndex_##name]; \
+        return BindlessResources_Texture2DArray_##type[BindlessResourcesDescriptorIndex_##name]; \
     }
 
 #define SHADER_CONSTANTS_TEXTURE_CUBE_ARRAY_DEFAULT_SRV(slot, name) \
-    [[vk::offset(slot * 4)]] int BindlessResourceDescriptorIndex_##name; \
+    [[vk::offset(slot * 4)]] int BindlessResourcesDescriptorIndex_##name; \
     TextureCubeArray Get##name() \
     { \
-        return BindlessResource_TextureCubeArray[BindlessResourceDescriptorIndex_##name]; \
+        return BindlessResources_TextureCubeArray[BindlessResourcesDescriptorIndex_##name]; \
     }
 
 #define SHADER_CONSTANTS_TEXTURE_CUBE_ARRAY_SRV(slot, type, name) \
-    [[vk::offset(slot * 4)]] int BindlessResourceDescriptorIndex_##name; \
+    [[vk::offset(slot * 4)]] int BindlessResourcesDescriptorIndex_##name; \
     TextureCubeArray<type> Get##name() \
     { \
-        return BindlessResource_TextureCubeArray_##type[BindlessResourceDescriptorIndex_##name]; \
+        return BindlessResources_TextureCubeArray_##type[BindlessResourcesDescriptorIndex_##name]; \
     }
 
 #define SHADER_CONSTANTS_TEXTURE_1D_UAV(slot, type, name) \
-    [[vk::offset(slot * 4)]] int BindlessResourceDescriptorIndex_##name; \
+    [[vk::offset(slot * 4)]] int BindlessResourcesDescriptorIndex_##name; \
     RWTexture1D<type> Get##name() \
     { \
-        return BindlessResource_RWTexture1D_##type[BindlessResourceDescriptorIndex_##name]; \
+        return BindlessResources_RWTexture1D_##type[BindlessResourcesDescriptorIndex_##name]; \
     }
 
 #define SHADER_CONSTANTS_TEXTURE_2D_UAV(slot, type, name) \
-    [[vk::offset(slot * 4)]] int BindlessResourceDescriptorIndex_##name; \
+    [[vk::offset(slot * 4)]] int BindlessResourcesDescriptorIndex_##name; \
     RWTexture2D<type> Get##name() \
     { \
-        return BindlessResource_RWTexture2D_##type[BindlessResourceDescriptorIndex_##name]; \
+        return BindlessResources_RWTexture2D_##type[BindlessResourcesDescriptorIndex_##name]; \
     }
 
 #define SHADER_CONSTANTS_TEXTURE_3D_UAV(slot, type, name) \
-    [[vk::offset(slot * 4)]] int BindlessResourceDescriptorIndex_##name; \
+    [[vk::offset(slot * 4)]] int BindlessResourcesDescriptorIndex_##name; \
     RWTexture3D<type> Get##name() \
     { \
-        return BindlessResource_RWTexture3D_##type[BindlessResourceDescriptorIndex_##name]; \
+        return BindlessResources_RWTexture3D_##type[BindlessResourcesDescriptorIndex_##name]; \
     }
 
 #define SHADER_CONSTANTS_TEXTURE_1D_ARRAY_UAV(slot, type, name) \
-    [[vk::offset(slot * 4)]] int BindlessResourceDescriptorIndex_##name; \
+    [[vk::offset(slot * 4)]] int BindlessResourcesDescriptorIndex_##name; \
     RWTexture1DArray<type> Get##name() \
     { \
-        return BindlessResource_RWTexture1DArray_##type[BindlessResourceDescriptorIndex_##name]; \
+        return BindlessResources_RWTexture1DArray_##type[BindlessResourcesDescriptorIndex_##name]; \
     }
 
 #define SHADER_CONSTANTS_TEXTURE_2D_ARRAY_UAV(slot, type, name) \
-    [[vk::offset(slot * 4)]] int BindlessResourceDescriptorIndex_##name; \
+    [[vk::offset(slot * 4)]] int BindlessResourcesDescriptorIndex_##name; \
     RWTexture2DArray<type> Get##name() \
     { \
-        return BindlessResource_RWTexture2DArray_##type[BindlessResourceDescriptorIndex_##name]; \
+        return BindlessResources_RWTexture2DArray_##type[BindlessResourcesDescriptorIndex_##name]; \
     }
 
 #define SHADER_CONSTANTS_TEXTURE_3D_ARRAY_UAV(slot, type, name) \
-    [[vk::offset(slot * 4)]] int BindlessResourceDescriptorIndex_##name; \
+    [[vk::offset(slot * 4)]] int BindlessResourcesDescriptorIndex_##name; \
     RWTexture3DArray<type> Get##name() \
     { \
-        return BindlessResource_RWTexture3DArray_##type[BindlessResourceDescriptorIndex_##name]; \
+        return BindlessResources_RWTexture3DArray_##type[BindlessResourcesDescriptorIndex_##name]; \
     }
 
 #define SHADER_CONSTANTS_CONSTANT_BUFFER_CBV(slot, type, name) \
-    [[vk::offset(slot * 4)]] int BindlessResourceDescriptorIndex_##name; \
+    [[vk::offset(slot * 4)]] int BindlessResourcesDescriptorIndex_##name; \
     ConstantBuffer<type> Get##name() \
     { \
-        return BindlessResource_ConstantBuffer_##type[BindlessResourceDescriptorIndex_##name]; \
+        return BindlessResources_ConstantBuffer_##type[BindlessResourcesDescriptorIndex_##name]; \
     }
 
 #define SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(slot, type, name) \
-    [[vk::offset(slot * 4)]] int BindlessResourceDescriptorIndex_##name; \
+    [[vk::offset(slot * 4)]] int BindlessResourcesDescriptorIndex_##name; \
     StructuredBuffer<type> Get##name() \
     { \
-        return BindlessResource_StructuredBuffer_##type[BindlessResourceDescriptorIndex_##name]; \
+        return BindlessResources_StructuredBuffer_##type[BindlessResourcesDescriptorIndex_##name]; \
     }
 
 #define SHADER_CONSTANTS_STRUCTURED_BUFFER_UAV(slot, type, name) \
-    [[vk::offset(slot * 4)]] int BindlessResourceDescriptorIndex_##name; \
+    [[vk::offset(slot * 4)]] int BindlessResourcesDescriptorIndex_##name; \
     RWStructuredBuffer<type> Get##name() \
     { \
-        return BindlessResource_RWStructuredBuffer_##type[BindlessResourceDescriptorIndex_##name]; \
+        return BindlessResources_RWStructuredBuffer_##type[BindlessResourcesDescriptorIndex_##name]; \
     }
 
 #define SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_SRV(slot, name) \
-    [[vk::offset(slot * 4)]] int BindlessResourceDescriptorIndex_##name; \
+    [[vk::offset(slot * 4)]] int BindlessResourcesDescriptorIndex_##name; \
     ByteAddressBuffer Get##name() \
     { \
-        return BindlessResource_ByteAddressBuffer[BindlessResourceDescriptorIndex_##name]; \
+        return BindlessResources_ByteAddressBuffer[BindlessResourcesDescriptorIndex_##name]; \
     }
 
 #define SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_UAV(slot, name) \
-    [[vk::offset(slot * 4)]] int BindlessResourceDescriptorIndex_##name; \
+    [[vk::offset(slot * 4)]] int BindlessResourcesDescriptorIndex_##name; \
     RWByteAddressBuffer Get##name() \
     { \
-        return BindlessResource_RWByteAddressBuffer[BindlessResourceDescriptorIndex_##name]; \
+        return BindlessResources_RWByteAddressBuffer[BindlessResourcesDescriptorIndex_##name]; \
     }
 
 #define SHADER_CONSTANTS_SCALAR(slot, type, name) \
@@ -668,178 +668,178 @@ SamplerComparisonState GlobalSamplerComparisonLessLinearClamp    : register(s107
 #else // DXIL
 
 #define SHADER_CONSTANTS_TEXTURE_1D_DEFAULT_SRV(slot, name) \
-    int BindlessResourceDescriptorIndex_##name/* : packoffset(c##slot)*/; \
+    int BindlessResourcesDescriptorIndex_##name/* : packoffset(c##slot)*/; \
     Texture1D Get##name() \
     { \
-        return ResourceDescriptorHeap[BindlessResourceDescriptorIndex_##name]; \
+        return ResourceDescriptorHeap[BindlessResourcesDescriptorIndex_##name]; \
     }
 
 #define SHADER_CONSTANTS_TEXTURE_1D_SRV(slot, type, name) \
-    int BindlessResourceDescriptorIndex_##name/* : packoffset(c##slot)*/; \
+    int BindlessResourcesDescriptorIndex_##name/* : packoffset(c##slot)*/; \
     Texture1D<type> Get##name() \
     { \
-        return ResourceDescriptorHeap[BindlessResourceDescriptorIndex_##name]; \
+        return ResourceDescriptorHeap[BindlessResourcesDescriptorIndex_##name]; \
     }
 
 #define SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(slot, name) \
-    int BindlessResourceDescriptorIndex_##name/* : packoffset(c##slot)*/; \
+    int BindlessResourcesDescriptorIndex_##name/* : packoffset(c##slot)*/; \
     Texture2D Get##name() \
     { \
-        return ResourceDescriptorHeap[BindlessResourceDescriptorIndex_##name]; \
+        return ResourceDescriptorHeap[BindlessResourcesDescriptorIndex_##name]; \
     }
 
 #define SHADER_CONSTANTS_TEXTURE_2D_SRV(slot, type, name) \
-    int BindlessResourceDescriptorIndex_##name/* : packoffset(c##slot)*/; \
+    int BindlessResourcesDescriptorIndex_##name/* : packoffset(c##slot)*/; \
     Texture2D<type> Get##name() \
     { \
-        return ResourceDescriptorHeap[BindlessResourceDescriptorIndex_##name]; \
+        return ResourceDescriptorHeap[BindlessResourcesDescriptorIndex_##name]; \
     }
 
 #define SHADER_CONSTANTS_TEXTURE_3D_DEFAULT_SRV(slot, name) \
-    int BindlessResourceDescriptorIndex_##name/* : packoffset(c##slot)*/; \
+    int BindlessResourcesDescriptorIndex_##name/* : packoffset(c##slot)*/; \
     Texture3D Get##name() \
     { \
-        return ResourceDescriptorHeap[BindlessResourceDescriptorIndex_##name]; \
+        return ResourceDescriptorHeap[BindlessResourcesDescriptorIndex_##name]; \
     }
 
 #define SHADER_CONSTANTS_TEXTURE_3D_SRV(slot, type, name) \
-    int BindlessResourceDescriptorIndex_##name/* : packoffset(c##slot)*/; \
+    int BindlessResourcesDescriptorIndex_##name/* : packoffset(c##slot)*/; \
     Texture3D<type> Get##name() \
     { \
-        return ResourceDescriptorHeap[BindlessResourceDescriptorIndex_##name]; \
+        return ResourceDescriptorHeap[BindlessResourcesDescriptorIndex_##name]; \
     }
 
 #define SHADER_CONSTANTS_TEXTURE_CUBE_DEFAULT_SRV(slot, name) \
-    int BindlessResourceDescriptorIndex_##name/* : packoffset(c##slot)*/; \
+    int BindlessResourcesDescriptorIndex_##name/* : packoffset(c##slot)*/; \
     TextureCube Get##name() \
     { \
-        return ResourceDescriptorHeap[BindlessResourceDescriptorIndex_##name]; \
+        return ResourceDescriptorHeap[BindlessResourcesDescriptorIndex_##name]; \
     }
 
 #define SHADER_CONSTANTS_TEXTURE_CUBE_SRV(slot, type, name) \
-    int BindlessResourceDescriptorIndex_##name/* : packoffset(c##slot)*/; \
+    int BindlessResourcesDescriptorIndex_##name/* : packoffset(c##slot)*/; \
     TextureCube<type> Get##name() \
     { \
-        return ResourceDescriptorHeap[BindlessResourceDescriptorIndex_##name]; \
+        return ResourceDescriptorHeap[BindlessResourcesDescriptorIndex_##name]; \
     }
 
 #define SHADER_CONSTANTS_TEXTURE_1D_ARRAY_DEFAULT_SRV(slot, name) \
-    int BindlessResourceDescriptorIndex_##name/* : packoffset(c##slot)*/; \
+    int BindlessResourcesDescriptorIndex_##name/* : packoffset(c##slot)*/; \
     Texture1DArray Get##name() \
     { \
-        return ResourceDescriptorHeap[BindlessResourceDescriptorIndex_##name]; \
+        return ResourceDescriptorHeap[BindlessResourcesDescriptorIndex_##name]; \
     }
 
 #define SHADER_CONSTANTS_TEXTURE_1D_ARRAY_SRV(slot, type, name) \
-    int BindlessResourceDescriptorIndex_##name/* : packoffset(c##slot)*/; \
+    int BindlessResourcesDescriptorIndex_##name/* : packoffset(c##slot)*/; \
     Texture1DArray<type> Get##name() \
     { \
-        return ResourceDescriptorHeap[BindlessResourceDescriptorIndex_##name]; \
+        return ResourceDescriptorHeap[BindlessResourcesDescriptorIndex_##name]; \
     }
 
 #define SHADER_CONSTANTS_TEXTURE_2D_ARRAY_DEFAULT_SRV(slot, name) \
-    int BindlessResourceDescriptorIndex_##name/* : packoffset(c##slot)*/; \
+    int BindlessResourcesDescriptorIndex_##name/* : packoffset(c##slot)*/; \
     Texture2DArray Get##name() \
     { \
-        return ResourceDescriptorHeap[BindlessResourceDescriptorIndex_##name]; \
+        return ResourceDescriptorHeap[BindlessResourcesDescriptorIndex_##name]; \
     }
 
 #define SHADER_CONSTANTS_TEXTURE_2D_ARRAY_SRV(slot, type, name) \
-    int BindlessResourceDescriptorIndex_##name/* : packoffset(c##slot)*/; \
+    int BindlessResourcesDescriptorIndex_##name/* : packoffset(c##slot)*/; \
     Texture2DArray<type> Get##name() \
     { \
-        return ResourceDescriptorHeap[BindlessResourceDescriptorIndex_##name]; \
+        return ResourceDescriptorHeap[BindlessResourcesDescriptorIndex_##name]; \
     }
 
 #define SHADER_CONSTANTS_TEXTURE_CUBE_ARRAY_DEFAULT_SRV(slot, name) \
-    int BindlessResourceDescriptorIndex_##name/* : packoffset(c##slot)*/; \
+    int BindlessResourcesDescriptorIndex_##name/* : packoffset(c##slot)*/; \
     TextureCubeArray Get##name() \
     { \
-        return ResourceDescriptorHeap[BindlessResourceDescriptorIndex_##name]; \
+        return ResourceDescriptorHeap[BindlessResourcesDescriptorIndex_##name]; \
     }
 
 #define SHADER_CONSTANTS_TEXTURE_CUBE_ARRAY_SRV(slot, type, name) \
-    int BindlessResourceDescriptorIndex_##name/* : packoffset(c##slot)*/; \
+    int BindlessResourcesDescriptorIndex_##name/* : packoffset(c##slot)*/; \
     TextureCubeArray<type> Get##name() \
     { \
-        return ResourceDescriptorHeap[BindlessResourceDescriptorIndex_##name]; \
+        return ResourceDescriptorHeap[BindlessResourcesDescriptorIndex_##name]; \
     }
 
 #define SHADER_CONSTANTS_TEXTURE_1D_UAV(slot, type, name) \
-    int BindlessResourceDescriptorIndex_##name/* : packoffset(c##slot)*/; \
+    int BindlessResourcesDescriptorIndex_##name/* : packoffset(c##slot)*/; \
     RWTexture1D<type> Get##name() \
     { \
-        return ResourceDescriptorHeap[BindlessResourceDescriptorIndex_##name]; \
+        return ResourceDescriptorHeap[BindlessResourcesDescriptorIndex_##name]; \
     }
 
 #define SHADER_CONSTANTS_TEXTURE_2D_UAV(slot, type, name) \
-    int BindlessResourceDescriptorIndex_##name/* : packoffset(c##slot)*/; \
+    int BindlessResourcesDescriptorIndex_##name/* : packoffset(c##slot)*/; \
     RWTexture2D<type> Get##name() \
     { \
-        return ResourceDescriptorHeap[BindlessResourceDescriptorIndex_##name]; \
+        return ResourceDescriptorHeap[BindlessResourcesDescriptorIndex_##name]; \
     }
 
 #define SHADER_CONSTANTS_TEXTURE_3D_UAV(slot, type, name) \
-    int BindlessResourceDescriptorIndex_##name/* : packoffset(c##slot)*/; \
+    int BindlessResourcesDescriptorIndex_##name/* : packoffset(c##slot)*/; \
     RWTexture3D<type> Get##name() \
     { \
-        return ResourceDescriptorHeap[BindlessResourceDescriptorIndex_##name]; \
+        return ResourceDescriptorHeap[BindlessResourcesDescriptorIndex_##name]; \
     }
 
 #define SHADER_CONSTANTS_TEXTURE_1D_ARRAY_UAV(slot, type, name) \
-    int BindlessResourceDescriptorIndex_##name/* : packoffset(c##slot)*/; \
+    int BindlessResourcesDescriptorIndex_##name/* : packoffset(c##slot)*/; \
     RWTexture1DArray<type> Get##name() \
     { \
-        return ResourceDescriptorHeap[BindlessResourceDescriptorIndex_##name]; \
+        return ResourceDescriptorHeap[BindlessResourcesDescriptorIndex_##name]; \
     }
 
 #define SHADER_CONSTANTS_TEXTURE_2D_ARRAY_UAV(slot, type, name) \
-    int BindlessResourceDescriptorIndex_##name/* : packoffset(c##slot)*/; \
+    int BindlessResourcesDescriptorIndex_##name/* : packoffset(c##slot)*/; \
     RWTexture2DArray<type> Get##name() \
     { \
-        return ResourceDescriptorHeap[BindlessResourceDescriptorIndex_##name]; \
+        return ResourceDescriptorHeap[BindlessResourcesDescriptorIndex_##name]; \
     }
 
 #define SHADER_CONSTANTS_TEXTURE_3D_ARRAY_UAV(slot, type, name) \
-    int BindlessResourceDescriptorIndex_##name/* : packoffset(c##slot)*/; \
+    int BindlessResourcesDescriptorIndex_##name/* : packoffset(c##slot)*/; \
     RWTexture3DArray<type> Get##name() \
     { \
-        return ResourceDescriptorHeap[BindlessResourceDescriptorIndex_##name]; \
+        return ResourceDescriptorHeap[BindlessResourcesDescriptorIndex_##name]; \
     }
 
 #define SHADER_CONSTANTS_CONSTANT_BUFFER_CBV(slot, type, name) \
-    int BindlessResourceDescriptorIndex_##name/* : packoffset(c##slot)*/; \
+    int BindlessResourcesDescriptorIndex_##name/* : packoffset(c##slot)*/; \
     ConstantBuffer<type> Get##name() \
     { \
-        return ResourceDescriptorHeap[BindlessResourceDescriptorIndex_##name]; \
+        return ResourceDescriptorHeap[BindlessResourcesDescriptorIndex_##name]; \
     }
 
 #define SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(slot, type, name) \
-    int BindlessResourceDescriptorIndex_##name/* : packoffset(c##slot)*/; \
+    int BindlessResourcesDescriptorIndex_##name/* : packoffset(c##slot)*/; \
     StructuredBuffer<type> Get##name() \
     { \
-        return ResourceDescriptorHeap[BindlessResourceDescriptorIndex_##name]; \
+        return ResourceDescriptorHeap[BindlessResourcesDescriptorIndex_##name]; \
     }
 
 #define SHADER_CONSTANTS_STRUCTURED_BUFFER_UAV(slot, type, name) \
-    int BindlessResourceDescriptorIndex_##name/* : packoffset(c##slot)*/; \
+    int BindlessResourcesDescriptorIndex_##name/* : packoffset(c##slot)*/; \
     RWStructuredBuffer<type> Get##name() \
     { \
-        return ResourceDescriptorHeap[BindlessResourceDescriptorIndex_##name]; \
+        return ResourceDescriptorHeap[BindlessResourcesDescriptorIndex_##name]; \
     }
 
 #define SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_SRV(slot, name) \
-    int BindlessResourceDescriptorIndex_##name/* : packoffset(c##slot)*/; \
+    int BindlessResourcesDescriptorIndex_##name/* : packoffset(c##slot)*/; \
     ByteAddressBuffer Get##name() \
     { \
-        return ResourceDescriptorHeap[BindlessResourceDescriptorIndex_##name]; \
+        return ResourceDescriptorHeap[BindlessResourcesDescriptorIndex_##name]; \
     }
 
 #define SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_UAV(slot, name) \
-    int BindlessResourceDescriptorIndex_##name/* : packoffset(c##slot)*/; \
+    int BindlessResourcesDescriptorIndex_##name/* : packoffset(c##slot)*/; \
     RWByteAddressBuffer Get##name() \
     { \
-        return ResourceDescriptorHeap[BindlessResourceDescriptorIndex_##name]; \
+        return ResourceDescriptorHeap[BindlessResourcesDescriptorIndex_##name]; \
     }
 
 #define SHADER_CONSTANTS_SCALAR(slot, type, name) \

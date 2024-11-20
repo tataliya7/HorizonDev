@@ -79,7 +79,7 @@ void ImGuiPS(
         discard;
     }
 
-    Texture2D texture = GetBindlessResourceTexture2D(input.textureID);
+    Texture2D texture = GetTexture2D(input.textureID);
     color = input.color * texture.SampleLevel(GlobalSamplerLinearWarp, input.textureCoord0, 0);
 }
 

@@ -11,7 +11,7 @@ float ComputeNormalizedIESProfileMultiplier(int bindlessResourceIndex, float3 wi
     float multiplier = 1.0f;
     if (bindlessResourceIndex >= 0)
     {
-        Texture2D iesTexture = GetBindlessResourceTexture2D(bindlessResourceIndex);
+        Texture2D iesTexture = GetTexture2D(bindlessResourceIndex);
 
         // Transform the negative direction of the incoming light from world space to light space
         float3 iesTextureSampleDirection = mul(worldToLight, wi);
