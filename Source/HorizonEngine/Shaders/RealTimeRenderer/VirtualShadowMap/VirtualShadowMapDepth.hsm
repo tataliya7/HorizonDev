@@ -45,6 +45,9 @@ void VirtualShadowMapDepthPS(in float4 position : SV_Position)
 
     RWTexture2DArray<uint> virtualShadowMapDepthTexture = ShaderConstants.GetVirtualShadowMapDepthTextureUAV();
 
-    uint3 physicalAddress = uint3(virtualAddress, 0);
-    InterlockedMax(virtualShadowMapDepthTexture[physicalAddress], asuint(depth));
+    //if ()
+    {
+        uint3 physicalAddress = uint3(virtualAddress, 0);
+        InterlockedMax(virtualShadowMapDepthTexture[physicalAddress], asuint(depth));
+    }
 }

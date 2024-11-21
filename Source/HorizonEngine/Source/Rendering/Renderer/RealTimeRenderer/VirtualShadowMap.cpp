@@ -209,7 +209,7 @@ namespace Horizon
                     commandList.CopyBuffer(
                         virtualShadowMapShaderParameterUploadBuffer,
                         0,
-                         virtualShadowMapShaderParameterBuffer,
+                        virtualShadowMapShaderParameterBuffer,
                         0,
                         sizeof(VirtualShadowMapShaderParameters));
                 };
@@ -247,7 +247,7 @@ namespace Horizon
             RenderGraphPassFlags::Compute,
             [&](RenderGraphBuilder& builder)
             {
-                virtualShadowMapPhysicalPageDataBuffer = builder.WriteBuffer(virtualShadowMapPhysicalPageDataBuffer, RenderBackendResourceState::CopyDst);
+                virtualShadowMapPhysicalPageDataBuffer = builder.WriteBuffer(virtualShadowMapPhysicalPageDataBuffer, RenderBackendResourceState::UnorderedAccess);
                 //virtualShadowMapPhysicalPageDataBuffer = builder.WriteBuffer(virtualShadowMapPhysicalPageDataBuffer, RenderBackendResourceState::UnorderedAccess);
 
                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)

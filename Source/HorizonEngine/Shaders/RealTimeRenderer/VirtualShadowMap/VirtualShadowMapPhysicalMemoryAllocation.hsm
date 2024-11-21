@@ -29,11 +29,11 @@ void VirtualShadowMapPhysicalMemoryAllocationCS(uint3 dispatchThreadID : SV_Disp
     VirtualShadowMapPhysicalPageData pageData = virtualShadowMapPhysicalPageDataBuffer.Load<VirtualShadowMapPhysicalPageData>(physicalPageIndex * sizeof(VirtualShadowMapPhysicalPageData));
     //uint pageData = virtualShadowMapPhysicalPageDataBuffer.Load<uint>(physicalPageIndex * sizeof(uint));
 
-    if (ShaderConstants.GetTTT() > 0)
-    {
-        virtualShadowMapActivePhysicalPageIndexBuffer.Store<uint>(dispatchThreadID.x * sizeof(uint), 0);
-        return;
-    }
+    // if (ShaderConstants.GetTTT() > 0)
+    // {
+    //     virtualShadowMapActivePhysicalPageIndexBuffer.Store<uint>(dispatchThreadID.x * sizeof(uint), 0);
+    //     return;
+    // }
 
     bool used = (pageData.flags & VIRTUAL_SHADOW_MAP_PHYSICAL_PAGE_DATA_FLAG_BIT_USED) != 0;
     if (used)
