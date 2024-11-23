@@ -13,6 +13,8 @@ namespace Horizon
         RenderGraph& renderGraph,
         const SceneView& view)
     {
+        return;
+
         const RealTimeRendererSceneTextures& sceneTextures = renderGraph.blackboard.Get<RealTimeRendererSceneTextures>();
         const RenderGraphTextureDesc& sceneColorTextureDesc = renderGraph.GetTextureDesc(sceneTextures.sceneColorTexture);
 

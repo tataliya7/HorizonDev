@@ -1700,7 +1700,7 @@ namespace Horizon
             attachmentInfo.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
             attachmentInfo.pNext = nullptr;
             attachmentInfo.imageView = texture->depthStencilViews[0]; // TODO: specify mip level
-            attachmentInfo.imageLayout = depthStencilRenderTarget.depthReadOnly ? VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL : VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+            attachmentInfo.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
             //attachmentInfo.imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL;
             //attachmentInfo.resolveImageView = VK_NULL_HANDLE;
             //attachmentInfo.resolveImageLayout = VK_IMAGE_LAYOUT_UNDEFINED;

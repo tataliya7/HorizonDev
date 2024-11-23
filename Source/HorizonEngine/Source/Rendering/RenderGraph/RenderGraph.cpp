@@ -429,12 +429,11 @@ namespace Horizon
                         .texture = registry.GetRenderBackendTextureHandle(pass->depthStencil.texture),
                         .mipLevel = pass->depthStencil.mipLevel,
                         .arrayLayer = pass->depthStencil.arrayLayer,
-                        .depthReadOnly = pass->depthStencil.depthReadOnly,
-                        .stencilReadOnly = pass->depthStencil.stencilReadOnly,
                         .depthLoadOp = pass->depthStencil.depthLoadOp,
                         .depthStoreOp = pass->depthStencil.depthStoreOp,
                         .stencilLoadOp = pass->depthStencil.stencilLoadOp,
                         .stencilStoreOp = pass->depthStencil.stencilStoreOp,
+                        .depthStencilAccessType = pass->depthStencil.depthStencilAccessType,
                     };
                 }
                 renderPass.allowUAVWrites = pass->allowUAVWrites;

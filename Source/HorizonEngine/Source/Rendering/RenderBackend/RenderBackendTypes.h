@@ -1023,12 +1023,27 @@ namespace Horizon
         Discard,
         Preserve,
         Clear,
+        NoAccess
     };
 
     enum class RenderBackendRenderPassEndingAccessType
     {
         Discard,
         Preserve,
+        NoAccess
+    };
+
+    enum class RenderBackendDepthStencilAccessType
+    {
+        DepthNoAccess_StencilNoAccess,
+        DepthNoAccess_StencilReadOnly,
+        DepthNoAccess_StencilWrite,
+        DepthReadOnly_StencilNoAccess,
+        DepthReadOnly_StencilWrite,
+        DepthReadOnly_StencilReadOnly,
+        DepthWrite_StencilNoAccess,
+        DepthWrite_StencilReadOnly,
+        DepthWrite_StencilWrite,
     };
 
     struct RenderBackendViewport
@@ -1246,12 +1261,11 @@ namespace Horizon
             RenderBackendTextureHandle texture;
             uint32 mipLevel;
             uint32 arrayLayer;
-            bool depthReadOnly;
-            bool stencilReadOnly;
             RenderBackendRenderPassBeginningAccessType depthLoadOp;
             RenderBackendRenderPassEndingAccessType depthStoreOp;
             RenderBackendRenderPassBeginningAccessType stencilLoadOp;
             RenderBackendRenderPassEndingAccessType stencilStoreOp;
+            RenderBackendDepthStencilAccessType depthStencilAccessType;
         };
         bool allowUAVWrites;
         Rect renderArea;

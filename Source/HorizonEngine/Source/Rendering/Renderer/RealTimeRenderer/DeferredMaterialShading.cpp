@@ -59,7 +59,12 @@ namespace Horizon
 
                 builder.BindRenderTarget(0, vbuffer0, RenderBackendRenderPassBeginningAccessType::Clear, RenderBackendRenderPassEndingAccessType::Preserve);
                 builder.BindRenderTarget(1, vbuffer1, RenderBackendRenderPassBeginningAccessType::Clear, RenderBackendRenderPassEndingAccessType::Preserve);
-                builder.BindDepthStencil(sceneDepthTexture, RenderBackendRenderPassBeginningAccessType::Clear, RenderBackendRenderPassEndingAccessType::Preserve, false);
+                builder.BindDepthStencil(sceneDepthTexture,
+                    RenderBackendRenderPassBeginningAccessType::Clear,
+                    RenderBackendRenderPassEndingAccessType::Preserve,
+                    RenderBackendRenderPassBeginningAccessType::NoAccess,
+                    RenderBackendRenderPassEndingAccessType::NoAccess,
+                    RenderBackendDepthStencilAccessType::DepthWrite_StencilNoAccess);
 
                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
                 {
@@ -90,7 +95,12 @@ namespace Horizon
 
                 builder.BindRenderTarget(0, vbuffer0, RenderBackendRenderPassBeginningAccessType::Clear, RenderBackendRenderPassEndingAccessType::Preserve);
                 builder.BindRenderTarget(1, vbuffer1, RenderBackendRenderPassBeginningAccessType::Clear, RenderBackendRenderPassEndingAccessType::Preserve);
-                builder.BindDepthStencil(sceneDepthTexture, RenderBackendRenderPassBeginningAccessType::Clear, RenderBackendRenderPassEndingAccessType::Preserve, false);
+                builder.BindDepthStencil(sceneDepthTexture,
+                    RenderBackendRenderPassBeginningAccessType::Clear,
+                    RenderBackendRenderPassEndingAccessType::Preserve,
+                    RenderBackendRenderPassBeginningAccessType::NoAccess,
+                    RenderBackendRenderPassEndingAccessType::NoAccess,
+                    RenderBackendDepthStencilAccessType::DepthWrite_StencilNoAccess);
 
                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
                 {
@@ -263,7 +273,12 @@ namespace Horizon
                 RenderGraphTextureHandle sceneColorTexture = sceneTextures.sceneColorTexture = builder.WriteTexture(sceneTextures.sceneColorTexture, RenderBackendResourceState::RenderTarget);
 
                 builder.BindRenderTarget(0, sceneColorTexture, RenderBackendRenderPassBeginningAccessType::Preserve, RenderBackendRenderPassEndingAccessType::Preserve);
-                builder.BindDepthStencil(sceneDepthTexture, RenderBackendRenderPassBeginningAccessType::Preserve, RenderBackendRenderPassEndingAccessType::Preserve, true);
+                builder.BindDepthStencil(sceneDepthTexture,
+                    RenderBackendRenderPassBeginningAccessType::Preserve,
+                    RenderBackendRenderPassEndingAccessType::Preserve,
+                    RenderBackendRenderPassBeginningAccessType::NoAccess,
+                    RenderBackendRenderPassEndingAccessType::NoAccess,
+                    RenderBackendDepthStencilAccessType::DepthReadOnly_StencilNoAccess);
 
                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
                 {
@@ -333,7 +348,12 @@ namespace Horizon
                 RenderGraphTextureHandle sceneColorTexture = sceneTextures.sceneColorTexture = builder.WriteTexture(sceneTextures.sceneColorTexture, RenderBackendResourceState::RenderTarget);
 
                 builder.BindRenderTarget(0, sceneColorTexture, RenderBackendRenderPassBeginningAccessType::Preserve, RenderBackendRenderPassEndingAccessType::Preserve);
-                builder.BindDepthStencil(sceneDepthTexture, RenderBackendRenderPassBeginningAccessType::Preserve, RenderBackendRenderPassEndingAccessType::Preserve, true);
+                builder.BindDepthStencil(sceneDepthTexture,
+                    RenderBackendRenderPassBeginningAccessType::Preserve,
+                    RenderBackendRenderPassEndingAccessType::Preserve,
+                    RenderBackendRenderPassBeginningAccessType::NoAccess,
+                    RenderBackendRenderPassEndingAccessType::NoAccess,
+                    RenderBackendDepthStencilAccessType::DepthReadOnly_StencilNoAccess);
 
                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
                 {
@@ -396,7 +416,12 @@ namespace Horizon
                 RenderGraphTextureHandle sceneColorTexture = sceneTextures.sceneColorTexture = builder.WriteTexture(sceneTextures.sceneColorTexture, RenderBackendResourceState::RenderTarget);
 
                 builder.BindRenderTarget(0, sceneColorTexture, RenderBackendRenderPassBeginningAccessType::Preserve, RenderBackendRenderPassEndingAccessType::Preserve);
-                builder.BindDepthStencil(sceneDepthTexture, RenderBackendRenderPassBeginningAccessType::Preserve, RenderBackendRenderPassEndingAccessType::Preserve, true);
+                builder.BindDepthStencil(sceneDepthTexture,
+                    RenderBackendRenderPassBeginningAccessType::Preserve,
+                    RenderBackendRenderPassEndingAccessType::Preserve,
+                    RenderBackendRenderPassBeginningAccessType::NoAccess,
+                    RenderBackendRenderPassEndingAccessType::NoAccess,
+                    RenderBackendDepthStencilAccessType::DepthReadOnly_StencilNoAccess);
 
                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
                 {

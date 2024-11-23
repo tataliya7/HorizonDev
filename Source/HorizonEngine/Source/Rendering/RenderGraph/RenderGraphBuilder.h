@@ -35,19 +35,9 @@ namespace Horizon
             RenderGraphTextureHandle handle,
             RenderBackendRenderPassBeginningAccessType depthLoadOp,
             RenderBackendRenderPassEndingAccessType depthStoreOp,
-            bool depthReadOnly,
-            uint32 mipLevel = 0,
-            uint32 arrayLayer = 0);
-        void BindDepthStencil(
-            RenderGraphTextureHandle handle,
-            RenderBackendRenderPassBeginningAccessType depthLoadOp,
-            RenderBackendRenderPassEndingAccessType depthStoreOp,
-            bool depthReadOnly,
             RenderBackendRenderPassBeginningAccessType stencilLoadOp,
             RenderBackendRenderPassEndingAccessType stencilStoreOp,
-            bool stencilReadOnly,
-            uint32 mipLevel = 0,
-            uint32 arrayLayer = 0);
+            RenderBackendDepthStencilAccessType depthStencilAccessType);
         void SetRenderArea(int32 x, int32 y, uint32 width, uint32 height);
         void SetAllowUAVWrites(bool value);
     private:

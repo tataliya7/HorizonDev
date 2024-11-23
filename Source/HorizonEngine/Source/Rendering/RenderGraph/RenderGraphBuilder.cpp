@@ -106,46 +106,20 @@ namespace Horizon
         RenderGraphTextureHandle handle,
         RenderBackendRenderPassBeginningAccessType depthLoadOp,
         RenderBackendRenderPassEndingAccessType depthStoreOp,
-        bool depthReadOnly,
-        uint32 mipLevel,
-        uint32 arrayLayer)
-    {
-        pass->depthStencil =
-        {
-            .texture = handle,
-            .mipLevel = mipLevel,
-            .arrayLayer = arrayLayer,
-            .depthReadOnly = depthReadOnly,
-            .stencilReadOnly = false,
-            .depthLoadOp = depthLoadOp,
-            .depthStoreOp = depthStoreOp,
-            .stencilLoadOp = RenderBackendRenderPassBeginningAccessType::Discard,
-            .stencilStoreOp = RenderBackendRenderPassEndingAccessType::Discard,
-        };
-    }
-
-    void RenderGraphBuilder::BindDepthStencil(
-        RenderGraphTextureHandle handle,
-        RenderBackendRenderPassBeginningAccessType depthLoadOp,
-        RenderBackendRenderPassEndingAccessType depthStoreOp,
-        bool depthReadOnly,
         RenderBackendRenderPassBeginningAccessType stencilLoadOp,
         RenderBackendRenderPassEndingAccessType stencilStoreOp,
-        bool stencilReadOnly,
-        uint32 mipLevel,
-        uint32 arrayLayer)
+        RenderBackendDepthStencilAccessType depthStencilAccessType)
     {
         pass->depthStencil =
         {
             .texture = handle,
-            .mipLevel = mipLevel,
-            .arrayLayer = arrayLayer,
-            .depthReadOnly = depthReadOnly,
-            .stencilReadOnly = stencilReadOnly,
+            .mipLevel = 0,
+            .arrayLayer = 0,
             .depthLoadOp = depthLoadOp,
             .depthStoreOp = depthStoreOp,
             .stencilLoadOp = stencilLoadOp,
             .stencilStoreOp = stencilStoreOp,
+            .depthStencilAccessType = depthStencilAccessType
         };
     }
 

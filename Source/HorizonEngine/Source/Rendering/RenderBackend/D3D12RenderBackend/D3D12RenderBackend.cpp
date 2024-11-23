@@ -98,6 +98,29 @@ namespace Horizon
         }
     }
 
+    uint32 GetDepthStencilViewIndex(RenderBackendDepthStencilAccessType accessType)
+    {
+        switch (accessType)
+        {
+        case RenderBackendDepthStencilAccessType::DepthNoAccess_StencilNoAccess:
+        case RenderBackendDepthStencilAccessType::DepthNoAccess_StencilWrite:
+        case RenderBackendDepthStencilAccessType::DepthWrite_StencilNoAccess:
+        case RenderBackendDepthStencilAccessType::DepthWrite_StencilWrite:
+            return 0u;
+        case RenderBackendDepthStencilAccessType::DepthReadOnly_StencilNoAccess:
+        case RenderBackendDepthStencilAccessType::DepthReadOnly_StencilWrite:
+            return 1u;
+        case RenderBackendDepthStencilAccessType::DepthNoAccess_StencilReadOnly:
+        case RenderBackendDepthStencilAccessType::DepthWrite_StencilReadOnly:
+            return 2u;
+        case RenderBackendDepthStencilAccessType::DepthReadOnly_StencilReadOnly:
+            return 3u;
+        default:
+            std::unreachable();
+            return ~0u;
+        }
+    }
+
     struct D3D12Adapter
     {
         Microsoft::WRL::ComPtr<IDXGIAdapter> dxgiAdapter;
@@ -294,21 +317,9 @@ namespace Horizon
             return unorderedAccessViews[mipSlice];
         }
 
-        D3D12DepthStencilView* GetDepthStencilView(bool depthReadOnly, bool stencilReadOnly)
+        D3D12DepthStencilView* GetDepthStencilView(uint32 index)
         {
-            uint32 index = 0;
-            if (depthReadOnly && !stencilReadOnly)
-            {
-                index = 1;
-            }
-            if (!depthReadOnly && stencilReadOnly)
-            {
-                index = 2;
-            }
-            if (depthReadOnly && stencilReadOnly)
-            {
-                index = 3;
-            }
+            assert(index <= 3);
             return depthStencilViews[index];
         }
 
@@ -2830,7 +2841,7 @@ namespace Horizon
 
             D3D12Texture* texture = device->GetTexture(depthStencil.texture);
 
-            depthStencilDesc.cpuDescriptor = texture->GetDepthStencilView(depthStencil.depthReadOnly, depthStencil.stencilReadOnly)->descriptor;
+            depthStencilDesc.cpuDescriptor = texture->GetDepthStencilView(GetDepthStencilViewIndex(depthStencil.depthStencilAccessType))->descriptor;
             depthStencilDesc.DepthBeginningAccess.Type = ConvertToD3D12RenderPassBeginningAccessType(depthStencil.depthLoadOp);
             depthStencilDesc.DepthBeginningAccess.Clear.ClearValue = texture->clearValue;
             depthStencilDesc.DepthEndingAccess.Type = ConvertToD3D12RenderPassEndingAccessType(depthStencil.depthStoreOp);
@@ -2844,14 +2855,15 @@ namespace Horizon
         }
 
         D3D12_RENDER_PASS_FLAGS flags = D3D12_RENDER_PASS_FLAG_NONE;
-        if (command.renderPassInfo.depthStencil.depthReadOnly)
+        if (command.renderPassInfo.depthStencil.depthStencilAccessType == RenderBackendDepthStencilAccessType::DepthReadOnly_StencilNoAccess ||
+            command.renderPassInfo.depthStencil.depthStencilAccessType == RenderBackendDepthStencilAccessType::DepthReadOnly_StencilWrite ||
+            command.renderPassInfo.depthStencil.depthStencilAccessType == RenderBackendDepthStencilAccessType::DepthReadOnly_StencilReadOnly)
         {
             flags |= D3D12_RENDER_PASS_FLAG_BIND_READ_ONLY_DEPTH;
-
-            depthStencilDesc.StencilBeginningAccess.Type = D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE_NO_ACCESS;
-            depthStencilDesc.StencilEndingAccess.Type = D3D12_RENDER_PASS_ENDING_ACCESS_TYPE_NO_ACCESS;
         }
-        if (command.renderPassInfo.depthStencil.stencilReadOnly)
+        if (command.renderPassInfo.depthStencil.depthStencilAccessType == RenderBackendDepthStencilAccessType::DepthNoAccess_StencilReadOnly ||
+            command.renderPassInfo.depthStencil.depthStencilAccessType == RenderBackendDepthStencilAccessType::DepthWrite_StencilReadOnly ||
+            command.renderPassInfo.depthStencil.depthStencilAccessType == RenderBackendDepthStencilAccessType::DepthReadOnly_StencilReadOnly)
         {
             flags |= D3D12_RENDER_PASS_FLAG_BIND_READ_ONLY_STENCIL;
         }
@@ -3926,6 +3938,18 @@ extern "C" { _declspec(dllexport) extern const char* D3D12SDKPath = /*u8*/".\\D3
 
         D3D12_FEATURE_DATA_D3D12_OPTIONS11 options11 = {};
         device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS11, &options11, sizeof(options11));
+
+        D3D12_FEATURE_DATA_D3D12_OPTIONS18 options18 = {};
+        device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS18, &options18, sizeof(options18));
+
+        if (options18.RenderPassesValid != TRUE)
+        {
+            LogInfo(GLogger, std::format("Render Pass is not supported."));
+        }
+        else
+        {
+            LogInfo(GLogger, std::format("Render Pass is supported. Tier: {}.", GetD3D12RenderPassesTierName(options5.RenderPassesTier)));
+        }
 
         D3D12_FEATURE_DATA_D3D12_OPTIONS21 options21 = {};
         device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS21, &options21, sizeof(options21));

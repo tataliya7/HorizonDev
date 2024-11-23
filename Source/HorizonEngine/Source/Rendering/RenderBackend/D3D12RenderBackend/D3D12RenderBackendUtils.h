@@ -42,6 +42,23 @@ namespace Horizon
         return TEXT("D3D_FEATURE_LEVEL_INVALID");
     }
 
+    static inline const char* GetD3D12RenderPassesTierName(D3D12_RENDER_PASS_TIER tier)
+    {
+        switch (tier)
+        {
+        case D3D12_RENDER_PASS_TIER_0:
+            return "D3D12_RENDER_PASS_TIER_0";
+        case D3D12_RENDER_PASS_TIER_1:
+            return "D3D12_RENDER_PASS_TIER_1";
+        case D3D12_RENDER_PASS_TIER_2:
+            return "D3D12_RENDER_PASS_TIER_2";
+        default:
+            std::unreachable();
+            break;
+        }
+        return "Unknown";
+    }
+
     static inline const WCHAR* GetD3DShaderModelWCHAR(D3D_SHADER_MODEL shaderModel)
     {
         switch (shaderModel)
@@ -336,32 +353,34 @@ namespace Horizon
         }
     }
 
-    static inline D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE ConvertToD3D12RenderPassBeginningAccessType(RenderBackendRenderPassBeginningAccessType loadOp)
+    static inline D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE ConvertToD3D12RenderPassBeginningAccessType(RenderBackendRenderPassBeginningAccessType accessType)
     {
-        switch (loadOp)
+        switch (accessType)
         {
-            // TODO: NoAction
         case RenderBackendRenderPassBeginningAccessType::Discard:
             return D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE_DISCARD;
         case RenderBackendRenderPassBeginningAccessType::Preserve:
             return D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE_PRESERVE;
         case RenderBackendRenderPassBeginningAccessType::Clear:
             return D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE_CLEAR;
+        case RenderBackendRenderPassBeginningAccessType::NoAccess:
+            return D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE_NO_ACCESS;
         default:
             std::unreachable();
             return D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE_DISCARD;
         }
     }
 
-    static inline D3D12_RENDER_PASS_ENDING_ACCESS_TYPE ConvertToD3D12RenderPassEndingAccessType(RenderBackendRenderPassEndingAccessType StoreOp)
+    static inline D3D12_RENDER_PASS_ENDING_ACCESS_TYPE ConvertToD3D12RenderPassEndingAccessType(RenderBackendRenderPassEndingAccessType accessType)
     {
-        switch (StoreOp)
+        switch (accessType)
         {
-            // TODO: NoAction
         case RenderBackendRenderPassEndingAccessType::Discard:
             return D3D12_RENDER_PASS_ENDING_ACCESS_TYPE_DISCARD;
         case RenderBackendRenderPassEndingAccessType::Preserve:
             return D3D12_RENDER_PASS_ENDING_ACCESS_TYPE_PRESERVE;
+        case RenderBackendRenderPassEndingAccessType::NoAccess:
+            return D3D12_RENDER_PASS_ENDING_ACCESS_TYPE_NO_ACCESS;
         default:
             std::unreachable();
             return D3D12_RENDER_PASS_ENDING_ACCESS_TYPE_DISCARD;

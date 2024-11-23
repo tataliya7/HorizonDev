@@ -76,12 +76,11 @@ namespace Horizon
             RenderGraphTextureHandle texture;
             uint32 mipLevel;
             uint32 arrayLayer;
-            bool depthReadOnly;
-            bool stencilReadOnly;
             RenderBackendRenderPassBeginningAccessType depthLoadOp;
             RenderBackendRenderPassEndingAccessType depthStoreOp;
             RenderBackendRenderPassBeginningAccessType stencilLoadOp;
             RenderBackendRenderPassEndingAccessType stencilStoreOp;
+            RenderBackendDepthStencilAccessType depthStencilAccessType;
         };
         bool allowUAVWrites = false;
         Rect renderArea;
