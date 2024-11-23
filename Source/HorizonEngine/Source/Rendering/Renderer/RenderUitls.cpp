@@ -145,9 +145,20 @@ namespace Horizon
                 commandList.Transitions(transitions, 2);
             }
 
-            RenderBackendRenderPassInfo renderPass = {
-                .renderTargets = { {.texture = textureHandle, .mipLevel = mipLevel, .arrayLayer = 0, .loadOp = RenderBackendRenderPassBeginningAccessType::Discard, .storeOp = RenderBackendRenderPassEndingAccessType::Preserve } },
+            RenderBackendRenderPassInfo renderPass =
+            {
+                .renderTargets =
+                {
+                    {
+                        .texture = textureHandle,
+                        .mipLevel = mipLevel,
+                        .arrayLayer = 0,
+                        .loadOp = RenderBackendRenderPassBeginningAccessType::Discard,
+                        .storeOp = RenderBackendRenderPassEndingAccessType::Preserve
+                    }
+                },
             };
+
             commandList.BeginRenderPass(renderPass);
 
             RenderBackendShaderConstants shaderConstants = {};

@@ -397,6 +397,7 @@ namespace Horizon
                virtualShadowMapDepthTexture = builder.WriteTexture(virtualShadowMapDepthTexture, RenderBackendResourceState::UnorderedAccess);
 
                builder.SetRenderArea(0, 0, virtualShadowMapSize, virtualShadowMapSize);
+               builder.SetAllowUAVWrites(true);
 
                return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
                {

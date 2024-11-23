@@ -279,7 +279,15 @@ namespace Horizon
         RenderBackendRenderPassInfo renderPass =
         {
             .renderTargets =
-                { {.texture = output, .mipLevel = 0, .arrayLayer = 0, .loadOp = RenderBackendRenderPassBeginningAccessType::Clear, .storeOp = RenderBackendRenderPassEndingAccessType::Preserve } },
+            {
+                {
+                    .texture = output,
+                    .mipLevel = 0,
+                    .arrayLayer = 0,
+                    .loadOp = RenderBackendRenderPassBeginningAccessType::Clear,
+                    .storeOp = RenderBackendRenderPassEndingAccessType::Preserve
+                }
+            },
         };
         commandList.BeginRenderPass(renderPass);
 

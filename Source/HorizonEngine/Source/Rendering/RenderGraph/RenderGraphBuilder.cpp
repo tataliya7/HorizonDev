@@ -13,33 +13,49 @@ namespace Horizon
         return RenderGraphBufferHandle();
     }
 
-    RenderGraphTextureHandle RenderGraphBuilder::ReadTexture(RenderGraphTextureHandle handle, RenderBackendResourceState finalState)
+    RenderGraphTextureHandle RenderGraphBuilder::ReadTexture(RenderGraphTextureHandle handle, RenderBackendResourceState initialState)
     {
         pass->textureStates.push_back(RenderGraphPass::TextureState{
             .texture = renderGraph->textures[handle.GetIndex()],
-            .state = finalState,
+            .initialState = initialState,
+            .finalState = initialState,
         });
         pass->inputs.push_back(renderGraph->textures[handle.GetIndex()]);
         renderGraph->textures[handle.GetIndex()]->referenceCount++;
         return handle;
     }
 
-    RenderGraphTextureHandle RenderGraphBuilder::WriteTexture(RenderGraphTextureHandle handle, RenderBackendResourceState finalState)
+    RenderGraphTextureHandle RenderGraphBuilder::WriteTexture(RenderGraphTextureHandle handle, RenderBackendResourceState initialState)
     {
         pass->textureStates.push_back(RenderGraphPass::TextureState{
             .texture = renderGraph->textures[handle.GetIndex()],
-            .state = finalState,
+            .initialState = initialState,
+            .finalState = initialState,
         });
         pass->outputs.push_back(renderGraph->textures[handle.GetIndex()]);
         pass->referenceCount++;
         return handle;
     }
 
-    RenderGraphTextureHandle RenderGraphBuilder::ReadWriteTexture(RenderGraphTextureHandle handle, RenderBackendResourceState finalState)
+    RenderGraphTextureHandle RenderGraphBuilder::WriteTexture(RenderGraphTextureHandle handle, RenderBackendResourceState initialState, RenderBackendResourceState finalState)
+    {
+        pass->textureStates.push_back(RenderGraphPass::TextureState{
+           .texture = renderGraph->textures[handle.GetIndex()],
+           .initialState = initialState,
+           .finalState = finalState,
+        });
+
+        pass->outputs.push_back(renderGraph->textures[handle.GetIndex()]);
+        pass->referenceCount++;
+        return handle;
+    }
+
+    RenderGraphTextureHandle RenderGraphBuilder::ReadWriteTexture(RenderGraphTextureHandle handle, RenderBackendResourceState initialState)
     {
         pass->textureStates.push_back(RenderGraphPass::TextureState{
             .texture = renderGraph->textures[handle.GetIndex()],
-            .state = finalState,
+            .initialState = initialState,
+            .finalState = initialState,
         });
         pass->inputs.push_back(renderGraph->textures[handle.GetIndex()]);
         pass->outputs.push_back(renderGraph->textures[handle.GetIndex()]);
@@ -47,23 +63,29 @@ namespace Horizon
         return handle;
     }
 
-    RenderGraphBufferHandle RenderGraphBuilder::ReadBuffer(RenderGraphBufferHandle handle, RenderBackendResourceState initalState)
-    {
-        return handle;
-    }
-
-    RenderGraphBufferHandle RenderGraphBuilder::WriteBuffer(RenderGraphBufferHandle handle, RenderBackendResourceState state)
+    RenderGraphBufferHandle RenderGraphBuilder::ReadBuffer(RenderGraphBufferHandle handle, RenderBackendResourceState initialState)
     {
         pass->bufferStates.push_back(RenderGraphPass::BufferState{
             .buffer = renderGraph->buffers[handle.GetIndex()],
-            .state = state,
+            .state = initialState,
+        });
+        pass->inputs.push_back(renderGraph->buffers[handle.GetIndex()]);
+        pass->referenceCount++;
+        return handle;
+    }
+
+    RenderGraphBufferHandle RenderGraphBuilder::WriteBuffer(RenderGraphBufferHandle handle, RenderBackendResourceState initialState)
+    {
+        pass->bufferStates.push_back(RenderGraphPass::BufferState{
+            .buffer = renderGraph->buffers[handle.GetIndex()],
+            .state = initialState,
         });
         pass->outputs.push_back(renderGraph->buffers[handle.GetIndex()]);
         pass->referenceCount++;
         return handle;
     }
 
-    RenderGraphBufferHandle RenderGraphBuilder::ReadWriteBuffer(RenderGraphBufferHandle handle, RenderBackendResourceState initalState)
+    RenderGraphBufferHandle RenderGraphBuilder::ReadWriteBuffer(RenderGraphBufferHandle handle, RenderBackendResourceState initialState)
     {
         return handle;
     }
@@ -80,13 +102,21 @@ namespace Horizon
         };
     }
 
-    void RenderGraphBuilder::BindDepthStencil(RenderGraphTextureHandle handle, RenderBackendRenderPassBeginningAccessType depthLoadOp, RenderBackendRenderPassEndingAccessType depthStoreOp, uint32 mipLevel, uint32 arraylayer)
+    void RenderGraphBuilder::BindDepthStencil(
+        RenderGraphTextureHandle handle,
+        RenderBackendRenderPassBeginningAccessType depthLoadOp,
+        RenderBackendRenderPassEndingAccessType depthStoreOp,
+        bool depthReadOnly,
+        uint32 mipLevel,
+        uint32 arrayLayer)
     {
         pass->depthStencil =
         {
             .texture = handle,
             .mipLevel = mipLevel,
-            .arrayLayer = arraylayer,
+            .arrayLayer = arrayLayer,
+            .depthReadOnly = depthReadOnly,
+            .stencilReadOnly = false,
             .depthLoadOp = depthLoadOp,
             .depthStoreOp = depthStoreOp,
             .stencilLoadOp = RenderBackendRenderPassBeginningAccessType::Discard,
@@ -94,13 +124,24 @@ namespace Horizon
         };
     }
 
-    void RenderGraphBuilder::BindDepthStencilTarget(RenderGraphTextureHandle handle, RenderBackendRenderPassBeginningAccessType depthLoadOp, RenderBackendRenderPassEndingAccessType depthStoreOp, RenderBackendRenderPassBeginningAccessType stencilLoadOp, RenderBackendRenderPassEndingAccessType stencilStoreOp, uint32 mipLevel, uint32 arraylayer)
+    void RenderGraphBuilder::BindDepthStencil(
+        RenderGraphTextureHandle handle,
+        RenderBackendRenderPassBeginningAccessType depthLoadOp,
+        RenderBackendRenderPassEndingAccessType depthStoreOp,
+        bool depthReadOnly,
+        RenderBackendRenderPassBeginningAccessType stencilLoadOp,
+        RenderBackendRenderPassEndingAccessType stencilStoreOp,
+        bool stencilReadOnly,
+        uint32 mipLevel,
+        uint32 arrayLayer)
     {
         pass->depthStencil =
         {
             .texture = handle,
             .mipLevel = mipLevel,
-            .arrayLayer = arraylayer,
+            .arrayLayer = arrayLayer,
+            .depthReadOnly = depthReadOnly,
+            .stencilReadOnly = stencilReadOnly,
             .depthLoadOp = depthLoadOp,
             .depthStoreOp = depthStoreOp,
             .stencilLoadOp = stencilLoadOp,
@@ -117,5 +158,10 @@ namespace Horizon
             .width = width,
             .height = height
         };
+    }
+
+    void RenderGraphBuilder::SetAllowUAVWrites(bool value)
+    {
+        pass->allowUAVWrites = value;
     }
 }

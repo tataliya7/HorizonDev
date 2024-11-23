@@ -18,7 +18,7 @@ namespace Horizon
         RayTracing     = (1 << 5),
         NeverGetCulled = (1 << 6),
         SkipRenderPass = (1 << 7),
-        Readback = Copy | NeverGetCulled,
+        Readback       = Copy | NeverGetCulled,
     };
     HORIZON_ENUM_CLASS_OPERATORS(RenderGraphPassFlags);
 
@@ -48,7 +48,8 @@ namespace Horizon
         struct TextureState
         {
             RenderGraphTexture* texture;
-            RenderBackendResourceState state;
+            RenderBackendResourceState initialState;
+            RenderBackendResourceState finalState;
         };
 
         struct BufferState
@@ -75,11 +76,14 @@ namespace Horizon
             RenderGraphTextureHandle texture;
             uint32 mipLevel;
             uint32 arrayLayer;
+            bool depthReadOnly;
+            bool stencilReadOnly;
             RenderBackendRenderPassBeginningAccessType depthLoadOp;
             RenderBackendRenderPassEndingAccessType depthStoreOp;
             RenderBackendRenderPassBeginningAccessType stencilLoadOp;
             RenderBackendRenderPassEndingAccessType stencilStoreOp;
         };
+        bool allowUAVWrites = false;
         Rect renderArea;
         RenderTarget renderTargets[RenderBackendMaxRenderTargetCount];
         DepthStencil depthStencil;

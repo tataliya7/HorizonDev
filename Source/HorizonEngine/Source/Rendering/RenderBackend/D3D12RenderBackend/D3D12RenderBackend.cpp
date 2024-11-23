@@ -268,7 +268,7 @@ namespace Horizon
         D3D12ShaderResourceView* shaderResourceView;
 
         std::vector<D3D12RenderTargetView*> renderTargetViews;
-        D3D12DepthStencilView* depthStencilViews[1];
+        D3D12DepthStencilView* depthStencilViews[4];
         std::vector<D3D12ShaderResourceView*> shaderResourceViews;
         std::vector<D3D12UnorderedAccessView*> unorderedAccessViews;
 
@@ -294,9 +294,22 @@ namespace Horizon
             return unorderedAccessViews[mipSlice];
         }
 
-        D3D12DepthStencilView* GetDepthStencilView()
+        D3D12DepthStencilView* GetDepthStencilView(bool depthReadOnly, bool stencilReadOnly)
         {
-            return depthStencilViews[0];
+            uint32 index = 0;
+            if (depthReadOnly && !stencilReadOnly)
+            {
+                index = 1;
+            }
+            if (!depthReadOnly && stencilReadOnly)
+            {
+                index = 2;
+            }
+            if (depthReadOnly && stencilReadOnly)
+            {
+                index = 3;
+            }
+            return depthStencilViews[index];
         }
 
         ID3D12Resource* GetID3D12Resource()
@@ -579,7 +592,8 @@ namespace Horizon
             uint32 index = AllocateBuffer();
             D3D12Buffer* buffer = buffers[index];
 
-            D3D12_RESOURCE_DESC resourceDesc = {
+            D3D12_RESOURCE_DESC resourceDesc =
+            {
                 .Dimension = D3D12_RESOURCE_DIMENSION_BUFFER,
                 .Alignment = 0,
                 .Width = desc->size,
@@ -587,7 +601,8 @@ namespace Horizon
                 .DepthOrArraySize = 1,
                 .MipLevels = 1,
                 .Format = DXGI_FORMAT_UNKNOWN,
-                .SampleDesc = {
+                .SampleDesc =
+                {
                     .Count = 1,
                     .Quality = 0,
                 },
@@ -595,7 +610,8 @@ namespace Horizon
                 .Flags = GetD3D12ResourceFlags(desc->flags)
             };
 
-            D3D12MA::ALLOCATION_DESC allocationDesc = {
+            D3D12MA::ALLOCATION_DESC allocationDesc =
+            {
                 .Flags = D3D12MA::ALLOCATION_FLAG_NONE,
                 .HeapType = GetD3D12HeapType(desc->flags),
                 .ExtraHeapFlags = D3D12_HEAP_FLAG_NONE, // TODO
@@ -607,7 +623,6 @@ namespace Horizon
             if (EnumClassHasFlags(desc->flags, RenderBackendBufferCreateFlags::Readback))
             {
                 initialState = D3D12_RESOURCE_STATE_COPY_DEST;
-                resourceDesc.Flags |= D3D12_RESOURCE_FLAG_DENY_SHADER_RESOURCE;
             }
             else if (EnumClassHasFlags(desc->flags, RenderBackendBufferCreateFlags::Upload))
             {
@@ -795,7 +810,7 @@ namespace Horizon
                 nullptr,
                 &buffer->allocation,
                 IID_PPV_ARGS(&buffer->resource)));
-            D3D12_CHECK(buffer->resource->SetName(UTF8ToUTF16(buffer->debugName).c_str()))
+            D3D12_CHECK(buffer->resource->SetName(UTF8ToUTF16(buffer->debugName).c_str()));
 
             buffer->gpuAddress = buffer->resource->GetGPUVirtualAddress();
             buffer->size = size;
@@ -1363,7 +1378,27 @@ namespace Horizon
 
                 texture->depthStencilViews[0] = new D3D12DepthStencilView();
                 texture->depthStencilViews[0]->descriptor = dsvDescriptorAllocator.Allocate();
+                dsvDesc.Flags = D3D12_DSV_FLAG_NONE;
                 device->CreateDepthStencilView(texture->GetID3D12Resource(), &dsvDesc, texture->depthStencilViews[0]->descriptor);
+
+                texture->depthStencilViews[1] = new D3D12DepthStencilView();
+                texture->depthStencilViews[1]->descriptor = dsvDescriptorAllocator.Allocate();
+                dsvDesc.Flags = D3D12_DSV_FLAG_READ_ONLY_DEPTH;
+                device->CreateDepthStencilView(texture->GetID3D12Resource(), &dsvDesc, texture->depthStencilViews[1]->descriptor);
+
+                const bool hasStencil = false;
+                if (hasStencil)
+                {
+                    texture->depthStencilViews[2] = new D3D12DepthStencilView();
+                    texture->depthStencilViews[2]->descriptor = dsvDescriptorAllocator.Allocate();
+                    dsvDesc.Flags = D3D12_DSV_FLAG_READ_ONLY_STENCIL;
+                    device->CreateDepthStencilView(texture->GetID3D12Resource(), &dsvDesc, texture->depthStencilViews[2]->descriptor);
+
+                    texture->depthStencilViews[3] = new D3D12DepthStencilView();
+                    texture->depthStencilViews[3]->descriptor = dsvDescriptorAllocator.Allocate();
+                    dsvDesc.Flags = D3D12_DSV_FLAG_READ_ONLY_DEPTH | D3D12_DSV_FLAG_READ_ONLY_STENCIL;
+                    device->CreateDepthStencilView(texture->GetID3D12Resource(), &dsvDesc, texture->depthStencilViews[3]->descriptor);
+                }
             }
 
             if (EnumClassHasFlags(desc->flags, RenderBackendTextureCreateFlags::UnorderedAccess))
@@ -2387,90 +2422,137 @@ namespace Horizon
         for (uint32 i = 0; i < command.transitionCount; i++)
         {
             const RenderBackendBarrier& transition = command.transitions[i];
-            assert(transition.stateBefore != transition.stateAfter);
 
+            // Before and after states must be different.
+            bool isTransitionBarrier = transition.stateBefore != transition.stateAfter;
 
-            switch (transition.type)
+            if ((transition.stateBefore == RenderBackendResourceState::UnorderedAccess) && (transition.stateAfter == RenderBackendResourceState::UnorderedAccess))
             {
-            case RenderBackendBarrier::Type::Texture:
+                isTransitionBarrier = false;
+            }
+            else
             {
-                D3D12Texture* texture = device->GetTexture(transition.texture);
-                uint32 firstLevel  = transition.textureRange.firstLevel;
-                uint32 firstLayer  = transition.textureRange.firstLayer;
-                uint32 planeSlice  = 0;
-                uint32 mipLevels   = (transition.textureRange.mipLevels == RenderBackendTextureSubresourceRange::RemainingMipLevels) ? (texture->mipLevels - firstLevel) : (transition.textureRange.mipLevels);
-                uint32 arraySlices = (transition.textureRange.arrayLayers == RenderBackendTextureSubresourceRange::RemainingArrayLayers) ? (texture->arraySize - firstLayer) : (transition.textureRange.arrayLayers);
+                assert(transition.stateBefore != transition.stateAfter);
+            }
 
-                //printf("Processing Texture State Transition: %s, initial state: %d, state before: %d, state after: %d\n", texture->debugName.c_str(), texture->initialState, transition.stateBefore, transition.stateAfter);
-
-                if (transition.textureRange.IsAll())
+            if (isTransitionBarrier)
+            {
+                switch (transition.type)
                 {
-                    D3D12_RESOURCE_BARRIER barrier = {};
-                    barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-                    barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-                    barrier.Transition.pResource = texture->GetID3D12Resource();
-                    barrier.Transition.StateBefore = (transition.stateBefore != RenderBackendResourceState::Undefined) ? ConvertToD3D12ResourceState(transition.stateBefore) : ConvertToD3D12ResourceState(texture->initialState);
-                    barrier.Transition.StateAfter = ConvertToD3D12ResourceState(transition.stateAfter);
-                    barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-
-                    // Before and after states must be different.
-                    // TODO: better way?
-                    if (barrier.Transition.StateBefore != barrier.Transition.StateAfter)
-                    {
-                        barriers.emplace_back(barrier);
-                    }
-                }
-                else
+                case RenderBackendBarrier::Type::Texture:
                 {
-                    for (uint32 mipSlice = firstLevel; mipSlice < firstLevel + mipLevels; mipSlice++)
+                    D3D12Texture* texture = device->GetTexture(transition.texture);
+                    uint32 firstLevel = transition.textureRange.firstLevel;
+                    uint32 firstLayer = transition.textureRange.firstLayer;
+                    uint32 planeSlice = 0;
+                    uint32 mipLevels = (transition.textureRange.mipLevels == RenderBackendTextureSubresourceRange::RemainingMipLevels) ? (texture->mipLevels - firstLevel) : (transition.textureRange.mipLevels);
+                    uint32 arraySlices = (transition.textureRange.arrayLayers == RenderBackendTextureSubresourceRange::RemainingArrayLayers) ? (texture->arraySize - firstLayer) : (transition.textureRange.arrayLayers);
+
+                    // LogVerbose(GLogger, std::format("Processing Texture State Transition: {}, initial state: {}, state before: {}, state after: {}, firstLevel: {}, mipLevels: {}, firstLayer: {}, arraySlices: {}",
+                    //     texture->debugName,
+                    //     int(texture->initialState),
+                    //     int(transition.stateBefore),
+                    //     int(transition.stateAfter),
+                    //     firstLevel,
+                    //     mipLevels,
+                    //     firstLayer,
+                    //     arraySlices));
+
+                    if (transition.textureRange.IsAll())
                     {
-                        for (uint32 arraySlice = firstLayer; arraySlice < firstLayer + arraySlices; arraySlice++)
+                        D3D12_RESOURCE_BARRIER barrier = {};
+                        barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+                        barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+                        barrier.Transition.pResource = texture->GetID3D12Resource();
+                        barrier.Transition.StateBefore = (transition.stateBefore != RenderBackendResourceState::Undefined) ? ConvertToD3D12ResourceState(transition.stateBefore) : ConvertToD3D12ResourceState(texture->initialState);
+                        barrier.Transition.StateAfter = ConvertToD3D12ResourceState(transition.stateAfter);
+                        barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+
+                        // Before and after states must be different.
+                        // TODO: better way?
+                        if (barrier.Transition.StateBefore != barrier.Transition.StateAfter)
                         {
-                            D3D12_RESOURCE_BARRIER barrier = {};
-                            barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-                            barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-                            barrier.Transition.pResource = texture->GetID3D12Resource();
-                            barrier.Transition.StateBefore = (transition.stateBefore != RenderBackendResourceState::Undefined) ? ConvertToD3D12ResourceState(transition.stateBefore) : ConvertToD3D12ResourceState(texture->initialState);
-                            barrier.Transition.StateAfter = ConvertToD3D12ResourceState(transition.stateAfter);
-                            barrier.Transition.Subresource = D3D12CalcSubresource(mipSlice, arraySlice, planeSlice, texture->mipLevels, texture->arraySize);
-
-                            // Before and after states must be different.
-                            // TODO: better way?
-                            if (barrier.Transition.StateBefore != barrier.Transition.StateAfter)
+                            barriers.emplace_back(barrier);
+                        }
+                    }
+                    else
+                    {
+                        for (uint32 mipSlice = firstLevel; mipSlice < firstLevel + mipLevels; mipSlice++)
+                        {
+                            for (uint32 arraySlice = firstLayer; arraySlice < firstLayer + arraySlices; arraySlice++)
                             {
-                                barriers.emplace_back(barrier);
+                                D3D12_RESOURCE_BARRIER barrier = {};
+                                barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+                                barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+                                barrier.Transition.pResource = texture->GetID3D12Resource();
+                                barrier.Transition.StateBefore = (transition.stateBefore != RenderBackendResourceState::Undefined) ? ConvertToD3D12ResourceState(transition.stateBefore) : ConvertToD3D12ResourceState(texture->initialState);
+                                barrier.Transition.StateAfter = ConvertToD3D12ResourceState(transition.stateAfter);
+                                barrier.Transition.Subresource = D3D12CalcSubresource(mipSlice, arraySlice, planeSlice, texture->mipLevels, texture->arraySize);
+
+                                // Before and after states must be different.
+                                // TODO: better way?
+                                if (barrier.Transition.StateBefore != barrier.Transition.StateAfter)
+                                {
+                                    barriers.emplace_back(barrier);
+                                }
                             }
                         }
                     }
-                }
-                if ((transition.stateBefore == RenderBackendResourceState::Undefined) && !texture->isSwapChainBuffer)
-                {
-                    D3D12DiscardResourceDesc& discard = resourcesToDiscard.emplace_back();
-                    discard.resource = texture->GetID3D12Resource();
-                    discard.region.FirstSubresource = D3D12CalcSubresource(firstLevel, firstLayer, planeSlice, texture->mipLevels, texture->arraySize);
-                    discard.region.NumSubresources = GetNumSubresources(device->GetID3D12Device(), mipLevels, arraySlices, texture->format);
-                    discard.region.NumRects = 0;
-                    discard.region.pRects = nullptr;
 
-                    discard.debug = texture->debugName;
-                }
-            } break;
-            case RenderBackendBarrier::Type::Buffer:
-            {
-                D3D12Buffer* buffer = device->GetBuffer(transition.buffer);
-                auto& barrier = barriers.emplace_back();
-                barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-                barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-                barrier.Transition.pResource = buffer->GetID3D12Resource();
-                barrier.Transition.StateBefore = ConvertToD3D12ResourceState(transition.stateBefore);
-                barrier.Transition.StateAfter = ConvertToD3D12ResourceState(transition.stateAfter);
-                barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-                /*if (transition.stateBefore == RenderBackendResourceState::Undefined)
+                    if ((transition.stateBefore == RenderBackendResourceState::Undefined) && !texture->isSwapChainBuffer)
+                    {
+                        D3D12DiscardResourceDesc& discard = resourcesToDiscard.emplace_back();
+                        discard.resource = texture->GetID3D12Resource();
+                        discard.region.FirstSubresource = D3D12CalcSubresource(firstLevel, firstLayer, planeSlice, texture->mipLevels, texture->arraySize);
+                        discard.region.NumSubresources = GetNumSubresources(device->GetID3D12Device(), mipLevels, arraySlices, texture->format);
+                        discard.region.NumRects = 0;
+                        discard.region.pRects = nullptr;
+                        discard.debug = texture->debugName;
+                    }
+                } break;
+                case RenderBackendBarrier::Type::Buffer:
                 {
-                    D3D12DiscardResourceDesc& discard = resourcesToDiscard.emplace_back();
-                    discard.resource = buffer->GetID3D12Resource();
-                }*/
-            } break;
+                    D3D12Buffer* buffer = device->GetBuffer(transition.buffer);
+
+                    D3D12_RESOURCE_BARRIER& barrier = barriers.emplace_back();
+                    barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+                    barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+                    barrier.Transition.pResource = buffer->GetID3D12Resource();
+                    barrier.Transition.StateBefore = ConvertToD3D12ResourceState(transition.stateBefore);
+                    barrier.Transition.StateAfter = ConvertToD3D12ResourceState(transition.stateAfter);
+                    barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+
+                    /*if (transition.stateBefore == RenderBackendResourceState::Undefined)
+                    {
+                        D3D12DiscardResourceDesc& discard = resourcesToDiscard.emplace_back();
+                        discard.resource = buffer->GetID3D12Resource();
+                    }*/
+                } break;
+                }
+            }
+            else
+            {
+                switch (transition.type)
+                {
+                case RenderBackendBarrier::Type::Texture:
+                {
+                    D3D12Texture* texture = device->GetTexture(transition.texture);
+
+                    D3D12_RESOURCE_BARRIER& barrier = barriers.emplace_back();
+                    barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_UAV;
+                    barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+                    barrier.UAV.pResource = texture->GetID3D12Resource();
+                } break;
+                case RenderBackendBarrier::Type::Buffer:
+                {
+                    D3D12Buffer* buffer = device->GetBuffer(transition.buffer);
+
+                    D3D12_RESOURCE_BARRIER& barrier = barriers.emplace_back();
+                    barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_UAV;
+                    barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+                    barrier.UAV.pResource = buffer->GetID3D12Resource();
+                } break;
+                }
             }
         }
 
@@ -2484,7 +2566,6 @@ namespace Horizon
         {
             for (D3D12DiscardResourceDesc& discard : resourcesToDiscard)
             {
-                //printf("Discard: %s\n", discard.debug.c_str());
                 commandList->GetID3D12GraphicsCommandList6()->DiscardResource(discard.resource, (discard.region.NumSubresources > 0) ? &discard.region : nullptr);
             }
         }
@@ -2504,7 +2585,8 @@ namespace Horizon
                 D3D12Texture* texture = device->GetTexture(transition.texture);
                 D3D12_TEXTURE_BARRIER& textureBarrier = textureBarriers.emplace_back();
 
-                D3D12_BARRIER_SUBRESOURCE_RANGE subresourceRange = {
+                D3D12_BARRIER_SUBRESOURCE_RANGE subresourceRange =
+                {
                     .IndexOrFirstMipLevel = transition.textureRange.firstLevel,
                     .NumMipLevels = (transition.textureRange.mipLevelCount == RenderBackendTextureSubresourceRange::RemainingMipLevels) ? (texture->mipLevelCount - transition.textureRange.firstLevel) : transition.textureRange.mipLevelCount,
                     .FirstArraySlice = transition.textureRange.firstLayer,
@@ -2710,19 +2792,18 @@ namespace Horizon
 
     bool D3D12RenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandBeginRenderPass& command)
     {
-        D3D12_RENDER_PASS_FLAGS flags = D3D12_RENDER_PASS_FLAG_NONE;
-
         UINT numRenderTargets = 0;
         D3D12_RENDER_PASS_RENDER_TARGET_DESC renderTargetDescs[D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT] = {};
 
         bool hasDepthStencil = false;
         D3D12_RENDER_PASS_DEPTH_STENCIL_DESC depthStencilDesc = {};
 
-        activeRenderPass.hasDepthStencil = false;
         activeRenderPass.numRenderTargets = 0;
+        activeRenderPass.hasDepthStencil = false;
 
         for (uint32 index = 0; index < RenderBackendMaxRenderTargetCount; index++)
         {
+            // TODO: remove this
             const auto& renderTarget = command.renderPassInfo.renderTargets[index];
             if (!renderTarget.texture)
             {
@@ -2749,7 +2830,7 @@ namespace Horizon
 
             D3D12Texture* texture = device->GetTexture(depthStencil.texture);
 
-            depthStencilDesc.cpuDescriptor = texture->GetDepthStencilView()->descriptor;
+            depthStencilDesc.cpuDescriptor = texture->GetDepthStencilView(depthStencil.depthReadOnly, depthStencil.stencilReadOnly)->descriptor;
             depthStencilDesc.DepthBeginningAccess.Type = ConvertToD3D12RenderPassBeginningAccessType(depthStencil.depthLoadOp);
             depthStencilDesc.DepthBeginningAccess.Clear.ClearValue = texture->clearValue;
             depthStencilDesc.DepthEndingAccess.Type = ConvertToD3D12RenderPassEndingAccessType(depthStencil.depthStoreOp);
@@ -2760,6 +2841,24 @@ namespace Horizon
 
             activeRenderPass.hasDepthStencil = true;
             activeRenderPass.depthStencilViewFormat = texture->format;
+        }
+
+        D3D12_RENDER_PASS_FLAGS flags = D3D12_RENDER_PASS_FLAG_NONE;
+        if (command.renderPassInfo.depthStencil.depthReadOnly)
+        {
+            flags |= D3D12_RENDER_PASS_FLAG_BIND_READ_ONLY_DEPTH;
+
+            depthStencilDesc.StencilBeginningAccess.Type = D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE_NO_ACCESS;
+            depthStencilDesc.StencilEndingAccess.Type = D3D12_RENDER_PASS_ENDING_ACCESS_TYPE_NO_ACCESS;
+        }
+        if (command.renderPassInfo.depthStencil.stencilReadOnly)
+        {
+            flags |= D3D12_RENDER_PASS_FLAG_BIND_READ_ONLY_STENCIL;
+        }
+
+        if (command.renderPassInfo.allowUAVWrites)
+        {
+            flags |= D3D12_RENDER_PASS_FLAG_ALLOW_UAV_WRITES;
         }
 
         commandList->GetID3D12GraphicsCommandList6()->BeginRenderPass(numRenderTargets, renderTargetDescs, hasDepthStencil ? &depthStencilDesc : nullptr, flags);

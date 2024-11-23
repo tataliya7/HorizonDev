@@ -89,7 +89,7 @@ namespace Horizon
                 velocityDilationDepthTexture = builder.WriteTexture(velocityDilationDepthTexture, RenderBackendResourceState::DepthStencil);
 
                 builder.BindRenderTarget(0, dilatedVelocityRangeTexture, RenderBackendRenderPassBeginningAccessType::Discard, RenderBackendRenderPassEndingAccessType::Preserve);
-                builder.BindDepthStencil(velocityDilationDepthTexture, RenderBackendRenderPassBeginningAccessType::Clear, RenderBackendRenderPassEndingAccessType::Discard);
+                builder.BindDepthStencil(velocityDilationDepthTexture, RenderBackendRenderPassBeginningAccessType::Clear, RenderBackendRenderPassEndingAccessType::Discard, false);
 
                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
                 {

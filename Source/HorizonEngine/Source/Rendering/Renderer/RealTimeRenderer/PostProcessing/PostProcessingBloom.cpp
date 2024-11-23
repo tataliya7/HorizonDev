@@ -21,8 +21,8 @@ namespace Horizon
         uint32 mip0Width = targetResolution.width / 2;
         uint32 mip0Height = targetResolution.height / 2;
 
-        uint32 numPasses = std::min(6u, Math::MaxMipLevelCount(mip0Width, mip0Height));
-        if (numPasses < 1)
+        uint32 passCount = std::min(6u, Math::MaxMipLevelCount(mip0Width, mip0Height));
+        if (passCount < 1)
         {
             // TODO
             return RenderGraphTextureHandle::Null;
@@ -34,7 +34,7 @@ namespace Horizon
         // Downsample
         {
             RenderGraphTextureHandle inputTexture = halfResolutionSceneColorTexture;
-            for (uint32 passIndex = 0; passIndex < numPasses; passIndex++)
+            for (uint32 passIndex = 0; passIndex < passCount; passIndex++)
             {
                 bool useKarisAverage = (passIndex == 0) ? true : false;
                 uint32 outputTextureWidth = mip0Width >> (1 + passIndex);
@@ -88,13 +88,13 @@ namespace Horizon
         // Upsample
         RenderGraphTextureHandle bloomTexture = RenderGraphTextureHandle::Null;
         {
-            RenderGraphTextureHandle lowResolutionInputTexture = downsampleMipChain[numPasses];
-            for (uint32 passIndex = 0; passIndex < numPasses; passIndex++)
+            RenderGraphTextureHandle lowResolutionInputTexture = downsampleMipChain[passCount];
+            for (uint32 passIndex = 0; passIndex < passCount; passIndex++)
             {
-                RenderGraphTextureHandle downsampledInputTexture = downsampleMipChain[numPasses - 1 - passIndex];
+                RenderGraphTextureHandle downsampledInputTexture = downsampleMipChain[passCount - 1 - passIndex];
 
-                uint32 outputTextureWidth = mip0Width >> (numPasses - passIndex - 1);
-                uint32 outputTextureHeight = mip0Height >> (numPasses - passIndex - 1);
+                uint32 outputTextureWidth = mip0Width >> (passCount - passIndex - 1);
+                uint32 outputTextureHeight = mip0Height >> (passCount - passIndex - 1);
 
                 RenderGraphTextureDesc outputTextureDesc = RenderGraphTextureDesc::Create2D(
                     outputTextureWidth,
@@ -102,6 +102,20 @@ namespace Horizon
                     RenderBackendTextureFormat::R11G11B10Float,
                     RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::UnorderedAccess | RenderBackendTextureCreateFlags::RenderTarget);
                 RenderGraphTextureHandle outputTexture = renderGraph.CreateTexture(outputTextureDesc, "GaussianBloomUpsampleTexture");
+
+                // When a resource has the D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET flag, DiscardResource must be called when the discarded subresource regions are in the D3D12_RESOURCE_STATE_RENDER_TARGET resource barrier state.
+                renderGraph.AddPass(
+                   std::format("DummyPass (Compute, {}x{})", outputTextureWidth, outputTextureHeight),
+                   RenderGraphPassFlags::Compute,
+                   [&](RenderGraphBuilder& builder)
+                   {
+                        outputTexture = builder.WriteTexture(outputTexture, RenderBackendResourceState::RenderTarget);
+
+                        return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
+                        {
+
+                        };
+                   });
 
                 renderGraph.AddPass(
                     std::format("GaussianBloomUpsample (Compute, {}x{})", outputTextureWidth, outputTextureHeight),
@@ -144,7 +158,6 @@ namespace Horizon
 
         return bloomTexture;
     }
-
 
     RenderGraphTextureHandle RealTimeRenderer::DispatchConvolutionBloom(
         RenderGraph& renderGraph,

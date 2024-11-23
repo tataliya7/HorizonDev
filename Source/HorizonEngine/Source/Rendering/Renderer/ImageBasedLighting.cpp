@@ -33,26 +33,25 @@ namespace Horizon
         commandList.Transitions(&transition, 1);
     }
 
-    void GenerateCubemapMips(RenderBackend* renderBackend, ShaderLibrary* shaderLibrary, RenderBackendCommandList& commandList, RenderBackendTextureHandle cubemap, uint32 numMipLevels)
+    void GenerateCubemapMips(RenderBackend* renderBackend, ShaderLibrary* shaderLibrary, RenderBackendCommandList& commandList, RenderBackendTextureHandle cubemapTexture, uint32 mipLevelCount)
     {
         RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::DownsampleCubemap);
 
-        for (uint32 mipLevel = 1; mipLevel < numMipLevels; mipLevel++)
+        for (uint32 mipLevel = 1; mipLevel < mipLevelCount; mipLevel++)
         {
             RenderBackendBarrier transitions[] =
             {
-                RenderBackendBarrier(cubemap, RenderBackendTextureSubresourceRange(mipLevel - 1, 1, 0, RenderBackendTextureSubresourceRange::RemainingArrayLayers), RenderBackendResourceState::UnorderedAccess, RenderBackendResourceState::ShaderResource),
-                RenderBackendBarrier(cubemap, RenderBackendTextureSubresourceRange(mipLevel, 1, 0, RenderBackendTextureSubresourceRange::RemainingArrayLayers), RenderBackendResourceState::Undefined, RenderBackendResourceState::UnorderedAccess)
+                RenderBackendBarrier(cubemapTexture, RenderBackendTextureSubresourceRange(mipLevel - 1, 1, 0, RenderBackendTextureSubresourceRange::RemainingArrayLayers), RenderBackendResourceState::UnorderedAccess, RenderBackendResourceState::ShaderResource),
             };
-            commandList.Transitions(transitions, 2);
+            commandList.Transitions(transitions, 1);
 
-            uint32 threadGroupCountX = CeilDiv(1 << (numMipLevels - mipLevel - 1), 8);
-            uint32 threadGroupCountY = CeilDiv(1 << (numMipLevels - mipLevel - 1), 8);
+            uint32 threadGroupCountX = CeilDiv(1 << (mipLevelCount - mipLevel - 1), 8);
+            uint32 threadGroupCountY = CeilDiv(1 << (mipLevelCount - mipLevel - 1), 8);
             uint32 threadGroupCountZ = 1;
 
             RenderBackendShaderConstants shaderConstants = {};
-            shaderConstants.BindTextureSRV(0, renderBackend->GetTextureSRVBindlessResourceDescriptorIndex(cubemap));
-            shaderConstants.BindTextureUAV(1, renderBackend->GetTextureUAVBindlessResourceDescriptorIndex(cubemap, mipLevel));
+            shaderConstants.BindTextureSRV(0, renderBackend->GetTextureSRVBindlessResourceDescriptorIndex(cubemapTexture));
+            shaderConstants.BindTextureUAV(1, renderBackend->GetTextureUAVBindlessResourceDescriptorIndex(cubemapTexture, mipLevel));
             shaderConstants.BindScalar(2, mipLevel - 1u);
 
             commandList.Dispatch(
@@ -63,7 +62,7 @@ namespace Horizon
                 threadGroupCountZ);
         }
 
-        RenderBackendBarrier transition = RenderBackendBarrier(cubemap, RenderBackendTextureSubresourceRange(numMipLevels - 1, RenderBackendTextureSubresourceRange::RemainingMipLevels, 0, RenderBackendTextureSubresourceRange::RemainingArrayLayers), RenderBackendResourceState::UnorderedAccess, RenderBackendResourceState::ShaderResource);
+        RenderBackendBarrier transition = RenderBackendBarrier(cubemapTexture, RenderBackendTextureSubresourceRange(mipLevelCount - 1, RenderBackendTextureSubresourceRange::RemainingMipLevels, 0, RenderBackendTextureSubresourceRange::RemainingArrayLayers), RenderBackendResourceState::UnorderedAccess, RenderBackendResourceState::ShaderResource);
         commandList.Transitions(&transition, 1);
     }
 
@@ -197,7 +196,7 @@ namespace Horizon
     {
         const uint32 mipLevelCount = Math::MaxMipLevelCount(cubemapSize);
 
-        GenerateCubemapMips(renderBackend, shaderLibrary, commandList, environmentMapTexture, mipLevelCount);
+        //GenerateCubemapMips(renderBackend, shaderLibrary, commandList, environmentMapTexture, mipLevelCount);
 
         const uint32 irradianceEnvironmentMapMipLevelCount = Math::MaxMipLevelCount(GIrradianceEnvironmentMapSize);
         const uint32 sourceMipLevel = Math::Max<uint32>(0, mipLevelCount - irradianceEnvironmentMapMipLevelCount);
@@ -212,7 +211,7 @@ namespace Horizon
 
     void ConvertLatLongToCubemap(RenderBackend* renderBackend, ShaderLibrary* shaderLibrary, RenderBackendCommandList& commandList, RenderBackendTextureHandle latLongTexture, RenderBackendTextureHandle cubemapTexture, uint32 cubemapTextureSize)
     {
-        RenderBackendBarrier transition(cubemapTexture, RenderBackendTextureSubresourceRange(0, 1, 0, 6), RenderBackendResourceState::Undefined, RenderBackendResourceState::UnorderedAccess);
+        RenderBackendBarrier transition(cubemapTexture, RenderBackendTextureSubresourceRange::All, RenderBackendResourceState::Undefined, RenderBackendResourceState::UnorderedAccess);
         commandList.Transitions(&transition, 1);
 
         uint32 threadGroupCountX = CeilDiv(cubemapTextureSize, 8);

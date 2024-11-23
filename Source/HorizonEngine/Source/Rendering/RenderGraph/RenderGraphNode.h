@@ -24,7 +24,7 @@ namespace Horizon
         {
             return referenceCount == 0;
         }
-        char const* GetName() const
+        const char* GetName() const
         {
             return name.c_str();
         }

@@ -782,10 +782,10 @@ namespace Horizon
             uint32 level;
             uint32 layer;
             const void* buffer;
-            uint32         width;
-            uint32         height;
-            uint64         size;
-            uint64         row_pitch_bytes;
+            uint32 width;
+            uint32 height;
+            uint64 size;
+            uint64 row_pitch_bytes;
         };
 
         std::vector<SubresourceData> data;
@@ -799,7 +799,8 @@ namespace Horizon
 
         void AddSubresourceData(uint32 level, uint32 layer, const void* buffer, uint32 width, uint32 height, uint64 size, uint64 row_pitch_bytes)
         {
-            SubresourceData subresourceData = {
+            SubresourceData subresourceData =
+            {
                 .level = level,
                 .layer = layer,
                 .buffer = buffer,
@@ -1245,11 +1246,14 @@ namespace Horizon
             RenderBackendTextureHandle texture;
             uint32 mipLevel;
             uint32 arrayLayer;
+            bool depthReadOnly;
+            bool stencilReadOnly;
             RenderBackendRenderPassBeginningAccessType depthLoadOp;
             RenderBackendRenderPassEndingAccessType depthStoreOp;
             RenderBackendRenderPassBeginningAccessType stencilLoadOp;
             RenderBackendRenderPassEndingAccessType stencilStoreOp;
         };
+        bool allowUAVWrites;
         Rect renderArea;
         RenderTargetDesc renderTargets[RenderBackendMaxRenderTargetCount];
         DepthStencilDesc depthStencil;

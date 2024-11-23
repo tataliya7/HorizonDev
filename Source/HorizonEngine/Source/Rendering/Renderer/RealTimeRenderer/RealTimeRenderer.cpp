@@ -635,7 +635,7 @@ namespace Horizon
         RenderGraphTextureDesc sceneDepthTextureDesc = RenderGraphTextureDesc::Create2D(
             renderResolution.width,
             renderResolution.height,
-            RenderBackendTextureFormat::D32Float,
+            RenderBackendTextureFormat::D32FloatS8Uint,
             RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::DepthStencil,
             clearDepth,
             1,

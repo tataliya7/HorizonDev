@@ -329,20 +329,6 @@ namespace Horizon
 
         editorSceneManager->GetActiveScene()->Tick(deltaTimeInSeconds);
 
-        //RenderBackendCommandList* commandList = renderBackend->AllocateCommandList();
-        //
-        // commandList->BeginDebugLabel();
-        // commandList->BeginTimingQuery();
-        //
-        // RenderBackendRenderPassInfo renderPass = {
-        //     .renderTargets = { {.texture = output, .mipLevel = 0, .arrayLayer = 0, .loadOp = RenderBackendRenderPassBeginningAccessType::Clear, .storeOp = RenderBackendRenderPassEndingAccessType::Preserve } },
-        // };
-        // commandList->BeginRenderPass(renderPass);
-        //
-        // commandList->EndRenderPass();
-        //
-        // commandList->EndTimingQuery();
-        // commandList->EndDebugLabel();
 
         Quaternion cameraOrientation = Math::QuaternionFromEulerAngles(Math::DegreesToRadians(editorCamera.GetRotation()));
 

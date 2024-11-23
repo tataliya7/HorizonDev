@@ -321,7 +321,7 @@ namespace Horizon
         case RenderBackendResourceState::CopySrc:
             return D3D12_RESOURCE_STATE_COPY_SOURCE;
         case RenderBackendResourceState::DepthStencilReadOnly:
-            return D3D12_RESOURCE_STATE_DEPTH_READ;
+            return D3D12_RESOURCE_STATE_DEPTH_READ | D3D12_RESOURCE_STATE_ALL_SHADER_RESOURCE;
         case RenderBackendResourceState::DepthStencil:
             return D3D12_RESOURCE_STATE_DEPTH_WRITE; // TODO
         case RenderBackendResourceState::RenderTarget:
@@ -340,6 +340,7 @@ namespace Horizon
     {
         switch (loadOp)
         {
+            // TODO: NoAction
         case RenderBackendRenderPassBeginningAccessType::Discard:
             return D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE_DISCARD;
         case RenderBackendRenderPassBeginningAccessType::Preserve:
@@ -356,6 +357,7 @@ namespace Horizon
     {
         switch (StoreOp)
         {
+            // TODO: NoAction
         case RenderBackendRenderPassEndingAccessType::Discard:
             return D3D12_RENDER_PASS_ENDING_ACCESS_TYPE_DISCARD;
         case RenderBackendRenderPassEndingAccessType::Preserve:

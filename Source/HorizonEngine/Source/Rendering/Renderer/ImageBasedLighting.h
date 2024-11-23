@@ -29,8 +29,8 @@ namespace Horizon
         RenderBackend* renderBackend,
         ShaderLibrary* shaderLibrary,
         RenderBackendCommandList& commandList,
-        RenderBackendTextureHandle cubemap,
-        uint32 numMipLevels);
+        RenderBackendTextureHandle cubemapTexture,
+        uint32 mipLevelCount);
 
     extern void PrecomputeEnvironmentMaps(
         RenderBackend* renderBackend,

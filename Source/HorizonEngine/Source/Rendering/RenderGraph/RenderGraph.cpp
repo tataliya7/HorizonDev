@@ -172,12 +172,20 @@ namespace Horizon
         uint32 index = (uint32)buffers.size();
         RenderGraphBufferHandle handle = RenderGraphBufferHandle(index, 0);
 
-        RenderGraphBuffer* buffer = AllocObject<RenderGraphBuffer>(name, externalBuffer->GetDesc());
+        const RenderBackendBufferDesc& bufferDesc = externalBuffer->GetDesc();
+
+        RenderBackendResourceState state = RenderBackendResourceState::ShaderResource;
+        if (EnumClassHasFlags(bufferDesc.flags, RenderBackendBufferCreateFlags::Readback))
+        {
+            state = RenderBackendResourceState::CopyDst;
+        }
+
+        RenderGraphBuffer* buffer = AllocObject<RenderGraphBuffer>(name, bufferDesc);
         buffer->imported = true;
-        buffer->initialState = RenderBackendResourceState::ShaderResource;
-        buffer->finalState = RenderBackendResourceState::ShaderResource;
-        buffer->intermediateState = RenderBackendResourceState::ShaderResource;
-        buffer->SetInternalBuffer(externalBuffer, RenderBackendResourceState::ShaderResource);
+        buffer->initialState = state;
+        buffer->finalState = state;
+        buffer->intermediateState = state;
+        buffer->SetInternalBuffer(externalBuffer, state);
 
         dag.RegisterNode(buffer);
         buffers.push_back(buffer);
@@ -331,14 +339,63 @@ namespace Horizon
             for (RenderGraphPass::TextureState& state : pass->textureStates)
             {
                 RenderGraphTexture* texture = state.texture;
-                if (state.state != texture->intermediateState)
+                if (state.initialState != texture->intermediateState)
                 {
                     RenderBackendBarrier barrier = RenderBackendBarrier(
                         texture->GetRenderBackendTextureHandle(),
                         RenderBackendTextureSubresourceRange::All,
                         texture->intermediateState,
+                        state.initialState);
+                    texture->intermediateState = state.initialState;
+                    pass->barriers.push_back(barrier);
+
+                    // LogVerbose(GLogger, std::format("Render Graph: Texture State Transition: {}, initial state: {}, state before: {}, state after: {}",
+                    //     texture->GetName(),
+                    //     int(texture->initialState),
+                    //     int(texture->intermediateState),
+                    //     int(state.initialState)));
+                }
+                // TODO: mark write/read
+                else if ((state.initialState == RenderBackendResourceState::UnorderedAccess) && (texture->intermediateState == RenderBackendResourceState::UnorderedAccess))
+                {
+                    RenderBackendBarrier barrier = RenderBackendBarrier(
+                        texture->GetRenderBackendTextureHandle(),
+                        RenderBackendTextureSubresourceRange::All,
+                        RenderBackendResourceState::UnorderedAccess,
+                        RenderBackendResourceState::UnorderedAccess);
+                    texture->intermediateState = state.initialState;
+                    pass->barriers.push_back(barrier);
+                }
+
+                // Work around
+                if (texture->finalState != state.initialState && state.finalState != texture->intermediateState)
+                {
+                    texture->intermediateState = state.finalState;
+                }
+            }
+
+            for (RenderGraphPass::BufferState& state : pass->bufferStates)
+            {
+                RenderGraphBuffer* buffer = state.buffer;
+                if (state.state != buffer->intermediateState)
+                {
+                    RenderBackendBarrier barrier = RenderBackendBarrier(
+                        buffer->GetRenderBackendBufferHandle(),
+                        RenderBackendBufferSubresourceRange::Whole,
+                        buffer->intermediateState,
                         state.state);
-                    texture->intermediateState = state.state;
+                    buffer->intermediateState = state.state;
+                    pass->barriers.push_back(barrier);
+                }
+                // TODO: mark write/read
+                else if ((state.state == RenderBackendResourceState::UnorderedAccess) && (buffer->intermediateState == RenderBackendResourceState::UnorderedAccess))
+                {
+                    RenderBackendBarrier barrier = RenderBackendBarrier(
+                        buffer->GetRenderBackendBufferHandle(),
+                        RenderBackendBufferSubresourceRange::Whole,
+                        RenderBackendResourceState::UnorderedAccess,
+                        RenderBackendResourceState::UnorderedAccess);
+                    buffer->intermediateState = state.state;
                     pass->barriers.push_back(barrier);
                 }
             }
@@ -372,12 +429,15 @@ namespace Horizon
                         .texture = registry.GetRenderBackendTextureHandle(pass->depthStencil.texture),
                         .mipLevel = pass->depthStencil.mipLevel,
                         .arrayLayer = pass->depthStencil.arrayLayer,
+                        .depthReadOnly = pass->depthStencil.depthReadOnly,
+                        .stencilReadOnly = pass->depthStencil.stencilReadOnly,
                         .depthLoadOp = pass->depthStencil.depthLoadOp,
                         .depthStoreOp = pass->depthStencil.depthStoreOp,
                         .stencilLoadOp = pass->depthStencil.stencilLoadOp,
                         .stencilStoreOp = pass->depthStencil.stencilStoreOp,
                     };
                 }
+                renderPass.allowUAVWrites = pass->allowUAVWrites;
                 renderPass.renderArea = pass->renderArea;
                 commandList.BeginRenderPass(renderPass);
             }

@@ -100,6 +100,7 @@ namespace Horizon
                     RenderGraphPassFlags::Compute,
                     [&](RenderGraphBuilder& builder)
                     {
+                        capturedEnvironmentMapTexture = builder.WriteTexture(capturedEnvironmentMapTexture, RenderBackendResourceState::UnorderedAccess);
 
                         return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
                         {
@@ -131,7 +132,7 @@ namespace Horizon
             RenderGraphPassFlags::Compute,
             [&](RenderGraphBuilder& builder)
             {
-                capturedEnvironmentMapTexture = builder.WriteTexture(capturedEnvironmentMapTexture, RenderBackendResourceState::ShaderResource);
+                capturedEnvironmentMapTexture = builder.WriteTexture(capturedEnvironmentMapTexture, RenderBackendResourceState::UnorderedAccess, RenderBackendResourceState::ShaderResource);
 
                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
                 {
@@ -139,12 +140,12 @@ namespace Horizon
 
                     for (uint32 mipLevel = 1; mipLevel < environmentMapTextureMipLevelCount; mipLevel++)
                     {
-                        RenderBackendBarrier transitionBefore = RenderBackendBarrier(
+                        RenderBackendBarrier transitions = RenderBackendBarrier(
                             registry.GetRenderBackendTextureHandle(capturedEnvironmentMapTexture),
-                            RenderBackendTextureSubresourceRange(mipLevel, 1, 0, RenderBackendTextureSubresourceRange::RemainingArrayLayers),
-                            RenderBackendResourceState::ShaderResource,
-                            RenderBackendResourceState::UnorderedAccess);
-                        commandList.Transitions(&transitionBefore, 1);
+                            RenderBackendTextureSubresourceRange(mipLevel - 1, 1, 0, RenderBackendTextureSubresourceRange::RemainingArrayLayers),
+                            RenderBackendResourceState::UnorderedAccess,
+                            RenderBackendResourceState::ShaderResource);
+                        commandList.Transitions(&transitions, 1);
 
                         uint32 threadGroupCountX = CeilDiv(1 << (environmentMapTextureMipLevelCount - mipLevel - 1), 8);
                         uint32 threadGroupCountY = CeilDiv(1 << (environmentMapTextureMipLevelCount - mipLevel - 1), 8);
@@ -161,14 +162,14 @@ namespace Horizon
                             threadGroupCountX,
                             threadGroupCountY,
                             threadGroupCountZ);
-
-                        RenderBackendBarrier transitionAfter = RenderBackendBarrier(
-                            registry.GetRenderBackendTextureHandle(capturedEnvironmentMapTexture),
-                            RenderBackendTextureSubresourceRange(mipLevel, 1, 0, RenderBackendTextureSubresourceRange::RemainingArrayLayers),
-                            RenderBackendResourceState::UnorderedAccess,
-                            RenderBackendResourceState::ShaderResource);
-                        commandList.Transitions(&transitionAfter, 1);
                     }
+
+                    RenderBackendBarrier transition = RenderBackendBarrier(
+                        registry.GetRenderBackendTextureHandle(capturedEnvironmentMapTexture),
+                        RenderBackendTextureSubresourceRange(environmentMapTextureMipLevelCount - 1, 1, 0, RenderBackendTextureSubresourceRange::RemainingArrayLayers),
+                        RenderBackendResourceState::UnorderedAccess,
+                        RenderBackendResourceState::ShaderResource);
+                    commandList.Transitions(&transition, 1);
                 };
             });
 

@@ -17,12 +17,13 @@ namespace Horizon
         ~RenderGraphBuilder() = default;
         RenderGraphTextureHandle CreateTransientTexture(const RenderGraphTextureDesc& desc, const char* name);
         RenderGraphBufferHandle CreateTransientBuffer(const RenderGraphBufferDesc& desc, const char* name);
-        RenderGraphTextureHandle ReadTexture(RenderGraphTextureHandle handle, RenderBackendResourceState initalState);
-        RenderGraphTextureHandle WriteTexture(RenderGraphTextureHandle handle, RenderBackendResourceState initalState);
-        RenderGraphTextureHandle ReadWriteTexture(RenderGraphTextureHandle handle, RenderBackendResourceState initalState);
-        RenderGraphBufferHandle ReadBuffer(RenderGraphBufferHandle handle, RenderBackendResourceState initalState);
-        RenderGraphBufferHandle WriteBuffer(RenderGraphBufferHandle handle, RenderBackendResourceState initalState);
-        RenderGraphBufferHandle ReadWriteBuffer(RenderGraphBufferHandle handle, RenderBackendResourceState initalState);
+        RenderGraphTextureHandle ReadTexture(RenderGraphTextureHandle handle, RenderBackendResourceState initialState);
+        RenderGraphTextureHandle WriteTexture(RenderGraphTextureHandle handle, RenderBackendResourceState initialState);
+        RenderGraphTextureHandle WriteTexture(RenderGraphTextureHandle handle, RenderBackendResourceState initialState, RenderBackendResourceState finalState);
+        RenderGraphTextureHandle ReadWriteTexture(RenderGraphTextureHandle handle, RenderBackendResourceState initialState);
+        RenderGraphBufferHandle ReadBuffer(RenderGraphBufferHandle handle, RenderBackendResourceState initialState);
+        RenderGraphBufferHandle WriteBuffer(RenderGraphBufferHandle handle, RenderBackendResourceState initialState);
+        RenderGraphBufferHandle ReadWriteBuffer(RenderGraphBufferHandle handle, RenderBackendResourceState initialState);
         void BindRenderTarget(
             uint32 slot,
             RenderGraphTextureHandle handle,
@@ -34,17 +35,21 @@ namespace Horizon
             RenderGraphTextureHandle handle,
             RenderBackendRenderPassBeginningAccessType depthLoadOp,
             RenderBackendRenderPassEndingAccessType depthStoreOp,
+            bool depthReadOnly,
             uint32 mipLevel = 0,
-            uint32 arraylayer = 0);
-        void BindDepthStencilTarget(
+            uint32 arrayLayer = 0);
+        void BindDepthStencil(
             RenderGraphTextureHandle handle,
             RenderBackendRenderPassBeginningAccessType depthLoadOp,
             RenderBackendRenderPassEndingAccessType depthStoreOp,
+            bool depthReadOnly,
             RenderBackendRenderPassBeginningAccessType stencilLoadOp,
             RenderBackendRenderPassEndingAccessType stencilStoreOp,
+            bool stencilReadOnly,
             uint32 mipLevel = 0,
-            uint32 arraylayer = 0);
+            uint32 arrayLayer = 0);
         void SetRenderArea(int32 x, int32 y, uint32 width, uint32 height);
+        void SetAllowUAVWrites(bool value);
     private:
         RenderGraph* const renderGraph;
         RenderGraphPass* const pass;

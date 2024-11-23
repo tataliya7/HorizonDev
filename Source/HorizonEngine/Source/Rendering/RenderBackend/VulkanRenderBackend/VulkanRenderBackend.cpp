@@ -1700,7 +1700,7 @@ namespace Horizon
             attachmentInfo.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
             attachmentInfo.pNext = nullptr;
             attachmentInfo.imageView = texture->depthStencilViews[0]; // TODO: specify mip level
-            attachmentInfo.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+            attachmentInfo.imageLayout = depthStencilRenderTarget.depthReadOnly ? VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL : VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
             //attachmentInfo.imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL;
             //attachmentInfo.resolveImageView = VK_NULL_HANDLE;
             //attachmentInfo.resolveImageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
@@ -2779,7 +2779,8 @@ namespace Horizon
         VK_CHECK(vkCreateShaderModule(handle, &shaderModuleInfo, VULKAN_ALLOCATION_CALLBACKS, &shaderModule));
         SetDebugUtilsObjectName(VK_OBJECT_TYPE_SHADER_MODULE, reinterpret_cast<uint64_t>(shaderModule), name);
 
-        VkPipelineShaderStageCreateInfo pipelineShaderStageCreateInfo = {
+        VkPipelineShaderStageCreateInfo pipelineShaderStageCreateInfo =
+        {
             .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
             .stage = stage,
             .module = shaderModule,
@@ -3556,7 +3557,8 @@ namespace Horizon
 
         VkSampleMask sampleMask = 0xFFFFFFFF;
 
-        VkPipelineMultisampleStateCreateInfo multisamplingStateInfo = {
+        VkPipelineMultisampleStateCreateInfo multisamplingStateInfo = 
+        {
             .sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO,
             .rasterizationSamples = VK_SAMPLE_COUNT_1_BIT,
             .sampleShadingEnable = VK_FALSE,
@@ -3566,7 +3568,8 @@ namespace Horizon
             .alphaToOneEnable = VK_FALSE,
         };
 
-        VkGraphicsPipelineCreateInfo graphicsPipelineInfo = {
+        VkGraphicsPipelineCreateInfo graphicsPipelineInfo = 
+        {
             .sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
             .pNext = useDynamicRendering ? &renderingInfo->pipelineRenderingInfo : nullptr,
             .stageCount = static_cast<uint32_t>(stages.size()),

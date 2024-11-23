@@ -75,6 +75,12 @@ namespace Horizon
     //     High,
     // };
 
+    enum class GlobalIlluminationTechnique
+    {
+        None,
+        Surfel,
+    };
+
     struct GlobalIlluminationSettings
     {
         Vector3 indirectLightingColor = Vector3(1.0f, 1.0f, 1.0f);
