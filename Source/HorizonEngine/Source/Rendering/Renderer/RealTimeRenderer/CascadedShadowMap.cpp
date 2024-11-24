@@ -96,6 +96,7 @@ namespace Horizon
         const float shadowCascadeSplitLambda = light.shadowCascadeSplitLambda;
         const float shadowCascadeTransitionScale = light.shadowCascadeTransitionScale;
         const Vector3f lightDirection = light.GetDirection();
+        const float maxShadowDistance = std::min(light.maxShadowDistance, cameraFarClippingPlane);
 
         outCascadedShadowMapRenderData.resolution = shadowMapSize;
         outCascadedShadowMapRenderData.cascadeCount = shadowCascadeCount;
@@ -104,8 +105,8 @@ namespace Horizon
         {
             ShadowMapCascadeData& cascadeData = outCascadedShadowMapRenderData.cascadeData[cascadeIndex];
 
-            float cascadeStartDistance = CascadedShadowMapPracticalSplitScheme(cascadeIndex, shadowCascadeCount, cameraNearClippingPlane, cameraFarClippingPlane, shadowCascadeSplitLambda);
-            float cascadeEndDistance = CascadedShadowMapPracticalSplitScheme(cascadeIndex + 1, shadowCascadeCount, cameraNearClippingPlane, cameraFarClippingPlane, shadowCascadeSplitLambda);
+            float cascadeStartDistance = CascadedShadowMapPracticalSplitScheme(cascadeIndex, shadowCascadeCount, cameraNearClippingPlane, maxShadowDistance, shadowCascadeSplitLambda);
+            float cascadeEndDistance = CascadedShadowMapPracticalSplitScheme(cascadeIndex + 1, shadowCascadeCount, cameraNearClippingPlane, maxShadowDistance, shadowCascadeSplitLambda);
 
             float transitionRange = (cascadeEndDistance - cascadeStartDistance) * shadowCascadeTransitionScale;
 

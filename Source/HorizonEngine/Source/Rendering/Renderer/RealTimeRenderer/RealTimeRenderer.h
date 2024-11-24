@@ -599,5 +599,47 @@ namespace Horizon
             debugDrawLinesVertices.push_back(start);
             debugDrawLinesVertices.push_back(end);
         }
+
+        void DrawSphere(
+            const Vector3& center,
+            float radius,
+            const Vector4& color)
+        {
+            // x
+            for (uint32 i = 0; i < 32; i++)
+            {
+                float theta1 = float(i) / 32.0f * 2.0f * M_PI;
+                float theta2 = float(uint32((i + 1) % 32)) / 32.0f * 2.0f * M_PI;
+                Vector3f c1 = Vector3f(0.0f, std::cos(theta1), std::sin(theta1));
+                Vector3f c2 = Vector3f(0.0f, std::cos(theta2), std::sin(theta2));
+
+                debugDrawLinesVertices.push_back(center + radius * c1);
+                debugDrawLinesVertices.push_back(center + radius * c2);
+            }
+
+            // y
+            for (uint32 i = 0; i < 32; i++)
+            {
+                float theta1 = float(i) / 32.0f * 2.0f * M_PI;
+                float theta2 = float(uint32((i + 1) % 32)) / 32.0f * 2.0f * M_PI;
+                Vector3f c1 = Vector3f(std::cos(theta1), 0.0f, std::sin(theta1));
+                Vector3f c2 = Vector3f(std::cos(theta2), 0.0f, std::sin(theta2));
+
+                debugDrawLinesVertices.push_back(center + radius * c1);
+                debugDrawLinesVertices.push_back(center + radius * c2);
+            }
+
+            // z
+            for (uint32 i = 0; i < 32; i++)
+            {
+                float theta1 = float(i) / 32.0f * 2.0f * M_PI;
+                float theta2 = float(uint32((i + 1) % 32)) / 32.0f * 2.0f * M_PI;
+                Vector3f c1 = Vector3f(std::cos(theta1), std::sin(theta1), 0.0f);
+                Vector3f c2 = Vector3f(std::cos(theta2), std::sin(theta2), 0.0f);
+
+                debugDrawLinesVertices.push_back(center + radius * c1);
+                debugDrawLinesVertices.push_back(center + radius * c2);
+            }
+        }
     };
 }

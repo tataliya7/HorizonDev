@@ -11,6 +11,25 @@ namespace Horizon
         Orthographic,
     };
 
+    enum class FieldOfViewAxis
+    {
+        Vertical,
+        Horizontal,
+        Major
+    };
+
+    static float VerticalFOVToHorizontalFOV(float verticalFOV, float aspectRatio)
+    {
+        float horizontalFOV = 2.0f * std::atan(std::tan(verticalFOV * 0.5f) * aspectRatio);
+        return horizontalFOV;
+    }
+
+    static float HorizontalFOVToVerticalFOV(float horizontalFOV, float aspectRatio)
+    {
+        float verticalFOV = 2.0f * std::atan(std::tan(horizontalFOV * 0.5f) / aspectRatio);
+        return verticalFOV;
+    }
+
     struct CameraComponent
     {
         CameraProjectionMode projectionMode;
@@ -18,6 +37,8 @@ namespace Horizon
         float nearClippingPlane;
 
         float farClippingPlane;
+
+        FieldOfViewAxis fieldOfViewAxis;
 
         float fieldOfView;
 

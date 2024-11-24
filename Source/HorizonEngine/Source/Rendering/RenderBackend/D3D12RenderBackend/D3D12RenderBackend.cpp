@@ -724,7 +724,7 @@ namespace Horizon
                 buffer->bindlessResourceDescriptorIndexCBV = AllocateResourceDescriptorIndex();
                 if (buffer->bindlessResourceDescriptorIndexCBV >= 0)
                 {
-                    assert(buffer->bindlessResourceDescriptorIndexCBV < D3D12_BINDLESS_MAX_NUM_RESOURCE_DESCRIPTOERS);
+                    assert(buffer->bindlessResourceDescriptorIndexCBV < D3D12_RENDER_BACKEND_BINDLESS_MAX_NUM_RESOURCE_DESCRIPTOERS);
                     D3D12_CPU_DESCRIPTOR_HANDLE rangeStart = resourceDescriptorHeap->cpuDescriptorHandle;
                     rangeStart.ptr += buffer->bindlessResourceDescriptorIndexCBV * device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
                     device->CopyDescriptorsSimple(1, rangeStart, buffer->descriptor, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
@@ -756,7 +756,7 @@ namespace Horizon
                 buffer->bindlessResourceDescriptorIndexSRV = AllocateResourceDescriptorIndex();
                 if (buffer->bindlessResourceDescriptorIndexSRV >= 0)
                 {
-                    assert(buffer->bindlessResourceDescriptorIndexSRV < D3D12_BINDLESS_MAX_NUM_RESOURCE_DESCRIPTOERS);
+                    assert(buffer->bindlessResourceDescriptorIndexSRV < D3D12_RENDER_BACKEND_BINDLESS_MAX_NUM_RESOURCE_DESCRIPTOERS);
                     D3D12_CPU_DESCRIPTOR_HANDLE rangeStart = resourceDescriptorHeap->cpuDescriptorHandle;
                     rangeStart.ptr += buffer->bindlessResourceDescriptorIndexSRV * device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
                     device->CopyDescriptorsSimple(1, rangeStart, buffer->descriptor, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
@@ -788,7 +788,7 @@ namespace Horizon
                 buffer->bindlessResourceDescriptorIndexUAV = AllocateResourceDescriptorIndex();
                 if (buffer->bindlessResourceDescriptorIndexUAV >= 0)
                 {
-                    assert(buffer->bindlessResourceDescriptorIndexUAV < D3D12_BINDLESS_MAX_NUM_RESOURCE_DESCRIPTOERS);
+                    assert(buffer->bindlessResourceDescriptorIndexUAV < D3D12_RENDER_BACKEND_BINDLESS_MAX_NUM_RESOURCE_DESCRIPTOERS);
                     D3D12_CPU_DESCRIPTOR_HANDLE rangeStart = resourceDescriptorHeap->cpuDescriptorHandle;
                     rangeStart.ptr += buffer->bindlessResourceDescriptorIndexUAV * device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
                     device->CopyDescriptorsSimple(1, rangeStart, buffer->descriptor, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
@@ -866,7 +866,7 @@ namespace Horizon
                 buffer->bindlessResourceDescriptorIndexCBV = AllocateResourceDescriptorIndex();
                 if (buffer->bindlessResourceDescriptorIndexCBV >= 0)
                 {
-                    assert(buffer->bindlessResourceDescriptorIndexCBV < D3D12_BINDLESS_MAX_NUM_RESOURCE_DESCRIPTOERS);
+                    assert(buffer->bindlessResourceDescriptorIndexCBV < D3D12_RENDER_BACKEND_BINDLESS_MAX_NUM_RESOURCE_DESCRIPTOERS);
                     D3D12_CPU_DESCRIPTOR_HANDLE rangeStart = resourceDescriptorHeap->cpuDescriptorHandle;
                     rangeStart.ptr += buffer->bindlessResourceDescriptorIndexCBV * device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
                     device->CopyDescriptorsSimple(1, rangeStart, buffer->descriptor, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
@@ -898,7 +898,7 @@ namespace Horizon
                 buffer->bindlessResourceDescriptorIndexSRV = AllocateResourceDescriptorIndex();
                 if (buffer->bindlessResourceDescriptorIndexSRV >= 0)
                 {
-                    assert(buffer->bindlessResourceDescriptorIndexSRV < D3D12_BINDLESS_MAX_NUM_RESOURCE_DESCRIPTOERS);
+                    assert(buffer->bindlessResourceDescriptorIndexSRV < D3D12_RENDER_BACKEND_BINDLESS_MAX_NUM_RESOURCE_DESCRIPTOERS);
                     D3D12_CPU_DESCRIPTOR_HANDLE rangeStart = resourceDescriptorHeap->cpuDescriptorHandle;
                     rangeStart.ptr += buffer->bindlessResourceDescriptorIndexSRV * device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
                     device->CopyDescriptorsSimple(1, rangeStart, buffer->descriptor, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
@@ -930,7 +930,7 @@ namespace Horizon
                 buffer->bindlessResourceDescriptorIndexUAV = AllocateResourceDescriptorIndex();
                 if (buffer->bindlessResourceDescriptorIndexUAV >= 0)
                 {
-                    assert(buffer->bindlessResourceDescriptorIndexUAV < D3D12_BINDLESS_MAX_NUM_RESOURCE_DESCRIPTOERS);
+                    assert(buffer->bindlessResourceDescriptorIndexUAV < D3D12_RENDER_BACKEND_BINDLESS_MAX_NUM_RESOURCE_DESCRIPTOERS);
                     D3D12_CPU_DESCRIPTOR_HANDLE rangeStart = resourceDescriptorHeap->cpuDescriptorHandle;
                     rangeStart.ptr += buffer->bindlessResourceDescriptorIndexUAV * device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
                     device->CopyDescriptorsSimple(1, rangeStart, buffer->descriptor, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
@@ -1211,7 +1211,7 @@ namespace Horizon
                     texture->shaderResourceView->bindlessIndex = AllocateResourceDescriptorIndex();
                     if (texture->shaderResourceView->bindlessIndex >= 0)
                     {
-                        assert(texture->shaderResourceView->bindlessIndex < D3D12_BINDLESS_MAX_NUM_RESOURCE_DESCRIPTOERS);
+                        assert(texture->shaderResourceView->bindlessIndex < D3D12_RENDER_BACKEND_BINDLESS_MAX_NUM_RESOURCE_DESCRIPTOERS);
                         D3D12_CPU_DESCRIPTOR_HANDLE rangeStart = resourceDescriptorHeap->cpuDescriptorHandle;
                         rangeStart.ptr += texture->shaderResourceView->bindlessIndex * device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
                         device->CopyDescriptorsSimple(1, rangeStart, texture->shaderResourceView->descriptor, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
@@ -1277,7 +1277,7 @@ namespace Horizon
                     texture->shaderResourceViews[mipLevel]->bindlessIndex = AllocateResourceDescriptorIndex();
                     if (texture->shaderResourceViews[mipLevel]->bindlessIndex >= 0)
                     {
-                        assert(texture->shaderResourceViews[mipLevel]->bindlessIndex < D3D12_BINDLESS_MAX_NUM_RESOURCE_DESCRIPTOERS);
+                        assert(texture->shaderResourceViews[mipLevel]->bindlessIndex < D3D12_RENDER_BACKEND_BINDLESS_MAX_NUM_RESOURCE_DESCRIPTOERS);
                         D3D12_CPU_DESCRIPTOR_HANDLE rangeStart = resourceDescriptorHeap->cpuDescriptorHandle;
                         rangeStart.ptr += texture->shaderResourceViews[mipLevel]->bindlessIndex * device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
                         device->CopyDescriptorsSimple(1, rangeStart, texture->shaderResourceViews[mipLevel]->descriptor, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
@@ -1471,7 +1471,7 @@ namespace Horizon
                     texture->unorderedAccessViews[mipSlice]->bindlessIndex = AllocateResourceDescriptorIndex();
                     if (texture->unorderedAccessViews[mipSlice]->bindlessIndex >= 0)
                     {
-                        assert(texture->unorderedAccessViews[mipSlice]->bindlessIndex < D3D12_BINDLESS_MAX_NUM_RESOURCE_DESCRIPTOERS);
+                        assert(texture->unorderedAccessViews[mipSlice]->bindlessIndex < D3D12_RENDER_BACKEND_BINDLESS_MAX_NUM_RESOURCE_DESCRIPTOERS);
                         D3D12_CPU_DESCRIPTOR_HANDLE rangeStart = resourceDescriptorHeap->cpuDescriptorHandle;
                         rangeStart.ptr += texture->unorderedAccessViews[mipSlice]->bindlessIndex * device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
                         device->CopyDescriptorsSimple(1, rangeStart, texture->unorderedAccessViews[mipSlice]->descriptor, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
@@ -1538,7 +1538,7 @@ namespace Horizon
 
             if (sampler->bindlessIndex >= 0)
             {
-                assert(sampler->bindlessIndex < D3D12_BINDLESS_MAX_NUM_SAMPLER_DESCRIPTOERS);
+                assert(sampler->bindlessIndex < D3D12_RENDER_BACKEND_BINDLESS_MAX_NUM_SAMPLER_DESCRIPTOERS);
                 D3D12_CPU_DESCRIPTOR_HANDLE rangeStart = samplerDescriptorHeap->cpuDescriptorHandle;
                 rangeStart.ptr += sampler->bindlessIndex * device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER);
                 device->CopyDescriptorsSimple(1, rangeStart, sampler->descriptor, D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER);

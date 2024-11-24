@@ -91,6 +91,8 @@ namespace Horizon
 
         float farClippingPlane;
 
+        FieldOfViewAxis fieldOfViewAxis;
+
         float fieldOfView;
 
         float aspectRatio;
