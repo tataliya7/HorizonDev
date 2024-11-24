@@ -1246,17 +1246,18 @@ namespace Horizon
         SlotData data[RenderBackendPushConstantsSlotCount];
     };
 
-    struct RenderBackendRenderPassInfo
+    struct alignas(64) RenderBackendRenderPassInfo
     {
-        struct RenderTargetDesc
+        struct RenderTargetBinding
         {
             RenderBackendTextureHandle texture;
             uint32 mipLevel;
             uint32 arrayLayer;
+            //uint32 arrayLayerCount;
             RenderBackendRenderPassBeginningAccessType loadOp;
             RenderBackendRenderPassEndingAccessType storeOp;
         };
-        struct DepthStencilDesc
+        struct DepthStencilBinding
         {
             RenderBackendTextureHandle texture;
             uint32 mipLevel;
@@ -1267,10 +1268,10 @@ namespace Horizon
             RenderBackendRenderPassEndingAccessType stencilStoreOp;
             RenderBackendDepthStencilAccessType depthStencilAccessType;
         };
-        bool allowUAVWrites;
         Rect renderArea;
-        RenderTargetDesc renderTargets[RenderBackendMaxRenderTargetCount];
-        DepthStencilDesc depthStencil;
+        bool allowUAVWrites; //uint32 renderPassFlags;
+        RenderTargetBinding renderTargets[RenderBackendMaxRenderTargetCount];
+        DepthStencilBinding depthStencil;
     };
 
     enum class RenderBackendRayTracingAccelerationStructureBuildFlags

@@ -2803,19 +2803,20 @@ namespace Horizon
 
     bool D3D12RenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandBeginRenderPass& command)
     {
-        UINT numRenderTargets = 0;
-        D3D12_RENDER_PASS_RENDER_TARGET_DESC renderTargetDescs[D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT] = {};
-
-        bool hasDepthStencil = false;
-        D3D12_RENDER_PASS_DEPTH_STENCIL_DESC depthStencilDesc = {};
-
+#if D3D12_RENDER_BACKEND_USE_RENDER_PASS
         activeRenderPass.numRenderTargets = 0;
         activeRenderPass.hasDepthStencil = false;
 
+        UINT numRenderTargets = 0;
+        bool hasDepthStencil = false;
+
+        D3D12_RENDER_PASS_RENDER_TARGET_DESC renderTargetDescs[D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT] = {};
+        D3D12_RENDER_PASS_DEPTH_STENCIL_DESC depthStencilDesc = {};
+
         for (uint32 index = 0; index < RenderBackendMaxRenderTargetCount; index++)
         {
-            // TODO: remove this
             const auto& renderTarget = command.renderPassInfo.renderTargets[index];
+            // TODO: remove this
             if (!renderTarget.texture)
             {
                 continue;
@@ -2830,7 +2831,6 @@ namespace Horizon
             renderTargetDesc.EndingAccess.Type = ConvertToD3D12RenderPassEndingAccessType(renderTarget.storeOp);
 
             numRenderTargets++;
-
             activeRenderPass.numRenderTargets = numRenderTargets;
             activeRenderPass.renderTargetFormats[numRenderTargets - 1] = texture->format;
         }
@@ -2849,7 +2849,6 @@ namespace Horizon
             depthStencilDesc.StencilEndingAccess.Type = ConvertToD3D12RenderPassEndingAccessType(depthStencil.stencilStoreOp);
 
             hasDepthStencil = true;
-
             activeRenderPass.hasDepthStencil = true;
             activeRenderPass.depthStencilViewFormat = texture->format;
         }
@@ -2874,13 +2873,94 @@ namespace Horizon
         }
 
         commandList->GetID3D12GraphicsCommandList6()->BeginRenderPass(numRenderTargets, renderTargetDescs, hasDepthStencil ? &depthStencilDesc : nullptr, flags);
+#else
+        activeRenderPass.numRenderTargets = 0;
+        activeRenderPass.hasDepthStencil = false;
+
+        UINT numRenderTargets = 0;
+        bool hasDepthStencil = false;
+
+        D3D12_CPU_DESCRIPTOR_HANDLE renderTargetViews[D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT] = {};
+        D3D12_CPU_DESCRIPTOR_HANDLE depthStencilView = {};
+
+        for (uint32 index = 0; index < RenderBackendMaxRenderTargetCount; index++)
+        {
+            const auto& renderTarget = command.renderPassInfo.renderTargets[index];
+            // TODO: remove this
+            if (!renderTarget.texture)
+            {
+                continue;
+            }
+
+            D3D12Texture* texture  = device->GetTexture(renderTarget.texture);
+
+            renderTargetViews[index] = texture->GetRenderTargetView(renderTarget.mipLevel)->descriptor;
+
+            numRenderTargets++;
+            activeRenderPass.numRenderTargets = numRenderTargets;
+            activeRenderPass.renderTargetFormats[numRenderTargets - 1] = texture->format;
+
+            if (renderTarget.loadOp == RenderBackendRenderPassBeginningAccessType::Clear)
+            {
+                D3D12_RECT clearRect = {};
+                clearRect.left = 0;
+                clearRect.top = 0;
+                clearRect.right = texture->width - 1;
+                clearRect.bottom = texture->height - 1;
+
+                commandList->GetID3D12GraphicsCommandList6()->ClearRenderTargetView(renderTargetViews[index], texture->clearValue.Color, 1, &clearRect);
+            }
+        }
+
+        if (command.renderPassInfo.depthStencil.texture)
+        {
+            const auto& depthStencil = command.renderPassInfo.depthStencil;
+
+            D3D12Texture* texture = device->GetTexture(depthStencil.texture);
+
+            depthStencilView = texture->GetDepthStencilView(GetDepthStencilViewIndex(depthStencil.depthStencilAccessType))->descriptor;
+
+            hasDepthStencil = true;
+            activeRenderPass.hasDepthStencil = true;
+            activeRenderPass.depthStencilViewFormat = texture->format;
+
+            D3D12_CLEAR_FLAGS clearFlags = D3D12_CLEAR_FLAGS(0);
+
+            if (depthStencil.depthLoadOp == RenderBackendRenderPassBeginningAccessType::Clear)
+            {
+                clearFlags |= D3D12_CLEAR_FLAG_DEPTH;
+            }
+
+            if (depthStencil.stencilLoadOp == RenderBackendRenderPassBeginningAccessType::Clear)
+            {
+                clearFlags |= D3D12_CLEAR_FLAG_STENCIL;
+            }
+
+            if (clearFlags != 0)
+            {
+                D3D12_RECT clearRect = {};
+                clearRect.left = 0;
+                clearRect.top = 0;
+                clearRect.right = texture->width - 1;
+                clearRect.bottom = texture->height - 1;
+
+                commandList->GetID3D12GraphicsCommandList6()->ClearDepthStencilView(depthStencilView, clearFlags, texture->clearValue.DepthStencil.Depth, texture->clearValue.DepthStencil.Stencil, 1, &clearRect);
+            }
+        }
+
+        commandList->GetID3D12GraphicsCommandList6()->OMSetRenderTargets(numRenderTargets, renderTargetViews, FALSE, hasDepthStencil ? &depthStencilView : nullptr);
+#endif
+
         insideRenderPass = true;
+
         return true;
     }
 
     bool D3D12RenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandEndRenderPass& command)
     {
+#if D3D12_RENDER_BACKEND_USE_RENDER_PASS
         commandList->GetID3D12GraphicsCommandList6()->EndRenderPass();
+#endif
         insideRenderPass = false;
         return true;
     }
@@ -4100,9 +4180,9 @@ extern "C" { _declspec(dllexport) extern const char* D3D12SDKPath = /*u8*/".\\D3
             resourceDescriptorHeap->cpuDescriptorHandle = resourceDescriptorHeap->GetID3D12DescriptorHeap()->GetCPUDescriptorHandleForHeapStart();
             resourceDescriptorHeap->gpuDescriptorHandle = resourceDescriptorHeap->GetID3D12DescriptorHeap()->GetGPUDescriptorHandleForHeapStart();
 
-            for (int i = 0; i < D3D12_BINDLESS_MAX_NUM_RESOURCE_DESCRIPTOERS; i++)
+            for (int i = 0; i < D3D12_RENDER_BACKEND_BINDLESS_MAX_NUM_RESOURCE_DESCRIPTOERS; i++)
             {
-                freeResourceDescriptorIndices.push_back(D3D12_BINDLESS_MAX_NUM_RESOURCE_DESCRIPTOERS - i - 1);
+                freeResourceDescriptorIndices.push_back(D3D12_RENDER_BACKEND_BINDLESS_MAX_NUM_RESOURCE_DESCRIPTOERS - i - 1);
             }
         }
 
@@ -4122,9 +4202,9 @@ extern "C" { _declspec(dllexport) extern const char* D3D12SDKPath = /*u8*/".\\D3
             samplerDescriptorHeap->cpuDescriptorHandle = samplerDescriptorHeap->GetID3D12DescriptorHeap()->GetCPUDescriptorHandleForHeapStart();
             samplerDescriptorHeap->gpuDescriptorHandle = samplerDescriptorHeap->GetID3D12DescriptorHeap()->GetGPUDescriptorHandleForHeapStart();
 
-            for (int i = 0; i < D3D12_BINDLESS_MAX_NUM_SAMPLER_DESCRIPTOERS; i++)
+            for (int i = 0; i < D3D12_RENDER_BACKEND_BINDLESS_MAX_NUM_SAMPLER_DESCRIPTOERS; i++)
             {
-                freeSamplerDescriptorIndices.push_back(D3D12_BINDLESS_MAX_NUM_SAMPLER_DESCRIPTOERS - i - 1);
+                freeSamplerDescriptorIndices.push_back(D3D12_RENDER_BACKEND_BINDLESS_MAX_NUM_SAMPLER_DESCRIPTOERS - i - 1);
             }
         }
 

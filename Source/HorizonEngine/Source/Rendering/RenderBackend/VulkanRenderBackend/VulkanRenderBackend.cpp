@@ -1527,7 +1527,7 @@ namespace Horizon
 
         for (uint32 index = 0; index < RenderBackendMaxRenderTargetCount; index++)
         {
-            const RenderBackendRenderPassInfo::RenderTargetDesc& colorRenderTarget = renderPassInfo.renderTargets[index];
+            const RenderBackendRenderPassInfo::RenderTargetBinding& colorRenderTarget = renderPassInfo.renderTargets[index];
 
             if (!colorRenderTarget.texture)
             {
@@ -1577,7 +1577,7 @@ namespace Horizon
 
         if (renderPassInfo.depthStencil.texture)
         {
-            const RenderBackendRenderPassInfo::DepthStencilDesc& depthStencilRenderTarget = renderPassInfo.depthStencil;
+            const RenderBackendRenderPassInfo::DepthStencilBinding& depthStencilRenderTarget = renderPassInfo.depthStencil;
             VulkanTexture* texture = device->GetTexture(depthStencilRenderTarget.texture);
 
             if (bSetExtent)
@@ -1631,7 +1631,7 @@ namespace Horizon
 
         for (uint32 index = 0; index < RenderBackendMaxRenderTargetCount; index++)
         {
-            const RenderBackendRenderPassInfo::RenderTargetDesc& colorRenderTarget = renderPassInfo.renderTargets[index];
+            const RenderBackendRenderPassInfo::RenderTargetBinding& colorRenderTarget = renderPassInfo.renderTargets[index];
 
             if (!colorRenderTarget.texture)
             {
@@ -1676,7 +1676,7 @@ namespace Horizon
 
         if (renderPassInfo.depthStencil.texture)
         {
-            const RenderBackendRenderPassInfo::DepthStencilDesc& depthStencilRenderTarget = renderPassInfo.depthStencil;
+            const RenderBackendRenderPassInfo::DepthStencilBinding& depthStencilRenderTarget = renderPassInfo.depthStencil;
             VulkanTexture* texture = device->GetTexture(depthStencilRenderTarget.texture);
 
             bool hasStencil = IsStencilFormat(texture->format);
