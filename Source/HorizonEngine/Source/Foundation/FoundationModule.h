@@ -9,3 +9,4 @@
 #include "Foundation/Memory/Memory.h"
 #include "Foundation/Logging/Logging.h"
 #include "Foundation/Misc/Misc.h"
+#include "Foundation/Platform/PlatformGenericAPI.h"

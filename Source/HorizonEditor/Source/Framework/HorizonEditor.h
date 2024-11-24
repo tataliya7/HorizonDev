@@ -275,6 +275,8 @@ namespace Horizon
         uint32 swapChainHeight = 0;
 
         StreamlineContext* streamlineContext;
+
+        float maxFrameRate = 120.0f;
     };
 }
 

@@ -269,6 +269,7 @@ namespace Horizon
         std::chrono::duration<float> timeDuration = std::chrono::duration_cast<std::chrono::duration<float>>(timePoint - previousTimePoint);
         float deltaTime = timeDuration.count();
         previousTimePoint = timePoint;
+
         return deltaTime;
     }
 
