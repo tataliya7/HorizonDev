@@ -6,13 +6,13 @@ namespace Horizon
 {
     enum class GeometryPassType : uint8
     {
-        Opaque,
-        Translucency,
-        VirtualShadowMap,
-        CascadedShadowMap,
-        EditorSelection,
-        EditorPickingProxy,
-        Count
+        Opaque                = 0,
+        Translucency          = 1,
+        VirtualShadowMap      = 2,
+        CascadedShadowMap     = 3,
+        EditorSelection       = 4,
+        EditorPickingProxy    = 5,
+        Count                 = 6
     };
 
     struct GeometryPassSetupJobData
@@ -53,5 +53,10 @@ namespace Horizon
         uint32 drawCommandCount;
 
         std::vector<GeometryPassDrawCommand> commands;
+    };
+
+    struct ViewDependentDrawCommands
+    {
+        std::array<GeometryPassDrawCommandList, static_cast<size_t>(GeometryPassType::Count)> drawCommandLists;
     };
 }

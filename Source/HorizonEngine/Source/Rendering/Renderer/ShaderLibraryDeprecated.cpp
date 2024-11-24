@@ -539,5 +539,13 @@ namespace Horizon
             ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Pixel, "Shaders/RealTimeRenderer/GUIComposition.hsm", "GUICompositionPS");
             shaderLibrary->LoadShader(ShaderID::GUICompositionPS, shaderDesc);
         }
+        {
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Vertex, "Shaders/RealTimeRenderer/DebugVisualization/DebugDrawLines.hsm", "DebugDrawLinesVS");
+            shaderLibrary->LoadShader(ShaderID::DebugDrawVS, shaderDesc);
+        }
+        {
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Pixel, "Shaders/RealTimeRenderer/DebugVisualization/DebugDrawLines.hsm", "DebugDrawLinesPS");
+            shaderLibrary->LoadShader(ShaderID::DebugDrawPS, shaderDesc);
+        }
     }
 }

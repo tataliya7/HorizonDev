@@ -111,6 +111,17 @@ namespace Horizon
             RenderBackendResourceState::ShaderResource); // TODO: handle transition
         targetTexture = renderGraphResourcePool->AllocateTexture(targetTextureDesc, "SceneViewTexture");
 
+        RenderGraphTextureDesc previewTextureDesc = RenderGraphTextureDesc::Create2D(
+            previewTextureWidth,
+            previewTextureHeight,
+            targetTextureFormat,
+            RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::UnorderedAccess | RenderBackendTextureCreateFlags::RenderTarget,
+            RenderBackendTextureClearValue::Black,
+            1,
+            1,
+            RenderBackendResourceState::ShaderResource); // TODO: handle transition
+        previewTexture = renderGraphResourcePool->AllocateTexture(previewTextureDesc, "SceneViewPreviewTexture");
+
         const uint32 environmentMapTextureSize = 128;
         const uint32 environmentMapTextureMipLevelCount = Math::MaxMipLevelCount(environmentMapTextureSize);
         RenderBackendTextureHandle environmentMapTextureLatLong = LoadTextureFromHDRFile(renderBackend, "../../../Assets/HDRIs/HDR_029_Sky_Cloudy_Ref.hdr");
@@ -134,11 +145,22 @@ namespace Horizon
         renderBackend->SubmitCommandLists(&commandList, 1, RenderBackendSwapChainHandle::Null);
 
         renderer = renderSystem->CreateRenderer();
+        previewRenderer = renderSystem->CreateRenderer();
 
         editorSceneManager = new EditorSceneManager();
         Scene* scene = editorSceneManager->CreateScene("DefaultScene");
         {
             editorSceneManager->SetActiveScene(scene);
+
+            EntityHandle camera01 = scene->CreateEntity("Camera01");
+            {
+                CameraComponent& cameraComponent = scene->GetEntityManager()->AddComponent<CameraComponent>(camera01);
+                cameraComponent.fieldOfView = Math::DegreesToRadians(60.0f);
+                cameraComponent.nearClippingPlane = 0.1f;
+                cameraComponent.farClippingPlane = 100.0f;
+                cameraComponent.overrideAspectRatio = false;
+                cameraComponent.aspectRatio = 16.0f / 9.0f;
+            }
 
             EntityHandle sunLight = scene->CreateEntity("SunLight");
             {
@@ -366,7 +388,93 @@ namespace Horizon
         viewMatrix_deprecated = sceneView.transformations.worldToViewMatrix;
         projectionMatrix_deprecated = sceneView.transformations.viewToClipMatrix;
 
+        RenderBackendCommandList* commandListUpload = new RenderBackendCommandList(GArena);
+        engine->GetSubsystem<RenderSystem>()->UpdateImGuiData(commandListUpload);
+        sceneView.scene->UpdateGPUScene(commandListUpload);
+        renderBackend->SubmitCommandLists(&commandListUpload, 1, RenderBackendSwapChainHandle::Null);
+        delete commandListUpload;
+
+
+        SceneView previewSceneView = {};
+
+        bool renderPreview = false;
+        if (preview)
+        {
+            if (editorSceneManager->GetActiveScene()->GetEntityManager()->HasComponent<CameraComponent>(selectedEntity))
+            {
+                CameraComponent& previewCamera = editorSceneManager->GetActiveScene()->GetEntityManager()->GetComponent<CameraComponent>(selectedEntity);
+                TransformComponent& transform = editorSceneManager->GetActiveScene()->GetEntityManager()->GetComponent<TransformComponent>(selectedEntity);
+
+                Quaternion previewCameraOrientation = Math::QuaternionFromEulerAngles(Math::DegreesToRadians(transform.rotation));
+
+                Vector3 preivewCameraUpVector = Math::Normalize(previewCameraOrientation * Vector3(0.0f, 0.0f, 1.0f));
+                Vector3 preivewCameraRightVector = Math::Normalize(previewCameraOrientation * Vector3(1.0f, 0.0f, 0.0f));
+                Vector3 preivewCameraForwardVector = Math::Normalize(previewCameraOrientation * Vector3(0.0f, 1.0f, 0.0f));
+
+                previewSceneView.frameIndex = frameIndex;
+                previewSceneView.deltaTimeInSeconds = deltaTimeInSeconds;
+                previewSceneView.scene = editorSceneManager->GetActiveScene()->GetRenderScene();
+                previewSceneView.renderSettings = renderSettings;
+                previewSceneView.debugVisualizationMode = currentDebugVisualizationMode;
+                previewSceneView.reset = false;
+                previewSceneView.cameraPosition = transform.position;
+                previewSceneView.cameraRotation = transform.rotation;
+                previewSceneView.cameraUpVector = preivewCameraUpVector;
+                previewSceneView.cameraRightVector = preivewCameraRightVector;
+                previewSceneView.cameraForwardVector = preivewCameraForwardVector;
+                previewSceneView.verticalFOV = previewCamera.fieldOfView;
+                previewSceneView.aspectRatio = previewCamera.aspectRatio;
+                previewSceneView.tanHalfVerticalFOV = std::tan(previewCamera.fieldOfView * 0.5f);
+                previewSceneView.nearClippingPlane = std::max(previewCamera.nearClippingPlane, MinNearClippingPlane);
+                previewSceneView.farClippingPlane = previewCamera.farClippingPlane;
+                previewSceneView.backgroundColor = Vector3(0.0f, 0.0f, 0.0f);
+                previewSceneView.targetWidth = previewTextureWidth;
+                previewSceneView.targetHeight = previewTextureHeight;
+                previewSceneView.targetTexture = previewTexture;
+                previewSceneView.displayWidth = previewTextureWidth;
+                previewSceneView.displayHeight = previewTextureHeight;
+                previewSceneView.transformations.Update(previewSceneView.cameraPosition, previewSceneView.cameraRotation, previewSceneView.verticalFOV, previewSceneView.aspectRatio, previewSceneView.nearClippingPlane, previewSceneView.farClippingPlane);
+
+                renderPreview = true;
+            }
+            else
+            {
+                // Clear preview texture
+            }
+        }
+
+        if (renderPreview)
+        {
+            float distance = previewSceneView.farClippingPlane;
+            float uLen = distance * previewSceneView.tanHalfVerticalFOV;
+            float rLen = uLen * previewSceneView.aspectRatio;
+            Vector3 farCenterPoint = previewSceneView.cameraPosition + distance * previewSceneView.cameraForwardVector;
+            Vector3 u = uLen * previewSceneView.cameraUpVector;
+            Vector3 r = rLen * previewSceneView.cameraRightVector;
+
+            Vector3 corners[4];
+            corners[0] = farCenterPoint - u - r; // left-bottom
+            corners[1] = farCenterPoint - u + r; // right-bottom
+            corners[2] = farCenterPoint + u - r; // left-up
+            corners[3] = farCenterPoint + u + r; // right-up
+
+            renderer->debugDrawLinesVertices.clear();
+            renderer->DrawLine(previewSceneView.cameraPosition, corners[0], Vector4(1.0f, 0.0f, 0.0f, 1.0f), 1.0f, 0);
+            renderer->DrawLine(previewSceneView.cameraPosition, corners[1], Vector4(1.0f, 0.0f, 0.0f, 1.0f), 1.0f, 0);
+            renderer->DrawLine(previewSceneView.cameraPosition, corners[2], Vector4(1.0f, 0.0f, 0.0f, 1.0f), 1.0f, 0);
+            renderer->DrawLine(previewSceneView.cameraPosition, corners[3], Vector4(1.0f, 0.0f, 0.0f, 1.0f), 1.0f, 0);
+            renderer->DrawLine(corners[0], corners[1], Vector4(1.0f, 0.0f, 0.0f, 1.0f), 1.0f, 0);
+            renderer->DrawLine(corners[1], corners[3], Vector4(1.0f, 0.0f, 0.0f, 1.0f), 1.0f, 0);
+            renderer->DrawLine(corners[2], corners[3], Vector4(1.0f, 0.0f, 0.0f, 1.0f), 1.0f, 0);
+            renderer->DrawLine(corners[2], corners[0], Vector4(1.0f, 0.0f, 0.0f, 1.0f), 1.0f, 0);
+        }
+
         engine->GetSubsystem<RenderSystem>()->RenderSceneView(renderer, &sceneView);
+
+        if (renderPreview)
+        {
+            engine->GetSubsystem<RenderSystem>()->RenderSceneView(previewRenderer, &previewSceneView);
+        }
 
         RenderBackendCommandList* commandList = new RenderBackendCommandList(GArena);
 

@@ -457,6 +457,12 @@ namespace Horizon
             const SceneView& view,
             RenderGraphTextureHandle sceneColorTexture);
 
+        RenderGraphTextureHandle AddDebugDrawPass(
+            RenderGraph& renderGraph,
+            const SceneView& view,
+            RenderGraphTextureHandle sceneColorTexture,
+            RenderGraphTextureHandle sceneDepthTexture);
+
         void SetupGeometryPasses();
 
         RenderBackend* renderBackend;
@@ -468,26 +474,26 @@ namespace Horizon
 
         struct RenderFeatures
         {
-            uint32 enableFrameRateUpConversion : 1;
-            uint32 enableSuperResolution : 1;
-            uint32 enableSuperSamplingAntiAliasing : 1;
-            uint32 enableSkyAtmosphereRendering : 1;
-            uint32 enableSubsurfaceScattering : 1;
-            uint32 enableScreenSpaceShadows : 1;
-            uint32 enableScreenSpaceReflections : 1;
-            uint32 enableScreenSpaceAmbientOcclusion : 1;
-            uint32 enableScreenSpaceLightShafts : 1;
-            uint32 enableRayTracingShadows : 1;
-            uint32 enableRayTracingReflections : 1;
-            uint32 enableRayTracingAmbientOcclusion : 1;
-            uint32 enableSurfelGI : 1;
-            uint32 enableMotionBlur : 1;
-            uint32 enableAutoExposure : 1;
-            uint32 enableLocalExposure : 1;
-            uint32 enableDepthOfField : 1;
-            uint32 enableLensFlare : 1;
-            uint32 enableGaussianBloom : 1;
-            uint32 enableConvolutionBloom : 1;
+            bool enableFrameRateUpConversion;
+            bool enableSuperResolution;
+            bool enableSuperSamplingAntiAliasing;
+            bool enableSkyAtmosphereRendering;
+            bool enableSubsurfaceScattering;
+            bool enableScreenSpaceShadows;
+            bool enableScreenSpaceReflections;
+            bool enableScreenSpaceAmbientOcclusion;
+            bool enableScreenSpaceLightShafts;
+            bool enableRayTracingShadows;
+            bool enableRayTracingReflections;
+            bool enableRayTracingAmbientOcclusion;
+            bool enableSurfelGI;
+            bool enableMotionBlur;
+            bool enableAutoExposure;
+            bool enableLocalExposure;
+            bool enableDepthOfField;
+            bool enableLensFlare;
+            bool enableGaussianBloom;
+            bool enableConvolutionBloom;
         } features;
 
         float renderResolutionPercentage = 1.0f;
@@ -574,5 +580,24 @@ namespace Horizon
         HistoryFrame historyFrame;
 
         void ResetHistoryFrame();
+
+        // Debug draw
+
+        RenderBackendBufferHandle debugDrawLinesVertexUploadBuffers[3];
+        RenderBackendBufferHandle debugDrawLinesVertexBuffers[3];
+        uint32 debugDrawLinesVertexBufferSizes[3] = { 0, 0, 0 };
+
+    public:
+        std::vector<Vector3> debugDrawLinesVertices;
+        void DrawLine(
+            const Vector3& start,
+            const Vector3& end,
+            const Vector4& color,
+            float width,
+            uint8 depthPriorityGroup)
+        {
+            debugDrawLinesVertices.push_back(start);
+            debugDrawLinesVertices.push_back(end);
+        }
     };
 }

@@ -1766,7 +1766,8 @@ namespace Horizon
 
             D3D12GraphicsPipelineState* newGraphicsPipelineState = new D3D12GraphicsPipelineState();
 
-            D3D12_INPUT_LAYOUT_DESC nullLnputLayout = {
+            D3D12_INPUT_LAYOUT_DESC nullLnputLayout =
+            {
                 .pInputElementDescs = nullptr,
                 .NumElements = 0
             };
@@ -1775,7 +1776,8 @@ namespace Horizon
 
             newGraphicsPipelineState->primitiveTopologyType = primitiveTopologyType;
 
-            DXGI_SAMPLE_DESC dxgiSampleDesc = {
+            DXGI_SAMPLE_DESC dxgiSampleDesc =
+            {
                 .Count = 1,
                 .Quality = 0
             };
@@ -1785,7 +1787,8 @@ namespace Horizon
                 ID3D12Device2* device2 = nullptr;
                 assert(SUCCEEDED(device->QueryInterface(IID_PPV_ARGS(&device2))));
 
-                D3DX12_MESH_SHADER_PIPELINE_STATE_DESC meshShaderPipelineStateDesc = {
+                D3DX12_MESH_SHADER_PIPELINE_STATE_DESC meshShaderPipelineStateDesc =
+                {
                     .pRootSignature = rootSignature.Get(),
                     .AS = amplificationShader ? amplificationShader->bytecode : D3D12_SHADER_BYTECODE(),
                     .MS = meshShader->bytecode,
@@ -1811,7 +1814,8 @@ namespace Horizon
 
                 CD3DX12_PIPELINE_MESH_STATE_STREAM psoStream = CD3DX12_PIPELINE_MESH_STATE_STREAM(meshShaderPipelineStateDesc);
 
-                D3D12_PIPELINE_STATE_STREAM_DESC streamDesc = {
+                D3D12_PIPELINE_STATE_STREAM_DESC streamDesc =
+                {
                     streamDesc.SizeInBytes = sizeof(psoStream),
                     streamDesc.pPipelineStateSubobjectStream = &psoStream
                 };
@@ -1820,7 +1824,8 @@ namespace Horizon
             }
             else
             {
-                D3D12_GRAPHICS_PIPELINE_STATE_DESC graphicsPipelineStateDesc = {
+                D3D12_GRAPHICS_PIPELINE_STATE_DESC graphicsPipelineStateDesc =
+                {
                     .pRootSignature = rootSignature.Get(),
                     .VS = vertexShader->bytecode,
                     .PS = pixelShader->bytecode, // TODO: allow no pixel shader

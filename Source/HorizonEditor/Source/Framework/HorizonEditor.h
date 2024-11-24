@@ -264,7 +264,12 @@ namespace Horizon
         EditorCamera editorCamera;
         Point2D currentMousePosition;
         RealTimeRenderer* renderer;
+        RealTimeRenderer* previewRenderer;
         RenderGraphPersistentTexture* targetTexture;
+
+        uint32 previewTextureWidth = 512;
+        uint32 previewTextureHeight = 512;
+        RenderGraphPersistentTexture* previewTexture;
         // End Scene View Window
 
         EditorSceneManager* editorSceneManager;
@@ -277,6 +282,8 @@ namespace Horizon
         StreamlineContext* streamlineContext;
 
         float maxFrameRate = 120.0f;
+
+        bool preview = true;
     };
 }
 

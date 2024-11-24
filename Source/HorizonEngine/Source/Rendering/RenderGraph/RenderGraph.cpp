@@ -299,10 +299,10 @@ namespace Horizon
     {
         OPTICK_EVENT();
 
-        if (!Compile())
-        {
-            return;
-        }
+        //if (!Compile())
+        //{
+        //    return;
+        //}
 
         for (RenderGraphTexture* texture : textures)
         {

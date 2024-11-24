@@ -426,4 +426,17 @@ namespace Horizon
          */
         Vector2u cursorPosition;
     };
+
+    /*
+     *
+     */
+    class SceneViewGroup
+    {
+    public:
+        /**
+         * The scene to be rendered.
+         */
+        RenderScene* scene;
+
+    };
 }

@@ -920,7 +920,7 @@ namespace Horizon
         ImVec2 contentRegionAvail = ImGui::GetContentRegionAvail();
         viewportSize = Vector2(contentRegionAvail.x, contentRegionAvail.y);
 
-        ImGui::Image(targetTexture->GetHandle().ToUnit64(), ImVec2(viewportSize.x, viewportSize.y), ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f));
+        ImGui::Image(previewTexture->GetHandle().ToUnit64(), ImVec2(viewportSize.x, viewportSize.y), ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f));
 
         ImGui::End();
 

@@ -116,14 +116,7 @@ namespace Horizon
 
     void RenderSystem::RenderSceneView(RealTimeRenderer* renderer, SceneView* sceneView)
     {
-        RenderBackendCommandList* commandListUpload = new RenderBackendCommandList(GArena);
-        UpdateImGuiData(commandListUpload);
-        renderBackend->SubmitCommandLists(&commandListUpload, 1, RenderBackendSwapChainHandle::Null);
-        delete commandListUpload;
-
         RenderBackendCommandList* commandList = new RenderBackendCommandList(GArena);
-
-        sceneView->scene->UpdateGPUScene(commandList);
 
         gpuProfiler->BeginFrame(commandList);
 

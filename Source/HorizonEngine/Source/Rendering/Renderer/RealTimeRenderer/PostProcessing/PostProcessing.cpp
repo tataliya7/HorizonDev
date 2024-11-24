@@ -37,6 +37,8 @@ namespace Horizon
             sceneColorTexture = DispatchDepthOfField(renderGraph, view, sceneColorTexture);
         }
 
+        sceneColorTexture = AddDebugDrawPass(renderGraph, view, sceneColorTexture, sceneDepthTexture);
+
         if (IsSuperResolutionEnabled()) // TODO
         {
             RenderGraphTextureHandle exposureTexture = AddCopyExposurePass(renderGraph, view, autoExposureBuffer);

@@ -320,4 +320,111 @@ namespace Horizon
         //
         // return outputTexture;
     }
+
+    RenderGraphTextureHandle RealTimeRenderer::AddDebugDrawPass(
+        RenderGraph& renderGraph,
+        const SceneView& view,
+        RenderGraphTextureHandle sceneColorTexture,
+        RenderGraphTextureHandle sceneDepthTexture)
+    {
+        uint32 newDebugDrawLinesVertexBufferSize = (uint32)debugDrawLinesVertices.size() * sizeof(Vector3);
+
+        if (newDebugDrawLinesVertexBufferSize == 0)
+        {
+            return sceneColorTexture;
+        }
+
+        RenderBackendBufferHandle& debugDrawLinesVertexUploadBuffer = debugDrawLinesVertexUploadBuffers[currentPerFrameDataBufferIndex];
+        RenderBackendBufferHandle& debugDrawLinesVertexBuffer = debugDrawLinesVertexBuffers[currentPerFrameDataBufferIndex];
+        uint32& debugDrawLinesVertexBufferSize = debugDrawLinesVertexBufferSizes[currentPerFrameDataBufferIndex];
+
+        if (!debugDrawLinesVertexBuffer)
+        {
+            RenderBackendBufferDesc bufferDesc = RenderBackendBufferDesc::CreateByteAddress(newDebugDrawLinesVertexBufferSize);
+            debugDrawLinesVertexBuffer = renderBackend->CreateBuffer(&bufferDesc, nullptr, "DebugDrawLinesVertexBuffer");
+
+            RenderBackendBufferDesc debugDrawLinesVertexUploadBufferDesc = RenderBackendBufferDesc::CreateUpload(newDebugDrawLinesVertexBufferSize);
+            debugDrawLinesVertexUploadBuffer = renderBackend->CreateBuffer(&debugDrawLinesVertexUploadBufferDesc, nullptr, "DebugDrawLinesVertexUploadBuffer");
+        }
+        else if (debugDrawLinesVertexBufferSize < newDebugDrawLinesVertexBufferSize)
+        {
+            renderBackend->ResizeBuffer(debugDrawLinesVertexBuffer, newDebugDrawLinesVertexBufferSize);
+            renderBackend->ResizeBuffer(debugDrawLinesVertexUploadBuffer, newDebugDrawLinesVertexBufferSize);
+        }
+        debugDrawLinesVertexBufferSize = newDebugDrawLinesVertexBufferSize;
+
+        if (debugDrawLinesVertexBuffer && debugDrawLinesVertexBufferSize > 0)
+        {
+            renderBackend->UpdateBuffer(debugDrawLinesVertexUploadBuffer, 0, debugDrawLinesVertices.data(), debugDrawLinesVertexBufferSize);
+
+            renderGraph.AddPass(
+                std::format("UpdateDebugDrawLinesVertexBuffer (Copy, {} bytes)", debugDrawLinesVertexBufferSize),
+                RenderGraphPassFlags::Copy,
+                [&](RenderGraphBuilder& builder)
+                {
+                    //debugDrawLinesVertexBuffer = builder.WriteBuffer(debugDrawLinesVertexBuffer, RenderBackendResourceState::CopyDst);
+
+                    return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
+                    {
+                        commandList.CopyBuffer(
+                            debugDrawLinesVertexUploadBuffer,
+                            0,
+                            debugDrawLinesVertexBuffer,
+                            0,
+                            debugDrawLinesVertexBufferSize);
+                    };
+                });
+
+        }
+
+        renderGraph.AddPass(
+            std::format("DebugDrawPass (Graphics, {}x{})", renderResolution.width, renderResolution.height),
+            RenderGraphPassFlags::Graphics,
+            [&](RenderGraphBuilder& builder)
+            {
+                sceneColorTexture = builder.WriteTexture(sceneColorTexture, RenderBackendResourceState::RenderTarget);
+                sceneDepthTexture = builder.WriteTexture(sceneDepthTexture, RenderBackendResourceState::DepthStencil);
+
+                builder.BindRenderTarget(0, sceneColorTexture, RenderBackendRenderPassBeginningAccessType::Preserve, RenderBackendRenderPassEndingAccessType::Preserve);
+                builder.BindDepthStencil(
+                    sceneDepthTexture,
+                    RenderBackendRenderPassBeginningAccessType::Preserve,
+                    RenderBackendRenderPassEndingAccessType::Preserve,
+                    RenderBackendRenderPassBeginningAccessType::NoAccess,
+                    RenderBackendRenderPassEndingAccessType::NoAccess,
+                    RenderBackendDepthStencilAccessType::DepthWrite_StencilNoAccess);
+
+                return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
+                {
+                    // TODO: MSAA
+                    // TODO: Remove pixel shader
+                    RenderBackendGraphicsPipelineState graphicsPipelineState = {};
+                    graphicsPipelineState.rasterizationState.cullMode = RenderBackendRasterizationCullMode::None;
+                    graphicsPipelineState.rasterizationState.lineWidth = 2.0f;
+                    graphicsPipelineState.depthStencilState.depthTestEnable = true;
+                    graphicsPipelineState.depthStencilState.depthWriteEnable = true;
+                    graphicsPipelineState.depthStencilState.depthCompareFunction = RenderBackendCompareOp::GreaterOrEqual;
+
+                    RenderBackendShaderConstants shaderConstants = {};
+                    shaderConstants.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
+                    shaderConstants.BindBufferSRV(1, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(debugDrawLinesVertexBuffer));
+
+                    RenderBackendShaderHandle vertexShader = shaderLibrary->GetShader(ShaderID::DebugDrawVS);
+                    RenderBackendShaderHandle pixelShader = shaderLibrary->GetShader(ShaderID::DebugDrawPS);
+
+                    commandList.Draw(
+                        vertexShader,
+                        pixelShader,
+                        graphicsPipelineState,
+                        shaderConstants,
+                        (uint32)debugDrawLinesVertices.size(),
+                        1,
+                        0,
+                        0,
+                        RenderBackendPrimitiveTopology::LineList);
+                };
+            });
+
+        return sceneColorTexture;
+    }
 }
