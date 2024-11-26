@@ -97,6 +97,7 @@ namespace Horizon
         const float shadowCascadeTransitionScale = light.shadowCascadeTransitionScale;
         const Vector3f lightDirection = light.GetDirection();
         const float maxShadowDistance = std::min(light.maxShadowDistance, cameraFarClippingPlane);
+        const Matrix4x4f worldToLight = light.worldToLight;
 
         outCascadedShadowMapRenderData.resolution = shadowMapSize;
         outCascadedShadowMapRenderData.cascadeCount = shadowCascadeCount;
@@ -156,26 +157,28 @@ namespace Horizon
             boundingSphere.w = boundingSphereRadius;
 
             Vector3f boundingSphereCenter = Vector3f(boundingSphere.x, boundingSphere.y, boundingSphere.z);
+#endif
 
             // Scene Independent Projection
             // GPU Gems 3. Chapter 10. Parallel-Split Shadow Maps on Programmable GPUs
-            // {
-                //Vector4f viewSpaceBoundingSphereCenter = ;
-
-                // To avoid shimmering caused by camera movements, create a "stable" projection using the method described in the article "Stable Cascaded Shadow Maps" from ShaderX6.
-                // 1. Using a bounding sphere instead of a bounding box to guarantee the projection is rotation-invariant.
-                // 2. Moving the shadow caster camera in texel-sized increments.
-
-                //float snapX = std::fmodf(, 2.0f / shadowMapSize);
-                //float snapY = std::fmodf(, 2.0f / shadowMapSize);
-            // }
-
-#endif
             float minZ = -100.0f;//-boundingSphereRadius;
             float maxZ = boundingSphereRadius;
 
             Matrix4x4f viewMatrix = glm::lookAt(boundingSphereCenter, boundingSphereCenter + lightDirection, Vector3f(0.0f, 1.0f, 0.0f));
             Matrix4x4f projectionMatrix = Math::OrthographicProjection_ReverseZ_ZO(-boundingSphereRadius, boundingSphereRadius, -boundingSphereRadius, boundingSphereRadius, minZ, maxZ);
+
+            {
+                // To avoid shimmering caused by camera movements, create a "stable" projection using the method described in the article "Stable Cascaded Shadow Maps" from ShaderX6.
+                // 1. Using a bounding sphere instead of a bounding box to guarantee the projection is rotation-invariant.
+                // 2. Moving the shadow caster camera in texel-sized increments.
+
+                Vector4f lightSpacePosition = worldToLight * Vector4f(boundingSphereCenter.x, boundingSphereCenter.y, boundingSphereCenter.z, 1.0f);
+
+                float snapX = std::fmod(lightSpacePosition.x / boundingSphereRadius, 2.0f / float(shadowMapSize));
+                float snapY = std::fmod(lightSpacePosition.y / boundingSphereRadius, 2.0f / float(shadowMapSize));
+
+                projectionMatrix[3] += Vector4f(snapX, snapY, 0.0f, 0.0f);
+            }
 
             cascadeData.cascadeIndex = cascadeIndex;
             cascadeData.startDistance = cascadeStartDistance;

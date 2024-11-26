@@ -513,6 +513,43 @@ namespace Horizon
                 float cascadeStartDistance = CascadedShadowMapPracticalSplitScheme(cascadeIndex, shadowCascadeCount, cameraNearClippingPlane, maxShadowDistance, shadowCascadeSplitLambda);
                 float cascadeEndDistance = CascadedShadowMapPracticalSplitScheme(cascadeIndex + 1, shadowCascadeCount, cameraNearClippingPlane, maxShadowDistance, shadowCascadeSplitLambda);
 
+#if 1
+                float halfCascadeFrustumNearPlaneExtentX = cascadeStartDistance * tanHalfVerticalFOV * aspectRatio;
+                float halfCascadeFrustumNearPlaneExtentY = cascadeStartDistance * tanHalfVerticalFOV;
+
+                float halfCascadeFrustumFarPlaneExtentX = cascadeEndDistance * tanHalfVerticalFOV * aspectRatio;
+                float halfCascadeFrustumFarPlaneExtentY = cascadeEndDistance * tanHalfVerticalFOV;
+
+                Vector4f cascadeFrustumCorners[8] =
+                {
+                    Vector4f( halfCascadeFrustumNearPlaneExtentX,  halfCascadeFrustumNearPlaneExtentY, -cascadeStartDistance, 1.0f), // top right
+                    Vector4f( halfCascadeFrustumNearPlaneExtentX, -halfCascadeFrustumNearPlaneExtentY, -cascadeStartDistance, 1.0f), // bottom right
+                    Vector4f(-halfCascadeFrustumNearPlaneExtentX,  halfCascadeFrustumNearPlaneExtentY, -cascadeStartDistance, 1.0f), // top left
+                    Vector4f(-halfCascadeFrustumNearPlaneExtentX, -halfCascadeFrustumNearPlaneExtentY, -cascadeStartDistance, 1.0f), // bottom left
+                    Vector4f( halfCascadeFrustumFarPlaneExtentX,  halfCascadeFrustumFarPlaneExtentY, -cascadeEndDistance, 1.0f), // top right
+                    Vector4f( halfCascadeFrustumFarPlaneExtentX, -halfCascadeFrustumFarPlaneExtentY, -cascadeEndDistance, 1.0f), // bottom right
+                    Vector4f(-halfCascadeFrustumFarPlaneExtentX,  halfCascadeFrustumFarPlaneExtentY, -cascadeEndDistance, 1.0f), // top left
+                    Vector4f(-halfCascadeFrustumFarPlaneExtentX, -halfCascadeFrustumFarPlaneExtentY, -cascadeEndDistance, 1.0f)  // bottom left
+                };
+
+                Vector3f boundingSphereCenter = Vector3f(0.0f, 0.0f, 0.0f);
+                for (uint32 i = 0; i < 8; i++)
+                {
+                    cascadeFrustumCorners[i] = inverseViewMatrix * cascadeFrustumCorners[i];
+                    boundingSphereCenter += Vector3f(cascadeFrustumCorners[i].x, cascadeFrustumCorners[i].y, cascadeFrustumCorners[i].z);
+                }
+                boundingSphereCenter /= 8.0f;
+
+                float boundingSphereRadius = 0.0f;
+                for (uint32 i = 0; i < 8; i++)
+                {
+                    float distance = glm::length(Vector3f(cascadeFrustumCorners[i].x, cascadeFrustumCorners[i].y, cascadeFrustumCorners[i].z) - boundingSphereCenter);
+                    boundingSphereRadius = glm::max(boundingSphereRadius, distance);
+                }
+                boundingSphereRadius = std::ceil(boundingSphereRadius); // Use the ceilling function to increase stability.
+
+                Vector4f boundingSphere = Vector4f(boundingSphereCenter.x, boundingSphereCenter.y, boundingSphereCenter.z, boundingSphereRadius);
+#else
                 Vector4f viewSpaceBoundingSphere = ComputeViewSpaceShadowCascadeMinimumBoundingSphere(cascadeStartDistance, cascadeEndDistance, tanHalfVerticalFOV, aspectRatio);
                 float boundingSphereRadius = std::ceil(viewSpaceBoundingSphere.w); // Use the ceilling function to increase stability.
 
@@ -535,7 +572,7 @@ namespace Horizon
                     //float snapX = std::fmodf(, 2.0f / shadowMapSize);
                     //float snapY = std::fmodf(, 2.0f / shadowMapSize);
                 // }
-
+#endif
                 float minZ = -100.0f;//-boundingSphereRadius;
                 float maxZ = boundingSphereRadius;
 
@@ -543,6 +580,9 @@ namespace Horizon
                 Matrix4x4f projectionMatrix = Math::OrthographicProjection_ReverseZ_ZO(-boundingSphereRadius, boundingSphereRadius, -boundingSphereRadius, boundingSphereRadius, minZ, maxZ);
 
                 renderer->DrawSphere(boundingSphereCenter, boundingSphereRadius, Vector4(1.0f, 0.0f, 0.0f, 1.0f));
+
+                Vector3 fff = previewSceneView.cameraPosition + cascadeEndDistance * previewSceneView.cameraForwardVector;
+                renderer->DrawLine(previewSceneView.cameraPosition + float(cascadeIndex) * previewSceneView.cameraRightVector, fff + float(cascadeIndex) * previewSceneView.cameraRightVector, Vector4(1.0f, 0.0f, 0.0f, 1.0f), 1.0f, 0);
             }
         }
 

@@ -248,6 +248,7 @@ namespace Horizon
         Vector3 position;
         Vector3 direction;
         Vector3 tangent;
+        Matrix4x4f worldToLight;
         float radius;
         bool castDynamicShadows;
         uint32 shadowMapSize;

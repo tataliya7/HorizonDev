@@ -280,7 +280,7 @@ namespace Horizon
             {
                 const TransformComponent& transform = entityManager->GetComponent<TransformComponent>(entity);
                 lightComponent.position = transform.position;
-                lightComponent.direction = Math::Normalize(Vector3(Math::QuaternionFromEulerAngles(Math::DegreesToRadians(transform.rotation)) * Vector4(0.0, 0.0, -1.0, 0.0)));
+                lightComponent.direction = Math::Normalize(Vector3(Math::QuaternionFromEulerAngles(Math::DegreesToRadians(transform.rotation)) * Vector4(0.0f, 0.0f, -1.0f, 0.0f)));
                 lightComponent.UpdateRenderObject();
             });
         }

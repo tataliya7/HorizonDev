@@ -73,14 +73,17 @@ namespace Horizon
             if (type == Type::Distant)
             {
                 renderObject->lightType = LightType::DistantLight;
+                renderObject->worldToLight = glm::lookAt(Vector3f(0.0f, 0.0f, 0.0f), direction, Vector3f(0.0f, 1.0f, 0.0f));
             }
             else if (type == Type::Point)
             {
                 renderObject->lightType = LightType::PointLight;
+                renderObject->worldToLight = glm::translate(position);
             }
             else if (type == Type::Spot)
             {
                 renderObject->lightType = LightType::SpotLight;
+                renderObject->worldToLight = glm::lookAt(position, position + direction, Vector3f(0.0f, 1.0f, 0.0f));
             }
         }
     }
