@@ -28,8 +28,9 @@ namespace Horizon
         float cascadeEndDistance[RendererMaxShadowMapCascadeCount];
         float transitionStartDistance[RendererMaxShadowMapCascadeCount];
         float inverseTransitionRange[RendererMaxShadowMapCascadeCount];
-        Vector2 shadowMapSize;
-        Vector2 shadowFadeOutParameters;
+        Vector4f depthBiasParameters[RendererMaxShadowMapCascadeCount];
+        Vector2f shadowMapSize;
+        Vector2f shadowFadeOutParameters;
         float maxShadowDistance;
         uint32 cascadeCount;
     };

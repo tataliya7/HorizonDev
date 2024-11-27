@@ -559,19 +559,6 @@ namespace Horizon
                 boundingSphere.w = boundingSphereRadius;
 
                 Vector3f boundingSphereCenter = Vector3f(boundingSphere.x, boundingSphere.y, boundingSphere.z);
-
-                // Scene Independent Projection
-                // GPU Gems 3. Chapter 10. Parallel-Split Shadow Maps on Programmable GPUs
-                // {
-                    //Vector4f viewSpaceBoundingSphereCenter = ;
-
-                    // To avoid shimmering caused by camera movements, create a "stable" projection using the method described in the article "Stable Cascaded Shadow Maps" from ShaderX6.
-                    // 1. Using a bounding sphere instead of a bounding box to guarantee the projection is rotation-invariant.
-                    // 2. Moving the shadow caster camera in texel-sized increments.
-
-                    //float snapX = std::fmodf(, 2.0f / shadowMapSize);
-                    //float snapY = std::fmodf(, 2.0f / shadowMapSize);
-                // }
 #endif
                 float minZ = -100.0f;//-boundingSphereRadius;
                 float maxZ = boundingSphereRadius;

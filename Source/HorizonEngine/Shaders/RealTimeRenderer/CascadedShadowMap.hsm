@@ -11,6 +11,13 @@ SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_SRV(3, GeometryInstanceDataBufferSRV);
 SHADER_CONSTANTS_SCALAR(4, uint, CascadeIndex);
 SHADER_CONSTANTS_STRUCT_END();
 
+float3 ApplyShadowMapDepthBias(float3 position, float3 normal, float3 lightDirection, float4 depthBiasParameters)
+{
+    float NdotL = saturate(dot(normal, -lightDirection));
+    float3 normalOffset = (1.0f - NdotL) * depthBiasParameters.y * normal;
+    return position + lightDirection * depthBiasParameters.xxx + normalOffset;
+}
+
 [shader("vertex")]
 void CascadedShadowMapVS(
     in uint vertexID : SV_VertexID,
@@ -34,15 +41,20 @@ void CascadedShadowMapVS(
     float4x4 worldToClipMatrix = cascadedShadowMapShaderParameters.worldToClipMatrix[cascadeIndex];
 
     float3 worldSpaceVertexPosition = mul(instanceData.localToWorldMatrix, float4(vertexAttributes.position, 1.0f)).xyz;
+    float3 worldSpaceVertexNormal = normalize(mul((float3x3)instanceData.localToWorldMatrix, vertexAttributes.normal));
+
+    const float3 lightDirection = frameShaderParameters.atmosphericLightDirection;
+    const float4 depthBiasParameters = cascadedShadowMapShaderParameters.depthBiasParameters[cascadeIndex];
+    // worldSpaceVertexPosition = ApplyShadowMapDepthBias(
+    //    worldSpaceVertexPosition,
+    //    worldSpaceVertexNormal,
+    //    lightDirection,
+    //    depthBiasParameters);
+
     float4 clipSpaceVertexPosition = mul(worldToClipMatrix, float4(worldSpaceVertexPosition, 1.0f));
 
     arrayIndex = cascadeIndex;
     position = clipSpaceVertexPosition;
-
-    // TODO: apply depth bias
-    // float bias = ;
-    // float z = ;
-    // position.z = z;
 }
 
 [shader("pixel")]

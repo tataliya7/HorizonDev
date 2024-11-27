@@ -8,6 +8,7 @@ struct CascadedShadowMapShaderParameters
     float cascadeEndDistance[MAX_SHADOW_CASCADE_COUNT];
     float transitionStartDistance[MAX_SHADOW_CASCADE_COUNT];
     float inverseTransitionRange[MAX_SHADOW_CASCADE_COUNT];
+    float4 depthBiasParameters[MAX_SHADOW_CASCADE_COUNT];
     float2 shadowMapSize;
     float2 shadowFadeOutParameters;
     float maxShadowDistance;
@@ -55,7 +56,7 @@ static const float2 PoissonOffsets[32] = {
     float2(0.4402924, 0.3640312),
 };
 
-uint CalculateCascadeIndex(float cameraSpacePositionZ, CascadedShadowMapShaderParameters parameters)
+uint ComputeCascadeIndex(float cameraSpacePositionZ, CascadedShadowMapShaderParameters parameters)
 {
     float4 depths = cameraSpacePositionZ.xxxx;
     float4 distances = float4(parameters.cascadeEndDistance[0], parameters.cascadeEndDistance[1], parameters.cascadeEndDistance[2], parameters.cascadeEndDistance[3]);

@@ -56,6 +56,7 @@ namespace Horizon
             outParameters.cascadeEndDistance[i] = std::numeric_limits<float>::max();
             outParameters.transitionStartDistance[i] = std::numeric_limits<float>::max();
             outParameters.inverseTransitionRange[i] = 0.0f;
+            outParameters.depthBiasParameters[i] = Vector4f(0.0f, 0.0f, 0.0f, 0.0f);
         }
         outParameters.shadowFadeOutParameters = Vector2f(0.0f, 1.0f);
         outParameters.maxShadowDistance = 0.0f;
@@ -66,12 +67,16 @@ namespace Horizon
     {
         InitializeCascadedShadowMapShaderParameters(outParameters);
 
+        float depthBias = light.shadowMapDepthBiasConstantFactor;
+        float slopeScaledDepthBias = light.shadowMapDepthBiasSlopeFactor;
+
         for (uint32 cascadeIndex = 0; cascadeIndex < data.cascadeCount; cascadeIndex++)
         {
             outParameters.worldToClipMatrix[cascadeIndex] = data.cascadeData[cascadeIndex].worldToClipMatrix;
             outParameters.cascadeEndDistance[cascadeIndex] = data.cascadeData[cascadeIndex].endDistance;
             outParameters.transitionStartDistance[cascadeIndex] = data.cascadeData[cascadeIndex].endDistance - data.cascadeData[cascadeIndex].transitionRange;
             outParameters.inverseTransitionRange[cascadeIndex] = 1.0f / std::max(data.cascadeData[cascadeIndex].transitionRange, 0.0001f);
+            outParameters.depthBiasParameters[cascadeIndex] = Vector4f(depthBias * data.cascadeData[cascadeIndex].boundingSphere.w / float(data.resolution), slopeScaledDepthBias * data.cascadeData[cascadeIndex].boundingSphere.w / float(data.resolution), 0.0f, 0.0f);
         }
 
         float shadowRange = light.maxShadowDistance - view.nearClippingPlane;
@@ -169,7 +174,7 @@ namespace Horizon
 
             {
                 // To avoid shimmering caused by camera movements, create a "stable" projection using the method described in the article "Stable Cascaded Shadow Maps" from ShaderX6.
-                // 1. Using a bounding sphere instead of a bounding box to guarantee the projection is rotation-invariant.
+                // 1. Using a fixed-size bounding box/sphere to guarantee the projection is rotation-invariant.
                 // 2. Moving the shadow caster camera in texel-sized increments.
 
                 Vector4f lightSpacePosition = worldToLight * Vector4f(boundingSphereCenter.x, boundingSphereCenter.y, boundingSphereCenter.z, 1.0f);
@@ -208,10 +213,11 @@ namespace Horizon
             graphicsPipelineState.rasterizationState.fillMode = RenderBackendRasterizationFillMode::Solid;
             graphicsPipelineState.depthStencilState.depthTestEnable = true;
             graphicsPipelineState.depthStencilState.depthWriteEnable = true;
-            // TODO: vkCmdSetDepthBias
+            graphicsPipelineState.depthStencilState.depthCompareFunction = RenderBackendCompareOp::GreaterOrEqual;
+
+            // TODO: 
             graphicsPipelineState.rasterizationState.depthBiasConstantFactor = light.shadowMapDepthBiasConstantFactor;
             graphicsPipelineState.rasterizationState.depthBiasSlopeFactor = light.shadowMapDepthBiasSlopeFactor;
-            graphicsPipelineState.depthStencilState.depthCompareFunction = RenderBackendCompareOp::GreaterOrEqual;
 
             RenderBackendShaderConstants shaderConstants = {};
             shaderConstants.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
