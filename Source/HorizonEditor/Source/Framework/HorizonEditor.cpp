@@ -69,7 +69,7 @@ namespace Horizon
 //        PhysXInit();
 //        Audio::AudioEngineInit();
 //
-        RenderDocPluginInit();
+        //RenderDocPluginInit();
 //
 
         InitializeEngine();
@@ -180,6 +180,8 @@ namespace Horizon
                 lightComponent.useColorTemperature = true;
                 lightComponent.colorTemperature = 6500.0f;
                 lightComponent.usedAsAtmosphericLight = true;
+                //lightComponent.shadowMapSize = 4096;
+                lightComponent.shadowCascadeSplitLambda = 0.8f;
                 lightComponent.CreateRenderObject(scene->GetRenderScene());
             }
 

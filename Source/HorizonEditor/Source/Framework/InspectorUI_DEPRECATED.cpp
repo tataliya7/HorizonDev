@@ -327,6 +327,19 @@ namespace Horizon
             ImGui::NextColumn();
 
             ImGui::AlignTextToFramePadding();
+            ImGui::TextUnformatted("Shadow Map Size");
+            ImGui::NextColumn();
+            ImGui::PushItemWidth(-1);
+
+            float v_min1 = 512.0f; float v_max1 = 4096.0f;
+            if (ImGui::DragScalar("##ShadowMapSize", ImGuiDataType_U32, &component.shadowMapSize, 1.0f, &v_min1, &v_max1))
+            {
+                component.shadowMapSize = Math::RoundDownToPowerOfTwo(component.shadowMapSize);
+            }
+            ImGui::PopItemWidth();
+            ImGui::NextColumn();
+
+            ImGui::AlignTextToFramePadding();
             ImGui::TextUnformatted("Shadow Cascade Count");
             ImGui::NextColumn();
             ImGui::PushItemWidth(-1);

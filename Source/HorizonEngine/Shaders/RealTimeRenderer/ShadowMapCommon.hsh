@@ -21,41 +21,6 @@ struct CubeShadowMapShaderParameters
     float4x4 worldToClipMatrix[6];
 };
 
-static const float2 PoissonOffsets[32] = {
-    float2(0.06407013, 0.05409927),
-    float2(0.7366577, 0.5789394),
-    float2(-0.6270542, -0.5320278),
-    float2(-0.4096107, 0.8411095),
-    float2(0.6849564, -0.4990818),
-    float2(-0.874181, -0.04579735),
-    float2(0.9989998, 0.0009880066),
-    float2(-0.004920578, -0.9151649),
-    float2(0.1805763, 0.9747483),
-    float2(-0.2138451, 0.2635818),
-    float2(0.109845, 0.3884785),
-    float2(0.06876755, -0.3581074),
-    float2(0.374073, -0.7661266),
-    float2(0.3079132, -0.1216763),
-    float2(-0.3794335, -0.8271583),
-    float2(-0.203878, -0.07715034),
-    float2(0.5912697, 0.1469799),
-    float2(-0.88069, 0.3031784),
-    float2(0.5040108, 0.8283722),
-    float2(-0.5844124, 0.5494877),
-    float2(0.6017799, -0.1726654),
-    float2(-0.5554981, 0.1559997),
-    float2(-0.3016369, -0.3900928),
-    float2(-0.5550632, -0.1723762),
-    float2(0.925029, 0.2995041),
-    float2(-0.2473137, 0.5538505),
-    float2(0.9183037, -0.2862392),
-    float2(0.2469421, 0.6718712),
-    float2(0.3916397, -0.4328209),
-    float2(-0.03576927, -0.6220032),
-    float2(-0.04661255, 0.7995201),
-    float2(0.4402924, 0.3640312),
-};
-
 uint ComputeCascadeIndex(float cameraSpacePositionZ, CascadedShadowMapShaderParameters parameters)
 {
     float4 depths = cameraSpacePositionZ.xxxx;
@@ -63,25 +28,6 @@ uint ComputeCascadeIndex(float cameraSpacePositionZ, CascadedShadowMapShaderPara
     float4 count = float4(depths >= distances);
 	uint cascadeIndex = uint(count.x + count.y + count.z + count.w);
     return cascadeIndex;
-}
-
-float PCFPoissonSampling(Texture2DArray shadowMapTexture, uint cascadeIndex, float2 shadowMapPosition, float receiverDepth, float filterSize, float offsetScale, float2 offsetRotation)
-{
-    float result = 0.0f;
-    uint sampleCount = 32;
-    for (uint i = 0; i < sampleCount; i++)
-    {
-        float2 offset = offsetScale * PoissonOffsets[i] * filterSize;
-        offset = float2(offset.x * offsetRotation.x - offset.y * offsetRotation.y, offset.y * offsetRotation.x + offset.x * offsetRotation.y);
-        float shadowFactor = shadowMapTexture.SampleCmpLevelZero(GlobalSamplerComparisonLessLinearClamp, float3(shadowMapPosition + offset, cascadeIndex), receiverDepth);
-        result += 1.0f - shadowFactor;
-    }
-    return result / float(sampleCount);
-}
-
-float PCFSoftShadowsCorrection(float shadowFactor)
-{
-    return shadowFactor * shadowFactor;
 }
 
 #if 0
@@ -122,3 +68,20 @@ float4 ShadowMapPositionWithNormalOffset(float3 P, float3 N, float3 L, float4x4 
     return shadowMapPosition;
 }
 #endif
+
+/**
+ * Use sqrt() to encode shadow factor to alleviate banding artifacts.
+ */
+float EncodeShadowFactor(float x)
+{
+	return sqrt(x);
+}
+
+/**
+ * Decode shadow factor.
+ * @see EncodeShadowFactor()
+ */
+float DecodeShadowFactor(float x)
+{
+	return x * x;
+}

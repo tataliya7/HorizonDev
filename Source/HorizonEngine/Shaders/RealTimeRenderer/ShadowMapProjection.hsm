@@ -2,6 +2,7 @@
 #include "../Random.hsh"
 #include "RealTimeRendererCommon.hsh"
 #include "ShadowMapCommon.hsh"
+#include "ShadowFilteringCommon.hsh"
 #include "ScreenSpaceRayTracing/ScreenSpaceRayTracingCommon.hsh"
 
 SHADER_CONSTANTS_STRUCT_BEGIN();
@@ -12,7 +13,7 @@ SHADER_CONSTANTS_TEXTURE_2D_ARRAY_DEFAULT_SRV(3, ShadowMapTextureSRV);
 SHADER_CONSTANTS_TEXTURE_2D_UAV(4, float4, ShadowMaskTextureUAV);
 SHADER_CONSTANTS_STRUCT_END();
 
-#define HARD_SHADOW 0
+#define SHADOW_FILTERING_METHOD 0
 
 float CSMShadow(
     CascadedShadowMapShaderParameters cascadedShadowMapShaderParameters,
@@ -35,9 +36,13 @@ float CSMShadow(
 
         if (valid)
         {
-            #if HARD_SHADOW
-            float shadowMapDepthValue = shadowMapTexture.SampleLevel(GlobalSamplerPointClamp, float3(shadowMapTextureCoord.xy, cascadeIndex), 0).r;
-            shadowFactor = (shadowMapTextureCoord.z > shadowMapDepthValue) ? 1.0f : 0.0f;
+            #if SHADOW_FILTERING_METHOD == 0
+            shadowFactor = PercentageCloserFiltering(
+                shadowMapTexture,
+                cascadedShadowMapShaderParameters.shadowMapSize,
+                cascadeIndex,
+                shadowMapTextureCoord.xy,
+                shadowMapTextureCoord.z);
             #else
             shadowFactor = PCFPoissonSampling(
                 shadowMapTexture,
@@ -48,8 +53,6 @@ float CSMShadow(
                 cascadedShadowMapShaderParameters.shadowMapSize.y,
                 rotation);
             #endif
-
-            shadowFactor = PCFSoftShadowsCorrection(shadowFactor);
         }
     }
 
@@ -166,5 +169,5 @@ void ShadowMapProjectionForDistantLightCS(uint3 dispatchThreadID : SV_DispatchTh
     float fadeOut = saturate((cameraSpaceDepth - cascadedShadowMapShaderParameters.shadowFadeOutParameters.x) * cascadedShadowMapShaderParameters.shadowFadeOutParameters.y);
     shadowFactor = lerp(shadowFactor, 1.0f, fadeOut * fadeOut);
 
-    shadowMaskTexture[pixelCoord] = float4(shadowFactor, 0.0f, 0.0f, 0.0f);
+    shadowMaskTexture[pixelCoord] = float4(EncodeShadowFactor(shadowFactor), 0.0f, 0.0f, 0.0f);
 }

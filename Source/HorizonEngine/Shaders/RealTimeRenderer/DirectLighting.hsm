@@ -129,6 +129,7 @@ float3 ComputeDistantLightDirectLightingContribution(PerFrameShaderParameters fr
 
     Texture2D shadowMaskTexture = ShaderConstants.GetScreenSpaceShadowMaskTextureSRV();
     visibility = shadowMaskTexture.SampleLevel(GlobalSamplerLinearClamp, surface.uv, 0).r;
+    visibility = DecodeShadowFactor(visibility);
 
     float3 L = normalize(-distantLightData.direction);
     float3 N = normalize(surface.N);
