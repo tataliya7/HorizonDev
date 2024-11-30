@@ -74,44 +74,6 @@ namespace Horizon
     void RealTimeRenderer::InitializeSceneView(SceneView* v)
     {
         sceneView = v;
-        // Super Resolution
-        //isDLSSEnabled = false;
-        //isFSR2Enabled = false;
-        //isSuperResolutionEnabled = false;
-        //switch (view.renderSettings.superResolutionTechnique)
-        //{
-        //case SuperResolutionTechnique::FSR2:
-        //    {
-        //        isFSR2Enabled = true;
-        //        isSuperResolutionEnabled = true;
-        //    } break;
-        //case SuperResolutionTechnique::DLSSSuperResolution:
-        //    {
-        //        isDLSSEnabled = true;
-        //        isSuperResolutionEnabled = true;
-        //    } break;
-        //default: break;
-        //}
-
-        //// Antialiasing
-        //isDLAAEnabled = false;
-        //isTemporalAAEnabled = false;
-        //if (!IsSuperResolutionEnabled())
-        //{
-        //    switch (view.renderSettings.antialiasingTechnique)
-        //    {
-        //    case AntialiasingTechnique::TemporalAA:
-        //        {
-        //            isTemporalAAEnabled = true;
-        //        } break;
-        //    case AntialiasingTechnique::DLAA:
-        //        {
-        //            isDLAAEnabled = true;
-        //        } break;
-        //    default: break;
-        //    }
-        //}
-
         SceneView& view = *sceneView;
         const RenderSettings& renderSettings = view.renderSettings;
 

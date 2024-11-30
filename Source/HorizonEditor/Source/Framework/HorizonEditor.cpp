@@ -232,13 +232,6 @@ namespace Horizon
                 LocalFogVolumeComponent& localFogVolumeComponent = scene->GetEntityManager()->AddComponent<LocalFogVolumeComponent>(localFogVolume);
                 localFogVolumeComponent.CreateRenderObject(scene->GetRenderScene());
             }
-
-            // DistantLightRenderObject* distantLight = new DistantLightRenderObject();
-            // distantLight->usedAsAtmosphericLight = true;
-            // renderScene->AddLight(distantLight);
-            //
-            // SkyAtmosphereRenderObject* skyAtmosphere = new SkyAtmosphereRenderObject();
-            // renderScene->AddSkyAtmosphere(skyAtmosphere);
         }
 
         // TODO: Test New Sponaza

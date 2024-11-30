@@ -48,6 +48,7 @@
          std::vector<MeshSubset> subsets;
          //std::vector<Matrix4x4> transformData;
          //std::vector<Matrix4x4> transformDataTranspose;
+         Matrix4x4f localToWorldMatrix;
 
          std::vector<Material> materials;
 

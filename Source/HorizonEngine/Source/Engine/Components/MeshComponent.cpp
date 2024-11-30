@@ -37,6 +37,9 @@
              renderObject->materialBuffer = materialBuffer;
              renderObject->materialIndexBuffer = materialIndexBuffer;
 
+             renderObject->localToWorldMatrix = localToWorldMatrix;
+             renderObject->worldToLocalMatrix = Math::InverseMatrix(localToWorldMatrix);
+
              scene->AddMesh(renderObject);
          }
      }
@@ -50,7 +53,8 @@
      {
          if (renderObject)
          {
-             //renderObject->transform = ;
+             renderObject->localToWorldMatrix = localToWorldMatrix;
+             renderObject->worldToLocalMatrix = Math::InverseMatrix(localToWorldMatrix);
          }
      }
 

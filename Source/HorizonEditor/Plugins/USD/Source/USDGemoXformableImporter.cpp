@@ -71,6 +71,7 @@ namespace Horizon::USDImporter
         TransformComponent& transformComponent = scene->GetEntityManager()->GetComponent<TransformComponent>(entity);
         transformComponent.position = transformPosition;
         transformComponent.rotation = transformRotation;
-        transformComponent.scale = transformScale;
+        // TODO
+        //transformComponent.scale = transformScale;
     }
 }

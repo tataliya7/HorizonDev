@@ -236,8 +236,8 @@ namespace Horizon
 
             // TODO
             GPUSceneGeometryInstanceData geometryInstance;
-            geometryInstance.localToWorldMatrix = glm::scale(IdentityMatrix4x4, Vector3(0.01f, 0.01f, 0.01f));
-            geometryInstance.worldToLocalMatrix = glm::inverse(geometryInstance.localToWorldMatrix);
+            geometryInstance.localToWorldMatrix = glm::scale(mesh->localToWorldMatrix, Vector3(0.01f, 0.01f, 0.01f));
+            geometryInstance.worldToLocalMatrix = mesh->worldToLocalMatrix;
             geometryInstance.previousLocalToWorldMatrix = geometryInstance.localToWorldMatrix;
             geometryInstance.previousWorldToLocalMatrix = geometryInstance.worldToLocalMatrix;
             geometryInstance.geometryID = geometryID;

@@ -116,7 +116,7 @@ namespace Horizon
 
             float transitionRange = (cascadeEndDistance - cascadeStartDistance) * shadowCascadeTransitionScale;
 
-#if 0
+#if 1
             float halfCascadeFrustumNearPlaneExtentX = cascadeStartDistance * tanHalfVerticalFOV * aspectRatio;
             float halfCascadeFrustumNearPlaneExtentY = cascadeStartDistance * tanHalfVerticalFOV;
 
@@ -165,8 +165,7 @@ namespace Horizon
 #endif
 
             // Scene Independent Projection
-            // GPU Gems 3. Chapter 10. Parallel-Split Shadow Maps on Programmable GPUs
-            float minZ = -100.0f;//-boundingSphereRadius;
+            float minZ = -boundingSphereRadius;
             float maxZ = boundingSphereRadius;
 
             Matrix4x4f viewMatrix = glm::lookAt(boundingSphereCenter, boundingSphereCenter + lightDirection, Vector3f(0.0f, 1.0f, 0.0f));
@@ -215,7 +214,7 @@ namespace Horizon
             graphicsPipelineState.depthStencilState.depthWriteEnable = true;
             graphicsPipelineState.depthStencilState.depthCompareFunction = RenderBackendCompareOp::GreaterOrEqual;
 
-            // TODO: 
+            // TODO:
             graphicsPipelineState.rasterizationState.depthBiasConstantFactor = light.shadowMapDepthBiasConstantFactor;
             graphicsPipelineState.rasterizationState.depthBiasSlopeFactor = light.shadowMapDepthBiasSlopeFactor;
 

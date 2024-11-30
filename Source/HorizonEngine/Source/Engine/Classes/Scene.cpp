@@ -273,7 +273,7 @@ namespace Horizon
         //         camera.Update();
         //     });
         // }
-        //
+
         // Update lights
         {
             entityManager->GetView<LightComponent>().each([&](EntityHandle entity, LightComponent& lightComponent)
@@ -284,15 +284,16 @@ namespace Horizon
                 lightComponent.UpdateRenderObject();
             });
         }
-        //
-        // // Update meshes
-        // {
-        //     entityManager->GetView<MeshComponent>().each([&](EntityHandle entity, MeshComponent& mesh)
-        //     {
-        //         auto& transform = entityManager->GetComponent<TransformComponent>(entity);
-        //         // mesh.worldMatrix = transform.world;
-        //     });
-        // }
+
+        // Update meshes
+        {
+            entityManager->GetView<MeshComponent>().each([&](EntityHandle entity, MeshComponent& meshComponent)
+            {
+                const TransformComponent& transform = entityManager->GetComponent<TransformComponent>(entity);
+                meshComponent.localToWorldMatrix = transform.localToWorldMatrix;
+                meshComponent.UpdateRenderObject();
+            });
+        }
 
         entityManager->GetView<SkyAtmosphereComponent>().each([&](EntityHandle entity)
         {

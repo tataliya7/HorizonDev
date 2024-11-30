@@ -150,7 +150,8 @@ namespace Horizon
         const uint32 shaderIndex = uint32(id);
         if (succeed)
         {
-            RenderBackendShaderDesc shaderDesc = {
+            RenderBackendShaderDesc shaderDesc =
+            {
                 .stage = static_cast<RenderBackendShaderStage>(desc.stage),
                 .code = compilerOutput.blob.GetData(),
                 .codeSize = compilerOutput.blob.GetSize(),

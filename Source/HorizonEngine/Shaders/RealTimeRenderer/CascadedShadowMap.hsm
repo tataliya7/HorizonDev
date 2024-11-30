@@ -55,6 +55,9 @@ void CascadedShadowMapVS(
 
     arrayIndex = cascadeIndex;
     position = clipSpaceVertexPosition;
+
+    // Clamp to near plane
+    position.z = min(position.z, 1);
 }
 
 [shader("pixel")]
