@@ -53,6 +53,8 @@ namespace Horizon
         RenderGraph(const RenderGraph& other) = delete;
         virtual ~RenderGraph();
 
+        RenderGraphBlackboard blackboard;
+
         /**
          * Adds a pass to the render graph with a lamda functions.
          *
@@ -121,7 +123,9 @@ namespace Horizon
 
         const RenderGraphBufferDesc& GetBufferDesc(RenderGraphBufferHandle handle) const;
 
-        RenderGraphBlackboard blackboard;
+        void BeginTimingQuery();
+
+        void EndTimingQuery();
 
     private:
 

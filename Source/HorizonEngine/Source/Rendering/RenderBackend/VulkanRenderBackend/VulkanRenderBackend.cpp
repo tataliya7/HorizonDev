@@ -3557,7 +3557,7 @@ namespace Horizon
 
         VkSampleMask sampleMask = 0xFFFFFFFF;
 
-        VkPipelineMultisampleStateCreateInfo multisamplingStateInfo = 
+        VkPipelineMultisampleStateCreateInfo multisamplingStateInfo =
         {
             .sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO,
             .rasterizationSamples = VK_SAMPLE_COUNT_1_BIT,
@@ -3568,7 +3568,7 @@ namespace Horizon
             .alphaToOneEnable = VK_FALSE,
         };
 
-        VkGraphicsPipelineCreateInfo graphicsPipelineInfo = 
+        VkGraphicsPipelineCreateInfo graphicsPipelineInfo =
         {
             .sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
             .pNext = useDynamicRendering ? &renderingInfo->pipelineRenderingInfo : nullptr,
@@ -4579,7 +4579,6 @@ namespace Horizon
         for (uint32 i = 0; i < command.transitionCount; i++)
         {
             const auto& transition = command.transitions[i];
-            assert(transition.stateBefore != transition.stateAfter);
 
             // TODO: remove this
             if (transition.stateAfter == RenderBackendResourceState::Undefined)
@@ -5120,6 +5119,7 @@ namespace Horizon
         {
             RenderBackendTextureResource textureResource = {};
             textureResource.texture = texture->handle;
+            textureResource.info = &texture->info;
             textureResource.memory = texture->allocation->GetMemory();
             textureResource.view = uav ? texture->uavs[0].uav : texture->defaultView;
             textureResource.width = texture->width;

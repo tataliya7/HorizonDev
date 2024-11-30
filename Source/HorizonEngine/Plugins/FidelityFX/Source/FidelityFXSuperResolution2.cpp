@@ -3,7 +3,7 @@ module;
 #include "Foundation/FoundationModule.h"
 #include "Rendering/RenderingModule.h"
 
-#include <ffx_fsr2.h>
+#include <FidelityFX/host/ffx_fsr2.h>
 
 module FidelityFX.SuperResolution2;
 
@@ -61,6 +61,8 @@ namespace Horizon
         , constants()
     {
         state = new FidelityFxSuperResolution2State();
+        state->fsr2ContextDescription = {};
+        state->fsr2Context = {};
         state->initialized = false;
     }
 
@@ -68,11 +70,11 @@ namespace Horizon
     {
         if (state != nullptr)
         {
-            if (state->fsr2ContextDescription.callbacks.scratchBuffer != nullptr)
+            if (state->fsr2ContextDescription.backendInterface.scratchBuffer != nullptr)
             {
                 ffxFsr2ContextDestroy(&state->fsr2Context);
-                free(state->fsr2ContextDescription.callbacks.scratchBuffer);
-                state->fsr2ContextDescription.callbacks.scratchBuffer = nullptr;
+                free(state->fsr2ContextDescription.backendInterface.scratchBuffer);
+                state->fsr2ContextDescription.backendInterface.scratchBuffer = nullptr;
             }
 
             delete state;

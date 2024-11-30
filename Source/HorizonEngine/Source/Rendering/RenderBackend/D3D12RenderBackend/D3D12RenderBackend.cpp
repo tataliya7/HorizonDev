@@ -3118,18 +3118,29 @@ namespace Horizon
         D3D12Texture* motionVectorTexture = device->GetTexture(command.motionVectors);
         D3D12Texture* exposureTexture = device->GetTexture(command.exposure);
 
-        auto GetRenderBackendTextureResourceD3D12 = [](D3D12Texture* texture)
+        auto GetRenderBackendTextureResourceD3D12 = [](D3D12Texture* texture, D3D12_RESOURCE_STATES state)
         {
             RenderBackendTextureResource textureResource = {};
             textureResource.texture = texture->resource.Get();
+            textureResource.info = nullptr;
+            textureResource.memory = nullptr;
+            textureResource.view = nullptr;
+            textureResource.width = texture->width;
+            textureResource.height = texture->height;
+            textureResource.mipLevels = texture->mipLevels;
+            textureResource.arrayLayers = texture->arraySize;
+            textureResource.format = texture->format;
+            textureResource.state = state;
+            textureResource.flags = 0;
+            textureResource.usage = 0;
             return textureResource;
         };
 
-        RenderBackendTextureResource output = GetRenderBackendTextureResourceD3D12(outputTexture);
-        RenderBackendTextureResource color = GetRenderBackendTextureResourceD3D12(colorTexture);
-        RenderBackendTextureResource depth = GetRenderBackendTextureResourceD3D12(depthTexture);
-        RenderBackendTextureResource motionVectors = GetRenderBackendTextureResourceD3D12(motionVectorTexture);
-        RenderBackendTextureResource exposure = GetRenderBackendTextureResourceD3D12(exposureTexture);
+        RenderBackendTextureResource output = GetRenderBackendTextureResourceD3D12(outputTexture, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+        RenderBackendTextureResource color = GetRenderBackendTextureResourceD3D12(colorTexture, D3D12_RESOURCE_STATE_ALL_SHADER_RESOURCE);
+        RenderBackendTextureResource depth = GetRenderBackendTextureResourceD3D12(depthTexture, D3D12_RESOURCE_STATE_ALL_SHADER_RESOURCE);
+        RenderBackendTextureResource motionVectors = GetRenderBackendTextureResourceD3D12(motionVectorTexture, D3D12_RESOURCE_STATE_ALL_SHADER_RESOURCE);
+        RenderBackendTextureResource exposure = GetRenderBackendTextureResourceD3D12(exposureTexture, D3D12_RESOURCE_STATE_ALL_SHADER_RESOURCE);
 
         bool succeed = command.callback(static_cast<void*>(commandList->commandList.Get()), command.context, output, color, depth, motionVectors, exposure);
 

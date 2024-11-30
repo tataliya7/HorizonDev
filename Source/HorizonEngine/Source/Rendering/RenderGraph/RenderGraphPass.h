@@ -20,7 +20,7 @@ namespace Horizon
         SkipRenderPass = (1 << 7),
         Readback       = Copy | NeverGetCulled,
     };
-    HORIZON_ENUM_CLASS_OPERATORS(RenderGraphPassFlags);
+    HORIZON_OVERLOAD_ENUM_CLASS_OPERATORS(RenderGraphPassFlags);
 
     class RenderGraphPass : public RenderGraphNode
     {

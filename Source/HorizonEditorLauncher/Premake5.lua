@@ -108,9 +108,9 @@ project "HorizonEditorLauncher"
 
             thirdpartypath("python/310/libs/python310.lib"),
 
-            thirdpartypath("ffx-fsr2/lib/ffx_fsr2_api_dx12_x64d.lib"),
-            thirdpartypath("ffx-fsr2/lib/ffx_fsr2_api_vk_x64d.lib"),
-            thirdpartypath("ffx-fsr2/lib/ffx_fsr2_api_x64d.lib"),
+            thirdpartypath("ffx/sdk/bin/ffx_sdk/ffx_backend_dx12_x64d.lib"),
+            thirdpartypath("ffx/sdk/bin/ffx_sdk/ffx_backend_vk_x64d.lib"),
+            thirdpartypath("ffx/sdk/bin/ffx_sdk/ffx_fsr2_x64d.lib"),
         }
         postbuildcommands {
             "{COPY} %{wks.location}/ThirdParty/physx/lib/debug/PhysX_64.dll %{cfg.targetdir}",
@@ -142,9 +142,9 @@ project "HorizonEditorLauncher"
             "{COPY} %{wks.location}/ThirdParty/python/310/lib %{cfg.targetdir}/python310/lib",
             "{COPY} %{wks.location}/ThirdParty/python/310/DLLs %{cfg.targetdir}/python310/DLLs",
 
-            "{COPY} %{wks.location}/ThirdParty/ffx-fsr2/lib/ffx_fsr2_api_dx12_x64d.dll %{cfg.targetdir}",
-            "{COPY} %{wks.location}/ThirdParty/ffx-fsr2/lib/ffx_fsr2_api_vk_x64d.dll %{cfg.targetdir}",
-            "{COPY} %{wks.location}/ThirdParty/ffx-fsr2/lib/ffx_fsr2_api_x64d.dll %{cfg.targetdir}",
+            "{COPY} %{wks.location}/ThirdParty/ffx/sdk/bin/ffx_sdk/ffx_backend_dx12_x64d.dll %{cfg.targetdir}",
+            "{COPY} %{wks.location}/ThirdParty/ffx/sdk/bin/ffx_sdk/ffx_backend_vk_x64d.dll %{cfg.targetdir}",
+            "{COPY} %{wks.location}/ThirdParty/ffx/sdk/bin/ffx_sdk/ffx_fsr2_x64d.dll %{cfg.targetdir}",
 
             "{COPY} %{wks.location}/ThirdParty/streamline/Streamline-2.4.15/bin/x64/development/NvLowLatencyVk.dll %{cfg.targetdir}",
             "{COPY} %{wks.location}/ThirdParty/streamline/Streamline-2.4.15/bin/x64/development/nvngx_dlss.dll %{cfg.targetdir}",
@@ -191,9 +191,9 @@ project "HorizonEditorLauncher"
 
             thirdpartypath("python/310/libs/python310.lib"),
 
-            thirdpartypath("ffx-fsr2/lib/ffx_fsr2_api_dx12_x64.lib"),
-            thirdpartypath("ffx-fsr2/lib/ffx_fsr2_api_vk_x64.lib"),
-            thirdpartypath("ffx-fsr2/lib/ffx_fsr2_api_x64.lib"),
+            thirdpartypath("ffx/sdk/bin/ffx_sdk/ffx_backend_dx12_x64.lib"),
+            thirdpartypath("ffx/sdk/bin/ffx_sdk/ffx_backend_vk_x64.lib"),
+            thirdpartypath("ffx/sdk/bin/ffx_sdk/ffx_fsr2_x64.lib"),
         }
         postbuildcommands {
             "{COPY} %{wks.location}/ThirdParty/physx/lib/release/PhysX_64.dll %{cfg.targetdir}",
@@ -226,9 +226,9 @@ project "HorizonEditorLauncher"
             "{COPY} %{wks.location}/ThirdParty/python/310/lib %{cfg.targetdir}/python310/lib",
             "{COPY} %{wks.location}/ThirdParty/python/310/DLLs %{cfg.targetdir}/python310/DLLs",
 
-            "{COPY} %{wks.location}/ThirdParty/ffx-fsr2/lib/ffx_fsr2_api_dx12_x64.dll %{cfg.targetdir}",
-            "{COPY} %{wks.location}/ThirdParty/ffx-fsr2/lib/ffx_fsr2_api_vk_x64.dll %{cfg.targetdir}",
-            "{COPY} %{wks.location}/ThirdParty/ffx-fsr2/lib/ffx_fsr2_api_x64.dll %{cfg.targetdir}",
+            "{COPY} %{wks.location}/ThirdParty/ffx/sdk/bin/ffx_sdk/ffx_backend_dx12_x64.dll %{cfg.targetdir}",
+            "{COPY} %{wks.location}/ThirdParty/ffx/sdk/bin/ffx_sdk/ffx_backend_vk_x64.dll %{cfg.targetdir}",
+            "{COPY} %{wks.location}/ThirdParty/ffx/sdk/bin/ffx_sdk/ffx_fsr2_x64.dll %{cfg.targetdir}",
 
             "{COPY} %{wks.location}/ThirdParty/streamline/Streamline-2.4.15/bin/x64/NvLowLatencyVk.dll %{cfg.targetdir}",
             "{COPY} %{wks.location}/ThirdParty/streamline/Streamline-2.4.15/bin/x64/nvngx_dlss.dll %{cfg.targetdir}",

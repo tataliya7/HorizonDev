@@ -3,8 +3,8 @@ module;
 #include "Foundation/FoundationModule.h"
 #include "Rendering/RenderingModule.h"
 
-#include <ffx_fsr2.h>
-#include <vk/ffx_fsr2_vk.h>
+#include <FidelityFX/host/ffx_fsr2.h>
+#include <FidelityFX/host/backends/vk/ffx_vk.h>
 
 module FidelityFX.SuperResolution2:Vulkan;
 
@@ -38,23 +38,27 @@ namespace Horizon
             VkDevice vkDevice = static_cast<VkDevice>(device.device);
             VkPhysicalDevice vkPhysicalDevice = static_cast<VkPhysicalDevice>(device.physicalDevice);
 
+            VkDeviceContext ffxDeviceContext = { vkDevice, vkPhysicalDevice, vkGetDeviceProcAddr };
+            FfxDevice ffxDevice = ffxGetDeviceVK(&ffxDeviceContext);
+
             uint32 targetWidth = fsr2->options.outputWidth;
             uint32 targetHeight = fsr2->options.outputHeight;
 
             // Only destroy contexts which are live
-            if (fsr2ContextDescription.callbacks.scratchBuffer != nullptr)
+            if (fsr2ContextDescription.backendInterface.scratchBuffer != nullptr)
             {
                 ffxFsr2ContextDestroy(&fsr2Context);
-                free(fsr2ContextDescription.callbacks.scratchBuffer);
-                fsr2ContextDescription.callbacks.scratchBuffer = nullptr;
+                free(fsr2ContextDescription.backendInterface.scratchBuffer);
+                fsr2ContextDescription.backendInterface.scratchBuffer = nullptr;
             }
 
-            size_t scratchBufferSize = ffxFsr2GetScratchMemorySizeVK(vkPhysicalDevice);
+            const size_t scratchBufferSize = ffxGetScratchMemorySizeVK(vkPhysicalDevice, 1);
             void* scratchBuffer = malloc(scratchBufferSize);
-            FfxErrorCode errorCode = ffxFsr2GetInterfaceVK(&fsr2ContextDescription.callbacks, scratchBuffer, scratchBufferSize, vkPhysicalDevice, vkGetDeviceProcAddr);
+            memset(scratchBuffer, 0, scratchBufferSize);
+
+            FfxErrorCode errorCode = ffxGetInterfaceVK(&fsr2ContextDescription.backendInterface, ffxDevice, scratchBuffer, scratchBufferSize, 1);
             FFX_ASSERT(errorCode == FFX_OK);
 
-            fsr2ContextDescription.device = ffxGetDeviceVK(vkDevice);
             fsr2ContextDescription.maxRenderSize.width = targetWidth;
             fsr2ContextDescription.maxRenderSize.height = targetHeight;
             fsr2ContextDescription.displaySize.width = targetWidth;
@@ -85,79 +89,51 @@ namespace Horizon
 
         FfxFsr2DispatchDescription fsr2DispatchDescription = {};
 
-        fsr2DispatchDescription.output = ffxGetTextureResourceVK(
-            &fsr2Context,
-            static_cast<VkImage>(output.texture),
-            static_cast<VkImageView>(output.view),
-            static_cast<uint32_t>(output.width),
-            static_cast<uint32_t>(output.height),
-            static_cast<VkFormat>(output.format),
+        fsr2DispatchDescription.output = ffxGetResourceVK(
+            output.texture,
+            ffxGetImageResourceDescriptionVK(static_cast<VkImage>(output.texture), *static_cast<VkImageCreateInfo*>(output.info)),
             L"FSR2_OutputUpscaledColor",
             FFX_RESOURCE_STATE_UNORDERED_ACCESS);
 
-        fsr2DispatchDescription.color = ffxGetTextureResourceVK(
-            &fsr2Context,
-            static_cast<VkImage>(color.texture),
-            static_cast<VkImageView>(color.view),
-            static_cast<uint32_t>(color.width),
-            static_cast<uint32_t>(color.height),
-            static_cast<VkFormat>(color.format),
+        fsr2DispatchDescription.color = ffxGetResourceVK(
+            color.texture,
+            ffxGetImageResourceDescriptionVK(static_cast<VkImage>(color.texture), *static_cast<VkImageCreateInfo*>(color.info)),
             L"FSR2_InputColor",
             FFX_RESOURCE_STATE_COMPUTE_READ);
 
-        fsr2DispatchDescription.depth = ffxGetTextureResourceVK(
-            &fsr2Context,
-            static_cast<VkImage>(depth.texture),
-            static_cast<VkImageView>(depth.view),
-            static_cast<uint32_t>(depth.width),
-            static_cast<uint32_t>(depth.height),
-            static_cast<VkFormat>(depth.format),
+        fsr2DispatchDescription.depth = ffxGetResourceVK(
+            depth.texture,
+            ffxGetImageResourceDescriptionVK(static_cast<VkImage>(depth.texture), *static_cast<VkImageCreateInfo*>(depth.info)),
             L"FSR2_InputDepth",
             FFX_RESOURCE_STATE_COMPUTE_READ);
 
-        fsr2DispatchDescription.motionVectors = ffxGetTextureResourceVK(
-            &fsr2Context,
-            static_cast<VkImage>(motionVectors.texture),
-            static_cast<VkImageView>(motionVectors.view),
-            static_cast<uint32_t>(motionVectors.width),
-            static_cast<uint32_t>(motionVectors.height),
-            static_cast<VkFormat>(motionVectors.format),
+        fsr2DispatchDescription.motionVectors = ffxGetResourceVK(
+            motionVectors.texture,
+            ffxGetImageResourceDescriptionVK(static_cast<VkImage>(motionVectors.texture), *static_cast<VkImageCreateInfo*>(motionVectors.info)),
             L"FSR2_InputMotionVectors",
             FFX_RESOURCE_STATE_COMPUTE_READ);
 
         if (false)
         {
-            fsr2DispatchDescription.exposure = ffxGetTextureResourceVK(
-                &fsr2Context,
-                VK_NULL_HANDLE,
-                VK_NULL_HANDLE,
-                1,
-                1,
-                VK_FORMAT_UNDEFINED,
+            fsr2DispatchDescription.exposure = ffxGetResourceVK(
+                nullptr,
+                FfxResourceDescription(),
                 L"FSR2_InputExposure");
         }
         else
         {
-            fsr2DispatchDescription.exposure = ffxGetTextureResourceVK(
-                &fsr2Context,
-                static_cast<VkImage>(exposure.texture),
-                static_cast<VkImageView>(exposure.view),
-                static_cast<uint32_t>(exposure.width),
-                static_cast<uint32_t>(exposure.height),
-                static_cast<VkFormat>(exposure.format),
+            fsr2DispatchDescription.exposure = ffxGetResourceVK(
+                exposure.texture,
+                ffxGetImageResourceDescriptionVK(static_cast<VkImage>(exposure.texture), *static_cast<VkImageCreateInfo*>(exposure.info)),
                 L"FSR2_InputExposure",
                 FFX_RESOURCE_STATE_COMPUTE_READ);
         }
 
         if (true)
         {
-            fsr2DispatchDescription.reactive = ffxGetTextureResourceVK(
-                &fsr2Context,
-                VK_NULL_HANDLE,
-                VK_NULL_HANDLE,
-                1,
-                1,
-                VK_FORMAT_UNDEFINED,
+            fsr2DispatchDescription.reactive = ffxGetResourceVK(
+                nullptr,
+                FfxResourceDescription(),
                 L"FSR2_EmptyInputReactiveMap");
         }
         else
@@ -167,13 +143,9 @@ namespace Horizon
 
         if (true)
         {
-            fsr2DispatchDescription.transparencyAndComposition = ffxGetTextureResourceVK(
-                &fsr2Context,
-                VK_NULL_HANDLE,
-                VK_NULL_HANDLE,
-                1,
-                1,
-                VK_FORMAT_UNDEFINED,
+            fsr2DispatchDescription.transparencyAndComposition = ffxGetResourceVK(
+                nullptr,
+                FfxResourceDescription(),
                 L"FSR2_EmptyTransparencyAndCompositionMap");
         }
         else

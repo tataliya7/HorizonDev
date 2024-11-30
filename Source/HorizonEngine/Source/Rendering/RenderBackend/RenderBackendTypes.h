@@ -108,7 +108,7 @@ namespace Horizon
         ReadWriteMask = UnorderedAccess | DepthStencil,
         WritableMask = RenderTarget | CopyDst | UnorderedAccess | DepthStencil,
     };
-    HORIZON_ENUM_CLASS_OPERATORS(RenderBackendResourceStateFlags);
+    HORIZON_OVERLOAD_ENUM_CLASS_OPERATORS(RenderBackendResourceStateFlags);
 
     enum class RenderBackendBufferCreateFlags
     {
@@ -135,7 +135,7 @@ namespace Horizon
         CpuToGpu = (1 << 16),
         GpuToCpu = (1 << 17),
     };
-    HORIZON_ENUM_CLASS_OPERATORS(RenderBackendBufferCreateFlags);
+    HORIZON_OVERLOAD_ENUM_CLASS_OPERATORS(RenderBackendBufferCreateFlags);
 
     struct RenderBackendBufferSubresourceRange
     {
@@ -260,7 +260,7 @@ namespace Horizon
         Readback = (1 << 8),
         Sparse = (1 << 9),
     };
-    HORIZON_ENUM_CLASS_OPERATORS(RenderBackendTextureCreateFlags);
+    HORIZON_OVERLOAD_ENUM_CLASS_OPERATORS(RenderBackendTextureCreateFlags);
 
     enum class RenderBackendTextureAddressMode
     {
@@ -561,7 +561,7 @@ namespace Horizon
         RGB  = R | G | B,
         RGBA = R | G | B | A,
     };
-    HORIZON_ENUM_CLASS_OPERATORS(RenderBackendColorComponentFlags);
+    HORIZON_OVERLOAD_ENUM_CLASS_OPERATORS(RenderBackendColorComponentFlags);
 
     struct RenderBackendTextureDesc
     {
@@ -1283,7 +1283,7 @@ namespace Horizon
         PreferFastBuild = 1 << 3,
         MinimizeMemory = 1 << 4,
     };
-    HORIZON_ENUM_CLASS_OPERATORS(RenderBackendRayTracingAccelerationStructureBuildFlags);
+    HORIZON_OVERLOAD_ENUM_CLASS_OPERATORS(RenderBackendRayTracingAccelerationStructureBuildFlags);
 
     enum class RenderBackendRayTracingInstanceFlags
     {
@@ -1293,7 +1293,7 @@ namespace Horizon
         ForceOpaque = 1 << 2,
         ForceNoOpaque = 1 << 3,
     };
-    HORIZON_ENUM_CLASS_OPERATORS(RenderBackendRayTracingInstanceFlags);
+    HORIZON_OVERLOAD_ENUM_CLASS_OPERATORS(RenderBackendRayTracingInstanceFlags);
 
     struct RenderBackendRayTracingInstance
     {
@@ -1317,7 +1317,7 @@ namespace Horizon
         Opaque = 1 << 0,
         NoDuplicateAnyHitInvocation = 1 << 1,
     };
-    HORIZON_ENUM_CLASS_OPERATORS(RenderBackendRayTracingGeometryFlags);
+    HORIZON_OVERLOAD_ENUM_CLASS_OPERATORS(RenderBackendRayTracingGeometryFlags);
 
     struct RenderBackendRayTracingGeometryTriangleDesc
     {
@@ -1545,6 +1545,9 @@ namespace Horizon
     {
         /** VkImage or ID3D12Resource */
         void* texture;
+
+        /** vkImageCreateInfo or nullptr */
+        void* info;
 
         /** vkDeviceMemory or nullptr */
         void* memory;

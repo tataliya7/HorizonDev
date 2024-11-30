@@ -3,8 +3,8 @@ module;
 #include "Foundation/FoundationModule.h"
 #include "Rendering/RenderingModule.h"
 
-#include <ffx_fsr2.h>
-#include <dx12/ffx_fsr2_dx12.h>
+#include <FidelityFX/host/ffx_fsr2.h>
+#include <FidelityFX/host/backends/dx12/ffx_dx12.h>
 
 module FidelityFX.SuperResolution2:D3D12;
 
@@ -36,24 +36,26 @@ namespace Horizon
         {
             RenderBackendDevice device = fsr2->renderBackend->GetNativeDevice();
             ID3D12Device* d3d12Device = static_cast<ID3D12Device*>(device.device);
+            FfxDevice ffxDevice = ffxGetDeviceDX12(d3d12Device);
 
             uint32 targetWidth = fsr2->options.outputWidth;
             uint32 targetHeight = fsr2->options.outputHeight;
 
             // only destroy contexts which are live
-            if (fsr2ContextDescription.callbacks.scratchBuffer != nullptr)
+            if (fsr2ContextDescription.backendInterface.scratchBuffer != nullptr)
             {
                 ffxFsr2ContextDestroy(&fsr2Context);
-                free(fsr2ContextDescription.callbacks.scratchBuffer);
-                fsr2ContextDescription.callbacks.scratchBuffer = nullptr;
+                free(fsr2ContextDescription.backendInterface.scratchBuffer);
+                fsr2ContextDescription.backendInterface.scratchBuffer = nullptr;
             }
 
-            const size_t scratchBufferSize = ffxFsr2GetScratchMemorySizeDX12();
+            const size_t scratchBufferSize = ffxGetScratchMemorySizeDX12(1);
             void* scratchBuffer = malloc(scratchBufferSize);
-            FfxErrorCode errorCode = ffxFsr2GetInterfaceDX12(&fsr2ContextDescription.callbacks, d3d12Device, scratchBuffer, scratchBufferSize);
+            memset(scratchBuffer, 0, scratchBufferSize);
+
+            FfxErrorCode errorCode = ffxGetInterfaceDX12(&fsr2ContextDescription.backendInterface, ffxDevice, scratchBuffer, scratchBufferSize, 1);
             FFX_ASSERT(errorCode == FFX_OK);
 
-            fsr2ContextDescription.device = ffxGetDeviceDX12(d3d12Device);
             fsr2ContextDescription.maxRenderSize.width = targetWidth;
             fsr2ContextDescription.maxRenderSize.height = targetHeight;
             fsr2ContextDescription.displaySize.width = targetWidth;
@@ -84,50 +86,61 @@ namespace Horizon
 
         FfxFsr2DispatchDescription fsr2DispatchDescription = {};
 
+        ID3D12Resource* outputTextureDX12 = static_cast<ID3D12Resource*>(output.texture);
+        FfxResourceDescription outputTextureDescription = ffxGetResourceDescriptionDX12(outputTextureDX12);
         fsr2DispatchDescription.output = ffxGetResourceDX12(
-            &fsr2Context,
-            static_cast<ID3D12Resource*>(output.texture),
+            outputTextureDX12,
+            outputTextureDescription,
             L"FSR2_OutputUpscaledColor",
             FFX_RESOURCE_STATE_UNORDERED_ACCESS);
 
+        ID3D12Resource* colorTextureDX12 = static_cast<ID3D12Resource*>(color.texture);
+        FfxResourceDescription colorTextureDescription = ffxGetResourceDescriptionDX12(colorTextureDX12);
         fsr2DispatchDescription.color = ffxGetResourceDX12(
-            &fsr2Context,
-            static_cast<ID3D12Resource*>(color.texture),
+            colorTextureDX12,
+            colorTextureDescription,
             L"FSR2_InputColor",
-            FFX_RESOURCE_STATE_COMPUTE_READ);
+            FFX_RESOURCE_STATE_PIXEL_COMPUTE_READ);
 
+        ID3D12Resource* depthTextureDX12 = static_cast<ID3D12Resource*>(depth.texture);
+        FfxResourceDescription depthTextureDescription = ffxGetResourceDescriptionDX12(depthTextureDX12);
         fsr2DispatchDescription.depth = ffxGetResourceDX12(
-            &fsr2Context,
-            static_cast<ID3D12Resource*>(depth.texture),
+            depthTextureDX12,
+            depthTextureDescription,
             L"FSR2_InputDepth",
-            FFX_RESOURCE_STATE_COMPUTE_READ);
+            FFX_RESOURCE_STATE_PIXEL_COMPUTE_READ);
 
+        ID3D12Resource* motionVectorTextureDX12 = static_cast<ID3D12Resource*>(motionVectors.texture);
+        FfxResourceDescription motionVectorTextureDescription = ffxGetResourceDescriptionDX12(motionVectorTextureDX12);
         fsr2DispatchDescription.motionVectors = ffxGetResourceDX12(
-            &fsr2Context,
-            static_cast<ID3D12Resource*>(motionVectors.texture),
+            motionVectorTextureDX12,
+            motionVectorTextureDescription,
             L"FSR2_InputMotionVectors",
-            FFX_RESOURCE_STATE_COMPUTE_READ);
+            FFX_RESOURCE_STATE_PIXEL_COMPUTE_READ);
 
         if (false)
         {
             fsr2DispatchDescription.exposure = ffxGetResourceDX12(
-                &fsr2Context,
                 nullptr,
+                ffxGetResourceDescriptionDX12(nullptr),
                 L"FSR2_InputExposure");
         }
         else
         {
+            ID3D12Resource* exposureTextureDX12 = static_cast<ID3D12Resource*>(exposure.texture);
+            FfxResourceDescription exposureTextureDescription = ffxGetResourceDescriptionDX12(exposureTextureDX12);
             fsr2DispatchDescription.exposure = ffxGetResourceDX12(
-                &fsr2Context,
-                static_cast<ID3D12Resource*>(exposure.texture),
-                L"FSR2_InputExposure");
+                exposureTextureDX12,
+                exposureTextureDescription,
+                L"FSR2_InputExposure",
+                FFX_RESOURCE_STATE_PIXEL_COMPUTE_READ);
         }
 
         if (true)
         {
             fsr2DispatchDescription.reactive = ffxGetResourceDX12(
-                &fsr2Context,
                 nullptr,
+                ffxGetResourceDescriptionDX12(nullptr),
                 L"FSR2_EmptyInputReactiveMap");
         }
         else
@@ -138,8 +151,8 @@ namespace Horizon
         if (true)
         {
             fsr2DispatchDescription.transparencyAndComposition = ffxGetResourceDX12(
-                &fsr2Context,
                 nullptr,
+                ffxGetResourceDescriptionDX12(nullptr),
                 L"FSR2_EmptyTransparencyAndCompositionMap");
         }
         else

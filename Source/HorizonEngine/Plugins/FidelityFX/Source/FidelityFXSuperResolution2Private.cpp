@@ -3,7 +3,7 @@ module;
 #include "Foundation/FoundationModule.h"
 #include "Rendering/RenderingModule.h"
 
-#include <ffx_fsr2.h>
+#include <FidelityFX/host/ffx_fsr2.h>
 
 module FidelityFX.SuperResolution2:Private;
 
@@ -62,13 +62,13 @@ namespace Horizon
         TemporalSuperSamplingConstants constants;
     };
 
-    void FidelityFXSuperResolution2Message(FfxFsr2MsgType type, const wchar_t* message)
+    void FidelityFXSuperResolution2Message(FfxMsgType type, const wchar_t* message)
     {
-        if (type == FFX_FSR2_MESSAGE_TYPE_ERROR)
+        if (type == FFX_MESSAGE_TYPE_ERROR)
         {
             Horizon::LogError(Horizon::GLogger, std::format(L"FSR2_API_DEBUG_ERROR: {}", message));
         }
-        else if (type == FFX_FSR2_MESSAGE_TYPE_WARNING)
+        else if (type == FFX_MESSAGE_TYPE_WARNING)
         {
             Horizon::LogWarning(Horizon::GLogger, std::format(L"FSR2_API_DEBUG_WARNING: {}", message));
         }
