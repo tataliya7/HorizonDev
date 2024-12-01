@@ -7,6 +7,7 @@ namespace Horizon
 {
     class VolumetricCloudComponent
     {
-
+    public:
+         float dummy;
     };
 }

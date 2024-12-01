@@ -1,6 +1,7 @@
 #pragma once
 
-#include "Engine/HorizonEngineModule.h"
+#include "Foundation/FoundationModule.h"
+#include "Rendering/RenderingModule.h"
 
 namespace Horizon
 {

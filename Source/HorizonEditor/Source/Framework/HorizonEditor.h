@@ -279,6 +279,8 @@ namespace Horizon
         uint32 swapChainWidth = 0;
         uint32 swapChainHeight = 0;
 
+        class TimeOfDayScheduler* timeOfDayScheduler;
+
         StreamlineContext* streamlineContext;
 
         float maxFrameRate = 120.0f;

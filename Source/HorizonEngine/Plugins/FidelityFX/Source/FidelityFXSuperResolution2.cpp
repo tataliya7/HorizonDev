@@ -60,7 +60,7 @@ namespace Horizon
         , options()
         , constants()
     {
-        state = new FidelityFxSuperResolution2State();
+        state = new FidelityFXSuperResolution2State();
         state->fsr2ContextDescription = {};
         state->fsr2Context = {};
         state->initialized = false;

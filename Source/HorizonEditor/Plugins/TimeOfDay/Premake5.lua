@@ -13,10 +13,7 @@ project "TimeOfDay"
         "**.cpp",
         "**.cppm",
         "**.inl",
-    }
-
-    links {
-        "HorizonEngine",
+        "**.lua",
     }
 
     includedirs {

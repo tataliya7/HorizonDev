@@ -22,7 +22,7 @@ namespace Horizon
         const RenderBackendTextureResource& exposure)
     {
         FidelityFXSuperResolution2* fsr2 = static_cast<FidelityFXSuperResolution2*>(context);
-        FidelityFxSuperResolution2State& fsr2State = *fsr2->state;
+        FidelityFXSuperResolution2State& fsr2State = *fsr2->state;
 
         FfxFsr2ContextDescription& fsr2ContextDescription = fsr2State.fsr2ContextDescription;
         FfxFsr2Context& fsr2Context = fsr2State.fsr2Context;

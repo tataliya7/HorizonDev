@@ -1,6 +1,6 @@
 #pragma once
 
-#define PCF_QUALITY 1
+#define PCF_QUALITY 2
 
 #define PCF_KERNEL_SHAPE 0
 

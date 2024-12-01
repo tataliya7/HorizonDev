@@ -2,10 +2,10 @@
 
 #include "USDModule.h"
 #include "RenderDocPlugin.h"
+#include "TimeOfDayPlugin.h"
 
 #include <optick.h>
 
-#include "TextureImporter.h"
 #include "../Plugins/Streamline/Source/StreamlineModule.h"
 
 // TODO: delete this
@@ -122,27 +122,6 @@ namespace Horizon
             RenderBackendResourceState::ShaderResource); // TODO: handle transition
         previewTexture = renderGraphResourcePool->AllocateTexture(previewTextureDesc, "SceneViewPreviewTexture");
 
-        const uint32 environmentMapTextureSize = 128;
-        const uint32 environmentMapTextureMipLevelCount = Math::MaxMipLevelCount(environmentMapTextureSize);
-        RenderBackendTextureHandle environmentMapTextureLatLong = LoadTextureFromHDRFile(renderBackend, "../../../Assets/HDRIs/HDR_029_Sky_Cloudy_Ref.hdr");
-        RenderBackendTextureDesc environmentMapTextureDesc = RenderBackendTextureDesc::CreateCube(
-            environmentMapTextureSize,
-            RenderBackendTextureFormat::R11G11B10Float,
-            RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::UnorderedAccess,
-            environmentMapTextureMipLevelCount);
-        RenderBackendTextureHandle environmentMapTexture = renderBackend->CreateTexture(&environmentMapTextureDesc, nullptr, "EnvironmentMapTexture");
-
-        RenderBackendCommandList* commandList = new RenderBackendCommandList(GArena);
-        // RenderBackendBarrier transitions[] =
-        // {
-        //     RenderBackendBarrier(targetTexture->GetHandle(), RenderBackendTextureSubresourceRange(0, 1, 0, 1), RenderBackendResourceState::Undefined, RenderBackendResourceState::ShaderResource),
-        // };
-        // commandList->Transitions(transitions, 1);
-
-        ConvertLatLongToCubemap(renderBackend, renderSystem->GetShaderLibrary(), *commandList, environmentMapTextureLatLong, environmentMapTexture, environmentMapTextureSize);
-        GenerateCubemapMips(renderBackend, renderSystem->GetShaderLibrary(), *commandList, environmentMapTexture, environmentMapTextureMipLevelCount);
-
-        renderBackend->SubmitCommandLists(&commandList, 1, RenderBackendSwapChainHandle::Null);
 
         renderer = renderSystem->CreateRenderer();
         previewRenderer = renderSystem->CreateRenderer();
@@ -152,38 +131,41 @@ namespace Horizon
         {
             editorSceneManager->SetActiveScene(scene);
 
-            EntityHandle camera01 = scene->CreateEntity("Camera01");
-            {
-                CameraComponent& cameraComponent = scene->GetEntityManager()->AddComponent<CameraComponent>(camera01);
-                cameraComponent.fieldOfViewAxis = FieldOfViewAxis::Horizontal;
-                cameraComponent.fieldOfView = Math::DegreesToRadians(90.0f);
-                cameraComponent.nearClippingPlane = 0.1f;
-                cameraComponent.farClippingPlane = 1000.0f;
-                cameraComponent.overrideAspectRatio = false;
-                cameraComponent.aspectRatio = 16.0f / 9.0f;
-            }
-
-            EntityHandle sunLight = scene->CreateEntity("SunLight");
-            {
-                TransformComponent& transformComponent = scene->GetEntityManager()->GetComponent<TransformComponent>(sunLight);
-                transformComponent.rotation = Vector3(11.0f, 6.0f, 0.0f);
-                //transformComponent.rotation = Vector3(0.0f, 0.0f, 0.0f);
-
-                LightComponent& lightComponent = scene->GetEntityManager()->AddComponent<LightComponent>(sunLight);
-                lightComponent.type = LightComponent::Type::Distant;
-                lightComponent.direction = DefaultLightDirection; //
-                lightComponent.direction = Math::Normalize(Vector3(-0.102607988f, 0.190808982f, -0.976249754f));
-                lightComponent.color = Vector3(1.0f, 1.0f, 1.0f);
-                lightComponent.luminousIntensity = 120000.0f;
-                lightComponent.apexAngleInDegrees = 0.5357f;
-                lightComponent.castDynamicShadows = true;
-                lightComponent.useColorTemperature = true;
-                lightComponent.colorTemperature = 6500.0f;
-                lightComponent.usedAsAtmosphericLight = true;
-                //lightComponent.shadowMapSize = 4096;
-                lightComponent.shadowCascadeSplitLambda = 0.8f;
-                lightComponent.CreateRenderObject(scene->GetRenderScene());
-            }
+            // EntityHandle sunLight = scene->CreateEntity("SunLight");
+            // {
+            //     TransformComponent& transformComponent = scene->GetEntityManager()->GetComponent<TransformComponent>(sunLight);
+            //     transformComponent.rotation = Vector3(11.0f, 6.0f, 0.0f);
+            //     //transformComponent.rotation = Vector3(0.0f, 0.0f, 0.0f);
+            //
+            //     LightComponent& lightComponent = scene->GetEntityManager()->AddComponent<LightComponent>(sunLight);
+            //     lightComponent.type = LightComponent::Type::Distant;
+            //     lightComponent.direction = DefaultLightDirection; //
+            //     lightComponent.direction = Math::Normalize(Vector3(-0.102607988f, 0.190808982f, -0.976249754f));
+            //     lightComponent.color = Vector3(1.0f, 1.0f, 1.0f);
+            //     lightComponent.luminousIntensity = 120000.0f;
+            //     lightComponent.apexAngleInDegrees = 0.5357f;
+            //     lightComponent.castDynamicShadows = true;
+            //     lightComponent.useColorTemperature = true;
+            //     lightComponent.colorTemperature = 6500.0f;
+            //     lightComponent.usedAsAtmosphericLight = true;
+            //     //lightComponent.shadowMapSize = 4096;
+            //     lightComponent.shadowCascadeSplitLambda = 0.8f;
+            //     lightComponent.CreateRenderObject(scene->GetRenderScene());
+            // }
+            //
+            // EntityHandle skyDome = scene->CreateEntity("SkyDome");
+            // {
+            //     SkyLightComponent& skyLightComponent = scene->GetEntityManager()->AddComponent<SkyLightComponent>(skyDome);
+            //     skyLightComponent.cubemapSize = environmentMapTextureSize;
+            //     skyLightComponent.environmentMapTexture = RenderGraphPersistentTexture("EnvironmentMapTexture", environmentMapTextureDesc, environmentMapTexture);
+            //     skyLightComponent.CreateRenderObject(scene->GetRenderScene());
+            // }
+            //
+            // EntityHandle skyAtmosphere = scene->CreateEntity("SkyAtmosphere");
+            // {
+            //     SkyAtmosphereComponent& skyAtmosphereComponent = scene->GetEntityManager()->AddComponent<SkyAtmosphereComponent>(skyAtmosphere);
+            //     skyAtmosphereComponent.CreateRenderObject(scene->GetRenderScene());
+            // }
 
             // Create point light 0
             EntityHandle pointLight0 = scene->CreateEntity("PointLight0");
@@ -215,26 +197,25 @@ namespace Horizon
                 lightComponent.CreateRenderObject(scene->GetRenderScene());
             }
 
-            EntityHandle skyDome = scene->CreateEntity("SkyDome");
-            {
-                SkyLightComponent& skyLightComponent = scene->GetEntityManager()->AddComponent<SkyLightComponent>(skyDome);
-                skyLightComponent.cubemapSize = environmentMapTextureSize;
-                skyLightComponent.environmentMapTexture = RenderGraphPersistentTexture("EnvironmentMapTexture", environmentMapTextureDesc, environmentMapTexture);
-                skyLightComponent.CreateRenderObject(scene->GetRenderScene());
-            }
-
-            EntityHandle skyAtmosphere = scene->CreateEntity("SkyAtmosphere");
-            {
-                SkyAtmosphereComponent& skyAtmosphereComponent = scene->GetEntityManager()->AddComponent<SkyAtmosphereComponent>(skyAtmosphere);
-                skyAtmosphereComponent.CreateRenderObject(scene->GetRenderScene());
-            }
-
             EntityHandle localFogVolume = scene->CreateEntity("LocalFogVolume");
             {
                 LocalFogVolumeComponent& localFogVolumeComponent = scene->GetEntityManager()->AddComponent<LocalFogVolumeComponent>(localFogVolume);
                 localFogVolumeComponent.CreateRenderObject(scene->GetRenderScene());
             }
+
+            EntityHandle camera01 = scene->CreateEntity("Camera01");
+            {
+                CameraComponent& cameraComponent = scene->GetEntityManager()->AddComponent<CameraComponent>(camera01);
+                cameraComponent.fieldOfViewAxis = FieldOfViewAxis::Horizontal;
+                cameraComponent.fieldOfView = Math::DegreesToRadians(90.0f);
+                cameraComponent.nearClippingPlane = 0.1f;
+                cameraComponent.farClippingPlane = 1000.0f;
+                cameraComponent.overrideAspectRatio = false;
+                cameraComponent.aspectRatio = 16.0f / 9.0f;
+            }
         }
+
+        timeOfDayScheduler = new TimeOfDayScheduler(scene);
 
         // TODO: Test New Sponaza
         USDImportSettings settings = {};
@@ -350,8 +331,8 @@ namespace Horizon
         streamlineContext->ReflexSetMarkerSimulationEnd(frameIndex);
 #endif
 
+        timeOfDayScheduler->Tick(deltaTimeInSeconds); // TODO
         editorSceneManager->GetActiveScene()->Tick(deltaTimeInSeconds);
-
 
         Quaternion cameraOrientation = Math::QuaternionFromEulerAngles(Math::DegreesToRadians(editorCamera.GetRotation()));
 

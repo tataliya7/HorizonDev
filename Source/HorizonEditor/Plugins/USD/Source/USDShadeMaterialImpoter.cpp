@@ -1,8 +1,6 @@
 #include "USDShadeMaterialImpoter.h"
 #include "USDUtils.h"
 
-#include "Framework/TextureImporter.h"
-
 namespace Horizon::USDImporter
 {
     USDImporter::USDShadeMaterialImpoter::USDShadeMaterialImpoter(USDImportContext& context)

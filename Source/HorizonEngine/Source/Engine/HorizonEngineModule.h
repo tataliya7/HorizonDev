@@ -13,6 +13,7 @@
 #include "Engine/ColorManagement/ColorManagement.h"
 #include "Engine/Classes/Scene.h"
 #include "Engine/Classes/RenderSystem.h"
+#include "Engine/Classes/TextureImporter.h"
 #include "Engine/Classes/HorizonEngine.h"
 #include "Engine/HorizonEngineVersion.h"
 

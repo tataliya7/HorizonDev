@@ -5,11 +5,14 @@ project "USD"
     staticruntime "Off"
     location "%{wks.location}/Build/%{prj.name}"
     targetdir "%{wks.location}/Build/Bin/%{cfg.buildcfg}"
-
+    
     files {
         "**.h",
+        "**.c",
+        "**.hpp",
         "**.cpp",
         "**.cppm",
+        "**.inl",
         "**.lua",
     }
 

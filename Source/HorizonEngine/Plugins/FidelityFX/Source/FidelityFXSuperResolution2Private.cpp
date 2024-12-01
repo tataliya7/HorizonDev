@@ -11,7 +11,7 @@ import FidelityFX.SuperResolution2;
 
 namespace Horizon
 {
-    struct FidelityFxSuperResolution2State
+    struct FidelityFXSuperResolution2State
     {
         FfxFsr2ContextDescription fsr2ContextDescription;
         FfxFsr2Context fsr2Context;
@@ -57,7 +57,7 @@ namespace Horizon
 
         RenderBackend* renderBackend;
         FidelityFXSuperResolution2API api;
-        FidelityFxSuperResolution2State* state;
+        FidelityFXSuperResolution2State* state;
         TemporalSuperSamplingOptions options;
         TemporalSuperSamplingConstants constants;
     };

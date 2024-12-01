@@ -24,6 +24,10 @@ namespace Horizon
         bool enableDebugLayers = true;
         bool enableHardwareRayTracing = false;
 
+#if HORIZON_CONFIGURATION_RELEASE
+        enableDebugLayers = false;
+#endif
+
         if (renderBackendType == RenderBackendType::Vulkan)
         {
             int flags = VULKAN_RENDER_BACKEND_CREATE_FLAGS_SURFACE;

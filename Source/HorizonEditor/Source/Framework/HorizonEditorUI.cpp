@@ -12,7 +12,6 @@
 
 #include <optick.h>
 
-#include "TextureImporter.h"
 #include "RenderDocPlugin.h"
 
 #include "InspectorUI_DEPRECATED.h"
