@@ -37,7 +37,7 @@ float GTAOFastAcos(float x)
     return (x >= 0) ? result : GTAO_PI - result;
 }
 
-float GTAOMultiBounce(float visibility, float3 albedo)
+float GTAOMultiBounce(float ao, float3 albedo)
 {
     /* Median luminance. Because colored multibounce looks bad. */
     float luminance = dot(albedo, 0.3333);
@@ -46,8 +46,8 @@ float GTAOMultiBounce(float visibility, float3 albedo)
     float b = -4.7951 * luminance + 0.6417;
     float c =  2.7552 * luminance + 0.6903;
 
-    float x = visibility;
-    return max(visibility, ((visibility * a + b) * visibility + c) * visibility);
+    const float x = ao;
+    return max(x, ((x * a + b) * x + c) * x);
 }
 
 float2 GTAONoise(uint spatialIndex, uint temporalIndex)
