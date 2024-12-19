@@ -1,6 +1,6 @@
 #include "RealTimeRenderer.h"
 
-#include "BendScreenSpaceShadows/bend_sss_cpu.h"
+#include "BendSSS/bend_sss_cpu.h"
 
 namespace Horizon
 {
