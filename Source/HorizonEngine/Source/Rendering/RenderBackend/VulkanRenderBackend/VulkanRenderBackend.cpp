@@ -2274,10 +2274,10 @@ namespace Horizon
                 {
                     .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
                     .image = texture.handle,
-                    .viewType = ConvertToVkImageViewType(desc->type, false),
+                    .viewType = ConvertToVkImageViewType(desc->type, texture.IsArray()),
                     .format = texture.format,
                     .components = { VK_COMPONENT_SWIZZLE_R, VK_COMPONENT_SWIZZLE_G, VK_COMPONENT_SWIZZLE_B, VK_COMPONENT_SWIZZLE_A },
-                    .subresourceRange = { texture.aspectMask, 0, 1, 0, texture.arrayLayers }
+                    .subresourceRange = { texture.aspectMask, 0, 1, 0, VK_REMAINING_ARRAY_LAYERS }
                 };
                 VK_CHECK(vkCreateImageView(handle, &imageViewInfo, VULKAN_ALLOCATION_CALLBACKS, &dsv));
                 texture.depthStencilViews[0] = dsv;
