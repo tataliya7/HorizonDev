@@ -205,6 +205,14 @@ namespace Horizon
             shaderLibrary->LoadShader(ShaderID::ShadowMapProjectionForDistantLight, shaderDesc);
         }
         {
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/ScreenSpaceShadows/ScreenSpaceShadowsStochastic.hsm", "ScreenSpaceShadowsStochasticCS");
+            shaderLibrary->LoadShader(ShaderID::ScreenSpaceShadowsStochastic, shaderDesc);
+        }
+        {
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/ScreenSpaceShadows/ScreenSpaceShadowsBend.hsm", "ScreenSpaceShadowsBendCS");
+            shaderLibrary->LoadShader(ShaderID::ScreenSpaceShadowsBend, shaderDesc);
+        }
+        {
             ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/ScreenSpaceRayTracing/ScreenSpaceIndirectDiffuse.hsm", "ScreenSpaceIndirectDiffuseCS");
             shaderLibrary->LoadShader(ShaderID::ScreenSpaceIndirectDiffuse, shaderDesc);
         }

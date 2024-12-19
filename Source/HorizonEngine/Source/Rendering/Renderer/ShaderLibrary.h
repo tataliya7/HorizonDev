@@ -53,6 +53,8 @@ namespace Horizon
         LocalLightShadowsPS,
         RayTracedShadowMap,
         ShadowMapProjectionForDistantLight,
+        ScreenSpaceShadowsStochastic,
+        ScreenSpaceShadowsBend,
         MotionVectors,
         SurfelGIFreeSurfels,
         SurfelGIGapFilling,

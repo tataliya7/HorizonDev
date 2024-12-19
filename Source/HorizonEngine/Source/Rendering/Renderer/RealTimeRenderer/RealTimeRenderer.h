@@ -256,6 +256,11 @@ namespace Horizon
             RenderGraph& renderGraph,
             const SceneView& view);
 
+        void DispatchScreenSpaceShadows(
+            RenderGraph& renderGraph,
+            const SceneView& view,
+            const LightRenderObject& light);
+
         void RenderVirtualShadowMapDepth(
             RenderGraph& renderGraph,
             const SceneView& view);

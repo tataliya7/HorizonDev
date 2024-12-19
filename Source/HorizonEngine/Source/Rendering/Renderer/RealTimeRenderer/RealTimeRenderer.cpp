@@ -776,6 +776,12 @@ namespace Horizon
         if (view.renderSettings.shadowsTechnique == ShadowsTechnique::ShadowMap)
         {
             DispatchShadowMapProjection(renderGraph, view);
+
+            const LightRenderObject* light = view.scene->GetAtmosphericLight();
+            if (light)
+            {
+                DispatchScreenSpaceShadows(renderGraph, view, *light);
+            }
         }
         else if (view.renderSettings.shadowsTechnique == ShadowsTechnique::VirtualShadowMap)
         {

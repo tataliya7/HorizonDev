@@ -171,6 +171,11 @@ namespace Horizon
         LightRenderObject(const LightRenderObjectDescription& description);
         virtual ~LightRenderObject();
 
+        bool IsDistantLight() const
+        {
+            return lightType == LightType::DistantLight;
+        }
+
         bool IsLocalLight() const
         {
             return lightType == LightType::PointLight || lightType == LightType::SpotLight;

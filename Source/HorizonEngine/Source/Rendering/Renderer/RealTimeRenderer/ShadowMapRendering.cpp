@@ -116,7 +116,7 @@ namespace Horizon
             renderResolution.height,
             RenderBackendTextureFormat::R8G8B8A8Unorm,
             RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::UnorderedAccess);
-            RenderGraphTextureHandle screenSpaceShadowMaskTexture = renderGraph.CreateTexture(screenSpaceShadowMaskTextureDesc, "ScreenSpaceShadowMaskTexture");
+        RenderGraphTextureHandle screenSpaceShadowMaskTexture = renderGraph.CreateTexture(screenSpaceShadowMaskTextureDesc, "ScreenSpaceShadowMaskTexture");
 
         renderGraph.AddPass(
             std::format("CascadedShadowMapProjection (Compute, {}x{})", renderResolution.width, renderResolution.height),

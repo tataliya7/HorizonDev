@@ -1,0 +1,7 @@
+
+[shader("compute")]
+[numthreads(8, 8, 1)]
+void ScreenSpaceShadowsStochasticCS(uint3 GroupID : SV_GroupID, uint3 GroupThreadID : SV_GroupThreadID)
+{
+
+}
