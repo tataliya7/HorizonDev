@@ -416,7 +416,6 @@ namespace Horizon
                         {
                             .texture = registry.GetRenderBackendTextureHandle(pass->renderTargets[i].texture),
                             .mipLevel = pass->renderTargets[i].mipLevel,
-                            .arrayLayer = pass->renderTargets[i].arrayLayer,
                             .loadOp = pass->renderTargets[i].loadOp,
                             .storeOp = pass->renderTargets[i].storeOp,
                         };
@@ -428,7 +427,6 @@ namespace Horizon
                     {
                         .texture = registry.GetRenderBackendTextureHandle(pass->depthStencil.texture),
                         .mipLevel = pass->depthStencil.mipLevel,
-                        .arrayLayer = pass->depthStencil.arrayLayer,
                         .depthLoadOp = pass->depthStencil.depthLoadOp,
                         .depthStoreOp = pass->depthStencil.depthStoreOp,
                         .stencilLoadOp = pass->depthStencil.stencilLoadOp,

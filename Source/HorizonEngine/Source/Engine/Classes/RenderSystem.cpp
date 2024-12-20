@@ -47,6 +47,7 @@ namespace Horizon
             {
                 .useDebugLayers = enableDebugLayers,
                 .useGPUBasedValidation = enableDebugLayers,
+                .useHardwareRayTracing = enableHardwareRayTracing
             };
             renderBackend = RenderBackendCreateD3D12(&d3d12RenderBackendDesc);
         }
@@ -280,7 +281,6 @@ namespace Horizon
                 {
                     .texture = output,
                     .mipLevel = 0,
-                    .arrayLayer = 0,
                     .loadOp = RenderBackendRenderPassBeginningAccessType::Clear,
                     .storeOp = RenderBackendRenderPassEndingAccessType::Preserve
                 }

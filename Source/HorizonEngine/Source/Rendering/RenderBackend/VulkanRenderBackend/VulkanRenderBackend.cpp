@@ -51,7 +51,7 @@ namespace Horizon
         BINDLESS_RESOURCE_BINDING_TEXTURE_UAV               = 2,
         BINDLESS_RESOURCE_BINDING_BUFFER_CBV                = 3,
         BINDLESS_RESOURCE_BINDING_BUFFER_SRV_AND_UAV        = 4,
-        BINDLESS_RESOURCE_BINDING_ACCELERATION_STRUCTURE    = 5,
+        BINDLESS_RESOURCE_BINDING_ACCELERATION_STRUCTURE_SRV    = 5,
     };
 
     struct VulkanBindlessConfig
@@ -142,22 +142,23 @@ namespace Horizon
         VkPhysicalDeviceMaintenance4FeaturesKHR maintenance4Features;
         VkPhysicalDeviceMaintenance5FeaturesKHR maintenance5Features;
         VkPhysicalDeviceMaintenance6FeaturesKHR maintenance6Features;
-        VkPhysicalDeviceDescriptorIndexingFeatures descriptorIndexingFeatures;
-        VkPhysicalDeviceBufferDeviceAddressFeatures bufferDeviceAddressFeatures;
-        VkPhysicalDeviceSynchronization2Features synchronization2Features;
+        VkPhysicalDeviceDescriptorIndexingFeaturesEXT descriptorIndexingFeatures;
+        VkPhysicalDeviceBufferDeviceAddressFeaturesKHR bufferDeviceAddressFeatures;
+        VkPhysicalDeviceSynchronization2FeaturesKHR synchronization2Features;
         VkPhysicalDeviceAccelerationStructureFeaturesKHR accelerationStructureFeatures;
         VkPhysicalDeviceRayTracingPipelineFeaturesKHR rayTracingPipelineFeatures;
         VkPhysicalDeviceRayQueryFeaturesKHR rayQueryFeatures;
-        VkPhysicalDeviceHostQueryResetFeatures hostQueryResetFeatures;
         VkPhysicalDeviceShaderFloat16Int8FeaturesKHR shaderFloat16Int8Features;
         VkPhysicalDevice16BitStorageFeaturesKHR float16StorageFeatures;
         VkPhysicalDeviceDynamicRenderingFeaturesKHR dynamicRenderingFeatures;
         VkPhysicalDeviceTimelineSemaphoreFeaturesKHR timelineSemaphoreFeatures;
         VkPhysicalDeviceFragmentShaderBarycentricFeaturesKHR fragmentShaderBarycentricFeatures;
-        VkPhysicalDeviceMultiviewFeatures multiviewFeatures;
-        VkPhysicalDeviceShaderDemoteToHelperInvocationFeatures shaderDemoteToHelperInvocationFeatures;
+        VkPhysicalDeviceMultiviewFeaturesKHR multiviewFeatures;
+        VkPhysicalDeviceSeparateDepthStencilLayoutsFeaturesKHR separateDepthStencilLayoutsFeatures;
+        VkPhysicalDeviceShaderDemoteToHelperInvocationFeaturesEXT shaderDemoteToHelperInvocationFeatures;
         VkPhysicalDeviceScalarBlockLayoutFeaturesEXT scalarBlockLayoutFeaturesEXT;
         VkPhysicalDeviceMeshShaderFeaturesEXT meshShaderFeaturesEXT;
+        VkPhysicalDeviceHostQueryResetFeaturesEXT hostQueryResetFeatures;
 
         void* featuresEntry;
         VkPhysicalDeviceFeatures2 enabledFeatures;
@@ -336,8 +337,8 @@ namespace Horizon
         std::vector<VkAccelerationStructureGeometryKHR> geometries;
         union
         {
-            RenderBackendRayTracingBottomLevelAccelerationDesc blasDesc;
-            RenderBackendRayTracingTopLevelAccelerationDesc tlasDesc;
+            RenderBackendRayTracingBottomLevelAccelerationStructureDesc blasDesc;
+            RenderBackendRayTracingTopLevelAccelerationStructureDesc tlasDesc;
         };
         uint32 descriptorIndex;
     };
@@ -483,8 +484,8 @@ namespace Horizon
         void DestroySampler(uint32 index);
         uint32 CreateShader(const RenderBackendShaderDesc* desc, const char* name);
         void DestroyShader(uint32 index);
-        uint32 CreateBottomLevelAS(const RenderBackendRayTracingBottomLevelAccelerationDesc* desc, const char* name);
-        uint32 CreateTopLevelAS(const RenderBackendRayTracingTopLevelAccelerationDesc* desc, const char* name);
+        uint32 CreateBottomLevelAS(const RenderBackendRayTracingBottomLevelAccelerationStructureDesc* desc, const char* name);
+        uint32 CreateTopLevelAS(const RenderBackendRayTracingTopLevelAccelerationStructureDesc* desc, const char* name);
         VkRenderPass FindOrCreateRenderPass(const VulkanRenderPassDesc& renderPassDesc);
         VulkanFramebuffer* FindOrCreateFramebuffer(const RenderBackendRenderPassInfo& renderPassInfo, const VulkanRenderPassDesc& renderPassDesc, VkRenderPass renderPass);
         VkPipelineLayout FindOrCreatePipelineLayout(uint32 pushConstantsSize, RenderBackendPipelineType pipelineType);
@@ -861,6 +862,7 @@ namespace Horizon
         int32 GetBufferCBVBindlessResourceDescriptorIndex(RenderBackendBufferHandle handle) override;
         int32 GetBufferSRVBindlessResourceDescriptorIndex(RenderBackendBufferHandle handle) override;
         int32 GetBufferUAVBindlessResourceDescriptorIndex(RenderBackendBufferHandle handle) override;
+        int32 GetAccelerationStructureSRVBindlessResourceDescriptorIndex(RenderBackendRayTracingAccelerationStructureHandle handle) override;
         RenderBackendSamplerHandle CreateSampler(const RenderBackendSamplerDesc* desc, const char* name) override;
         void DestroySampler(RenderBackendSamplerHandle sampler) override;
         RenderBackendShaderHandle CreateShader(const RenderBackendShaderDesc* desc, const char* name) override;
@@ -868,8 +870,8 @@ namespace Horizon
         RenderBackendTimingQueryHeapHandle CreateTimingQueryHeap(const RenderBackendTimingQueryHeapDesc* desc, const char* name) override;
         void DestroyTimingQueryHeap(RenderBackendTimingQueryHeapHandle timingQueryHeap) override;
         void SubmitCommandLists(RenderBackendCommandList** commandLists, uint32 numCommandLists, RenderBackendSwapChainHandle swapChain) override;
-        RenderBackendRayTracingAccelerationStructureHandle CreateRayTracingBottomLevelAccelerationStructure(const RenderBackendRayTracingBottomLevelAccelerationDesc* desc, const char* name) override;
-        RenderBackendRayTracingAccelerationStructureHandle CreateRayTracingTopLevelAccelerationStructure(const RenderBackendRayTracingTopLevelAccelerationDesc* desc, const char* name) override;
+        RenderBackendRayTracingAccelerationStructureHandle CreateRayTracingBottomLevelAccelerationStructure(const RenderBackendRayTracingBottomLevelAccelerationStructureDesc* desc, const char* name) override;
+        RenderBackendRayTracingAccelerationStructureHandle CreateRayTracingTopLevelAccelerationStructure(const RenderBackendRayTracingTopLevelAccelerationStructureDesc* desc, const char* name) override;
         RenderBackendRayTracingPipelineStateHandle CreateRayTracingPipelineState(const RenderBackendRayTracingPipelineStateDesc* desc, const char* name) override;
         RenderBackendBufferHandle CreateRayTracingShaderBindingTable(const RenderBackendRayTracingShaderBindingTableDesc* desc, const char* name) override;
 
@@ -988,12 +990,12 @@ namespace Horizon
                 };
                 physicalDevice.rayQueryFeatures = {
                     .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_QUERY_FEATURES_KHR,
-                    .pNext = &physicalDevice.vulkan12Features
+                    .pNext = &physicalDevice.bufferDeviceAddressFeatures
                 };
             }
 
             physicalDevice.bufferDeviceAddressFeatures = {
-                .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES,
+                .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES_KHR,
                 .pNext = &physicalDevice.descriptorIndexingFeatures
             };
             physicalDevice.descriptorIndexingFeatures = {
@@ -1001,15 +1003,15 @@ namespace Horizon
                 .pNext = &physicalDevice.dynamicRenderingFeatures
             };
             physicalDevice.dynamicRenderingFeatures = {
-                .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES,
+                .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES_KHR,
                 .pNext = &physicalDevice.timelineSemaphoreFeatures
             };
             physicalDevice.timelineSemaphoreFeatures = {
-                .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TIMELINE_SEMAPHORE_FEATURES,
+                .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TIMELINE_SEMAPHORE_FEATURES_KHR,
                 .pNext = &physicalDevice.synchronization2Features
             };
             physicalDevice.synchronization2Features = {
-                .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SYNCHRONIZATION_2_FEATURES,
+                .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SYNCHRONIZATION_2_FEATURES_KHR,
                 .pNext = &physicalDevice.maintenance4Features
             };
             physicalDevice.maintenance4Features = {
@@ -1025,7 +1027,7 @@ namespace Horizon
             //     .pNext = &physicalDevice.shaderFloat16Int8Features
             // };
             physicalDevice.shaderFloat16Int8Features = {
-                .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_FLOAT16_INT8_FEATURES,
+                .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_FLOAT16_INT8_FEATURES_KHR,
                 .pNext = &physicalDevice.float16StorageFeatures,
             };
             physicalDevice.float16StorageFeatures = {
@@ -1033,7 +1035,7 @@ namespace Horizon
                 .pNext = &physicalDevice.hostQueryResetFeatures,
             };
             physicalDevice.hostQueryResetFeatures = {
-                .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_HOST_QUERY_RESET_FEATURES,
+                .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_HOST_QUERY_RESET_FEATURES_EXT,
                 .pNext = &physicalDevice.fragmentShaderBarycentricFeatures,
             };
             physicalDevice.fragmentShaderBarycentricFeatures = {
@@ -1045,14 +1047,18 @@ namespace Horizon
                 .pNext = &physicalDevice.multiviewFeatures,
             };
             physicalDevice.multiviewFeatures = {
-                .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_FEATURES,
+                .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_FEATURES_KHR,
+                .pNext = &physicalDevice.separateDepthStencilLayoutsFeatures,
+            };
+            physicalDevice.separateDepthStencilLayoutsFeatures = {
+                .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SEPARATE_DEPTH_STENCIL_LAYOUTS_FEATURES_KHR,
                 .pNext = &physicalDevice.shaderDemoteToHelperInvocationFeatures,
             };
 
             if (enableMeshShaderSupport)
             {
                 physicalDevice.shaderDemoteToHelperInvocationFeatures = {
-                    .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_DEMOTE_TO_HELPER_INVOCATION_FEATURES,
+                    .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_DEMOTE_TO_HELPER_INVOCATION_FEATURES_EXT,
                     .pNext = &physicalDevice.meshShaderFeaturesEXT,
                 };
                 physicalDevice.meshShaderFeaturesEXT = {
@@ -1063,7 +1069,7 @@ namespace Horizon
             else
             {
                 physicalDevice.shaderDemoteToHelperInvocationFeatures = {
-                    .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_DEMOTE_TO_HELPER_INVOCATION_FEATURES,
+                    .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_DEMOTE_TO_HELPER_INVOCATION_FEATURES_EXT,
                     .pNext = nullptr,
                 };
             }
@@ -1433,7 +1439,8 @@ namespace Horizon
             .pfnUserCallback = DebugUtilsMessengerCallback
         };
 
-        VkApplicationInfo applicationInfo = {
+        VkApplicationInfo applicationInfo =
+        {
             .sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
             .pApplicationName = "Horizon",
             .applicationVersion = 0,
@@ -1629,6 +1636,8 @@ namespace Horizon
 
         memset(outRenderingInfo, 0, sizeof(VulkanRenderingInfo));
 
+        uint32 layerCount = 1;
+
         for (uint32 index = 0; index < RenderBackendMaxRenderTargetCount; index++)
         {
             const RenderBackendRenderPassInfo::RenderTargetBinding& colorRenderTarget = renderPassInfo.renderTargets[index];
@@ -1641,7 +1650,7 @@ namespace Horizon
             VulkanTexture* texture = device->GetTexture(colorRenderTarget.texture);
 
             uint32 mipLevel = renderPassInfo.renderTargets[index].mipLevel;
-            uint32 arrayLayer = renderPassInfo.renderTargets[index].arrayLayer;
+            layerCount = std::max(layerCount, texture->arrayLayers);
 
             if (bSetExtent)
             {
@@ -1660,11 +1669,10 @@ namespace Horizon
             VkRenderingAttachmentInfo& attachmentInfo = outRenderingInfo->colorAttachments[outRenderingInfo->colorAttachmentCount];
             attachmentInfo.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
             attachmentInfo.pNext = nullptr;
-            attachmentInfo.imageView = texture->renderTargetViews[mipLevel]; // TODO: specify mip level
+            attachmentInfo.imageView = texture->renderTargetViews[mipLevel];
             attachmentInfo.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-            //attachmentInfo.imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL;
-            //attachmentInfo.resolveImageView = VK_NULL_HANDLE;
-            //attachmentInfo.resolveImageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+            attachmentInfo.resolveImageView = VK_NULL_HANDLE;
+            attachmentInfo.resolveImageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
             attachmentInfo.resolveMode = VK_RESOLVE_MODE_NONE;
             attachmentInfo.loadOp = ConvertToVkAttachmentLoadOp(colorRenderTarget.loadOp);
             attachmentInfo.storeOp = ConvertToVkAttachmentStoreOp(colorRenderTarget.storeOp);
@@ -1681,7 +1689,7 @@ namespace Horizon
 
             bool hasStencil = IsStencilFormat(texture->format);
             uint32 mipLevel = renderPassInfo.depthStencil.mipLevel;
-            uint32 arrayLayer = renderPassInfo.depthStencil.arrayLayer;
+            layerCount = std::max(layerCount, texture->arrayLayers);
 
             if (bSetExtent)
             {
@@ -1699,11 +1707,10 @@ namespace Horizon
             VkRenderingAttachmentInfo& attachmentInfo = outRenderingInfo->depthStencilAttachment;
             attachmentInfo.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
             attachmentInfo.pNext = nullptr;
-            attachmentInfo.imageView = texture->depthStencilViews[0]; // TODO: specify mip level
+            attachmentInfo.imageView = texture->depthStencilViews[0]; // TODO
             attachmentInfo.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-            //attachmentInfo.imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL;
-            //attachmentInfo.resolveImageView = VK_NULL_HANDLE;
-            //attachmentInfo.resolveImageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+            attachmentInfo.resolveImageView = VK_NULL_HANDLE;
+            attachmentInfo.resolveImageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
             attachmentInfo.resolveMode = VK_RESOLVE_MODE_NONE;
             attachmentInfo.loadOp = ConvertToVkAttachmentLoadOp(depthStencilRenderTarget.depthLoadOp);
             attachmentInfo.storeOp = ConvertToVkAttachmentStoreOp(depthStencilRenderTarget.depthStoreOp);
@@ -1728,7 +1735,7 @@ namespace Horizon
             .pNext = nullptr,
             .flags = 0,
             .renderArea = renderArea,
-            .layerCount = 1,
+            .layerCount = layerCount,
             .colorAttachmentCount = outRenderingInfo->colorAttachmentCount,
             .pColorAttachments = outRenderingInfo->colorAttachments,
             .pDepthAttachment = outRenderingInfo->hasDepthStencil ? &outRenderingInfo->depthStencilAttachment : nullptr,
@@ -2033,7 +2040,8 @@ namespace Horizon
     {
         uint32 index = GetRenderBackendHandleRepresentation(bufferHandle.GetIndex());
         VulkanBuffer& buffer = buffers[index];
-        VkBufferDeviceAddressInfoKHR bufferDeviceAddressInfo = {
+        VkBufferDeviceAddressInfoKHR bufferDeviceAddressInfo =
+        {
             .sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO,
             .buffer = buffer.handle,
         };
@@ -2207,6 +2215,7 @@ namespace Horizon
                 {
                     imageViewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
                 }
+
                 VK_CHECK(vkCreateImageView(handle, &imageViewInfo, VULKAN_ALLOCATION_CALLBACKS, &texture.srvs[mipLevel].srv));
 
                 uint32 index = bindlessDescriptorManager.AllocateSampledImageIndex();
@@ -2278,21 +2287,19 @@ namespace Horizon
         }
         if (EnumClassHasFlags(desc->flags, RenderBackendTextureCreateFlags::DepthStencil))
         {
-            //for (uint32 i = 0; i < texture.arrayLayers; i++)
+            VkImageView dsv = VK_NULL_HANDLE;
+            VkImageViewCreateInfo imageViewInfo =
             {
-                VkImageView dsv = VK_NULL_HANDLE;
-                VkImageViewCreateInfo imageViewInfo =
-                {
-                    .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
-                    .image = texture.handle,
-                    .viewType = ConvertToVkImageViewType(desc->type, texture.IsArray()),
-                    .format = texture.format,
-                    .components = { VK_COMPONENT_SWIZZLE_R, VK_COMPONENT_SWIZZLE_G, VK_COMPONENT_SWIZZLE_B, VK_COMPONENT_SWIZZLE_A },
-                    .subresourceRange = { texture.aspectMask, 0, 1, 0, VK_REMAINING_ARRAY_LAYERS }
-                };
-                VK_CHECK(vkCreateImageView(handle, &imageViewInfo, VULKAN_ALLOCATION_CALLBACKS, &dsv));
-                texture.depthStencilViews[0] = dsv;
-            }
+                .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+                .image = texture.handle,
+                .viewType = ConvertToVkImageViewType(desc->type, texture.IsArray()),
+                .format = texture.format,
+                .components = { VK_COMPONENT_SWIZZLE_R, VK_COMPONENT_SWIZZLE_G, VK_COMPONENT_SWIZZLE_B, VK_COMPONENT_SWIZZLE_A },
+                .subresourceRange = { texture.aspectMask, 0, 1, 0, VK_REMAINING_ARRAY_LAYERS }
+            };
+            VK_CHECK(vkCreateImageView(handle, &imageViewInfo, VULKAN_ALLOCATION_CALLBACKS, &dsv));
+
+            texture.depthStencilViews[0] = dsv;
         }
 
         if (data != nullptr)
@@ -2350,7 +2357,7 @@ namespace Horizon
                     .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
                     .image = texture.handle,
                     .subresourceRange = {
-                        .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+                        .aspectMask = texture.aspectMask,
                         .baseMipLevel = 0,
                         .levelCount = imageInfo.mipLevels,
                         .baseArrayLayer = 0,
@@ -2393,7 +2400,7 @@ namespace Horizon
             {
                 VkImageBlit imageBlit = {
                     .srcSubresource = {
-                        .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+                        .aspectMask = texture.aspectMask,
                         .mipLevel = mipLevel - 1,
                         .baseArrayLayer = 0,
                         .layerCount = 1,
@@ -2403,7 +2410,7 @@ namespace Horizon
                         { .x = std::max((int32)(texture.width >> (mipLevel - 1)), 1), .y = std::max((int32)(texture.height >> (mipLevel - 1)), 1), .z = 1,},
                     },
                     .dstSubresource = {
-                        .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+                        .aspectMask = texture.aspectMask,
                         .mipLevel = mipLevel,
                         .baseArrayLayer = 0,
                         .layerCount = 1,
@@ -2424,7 +2431,7 @@ namespace Horizon
                     .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
                     .image = texture.handle,
                     .subresourceRange = {
-                        .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+                        .aspectMask = texture.aspectMask,
                         .baseMipLevel = mipLevel,
                         .levelCount = 1,
                         .baseArrayLayer = 0,
@@ -2474,7 +2481,7 @@ namespace Horizon
                     .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
                     .image = texture.handle,
                     .subresourceRange = {
-                        .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+                        .aspectMask = texture.aspectMask,
                         .baseMipLevel = 0,
                         .levelCount = texture.mipLevels,
                         .baseArrayLayer = 0,
@@ -2949,7 +2956,7 @@ namespace Horizon
                 .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
                 .pNext = &writeAccelerationStructureInfo,
                 .dstSet = bindlessDescriptorManager.set,
-                .dstBinding = BINDLESS_RESOURCE_BINDING_ACCELERATION_STRUCTURE,
+                .dstBinding = BINDLESS_RESOURCE_BINDING_ACCELERATION_STRUCTURE_SRV,
                 .dstArrayElement = descriptorIndex,
                 .descriptorCount = 1,
                 .descriptorType = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR,
@@ -2983,25 +2990,27 @@ namespace Horizon
         }
     }
 
-    uint32 VulkanDevice::CreateBottomLevelAS(const RenderBackendRayTracingBottomLevelAccelerationDesc* desc, const char* name)
+    uint32 VulkanDevice::CreateBottomLevelAS(const RenderBackendRayTracingBottomLevelAccelerationStructureDesc* desc, const char* name)
     {
         VulkanRayTracingAccelerationStructure accelerationStructure;
         accelerationStructure.buildFlags = ConvertToVkBuildAccelerationStructureFlagsKHR(desc->buildFlags);
         accelerationStructure.blasDesc = *desc;
 
-        std::vector<uint32> primitiveCounts(desc->numGeometries);
-        for (uint32 i = 0; i < desc->numGeometries; i++)
+        std::vector<uint32> primitiveCounts(desc->geometryCount);
+        for (uint32 i = 0; i < desc->geometryCount; i++)
         {
             const RenderBackendRayTracingGeometryDesc& geometryDesc = desc->geometryDescs[i];
-            VkAccelerationStructureGeometryKHR geometry = {
+            VkAccelerationStructureGeometryKHR geometry =
+            {
                .sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR,
                .geometryType = (VkGeometryTypeKHR)geometryDesc.type,
                .flags = ConvertToVkGeometryFlagsKHR(geometryDesc.flags),
             };
             if (geometry.geometryType == VK_GEOMETRY_TYPE_TRIANGLES_KHR)
             {
-                uint32 maxVertex = geometryDesc.triangleDesc.numVertices;
-                geometry.geometry.triangles = {
+                uint32 maxVertex = geometryDesc.triangleDesc.vertexCount;
+                geometry.geometry.triangles =
+                {
                     .sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR,
                     .vertexFormat = VK_FORMAT_R32G32B32_SFLOAT,
                     .vertexData = GetBufferDeviceAddress(geometryDesc.triangleDesc.vertexBuffer) + geometryDesc.triangleDesc.vertexOffset,
@@ -3011,11 +3020,12 @@ namespace Horizon
                     .indexData = GetBufferDeviceAddress(geometryDesc.triangleDesc.indexBuffer) + geometryDesc.triangleDesc.indexOffset,
                     .transformData = GetBufferDeviceAddress(geometryDesc.triangleDesc.transformBuffer) + geometryDesc.triangleDesc.transformOffset
                 };
-                primitiveCounts[i] = geometryDesc.triangleDesc.numIndices / 3;
+                primitiveCounts[i] = geometryDesc.triangleDesc.indexCount / 3;
             }
             else if (geometry.geometryType == VK_GEOMETRY_TYPE_AABBS_KHR)
             {
-                geometry.geometry.aabbs = {
+                geometry.geometry.aabbs =
+                {
                    .sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_AABBS_DATA_KHR,
                    .data = GetBufferDeviceAddress(geometryDesc.aabbDesc.buffer) + geometryDesc.aabbDesc.offset,
                    .stride = sizeof(VkAabbPositionsKHR)
@@ -3030,14 +3040,14 @@ namespace Horizon
         return index;
     }
 
-    uint32 VulkanDevice::CreateTopLevelAS(const RenderBackendRayTracingTopLevelAccelerationDesc* desc, const char* name)
+    uint32 VulkanDevice::CreateTopLevelAS(const RenderBackendRayTracingTopLevelAccelerationStructureDesc* desc, const char* name)
     {
         VulkanRayTracingAccelerationStructure accelerationStructure = {};
         accelerationStructure.buildFlags = ConvertToVkBuildAccelerationStructureFlagsKHR(desc->buildFlags);
         accelerationStructure.tlasDesc = *desc;
 
         std::vector<VkAccelerationStructureInstanceKHR> instances;
-        for (uint32 i = 0; i < desc->numInstances; i++)
+        for (uint32 i = 0; i < desc->instanceCount; i++)
         {
             VkTransformMatrixKHR transformMatrix;
             memcpy(&transformMatrix, &desc->instances[i].transformMatrix, sizeof(VkTransformMatrixKHR));
@@ -3054,7 +3064,7 @@ namespace Horizon
 
         VulkanRayTracingAccelerationStructure::Buffer instanceBuffer;
         {
-            instanceBuffer.size = desc->numInstances * sizeof(VkAccelerationStructureInstanceKHR);
+            instanceBuffer.size = desc->instanceCount * sizeof(VkAccelerationStructureInstanceKHR);
             VkBufferCreateInfo bufferCreateInfo = {
                 .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
                 .size = instanceBuffer.size,
@@ -3099,7 +3109,7 @@ namespace Horizon
         };
         accelerationStructure.geometries.emplace_back(geometry);
 
-        uint32 numPrimitives = desc->numInstances;
+        uint32 numPrimitives = desc->instanceCount;
         uint32 index = CreateAccelerationStructure(&accelerationStructure, VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR, &numPrimitives, name);
 
         return index;
@@ -3258,9 +3268,9 @@ namespace Horizon
         uint64 mipLevelsAndArrayLayers[RenderBackendMaxRenderTargetCount + 1];
         for (int32 index = 0; index < RenderBackendMaxRenderTargetCount; index++)
         {
-            mipLevelsAndArrayLayers[index] = ((uint64)renderPassInfo.renderTargets[index].arrayLayer << (uint64)32) | (uint64)renderPassInfo.renderTargets[index].mipLevel;
+            mipLevelsAndArrayLayers[index] = (/*(uint64)renderPassInfo.renderTargets[index].arrayLayer*/uint64(1) << (uint64)32) | (uint64)renderPassInfo.renderTargets[index].mipLevel;
         }
-        mipLevelsAndArrayLayers[RenderBackendMaxRenderTargetCount] = ((uint64)renderPassInfo.depthStencil.arrayLayer << (uint64)32) | (uint64)renderPassInfo.depthStencil.mipLevel;
+        mipLevelsAndArrayLayers[RenderBackendMaxRenderTargetCount] = (/*(uint64)renderPassInfo.depthStencil.arrayLayer*/uint64(1) << (uint64)32) | (uint64)renderPassInfo.depthStencil.mipLevel;
         uint32 framebufferHash = CRC32(mipLevelsAndArrayLayers, (RenderBackendMaxRenderTargetCount + 1) * sizeof(uint64), renderPassCompatibleHash);
 
         FramebufferList* framebufferList = nullptr;
@@ -3300,7 +3310,6 @@ namespace Horizon
             assert(texture->width == width && texture->height == height);
 
             uint32 mipLevel = renderPassInfo.renderTargets[index].mipLevel;
-            uint32 arrayLayer = renderPassInfo.renderTargets[index].arrayLayer;
 
             framebuffer.images[index] = texture->handle;
             framebuffer.attachments[index] = texture->renderTargetViews[mipLevel];
@@ -3311,12 +3320,11 @@ namespace Horizon
             assert(texture->width == width && texture->height == height);
 
             uint32 mipLevel = renderPassInfo.depthStencil.mipLevel;
-            uint32 arrayLayer = renderPassInfo.depthStencil.arrayLayer;
 
             bool hasStencil = IsStencilFormat(texture->format);
 
             framebuffer.images[numAttachments] = texture->handle;
-            framebuffer.attachments[numAttachments] = texture->depthStencilViews[arrayLayer];
+            framebuffer.attachments[numAttachments] = texture->depthStencilViews[0];
             numAttachments++;
         }
         framebuffer.colorAttachmentCount = renderPassDesc.colorAttachmentCount;
@@ -3938,6 +3946,7 @@ namespace Horizon
             requiredDeviceExtensions.push_back(VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME);
             requiredDeviceExtensions.push_back(VK_KHR_EXTERNAL_MEMORY_WIN32_EXTENSION_NAME);
             //requiredDeviceExtensions.push_back(VK_KHR_SHADER_RELAXED_EXTENDED_INSTRUCTION_EXTENSION_NAME);
+            requiredDeviceExtensions.push_back(VK_KHR_SEPARATE_DEPTH_STENCIL_LAYOUTS_EXTENSION_NAME); // Required if VK_KHR_synchronization2 is enabled.
             requiredDeviceExtensions.push_back(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
             requiredDeviceExtensions.push_back(VK_EXT_SCALAR_BLOCK_LAYOUT_EXTENSION_NAME);
             requiredDeviceExtensions.push_back(VK_EXT_PIPELINE_CREATION_FEEDBACK_EXTENSION_NAME);
@@ -3994,7 +4003,8 @@ namespace Horizon
                 queuePriorities[family].resize(queueCount, 1.0f);
                 commandQueues[family].resize(queueCount);
 
-                VkDeviceQueueCreateInfo queueInfo = {
+                VkDeviceQueueCreateInfo queueInfo =
+                {
                     .sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
                     .queueFamilyIndex = physicalDevice->queueFamilyIndices[family],
                     .queueCount = queueCount,
@@ -4007,7 +4017,8 @@ namespace Horizon
                 }
             }
 
-            VkDeviceCreateInfo deviceInfo = {
+            VkDeviceCreateInfo deviceInfo =
+            {
                 .sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
                 .pNext = &physicalDevice->enabledFeatures,
                 .queueCreateInfoCount = (uint32)(queueInfos.size()),
@@ -4131,12 +4142,12 @@ namespace Horizon
 
             bindlessDescriptorSetLayoutBindings =
             {
-                { .binding = BINDLESS_RESOURCE_BINDING_SAMPLER,                .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER,                    .descriptorCount = numSamplers,               .stageFlags = VK_SHADER_STAGE_ALL },
-                { .binding = BINDLESS_RESOURCE_BINDING_TEXTURE_SRV,            .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,              .descriptorCount = numSampledImages,          .stageFlags = VK_SHADER_STAGE_ALL },
-                { .binding = BINDLESS_RESOURCE_BINDING_TEXTURE_UAV,            .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,              .descriptorCount = numStorageImages,          .stageFlags = VK_SHADER_STAGE_ALL },
-                { .binding = BINDLESS_RESOURCE_BINDING_BUFFER_CBV,             .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,             .descriptorCount = numUniformBuffers,         .stageFlags = VK_SHADER_STAGE_ALL },
-                { .binding = BINDLESS_RESOURCE_BINDING_BUFFER_SRV_AND_UAV,     .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,             .descriptorCount = numStorageBuffers,         .stageFlags = VK_SHADER_STAGE_ALL },
-                { .binding = BINDLESS_RESOURCE_BINDING_ACCELERATION_STRUCTURE, .descriptorType = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, .descriptorCount = numAccelerationStructures, .stageFlags = VK_SHADER_STAGE_ALL },
+                { .binding = BINDLESS_RESOURCE_BINDING_SAMPLER,                    .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER,                    .descriptorCount = numSamplers,               .stageFlags = VK_SHADER_STAGE_ALL },
+                { .binding = BINDLESS_RESOURCE_BINDING_TEXTURE_SRV,                .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,              .descriptorCount = numSampledImages,          .stageFlags = VK_SHADER_STAGE_ALL },
+                { .binding = BINDLESS_RESOURCE_BINDING_TEXTURE_UAV,                .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,              .descriptorCount = numStorageImages,          .stageFlags = VK_SHADER_STAGE_ALL },
+                { .binding = BINDLESS_RESOURCE_BINDING_BUFFER_CBV,                 .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,             .descriptorCount = numUniformBuffers,         .stageFlags = VK_SHADER_STAGE_ALL },
+                { .binding = BINDLESS_RESOURCE_BINDING_BUFFER_SRV_AND_UAV,         .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,             .descriptorCount = numStorageBuffers,         .stageFlags = VK_SHADER_STAGE_ALL },
+                { .binding = BINDLESS_RESOURCE_BINDING_ACCELERATION_STRUCTURE_SRV, .descriptorType = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, .descriptorCount = numAccelerationStructures, .stageFlags = VK_SHADER_STAGE_ALL },
             };
 
             bindlessDescriptorBindingFlags =
@@ -4234,7 +4245,7 @@ namespace Horizon
             return false;
         }
 
-        // To be able to bind a set once in a frame for all shaders, all pipeline layouts have to be compatible
+        // To be able to bind a set once in a frame for all shaders_deprecated, all pipeline layouts have to be compatible
         bindlessDescriptorManager.pushConstantsSize = 128;
         bindlessDescriptorManager.compatibleGraphicsPipelineLayout = FindOrCreatePipelineLayout(bindlessDescriptorManager.pushConstantsSize, RenderBackendPipelineType::Graphics);
         bindlessDescriptorManager.compatibleComputePipelineLayout = FindOrCreatePipelineLayout(bindlessDescriptorManager.pushConstantsSize, RenderBackendPipelineType::Compute);
@@ -4627,7 +4638,7 @@ namespace Horizon
                     .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
                     .image = texture->handle,
                     .subresourceRange = {
-                        .aspectMask = texture->aspectMask,
+                        .aspectMask = GetVkImageAspectFlags(texture->format),
                         .baseMipLevel = transition.textureRange.firstLevel,
                         .levelCount = transition.textureRange.mipLevels,
                         .baseArrayLayer = transition.textureRange.firstLayer,
@@ -4804,7 +4815,7 @@ namespace Horizon
             .scratchData = dstBLAS->scratchBuffer.deviceAddress
         };
 
-        uint32 numGeometries = (uint32)dstBLAS->blasDesc.numGeometries;
+        uint32 numGeometries = (uint32)dstBLAS->blasDesc.geometryCount;
         std::vector<VkAccelerationStructureBuildRangeInfoKHR> ranges(numGeometries);
         std::vector<VkAccelerationStructureBuildRangeInfoKHR*> buildRangeInfos(numGeometries);
         for (uint32 i = 0; i < numGeometries; i++)
@@ -4812,7 +4823,7 @@ namespace Horizon
             if (dstBLAS->blasDesc.geometryDescs->type == RenderBackendRayTracingGeometryType::Triangles)
             {
                 VkAccelerationStructureBuildRangeInfoKHR buildRange = {
-                    .primitiveCount = dstBLAS->blasDesc.geometryDescs[i].triangleDesc.numIndices / 3,
+                    .primitiveCount = dstBLAS->blasDesc.geometryDescs[i].triangleDesc.indexCount / 3,
                     .primitiveOffset = 0,
                     .firstVertex = 0,
                     .transformOffset = dstBLAS->blasDesc.geometryDescs[i].triangleDesc.transformOffset,
@@ -4845,8 +4856,8 @@ namespace Horizon
 
     bool VulkanRenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandBuildTopLevelAS& command)
     {
-        const auto& srcTLAS = command.srcTLAS ? device->GetAccelerationStructure(command.srcTLAS) : nullptr;
-        const auto& dstTLAS = device->GetAccelerationStructure(command.dstTLAS);
+        const VulkanRayTracingAccelerationStructure* srcTLAS = command.srcTLAS ? device->GetAccelerationStructure(command.srcTLAS) : nullptr;
+        const VulkanRayTracingAccelerationStructure* dstTLAS = device->GetAccelerationStructure(command.dstTLAS);
 
         VkAccelerationStructureBuildGeometryInfoKHR accelerationStructureBuildGeometryInfo = {
             .sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR,
@@ -4861,7 +4872,7 @@ namespace Horizon
         };
 
         VkAccelerationStructureBuildRangeInfoKHR range = {
-            .primitiveCount = dstTLAS->tlasDesc.numInstances,
+            .primitiveCount = dstTLAS->tlasDesc.instanceCount,
             .primitiveOffset = 0,
             .firstVertex = 0,
             .transformOffset = 0,
@@ -5628,7 +5639,7 @@ namespace Horizon
 
     }
 
-    RenderBackendRayTracingAccelerationStructureHandle VulkanRenderBackend::CreateRayTracingTopLevelAccelerationStructure(const RenderBackendRayTracingTopLevelAccelerationDesc* desc, const char* name)
+    RenderBackendRayTracingAccelerationStructureHandle VulkanRenderBackend::CreateRayTracingTopLevelAccelerationStructure(const RenderBackendRayTracingTopLevelAccelerationStructureDesc* desc, const char* name)
     {
         RenderBackendRayTracingAccelerationStructureHandle handle = handleManager.Allocate<RenderBackendRayTracingAccelerationStructureHandle>();
         uint32 index = device.CreateTopLevelAS(desc, name);
@@ -5636,7 +5647,7 @@ namespace Horizon
         return handle;
     }
 
-    RenderBackendRayTracingAccelerationStructureHandle VulkanRenderBackend::CreateRayTracingBottomLevelAccelerationStructure(const RenderBackendRayTracingBottomLevelAccelerationDesc* desc, const char* name)
+    RenderBackendRayTracingAccelerationStructureHandle VulkanRenderBackend::CreateRayTracingBottomLevelAccelerationStructure(const RenderBackendRayTracingBottomLevelAccelerationStructureDesc* desc, const char* name)
     {
         RenderBackendRayTracingAccelerationStructureHandle handle = handleManager.Allocate<RenderBackendRayTracingAccelerationStructureHandle>();
         uint32 index = device.CreateBottomLevelAS(desc, name);
@@ -5882,6 +5893,16 @@ namespace Horizon
         return device.GetBufferUAVBindlessResourceDescriptorIndex(bufferIndex);
     }
 
+    int32 VulkanRenderBackend::GetAccelerationStructureSRVBindlessResourceDescriptorIndex(RenderBackendRayTracingAccelerationStructureHandle handle)
+    {
+        uint32 index = 0;
+        if (!device.TryGetRenderBackendHandleRepresentation(handle.GetIndex(), &index))
+        {
+            return -1;
+        }
+        return device.accelerationStructures[index].descriptorIndex;
+    }
+
     RenderBackendRayTracingPipelineStateHandle VulkanRenderBackend::CreateRayTracingPipelineState(const RenderBackendRayTracingPipelineStateDesc* desc, const char* name)
     {
         RenderBackendRayTracingPipelineStateHandle handle = handleManager.Allocate<RenderBackendRayTracingPipelineStateHandle>();
@@ -5894,18 +5915,8 @@ namespace Horizon
 
             for (uint32 shaderIndex = 0; shaderIndex < numShaders; shaderIndex++)
             {
-                shaderStageCreateInfos[shaderIndex] = {
-                    .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
-                    .stage = ConvertToVkShaderStageFlagBits(desc->shaders[shaderIndex].stage),
-                    .pName = desc->shaders[shaderIndex].entry.c_str(),
-                };
-                VkShaderModuleCreateInfo shaderModuleCreateInfo = {
-                    .sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
-                    .codeSize = desc->shaders[shaderIndex].code.size,
-                    .pCode = (uint32*)desc->shaders[shaderIndex].code.data,
-                };
-                VK_CHECK(vkCreateShaderModule(device.GetHandle(), &shaderModuleCreateInfo, VULKAN_ALLOCATION_CALLBACKS, &shaderStageCreateInfos[shaderIndex].module));
-                device.SetDebugUtilsObjectName(VK_OBJECT_TYPE_SHADER_MODULE, (uint64)shaderStageCreateInfos[shaderIndex].module, shaderStageCreateInfos[shaderIndex].pName);
+                VulkanShader* shader = device.GetShader(desc->shaders[shaderIndex]);
+                shaderStageCreateInfos[shaderIndex] = shader->stageInfo;
             }
 
             uint32 numRayGenerationShaders = 0;

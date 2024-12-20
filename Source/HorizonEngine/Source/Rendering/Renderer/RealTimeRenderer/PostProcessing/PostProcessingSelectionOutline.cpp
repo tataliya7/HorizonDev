@@ -60,7 +60,7 @@ namespace Horizon
                                 graphicsPipelineState,
                                 shaderConstants,
                                 drawCallInfo.indexBuffer,
-                                drawCallInfo.numIndices,
+                                drawCallInfo.indexCount,
                                 1,
                                 drawCallInfo.firstIndex,
                                 0,

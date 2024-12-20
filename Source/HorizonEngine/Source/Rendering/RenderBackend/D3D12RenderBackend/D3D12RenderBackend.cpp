@@ -141,6 +141,7 @@ namespace Horizon
 
         Microsoft::WRL::ComPtr<ID3D12CommandList> commandList;
         Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> graphicsCommandList;
+        Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList4> graphicsCommandList4;
         Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList6> graphicsCommandList6;
         Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList7> graphicsCommandList7;
 
@@ -152,6 +153,11 @@ namespace Horizon
         ID3D12GraphicsCommandList* GetID3D12GraphicsCommandList()
         {
             return graphicsCommandList.Get();
+        }
+
+        ID3D12GraphicsCommandList4* GetID3D12GraphicsCommandList4()
+        {
+            return graphicsCommandList4.Get();
         }
 
         ID3D12GraphicsCommandList6* GetID3D12GraphicsCommandList6()
@@ -528,6 +534,11 @@ namespace Horizon
         ID3D12Device* GetID3D12Device()
         {
             return device.Get();
+        }
+
+        ID3D12Device5* GetDXRDevice()
+        {
+            return device5.Get();
         }
 
         ID3D12CommandSignature* GetDispatchIndirectCommandSignature()
@@ -1688,6 +1699,7 @@ namespace Horizon
         }
 
         Microsoft::WRL::ComPtr<ID3D12Device> device;
+        Microsoft::WRL::ComPtr<ID3D12Device5> device5;
 
         D3D12CommandQueue* commandQueues[(uint32)D3D12CommandQueueType::Count];
 
@@ -1975,8 +1987,9 @@ namespace Horizon
                         nullptr,
                         IID_PPV_ARGS(&commandList->graphicsCommandList)));
                     commandList->commandList = commandList->graphicsCommandList;
+                    D3D12_CHECK(commandList->commandList->QueryInterface(IID_PPV_ARGS(&commandList->graphicsCommandList4)));
                     D3D12_CHECK(commandList->commandList->QueryInterface(IID_PPV_ARGS(&commandList->graphicsCommandList6)));
-                    //D3D12_CHECK(commandList->commandList->QueryInterface(IID_PPV_ARGS(&commandList->graphicsCommandList7)));
+                    D3D12_CHECK(commandList->commandList->QueryInterface(IID_PPV_ARGS(&commandList->graphicsCommandList7)));
                 } break;
                 case D3D12CommandQueueType::Copy:
                 {
@@ -2164,6 +2177,7 @@ namespace Horizon
         int32 GetBufferCBVBindlessResourceDescriptorIndex(RenderBackendBufferHandle uav) override;
         int32 GetBufferSRVBindlessResourceDescriptorIndex(RenderBackendBufferHandle uav) override;
         int32 GetBufferUAVBindlessResourceDescriptorIndex(RenderBackendBufferHandle uav) override;
+        int32 GetAccelerationStructureSRVBindlessResourceDescriptorIndex(RenderBackendRayTracingAccelerationStructureHandle accelerationStructure) override;
         RenderBackendSamplerHandle CreateSampler(const RenderBackendSamplerDesc* desc, const char* name) override;
         void DestroySampler(RenderBackendSamplerHandle sampler) override;
         RenderBackendShaderHandle CreateShader(const RenderBackendShaderDesc* desc, const char* name) override;
@@ -2171,8 +2185,8 @@ namespace Horizon
         RenderBackendTimingQueryHeapHandle CreateTimingQueryHeap(const RenderBackendTimingQueryHeapDesc* desc, const char* name) override;
         void DestroyTimingQueryHeap(RenderBackendTimingQueryHeapHandle timingQueryHeap) override;
         void SubmitCommandLists(RenderBackendCommandList** commandLists, uint32 numCommandLists, RenderBackendSwapChainHandle swapChain) override;
-        RenderBackendRayTracingAccelerationStructureHandle CreateRayTracingBottomLevelAccelerationStructure(const RenderBackendRayTracingBottomLevelAccelerationDesc* desc, const char* name) override;
-        RenderBackendRayTracingAccelerationStructureHandle CreateRayTracingTopLevelAccelerationStructure(const RenderBackendRayTracingTopLevelAccelerationDesc* desc, const char* name) override;
+        RenderBackendRayTracingAccelerationStructureHandle CreateRayTracingBottomLevelAccelerationStructure(const RenderBackendRayTracingBottomLevelAccelerationStructureDesc* desc, const char* name) override;
+        RenderBackendRayTracingAccelerationStructureHandle CreateRayTracingTopLevelAccelerationStructure(const RenderBackendRayTracingTopLevelAccelerationStructureDesc* desc, const char* name) override;
         RenderBackendRayTracingPipelineStateHandle CreateRayTracingPipelineState(const RenderBackendRayTracingPipelineStateDesc* desc, const char* name) override;
         RenderBackendBufferHandle CreateRayTracingShaderBindingTable(const RenderBackendRayTracingShaderBindingTableDesc* desc, const char* name) override;
         bool IsTearingSupported() const
@@ -2752,12 +2766,41 @@ namespace Horizon
 
     bool D3D12RenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandBuildTopLevelAS& command)
     {
+        //const D3D12AccelerationStructure* srcTLAS = command.srcTLAS ? device->GetAccelerationStructure(command.srcTLAS) : nullptr;
+        //const D3D12AccelerationStructure* dstTLAS = device->GetAccelerationStructure(command.dstTLAS);
+
+        //D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS buildFlags = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_PREFER_FAST_TRACE;
+        //if ()
+        //{
+        //    assert(buildFlags | D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_ALLOW_UPDATE);
+        //    buildFlags |= D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_PERFORM_UPDATE;
+        //}
+
+        //D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS topLevelAccelerationStructureInputs = {};
+        //topLevelAccelerationStructureInputs.Type = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL;
+        //topLevelAccelerationStructureInputs.Flags = buildFlags;
+        //topLevelAccelerationStructureInputs.NumDescs = numInstances;
+        //topLevelAccelerationStructureInputs.DescsLayout = D3D12_ELEMENTS_LAYOUT_ARRAY;
+        //topLevelAccelerationStructureInputs.InstanceDescs = ;
+
+        //D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO topLevelAccelerationStructurePrebuildInfo = {};
+        //device->GetDXRDevice()->GetRaytracingAccelerationStructurePrebuildInfo(&topLevelAccelerationStructureInputs, &topLevelAccelerationStructurePrebuildInfo);
+
+        //D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC buildDesc = {};
+        //buildDesc.DestAccelerationStructureData = AccelerationStructureBuffers[GPUIndex]->ResourceLocation.GetGPUVirtualAddress();
+        //buildDesc.Inputs = topLevelAccelerationStructureInputs;
+        //buildDesc.SourceAccelerationStructureData = srcTLAS ? AccelerationStructureBuffers[GPUIndex]->ResourceLocation.GetGPUVirtualAddress() : D3D12_GPU_VIRTUAL_ADDRESS(0);
+        //buildDesc.ScratchAccelerationStructureData = ScratchBufferAddress;
+
+        //commandList->GetID3D12GraphicsCommandList4()->BuildRaytracingAccelerationStructure(&buildDesc, 0, nullptr);
+
         return true;
     }
 
     bool D3D12RenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandDispatchRays& command)
     {
         D3D12_DISPATCH_RAYS_DESC dispatchRaysDesc = {};
+
         commandList->GetID3D12GraphicsCommandList7()->DispatchRays(&dispatchRaysDesc);
         return true;
     }
@@ -3712,6 +3755,18 @@ extern "C" { _declspec(dllexport) extern const char* D3D12SDKPath = /*u8*/".\\D3
         return buffer->bindlessResourceDescriptorIndexUAV;
     }
 
+    int32 D3D12RenderBackend::GetAccelerationStructureSRVBindlessResourceDescriptorIndex(RenderBackendRayTracingAccelerationStructureHandle handle)
+    {
+        D3D12Device* device = devices[0];
+        uint32 bufferIndex = 0;
+        if (!device->TryGetRenderBackendHandleRepresentation(handle.GetIndex(), &bufferIndex))
+        {
+            return 0;
+        }
+        D3D12Buffer* buffer = device->buffers[bufferIndex];
+        return buffer->bindlessResourceDescriptorIndexUAV;
+    }
+
     RenderBackendSamplerHandle D3D12RenderBackend::CreateSampler(const RenderBackendSamplerDesc* desc, const char* name)
     {
         RenderBackendSamplerHandle handle = handleManager.Allocate<RenderBackendSamplerHandle>();
@@ -3841,13 +3896,14 @@ extern "C" { _declspec(dllexport) extern const char* D3D12SDKPath = /*u8*/".\\D3
         device->workloads.push_back(workload);
     }
 
-    RenderBackendRayTracingAccelerationStructureHandle D3D12RenderBackend::CreateRayTracingBottomLevelAccelerationStructure(const RenderBackendRayTracingBottomLevelAccelerationDesc* desc, const char* name)
+    RenderBackendRayTracingAccelerationStructureHandle D3D12RenderBackend::CreateRayTracingBottomLevelAccelerationStructure(const RenderBackendRayTracingBottomLevelAccelerationStructureDesc* desc, const char* name)
     {
         return RenderBackendRayTracingAccelerationStructureHandle::Null;
     }
 
-    RenderBackendRayTracingAccelerationStructureHandle D3D12RenderBackend::CreateRayTracingTopLevelAccelerationStructure(const RenderBackendRayTracingTopLevelAccelerationDesc* desc, const char* name)
+    RenderBackendRayTracingAccelerationStructureHandle D3D12RenderBackend::CreateRayTracingTopLevelAccelerationStructure(const RenderBackendRayTracingTopLevelAccelerationStructureDesc* desc, const char* name)
     {
+
         return RenderBackendRayTracingAccelerationStructureHandle::Null;
     }
 
@@ -4015,6 +4071,8 @@ extern "C" { _declspec(dllexport) extern const char* D3D12SDKPath = /*u8*/".\\D3
         else
         {
             LogInfo(GLogger, std::format("DirectX Raytracing is supported. Tier: {}.", (int)options5.RaytracingTier));
+
+            device->QueryInterface(IID_PPV_ARGS(&device5));
         }
 
         D3D12_FEATURE_DATA_D3D12_OPTIONS7 options7 = {};

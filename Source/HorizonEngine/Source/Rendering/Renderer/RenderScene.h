@@ -4,6 +4,7 @@
 #include "RenderStatistics.h"
 #include "ShaderLibrary.h"
 #include "RendererPrivate.h" // TODO
+#include "RayTracing/RayTracingScene.h"
 
 namespace Horizon
 {
@@ -478,11 +479,20 @@ namespace Horizon
 
         void UpdateGPUScene(RenderBackendCommandList* commandList);
 
+        bool ShouldUpdateRayTracingScene()
+        {
+            return rayTracingScene && true;
+        }
+
         GPUScene* GetGPUScene() const
         {
             return gpuScene;
         }
 
+        RayTracingScene* GetRayTracingScene() const
+        {
+            return rayTracingScene;
+        }
     //private:
 
         RenderBackend* renderBackend;
@@ -505,7 +515,7 @@ namespace Horizon
 
         GPUScene* gpuScene;
 
-        //RayTracingScene rayTracingScene;
+        RayTracingScene* rayTracingScene;
 
         RenderStatistics renderStatistics;
 
@@ -528,14 +538,9 @@ namespace Horizon
         RenderBackendBufferHandle instanceUploadBuffer;
 
         // Transforms
-        uint32 numTransforms = 0;
-        uint64 transformBufferSize = 0;
-        std::vector<Matrix4x4> transforms;
-        std::vector<Matrix4x4> rowMajorTransforms;
         RenderBackendBufferHandle transformBuffer;
         RenderBackendBufferHandle transformUploadBuffer;
         RenderBackendBufferHandle previousTransformBuffer;
-        RenderBackendBufferHandle transformBufferRowMajor;
 
         RenderBackendBufferHandle lightDataBuffer;
         RenderBackendBufferHandle lightDataUploadBuffer;

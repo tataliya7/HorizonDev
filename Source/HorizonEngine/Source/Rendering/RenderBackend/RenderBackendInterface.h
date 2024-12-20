@@ -176,6 +176,11 @@ namespace Horizon
         /**
          * TBD.
          */
+        virtual int32 GetAccelerationStructureSRVBindlessResourceDescriptorIndex(RenderBackendRayTracingAccelerationStructureHandle accelerationStructure) = 0;
+
+        /**
+         * TBD.
+         */
         virtual RenderBackendSamplerHandle CreateSampler(const RenderBackendSamplerDesc* desc, const char* name) = 0;
 
         /**
@@ -224,12 +229,12 @@ namespace Horizon
         /**
          * TBD.
          */
-        virtual RenderBackendRayTracingAccelerationStructureHandle CreateRayTracingBottomLevelAccelerationStructure(const RenderBackendRayTracingBottomLevelAccelerationDesc* desc, const char* name) = 0;
+        virtual RenderBackendRayTracingAccelerationStructureHandle CreateRayTracingBottomLevelAccelerationStructure(const RenderBackendRayTracingBottomLevelAccelerationStructureDesc* desc, const char* name) = 0;
 
         /**
          * TBD.
          */
-        virtual RenderBackendRayTracingAccelerationStructureHandle CreateRayTracingTopLevelAccelerationStructure(const RenderBackendRayTracingTopLevelAccelerationDesc* desc, const char* name) = 0;
+        virtual RenderBackendRayTracingAccelerationStructureHandle CreateRayTracingTopLevelAccelerationStructure(const RenderBackendRayTracingTopLevelAccelerationStructureDesc* desc, const char* name) = 0;
 
         /**
          * TBD.

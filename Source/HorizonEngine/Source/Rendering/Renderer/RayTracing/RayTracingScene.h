@@ -1,6 +1,6 @@
 #pragma once
 
-#include "RendererCommon.h"
+#include "Rendering/Renderer/RendererCommon.h"
 
 namespace Horizon
 {
@@ -26,17 +26,31 @@ namespace Horizon
     class RayTracingScene
     {
     public:
+
+        RayTracingScene();
+        ~RayTracingScene();
+
         RenderBackendRayTracingAccelerationStructureHandle GetTLAS()
         {
-            return tlas;
+            return topLevelAccelerationStructure;
         }
         std::vector<RayTracingGeometry*> geometriesToBuild;
-    private:
-        RenderBackendRayTracingAccelerationStructureHandle tlas;
+
+        // TODO
+        RenderBackendRayTracingAccelerationStructureHandle bottomLevelAccelerationStructure;
+
+    //private:
+
+        RenderBackendRayTracingAccelerationStructureHandle topLevelAccelerationStructure;
 
         RenderBackendBufferHandle instanceUploadBuffer;
         RenderBackendBufferHandle transformUploadBuffer;
-        
+
+        uint32 transformMatrixCount = 0;
+        uint64 transformBufferSize = 0;
+        std::vector<Matrix4x4> rowMajorTransforms;
+        RenderBackendBufferHandle transformBufferRowMajor;
+        RenderBackendBufferHandle transformBufferRowMajorUpload;
         //std::vector<RayTracingInstance> instances;
     };
 

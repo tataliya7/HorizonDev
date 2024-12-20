@@ -70,7 +70,7 @@ namespace Horizon
         //                     graphicsPipelineState,
         //                     shaderConstants,
         //                     drawCallInfo.indexBuffer,
-        //                     drawCallInfo.numIndices,
+        //                     drawCallInfo.indexCount,
         //                     numViewports,
         //                     drawCallInfo.firstIndex,
         //                     0,

@@ -269,7 +269,7 @@ namespace Horizon
             RenderGraph& renderGraph,
             const SceneView& view);
 
-        void RenderRayTracingShadows(
+        void DispatchRayTracingShadows(
             RenderGraph& renderGraph,
             const SceneView& view,
             const LightRenderObject& light,

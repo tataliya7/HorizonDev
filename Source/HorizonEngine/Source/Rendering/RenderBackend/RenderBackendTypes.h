@@ -1252,8 +1252,6 @@ namespace Horizon
         {
             RenderBackendTextureHandle texture;
             uint32 mipLevel;
-            uint32 arrayLayer;
-            //uint32 arrayLayerCount;
             RenderBackendRenderPassBeginningAccessType loadOp;
             RenderBackendRenderPassEndingAccessType storeOp;
         };
@@ -1261,7 +1259,6 @@ namespace Horizon
         {
             RenderBackendTextureHandle texture;
             uint32 mipLevel;
-            uint32 arrayLayer;
             RenderBackendRenderPassBeginningAccessType depthLoadOp;
             RenderBackendRenderPassEndingAccessType depthStoreOp;
             RenderBackendRenderPassBeginningAccessType stencilLoadOp;
@@ -1321,8 +1318,8 @@ namespace Horizon
 
     struct RenderBackendRayTracingGeometryTriangleDesc
     {
-        uint32 numIndices;
-        uint32 numVertices;
+        uint32 indexCount;
+        uint32 vertexCount;
         uint32 vertexStride;
         RenderBackendBufferHandle vertexBuffer;
         uint32 vertexOffset;
@@ -1349,18 +1346,18 @@ namespace Horizon
         //};
     };
 
-    struct RenderBackendRayTracingBottomLevelAccelerationDesc
+    struct RenderBackendRayTracingBottomLevelAccelerationStructureDesc
     {
         RenderBackendRayTracingAccelerationStructureBuildFlags buildFlags;
-        uint32 numGeometries;
+        uint32 geometryCount;
         RenderBackendRayTracingGeometryDesc* geometryDescs;
     };
 
-    struct RenderBackendRayTracingTopLevelAccelerationDesc
+    struct RenderBackendRayTracingTopLevelAccelerationStructureDesc
     {
         RenderBackendRayTracingAccelerationStructureBuildFlags buildFlags;
         RenderBackendRayTracingGeometryFlags geometryFlags;
-        uint32 numInstances;
+        uint32 instanceCount;
         RenderBackendRayTracingInstance* instances;
     };
 
@@ -1471,14 +1468,14 @@ namespace Horizon
     struct RenderBackendRayTracingPipelineStateDesc
     {
         uint32 maxRayRecursionDepth;
-        std::vector<RenderBackendRayTracingShaderDesc> shaders;
+        std::vector<RenderBackendShaderHandle> shaders;
         std::vector<RenderBackendRayTracingShaderGroupDesc> shaderGroupDescs;
     };
 
     struct RenderBackendRayTracingShaderBindingTableDesc
     {
         RenderBackendRayTracingPipelineStateHandle rayTracingPipelineState;
-        uint32 numShaderRecords;
+        uint32 shaderRecordCount;
         std::vector<uint32> shaderGroupIndices;
         std::vector<uint32> shaderRecordSizes;
         std::vector<void*>  shaderRecordValues;

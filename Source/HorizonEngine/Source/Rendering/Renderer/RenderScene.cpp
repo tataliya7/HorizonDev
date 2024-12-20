@@ -73,6 +73,7 @@ namespace Horizon
         , activeSkyAtmosphere(nullptr)
     {
         gpuScene = new GPUScene();
+        rayTracingScene = new RayTracingScene();
     }
 
     RenderScene::~RenderScene()
@@ -381,6 +382,94 @@ namespace Horizon
                 irradianceEnvironmentMapBufferFast);
         }
 
+        static int first11 = 0;
+        if (ShouldUpdateRayTracingScene())
+        {
+            static std::vector<RenderBackendRayTracingGeometryDesc> geometryDescs;
+            if (first11 == 0)
+            {
+                rayTracingScene->transformMatrixCount = uint32(meshes.size());
+                RenderBackendBufferDesc transformBufferRowMajorUploadDesc = RenderBackendBufferDesc::CreateUpload(rayTracingScene->transformMatrixCount * uint32(sizeof(float)) * 16);
+                rayTracingScene->transformBufferRowMajorUpload = renderBackend->CreateBuffer(&transformBufferRowMajorUploadDesc, nullptr, "RowMajorTransformUploadBuffer");
+                RenderBackendBufferDesc transformBufferRowMajorDesc = RenderBackendBufferDesc::CreateByteAddress(rayTracingScene->transformMatrixCount * uint32(sizeof(float)) * 16);
+                rayTracingScene->transformBufferRowMajor = renderBackend->CreateBuffer(&transformBufferRowMajorDesc, nullptr, "RowMajorTransformBuffer");
+
+                for (const MeshRenderObject* mesh : meshes)
+                {
+                    RenderBackendRayTracingGeometryDesc geometryDesc = {};
+                    geometryDesc.type = RenderBackendRayTracingGeometryType::Triangles;
+                    geometryDesc.flags = RenderBackendRayTracingGeometryFlags::Opaque;
+                    geometryDesc.triangleDesc.indexCount = mesh->indexCount;
+                    geometryDesc.triangleDesc.vertexCount = mesh->vertexCount;
+                    geometryDesc.triangleDesc.vertexStride = 3 * sizeof(float);
+                    geometryDesc.triangleDesc.vertexBuffer = mesh->vertexBuffers[0];
+                    geometryDesc.triangleDesc.vertexOffset = 0;
+                    geometryDesc.triangleDesc.indexBuffer = mesh->indexBuffer;
+                    geometryDesc.triangleDesc.indexOffset = 0;//mesh->baseIndex * sizeof(uint32);
+                    geometryDesc.triangleDesc.transformBuffer = rayTracingScene->transformBufferRowMajor;
+                    geometryDesc.triangleDesc.transformOffset = uint32(geometryDescs.size()) * uint32(sizeof(float)) * 16;
+                    geometryDescs.push_back(geometryDesc);
+
+                    rayTracingScene->rowMajorTransforms.push_back(Math::Transpose(glm::scale(mesh->localToWorldMatrix, Vector3(0.01f, 0.01f, 0.01f))));
+                }
+
+                if (rayTracingScene->transformMatrixCount > 0)
+                {
+                    renderBackend->UpdateBuffer(rayTracingScene->transformBufferRowMajorUpload, 0, rayTracingScene->rowMajorTransforms.data(), transformBufferRowMajorDesc.size);
+
+                    RenderBackendBarrier barrier1[] =
+                    {
+                        RenderBackendBarrier(rayTracingScene->transformBufferRowMajor, RenderBackendBufferSubresourceRange::Whole, RenderBackendResourceState::Undefined, RenderBackendResourceState::CopyDst)
+                    };
+                    commandList->Transitions(barrier1, 1);
+
+                    commandList->CopyBuffer(
+                        rayTracingScene->transformBufferRowMajorUpload,
+                        0,
+                        rayTracingScene->transformBufferRowMajor,
+                        0,
+                        transformBufferRowMajorDesc.size);
+
+                    RenderBackendBarrier barrier2[] =
+                    {
+                        RenderBackendBarrier(rayTracingScene->transformBufferRowMajor, RenderBackendBufferSubresourceRange::Whole, RenderBackendResourceState::CopyDst, RenderBackendResourceState::UnorderedAccess)
+                    };
+                    commandList->Transitions(barrier2, 1);
+                }
+            }
+
+            if (first11 == 1)
+            {
+                RenderBackendRayTracingBottomLevelAccelerationStructureDesc blasDesc =
+                {
+                    .buildFlags = RenderBackendRayTracingAccelerationStructureBuildFlags::PreferFastTrace,
+                    .geometryCount = uint32(geometryDescs.size()),
+                    .geometryDescs = geometryDescs.data()
+                };
+                rayTracingScene->bottomLevelAccelerationStructure = renderBackend->CreateRayTracingBottomLevelAccelerationStructure(&blasDesc, "BLAS");
+
+                RenderBackendRayTracingInstance geometryInstance =
+                {
+                    .transformMatrix = Matrix4x4f(1.0f),
+                    .instanceID = 0,
+                    .instanceMask = 0xff,
+                    .instanceContributionToHitGroupIndex = 0,
+                    .flags = RenderBackendRayTracingInstanceFlags::TriangleFacingCullDisable,
+                    .blas = rayTracingScene->bottomLevelAccelerationStructure
+                };
+
+                RenderBackendRayTracingTopLevelAccelerationStructureDesc tlasDesc =
+                {
+                    .buildFlags = RenderBackendRayTracingAccelerationStructureBuildFlags::PreferFastTrace,
+                    .geometryFlags = RenderBackendRayTracingGeometryFlags::Opaque,
+                    .instanceCount = 1,
+                    .instances = &geometryInstance
+                };
+                rayTracingScene->topLevelAccelerationStructure = renderBackend->CreateRayTracingTopLevelAccelerationStructure(&tlasDesc, "RayTracingSceneTLAS");
+            }
+
+            first11++;
+        }
     }
 
 #if 0

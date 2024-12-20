@@ -182,11 +182,6 @@ namespace Horizon
         //    preExposure = view.renderSettings.fixedPreExposure;
         //}
 
-        //isSurfelGIEnabled = false;
-        //isRayTracingShadowsEnabled = settings.shadowsTechnique == ShadowsTechnique::RayTracingShadows;
-        //isRayTracingReflectionsEnabled = settings.reflectionsTechnique == ReflectionsTechnique::RayTracingReflections;
-        //isRayTracingAmbientOcclusionEnabled = settings.ambientOcclusionTechnique == AmbientOcclusionTechnique::RayTracingAmbientOcclusion;
-
         finalPostProcessingSettings = view.renderSettings.postProcessingSettings;
 
         const RenderScene* scene = view.GetRenderScene();
@@ -766,12 +761,12 @@ namespace Horizon
         //    debugViewModeTextures.screenSpaceShadowMaskTexture = renderGraph.CreateTexture(screenSpaceShadowMaskTextureDesc, "ScreenSpaceShadowMaskTexture (Copy)");
         //}
 
-        RenderGraphTextureDesc rayDistanceDesc = RenderGraphTextureDesc::Create2D(
+        RenderGraphTextureDesc rayDistanceTextureDesc = RenderGraphTextureDesc::Create2D(
             renderResolution.width,
             renderResolution.height,
             RenderBackendTextureFormat::R16Float,
             RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::UnorderedAccess);
-        RenderGraphTextureHandle rayDistance = renderGraph.CreateTexture(screenSpaceShadowMaskTextureDesc, "RayTracingShadowsRayDistance");
+        RenderGraphTextureHandle rayDistanceTexture = renderGraph.CreateTexture(rayDistanceTextureDesc, "RayTracingShadowsRayDistanceTexture");
 
         if (view.renderSettings.shadowsTechnique == ShadowsTechnique::ShadowMap)
         {
@@ -786,6 +781,16 @@ namespace Horizon
         else if (view.renderSettings.shadowsTechnique == ShadowsTechnique::VirtualShadowMap)
         {
             DispatchVirtualShadowMapProjection(renderGraph, view);
+        }
+        else if (view.renderSettings.shadowsTechnique == ShadowsTechnique::RayTracingShadows)
+        {
+            const LightRenderObject* light = view.scene->GetAtmosphericLight();
+            if (light)
+            {
+                DispatchRayTracingShadows(renderGraph, view, *light, screenSpaceShadowMaskTexture, rayDistanceTexture);
+
+                sceneTextures.shadowMaskTexture = screenSpaceShadowMaskTexture;
+            }
         }
 
         RenderGraphTextureHandle localLightShadowMapAtlas = RenderLocalLightShadows(renderGraph, view);

@@ -193,105 +193,6 @@ Texture2D GetTexture2DNonUniform(int index)
     return BindlessResources_Texture2D[NonUniformResourceIndex(index)];
 }
 
-#define BIND_BYTE_ADDRESS_BUFFER_SRV(slot, name) \
-ByteAddressBuffer Get##name##SRV() \
-{ \
-    uint bufferIndex = GetShaderConstantValue(slot); \
-    return BindlessResources_ByteAddressBuffer[bufferIndex]; \
-}
-
-#define BIND_BYTE_ADDRESS_BUFFER_UAV(slot, name) \
-RWByteAddressBuffer Get##name##UAV() \
-{ \
-    uint bufferIndex = GetShaderConstantValue(slot); \
-    return BindlessResources_RWByteAddressBuffer[bufferIndex]; \
-}
-
-#define BIND_TEXTURE_1D_SRV(slot, name) \
-Texture1D Get##name##SRV() \
-{ \
-    return BindlessResources_Texture1D[GetShaderConstantValue(slot)]; \
-}
-
-#define BIND_TEXTURE_1D_TYPED_SRV(slot, type, name) \
-Texture1D<type> Get##name##SRV() \
-{ \
-    return BindlessResources_Texture1D_##type[GetShaderConstantValue(slot)]; \
-}
-
-#define BIND_TEXTURE_2D_SRV(slot, name) \
-Texture2D Get##name##SRV() \
-{ \
-    return BindlessResources_Texture2D[GetShaderConstantValue(slot)]; \
-}
-
-#define BIND_TEXTURE_2D_TYPED_SRV(slot, type, name) \
-Texture2D<type> Get##name##SRV() \
-{ \
-    return BindlessResources_Texture2D_##type[GetShaderConstantValue(slot)]; \
-}
-
-#define BIND_TEXTURE_3D_SRV(slot, name) \
-Texture3D Get##name##SRV() \
-{ \
-    return BindlessResources_Texture3D[GetShaderConstantValue(slot)]; \
-}
-
-#define BIND_TEXTURE_3D_TYPED_SRV(slot, type, name) \
-Texture3D<type> Get##name##SRV() \
-{ \
-    return BindlessResources_Texture3D_##type[GetShaderConstantValue(slot)]; \
-}
-
-#define BIND_TEXTURE_CUBE_SRV(slot, name) \
-TextureCube Get##name##SRV() \
-{ \
-    return BindlessResources_TextureCube[GetShaderConstantValue(slot)]; \
-}
-
-#define BIND_TEXTURE_CUBE_TYPED_SRV(slot, type, name) \
-TextureCube<type> Get##name##SRV() \
-{ \
-    return BindlessResources_TextureCube_##type[GetShaderConstantValue(slot)]; \
-}
-
-#define BIND_TEXTURE_2D_ARRAY_SRV(slot, name) \
-Texture2DArray Get##name##SRV() \
-{ \
-    return BindlessResources_Texture2DArray[GetShaderConstantValue(slot)]; \
-}
-
-#define BIND_TEXTURE_2D_ARRAY_TYPED_SRV(slot, type, name) \
-Texture2DArray<type> Get##name##SRV() \
-{ \
-    return BindlessResources_Texture2DArray_##type[GetShaderConstantValue(slot)]; \
-}
-
-#define BIND_TEXTURE_2D_UAV(slot, type, name) \
-RWTexture2D<type> Get##name##UAV() \
-{ \
-    return BindlessResources_RWTexture2D_##type[GetShaderConstantValue(slot)]; \
-}
-
-#define BIND_TEXTURE_2D_ARRAY_UAV(slot, type, name) \
-RWTexture2DArray<type> Get##name##UAV() \
-{ \
-    return BindlessResources_RWTexture2DArray_##type[GetShaderConstantValue(slot)]; \
-}
-
-#define BIND_TEXTURE_3D_UAV(slot, type, name) \
-RWTexture3D<type> Get##name##UAV() \
-{ \
-    return BindlessResources_RWTexture3D_##type[GetShaderConstantValue(slot)]; \
-}
-#if RAY_TRACING_ENABLED
-#define BIND_TLAS_SRV(slot, name) \
-RaytracingAccelerationStructure Get##name() \
-{ \
-    return BindlessResources_RaytracingAccelerationStructure[GetShaderConstantValue(slot)]; \
-}
-#endif
-
 #else
 
 // Sampler
@@ -329,121 +230,6 @@ Texture2D GetTexture2D(int index)
 Texture2D GetTexture2DNonUniform(int index)
 {
     return ResourceDescriptorHeap[NonUniformResourceIndex(index)];
-}
-
-#define BIND_BUFFER_CBV(slot, type) \
-ConstantBuffer<type> Get##type##CBV() \
-{ \
-    uint bufferIndex = GetShaderConstantValue(slot); \
-    ConstantBuffer<type> buffer = ResourceDescriptorHeap[bufferIndex]; \
-    return buffer; \
-}
-
-#define BIND_BYTE_ADDRESS_BUFFER_SRV(slot, name) \
-ByteAddressBuffer Get##name##SRV() \
-{ \
-    uint bufferIndex = GetShaderConstantValue(slot); \
-    ByteAddressBuffer buffer = ResourceDescriptorHeap[bufferIndex]; \
-    return buffer; \
-}
-
-#define BIND_BYTE_ADDRESS_BUFFER_UAV(slot, name) \
-RWByteAddressBuffer Get##name##UAV() \
-{ \
-    uint bufferIndex = GetShaderConstantValue(slot); \
-    RWByteAddressBuffer buffer = ResourceDescriptorHeap[bufferIndex]; \
-    return buffer; \
-}
-
-#define BIND_TEXTURE_1D_SRV(slot, name) \
-Texture1D Get##name##SRV() \
-{ \
-    Texture1D texture = ResourceDescriptorHeap[GetShaderConstantValue(slot)]; \
-    return texture; \
-}
-
-#define BIND_TEXTURE_1D_TYPED_SRV(slot, type, name) \
-Texture1D<type> Get##name##SRV() \
-{ \
-    Texture1D<type> texture = ResourceDescriptorHeap[GetShaderConstantValue(slot)]; \
-    return texture; \
-}
-
-#define BIND_TEXTURE_2D_SRV(slot, name) \
-Texture2D Get##name##SRV() \
-{ \
-    Texture2D texture = ResourceDescriptorHeap[GetShaderConstantValue(slot)]; \
-    return texture; \
-}
-
-#define BIND_TEXTURE_2D_TYPED_SRV(slot, type, name) \
-Texture2D<type> Get##name##SRV() \
-{ \
-    Texture2D<type> texture = ResourceDescriptorHeap[GetShaderConstantValue(slot)]; \
-    return texture; \
-}
-
-#define BIND_TEXTURE_3D_SRV(slot, name) \
-Texture3D Get##name##SRV() \
-{ \
-    Texture3D texture = ResourceDescriptorHeap[GetShaderConstantValue(slot)]; \
-    return texture; \
-}
-
-#define BIND_TEXTURE_3D_TYPED_SRV(slot, type, name) \
-Texture3D<type> Get##name##SRV() \
-{ \
-    Texture3D<type> texture = ResourceDescriptorHeap[GetShaderConstantValue(slot)]; \
-    return texture; \
-}
-
-#define BIND_TEXTURE_CUBE_SRV(slot, name) \
-TextureCube Get##name##SRV() \
-{ \
-    TextureCube texture = ResourceDescriptorHeap[GetShaderConstantValue(slot)]; \
-    return texture; \
-}
-
-#define BIND_TEXTURE_CUBE_TYPED_SRV(slot, type, name) \
-TextureCube<type> Get##name##SRV() \
-{ \
-    TextureCube<type> texture = ResourceDescriptorHeap[GetShaderConstantValue(slot)]; \
-    return texture; \
-}
-
-#define BIND_TEXTURE_2D_ARRAY_SRV(slot, name) \
-Texture2DArray Get##name##SRV() \
-{ \
-    Texture2DArray texture = ResourceDescriptorHeap[GetShaderConstantValue(slot)]; \
-    return texture; \
-}
-
-#define BIND_TEXTURE_2D_ARRAY_TYPED_SRV(slot, type, name) \
-Texture2DArray<type> Get##name##SRV() \
-{ \
-    Texture2DArray<type> texture = ResourceDescriptorHeap[GetShaderConstantValue(slot)]; \
-    return texture; \
-}
-
-#define BIND_TEXTURE_2D_UAV(slot, type, name) \
-RWTexture2D<type> Get##name##UAV() \
-{ \
-    RWTexture2D<type> texture = ResourceDescriptorHeap[GetShaderConstantValue(slot)]; \
-    return texture; \
-}
-
-#define BIND_TEXTURE_2D_ARRAY_UAV(slot, type, name) \
-RWTexture2DArray<type> Get##name##UAV() \
-{ \
-    RWTexture2DArray<type> texture = ResourceDescriptorHeap[GetShaderConstantValue(slot)]; \
-    return texture; \
-}
-
-#define BIND_TEXTURE_3D_UAV(slot, type, name) \
-RWTexture3D<type> Get##name##UAV() \
-{ \
-    RWTexture3D<type> texture = ResourceDescriptorHeap[GetShaderConstantValue(slot)]; \
-    return texture; \
 }
 
 #endif
@@ -658,6 +444,15 @@ SamplerComparisonState GlobalSamplerComparisonLessLinearClamp    : register(s107
         return BindlessResources_RWByteAddressBuffer[BindlessResourcesDescriptorIndex_##name]; \
     }
 
+#if RAY_TRACING_ENABLED
+#define SHADER_CONSTANTS_ACCELERATION_STRUCTURE_SRV(slot, name) \
+    [[vk::offset(slot * 4)]] int BindlessResourcesDescriptorIndex_##name; \
+    RaytracingAccelerationStructure Get##name() \
+    { \
+        return BindlessResources_RaytracingAccelerationStructure[BindlessResourcesDescriptorIndex_##name]; \
+    }
+#endif
+
 #define SHADER_CONSTANTS_SCALAR(slot, type, name) \
     [[vk::offset(slot * 4)]] type name; \
     type Get##name() \
@@ -841,6 +636,15 @@ SamplerComparisonState GlobalSamplerComparisonLessLinearClamp    : register(s107
     { \
         return ResourceDescriptorHeap[BindlessResourcesDescriptorIndex_##name]; \
     }
+
+#if RAY_TRACING_ENABLED
+#define SHADER_CONSTANTS_ACCELERATION_STRUCTURE_SRV(slot, name) \
+    int BindlessResourcesDescriptorIndex_##name/* : packoffset(c##slot)*/; \
+    RaytracingAccelerationStructure Get##name() \
+    { \
+        return ResourceDescriptorHeap[BindlessResourcesDescriptorIndex_##name]; \
+    }
+#endif
 
 #define SHADER_CONSTANTS_SCALAR(slot, type, name) \
     type name/* : packoffset(c##slot)*/; \

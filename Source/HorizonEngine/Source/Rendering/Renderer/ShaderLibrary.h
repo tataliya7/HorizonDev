@@ -148,6 +148,11 @@ namespace Horizon
         DebugDrawVS,
         DebugDrawPS,
         // End: Real Time Renderer
+
+        RayTracingShadowsRayGen,
+        RayTracingShadowsMiss,
+        RayTracingShadowsInlineRayTracing,
+
         Count,
     };
 

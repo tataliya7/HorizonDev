@@ -152,7 +152,6 @@ namespace Horizon
                     {
                         .texture = textureHandle,
                         .mipLevel = mipLevel,
-                        .arrayLayer = 0,
                         .loadOp = RenderBackendRenderPassBeginningAccessType::Discard,
                         .storeOp = RenderBackendRenderPassEndingAccessType::Preserve
                     }

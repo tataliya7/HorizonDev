@@ -64,14 +64,14 @@ namespace Horizon
         return (format == VK_FORMAT_D32_SFLOAT) || (format == VK_FORMAT_D16_UNORM);
     }
 
-    static inline bool IsDepthStencilFormat(VkFormat format)
-    {
-        return (IsDepthOnlyFormat(format)) || (format == VK_FORMAT_D32_SFLOAT_S8_UINT) || (format == VK_FORMAT_D24_UNORM_S8_UINT) || (format == VK_FORMAT_D16_UNORM_S8_UINT);
-    }
-
     static inline bool IsStencilFormat(VkFormat format)
     {
         return (format == VK_FORMAT_D32_SFLOAT_S8_UINT) || (format == VK_FORMAT_D24_UNORM_S8_UINT) || (format == VK_FORMAT_D16_UNORM_S8_UINT);
+    }
+
+    static inline bool IsDepthStencilFormat(VkFormat format)
+    {
+        return (format == VK_FORMAT_D32_SFLOAT) || (format == VK_FORMAT_D16_UNORM) || (format == VK_FORMAT_D32_SFLOAT_S8_UINT) || (format == VK_FORMAT_D24_UNORM_S8_UINT) || (format == VK_FORMAT_D16_UNORM_S8_UINT);
     }
 
     static inline uint32 AlignUp(uint32 size, uint32 alignment)

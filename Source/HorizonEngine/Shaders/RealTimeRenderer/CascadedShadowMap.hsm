@@ -23,7 +23,7 @@ void CascadedShadowMapVS(
     in uint vertexID : SV_VertexID,
     in uint instanceID : SV_InstanceID,
 	out uint arrayIndex : SV_RenderTargetArrayIndex,
-    out  float4 position : SV_Position)
+    out float4 position : SV_Position)
 {
     StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
     PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
@@ -61,8 +61,7 @@ void CascadedShadowMapVS(
 }
 
 [shader("pixel")]
-void CascadedShadowMapPS(
-    in uint primitiveID : SV_PrimitiveID)
+void CascadedShadowMapPS(in uint primitiveID : SV_PrimitiveID)
 {
 #if 0
     StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();

@@ -8,6 +8,7 @@ namespace Horizon
     {
         bool useDebugLayers;
         bool useGPUBasedValidation;
+        bool useHardwareRayTracing;
     };
 
     RenderBackend* RenderBackendCreateD3D12(const D3D12RenderBackendDesc* desc);

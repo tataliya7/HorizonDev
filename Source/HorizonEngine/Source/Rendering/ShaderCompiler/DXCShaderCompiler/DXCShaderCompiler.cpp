@@ -157,6 +157,12 @@ namespace Horizon
         case ShaderStage::Mesh:
             targetProfile = std::format(L"ms_{}_{}", shaderModelVersion.major, shaderModelVersion.minor);
             break;
+        case ShaderStage::RayGen:
+            targetProfile = std::format(L"lib_{}_{}", shaderModelVersion.major, shaderModelVersion.minor);
+            break;
+        case ShaderStage::Miss:
+            targetProfile = std::format(L"lib_{}_{}", shaderModelVersion.major, shaderModelVersion.minor);
+            break;
         default:
             std::unreachable();
             break;
