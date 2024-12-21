@@ -22,17 +22,6 @@ namespace Horizon
         this->renderBackend = renderBackend;
         this->rootDirectory = rootDirectory;
         this->shadingLanguage = (renderBackend->GetType() == RenderBackendType::Vulkan) ? ShadingLanguage::SPIRV : ShadingLanguage::DXIL;
-
-        // TODO:
-        this->shaderCompilerOptions =
-        {
-            .generateDebugInfo = true,
-            .skipOptimization = true,
-            .warningAreErrors = true,
-            .enable16BitTypes = false,
-            .optimizationLevel = ShaderOptimizationLevel::O3
-        };
-
         this->hotReloadEnabled = true;
 
         loadedShaders.resize((size_t)ShaderID::Count);
@@ -129,7 +118,7 @@ namespace Horizon
             ShaderCompiler* shaderCompiler = CreateDXCShaderCompiler();
             if (shaderCompiler)
             {
-                succeed = shaderCompiler->CompileShader(shaderCompilerOptions, shaderSource, shadingLanguage, &compilerOutput);
+                succeed = shaderCompiler->CompileShader(desc.shaderCompilerOptions, shaderSource, shadingLanguage, &compilerOutput);
                 DestroyDXCShaderCompiler(shaderCompiler);
             }
 

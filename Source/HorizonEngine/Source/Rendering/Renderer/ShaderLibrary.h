@@ -162,6 +162,7 @@ namespace Horizon
         const char* filename;
         const char* entryFunctionName;
         std::vector<ShaderMacroDefine> defines;
+        ShaderCompilerOptions shaderCompilerOptions;
 
         static ShaderDesc Create(ShaderStage stage, const char* filename, const char* entryFunctionName)
         {
@@ -177,6 +178,20 @@ namespace Horizon
             ShaderMacroDefine& define = defines.emplace_back();
             define.name = name;
             define.value = std::format("{}", value);
+        }
+
+        ShaderDesc()
+        {
+            // TODO:
+            this->shaderCompilerOptions =
+            {
+                .generateDebugInfo = true,
+                .skipOptimization = true,
+                .warningAreErrors = true,
+                .enable16BitTypes = false,
+                .inlineRayTracing = false,
+                .optimizationLevel = ShaderOptimizationLevel::O3
+            };
         }
     };
 
@@ -202,7 +217,6 @@ namespace Horizon
         std::string rootDirectory;
         RenderBackend* renderBackend;
         ShadingLanguage shadingLanguage;
-        ShaderCompilerOptions shaderCompilerOptions;
         std::vector<Shader> loadedShaders;
 
         /** Experimental */

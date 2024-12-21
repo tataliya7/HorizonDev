@@ -35,6 +35,7 @@ namespace Horizon
             {
                 ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/HardwareRayTracing/RayTracingShadows.hsm", "RayTracingShadowsInlineRayTracingCS");
                 shaderDesc.AddDefine("RAY_TRACING_ENABLED", 1);
+                shaderDesc.shaderCompilerOptions.inlineRayTracing = true;
                 shaderLibrary->LoadShader(ShaderID::RayTracingShadowsInlineRayTracing, shaderDesc);
             }
 
@@ -60,41 +61,85 @@ namespace Horizon
             rayTracingShadowsSBT = renderBackend->CreateRayTracingShaderBindingTable(&rayTracingShadowsSBTDesc, "RayTracingShadowsSBT");
         }
 
-        renderGraph.AddPass(
-            std::format("RayTracingShadows (RayTracing, {}x{})", renderResolution.width, renderResolution.height),
-            RenderGraphPassFlags::RayTracing,
-            [&](RenderGraphBuilder& builder)
-            {
-                RealTimeRendererSceneTextures& sceneTextures = renderGraph.blackboard.Get<RealTimeRendererSceneTextures>();
-                RenderGraphTextureHandle sceneDepthTexture = builder.ReadTexture(sceneTextures.sceneDepthTexture, RenderBackendResourceState::ShaderResource);
-                screenSpaceShadowMaskTexture = builder.WriteTexture(screenSpaceShadowMaskTexture, RenderBackendResourceState::UnorderedAccess);
-
-                return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
+        const bool inlineRayTracing = true;
+        if (inlineRayTracing)
+        {
+            renderGraph.AddPass(
+                std::format("RayTracingShadows (Compute-InlineRayTracing, {}x{})", renderResolution.width, renderResolution.height),
+                RenderGraphPassFlags::Compute,
+                [&](RenderGraphBuilder& builder)
                 {
-                    uint32 dispatchWidth = renderResolution.width;
-                    uint32 dispatchHeight = renderResolution.height;
-                    uint32 dispatchDepth = 1;
+                    RealTimeRendererSceneTextures& sceneTextures = renderGraph.blackboard.Get<RealTimeRendererSceneTextures>();
+                    RenderGraphTextureHandle sceneDepthTexture = builder.ReadTexture(sceneTextures.sceneDepthTexture, RenderBackendResourceState::ShaderResource);
+                    screenSpaceShadowMaskTexture = builder.WriteTexture(screenSpaceShadowMaskTexture, RenderBackendResourceState::UnorderedAccess);
 
-                    RayTracingScene* rayTracingScene = view.scene->GetRayTracingScene();
+                    return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
+                    {
+                        uint32 threadGroupCountX = CeilDiv(renderResolution.width, 8);
+                        uint32 threadGroupCountY = CeilDiv(renderResolution.height, 4);
+                        uint32 threadGroupCountZ = 1;
 
-                    RenderBackendShaderConstants shaderConstants = {};
-                    shaderConstants.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
-                    shaderConstants.BindAccelerationStructure(1, renderBackend->GetAccelerationStructureSRVBindlessResourceDescriptorIndex(rayTracingScene->GetTLAS()));
-                    shaderConstants.BindTextureSRV(2, registry.GetTextureSRVBindlessResourceDescriptorIndex(sceneDepthTexture));
-                    shaderConstants.BindTextureUAV(3, registry.GetTextureUAVBindlessResourceDescriptorIndex(screenSpaceShadowMaskTexture, 0));
-                    shaderConstants.BindTextureUAV(4, registry.GetTextureUAVBindlessResourceDescriptorIndex(rayDistanceTexture, 0));
-                    shaderConstants.BindScalar(5, light.GetDirection().x);
-                    shaderConstants.BindScalar(6, light.GetDirection().y);
-                    shaderConstants.BindScalar(7, light.GetDirection().z);
+                        RayTracingScene* rayTracingScene = view.scene->GetRayTracingScene();
 
-                    commandList.DispatchRays(
-                        rayTracingShadowsPipelineState,
-                        rayTracingShadowsSBT,
-                        shaderConstants,
-                        dispatchWidth,
-                        dispatchHeight,
-                        dispatchDepth);
-                };
-            });
+                        RenderBackendShaderConstants shaderConstants = {};
+                        shaderConstants.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
+                        shaderConstants.BindAccelerationStructure(1, renderBackend->GetAccelerationStructureSRVBindlessResourceDescriptorIndex(rayTracingScene->GetTLAS()));
+                        shaderConstants.BindTextureSRV(2, registry.GetTextureSRVBindlessResourceDescriptorIndex(sceneDepthTexture));
+                        shaderConstants.BindTextureUAV(3, registry.GetTextureUAVBindlessResourceDescriptorIndex(screenSpaceShadowMaskTexture, 0));
+                        shaderConstants.BindTextureUAV(4, registry.GetTextureUAVBindlessResourceDescriptorIndex(rayDistanceTexture, 0));
+                        shaderConstants.BindScalar(5, light.GetDirection().x);
+                        shaderConstants.BindScalar(6, light.GetDirection().y);
+                        shaderConstants.BindScalar(7, light.GetDirection().z);
+
+                        RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::RayTracingShadowsInlineRayTracing);
+
+                        commandList.Dispatch(
+                            computeShader,
+                            shaderConstants,
+                            threadGroupCountX,
+                            threadGroupCountY,
+                            threadGroupCountZ);
+                    };
+                });
+        }
+        else
+        {
+            renderGraph.AddPass(
+                std::format("RayTracingShadows (RayTracing, {}x{})", renderResolution.width, renderResolution.height),
+                RenderGraphPassFlags::RayTracing,
+                [&](RenderGraphBuilder& builder)
+                {
+                    RealTimeRendererSceneTextures& sceneTextures = renderGraph.blackboard.Get<RealTimeRendererSceneTextures>();
+                    RenderGraphTextureHandle sceneDepthTexture = builder.ReadTexture(sceneTextures.sceneDepthTexture, RenderBackendResourceState::ShaderResource);
+                    screenSpaceShadowMaskTexture = builder.WriteTexture(screenSpaceShadowMaskTexture, RenderBackendResourceState::UnorderedAccess);
+
+                    return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
+                    {
+                        uint32 dispatchWidth = renderResolution.width;
+                        uint32 dispatchHeight = renderResolution.height;
+                        uint32 dispatchDepth = 1;
+
+                        RayTracingScene* rayTracingScene = view.scene->GetRayTracingScene();
+
+                        RenderBackendShaderConstants shaderConstants = {};
+                        shaderConstants.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
+                        shaderConstants.BindAccelerationStructure(1, renderBackend->GetAccelerationStructureSRVBindlessResourceDescriptorIndex(rayTracingScene->GetTLAS()));
+                        shaderConstants.BindTextureSRV(2, registry.GetTextureSRVBindlessResourceDescriptorIndex(sceneDepthTexture));
+                        shaderConstants.BindTextureUAV(3, registry.GetTextureUAVBindlessResourceDescriptorIndex(screenSpaceShadowMaskTexture, 0));
+                        shaderConstants.BindTextureUAV(4, registry.GetTextureUAVBindlessResourceDescriptorIndex(rayDistanceTexture, 0));
+                        shaderConstants.BindScalar(5, light.GetDirection().x);
+                        shaderConstants.BindScalar(6, light.GetDirection().y);
+                        shaderConstants.BindScalar(7, light.GetDirection().z);
+
+                        commandList.DispatchRays(
+                            rayTracingShadowsPipelineState,
+                            rayTracingShadowsSBT,
+                            shaderConstants,
+                            dispatchWidth,
+                            dispatchHeight,
+                            dispatchDepth);
+                    };
+                });
+        }
     }
 }

@@ -199,7 +199,8 @@ namespace Horizon
             break;
         }
 
-        if (options.generateDebugInfo)
+        if (options.generateDebugInfo
+            && !options.inlineRayTracing) // TODO: fix this
         {
             arguments.push_back(L"-Zi");
             arguments.push_back(L"-Zss");

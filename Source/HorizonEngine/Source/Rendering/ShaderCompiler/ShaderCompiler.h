@@ -76,6 +76,7 @@ namespace Horizon
         bool skipOptimization;
         bool warningAreErrors;
         bool enable16BitTypes;
+        bool inlineRayTracing;
         ShaderOptimizationLevel optimizationLevel;
     };
 
@@ -98,18 +99,6 @@ namespace Horizon
         uint32 numIncludeDirectories;
         HLSLShaderModel shaderModel;
     };
-
-    // struct ShaderModuleDescription
-    // {
-    //     const char* filename;
-    //     const uint8* code;
-    //     uint64 codeSize;
-    //     const ShaderMacroDefine* defines;
-    //     uint32 numDefines;
-    //     const char** includeDirectories;
-    //     uint32 numIncludeDirectories;
-    //     HLSLShaderModel shaderModel;
-    // };
 
     class ShaderBlob
     {
