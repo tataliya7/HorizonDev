@@ -797,6 +797,11 @@ namespace Horizon
 
         AddDirectLightingPass(renderGraph, view, localLightShadowMapAtlas);
 
+        if (view.renderSettings.rendererType == RendererType::PathTracing)
+        {
+            DispatchPathTracing(renderGraph, view);
+        }
+
         if (IsSubsurfaceScatteringEnabled())
         {
             RenderSubsurfaceScattering(renderGraph, view);

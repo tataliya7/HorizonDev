@@ -173,6 +173,8 @@ namespace Horizon
                 };
             });
 
+        sceneTextures.environmentMapTexture = capturedEnvironmentMapTexture;
+
         uint32 sampleCount = 64;
 
         RenderGraphBufferDesc irradianceEnvironmentMapBufferDesc = RenderGraphBufferDesc::CreateByteAddress(sizeof(float) * 9 * 3);

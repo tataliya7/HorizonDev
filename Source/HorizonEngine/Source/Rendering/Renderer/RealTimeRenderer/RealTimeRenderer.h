@@ -98,6 +98,7 @@ namespace Horizon
         //RenderGraphTextureHandle targetTexture;
         //RenderGraphTextureHandle displayTexture;
 
+        RenderGraphTextureHandle environmentMapTexture;
         RenderGraphBufferHandle irradianceEnvironmentMapBuffer;
         RenderGraphTextureHandle convolvedEnvironmentMapTexture;
 
@@ -219,6 +220,8 @@ namespace Horizon
         // }
 
         bool LoadShaders();
+
+        void DispatchPathTracing(RenderGraph& renderGraph, const SceneView& view);
 
         void AddSurfleGIPasses(
             RenderGraph& renderGraph,

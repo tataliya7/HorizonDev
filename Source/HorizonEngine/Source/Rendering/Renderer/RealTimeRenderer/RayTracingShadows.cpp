@@ -25,22 +25,6 @@ namespace Horizon
         if (firstTime)
         {
             firstTime = 0;
-            {
-                ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::RayGen, "Shaders/RealTimeRenderer/HardwareRayTracing/RayTracingShadows.hsm", "RayTracingShadowsRayGen");
-                shaderDesc.AddDefine("RAY_TRACING_ENABLED", 1);
-                shaderLibrary->LoadShader(ShaderID::RayTracingShadowsRayGen, shaderDesc);
-            }
-            {
-                ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Miss, "Shaders/RealTimeRenderer/HardwareRayTracing/RayTracingShadows.hsm", "RayTracingShadowsMiss");
-                shaderDesc.AddDefine("RAY_TRACING_ENABLED", 1);
-                shaderLibrary->LoadShader(ShaderID::RayTracingShadowsMiss, shaderDesc);
-            }
-            {
-                ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/HardwareRayTracing/RayTracingShadows.hsm", "RayTracingShadowsInlineRayTracingCS");
-                shaderDesc.AddDefine("RAY_TRACING_ENABLED", 1);
-                shaderDesc.shaderCompilerOptions.inlineRayTracing = true;
-                shaderLibrary->LoadShader(ShaderID::RayTracingShadowsInlineRayTracing, shaderDesc);
-            }
 
             RenderBackendRayTracingPipelineStateDesc rayTracingShadowsPipelineStateDesc =
             {

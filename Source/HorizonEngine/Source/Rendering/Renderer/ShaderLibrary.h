@@ -149,6 +149,11 @@ namespace Horizon
         DebugDrawPS,
         // End: Real Time Renderer
 
+        PathTracingRayGen,
+        PathTracingDefaultMiss,
+        PathTracingShadowRayMiss,
+        PathTracingDefaultOpaqueClosestHit,
+
         RayTracingShadowsRayGen,
         RayTracingShadowsMiss,
         RayTracingShadowsInlineRayTracing,

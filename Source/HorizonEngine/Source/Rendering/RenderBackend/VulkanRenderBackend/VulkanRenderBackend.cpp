@@ -2789,7 +2789,8 @@ namespace Horizon
         VkShaderStageFlagBits stage = ConvertToVkShaderStageFlagBits(desc->stage);
 
         VkShaderModule shaderModule = VK_NULL_HANDLE;
-        VkShaderModuleCreateInfo shaderModuleInfo = {
+        VkShaderModuleCreateInfo shaderModuleInfo =
+        {
             .sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
             .codeSize = desc->codeSize,
             .pCode = static_cast<const uint32_t*>(desc->code),
@@ -5932,7 +5933,8 @@ namespace Horizon
                 switch (desc->shaderGroupDescs[groupIndex].type)
                 {
                 case RenderBackendRayTracingShaderGroupType::RayGen:
-                    shaderGroupCreateInfos[groupIndex] = {
+                    shaderGroupCreateInfos[groupIndex] =
+                    {
                         .sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_KHR,
                         .type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR,
                         .generalShader = desc->shaderGroupDescs[groupIndex].rayGenerationShader,
@@ -5943,7 +5945,8 @@ namespace Horizon
                     numRayGenerationShaders++;
                     break;
                 case RenderBackendRayTracingShaderGroupType::Miss:
-                    shaderGroupCreateInfos[groupIndex] = {
+                    shaderGroupCreateInfos[groupIndex] =
+                    {
                         .sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_KHR,
                         .type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR,
                         .generalShader = desc->shaderGroupDescs[groupIndex].missShader,
@@ -5954,15 +5957,19 @@ namespace Horizon
                     numMissShaders++;
                     break;
                 case RenderBackendRayTracingShaderGroupType::TrianglesHitGroup:
-                    shaderGroupCreateInfos[groupIndex] = {
+                    shaderGroupCreateInfos[groupIndex] =
+                    {
                         .sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_KHR,
                         .type = VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_KHR,
+                        .generalShader = VK_SHADER_UNUSED_KHR,
                         .closestHitShader = desc->shaderGroupDescs[groupIndex].closestHitShader,
                         .anyHitShader = desc->shaderGroupDescs[groupIndex].anyHitShader,
                         .intersectionShader = desc->shaderGroupDescs[groupIndex].intersectionShader,
                     };
                     numHitGroups++;
                     break;
+                case RenderBackendRayTracingShaderGroupType::ProceduralHitGroup:
+                    std::unreachable();
                 default:
                     std::unreachable();
                     break;
@@ -5974,7 +5981,8 @@ namespace Horizon
 
             VkPipelineLayout pipelineLayout = device.FindOrCreatePipelineLayout(device.bindlessDescriptorManager.pushConstantsSize, RenderBackendPipelineType::RayTracing);
 
-            VkRayTracingPipelineCreateInfoKHR rayTracingPipelineCreateInfo = {
+            VkRayTracingPipelineCreateInfoKHR rayTracingPipelineCreateInfo =
+            {
                 .sType = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR,
                 .stageCount = (uint32)shaderStageCreateInfos.size(),
                 .pStages = shaderStageCreateInfos.data(),
@@ -6043,7 +6051,8 @@ namespace Horizon
                 sbtBufferData += shaderGroupSizeAligned;
             }
 
-            VkBufferDeviceAddressInfoKHR bufferDeviceAddressInfo = {
+            VkBufferDeviceAddressInfoKHR bufferDeviceAddressInfo =
+            {
                 .sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO,
                 .buffer = sbtBuffer.handle,
             };

@@ -8,5 +8,12 @@ namespace Horizon
     {
     public:
 
+        RenderGraphPersistentTexture* colorTexture;
+        RenderGraphPersistentTexture* depthTexture;
+        RenderGraphPersistentTexture* normalTexture;
+
+        void DispatchPathTracing(
+            RenderGraph& renderGraph,
+            const SceneView& view);
     };
 }

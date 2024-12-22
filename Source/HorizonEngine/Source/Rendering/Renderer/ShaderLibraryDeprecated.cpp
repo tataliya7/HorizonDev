@@ -555,5 +555,44 @@ namespace Horizon
             ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Pixel, "Shaders/RealTimeRenderer/DebugVisualization/DebugDrawLines.hsm", "DebugDrawLinesPS");
             shaderLibrary->LoadShader(ShaderID::DebugDrawPS, shaderDesc);
         }
+
+        {
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::RayGen, "Shaders/RealTimeRenderer/HardwareRayTracing/PathTracing.hsm", "PathTracingRayGen");
+            shaderDesc.AddDefine("RAY_TRACING_ENABLED", 1);
+            shaderLibrary->LoadShader(ShaderID::PathTracingRayGen, shaderDesc);
+        }
+        {
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Miss, "Shaders/RealTimeRenderer/HardwareRayTracing/PathTracing.hsm", "PathTracingDefaultMiss");
+            shaderDesc.AddDefine("RAY_TRACING_ENABLED", 1);
+            shaderLibrary->LoadShader(ShaderID::PathTracingDefaultMiss, shaderDesc);
+        }
+        {
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Miss, "Shaders/RealTimeRenderer/HardwareRayTracing/PathTracing.hsm", "PathTracingShadowRayMiss");
+            shaderDesc.AddDefine("RAY_TRACING_ENABLED", 1);
+            shaderLibrary->LoadShader(ShaderID::PathTracingShadowRayMiss, shaderDesc);
+        }
+        {
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::ClosestHit, "Shaders/RealTimeRenderer/HardwareRayTracing/PathTracing.hsm", "PathTracingDefaultOpaqueClosestHit");
+            shaderDesc.AddDefine("RAY_TRACING_ENABLED", 1);
+            shaderLibrary->LoadShader(ShaderID::PathTracingDefaultOpaqueClosestHit, shaderDesc);
+        }
+
+        {
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::RayGen, "Shaders/RealTimeRenderer/HardwareRayTracing/RayTracingShadows.hsm", "RayTracingShadowsRayGen");
+            shaderDesc.AddDefine("RAY_TRACING_ENABLED", 1);
+            shaderLibrary->LoadShader(ShaderID::RayTracingShadowsRayGen, shaderDesc);
+        }
+        {
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Miss, "Shaders/RealTimeRenderer/HardwareRayTracing/RayTracingShadows.hsm", "RayTracingShadowsMiss");
+            shaderDesc.AddDefine("RAY_TRACING_ENABLED", 1);
+            shaderLibrary->LoadShader(ShaderID::RayTracingShadowsMiss, shaderDesc);
+        }
+
+        {
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/HardwareRayTracing/RayTracingShadows.hsm", "RayTracingShadowsInlineRayTracingCS");
+            shaderDesc.AddDefine("RAY_TRACING_ENABLED", 1);
+            shaderDesc.shaderCompilerOptions.inlineRayTracing = true;
+            shaderLibrary->LoadShader(ShaderID::RayTracingShadowsInlineRayTracing, shaderDesc);
+        }
     }
 }

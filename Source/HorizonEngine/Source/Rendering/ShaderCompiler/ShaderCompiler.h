@@ -13,9 +13,9 @@ namespace Horizon
         Mesh = 4,
         RayGen = 5,
         Miss = 6,
-        //AnyHit = 7,
-        //ClosestHit = 8,
-        //Intersection = 9,
+        AnyHit = 7,
+        ClosestHit = 8,
+        Intersection = 9,
         Count = 5,
     };
 

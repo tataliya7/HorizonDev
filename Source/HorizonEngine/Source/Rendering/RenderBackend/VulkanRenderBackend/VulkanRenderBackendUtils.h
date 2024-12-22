@@ -346,7 +346,7 @@ namespace Horizon
             return VK_SHADER_STAGE_MISS_BIT_KHR;
         case RenderBackendShaderStage::Intersection:
             return VK_SHADER_STAGE_INTERSECTION_BIT_KHR;
-        case RenderBackendShaderStage::Task:
+        case RenderBackendShaderStage::Amplification:
             return VK_SHADER_STAGE_TASK_BIT_EXT;
         case RenderBackendShaderStage::Mesh:
             return VK_SHADER_STAGE_MESH_BIT_EXT;

@@ -158,9 +158,10 @@ namespace Horizon
             targetProfile = std::format(L"ms_{}_{}", shaderModelVersion.major, shaderModelVersion.minor);
             break;
         case ShaderStage::RayGen:
-            targetProfile = std::format(L"lib_{}_{}", shaderModelVersion.major, shaderModelVersion.minor);
-            break;
         case ShaderStage::Miss:
+        case ShaderStage::AnyHit:
+        case ShaderStage::ClosestHit:
+        case ShaderStage::Intersection:
             targetProfile = std::format(L"lib_{}_{}", shaderModelVersion.major, shaderModelVersion.minor);
             break;
         default:

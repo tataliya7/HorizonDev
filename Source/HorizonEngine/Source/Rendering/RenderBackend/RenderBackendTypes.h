@@ -943,7 +943,7 @@ namespace Horizon
         Compute         = 0,
         Vertex          = 1,
         Pixel           = 2,
-        Task            = 3,
+        Amplification   = 3,
         Mesh            = 4,
         RayGen          = 5,
         Miss            = 6,
