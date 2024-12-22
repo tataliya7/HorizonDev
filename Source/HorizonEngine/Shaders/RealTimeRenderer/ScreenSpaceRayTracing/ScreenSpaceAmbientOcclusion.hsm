@@ -44,14 +44,11 @@ float GTAOFastAcos(float x)
     return (x >= 0) ? result : GTAO_PI - result;
 }
 
-float GTAOMultiBounce(float ao, float3 albedo)
+float3 GTAOMultiBounce(float ao, float3 albedo)
 {
-    /* Median luminance. Because colored multibounce looks bad. */
-    float luminance = dot(albedo, 0.3333);
-
-    float a =  2.0404 * luminance - 0.3324;
-    float b = -4.7951 * luminance + 0.6417;
-    float c =  2.7552 * luminance + 0.6903;
+    float3 a =  2.0404 * albedo - 0.3324;
+    float3 b = -4.7951 * albedo + 0.6417;
+    float3 c =  2.7552 * albedo + 0.6903;
 
     const float x = ao;
     return max(x, ((x * a + b) * x + c) * x);
@@ -348,11 +345,11 @@ void GTAOHorizonSearchAndIntegralCS(uint3 dispatchThreadID : SV_DispatchThreadID
     }
     visibility /= ((float)GTAONumSlices);
 
-    if (multiBounce > 0)
-    {
-        float3 baseColor = gbuffer1.SampleLevel(GlobalSamplerLinearClamp, uv, 0).rgb;
-        visibility = GTAOMultiBounce(visibility, baseColor);
-    }
+    // if (multiBounce > 0)
+    // {
+    //     float3 baseColor = gbuffer1.SampleLevel(GlobalSamplerLinearClamp, uv, 0).rgb;
+    //     visibility = GTAOMultiBounce(visibility, baseColor);
+    // }
     visibility = pow(saturate(visibility), aoFactor);
 
     outputTexture[pixelCoord] = visibility;

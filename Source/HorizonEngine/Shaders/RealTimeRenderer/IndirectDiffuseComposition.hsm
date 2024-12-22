@@ -48,10 +48,8 @@ void IndirectDiffuseCompositionPS(in float4 position : SV_Position, out float4 o
     float roughness = gbuffer1Data.z;
     float4 baseColor = gbuffer2Data;
 
-    // if (multiBounce > 0)
-    // {
-    //     ambientOcclusion = GTAOMultiBounce(visibility, baseColor);
-    // }
+    /* Median luminance. Because colored multibounce looks bad. */
+    ambientOcclusion *= GTAOMultiBounce(ambientOcclusion, dot(baseColor, 0.3333f)).r;
 
     float3 diffuseBRDF = baseColor.rgb * (1.0f / PI) * (1.0f - metallic);
 
