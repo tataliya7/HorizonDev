@@ -3995,13 +3995,13 @@ extern "C" { _declspec(dllexport) extern const char* D3D12SDKPath = /*u8*/".\\D3
     int32 D3D12RenderBackend::GetAccelerationStructureSRVBindlessResourceDescriptorIndex(RenderBackendRayTracingAccelerationStructureHandle handle)
     {
         D3D12Device* device = devices[0];
-        uint32 bufferIndex = 0;
-        if (!device->TryGetRenderBackendHandleRepresentation(handle.GetIndex(), &bufferIndex))
+        uint32 index = 0;
+        if (!device->TryGetRenderBackendHandleRepresentation(handle.GetIndex(), &index))
         {
             return 0;
         }
-        D3D12Buffer* buffer = device->buffers[bufferIndex];
-        return buffer->bindlessResourceDescriptorIndexUAV;
+        D3D12RayTracingAccelerationStructure* accelerationStructure = device->accelerationStructures[index];
+        return accelerationStructure->bindlessIndex;
     }
 
     RenderBackendSamplerHandle D3D12RenderBackend::CreateSampler(const RenderBackendSamplerDesc* desc, const char* name)

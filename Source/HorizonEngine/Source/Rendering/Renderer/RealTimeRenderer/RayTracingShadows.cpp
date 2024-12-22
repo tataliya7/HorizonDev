@@ -20,8 +20,11 @@ namespace Horizon
     {
         static RenderBackendRayTracingPipelineStateHandle rayTracingShadowsPipelineState;
         static RenderBackendBufferHandle rayTracingShadowsSBT;
-        if (!rayTracingShadowsPipelineState)
+
+        static bool firstTime = 1;
+        if (firstTime)
         {
+            firstTime = 0;
             {
                 ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::RayGen, "Shaders/RealTimeRenderer/HardwareRayTracing/RayTracingShadows.hsm", "RayTracingShadowsRayGen");
                 shaderDesc.AddDefine("RAY_TRACING_ENABLED", 1);
