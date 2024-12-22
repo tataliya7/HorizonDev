@@ -16,6 +16,16 @@ SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(6, AmbientOcclusionTextureSRV);
 SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(7, IndirectDiffuseTextureSRV);
 SHADER_CONSTANTS_STRUCT_END();
 
+float3 GTAOMultiBounce(float ao, float3 albedo)
+{
+    float3 a =  2.0404 * albedo - 0.3324;
+    float3 b = -4.7951 * albedo + 0.6417;
+    float3 c =  2.7552 * albedo + 0.6903;
+
+    const float x = ao;
+    return max(x, ((x * a + b) * x + c) * x);
+}
+
 [shader("pixel")]
 void IndirectDiffuseCompositionPS(in float4 position : SV_Position, out float4 outputColor : SV_Target0)
 {
