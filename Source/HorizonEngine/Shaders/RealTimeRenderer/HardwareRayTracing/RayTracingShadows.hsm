@@ -61,7 +61,7 @@ void RayTracingShadowsRayGen()
 
     // Prepare a shadow ray.
     RayDesc ray;
-    ray.Origin = worldSpacePosition.xyz;
+    ray.Origin = worldSpacePosition;
     ray.Direction = randDirection;
     ray.TMin = 0.01f;
     ray.TMax = 10000.0f;
@@ -126,7 +126,7 @@ void RayTracingShadowsInlineRayTracingCS(uint3 dispatchThreadID : SV_DispatchThr
     randDirection = TangentToWorld(randDirection, TBN);
 
     RayDesc ray;
-    ray.Origin = worldSpacePosition.xyz;
+    ray.Origin = worldSpacePosition;
     ray.Direction = randDirection;
     ray.TMin = 0.01f;
     ray.TMax = 10000.0f;

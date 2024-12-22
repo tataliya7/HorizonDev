@@ -354,6 +354,18 @@ namespace Horizon
         int bindlessIndex;
     };
 
+    struct D3D12RayTracingAccelerationStructure
+    {
+        D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS buildFlags;
+        Microsoft::WRL::ComPtr<ID3D12Resource> accelerationStructureBuffer;
+        Microsoft::WRL::ComPtr<ID3D12Resource> scratchBuffer;
+        Microsoft::WRL::ComPtr<ID3D12Resource> instanceBuffer;
+        uint32 numInstances = 0;
+        int bindlessIndex = -1;
+        D3D12_CPU_DESCRIPTOR_HANDLE descriptor;
+        std::vector<D3D12_RAYTRACING_GEOMETRY_DESC> geometries;
+    };
+
     struct D3D12TimingQueryHeap
     {
         Microsoft::WRL::ComPtr<ID3D12QueryHeap> queryHeap;
@@ -380,6 +392,8 @@ namespace Horizon
     struct D3D12Shader
     {
         D3D12_SHADER_BYTECODE bytecode;
+
+        uint32 hash;
     };
 
     struct D3D12ComputePipelineState
@@ -571,6 +585,12 @@ namespace Horizon
         {
             uint32 index = GetRenderBackendHandleRepresentation(handle.GetIndex());
             return buffers[index];
+        }
+
+        D3D12RayTracingAccelerationStructure* GetRayTracingAccelerationStructure(RenderBackendRayTracingAccelerationStructureHandle handle)
+        {
+            uint32 index = GetRenderBackendHandleRepresentation(handle.GetIndex());
+            return accelerationStructures[index];
         }
 
         D3D12Shader* GetShader(RenderBackendShaderHandle handle)
@@ -1013,7 +1033,9 @@ namespace Horizon
                 useClearValue ? &optimizedClearValue : nullptr,
                 &texture->allocation,
                 IID_PPV_ARGS(&texture->resource)));
+
             D3D12_CHECK(texture->resource->SetName(UTF8ToUTF16(name).c_str()));
+
             texture->width = desc->width;
             texture->height = desc->height;
             texture->depth = desc->depth;
@@ -1508,6 +1530,22 @@ namespace Horizon
             return samplerIndex;
         }
 
+        uint32 AllocateRayTracingAccelerationStructure()
+        {
+            uint32 index = 0;
+            if (!freeAccelerationStructures.empty())
+            {
+                index = freeAccelerationStructures.back();
+                freeAccelerationStructures.pop_back();
+            }
+            else
+            {
+                index = (uint32)accelerationStructures.size();
+                accelerationStructures.emplace_back(new D3D12RayTracingAccelerationStructure());
+            }
+            return index;
+        }
+
         uint32 AllocateShader()
         {
             uint32 shaderIndex = 0;
@@ -1555,6 +1593,152 @@ namespace Horizon
                 device->CopyDescriptorsSimple(1, rangeStart, sampler->descriptor, D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER);
             }
 
+            return index;
+        }
+
+        inline void AllocateUAVBuffer(ID3D12Device* pDevice, UINT64 bufferSize, ID3D12Resource **ppResource, D3D12_RESOURCE_STATES initialResourceState = D3D12_RESOURCE_STATE_COMMON, const wchar_t* resourceName = nullptr)
+        {
+            auto uploadHeapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
+            auto bufferDesc = CD3DX12_RESOURCE_DESC::Buffer(bufferSize, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS | D3D12_RESOURCE_FLAG_RAYTRACING_ACCELERATION_STRUCTURE);
+            pDevice->CreateCommittedResource(
+                &uploadHeapProperties,
+                D3D12_HEAP_FLAG_NONE,
+                &bufferDesc,
+                initialResourceState,
+                nullptr,
+                IID_PPV_ARGS(ppResource));
+            if (resourceName)
+            {
+                (*ppResource)->SetName(resourceName);
+            }
+        }
+
+        inline void AllocateUploadBuffer(ID3D12Device* pDevice, void *pData, UINT64 datasize, ID3D12Resource **ppResource, const wchar_t* resourceName = nullptr)
+        {
+            auto uploadHeapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
+            auto bufferDesc = CD3DX12_RESOURCE_DESC::Buffer(datasize);
+            pDevice->CreateCommittedResource(
+                &uploadHeapProperties,
+                D3D12_HEAP_FLAG_NONE,
+                &bufferDesc,
+                D3D12_RESOURCE_STATE_GENERIC_READ,
+                nullptr,
+                IID_PPV_ARGS(ppResource));
+            if (resourceName)
+            {
+                (*ppResource)->SetName(resourceName);
+            }
+            void *pMappedData;
+            (*ppResource)->Map(0, nullptr, &pMappedData);
+            memcpy(pMappedData, pData, datasize);
+            (*ppResource)->Unmap(0, nullptr);
+        }
+
+        uint32 CreateD3D12RayTracingBottomLevelAccelerationStructure(const RenderBackendRayTracingBottomLevelAccelerationStructureDesc* desc, const char* name)
+        {
+            uint32 index = AllocateRayTracingAccelerationStructure();
+            D3D12RayTracingAccelerationStructure* accelerationStructure = accelerationStructures[index];
+            {
+                accelerationStructure->buildFlags = ConvertToD3D12RayTracingAccelerationStructureBuildFlags(desc->buildFlags);
+
+                accelerationStructure->geometries.resize(desc->geometryCount);
+                for (uint32 i = 0; i < desc->geometryCount; i++)
+                {
+                    const RenderBackendRayTracingGeometryDesc& geometryDesc = desc->geometryDescs[i];
+                    D3D12_RAYTRACING_GEOMETRY_DESC& geometry = accelerationStructure->geometries[i];
+                    geometry.Type = ConvertToD3D12RayTracingGeometryType(geometryDesc.type);
+                    geometry.Flags = ConvertToD3D12RayTracingGeometryFlags(geometryDesc.flags);
+                    if (geometry.Type == D3D12_RAYTRACING_GEOMETRY_TYPE_TRIANGLES)
+                    {
+                        geometry.Triangles.Transform3x4 = GetBuffer(geometryDesc.triangleDesc.transformBuffer)->GetID3D12Resource()->GetGPUVirtualAddress() + geometryDesc.triangleDesc.transformOffset;
+                        geometry.Triangles.IndexFormat = DXGI_FORMAT_R32_UINT;
+                        geometry.Triangles.VertexFormat = DXGI_FORMAT_R32G32B32_FLOAT;
+                        geometry.Triangles.IndexCount = geometryDesc.triangleDesc.indexCount;
+                        geometry.Triangles.VertexCount = geometryDesc.triangleDesc.vertexCount;
+                        geometry.Triangles.IndexBuffer = GetBuffer(geometryDesc.triangleDesc.indexBuffer)->GetID3D12Resource()->GetGPUVirtualAddress() + geometryDesc.triangleDesc.indexOffset;
+                        geometry.Triangles.VertexBuffer.StartAddress = GetBuffer(geometryDesc.triangleDesc.vertexBuffer)->GetID3D12Resource()->GetGPUVirtualAddress() + geometryDesc.triangleDesc.vertexOffset;
+                        geometry.Triangles.VertexBuffer.StrideInBytes = geometryDesc.triangleDesc.vertexStride;
+                    }
+                    else if (geometry.Type == D3D12_RAYTRACING_GEOMETRY_TYPE_PROCEDURAL_PRIMITIVE_AABBS)
+                    {
+                        //geometry.AABBs.AABBCount = ;
+                        //geometry.AABBs.AABBs.StartAddress = ;
+                        //geometry.AABBs.AABBs.StrideInBytes = ;
+                    }
+                }
+
+                D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS buildFlags = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_PREFER_FAST_TRACE;
+
+                D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS bottomLevelAccelerationStructureInputs = {};
+                bottomLevelAccelerationStructureInputs.Type = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL;
+                bottomLevelAccelerationStructureInputs.Flags = buildFlags;
+                bottomLevelAccelerationStructureInputs.NumDescs = desc->geometryCount;
+                bottomLevelAccelerationStructureInputs.DescsLayout = D3D12_ELEMENTS_LAYOUT_ARRAY;
+                bottomLevelAccelerationStructureInputs.pGeometryDescs = accelerationStructure->geometries.data();
+
+                D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO bottomLevelAccelerationStructurePrebuildInfo = {};
+                GetDXRDevice()->GetRaytracingAccelerationStructurePrebuildInfo(&bottomLevelAccelerationStructureInputs, &bottomLevelAccelerationStructurePrebuildInfo);
+
+                AllocateUAVBuffer(device.Get(), bottomLevelAccelerationStructurePrebuildInfo.ResultDataMaxSizeInBytes, &accelerationStructure->accelerationStructureBuffer, D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE, L"BottomLevelAccelerationStructure");
+                AllocateUAVBuffer(device.Get(), bottomLevelAccelerationStructurePrebuildInfo.ScratchDataSizeInBytes, &accelerationStructure->scratchBuffer, D3D12_RESOURCE_STATE_COMMON, L"ScratchBuffer");
+            }
+            return index;
+        }
+
+        uint32 CreateD3D12RayTracingTopLevelAccelerationStructure(const RenderBackendRayTracingTopLevelAccelerationStructureDesc* desc, const char* name)
+        {
+            uint32 index = AllocateRayTracingAccelerationStructure();
+            D3D12RayTracingAccelerationStructure* accelerationStructure = accelerationStructures[index];
+            {
+                accelerationStructure->buildFlags = ConvertToD3D12RayTracingAccelerationStructureBuildFlags(desc->buildFlags);
+
+                std::vector<D3D12_RAYTRACING_INSTANCE_DESC> instances;
+                for (uint32 i = 0; i < desc->instanceCount; i++)
+                {
+                    D3D12_RAYTRACING_INSTANCE_DESC instanceDesc = {};
+                    instanceDesc.Transform[0][0] = instanceDesc.Transform[1][1] = instanceDesc.Transform[2][2] = 1; // TODO
+                    instanceDesc.InstanceID = desc->instances[i].instanceID;
+                    instanceDesc.InstanceMask = desc->instances[i].instanceMask;
+                    instanceDesc.InstanceContributionToHitGroupIndex = desc->instances[i].instanceContributionToHitGroupIndex;
+                    instanceDesc.Flags = desc->instances[i].instanceContributionToHitGroupIndex;
+                    instanceDesc.AccelerationStructure = GetRayTracingAccelerationStructure(desc->instances[i].blas)->accelerationStructureBuffer->GetGPUVirtualAddress();
+                    instances.emplace_back(instanceDesc);
+                }
+                AllocateUploadBuffer(device.Get(), instances.data(), instances.size() * sizeof(D3D12_RAYTRACING_INSTANCE_DESC), &accelerationStructure->instanceBuffer, L"InstanceDescs");
+                accelerationStructure->numInstances = desc->instanceCount;
+
+                D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS buildFlags = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_PREFER_FAST_TRACE;
+
+                D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS topLevelAccelerationStructureInputs = {};
+                topLevelAccelerationStructureInputs.Type = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL;
+                topLevelAccelerationStructureInputs.Flags = buildFlags;
+                topLevelAccelerationStructureInputs.NumDescs = desc->instanceCount;
+                topLevelAccelerationStructureInputs.DescsLayout = D3D12_ELEMENTS_LAYOUT_ARRAY;
+
+                D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO topLevelAccelerationStructurePrebuildInfo = {};
+                GetDXRDevice()->GetRaytracingAccelerationStructurePrebuildInfo(&topLevelAccelerationStructureInputs, &topLevelAccelerationStructurePrebuildInfo);
+
+                AllocateUAVBuffer(device.Get(), topLevelAccelerationStructurePrebuildInfo.ResultDataMaxSizeInBytes, &accelerationStructure->accelerationStructureBuffer, D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE, L"TopLevelAccelerationStructure");
+                AllocateUAVBuffer(device.Get(), topLevelAccelerationStructurePrebuildInfo.ScratchDataSizeInBytes, &accelerationStructure->scratchBuffer, D3D12_RESOURCE_STATE_COMMON, L"ScratchBuffer");
+
+                accelerationStructure->descriptor = resourceDescriptorAllocator.Allocate();
+
+                D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+                srvDesc.Format = DXGI_FORMAT_UNKNOWN;
+                srvDesc.ViewDimension = D3D12_SRV_DIMENSION_RAYTRACING_ACCELERATION_STRUCTURE;
+                srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+                srvDesc.RaytracingAccelerationStructure.Location = accelerationStructure->accelerationStructureBuffer->GetGPUVirtualAddress();
+                device->CreateShaderResourceView(nullptr, &srvDesc, accelerationStructure->descriptor);
+
+                accelerationStructure->bindlessIndex = AllocateResourceDescriptorIndex();
+                if (accelerationStructure->bindlessIndex >= 0)
+                {
+                    assert(accelerationStructure->bindlessIndex < D3D12_RENDER_BACKEND_BINDLESS_MAX_NUM_RESOURCE_DESCRIPTOERS);
+                    D3D12_CPU_DESCRIPTOR_HANDLE rangeStart = resourceDescriptorHeap->cpuDescriptorHandle;
+                    rangeStart.ptr += accelerationStructure->bindlessIndex * device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+                    device->CopyDescriptorsSimple(1, rangeStart, accelerationStructure->descriptor, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+                }
+            }
             return index;
         }
 
@@ -1621,6 +1805,8 @@ namespace Horizon
 
             shader->bytecode.pShaderBytecode = desc->code;
             shader->bytecode.BytecodeLength = desc->codeSize;
+
+            shader->hash = CRC32(desc->code, desc->codeSize);
 
             return index;
         }
@@ -1716,6 +1902,9 @@ namespace Horizon
         std::vector<D3D12Sampler*> samplers;
         std::vector<uint32> freeSamplers;
 
+        std::vector<D3D12RayTracingAccelerationStructure*> accelerationStructures;
+        std::vector<uint32> freeAccelerationStructures;
+
         std::vector<D3D12Shader*> shaders;
         std::vector<uint32> freeShaders;
 
@@ -1724,7 +1913,8 @@ namespace Horizon
 
         D3D12ComputePipelineState* FindOrCreateComputePipelineState(D3D12Shader* shader)
         {
-            uint32 pipelineStateHash = CRC32(&shader->bytecode, sizeof(D3D12_SHADER_BYTECODE));
+            uint32 shaderHash = shader->hash;
+            uint64 pipelineStateHash = shaderHash;
 
             if (computePipelineStateMap.find(pipelineStateHash) != computePipelineStateMap.end())
             {
@@ -1765,11 +1955,17 @@ namespace Horizon
             InitD3D12BlendDesc(pipelineState.colorBlendState, renderPass->numRenderTargets, pipelineStateDesc.blendState);
 
             uint64 pipelineStateDescHash = CRC32(&pipelineStateDesc, sizeof(D3D12GraphicsPipelineStateDesc));
-            uint32 renderPassFullHash = CRC32(renderPass, sizeof(D3D12RenderPass));
+            uint32 renderPassHash = CRC32(renderPass, sizeof(D3D12RenderPass));
 
-            // TODO: don't cast pointers to uint64
-            uint64 values[] = { uint64(vertexShader), uint64(pixelShader), uint64(amplificationShader), uint64(meshShader), uint64(topology), pipelineStateDescHash };
-            uint64 pipelineStateHash = (uint64(CRC32(values, ArraySize(values) * sizeof(uint64))) << 32) | renderPassFullHash;
+            uint32 vertexShaderHash = vertexShader ? vertexShader->hash : 0;
+            uint32 pixelShaderHash = pixelShader ? pixelShader->hash : 0;
+            uint32 amplificationShaderHash = amplificationShader ? amplificationShader->hash : 0;
+            uint32 meshShaderHash = meshShader ? meshShader->hash : 0;
+
+            uint64 values[] = { uint64(vertexShaderHash), uint64(pixelShaderHash), uint64(amplificationShaderHash), uint64(meshShaderHash), uint64(topology), pipelineStateDescHash };
+            uint32 psoHash = CRC32(values, ArraySize(values) * sizeof(uint64));
+
+            uint64 pipelineStateHash = (uint64(psoHash) << 32) | uint64(renderPassHash);
 
             if (graphicsPipelineStateMap.find(pipelineStateHash) != graphicsPipelineStateMap.end())
             {
@@ -1778,7 +1974,7 @@ namespace Horizon
 
             D3D12GraphicsPipelineState* newGraphicsPipelineState = new D3D12GraphicsPipelineState();
 
-            D3D12_INPUT_LAYOUT_DESC nullLnputLayout =
+            D3D12_INPUT_LAYOUT_DESC nullInputLayout =
             {
                 .pInputElementDescs = nullptr,
                 .NumElements = 0
@@ -1849,7 +2045,7 @@ namespace Horizon
                     .SampleMask = 0xFFFFFFFF,
                     .RasterizerState = pipelineStateDesc.rasterizerState,
                     .DepthStencilState = pipelineStateDesc.depthStencilState,
-                    .InputLayout = nullLnputLayout,
+                    .InputLayout = nullInputLayout,
                     .IBStripCutValue = D3D12_INDEX_BUFFER_STRIP_CUT_VALUE_DISABLED,
                     .PrimitiveTopologyType = primitiveTopologyType,
                     .NumRenderTargets = renderPass->numRenderTargets,
@@ -2238,9 +2434,6 @@ namespace Horizon
         bool CompileRenderBackendCommand(const RenderBackendCommandResolveTimingQueryResults& command);
         bool CompileRenderBackendCommand(const RenderBackendCommandDispatch& command);
         bool CompileRenderBackendCommand(const RenderBackendCommandDispatchIndirect& command);
-        bool CompileRenderBackendCommand(const RenderBackendCommandBuildBottomLevelAS& command);
-        bool CompileRenderBackendCommand(const RenderBackendCommandBuildTopLevelAS& command);
-        bool CompileRenderBackendCommand(const RenderBackendCommandDispatchRays& command);
         bool CompileRenderBackendCommand(const RenderBackendCommandSetViewport& command);
         bool CompileRenderBackendCommand(const RenderBackendCommandSetScissor& command);
         bool CompileRenderBackendCommand(const RenderBackendCommandSetStencilReference& command);
@@ -2252,6 +2445,9 @@ namespace Horizon
         bool CompileRenderBackendCommand(const RenderBackendCommandDispatchMeshIndirect& command);
         bool CompileRenderBackendCommand(const RenderBackendCommandBeginDebugLabel& command);
         bool CompileRenderBackendCommand(const RenderBackendCommandEndDebugLabel& command);
+        bool CompileRenderBackendCommand(const RenderBackendCommandBuildRayTracingBottomLevelAccelerationStructure& command);
+        bool CompileRenderBackendCommand(const RenderBackendCommandBuildRayTracingTopLevelAccelerationStructure& command);
+        bool CompileRenderBackendCommand(const RenderBackendCommandDispatchRays& command);
         bool CompileRenderBackendCommand(const RenderBackendCommandDispatchSuperSampling& command);
     private:
         bool PrepareForDispatch(RenderBackendShaderHandle computeShader, const RenderBackendShaderConstants& shaderConstants);
@@ -2293,9 +2489,6 @@ namespace Horizon
                 COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandResolveTimingQueryResults);
                 COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandDispatch);
                 COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandDispatchIndirect);
-                COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandBuildBottomLevelAS);
-                COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandBuildTopLevelAS);
-                COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandDispatchRays);
                 COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandSetViewport);
                 COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandSetScissor);
                 COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandSetStencilReference);
@@ -2307,7 +2500,11 @@ namespace Horizon
                 COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandDispatchMeshIndirect);
                 COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandBeginDebugLabel);
                 COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandEndDebugLabel);
+                COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandBuildRayTracingBottomLevelAccelerationStructure);
+                COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandBuildRayTracingTopLevelAccelerationStructure);
+                COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandDispatchRays);
                 COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandDispatchSuperSampling);
+                default: std::unreachable();
             }
         }
 #undef COMPILE_RENDER_COMMAND
@@ -2696,6 +2893,8 @@ namespace Horizon
 
     bool D3D12RenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandResolveTimingQueryResults& command)
     {
+        OPTICK_EVENT();
+
         const auto& timingQueryHeap = device->GetTimingQueryHeap(command.timingQueryHeap);
         const auto& buffer = device->GetBuffer(command.buffer);
 
@@ -2741,6 +2940,8 @@ namespace Horizon
 
     bool D3D12RenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandDispatch& command)
     {
+        OPTICK_EVENT();
+
         if (!PrepareForDispatch(command.computeShader, command.shaderConstants))
         {
             return false;
@@ -2751,6 +2952,8 @@ namespace Horizon
 
     bool D3D12RenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandDispatchIndirect& command)
     {
+        OPTICK_EVENT();
+
         if (!PrepareForDispatch(command.computeShader, command.shaderConstants))
         {
             return false;
@@ -2759,46 +2962,74 @@ namespace Horizon
         return true;
     }
 
-    bool D3D12RenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandBuildBottomLevelAS& command)
+    bool D3D12RenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandBuildRayTracingBottomLevelAccelerationStructure& command)
     {
+        OPTICK_EVENT();
+
+        const D3D12RayTracingAccelerationStructure* srcBLAS = command.srcBLAS ? device->GetRayTracingAccelerationStructure(command.srcBLAS) : nullptr;
+        const D3D12RayTracingAccelerationStructure* dstBLAS = device->GetRayTracingAccelerationStructure(command.dstBLAS);
+
+        D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS buildFlags = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_PREFER_FAST_TRACE;
+        if (srcBLAS)
+        {
+            assert(buildFlags | D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_ALLOW_UPDATE);
+            buildFlags |= D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_PERFORM_UPDATE;
+        }
+
+        D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS buildInputs = {};
+        buildInputs.Type = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL;
+        buildInputs.Flags = buildFlags;
+        buildInputs.NumDescs = uint32(dstBLAS->geometries.size());
+        buildInputs.DescsLayout = D3D12_ELEMENTS_LAYOUT_ARRAY;
+        buildInputs.pGeometryDescs = dstBLAS->geometries.data();
+
+        D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC buildDesc = {};
+        buildDesc.DestAccelerationStructureData = dstBLAS->accelerationStructureBuffer->GetGPUVirtualAddress();
+        buildDesc.Inputs = buildInputs;
+        buildDesc.SourceAccelerationStructureData = srcBLAS ? srcBLAS->accelerationStructureBuffer->GetGPUVirtualAddress() : D3D12_GPU_VIRTUAL_ADDRESS(0);
+        buildDesc.ScratchAccelerationStructureData = dstBLAS->scratchBuffer->GetGPUVirtualAddress();
+
+        commandList->GetID3D12GraphicsCommandList4()->BuildRaytracingAccelerationStructure(&buildDesc, 0, nullptr);
+
         return true;
     }
 
-    bool D3D12RenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandBuildTopLevelAS& command)
+    bool D3D12RenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandBuildRayTracingTopLevelAccelerationStructure& command)
     {
-        //const D3D12AccelerationStructure* srcTLAS = command.srcTLAS ? device->GetAccelerationStructure(command.srcTLAS) : nullptr;
-        //const D3D12AccelerationStructure* dstTLAS = device->GetAccelerationStructure(command.dstTLAS);
+        OPTICK_EVENT();
 
-        //D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS buildFlags = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_PREFER_FAST_TRACE;
-        //if ()
-        //{
-        //    assert(buildFlags | D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_ALLOW_UPDATE);
-        //    buildFlags |= D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_PERFORM_UPDATE;
-        //}
+        const D3D12RayTracingAccelerationStructure* srcTLAS = command.srcTLAS ? device->GetRayTracingAccelerationStructure(command.srcTLAS) : nullptr;
+        const D3D12RayTracingAccelerationStructure* dstTLAS = device->GetRayTracingAccelerationStructure(command.dstTLAS);
 
-        //D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS topLevelAccelerationStructureInputs = {};
-        //topLevelAccelerationStructureInputs.Type = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL;
-        //topLevelAccelerationStructureInputs.Flags = buildFlags;
-        //topLevelAccelerationStructureInputs.NumDescs = numInstances;
-        //topLevelAccelerationStructureInputs.DescsLayout = D3D12_ELEMENTS_LAYOUT_ARRAY;
-        //topLevelAccelerationStructureInputs.InstanceDescs = ;
+        D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS buildFlags = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_PREFER_FAST_TRACE;
+        if (srcTLAS)
+        {
+            assert(buildFlags | D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_ALLOW_UPDATE);
+            buildFlags |= D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_PERFORM_UPDATE;
+        }
 
-        //D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO topLevelAccelerationStructurePrebuildInfo = {};
-        //device->GetDXRDevice()->GetRaytracingAccelerationStructurePrebuildInfo(&topLevelAccelerationStructureInputs, &topLevelAccelerationStructurePrebuildInfo);
+        D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS buildInputs = {};
+        buildInputs.Type = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL;
+        buildInputs.Flags = buildFlags;
+        buildInputs.NumDescs = dstTLAS->numInstances;
+        buildInputs.DescsLayout = D3D12_ELEMENTS_LAYOUT_ARRAY;
+        buildInputs.InstanceDescs = dstTLAS->instanceBuffer->GetGPUVirtualAddress();
 
-        //D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC buildDesc = {};
-        //buildDesc.DestAccelerationStructureData = AccelerationStructureBuffers[GPUIndex]->ResourceLocation.GetGPUVirtualAddress();
-        //buildDesc.Inputs = topLevelAccelerationStructureInputs;
-        //buildDesc.SourceAccelerationStructureData = srcTLAS ? AccelerationStructureBuffers[GPUIndex]->ResourceLocation.GetGPUVirtualAddress() : D3D12_GPU_VIRTUAL_ADDRESS(0);
-        //buildDesc.ScratchAccelerationStructureData = ScratchBufferAddress;
+        D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC buildDesc = {};
+        buildDesc.DestAccelerationStructureData = dstTLAS->accelerationStructureBuffer->GetGPUVirtualAddress();
+        buildDesc.Inputs = buildInputs;
+        buildDesc.SourceAccelerationStructureData = srcTLAS ? srcTLAS->accelerationStructureBuffer->GetGPUVirtualAddress() : D3D12_GPU_VIRTUAL_ADDRESS(0);
+        buildDesc.ScratchAccelerationStructureData = dstTLAS->scratchBuffer->GetGPUVirtualAddress();
 
-        //commandList->GetID3D12GraphicsCommandList4()->BuildRaytracingAccelerationStructure(&buildDesc, 0, nullptr);
+        commandList->GetID3D12GraphicsCommandList4()->BuildRaytracingAccelerationStructure(&buildDesc, 0, nullptr);
 
         return true;
     }
 
     bool D3D12RenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandDispatchRays& command)
     {
+        OPTICK_EVENT();
+
         D3D12_DISPATCH_RAYS_DESC dispatchRaysDesc = {};
 
         commandList->GetID3D12GraphicsCommandList7()->DispatchRays(&dispatchRaysDesc);
@@ -2852,6 +3083,10 @@ namespace Horizon
     bool D3D12RenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandBeginRenderPass& command)
     {
 #if D3D12_RENDER_BACKEND_USE_RENDER_PASS
+
+        // TODO: optimize this, to avoid recreate PSOs.
+        memset(&activeRenderPass, 0, sizeof(D3D12RenderPass));
+
         activeRenderPass.numRenderTargets = 0;
         activeRenderPass.hasDepthStencil = false;
 
@@ -3155,6 +3390,8 @@ namespace Horizon
 
     bool D3D12RenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandDispatchSuperSampling& command)
     {
+        OPTICK_EVENT();
+
         D3D12Texture* outputTexture = device->GetTexture(command.output);
         D3D12Texture* colorTexture = device->GetTexture(command.color);
         D3D12Texture* depthTexture = device->GetTexture(command.depth);
@@ -3325,7 +3562,7 @@ extern "C" { _declspec(dllexport) extern const char* D3D12SDKPath = /*u8*/".\\D3
                     numAdapters++;
                 }
             }
-        };
+        }
 
         return true;
     }
@@ -3898,13 +4135,20 @@ extern "C" { _declspec(dllexport) extern const char* D3D12SDKPath = /*u8*/".\\D3
 
     RenderBackendRayTracingAccelerationStructureHandle D3D12RenderBackend::CreateRayTracingBottomLevelAccelerationStructure(const RenderBackendRayTracingBottomLevelAccelerationStructureDesc* desc, const char* name)
     {
-        return RenderBackendRayTracingAccelerationStructureHandle::Null;
+        RenderBackendRayTracingAccelerationStructureHandle handle = handleManager.Allocate<RenderBackendRayTracingAccelerationStructureHandle>();
+        D3D12Device* device = devices[0];
+        uint32 index = device->CreateD3D12RayTracingBottomLevelAccelerationStructure(desc, name);
+        device->SetRenderBackendHandleRepresentation(handle.GetIndex(), index);
+        return handle;
     }
 
     RenderBackendRayTracingAccelerationStructureHandle D3D12RenderBackend::CreateRayTracingTopLevelAccelerationStructure(const RenderBackendRayTracingTopLevelAccelerationStructureDesc* desc, const char* name)
     {
-
-        return RenderBackendRayTracingAccelerationStructureHandle::Null;
+        RenderBackendRayTracingAccelerationStructureHandle handle = handleManager.Allocate<RenderBackendRayTracingAccelerationStructureHandle>();
+        D3D12Device* device = devices[0];
+        uint32 index = device->CreateD3D12RayTracingTopLevelAccelerationStructure(desc, name);
+        device->SetRenderBackendHandleRepresentation(handle.GetIndex(), index);
+        return handle;
     }
 
     RenderBackendRayTracingPipelineStateHandle D3D12RenderBackend::CreateRayTracingPipelineState(const RenderBackendRayTracingPipelineStateDesc* desc, const char* name)
@@ -3929,7 +4173,8 @@ extern "C" { _declspec(dllexport) extern const char* D3D12SDKPath = /*u8*/".\\D3
         }
 
         //mask = RenderBackendDeviceMask(0);
-        mask = {
+        mask =
+        {
             .mask = 0U
         };
 
@@ -4264,7 +4509,8 @@ extern "C" { _declspec(dllexport) extern const char* D3D12SDKPath = /*u8*/".\\D3
         {
             samplerDescriptorHeap = new D3D12DescriptorHeap();
 
-            D3D12_DESCRIPTOR_HEAP_DESC heapDesc = {
+            D3D12_DESCRIPTOR_HEAP_DESC heapDesc =
+            {
                 .Type = D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER,
                 .NumDescriptors = 2048, // tier 1 limit
                 .Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE,

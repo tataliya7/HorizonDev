@@ -358,7 +358,7 @@ namespace Horizon
     void RenderBackendCommandList::BuildRayTracingBottomLevelAccelerationStructure(
         RenderBackendRayTracingAccelerationStructureHandle blas)
     {
-        RenderBackendCommandBuildBottomLevelAS* command = AllocateCommand<RenderBackendCommandBuildBottomLevelAS>(RenderBackendCommandBuildBottomLevelAS::Type);
+        RenderBackendCommandBuildRayTracingBottomLevelAccelerationStructure* command = AllocateCommand<RenderBackendCommandBuildRayTracingBottomLevelAccelerationStructure>(RenderBackendCommandBuildRayTracingBottomLevelAccelerationStructure::Type);
         command->srcBLAS = RenderBackendRayTracingAccelerationStructureHandle::Null;
         command->dstBLAS = blas;
     }
@@ -366,7 +366,7 @@ namespace Horizon
     void RenderBackendCommandList::BuildRayTracingTopLevelAccelerationStructure(
         RenderBackendRayTracingAccelerationStructureHandle tlas)
     {
-        RenderBackendCommandBuildTopLevelAS* command = AllocateCommand<RenderBackendCommandBuildTopLevelAS>(RenderBackendCommandBuildTopLevelAS::Type);
+        RenderBackendCommandBuildRayTracingTopLevelAccelerationStructure* command = AllocateCommand<RenderBackendCommandBuildRayTracingTopLevelAccelerationStructure>(RenderBackendCommandBuildRayTracingTopLevelAccelerationStructure::Type);
         command->srcTLAS = RenderBackendRayTracingAccelerationStructureHandle::Null;
         command->dstTLAS = tlas;
     }
@@ -375,7 +375,7 @@ namespace Horizon
         RenderBackendRayTracingAccelerationStructureHandle srcTLAS,
         RenderBackendRayTracingAccelerationStructureHandle dstTLAS)
     {
-        RenderBackendCommandBuildTopLevelAS* command = AllocateCommand<RenderBackendCommandBuildTopLevelAS>(RenderBackendCommandBuildTopLevelAS::Type);
+        RenderBackendCommandBuildRayTracingTopLevelAccelerationStructure* command = AllocateCommand<RenderBackendCommandBuildRayTracingTopLevelAccelerationStructure>(RenderBackendCommandBuildRayTracingTopLevelAccelerationStructure::Type);
         command->srcTLAS = srcTLAS;
         command->dstTLAS = dstTLAS;
     }
@@ -384,7 +384,7 @@ namespace Horizon
         RenderBackendRayTracingAccelerationStructureHandle srcBLAS,
         RenderBackendRayTracingAccelerationStructureHandle dstBLAS)
     {
-        RenderBackendCommandBuildBottomLevelAS* command = AllocateCommand<RenderBackendCommandBuildBottomLevelAS>(RenderBackendCommandBuildBottomLevelAS::Type);
+        RenderBackendCommandBuildRayTracingBottomLevelAccelerationStructure* command = AllocateCommand<RenderBackendCommandBuildRayTracingBottomLevelAccelerationStructure>(RenderBackendCommandBuildRayTracingBottomLevelAccelerationStructure::Type);
         command->srcBLAS = srcBLAS;
         command->dstBLAS = dstBLAS;
     }

@@ -391,7 +391,7 @@ namespace Horizon
                 rayTracingScene->transformMatrixCount = uint32(meshes.size());
                 RenderBackendBufferDesc transformBufferRowMajorUploadDesc = RenderBackendBufferDesc::CreateUpload(rayTracingScene->transformMatrixCount * uint32(sizeof(float)) * 16);
                 rayTracingScene->transformBufferRowMajorUpload = renderBackend->CreateBuffer(&transformBufferRowMajorUploadDesc, nullptr, "RowMajorTransformUploadBuffer");
-                RenderBackendBufferDesc transformBufferRowMajorDesc = RenderBackendBufferDesc::CreateByteAddress(rayTracingScene->transformMatrixCount * uint32(sizeof(float)) * 16);
+                RenderBackendBufferDesc transformBufferRowMajorDesc = RenderBackendBufferDesc::Create(uint32(sizeof(float)) * 16, rayTracingScene->transformMatrixCount, RenderBackendBufferCreateFlags::UnorderedAccess | RenderBackendBufferCreateFlags::ShaderResource | RenderBackendBufferCreateFlags::RayTracingAccelerationStructure);
                 rayTracingScene->transformBufferRowMajor = renderBackend->CreateBuffer(&transformBufferRowMajorDesc, nullptr, "RowMajorTransformBuffer");
 
                 for (const MeshRenderObject* mesh : meshes)
@@ -438,7 +438,7 @@ namespace Horizon
                 }
             }
 
-            if (first11 == 1)
+            if (first11 == 100)
             {
                 RenderBackendRayTracingBottomLevelAccelerationStructureDesc blasDesc =
                 {
@@ -466,6 +466,16 @@ namespace Horizon
                     .instances = &geometryInstance
                 };
                 rayTracingScene->topLevelAccelerationStructure = renderBackend->CreateRayTracingTopLevelAccelerationStructure(&tlasDesc, "RayTracingSceneTLAS");
+            }
+
+            if (first11 == 200)
+            {
+                commandList->BuildRayTracingBottomLevelAccelerationStructure(rayTracingScene->bottomLevelAccelerationStructure);
+            }
+
+            if (first11 == 500)
+            {
+                commandList->BuildRayTracingTopLevelAccelerationStructure(rayTracingScene->topLevelAccelerationStructure);
             }
 
             first11++;

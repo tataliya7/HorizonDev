@@ -126,7 +126,7 @@ namespace Horizon
         IndexBuffer = (1 << 8),
         UniformBuffer = (1 << 9),
         StructuredBuffer = (1 << 10),
-        AccelerationStructure = (1 << 11),
+        RayTracingAccelerationStructure = (1 << 11),
         ShaderBindingTable = (1 << 12),
         // Memory access
         CreateMapped = (1 << 13),
@@ -1220,7 +1220,7 @@ namespace Horizon
 
         void BindAccelerationStructure(uint8 slot, int descriptorIndex)
         {
-            //types[slot] = int8(Type::AccelerationStructure);
+            //types[slot] = int8(Type::RayTracingAccelerationStructure);
             data[slot].descriptorIndex = descriptorIndex;
         }
 

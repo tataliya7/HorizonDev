@@ -42,8 +42,8 @@ namespace Horizon
         DispatchMeshIndirect,
         BeginDebugLabel,
         EndDebugLabel,
-        BuildBottomLevelAS,
-        BuildTopLevelAS,
+        BuildRayTracingBottomLevelAccelerationStructure,
+        BuildRayTracingTopLevelAccelerationStructure,
         DispatchRays,
         DispatchSuperSampling,
         Count,
@@ -255,13 +255,13 @@ namespace Horizon
 
     };
 
-    struct RenderBackendCommandBuildBottomLevelAS : RenderBackendCommand<RenderBackendCommandType::BuildBottomLevelAS, RenderBackendCommandQueueType::Compute>
+    struct RenderBackendCommandBuildRayTracingBottomLevelAccelerationStructure : RenderBackendCommand<RenderBackendCommandType::BuildRayTracingBottomLevelAccelerationStructure, RenderBackendCommandQueueType::Compute>
     {
         RenderBackendRayTracingAccelerationStructureHandle srcBLAS;
         RenderBackendRayTracingAccelerationStructureHandle dstBLAS;
     };
 
-    struct RenderBackendCommandBuildTopLevelAS : RenderBackendCommand<RenderBackendCommandType::BuildTopLevelAS, RenderBackendCommandQueueType::Compute>
+    struct RenderBackendCommandBuildRayTracingTopLevelAccelerationStructure : RenderBackendCommand<RenderBackendCommandType::BuildRayTracingTopLevelAccelerationStructure, RenderBackendCommandQueueType::Compute>
     {
         RenderBackendRayTracingAccelerationStructureHandle srcTLAS;
         RenderBackendRayTracingAccelerationStructureHandle dstTLAS;

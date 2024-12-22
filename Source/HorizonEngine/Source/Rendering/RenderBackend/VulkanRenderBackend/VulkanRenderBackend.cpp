@@ -333,14 +333,11 @@ namespace Horizon
         };
         Buffer accelerationStructureBuffer;
         Buffer scratchBuffer;
+        uint32 instanceCount = 0;
         std::vector<Buffer> resourceBuffers;
-        std::vector<VkAccelerationStructureGeometryKHR> geometries;
-        union
-        {
-            RenderBackendRayTracingBottomLevelAccelerationStructureDesc blasDesc;
-            RenderBackendRayTracingTopLevelAccelerationStructureDesc tlasDesc;
-        };
         uint32 descriptorIndex;
+        std::vector<VkAccelerationStructureGeometryKHR> geometries;
+        std::vector<VkAccelerationStructureBuildRangeInfoKHR> buildRangeInfos;
     };
 
     struct VulkanRenderingInfo
@@ -484,8 +481,8 @@ namespace Horizon
         void DestroySampler(uint32 index);
         uint32 CreateShader(const RenderBackendShaderDesc* desc, const char* name);
         void DestroyShader(uint32 index);
-        uint32 CreateBottomLevelAS(const RenderBackendRayTracingBottomLevelAccelerationStructureDesc* desc, const char* name);
-        uint32 CreateTopLevelAS(const RenderBackendRayTracingTopLevelAccelerationStructureDesc* desc, const char* name);
+        uint32 CreateRayTracingBottomLevelAccelerationStructure(const RenderBackendRayTracingBottomLevelAccelerationStructureDesc* desc, const char* name);
+        uint32 CreateRayTracingTopLevelAccelerationStructure(const RenderBackendRayTracingTopLevelAccelerationStructureDesc* desc, const char* name);
         VkRenderPass FindOrCreateRenderPass(const VulkanRenderPassDesc& renderPassDesc);
         VulkanFramebuffer* FindOrCreateFramebuffer(const RenderBackendRenderPassInfo& renderPassInfo, const VulkanRenderPassDesc& renderPassDesc, VkRenderPass renderPass);
         VkPipelineLayout FindOrCreatePipelineLayout(uint32 pushConstantsSize, RenderBackendPipelineType pipelineType);
@@ -567,7 +564,7 @@ namespace Horizon
             uint32 index = GetRenderBackendHandleRepresentation(handle.GetIndex());
             return timingQueryHeaps.Get(index);
         }
-        inline VulkanRayTracingAccelerationStructure* GetAccelerationStructure(RenderBackendRayTracingAccelerationStructureHandle handle)
+        inline VulkanRayTracingAccelerationStructure* GetRayTracingAccelerationStructure(RenderBackendRayTracingAccelerationStructureHandle handle)
         {
             uint32 index = GetRenderBackendHandleRepresentation(handle.GetIndex());
             return &accelerationStructures[index];
@@ -1776,13 +1773,15 @@ namespace Horizon
 
     uint32 VulkanDevice::CreateBuffer(const RenderBackendBufferDesc* desc, const void* data, const char* name)
     {
-        VulkanBuffer buffer = {
+        VulkanBuffer buffer =
+        {
             .size = desc->size,
             .usageFlags = GetVkBufferUsageFlags(desc->flags),
             .name = name,
         };
 
-        VkBufferCreateInfo bufferCreateInfo = {
+        VkBufferCreateInfo bufferCreateInfo =
+        {
             .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
             .size = buffer.size,
             .usage = buffer.usageFlags,
@@ -1940,7 +1939,8 @@ namespace Horizon
         VulkanBuffer& buffer = buffers[index];
         if (buffer.handle != VK_NULL_HANDLE)
         {
-            ResourceToDestroy resource = {
+            ResourceToDestroy resource =
+            {
                 .type = ResourceToDestroy::Type::Buffer,
                 .vkHandle = (uint64)buffer.handle,
                 .allocation = buffer.allocation,
@@ -2818,7 +2818,8 @@ namespace Horizon
 
     uint32 VulkanDevice::CreateAccelerationStructure(VulkanRayTracingAccelerationStructure* accelerationStructure, VkAccelerationStructureTypeKHR type, uint32* primitiveCounts, const char* name)
     {
-        VkAccelerationStructureBuildGeometryInfoKHR accelerationStructureBuildGeometryInfo = {
+        VkAccelerationStructureBuildGeometryInfoKHR accelerationStructureBuildGeometryInfo =
+        {
             .sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR,
             .type = type,
             .flags = accelerationStructure->buildFlags,
@@ -2826,9 +2827,11 @@ namespace Horizon
             .pGeometries = accelerationStructure->geometries.data(),
         };
 
-        VkAccelerationStructureBuildSizesInfoKHR accelerationStructureBuildSizesInfo = {
+        VkAccelerationStructureBuildSizesInfoKHR accelerationStructureBuildSizesInfo =
+        {
             .sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_SIZES_INFO_KHR
         };
+
         backend->vulkanFunctions.vkGetAccelerationStructureBuildSizesKHR(
             handle,
             VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR,
@@ -2905,44 +2908,54 @@ namespace Horizon
             &accelerationStructure->handle));
         SetDebugUtilsObjectName(VK_OBJECT_TYPE_ACCELERATION_STRUCTURE_KHR, (uint64)accelerationStructure->handle, name);
 
-        VkAccelerationStructureDeviceAddressInfoKHR deviceAddressInfo = {
+        VkAccelerationStructureDeviceAddressInfoKHR deviceAddressInfo =
+        {
             .sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_DEVICE_ADDRESS_INFO_KHR,
             .accelerationStructure = accelerationStructure->handle,
         };
         accelerationStructure->deviceAddress = backend->vulkanFunctions.vkGetAccelerationStructureDeviceAddressKHR(handle, &deviceAddressInfo);
 
-        VkAccelerationStructureBuildGeometryInfoKHR accelerationBuildGeometryInfo = {
+        const uint32 geometryCount = uint32(accelerationStructure->geometries.size());
+
+        VkAccelerationStructureBuildGeometryInfoKHR accelerationBuildGeometryInfo =
+        {
             .sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR,
             .type = type,
             .flags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR,
             .mode = VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR,
             .dstAccelerationStructure = accelerationStructure->handle,
-            .geometryCount = (uint32)accelerationStructure->geometries.size(),
+            .geometryCount = geometryCount,
             .pGeometries = accelerationStructure->geometries.data(),
-            .scratchData = {.deviceAddress = accelerationStructure->scratchBuffer.deviceAddress }
+            .ppGeometries = nullptr,
+            .scratchData = { .deviceAddress = accelerationStructure->scratchBuffer.deviceAddress }
         };
 
-        std::vector<VkAccelerationStructureBuildRangeInfoKHR> accelerationBuildStructureRangeInfos((uint32)accelerationStructure->geometries.size());
-        std::vector<VkAccelerationStructureBuildRangeInfoKHR*> pBuildRangeInfos((uint32)accelerationStructure->geometries.size());
-        for (uint32 geometryIndex = 0; geometryIndex < (uint32)accelerationStructure->geometries.size(); geometryIndex++)
+        accelerationStructure->buildRangeInfos.resize(geometryCount);
+        for (uint32 geometryIndex = 0; geometryIndex < geometryCount; geometryIndex++)
         {
-            accelerationBuildStructureRangeInfos[geometryIndex] = {
+            accelerationStructure->buildRangeInfos[geometryIndex] =
+            {
                 .primitiveCount = primitiveCounts[geometryIndex],
                 .primitiveOffset = 0,
                 .firstVertex = 0,
                 .transformOffset = 0,
             };
-            pBuildRangeInfos[geometryIndex] = &accelerationBuildStructureRangeInfos[geometryIndex];
         }
 
-        VkCommandBuffer commandBuffer; VkCommandPool pool;
-        VulkanHelper::CreateTemporaryCommandBuffer(handle, GetQueueFamilyIndex(RenderBackendQueueFamily::Graphics), pool, commandBuffer);
-        backend->vulkanFunctions.vkCmdBuildAccelerationStructuresKHR(
-            commandBuffer,
-            1,
-            &accelerationBuildGeometryInfo,
-            pBuildRangeInfos.data());
-        VulkanHelper::FlushTemporaryCommandBuffer(handle, GetCommandQueue(RenderBackendQueueFamily::Graphics, 0)->handle, pool, commandBuffer);
+        std::vector<const VkAccelerationStructureBuildRangeInfoKHR*> pBuildRangeInfos(geometryCount);
+        for (uint32 geometryIndex = 0; geometryIndex < geometryCount; geometryIndex++)
+        {
+            pBuildRangeInfos[geometryIndex] = &accelerationStructure->buildRangeInfos[geometryIndex];
+        }
+
+        // VkCommandBuffer commandBuffer; VkCommandPool pool;
+        // VulkanHelper::CreateTemporaryCommandBuffer(handle, GetQueueFamilyIndex(RenderBackendQueueFamily::Graphics), pool, commandBuffer);
+        // backend->vulkanFunctions.vkCmdBuildAccelerationStructuresKHR(
+        //     commandBuffer,
+        //     1,
+        //     &accelerationBuildGeometryInfo,
+        //     pBuildRangeInfos.data());
+        // VulkanHelper::FlushTemporaryCommandBuffer(handle, GetCommandQueue(RenderBackendQueueFamily::Graphics, 0)->handle, pool, commandBuffer);
 
         if (type == VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR || type == VK_ACCELERATION_STRUCTURE_TYPE_GENERIC_KHR)
         {
@@ -2990,16 +3003,18 @@ namespace Horizon
         }
     }
 
-    uint32 VulkanDevice::CreateBottomLevelAS(const RenderBackendRayTracingBottomLevelAccelerationStructureDesc* desc, const char* name)
+    uint32 VulkanDevice::CreateRayTracingBottomLevelAccelerationStructure(const RenderBackendRayTracingBottomLevelAccelerationStructureDesc* desc, const char* name)
     {
         VulkanRayTracingAccelerationStructure accelerationStructure;
         accelerationStructure.buildFlags = ConvertToVkBuildAccelerationStructureFlagsKHR(desc->buildFlags);
-        accelerationStructure.blasDesc = *desc;
+
+        accelerationStructure.geometries.clear();
 
         std::vector<uint32> primitiveCounts(desc->geometryCount);
-        for (uint32 i = 0; i < desc->geometryCount; i++)
+        for (uint32 geometryIndex = 0; geometryIndex < desc->geometryCount; geometryIndex++)
         {
-            const RenderBackendRayTracingGeometryDesc& geometryDesc = desc->geometryDescs[i];
+            const RenderBackendRayTracingGeometryDesc& geometryDesc = desc->geometryDescs[geometryIndex];
+
             VkAccelerationStructureGeometryKHR geometry =
             {
                .sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR,
@@ -3020,7 +3035,7 @@ namespace Horizon
                     .indexData = GetBufferDeviceAddress(geometryDesc.triangleDesc.indexBuffer) + geometryDesc.triangleDesc.indexOffset,
                     .transformData = GetBufferDeviceAddress(geometryDesc.triangleDesc.transformBuffer) + geometryDesc.triangleDesc.transformOffset
                 };
-                primitiveCounts[i] = geometryDesc.triangleDesc.indexCount / 3;
+                primitiveCounts[geometryIndex] = geometryDesc.triangleDesc.indexCount / 3;
             }
             else if (geometry.geometryType == VK_GEOMETRY_TYPE_AABBS_KHR)
             {
@@ -3031,36 +3046,37 @@ namespace Horizon
                    .stride = sizeof(VkAabbPositionsKHR)
                 };
                 VulkanBuffer* buffer = GetBuffer(geometryDesc.aabbDesc.buffer);
-                primitiveCounts[i] = (uint32)(buffer->size / sizeof(VkAabbPositionsKHR));
+                primitiveCounts[geometryIndex] = (uint32)(buffer->size / sizeof(VkAabbPositionsKHR));
             }
-            accelerationStructure.geometries.emplace_back(geometry);
+            accelerationStructure.geometries.push_back(geometry);
         }
         uint32 index = CreateAccelerationStructure(&accelerationStructure, VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR, primitiveCounts.data(), name);
 
         return index;
     }
 
-    uint32 VulkanDevice::CreateTopLevelAS(const RenderBackendRayTracingTopLevelAccelerationStructureDesc* desc, const char* name)
+    uint32 VulkanDevice::CreateRayTracingTopLevelAccelerationStructure(const RenderBackendRayTracingTopLevelAccelerationStructureDesc* desc, const char* name)
     {
         VulkanRayTracingAccelerationStructure accelerationStructure = {};
         accelerationStructure.buildFlags = ConvertToVkBuildAccelerationStructureFlagsKHR(desc->buildFlags);
-        accelerationStructure.tlasDesc = *desc;
 
         std::vector<VkAccelerationStructureInstanceKHR> instances;
         for (uint32 i = 0; i < desc->instanceCount; i++)
         {
             VkTransformMatrixKHR transformMatrix;
             memcpy(&transformMatrix, &desc->instances[i].transformMatrix, sizeof(VkTransformMatrixKHR));
-            VkAccelerationStructureInstanceKHR instance = {
+            VkAccelerationStructureInstanceKHR instance =
+            {
                 .transform = transformMatrix,
                 .instanceCustomIndex = desc->instances[i].instanceID,
                 .mask = desc->instances[i].instanceMask,
                 .instanceShaderBindingTableRecordOffset = desc->instances[i].instanceContributionToHitGroupIndex,
                 .flags = ConvertToVkGeometryInstanceFlagsKHR(desc->instances[i].flags),
-                .accelerationStructureReference = GetAccelerationStructure(desc->instances[i].blas)->deviceAddress,
+                .accelerationStructureReference = GetRayTracingAccelerationStructure(desc->instances[i].blas)->deviceAddress,
             };
             instances.emplace_back(instance);
         }
+        accelerationStructure.instanceCount = desc->instanceCount;
 
         VulkanRayTracingAccelerationStructure::Buffer instanceBuffer;
         {
@@ -3090,24 +3106,28 @@ namespace Horizon
             instanceBuffer.deviceAddress = backend->vulkanFunctions.vkGetBufferDeviceAddressKHR(handle, &bufferDeviceInfo);
             memcpy(instanceBuffer.allocationInfo.pMappedData, instances.data(), instanceBuffer.size);
             VK_CHECK(vmaFlushAllocation(vmaAllocator, instanceBuffer.allocation, 0, instanceBuffer.size));
-            accelerationStructure.resourceBuffers.emplace_back(instanceBuffer);
+            accelerationStructure.resourceBuffers.push_back(instanceBuffer);
         }
 
-        VkAccelerationStructureGeometryKHR geometry = {
+        VkAccelerationStructureGeometryKHR geometry =
+        {
             .sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR,
             .geometryType = VK_GEOMETRY_TYPE_INSTANCES_KHR,
-            .geometry = {
-                .instances = {
+            .geometry =
+            {
+                .instances =
+                {
                     .sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_INSTANCES_DATA_KHR,
                     .arrayOfPointers = VK_FALSE,
-                    .data = {
+                    .data =
+                    {
                         .deviceAddress = instanceBuffer.deviceAddress
                     },
                 },
             },
             .flags = ConvertToVkGeometryFlagsKHR(desc->geometryFlags),
         };
-        accelerationStructure.geometries.emplace_back(geometry);
+        accelerationStructure.geometries.push_back(geometry);
 
         uint32 numPrimitives = desc->instanceCount;
         uint32 index = CreateAccelerationStructure(&accelerationStructure, VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR, &numPrimitives, name);
@@ -4419,9 +4439,6 @@ namespace Horizon
         bool CompileRenderBackendCommand(const RenderBackendCommandResolveTimingQueryResults& command);
         bool CompileRenderBackendCommand(const RenderBackendCommandDispatch& command);
         bool CompileRenderBackendCommand(const RenderBackendCommandDispatchIndirect& command);
-        bool CompileRenderBackendCommand(const RenderBackendCommandBuildBottomLevelAS& command);
-        bool CompileRenderBackendCommand(const RenderBackendCommandBuildTopLevelAS& command);
-        bool CompileRenderBackendCommand(const RenderBackendCommandDispatchRays& command);
         bool CompileRenderBackendCommand(const RenderBackendCommandSetViewport& command);
         bool CompileRenderBackendCommand(const RenderBackendCommandSetScissor& command);
         bool CompileRenderBackendCommand(const RenderBackendCommandSetStencilReference& command);
@@ -4433,6 +4450,9 @@ namespace Horizon
         bool CompileRenderBackendCommand(const RenderBackendCommandDispatchMeshIndirect& command);
         bool CompileRenderBackendCommand(const RenderBackendCommandBeginDebugLabel& command);
         bool CompileRenderBackendCommand(const RenderBackendCommandEndDebugLabel& command);
+        bool CompileRenderBackendCommand(const RenderBackendCommandBuildRayTracingBottomLevelAccelerationStructure& command);
+        bool CompileRenderBackendCommand(const RenderBackendCommandBuildRayTracingTopLevelAccelerationStructure& command);
+        bool CompileRenderBackendCommand(const RenderBackendCommandDispatchRays& command);
         bool CompileRenderBackendCommand(const RenderBackendCommandDispatchSuperSampling& command);
     private:
         void ApplyTransitions();
@@ -4798,85 +4818,70 @@ namespace Horizon
         return true;
     }
 
-    bool VulkanRenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandBuildBottomLevelAS& command)
+    bool VulkanRenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandBuildRayTracingBottomLevelAccelerationStructure& command)
     {
-        const auto& srcBLAS = command.srcBLAS ? device->GetAccelerationStructure(command.srcBLAS) : nullptr;
-        const auto& dstBLAS = device->GetAccelerationStructure(command.dstBLAS);
+        const VulkanRayTracingAccelerationStructure* srcBLAS = command.srcBLAS ? device->GetRayTracingAccelerationStructure(command.srcBLAS) : nullptr;
+        const VulkanRayTracingAccelerationStructure* dstBLAS = device->GetRayTracingAccelerationStructure(command.dstBLAS);
 
-        VkAccelerationStructureBuildGeometryInfoKHR accelerationStructureBuildGeometryInfo = {
+        VkAccelerationStructureBuildGeometryInfoKHR accelerationStructureBuildGeometryInfo =
+        {
             .sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR,
             .type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR,
             .flags = dstBLAS->buildFlags,
             .mode = srcBLAS ? VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR : VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR,
             .srcAccelerationStructure = srcBLAS ? srcBLAS->handle : VK_NULL_HANDLE,
             .dstAccelerationStructure = dstBLAS->handle,
-            .geometryCount = (uint32)dstBLAS->geometries.size(),
+            .geometryCount = uint32(dstBLAS->geometries.size()),
             .pGeometries = dstBLAS->geometries.data(),
-            .scratchData = dstBLAS->scratchBuffer.deviceAddress
+            .ppGeometries = nullptr,
+            .scratchData = { .deviceAddress = dstBLAS->scratchBuffer.deviceAddress }
         };
 
-        uint32 numGeometries = (uint32)dstBLAS->blasDesc.geometryCount;
-        std::vector<VkAccelerationStructureBuildRangeInfoKHR> ranges(numGeometries);
-        std::vector<VkAccelerationStructureBuildRangeInfoKHR*> buildRangeInfos(numGeometries);
-        for (uint32 i = 0; i < numGeometries; i++)
+        std::vector<const VkAccelerationStructureBuildRangeInfoKHR*> pBuildRangeInfos(uint32(dstBLAS->geometries.size()));
+        for (uint32 geometryIndex = 0; geometryIndex < uint32(dstBLAS->geometries.size()); geometryIndex++)
         {
-            if (dstBLAS->blasDesc.geometryDescs->type == RenderBackendRayTracingGeometryType::Triangles)
-            {
-                VkAccelerationStructureBuildRangeInfoKHR buildRange = {
-                    .primitiveCount = dstBLAS->blasDesc.geometryDescs[i].triangleDesc.indexCount / 3,
-                    .primitiveOffset = 0,
-                    .firstVertex = 0,
-                    .transformOffset = dstBLAS->blasDesc.geometryDescs[i].triangleDesc.transformOffset,
-                };
-                ranges[i] = buildRange;
-                buildRangeInfos[i] = &ranges[i];
-            }
-            else if (dstBLAS->blasDesc.geometryDescs->type == RenderBackendRayTracingGeometryType::AABBs)
-            {
-                VulkanBuffer* buffer = device->GetBuffer(dstBLAS->blasDesc.geometryDescs[i].aabbDesc.buffer);
-                VkAccelerationStructureBuildRangeInfoKHR buildRange = {
-                    .primitiveCount = (uint32)(buffer->size / sizeof(VkAabbPositionsKHR)),
-                    .primitiveOffset = dstBLAS->blasDesc.geometryDescs[i].aabbDesc.offset,
-                    .firstVertex = 0,
-                    .transformOffset = 0,
-                };
-                ranges[i] = buildRange;
-                buildRangeInfos[i] = &ranges[i];
-            }
+            pBuildRangeInfos[geometryIndex] = &dstBLAS->buildRangeInfos[geometryIndex];
         }
 
         device->GetBackend()->vulkanFunctions.vkCmdBuildAccelerationStructuresKHR(
             commandBuffer,
             1,
             &accelerationStructureBuildGeometryInfo,
-            buildRangeInfos.data());
+            pBuildRangeInfos.data());
 
         return true;
     }
 
-    bool VulkanRenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandBuildTopLevelAS& command)
+    bool VulkanRenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandBuildRayTracingTopLevelAccelerationStructure& command)
     {
-        const VulkanRayTracingAccelerationStructure* srcTLAS = command.srcTLAS ? device->GetAccelerationStructure(command.srcTLAS) : nullptr;
-        const VulkanRayTracingAccelerationStructure* dstTLAS = device->GetAccelerationStructure(command.dstTLAS);
+        const VulkanRayTracingAccelerationStructure* srcTLAS = command.srcTLAS ? device->GetRayTracingAccelerationStructure(command.srcTLAS) : nullptr;
+        const VulkanRayTracingAccelerationStructure* dstTLAS = device->GetRayTracingAccelerationStructure(command.dstTLAS);
 
-        VkAccelerationStructureBuildGeometryInfoKHR accelerationStructureBuildGeometryInfo = {
+        // If type is VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR, geometryCount must be 1.
+        assert(dstTLAS->geometries.size() == 1);
+
+        VkAccelerationStructureBuildGeometryInfoKHR accelerationStructureBuildGeometryInfo =
+        {
             .sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR,
             .type = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR,
             .flags = dstTLAS->buildFlags,
             .mode = srcTLAS ? VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR : VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR,
             .srcAccelerationStructure = srcTLAS ? srcTLAS->handle : VK_NULL_HANDLE,
             .dstAccelerationStructure = dstTLAS->handle,
-            .geometryCount = (uint32)dstTLAS->geometries.size(),
+            .geometryCount = uint32(dstTLAS->geometries.size()),
             .pGeometries = dstTLAS->geometries.data(),
-            .scratchData = dstTLAS->scratchBuffer.deviceAddress,
+            .ppGeometries = nullptr,
+            .scratchData = { .deviceAddress = dstTLAS->scratchBuffer.deviceAddress }
         };
 
-        VkAccelerationStructureBuildRangeInfoKHR range = {
-            .primitiveCount = dstTLAS->tlasDesc.instanceCount,
+        VkAccelerationStructureBuildRangeInfoKHR range =
+        {
+            .primitiveCount = dstTLAS->instanceCount,
             .primitiveOffset = 0,
             .firstVertex = 0,
             .transformOffset = 0,
         };
+
         VkAccelerationStructureBuildRangeInfoKHR* buildRangeInfo = &range;
 
         device->GetBackend()->vulkanFunctions.vkCmdBuildAccelerationStructuresKHR(
@@ -5247,9 +5252,6 @@ namespace Horizon
             COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandResolveTimingQueryResults);
             COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandDispatch);
             COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandDispatchIndirect);
-            COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandBuildBottomLevelAS);
-            COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandBuildTopLevelAS);
-            COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandDispatchRays);
             COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandSetViewport);
             COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandSetScissor);
             COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandSetStencilReference);
@@ -5261,9 +5263,11 @@ namespace Horizon
             COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandDispatchMeshIndirect);
             COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandBeginDebugLabel);
             COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandEndDebugLabel);
+            COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandBuildRayTracingBottomLevelAccelerationStructure);
+            COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandBuildRayTracingTopLevelAccelerationStructure);
+            COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandDispatchRays);
             COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandDispatchSuperSampling);
-            default:
-                std::unreachable();
+            default: std::unreachable();
             }
         }
 #undef COMPILE_RENDER_COMMAND
@@ -5642,7 +5646,7 @@ namespace Horizon
     RenderBackendRayTracingAccelerationStructureHandle VulkanRenderBackend::CreateRayTracingTopLevelAccelerationStructure(const RenderBackendRayTracingTopLevelAccelerationStructureDesc* desc, const char* name)
     {
         RenderBackendRayTracingAccelerationStructureHandle handle = handleManager.Allocate<RenderBackendRayTracingAccelerationStructureHandle>();
-        uint32 index = device.CreateTopLevelAS(desc, name);
+        uint32 index = device.CreateRayTracingTopLevelAccelerationStructure(desc, name);
         device.SetRenderBackendHandleRepresentation(handle.GetIndex(), index);
         return handle;
     }
@@ -5650,7 +5654,7 @@ namespace Horizon
     RenderBackendRayTracingAccelerationStructureHandle VulkanRenderBackend::CreateRayTracingBottomLevelAccelerationStructure(const RenderBackendRayTracingBottomLevelAccelerationStructureDesc* desc, const char* name)
     {
         RenderBackendRayTracingAccelerationStructureHandle handle = handleManager.Allocate<RenderBackendRayTracingAccelerationStructureHandle>();
-        uint32 index = device.CreateBottomLevelAS(desc, name);
+        uint32 index = device.CreateRayTracingBottomLevelAccelerationStructure(desc, name);
         device.SetRenderBackendHandleRepresentation(handle.GetIndex(), index);
         return handle;
     }

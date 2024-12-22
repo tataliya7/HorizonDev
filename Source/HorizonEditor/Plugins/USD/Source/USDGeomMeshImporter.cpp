@@ -223,6 +223,7 @@ namespace Horizon::USDImporter
         RenderBackend* renderBackend = renderSystem->GetRenderBackend();
 
         RenderBackendBufferDesc vertexBuffer0Desc = RenderBackendBufferDesc::CreateByteAddress(mesh.vertexCount * sizeof(Vector3));
+        vertexBuffer0Desc.flags |= RenderBackendBufferCreateFlags::RayTracingAccelerationStructure; // TODO
         mesh.vertexBuffers[0] = renderBackend->CreateBuffer(&vertexBuffer0Desc, mesh.positions.data(), "VertexPosition");
 
         RenderBackendBufferDesc vertexBuffer1Desc = RenderBackendBufferDesc::CreateByteAddress(mesh.normals.size() * sizeof(Vector3));
@@ -240,6 +241,7 @@ namespace Horizon::USDImporter
         if (mesh.indexCount > 0)
         {
             RenderBackendBufferDesc indexBufferDesc = RenderBackendBufferDesc::CreateIndex(sizeof(uint32), mesh.indexCount);
+            indexBufferDesc.flags |= RenderBackendBufferCreateFlags::RayTracingAccelerationStructure; // TODO
             mesh.indexBuffer = renderBackend->CreateBuffer(&indexBufferDesc, mesh.indices.data(), "IndexBuffer");
         }
 

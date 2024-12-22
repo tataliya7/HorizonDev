@@ -243,7 +243,7 @@ namespace Horizon
         {
             result |= D3D12_RESOURCE_FLAG_DENY_SHADER_RESOURCE;
         }
-        if (EnumClassHasFlags(flags, RenderBackendBufferCreateFlags::AccelerationStructure))
+        if (EnumClassHasFlags(flags, RenderBackendBufferCreateFlags::RayTracingAccelerationStructure))
         {
             result |= D3D12_RESOURCE_FLAG_RAYTRACING_ACCELERATION_STRUCTURE;
         }
@@ -722,5 +722,59 @@ namespace Horizon
             std::unreachable();
             return D3D12_FILL_MODE_SOLID;
         }
+    }
+
+    static inline D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS ConvertToD3D12RayTracingAccelerationStructureBuildFlags(RenderBackendRayTracingAccelerationStructureBuildFlags flags)
+    {
+        D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS result = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_NONE;
+        if (EnumClassHasFlags(flags, RenderBackendRayTracingAccelerationStructureBuildFlags::AllowUpdate))
+        {
+            result |= D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_ALLOW_UPDATE;
+        }
+        if (EnumClassHasFlags(flags, RenderBackendRayTracingAccelerationStructureBuildFlags::AllowCompaction))
+        {
+            result |= D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_ALLOW_COMPACTION;
+        }
+        if (EnumClassHasFlags(flags, RenderBackendRayTracingAccelerationStructureBuildFlags::PreferFastTrace))
+        {
+            result |= D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_PREFER_FAST_TRACE;
+        }
+        if (EnumClassHasFlags(flags, RenderBackendRayTracingAccelerationStructureBuildFlags::PreferFastBuild))
+        {
+            result |= D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_PREFER_FAST_BUILD;
+        }
+        if (EnumClassHasFlags(flags, RenderBackendRayTracingAccelerationStructureBuildFlags::MinimizeMemory))
+        {
+            result |= D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_MINIMIZE_MEMORY;
+        }
+        return result;
+    }
+
+    static inline D3D12_RAYTRACING_GEOMETRY_TYPE ConvertToD3D12RayTracingGeometryType(RenderBackendRayTracingGeometryType type)
+    {
+        switch (type)
+        {
+        case RenderBackendRayTracingGeometryType::Triangles:
+            return D3D12_RAYTRACING_GEOMETRY_TYPE_TRIANGLES;
+        case RenderBackendRayTracingGeometryType::AABBs:
+            return D3D12_RAYTRACING_GEOMETRY_TYPE_PROCEDURAL_PRIMITIVE_AABBS;
+        default:
+            std::unreachable();
+            return D3D12_RAYTRACING_GEOMETRY_TYPE_TRIANGLES;
+        }
+    }
+
+    static inline D3D12_RAYTRACING_GEOMETRY_FLAGS ConvertToD3D12RayTracingGeometryFlags(RenderBackendRayTracingGeometryFlags flags)
+    {
+        D3D12_RAYTRACING_GEOMETRY_FLAGS result = D3D12_RAYTRACING_GEOMETRY_FLAG_NONE;
+        if (EnumClassHasFlags(flags, RenderBackendRayTracingGeometryFlags::Opaque))
+        {
+            result |= D3D12_RAYTRACING_GEOMETRY_FLAG_OPAQUE;
+        }
+        if (EnumClassHasFlags(flags, RenderBackendRayTracingGeometryFlags::NoDuplicateAnyHitInvocation))
+        {
+            result |= D3D12_RAYTRACING_GEOMETRY_FLAG_NO_DUPLICATE_ANYHIT_INVOCATION;
+        }
+        return result;
     }
 }

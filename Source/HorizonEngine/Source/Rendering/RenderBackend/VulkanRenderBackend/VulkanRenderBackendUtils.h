@@ -443,7 +443,7 @@ namespace Horizon
         {
             usage |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT;
         }
-        if (EnumClassHasFlags(flags, RenderBackendBufferCreateFlags::AccelerationStructure))
+        if (EnumClassHasFlags(flags, RenderBackendBufferCreateFlags::RayTracingAccelerationStructure))
         {
             usage |= VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR;
         }
@@ -514,26 +514,25 @@ namespace Horizon
     static inline VkBuildAccelerationStructureFlagsKHR ConvertToVkBuildAccelerationStructureFlagsKHR(RenderBackendRayTracingAccelerationStructureBuildFlags flags)
     {
         VkBuildAccelerationStructureFlagsKHR result = 0;
-        switch (flags)
+        if (EnumClassHasFlags(flags, RenderBackendRayTracingAccelerationStructureBuildFlags::AllowUpdate))
         {
-        case RenderBackendRayTracingAccelerationStructureBuildFlags::AllowUpdate:
             result |= VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR;
-            break;
-        case RenderBackendRayTracingAccelerationStructureBuildFlags::AllowCompaction:
+        }
+        if (EnumClassHasFlags(flags, RenderBackendRayTracingAccelerationStructureBuildFlags::AllowCompaction))
+        {
             result |= VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_COMPACTION_BIT_KHR;
-            break;
-        case RenderBackendRayTracingAccelerationStructureBuildFlags::PreferFastTrace:
+        }
+        if (EnumClassHasFlags(flags, RenderBackendRayTracingAccelerationStructureBuildFlags::PreferFastTrace))
+        {
             result |= VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR;
-            break;
-        case RenderBackendRayTracingAccelerationStructureBuildFlags::PreferFastBuild:
+        }
+        if (EnumClassHasFlags(flags, RenderBackendRayTracingAccelerationStructureBuildFlags::PreferFastBuild))
+        {
             result |= VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_BUILD_BIT_KHR;
-            break;
-        case RenderBackendRayTracingAccelerationStructureBuildFlags::MinimizeMemory:
+        }
+        if (EnumClassHasFlags(flags, RenderBackendRayTracingAccelerationStructureBuildFlags::MinimizeMemory))
+        {
             result |= VK_BUILD_ACCELERATION_STRUCTURE_LOW_MEMORY_BIT_KHR;
-            break;
-        default:
-            std::unreachable();
-            break;
         }
         return result;
     }

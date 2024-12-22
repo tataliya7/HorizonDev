@@ -15,6 +15,7 @@ namespace Horizon
 
     extern Logger* GLogger;
 
+    extern bool CreateFileLogger_Deprecated();
     extern bool CreateConsoleLogger_Deprecated();
     extern void LogVerbose(Logger* logger, std::wstring_view message);
     extern void LogInfo(Logger* logger, std::wstring_view message);
