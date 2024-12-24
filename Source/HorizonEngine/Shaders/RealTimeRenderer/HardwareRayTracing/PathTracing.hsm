@@ -23,9 +23,9 @@ struct PathTracingRayPayload
     float3    light_eval;
     float3    emitted;
     float3    throughput;
-    uint      seed;
     uint      primary_ray;
     uint      depth;
+    uint      seed;
     uint      done;
 };
 
@@ -194,14 +194,11 @@ void PathTracingDefaultOpaqueClosestHit(inout PathTracingRayPayload payload : SV
     const float3 N = faceforward(Ng, ray_direction, Ng);
     const float3 V = normalize(frameShaderParameters.cameraPosition - shading_point);
 
+    payload.emitted = float3(0.0f, 0.0f, 0.0f);
     if (payload.primary_ray == 1)
     {
         payload.emitted = material.emission.xyz;
         payload.primary_ray = 0;
-    }
-    else
-    {
-        payload.emitted = float3(0.0f, 0.0f, 0.0f);
     }
 
     // BSDF bsdf = eval_bsdf();
@@ -371,7 +368,7 @@ void PathTracingRayGen()
             topLevelAccelerationStructure,
             rayFlags,
             instanceInclusionMask,
-            1, // SBT record offset
+            0, // SBT record offset
             1, // SBT record stride
             0, // Miss shader index
             ray,
@@ -387,7 +384,6 @@ void PathTracingRayGen()
 
         rayOrigin = payload.ray_origin;
         rayDirection = payload.ray_direction;
-
         payload.depth += 1;
     }
 

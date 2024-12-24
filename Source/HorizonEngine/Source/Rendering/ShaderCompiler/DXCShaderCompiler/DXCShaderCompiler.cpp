@@ -187,6 +187,7 @@ namespace Horizon
         {
         case ShadingLanguage::DXIL:
             //arguments.push_back(L"-Fd");
+            arguments.push_back(L"-disable-payload-qualifiers");
             break;
         case ShadingLanguage::SPIRV:
             arguments.push_back(L"-spirv");

@@ -20,40 +20,6 @@ namespace Horizon
         }
     }
 
-    namespace VulkanHelper
-    {
-        void CreateTemporaryCommandBuffer(VkDevice device, uint32 queueFamilyIndex, VkCommandPool& tempCmdPool, VkCommandBuffer& tempCmdBuffer)
-        {
-            VkCommandPoolCreateInfo commandPoolInfo = {};
-            commandPoolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-            commandPoolInfo.queueFamilyIndex = queueFamilyIndex;
-            commandPoolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-            VK_CHECK(vkCreateCommandPool(device, &commandPoolInfo, VULKAN_ALLOCATION_CALLBACKS, &tempCmdPool));
-            VkCommandBufferAllocateInfo allocateInfo = {};
-            allocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-            allocateInfo.commandPool = tempCmdPool;
-            allocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-            allocateInfo.commandBufferCount = 1;
-            VK_CHECK(vkAllocateCommandBuffers(device, &allocateInfo, &tempCmdBuffer));
-            VkCommandBufferBeginInfo beginInfo = {};
-            beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-            beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-            VK_CHECK(vkBeginCommandBuffer(tempCmdBuffer, &beginInfo));
-        }
-
-        void FlushTemporaryCommandBuffer(VkDevice device, VkQueue queue, VkCommandPool tempCmdPool, VkCommandBuffer tempCmdBuffer)
-        {
-            VK_CHECK(vkEndCommandBuffer(tempCmdBuffer));
-            VkSubmitInfo submitInfo = {};
-            submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-            submitInfo.commandBufferCount = 1;
-            submitInfo.pCommandBuffers = &tempCmdBuffer;
-            VK_CHECK(vkQueueSubmit(queue, 1, &submitInfo, VK_NULL_HANDLE));
-            VK_CHECK(vkDeviceWaitIdle(device));
-            vkDestroyCommandPool(device, tempCmdPool, nullptr);
-        }
-    }
-
     static inline VkBool32 ConvertToVkBool(bool b)
     {
         return b ? VK_TRUE : VK_FALSE;
@@ -584,7 +550,7 @@ namespace Horizon
         return (VkCompareOp)compareOp;
     }
 
-    void GetVkFilterAndVkSamplerMipmapMode(
+    static inline void GetVkFilterAndVkSamplerMipmapMode(
         RenderBackendTextureFilter filter,
         VkFilter* outMinFilter,
         VkFilter* outMagFilter,
@@ -748,7 +714,7 @@ namespace Horizon
         }
     }
 
-    void GetBarrierInfo2(
+    static inline void GetBarrierInfo2(
         RenderBackendResourceState srcState,
         RenderBackendResourceState dstState,
         VkImageLayout* outOldLayout,

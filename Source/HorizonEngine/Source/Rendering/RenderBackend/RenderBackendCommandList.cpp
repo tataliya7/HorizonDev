@@ -398,7 +398,7 @@ namespace Horizon
         uint32 depth)
     {
         RenderBackendCommandDispatchRays* command = AllocateCommand<RenderBackendCommandDispatchRays>(RenderBackendCommandDispatchRays::Type);
-        command->pipelineState = pipelineState;
+        command->pipelineStateObject = pipelineState;
         command->shaderBindingTable = shaderBindingTable;
         command->width = width;
         command->height = height;

@@ -135,7 +135,7 @@ void VirtualShadowMapProjectionCS(uint3 dispatchThreadID : SV_DispatchThreadID)
     float3 worldSpacePosition = ReconstructWorldSpacePositionFromUVZ(uv, depth, frameShaderParameters.clipToWorldMatrix);
     float4 cameraSpacePosition = mul(frameShaderParameters.worldToViewMatrix, float4(worldSpacePosition, 1.0f));
 
-	const float noise = InterleavedGradientNoiseEX(pixelCoord, frameShaderParameters.frameIndexMod8);
+    const float noise = InterleavedGradientNoiseEX(pixelCoord, frameShaderParameters.frameIndexMod8);
 
     float cameraSpaceDepth = -cameraSpacePosition.z;
 

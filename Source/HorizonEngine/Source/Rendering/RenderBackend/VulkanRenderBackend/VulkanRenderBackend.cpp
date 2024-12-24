@@ -11,6 +11,41 @@
 
 namespace Horizon
 {
+
+    namespace VulkanHelper
+    {
+        void CreateTemporaryCommandBuffer(VkDevice device, uint32 queueFamilyIndex, VkCommandPool& tempCmdPool, VkCommandBuffer& tempCmdBuffer)
+        {
+            VkCommandPoolCreateInfo commandPoolInfo = {};
+            commandPoolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+            commandPoolInfo.queueFamilyIndex = queueFamilyIndex;
+            commandPoolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+            VK_CHECK(vkCreateCommandPool(device, &commandPoolInfo, VULKAN_ALLOCATION_CALLBACKS, &tempCmdPool));
+            VkCommandBufferAllocateInfo allocateInfo = {};
+            allocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+            allocateInfo.commandPool = tempCmdPool;
+            allocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+            allocateInfo.commandBufferCount = 1;
+            VK_CHECK(vkAllocateCommandBuffers(device, &allocateInfo, &tempCmdBuffer));
+            VkCommandBufferBeginInfo beginInfo = {};
+            beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+            beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+            VK_CHECK(vkBeginCommandBuffer(tempCmdBuffer, &beginInfo));
+        }
+
+        void FlushTemporaryCommandBuffer(VkDevice device, VkQueue queue, VkCommandPool tempCmdPool, VkCommandBuffer tempCmdBuffer)
+        {
+            VK_CHECK(vkEndCommandBuffer(tempCmdBuffer));
+            VkSubmitInfo submitInfo = {};
+            submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+            submitInfo.commandBufferCount = 1;
+            submitInfo.pCommandBuffers = &tempCmdBuffer;
+            VK_CHECK(vkQueueSubmit(queue, 1, &submitInfo, VK_NULL_HANDLE));
+            VK_CHECK(vkDeviceWaitIdle(device));
+            vkDestroyCommandPool(device, tempCmdPool, nullptr);
+        }
+    }
+
     class VulkanRenderBackend;
     class VulkanCommandBufferManager;
 
@@ -4897,13 +4932,13 @@ namespace Horizon
     bool VulkanRenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandDispatchRays& command)
     {
         uint32 pushConstantsSize = device->bindlessDescriptorManager.pushConstantsSize;
-        VulkanRayTracingPipelineState* pipelineState = device->GetRayTracingPipelineState(command.pipelineState);
+        VulkanRayTracingPipelineState* pipelineState = device->GetRayTracingPipelineState(command.pipelineStateObject);
 
         if (pipelineState->handle != activeRayTracingPipeline)
         {
             VkDescriptorSet set = device->GetBindlessGlobalSet();
             vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipelineState->handle);
-            activeComputePipeline = pipelineState->handle;
+            activeRayTracingPipeline = pipelineState->handle;
         }
 
         if (pushConstantsSize > 0)
@@ -5039,7 +5074,7 @@ namespace Horizon
 
     bool VulkanRenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandDispatchMesh& command)
     {
-        // if (!PrepareForDraw(nullptr, command.pixelShader, command.pipelineState, command.topology, RenderBackendBufferHandle::Null, command.shaderConstants))
+        // if (!PrepareForDraw(nullptr, command.pixelShader, command.pipelineStateObject, command.topology, RenderBackendBufferHandle::Null, command.shaderConstants))
         // {
         //     return false;
         // }
@@ -5053,7 +5088,7 @@ namespace Horizon
 
     bool VulkanRenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandDispatchMeshIndirect& command)
     {
-        // if (!PrepareForDraw(nullptr, command.pixelShader, command.pipelineState, command.topology, RenderBackendBufferHandle::Null, command.shaderConstants))
+        // if (!PrepareForDraw(nullptr, command.pixelShader, command.pipelineStateObject, command.topology, RenderBackendBufferHandle::Null, command.shaderConstants))
         // {
         //     return false;
         // }
@@ -6073,7 +6108,7 @@ namespace Horizon
             };
 
             sbtBuffer.shaderBindingTable->hitShaderBindingTable = {
-                .deviceAddress = sbtBufferAddress + sbtBuffer.shaderBindingTable->missShaderBindingTable.size,
+                .deviceAddress = sbtBufferAddress + sbtBuffer.shaderBindingTable->rayGenShaderBindingTable.size + sbtBuffer.shaderBindingTable->missShaderBindingTable.size,
                 .stride = hitGroupStride,
                 .size = hitGroupStride * numHitGroups
             };

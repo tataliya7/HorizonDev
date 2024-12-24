@@ -22,7 +22,7 @@ float3 ApplyShadowMapDepthBias(float3 position, float3 normal, float3 lightDirec
 void CascadedShadowMapVS(
     in uint vertexID : SV_VertexID,
     in uint instanceID : SV_InstanceID,
-	out uint arrayIndex : SV_RenderTargetArrayIndex,
+    out uint arrayIndex : SV_RenderTargetArrayIndex,
     out float4 position : SV_Position)
 {
     StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();

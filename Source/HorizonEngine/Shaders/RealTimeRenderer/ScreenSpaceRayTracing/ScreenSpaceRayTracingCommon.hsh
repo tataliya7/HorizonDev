@@ -248,8 +248,8 @@ ScreenSpaceRay CreateScreenSpaceRay(
 
     float3 rayStartToEndUVZ = rayEndUVZ - rayStartUVZ;
 
-	float4 auxiliaryRayEnd = clipSpaceRayStart + mul(viewToClipMatrix, float4(0.0f, 0.0f, tMax, 0.0f));
-	auxiliaryRayEnd = auxiliaryRayEnd / auxiliaryRayEnd.w;
+    float4 auxiliaryRayEnd = clipSpaceRayStart + mul(viewToClipMatrix, float4(0.0f, 0.0f, tMax, 0.0f));
+    auxiliaryRayEnd = auxiliaryRayEnd / auxiliaryRayEnd.w;
 
     ScreenSpaceRay ray;
     ray.rayStartUVZ = rayStartUVZ;
@@ -325,8 +325,8 @@ float CastScreenSpaceShadowRay(
     float3 rayEndUVZ = float3(NDCSpaceXYToScreenSpaceUV(ndcSpaceRayEnd.xy), ndcSpaceRayEnd.z);
     float3 rayStartToEndUVZ = rayEndUVZ - rayStartUVZ;
 
-	float4 auxiliaryRayEnd = clipSpaceRayStart + mul(viewToClipMatrix, float4(0.0f, 0.0f, tMax, 0.0f));
-	auxiliaryRayEnd = auxiliaryRayEnd / auxiliaryRayEnd.w;
+    float4 auxiliaryRayEnd = clipSpaceRayStart + mul(viewToClipMatrix, float4(0.0f, 0.0f, tMax, 0.0f));
+    auxiliaryRayEnd = auxiliaryRayEnd / auxiliaryRayEnd.w;
 
     const uint stepCount = SCREEN_SPACE_SHADOW_RAY_FIXED_STEP_COUNT;
     const float step = 1.0f / float(stepCount);

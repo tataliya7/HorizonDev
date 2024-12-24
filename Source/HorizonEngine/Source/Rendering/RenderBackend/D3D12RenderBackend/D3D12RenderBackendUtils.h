@@ -11,6 +11,39 @@ namespace Horizon
 
 #define SIZEOF_32BIT(x) ((sizeof(x) - 1) / sizeof(uint32) + 1)
 
+    namespace D3D12Utils
+    {
+        inline std::wstring Widen(const std::string& input)
+        {
+            std::wstring result = {};
+            if (input.length() > 0)
+            {
+                int length = MultiByteToWideChar(CP_UTF8, 0, input.c_str(), int(input.size()), NULL, 0);
+                if (length > 0)
+                {
+                    result.resize(length);
+                    MultiByteToWideChar(CP_UTF8, 0, input.c_str(), int(input.size()), result.data(), int(result.size()));
+                }
+            }
+            return result;
+        }
+
+        inline std::string Narrow(const std::wstring& input)
+        {
+            std::string result = {};
+            if (input.length() > 0)
+            {
+                int length = WideCharToMultiByte(CP_UTF8, 0, input.c_str(), int(input.size()), NULL, 0, NULL, NULL);
+                if (length > 0)
+                {
+                    result.resize(length);
+                    WideCharToMultiByte(CP_UTF8, 0, input.c_str(), int(input.size()), result.data(), int(result.size()), NULL, NULL);
+                }
+            }
+            return result;
+        }
+    }
+
     static inline void VerifyD3D12Result(HRESULT result, const char* function, const char* filename, uint32 line)
     {
         LogError(GLogger, std::format("D3D12 function returns a runtime error. Code: 0x{:X}. Function: {}. File: {}. Line: {}.", (uint32)result, function, filename, line));
@@ -282,6 +315,10 @@ namespace Horizon
         else if (EnumClassHasFlags(flags, RenderBackendBufferCreateFlags::Readback))
         {
             type = D3D12_HEAP_TYPE_READBACK;
+        }
+        else if (EnumClassHasFlags(flags, RenderBackendBufferCreateFlags::CpuOnly))
+        {
+            type = D3D12_HEAP_TYPE_UPLOAD;
         }
         // TODO: investigate this
         //else if (EnumClassHasFlags(flags, RenderBackendBufferCreateFlags::CpuToGpu))

@@ -37,6 +37,7 @@
 #include <d3dx12/d3dx12_check_feature_support.h>
 
 #include "D3D12MemAlloc.h"
+#include "Rendering/RenderBackend/VulkanRenderBackend/VulkanRenderBackendUtils.h"
 
 #pragma comment(lib,"dxgi.lib")
 #pragma comment(lib,"d3d12.lib")
@@ -248,6 +249,15 @@ namespace Horizon
         int bindlessResourceDescriptorIndexSRV;
         int bindlessResourceDescriptorIndexUAV;
 
+        struct ShaderBindingTable
+        {
+            D3D12_GPU_VIRTUAL_ADDRESS_RANGE rayGenerationShaderRecord;
+            D3D12_GPU_VIRTUAL_ADDRESS_RANGE_AND_STRIDE missShaderTable;
+            D3D12_GPU_VIRTUAL_ADDRESS_RANGE_AND_STRIDE hitGroupTable;
+            D3D12_GPU_VIRTUAL_ADDRESS_RANGE_AND_STRIDE callableShaderTable;
+        };
+        ShaderBindingTable shaderBindingTable;
+
         ID3D12Resource* GetID3D12Resource()
         {
             return resource.Get();
@@ -392,7 +402,7 @@ namespace Horizon
     struct D3D12Shader
     {
         D3D12_SHADER_BYTECODE bytecode;
-
+        std::wstring entryFunctionName;
         uint32 hash;
     };
 
@@ -415,13 +425,27 @@ namespace Horizon
 
     struct D3D12GraphicsPipelineState
     {
-        Microsoft::WRL::ComPtr<ID3D12PipelineState> state;
+        Microsoft::WRL::ComPtr<ID3D12PipelineState> stateObject;
 
         D3D12_PRIMITIVE_TOPOLOGY_TYPE primitiveTopologyType;
 
         ID3D12PipelineState* GetID3D12PipelineState()
         {
-            return state.Get();
+            return stateObject.Get();
+        }
+    };
+
+    struct D3D12RayTracingPipelineStateObject
+    {
+        Microsoft::WRL::ComPtr<ID3D12StateObject> stateObject;
+
+        uint32 numMissShaders = 0;
+        uint32 numHitGroups = 0;
+        RenderBackendRayTracingPipelineStateDesc desc;
+
+        ID3D12StateObject* GetID3D12StateObject()
+        {
+            return stateObject.Get();
         }
     };
 
@@ -1805,7 +1829,7 @@ namespace Horizon
 
             shader->bytecode.pShaderBytecode = desc->code;
             shader->bytecode.BytecodeLength = desc->codeSize;
-
+            shader->entryFunctionName = D3D12Utils::Widen(desc->entryFunctionName);
             shader->hash = CRC32(desc->code, desc->codeSize);
 
             return index;
@@ -1908,8 +1932,9 @@ namespace Horizon
         std::vector<D3D12Shader*> shaders;
         std::vector<uint32> freeShaders;
 
-        std::unordered_map<uint64, D3D12GraphicsPipelineState*> graphicsPipelineStateMap;
         std::unordered_map<uint64, D3D12ComputePipelineState*> computePipelineStateMap;
+        std::unordered_map<uint64, D3D12GraphicsPipelineState*> graphicsPipelineStateMap;
+        std::vector<D3D12RayTracingPipelineStateObject*> rayTracingPipelineStateObjects;
 
         D3D12ComputePipelineState* FindOrCreateComputePipelineState(D3D12Shader* shader)
         {
@@ -1923,7 +1948,8 @@ namespace Horizon
 
             D3D12ComputePipelineState* newComputePipelineState = new D3D12ComputePipelineState();
 
-            D3D12_COMPUTE_PIPELINE_STATE_DESC computePipelineStateDesc = {
+            D3D12_COMPUTE_PIPELINE_STATE_DESC computePipelineStateDesc =
+            {
                 .pRootSignature = rootSignature.Get(),
                 .CS = shader->bytecode,
                 .NodeMask = mask.Get(),
@@ -2028,7 +2054,7 @@ namespace Horizon
                     streamDesc.pPipelineStateSubobjectStream = &psoStream
                 };
 
-                D3D12_CHECK(device2->CreatePipelineState(&streamDesc, IID_PPV_ARGS(&newGraphicsPipelineState->state)));
+                D3D12_CHECK(device2->CreatePipelineState(&streamDesc, IID_PPV_ARGS(&newGraphicsPipelineState->stateObject)));
             }
             else
             {
@@ -2062,11 +2088,207 @@ namespace Horizon
                     graphicsPipelineStateDesc.RTVFormats[i] = renderPass->renderTargetFormats[i];
                 }
 
-                D3D12_CHECK(device->CreateGraphicsPipelineState(&graphicsPipelineStateDesc, IID_PPV_ARGS(&newGraphicsPipelineState->state)));
+                D3D12_CHECK(device->CreateGraphicsPipelineState(&graphicsPipelineStateDesc, IID_PPV_ARGS(&newGraphicsPipelineState->stateObject)));
             }
 
             graphicsPipelineStateMap.emplace(pipelineStateHash, newGraphicsPipelineState);
             return graphicsPipelineStateMap[pipelineStateHash];
+        }
+
+        uint32 CreateD3D12RayTracingPipelineState(const RenderBackendRayTracingPipelineStateDesc* desc, const char* name)
+        {
+            D3D12RayTracingPipelineStateObject* rayTracingPipelineStateObject = new D3D12RayTracingPipelineStateObject();
+            rayTracingPipelineStateObject->desc = *desc;
+
+            D3D12_STATE_OBJECT_TYPE stateObjectType = D3D12_STATE_OBJECT_TYPE_RAYTRACING_PIPELINE;
+
+            UINT maxTraceRecursionDepth = desc->maxRayRecursionDepth;
+            uint32 numShaders = (uint32)desc->shaders.size();
+            uint32 numShaderGroups = (uint32)desc->shaderGroupDescs.size();
+
+            CD3DX12_STATE_OBJECT_DESC rayTracingPipelineStateObjectDesc(stateObjectType);
+
+            // DXIL library
+            for (uint32 shaderIndex = 0; shaderIndex < numShaders; shaderIndex++)
+            {
+                D3D12Shader* shader = GetShader(desc->shaders[shaderIndex]);
+                CD3DX12_DXIL_LIBRARY_SUBOBJECT* dxilLibrary = rayTracingPipelineStateObjectDesc.CreateSubobject<CD3DX12_DXIL_LIBRARY_SUBOBJECT>();
+                dxilLibrary->SetDXILLibrary(&shader->bytecode);
+                dxilLibrary->DefineExport(shader->entryFunctionName.c_str());
+            }
+
+            for (uint32 groupIndex = 0; groupIndex < numShaderGroups; groupIndex++)
+            {
+                if (desc->shaderGroupDescs[groupIndex].type == RenderBackendRayTracingShaderGroupType::Miss)
+                {
+                    rayTracingPipelineStateObject->numMissShaders++;
+                }
+
+                // Hit group
+                if (desc->shaderGroupDescs[groupIndex].type == RenderBackendRayTracingShaderGroupType::TrianglesHitGroup)
+                {
+                    CD3DX12_HIT_GROUP_SUBOBJECT* hitGroup = rayTracingPipelineStateObjectDesc.CreateSubobject<CD3DX12_HIT_GROUP_SUBOBJECT>();
+                    if (desc->shaderGroupDescs[groupIndex].anyHitShader != RenderBackendRayTracingShaderGroupDesc::ShaderUnused)
+                    {
+                        D3D12Shader* shader = GetShader(desc->shaders[desc->shaderGroupDescs[groupIndex].anyHitShader]);
+                        hitGroup->SetAnyHitShaderImport(shader->entryFunctionName.c_str());
+                    }
+                    if (desc->shaderGroupDescs[groupIndex].closestHitShader != RenderBackendRayTracingShaderGroupDesc::ShaderUnused)
+                    {
+                        D3D12Shader* shader = GetShader(desc->shaders[desc->shaderGroupDescs[groupIndex].closestHitShader]);
+                        hitGroup->SetClosestHitShaderImport(shader->entryFunctionName.c_str());
+                    }
+                    if (desc->shaderGroupDescs[groupIndex].intersectionShader != RenderBackendRayTracingShaderGroupDesc::ShaderUnused)
+                    {
+                        D3D12Shader* shader = GetShader(desc->shaders[desc->shaderGroupDescs[groupIndex].intersectionShader]);
+                        hitGroup->SetIntersectionShaderImport(shader->entryFunctionName.c_str());
+                    }
+                    // todo!!!
+                    hitGroup->SetHitGroupExport(L"Any");// (shader->entryFunctionName.c_str());
+                    hitGroup->SetHitGroupType(D3D12_HIT_GROUP_TYPE_TRIANGLES);
+
+                    rayTracingPipelineStateObject->numHitGroups++;
+                }
+            }
+
+            // Subobject to exports association
+            //CD3DX12_SUBOBJECT_TO_EXPORTS_ASSOCIATION_SUBOBJECT* subobjectToExportsAssociation = rayTracingPipelineStateObjectDesc.CreateSubobject<CD3DX12_SUBOBJECT_TO_EXPORTS_ASSOCIATION_SUBOBJECT>();
+            // subobjectToExportsAssociation->SetSubobjectToAssociate(*localRootSignature);
+            // subobjectToExportsAssociation->AddExport(c_raygenShaderName);
+
+            // Global root signature
+            CD3DX12_GLOBAL_ROOT_SIGNATURE_SUBOBJECT* globalRootSignature = rayTracingPipelineStateObjectDesc.CreateSubobject<CD3DX12_GLOBAL_ROOT_SIGNATURE_SUBOBJECT>();
+            globalRootSignature->SetRootSignature(GetID3D12RootSignature());
+
+            // State object config
+            if (true) // TODO
+            {
+                CD3DX12_STATE_OBJECT_CONFIG_SUBOBJECT* stateObjectConfig = rayTracingPipelineStateObjectDesc.CreateSubobject<CD3DX12_STATE_OBJECT_CONFIG_SUBOBJECT>();
+                stateObjectConfig->SetFlags(D3D12_STATE_OBJECT_FLAG_ALLOW_STATE_OBJECT_ADDITIONS);
+            }
+
+            // Shader config
+            CD3DX12_RAYTRACING_SHADER_CONFIG_SUBOBJECT* shaderConfig = rayTracingPipelineStateObjectDesc.CreateSubobject<CD3DX12_RAYTRACING_SHADER_CONFIG_SUBOBJECT>();
+            UINT maxPayloadSizeInBytes = 128; // TODO
+            UINT maxAttributeSizeInBytes = 8; // TODO
+            // With payload access qualifiers (PAQs), the MaxPayloadSizeInBytes property of D3D12_RAYTRACING_SHADER_CONFIG is no longer needed.
+            shaderConfig->Config(maxPayloadSizeInBytes, maxAttributeSizeInBytes);
+
+            // Pipeline config
+            CD3DX12_RAYTRACING_PIPELINE_CONFIG_SUBOBJECT* pipelineConfig = rayTracingPipelineStateObjectDesc.CreateSubobject<CD3DX12_RAYTRACING_PIPELINE_CONFIG_SUBOBJECT>();
+            pipelineConfig->Config(maxTraceRecursionDepth);
+
+            //CD3DX12_NODE_MASK_SUBOBJECT* nodeMaskSubobject = rayTracingPipelineStateObjectDesc.CreateSubobject<CD3DX12_NODE_MASK_SUBOBJECT>();
+            //nodeMaskSubobject->SetNodeMask(0);
+
+            D3D12_CHECK(GetDXRDevice()->CreateStateObject(rayTracingPipelineStateObjectDesc, IID_PPV_ARGS(&rayTracingPipelineStateObject->stateObject)));
+
+            uint32 index = uint32(rayTracingPipelineStateObjects.size());
+            rayTracingPipelineStateObjects.push_back(rayTracingPipelineStateObject);
+            return index;
+        }
+
+        D3D12RayTracingPipelineStateObject* GetRayTracingPipelineStateObject(RenderBackendRayTracingPipelineStateHandle handle)
+        {
+            uint32 index = GetRenderBackendHandleRepresentation(handle.GetIndex());
+            return rayTracingPipelineStateObjects[index];
+        }
+
+        uint32 CreateD3D12ShaderBindingTable(const RenderBackendRayTracingShaderBindingTableDesc* desc, const char* name)
+        {
+            D3D12RayTracingPipelineStateObject* rayTracingPipelineStateObject = GetRayTracingPipelineStateObject(desc->rayTracingPipelineState);
+
+            uint32 numMissShaders = rayTracingPipelineStateObject->numMissShaders;
+            uint32 numHitGroups = rayTracingPipelineStateObject->numHitGroups;
+            uint32 numShaderGroups = 1 + numMissShaders + numHitGroups;
+
+            uint32 rayGenGroupStride = D3D12_RAYTRACING_SHADER_RECORD_BYTE_ALIGNMENT;
+            uint32 missGroupStride = D3D12_RAYTRACING_SHADER_RECORD_BYTE_ALIGNMENT;
+            uint32 hitGroupStride = D3D12_RAYTRACING_SHADER_RECORD_BYTE_ALIGNMENT;
+
+            uint32 sbtBufferSize = 0;
+
+            sbtBufferSize = rayGenGroupStride;
+
+            uint32 missShaderTableOffset = AlignUp(sbtBufferSize, D3D12_RAYTRACING_SHADER_TABLE_BYTE_ALIGNMENT);
+            sbtBufferSize = missShaderTableOffset + numMissShaders * missGroupStride;
+
+            uint32 hitGroupTableOffset = AlignUp(sbtBufferSize, D3D12_RAYTRACING_SHADER_TABLE_BYTE_ALIGNMENT);
+            sbtBufferSize = hitGroupTableOffset + numHitGroups * hitGroupStride;
+
+            uint32 callableShaderTableOffset = AlignUp(sbtBufferSize, D3D12_RAYTRACING_SHADER_TABLE_BYTE_ALIGNMENT);
+            sbtBufferSize = callableShaderTableOffset + 0;
+
+            RenderBackendBufferDesc sbtBufferDesc = RenderBackendBufferDesc::CreateShaderBindingTable(sbtBufferSize);
+            uint32 index = CreateD3D12Buffer(&sbtBufferDesc, nullptr, "SBT");
+            D3D12Buffer& sbtBuffer = *buffers[index];
+
+            void* sbtBufferDataT = nullptr;
+            sbtBuffer.resource->Map(0, nullptr, &sbtBufferDataT);
+            uint8* sbtBufferData = reinterpret_cast<uint8*>(sbtBufferDataT);
+
+            Microsoft::WRL::ComPtr<ID3D12StateObjectProperties> stateObjectProperties;
+            rayTracingPipelineStateObject->stateObject.As(&stateObjectProperties);
+
+            uint32 numMissShadersTemp = 0;
+            uint32 numHitGroupTemp = 0;
+            for (uint32 groupIndex = 0; groupIndex < numShaderGroups; groupIndex++)
+            {
+                if (rayTracingPipelineStateObject->desc.shaderGroupDescs[groupIndex].type == RenderBackendRayTracingShaderGroupType::RayGen)
+                {
+                    D3D12Shader* shader = GetShader(rayTracingPipelineStateObject->desc.shaders[groupIndex]);
+                    const wchar_t* exportName = shader->entryFunctionName.c_str();
+                    void* shaderIdentifierPointer = stateObjectProperties->GetShaderIdentifier(exportName);
+                    assert(shaderIdentifierPointer != nullptr);
+                    memcpy(sbtBufferData, shaderIdentifierPointer, D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES);
+                }
+                if (rayTracingPipelineStateObject->desc.shaderGroupDescs[groupIndex].type == RenderBackendRayTracingShaderGroupType::Miss)
+                {
+                    D3D12Shader* shader = GetShader(rayTracingPipelineStateObject->desc.shaders[groupIndex]);
+                    const wchar_t* exportName = shader->entryFunctionName.c_str();
+                    void* shaderIdentifierPointer = stateObjectProperties->GetShaderIdentifier(exportName);
+                    assert(shaderIdentifierPointer != nullptr);
+                    memcpy(sbtBufferData + missShaderTableOffset + numMissShadersTemp * missGroupStride, shaderIdentifierPointer, D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES);
+                    numMissShadersTemp++;
+                }
+                if (rayTracingPipelineStateObject->desc.shaderGroupDescs[groupIndex].type == RenderBackendRayTracingShaderGroupType::TrianglesHitGroup)
+                {
+                    D3D12Shader* shader = GetShader(rayTracingPipelineStateObject->desc.shaders[groupIndex]);
+                    const wchar_t* exportName = L"Any";//shader->entryFunctionName.c_str();
+                    void* shaderIdentifierPointer = stateObjectProperties->GetShaderIdentifier(exportName);
+                    assert(shaderIdentifierPointer != nullptr);
+                    memcpy(sbtBufferData + hitGroupTableOffset + numHitGroupTemp * hitGroupStride, shaderIdentifierPointer, D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES);
+                    numHitGroupTemp++;
+                }
+            }
+
+            sbtBuffer.resource->Unmap(0, nullptr);
+
+            sbtBuffer.shaderBindingTable.rayGenerationShaderRecord.StartAddress = sbtBuffer.resource->GetGPUVirtualAddress();
+            sbtBuffer.shaderBindingTable.rayGenerationShaderRecord.SizeInBytes = rayGenGroupStride;
+
+            sbtBuffer.shaderBindingTable.missShaderTable.StartAddress = sbtBuffer.resource->GetGPUVirtualAddress() + missShaderTableOffset;
+            sbtBuffer.shaderBindingTable.missShaderTable.SizeInBytes = numMissShaders * missGroupStride;
+            sbtBuffer.shaderBindingTable.missShaderTable.StrideInBytes = missGroupStride;
+
+            if (numHitGroups > 0)
+            {
+                sbtBuffer.shaderBindingTable.hitGroupTable.StartAddress = sbtBuffer.resource->GetGPUVirtualAddress() + hitGroupTableOffset;
+                sbtBuffer.shaderBindingTable.hitGroupTable.SizeInBytes = numHitGroups * hitGroupStride;
+                sbtBuffer.shaderBindingTable.hitGroupTable.StrideInBytes = hitGroupStride;
+            }
+            else
+            {
+                sbtBuffer.shaderBindingTable.hitGroupTable.StartAddress = 0;
+                sbtBuffer.shaderBindingTable.hitGroupTable.SizeInBytes = 0;
+                sbtBuffer.shaderBindingTable.hitGroupTable.StrideInBytes = 0;
+            }
+
+            sbtBuffer.shaderBindingTable.callableShaderTable.StartAddress = 0;// sbtBuffer.resource->GetGPUVirtualAddress() + callableShaderTableOffset;
+            sbtBuffer.shaderBindingTable.callableShaderTable.SizeInBytes = 0;
+            sbtBuffer.shaderBindingTable.callableShaderTable.StrideInBytes = 0;
+
+            return index;
         }
 
         std::vector<D3D12TimingQueryHeap*> queryHeaps;
@@ -2458,7 +2680,7 @@ namespace Horizon
         D3D12RenderPass activeRenderPass;
         ID3D12PipelineState* activeComputePipeline;
         ID3D12PipelineState* activeGraphicsPipeline;
-        ID3D12PipelineState* activeRayTracingPipeline;
+        ID3D12StateObject* activeRayTracingPipeline;
         bool insideRenderPass;
     };
 
@@ -2675,7 +2897,7 @@ namespace Horizon
                     uint32 mipLevels = (transition.textureRange.mipLevels == RenderBackendTextureSubresourceRange::RemainingMipLevels) ? (texture->mipLevels - firstLevel) : (transition.textureRange.mipLevels);
                     uint32 arraySlices = (transition.textureRange.arrayLayers == RenderBackendTextureSubresourceRange::RemainingArrayLayers) ? (texture->arraySize - firstLayer) : (transition.textureRange.arrayLayers);
 
-                    // LogVerbose(GLogger, std::format("Processing Texture State Transition: {}, initial state: {}, state before: {}, state after: {}, firstLevel: {}, mipLevels: {}, firstLayer: {}, arraySlices: {}",
+                    // LogVerbose(GLogger, std::format("Processing Texture State Transition: {}, initial stateObject: {}, stateObject before: {}, stateObject after: {}, firstLevel: {}, mipLevels: {}, firstLayer: {}, arraySlices: {}",
                     //     texture->debugName,
                     //     int(texture->initialState),
                     //     int(transition.stateBefore),
@@ -3030,9 +3252,38 @@ namespace Horizon
     {
         OPTICK_EVENT();
 
-        D3D12_DISPATCH_RAYS_DESC dispatchRaysDesc = {};
+        // TODO
+        commandList->GetID3D12GraphicsCommandList4()->SetComputeRootSignature(device->GetID3D12RootSignature());
 
-        commandList->GetID3D12GraphicsCommandList7()->DispatchRays(&dispatchRaysDesc);
+        D3D12RayTracingPipelineStateObject* rayTracingPipelineStateObject = device->GetRayTracingPipelineStateObject(command.pipelineStateObject);
+        if (activeRayTracingPipeline != rayTracingPipelineStateObject->GetID3D12StateObject())
+        {
+            commandList->GetID3D12GraphicsCommandList4()->SetPipelineState1(rayTracingPipelineStateObject->GetID3D12StateObject());
+            activeRayTracingPipeline = rayTracingPipelineStateObject->GetID3D12StateObject();
+        }
+
+        if (RenderBackendPushConstantsBytes > 0)
+        {
+            const void* pushConstantsData = &command.shaderConstants.data;
+            commandList->GetID3D12GraphicsCommandList4()->SetComputeRoot32BitConstants(
+                0, // TODO
+                RenderBackendPushConstantsBytes / 4,
+                pushConstantsData,
+                0);
+        }
+
+        D3D12Buffer* sbtBuffer = device->GetBuffer(command.shaderBindingTable);
+
+        D3D12_DISPATCH_RAYS_DESC dispatchRaysDesc = {};
+        dispatchRaysDesc.RayGenerationShaderRecord = sbtBuffer->shaderBindingTable.rayGenerationShaderRecord;
+        dispatchRaysDesc.MissShaderTable = sbtBuffer->shaderBindingTable.missShaderTable;
+        dispatchRaysDesc.HitGroupTable = sbtBuffer->shaderBindingTable.hitGroupTable;
+        dispatchRaysDesc.CallableShaderTable = sbtBuffer->shaderBindingTable.callableShaderTable;
+        dispatchRaysDesc.Width = command.width;
+        dispatchRaysDesc.Height = command.height;
+        dispatchRaysDesc.Depth = command.depth;
+
+        commandList->GetID3D12GraphicsCommandList4()->DispatchRays(&dispatchRaysDesc);
         return true;
     }
 
@@ -3349,7 +3600,7 @@ namespace Horizon
 
     bool D3D12RenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandDispatchMesh& command)
     {
-        // if (!PrepareForMeshShading(command.amplificationShader, command.meshShader, command.pixelShader, command.pipelineState, command.topology, command.shaderConstants))
+        // if (!PrepareForMeshShading(command.amplificationShader, command.meshShader, command.pixelShader, command.pipelineStateObject, command.topology, command.shaderConstants))
         // {
         //     return false;
         // }
@@ -3362,7 +3613,7 @@ namespace Horizon
 
     bool D3D12RenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandDispatchMeshIndirect& command)
     {
-        // if (!PrepareForMeshShading(command.amplificationShader, command.meshShader, command.pixelShader, command.pipelineState, command.topology, command.shaderConstants))
+        // if (!PrepareForMeshShading(command.amplificationShader, command.meshShader, command.pixelShader, command.pipelineStateObject, command.topology, command.shaderConstants))
         // {
         //     return false;
         // }
@@ -3424,7 +3675,7 @@ namespace Horizon
 
         bool succeed = command.callback(static_cast<void*>(commandList->commandList.Get()), command.context, output, color, depth, motionVectors, exposure);
 
-        // TODO: restore pipeline state
+        // TODO: restore pipeline stateObject
         ID3D12DescriptorHeap* descriptorHeaps[] =
         {
             device->resourceDescriptorHeap->GetID3D12DescriptorHeap(),
@@ -4153,12 +4404,20 @@ extern "C" { _declspec(dllexport) extern const char* D3D12SDKPath = /*u8*/".\\D3
 
     RenderBackendRayTracingPipelineStateHandle D3D12RenderBackend::CreateRayTracingPipelineState(const RenderBackendRayTracingPipelineStateDesc* desc, const char* name)
     {
-        return RenderBackendRayTracingPipelineStateHandle::Null;
+        RenderBackendRayTracingPipelineStateHandle handle = handleManager.Allocate<RenderBackendRayTracingPipelineStateHandle>();
+        D3D12Device* device = devices[0];
+        uint32 index = device->CreateD3D12RayTracingPipelineState(desc, name);
+        device->SetRenderBackendHandleRepresentation(handle.GetIndex(), index);
+        return handle;
     }
 
     RenderBackendBufferHandle D3D12RenderBackend::CreateRayTracingShaderBindingTable(const RenderBackendRayTracingShaderBindingTableDesc* desc, const char* name)
     {
-        return RenderBackendBufferHandle::Null;
+        RenderBackendBufferHandle handle = handleManager.Allocate<RenderBackendBufferHandle>();
+        D3D12Device* device = devices[0];
+        uint32 index = device->CreateD3D12ShaderBindingTable(desc, name);
+        device->SetRenderBackendHandleRepresentation(handle.GetIndex(), index);
+        return handle;
     }
 
     bool D3D12Device::Init(D3D12RenderBackend* backend, D3D12Adapter* adapter)

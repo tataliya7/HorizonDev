@@ -26,7 +26,7 @@ uint ComputeCascadeIndex(float cameraSpacePositionZ, CascadedShadowMapShaderPara
     float4 depths = cameraSpacePositionZ.xxxx;
     float4 distances = float4(parameters.cascadeEndDistance[0], parameters.cascadeEndDistance[1], parameters.cascadeEndDistance[2], parameters.cascadeEndDistance[3]);
     float4 count = float4(depths >= distances);
-	uint cascadeIndex = uint(count.x + count.y + count.z + count.w);
+    uint cascadeIndex = uint(count.x + count.y + count.z + count.w);
     return cascadeIndex;
 }
 
@@ -74,7 +74,7 @@ float4 ShadowMapPositionWithNormalOffset(float3 P, float3 N, float3 L, float4x4 
  */
 float EncodeShadowFactor(float x)
 {
-	return sqrt(x);
+    return sqrt(x);
 }
 
 /**
@@ -83,5 +83,5 @@ float EncodeShadowFactor(float x)
  */
 float DecodeShadowFactor(float x)
 {
-	return x * x;
+    return x * x;
 }

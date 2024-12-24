@@ -45,6 +45,7 @@ namespace Horizon
         BuildRayTracingBottomLevelAccelerationStructure,
         BuildRayTracingTopLevelAccelerationStructure,
         DispatchRays,
+        DispatchRaysIndirect,
         DispatchSuperSampling,
         Count,
     };
@@ -269,12 +270,20 @@ namespace Horizon
 
     struct RenderBackendCommandDispatchRays : RenderBackendCommand<RenderBackendCommandType::DispatchRays, RenderBackendCommandQueueType::Graphics>
     {
-        RenderBackendRayTracingPipelineStateHandle pipelineState;
+        RenderBackendRayTracingPipelineStateHandle pipelineStateObject;
         RenderBackendBufferHandle shaderBindingTable;
         RenderBackendShaderConstants shaderConstants;
         uint32 width;
         uint32 height;
         uint32 depth;
+    };
+
+    struct RenderBackendCommandDispatchRaysIndirect : RenderBackendCommand<RenderBackendCommandType::DispatchRaysIndirect, RenderBackendCommandQueueType::Graphics>
+    {
+        RenderBackendRayTracingPipelineStateHandle pipelineStateObject;
+        RenderBackendBufferHandle shaderBindingTable;
+        RenderBackendShaderConstants shaderConstants;
+        RenderBackendBufferHandle argumentBuffer;
     };
 
     struct RenderBackendCommandDispatchSuperSampling : RenderBackendCommand<RenderBackendCommandType::DispatchSuperSampling, RenderBackendCommandQueueType::Compute>

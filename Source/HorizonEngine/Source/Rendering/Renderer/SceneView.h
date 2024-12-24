@@ -77,7 +77,7 @@ namespace Horizon
             if (true)
             {
                 // Infinite far plane and reversed-z
-	            // Reference: http://www.terathon.com/gdc07_lengyel.pdf
+                // Reference: http://www.terathon.com/gdc07_lengyel.pdf
                 viewToClipMatrix = Math::InfinitePerspectiveReversedZ_RH(fieldOfView, aspectRatio, nearClippingPlane);
             }
             else

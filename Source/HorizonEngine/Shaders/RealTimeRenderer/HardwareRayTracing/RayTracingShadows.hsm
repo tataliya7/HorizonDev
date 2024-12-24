@@ -35,6 +35,10 @@ void RayTracingShadowsRayGen()
 
     const uint2 pixelCoord = launchIndex.xy;
 
+        shadowMaskTexture[pixelCoord] = 1.0f;
+        rayDistanceTexture[pixelCoord] = -1.0f;
+        return;
+
     // Skip background pixels.
     const float depth = depthTexture[pixelCoord].r;
     if (depth == FAR_CLIPPING_PLANE_DEPTH_VALUE)
@@ -136,7 +140,7 @@ void RayTracingShadowsInlineRayTracingCS(uint3 dispatchThreadID : SV_DispatchThr
 
     RayQuery<RAY_FLAG_NONE> rayQueryObject;
 
-	rayQueryObject.TraceRayInline(
+    rayQueryObject.TraceRayInline(
         topLevelAccelerationStructure,
         rayFlags,
         instanceInclusionMask,
