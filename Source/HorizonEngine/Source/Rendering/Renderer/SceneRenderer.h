@@ -10,7 +10,8 @@ namespace Horizon
     enum class RendererType
     {
         RealTime,
-        PathTracing,
+        RealTimePathTracing,
+        ReferencePathTracing,
         Count,
     };
 

@@ -12,7 +12,9 @@ SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(4, DistantLightData, DistantLightDataBuff
 SHADER_CONSTANTS_TEXTURE_CUBE_DEFAULT_SRV(5, SkyLightTextureSRV);
 SHADER_CONSTANTS_TEXTURE_2D_UAV(6, float4, ColorTextureUAV);
 SHADER_CONSTANTS_TEXTURE_2D_UAV(7, float, DepthTextureUAV);
-SHADER_CONSTANTS_TEXTURE_2D_UAV(8, float3, NormalTextureUAV);
+//SHADER_CONSTANTS_TEXTURE_2D_UAV(8, float3, NormalTextureUAV);
+SHADER_CONSTANTS_SCALAR(8, int, Iteration);
+SHADER_CONSTANTS_SCALAR(9, float, AccumulationFactor);
 SHADER_CONSTANTS_STRUCT_END();
 
 struct PathTracingRayPayload
@@ -34,7 +36,12 @@ struct PathTracingShadowRayPayload
     float     visibility;
 };
 
-// Ray CreatePrimaryRay()
+struct RayState
+{
+    float t;
+};
+
+// RayState CreatePrimaryRay()
 // {
 //     return ray;
 // }
@@ -318,10 +325,12 @@ void PathTracingRayGen()
     RWTexture2D<float4> colorTexture = ShaderConstants.GetColorTextureUAV();
     RWTexture2D<float> depthTexture = ShaderConstants.GetDepthTextureUAV();
 
+    int iteration = ShaderConstants.GetIteration();
+    float accumulationFactor = ShaderConstants.GetAccumulationFactor();
     uint maxBounces = 8;//frameShaderParameters.maxBounces;
 
-    const uint seed = tea(dispatchRaysIndex.y * frameShaderParameters.renderWidth + dispatchRaysIndex.x, 0);
-    float2 subpixelJitter = 0.5f;//float2(randf(seed), randf(seed));
+    uint seed = tea(dispatchRaysIndex.y * frameShaderParameters.renderWidth + dispatchRaysIndex.x, frameShaderParameters.frameIndex);
+    float2 subpixelJitter = float2(randf(seed), randf(seed));
 
     uint2 pixelCoord = dispatchRaysIndex.xy;
     float2 uv = (float2(pixelCoord) + subpixelJitter) * frameShaderParameters.renderResolution.zw;
@@ -395,6 +404,12 @@ void PathTracingRayGen()
         depth = clipHitPoint.z / clipHitPoint.w;
     }
 
-    colorTexture[pixelCoord] = float4(accumulated_color, 1.0f);
-    depthTexture[pixelCoord] = depth;
+    float4 historyColor = iteration != 0 ? colorTexture[pixelCoord] : float4(0.0f, 0.0f, 0.0f, 1.0f);
+    float historyDepth = iteration != 0 ? depthTexture[pixelCoord] : 0.0f;
+
+    float3 finalColor = historyColor.rgb + accumulated_color.rgb * accumulationFactor;//lerp(historyColor.rgb, accumulated_color.rgb, accumulationFactor);
+    float finalDepth = depth;//lerp(historyDepth, depth, accumulationFactor);
+
+    colorTexture[pixelCoord] = float4(finalColor, 1.0f);
+    depthTexture[pixelCoord] = finalDepth;
 }

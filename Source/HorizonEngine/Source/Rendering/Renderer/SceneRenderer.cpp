@@ -23,7 +23,7 @@ namespace Horizon
 
         RendererType rendererType = sceneView->GetRenderSettings().rendererType;
 
-        if (rendererType == RendererType::PathTracing)
+        if (rendererType == RendererType::ReferencePathTracing)
         {
             assert(false && "Path tracing renderer is not implemented yet.");
             sceneRenderer = nullptr;

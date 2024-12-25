@@ -40,11 +40,20 @@ namespace Horizon
 
         const GPUScene* gpuScene = sceneView->scene->GetGPUScene();
 
-        uint32 spp = 1024;
+        uint32 spp = 4096;
+        uint32 maxIteration = spp;
+
+        static int32 iteration = 0;
+        float accumulationFactor = 1.0f / float(maxIteration);
 
         //RenderGraphTextureHandle colorTexture = renderGraph.ImportExternalTexture(colorTexture, "PathTracingColorTexture");
         //RenderGraphTextureHandle depthTexture = renderGraph.ImportExternalTexture(depthTexture, "PathTracingDepthTexture");
         //RenderGraphTextureHandle normalTexture = renderGraph.ImportExternalTexture(normalTexture, "PathTracingNormalTexture");
+
+        RealTimeRendererSceneTextures& sceneTextures = renderGraph.blackboard.Get<RealTimeRendererSceneTextures>();
+
+        RenderGraphTextureDesc colorTextureDesc = renderGraph.GetTextureDesc(sceneTextures.sceneColorTexture);
+        RenderGraphTextureHandle colorTexture = renderGraph.CreateTexture(colorTextureDesc, "PathTracingColorTexture");
 
         RenderGraphTextureDesc depthTextureDesc = RenderGraphTextureDesc::Create2D(
             renderResolution.width,
@@ -53,16 +62,37 @@ namespace Horizon
             RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::UnorderedAccess);
         RenderGraphTextureHandle depthTexture = renderGraph.CreateTexture(depthTextureDesc, "PathTracingDepthTexture");
 
+        if (view.transformations.worldToClipMatrix != historyFrame.transformations.worldToClipMatrix)
+        {
+            iteration = 0;
+
+            renderGraph.AddPass(
+                std::format("ClearSceneTextures"),
+                RenderGraphPassFlags::Compute,
+                [&](RenderGraphBuilder& builder)
+                {
+                    colorTexture = builder.WriteTexture(colorTexture, RenderBackendResourceState::UnorderedAccess);
+
+                    return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
+                    {
+                        RenderBackendTextureClearValue clearValue = RenderBackendTextureClearValue::Black;
+
+                        RenderBackendTextureUAVDesc sceneColorTextureUAV = RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(colorTexture), 0);
+                        commandList.ClearTextureUAV(sceneColorTextureUAV, clearValue);
+                    };
+                });
+        }
+
         renderGraph.AddPass(
             std::format("PathTracing (RayTracing, {}x{})", renderResolution.width, renderResolution.height),
             RenderGraphPassFlags::RayTracing,
             [&](RenderGraphBuilder& builder)
             {
-                RealTimeRendererSceneTextures& sceneTextures = renderGraph.blackboard.Get<RealTimeRendererSceneTextures>();
                 RenderGraphTextureHandle environmentMapTexture = builder.ReadTexture(sceneTextures.environmentMapTexture, RenderBackendResourceState::ShaderResource);
-                RenderGraphTextureHandle colorTexture = builder.WriteTexture(sceneTextures.sceneColorTexture, RenderBackendResourceState::UnorderedAccess);
+                colorTexture = builder.WriteTexture(colorTexture, RenderBackendResourceState::UnorderedAccess);
                 depthTexture = builder.WriteTexture(depthTexture, RenderBackendResourceState::UnorderedAccess);
                 //RenderGraphTextureHandle normalTexture = builder.WriteTexture(normalTexture, RenderBackendResourceState::UnorderedAccess);
+                sceneTextures.sceneColorTexture = colorTexture;
 
                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
                 {
@@ -82,6 +112,8 @@ namespace Horizon
                     shaderConstants.BindTextureUAV(6, registry.GetTextureUAVBindlessResourceDescriptorIndex(colorTexture, 0));
                     shaderConstants.BindTextureUAV(7, registry.GetTextureUAVBindlessResourceDescriptorIndex(depthTexture, 0));
                     //shaderConstants.BindTextureUAV(8, registry.GetTextureUAVBindlessResourceDescriptorIndex(normalTexture, 0));
+                    shaderConstants.BindScalar(8, iteration);
+                    shaderConstants.BindScalar(9, accumulationFactor);
 
                     commandList.DispatchRays(
                         pathTracingPipelineState,
@@ -92,5 +124,8 @@ namespace Horizon
                         dispatchDepth);
                 };
             });
+
+
+        iteration++;
     }
 }
