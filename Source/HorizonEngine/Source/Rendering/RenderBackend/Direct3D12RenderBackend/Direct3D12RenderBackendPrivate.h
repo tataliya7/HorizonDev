@@ -33,7 +33,7 @@
 #include <d3dx12/d3dx12_property_format_table.h>
 #include <d3dx12/d3dx12_check_feature_support.h>
 
-#include "D3D12MemAlloc.h"
+#include "D3D12MemoryAllocator/D3D12MemAlloc.h"
 
 namespace Horizon
 {
