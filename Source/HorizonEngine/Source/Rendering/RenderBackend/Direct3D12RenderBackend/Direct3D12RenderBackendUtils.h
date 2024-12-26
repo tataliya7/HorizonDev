@@ -1,6 +1,6 @@
 #pragma once
 
-#include "D3D12RenderBackendCommon.h"
+#include "Direct3D12RenderBackendCommon.h"
 
 #include <d3dx12/d3dx12.h>
 
@@ -42,6 +42,11 @@ namespace Horizon
             }
             return result;
         }
+    }
+
+    static inline uint32 AlignUp(uint32 size, uint32 alignment)
+    {
+        return (size + alignment - 1) & ~(alignment - 1);
     }
 
     static inline void VerifyD3D12Result(HRESULT result, const char* function, const char* filename, uint32 line)
