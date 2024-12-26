@@ -245,7 +245,7 @@ namespace Horizon
         uint32 drawCount;
     };
 
-    struct RenderBackendCommandBeginDebugLabel: RenderBackendCommand<RenderBackendCommandType::BeginDebugLabel, RenderBackendCommandQueueType::All>
+    struct RenderBackendCommandBeginDebugLabel : RenderBackendCommand<RenderBackendCommandType::BeginDebugLabel, RenderBackendCommandQueueType::All>
     {
         char labelName[256];
         float color[4];
