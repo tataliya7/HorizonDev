@@ -1501,13 +1501,6 @@ namespace Horizon
         RenderBackendSwapChainPresentMode presentMode;
     };
 
-    struct RenderBackendDispatchIndirectArguments
-    {
-        uint32 threadGroupCountX;
-        uint32 threadGroupCountY;
-        uint32 threadGroupCountZ;
-    };
-
     struct RenderBackendDrawIndirectArguments
     {
         uint32 numVertices;
@@ -1523,6 +1516,20 @@ namespace Horizon
         uint32 firstIndex;
         int32 vertexOffset;
         uint32 firstInstance;
+    };
+
+    struct RenderBackendDispatchIndirectArguments
+    {
+        uint32 threadGroupCountX;
+        uint32 threadGroupCountY;
+        uint32 threadGroupCountZ;
+    };
+
+    struct RenderBackendDispatchRaysIndirectArguments
+    {
+        uint32 width;
+        uint32 height;
+        uint32 depth;
     };
 
     struct RenderBackendDispatchMeshIndirectArguments

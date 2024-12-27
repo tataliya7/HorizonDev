@@ -538,9 +538,10 @@ namespace Horizon
 
         std::vector<D3D12SubmissionWorkload*> workloads;
 
-        Microsoft::WRL::ComPtr<ID3D12CommandSignature> dispatchIndirectCommandSignature;
         Microsoft::WRL::ComPtr<ID3D12CommandSignature> drawIndirectCommandSignature;
         Microsoft::WRL::ComPtr<ID3D12CommandSignature> drawIndexedIndirectCommandSignature;
+        Microsoft::WRL::ComPtr<ID3D12CommandSignature> dispatchIndirectCommandSignature;
+        Microsoft::WRL::ComPtr<ID3D12CommandSignature> dispatchRaysIndirectCommandSignature;
         Microsoft::WRL::ComPtr<ID3D12CommandSignature> dispatchMeshIndirectCommandSignature;
 
         ID3D12Device* GetID3D12Device()
@@ -2617,7 +2618,12 @@ namespace Horizon
         virtual ~D3D12RenderBackendCommandListContext() = default;
         inline D3D12CommandQueueType GetQueueFamily() const { return queueType; }
         inline D3D12CommandList* GetCommandList() const { return commandList; }
+        bool IsAsynchronousComputeContext() const
+        {
+            return queueType == D3D12CommandQueueType::Compute;
+        }
         bool CompileRenderBackendCommands(const RenderBackendCommandContainer& container);
+        bool CompileRenderBackendCommandsAsynchronous(const RenderBackendCommandContainer& container);
         bool CompileRenderBackendCommand(const RenderBackendCommandCopyBuffer& command);
         bool CompileRenderBackendCommand(const RenderBackendCommandCopyTexture& command);
         bool CompileRenderBackendCommand(const RenderBackendCommandUpdateBuffer& command);

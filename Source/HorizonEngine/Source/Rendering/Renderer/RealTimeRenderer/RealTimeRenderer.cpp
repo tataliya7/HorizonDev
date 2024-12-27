@@ -623,6 +623,11 @@ namespace Horizon
             RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::UnorderedAccess);
         sceneTextures.motionVectorTexture = renderGraph.CreateTexture(motionVectorTextureDesc, "MotionVectorTexture");
 
+        if (IsSkyAtmosphereRenderingEnabled())
+        {
+            RenderSkyAtmosphereLUTs(renderGraph, view);
+        }
+
         DispatchLocalLightCulling(renderGraph, view);
 
         RenderVisibilityBuffer(renderGraph, view);
@@ -640,11 +645,6 @@ namespace Horizon
         else if (view.renderSettings.shadowsTechnique == ShadowsTechnique::VirtualShadowMap)
         {
             RenderVirtualShadowMapDepth(renderGraph, view);
-        }
-
-        if (IsSkyAtmosphereRenderingEnabled())
-        {
-            RenderSkyAtmosphereLUTs(renderGraph, view);
         }
 
         CaptureEnvironmentMap(renderGraph, view);

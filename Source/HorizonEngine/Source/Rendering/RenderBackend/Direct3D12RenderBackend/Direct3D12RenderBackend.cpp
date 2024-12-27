@@ -39,16 +39,16 @@ static void D3D12MessageCallback(
 
 namespace Horizon
 {
-    bool D3D12RenderBackendCommandListContext::CompileRenderBackendCommands(const RenderBackendCommandContainer& container)
-    {
 #define COMPILE_RENDER_COMMAND(command, RenderBackendCommandStruct)                                        \
         case RenderBackendCommandStruct::Type:                                                             \
         if (!CompileRenderBackendCommand(*reinterpret_cast<const RenderBackendCommandStruct*>(command)))   \
         {                                                                                                  \
             return false;                                                                                  \
         }                                                                                                  \
-        break;
+        break
 
+    bool D3D12RenderBackendCommandListContext::CompileRenderBackendCommands(const RenderBackendCommandContainer& container)
+    {
         for (uint32 i = 0; i < container.numCommands; i++)
         {
             switch (container.types[i])
@@ -84,7 +84,31 @@ namespace Horizon
                 default: std::unreachable();
             }
         }
-#undef COMPILE_RENDER_COMMAND
+        return true;
+    }
+
+    bool D3D12RenderBackendCommandListContext::CompileRenderBackendCommandsAsynchronous(const RenderBackendCommandContainer& container)
+    {
+        for (uint32 i = 0; i < container.numCommands; i++)
+        {
+            switch (container.types[i])
+            {
+                COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandClearBufferUAV);
+                COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandClearTextureUAV);
+                COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandBarriers);
+                COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandTransitions);
+                //COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandBeginTimingQuery);
+                //COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandEndTimingQuery);
+                //COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandResolveTimingQueryResults);
+                COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandDispatch);
+                COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandDispatchIndirect);
+                COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandBeginDebugLabel);
+                COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandEndDebugLabel);
+                COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandBuildRayTracingBottomLevelAccelerationStructure);
+                COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandBuildRayTracingTopLevelAccelerationStructure);
+                default: std::unreachable();
+            }
+        }
         return true;
     }
 
@@ -1936,11 +1960,11 @@ extern "C" { _declspec(dllexport) extern const char* D3D12SDKPath = /*u8*/".\\D3
 
         if (options5.RaytracingTier == D3D12_RAYTRACING_TIER_NOT_SUPPORTED)
         {
-            LogInfo(GLogger, std::format("DirectX Raytracing is not supported."));
+            LogInfo(GLogger, std::format("DirectX Raytracing (DXR) is not supported."));
         }
         else
         {
-            LogInfo(GLogger, std::format("DirectX Raytracing is supported. Tier: {}.", (int)options5.RaytracingTier));
+            LogInfo(GLogger, std::format("DirectX Raytracing (DXR) is supported. Tier: {}.", (int)options5.RaytracingTier));
 
             device->QueryInterface(IID_PPV_ARGS(&device5));
         }
@@ -1955,6 +1979,7 @@ extern "C" { _declspec(dllexport) extern const char* D3D12SDKPath = /*u8*/".\\D3
         else
         {
             LogInfo(GLogger, std::format("Mesh shader is supported. Tier: {}.", (int)options7.MeshShaderTier));
+            // dispatchRaysIndirect = true;
         }
 
         D3D12_FEATURE_DATA_D3D12_OPTIONS9 options9 = {};
@@ -1992,22 +2017,25 @@ extern "C" { _declspec(dllexport) extern const char* D3D12SDKPath = /*u8*/".\\D3
             commandQueues[i] = nullptr;
         }
 
+        // Create command queues
         {
             D3D12CommandQueueType queueType = D3D12CommandQueueType::Direct;
 
             D3D12CommandQueue* commandQueue = new D3D12CommandQueue();
             commandQueue->queueType = queueType;
 
-            D3D12_COMMAND_QUEUE_DESC commandQueueDesc = {
-                .Type = GetD3D12CommandListType(queueType),
-                .Priority = D3D12_COMMAND_QUEUE_PRIORITY_NORMAL,
-                .Flags = D3D12_COMMAND_QUEUE_FLAG_NONE,
-                .NodeMask = mask.Get(),
-            };
+            D3D12_COMMAND_QUEUE_DESC commandQueueDesc = {};
+            commandQueueDesc.Type = GetD3D12CommandListType(queueType);
+            commandQueueDesc.Priority = D3D12_COMMAND_QUEUE_PRIORITY_NORMAL;
+            commandQueueDesc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
+            commandQueueDesc.NodeMask = mask.Get();
+
             D3D12_CHECK(device->CreateCommandQueue(&commandQueueDesc, IID_PPV_ARGS(&commandQueue->queue)));
-            D3D12_CHECK(commandQueue->queue->SetName(L"DirectCommandQueue"));
+            D3D12_CHECK(commandQueue->queue->SetName(L"3D Queue"));
 
             D3D12_CHECK(device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&commandQueue->fence)));
+            D3D12_CHECK(commandQueue->fence->SetName(L"3D Queue Fence"));
+
             commandQueue->lastSignaledValue = 0;
 
             commandQueues[(uint32)queueType] = commandQueue;
@@ -2025,9 +2053,11 @@ extern "C" { _declspec(dllexport) extern const char* D3D12SDKPath = /*u8*/".\\D3
                 .NodeMask = mask.Get(),
             };
             D3D12_CHECK(device->CreateCommandQueue(&commandQueueDesc, IID_PPV_ARGS(&commandQueue->queue)));
-            D3D12_CHECK(commandQueue->queue->SetName(L"ComputeCommandQueue"));
+            D3D12_CHECK(commandQueue->queue->SetName(L"Compute Queue"));
 
             D3D12_CHECK(device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&commandQueue->fence)));
+            D3D12_CHECK(commandQueue->fence->SetName(L"Compute Queue Fence"));
+
             commandQueue->lastSignaledValue = 0;
 
             commandQueues[(uint32)queueType] = commandQueue;
@@ -2045,9 +2075,11 @@ extern "C" { _declspec(dllexport) extern const char* D3D12SDKPath = /*u8*/".\\D3
                 .NodeMask = mask.Get(),
             };
             D3D12_CHECK(device->CreateCommandQueue(&commandQueueDesc, IID_PPV_ARGS(&commandQueue->queue)));
-            D3D12_CHECK(commandQueue->queue->SetName(L"CopyCommandQueue"));
+            D3D12_CHECK(commandQueue->queue->SetName(L"Copy Queue"));
 
             D3D12_CHECK(device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&commandQueue->fence)));
+            D3D12_CHECK(commandQueue->fence->SetName(L"Copy Queue Fence"));
+
             commandQueue->lastSignaledValue = 0;
 
             commandQueues[(uint32)queueType] = commandQueue;
@@ -2055,51 +2087,60 @@ extern "C" { _declspec(dllexport) extern const char* D3D12SDKPath = /*u8*/".\\D3
 
         // Create command signatures
         {
-            D3D12_INDIRECT_ARGUMENT_DESC dispatchIndirectArgumentDesc;
-            dispatchIndirectArgumentDesc.Type = D3D12_INDIRECT_ARGUMENT_TYPE_DISPATCH;
-
-            D3D12_COMMAND_SIGNATURE_DESC commandSignatureDesc =
-            {
-                .ByteStride = sizeof(RenderBackendDispatchIndirectArguments),
-                .NumArgumentDescs = 1,
-                .pArgumentDescs = &dispatchIndirectArgumentDesc,
-            };
-            D3D12_CHECK(device->CreateCommandSignature(&commandSignatureDesc, nullptr, IID_PPV_ARGS(&dispatchIndirectCommandSignature)));
-        }
-        {
-            D3D12_INDIRECT_ARGUMENT_DESC drawIndirectArgumentDesc;
+            D3D12_INDIRECT_ARGUMENT_DESC drawIndirectArgumentDesc = {};
             drawIndirectArgumentDesc.Type = D3D12_INDIRECT_ARGUMENT_TYPE_DRAW;
 
-            D3D12_COMMAND_SIGNATURE_DESC commandSignatureDesc =
-            {
-                .ByteStride = sizeof(RenderBackendDrawIndirectArguments),
-                .NumArgumentDescs = 1,
-                .pArgumentDescs = &drawIndirectArgumentDesc,
-            };
+            D3D12_COMMAND_SIGNATURE_DESC commandSignatureDesc = {};
+            commandSignatureDesc.ByteStride = sizeof(RenderBackendDrawIndirectArguments);
+            commandSignatureDesc.NumArgumentDescs = 1;
+            commandSignatureDesc.pArgumentDescs = &drawIndirectArgumentDesc;
+            commandSignatureDesc.NodeMask = 0;
             D3D12_CHECK(device->CreateCommandSignature(&commandSignatureDesc, nullptr, IID_PPV_ARGS(&drawIndirectCommandSignature)));
         }
         {
-            D3D12_INDIRECT_ARGUMENT_DESC drawIndexedIndirectArgumentDesc;
+            D3D12_INDIRECT_ARGUMENT_DESC drawIndexedIndirectArgumentDesc = {};
             drawIndexedIndirectArgumentDesc.Type = D3D12_INDIRECT_ARGUMENT_TYPE_DRAW_INDEXED;
 
-            D3D12_COMMAND_SIGNATURE_DESC commandSignatureDesc =
-            {
-                .ByteStride = sizeof(RenderBackendDrawIndexedIndirectArguments),
-                .NumArgumentDescs = 1,
-                .pArgumentDescs = &drawIndexedIndirectArgumentDesc,
-            };
+            D3D12_COMMAND_SIGNATURE_DESC commandSignatureDesc = {};
+            commandSignatureDesc.ByteStride = sizeof(RenderBackendDrawIndexedIndirectArguments);
+            commandSignatureDesc.NumArgumentDescs = 1;
+            commandSignatureDesc.pArgumentDescs = &drawIndexedIndirectArgumentDesc;
+            commandSignatureDesc.NodeMask = 0;
             D3D12_CHECK(device->CreateCommandSignature(&commandSignatureDesc, nullptr, IID_PPV_ARGS(&drawIndexedIndirectCommandSignature)));
         }
         {
-            D3D12_INDIRECT_ARGUMENT_DESC dispatchMeshIndirectArgumentDesc;
+            D3D12_INDIRECT_ARGUMENT_DESC dispatchIndirectArgumentDesc = {};
+            dispatchIndirectArgumentDesc.Type = D3D12_INDIRECT_ARGUMENT_TYPE_DISPATCH;
+
+            D3D12_COMMAND_SIGNATURE_DESC commandSignatureDesc = {};
+            commandSignatureDesc.ByteStride = sizeof(RenderBackendDispatchIndirectArguments);
+            commandSignatureDesc.NumArgumentDescs = 1;
+            commandSignatureDesc.pArgumentDescs = &dispatchIndirectArgumentDesc;
+            commandSignatureDesc.NodeMask = 0;
+            D3D12_CHECK(device->CreateCommandSignature(&commandSignatureDesc, nullptr, IID_PPV_ARGS(&dispatchIndirectCommandSignature)));
+        }
+        // TODO: if (supportDispatchRaysIndirect)
+        {
+            D3D12_INDIRECT_ARGUMENT_DESC dispatchRaysIndirectArgumentDesc = {};
+            dispatchRaysIndirectArgumentDesc.Type = D3D12_INDIRECT_ARGUMENT_TYPE_DISPATCH_RAYS;
+
+            D3D12_COMMAND_SIGNATURE_DESC commandSignatureDesc = {};
+            commandSignatureDesc.ByteStride = sizeof(RenderBackendDispatchRaysIndirectArguments);
+            commandSignatureDesc.NumArgumentDescs = 1;
+            commandSignatureDesc.pArgumentDescs = &dispatchRaysIndirectArgumentDesc;
+            commandSignatureDesc.NodeMask = 0;
+            D3D12_CHECK(device->CreateCommandSignature(&commandSignatureDesc, nullptr, IID_PPV_ARGS(&dispatchRaysIndirectCommandSignature)));
+        }
+        //  TODO: if (supportMeshShading)
+        {
+            D3D12_INDIRECT_ARGUMENT_DESC dispatchMeshIndirectArgumentDesc = {};
             dispatchMeshIndirectArgumentDesc.Type = D3D12_INDIRECT_ARGUMENT_TYPE_DISPATCH_MESH;
 
-            D3D12_COMMAND_SIGNATURE_DESC commandSignatureDesc =
-            {
-                .ByteStride = sizeof(RenderBackendDispatchMeshIndirectArguments),
-                .NumArgumentDescs = 1,
-                .pArgumentDescs = &dispatchMeshIndirectArgumentDesc,
-            };
+            D3D12_COMMAND_SIGNATURE_DESC commandSignatureDesc = {};
+            commandSignatureDesc.ByteStride = sizeof(RenderBackendDispatchMeshIndirectArguments);
+            commandSignatureDesc.NumArgumentDescs = 1;
+            commandSignatureDesc.pArgumentDescs = &dispatchMeshIndirectArgumentDesc;
+            commandSignatureDesc.NodeMask = 0;
             D3D12_CHECK(device->CreateCommandSignature(&commandSignatureDesc, nullptr, IID_PPV_ARGS(&dispatchMeshIndirectCommandSignature)));
         }
 

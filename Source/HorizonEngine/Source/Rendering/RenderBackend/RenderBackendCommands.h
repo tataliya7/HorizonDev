@@ -9,11 +9,11 @@ namespace Horizon
 {
     enum class RenderBackendCommandQueueType : uint8
     {
-        None = 0,
-        Copy = (1 << 0),
-        Compute = (1 << 1),
-        Graphics = (1 << 2),
-        All = Copy | Compute | Graphics,
+        None     = 0,
+        Graphics = (1 << 0),
+        Compute  = (1 << 1),
+        Copy     = (1 << 2),
+        All      = Graphics | Compute | Copy
     };
 
     enum class RenderBackendCommandType

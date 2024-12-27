@@ -160,6 +160,7 @@ namespace Horizon
 
         RenderGraphDAG dag;
 
+        uint32 asyncComputePassCount = 0;
         std::vector<RenderGraphPass*> passes;
 
         std::vector<RenderGraphTexture*> textures;

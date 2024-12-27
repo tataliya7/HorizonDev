@@ -12,3 +12,5 @@ enum
     RenderBackendPushConstantsBytes = 128,
     RenderBackendPushConstantsSlotCount = 32,
 };
+
+#define ASYNC_COMPUTE 1
