@@ -48,7 +48,7 @@ namespace Horizon
             rayTracingShadowsSBT = renderBackend->CreateRayTracingShaderBindingTable(&rayTracingShadowsSBTDesc, "RayTracingShadowsSBT");
         }
 
-        const bool inlineRayTracing = false;
+        const bool inlineRayTracing = true;
         if (inlineRayTracing)
         {
             renderGraph.AddPass(

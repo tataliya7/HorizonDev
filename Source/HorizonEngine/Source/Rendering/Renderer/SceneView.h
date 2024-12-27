@@ -290,12 +290,12 @@ namespace Horizon
             return nearClippingPlane;
         }
 
-        const CameraTransformations& GetTransformations() const
+        const CameraTransformations& GetCameraTransformations() const
         {
             return transformations;
         }
 
-        // void UpdateTransformations(const CameraComponent& camera)
+        // void UpdateCameraTransformations(const CameraComponent& camera)
         // {
         //     perFrameShaderParameters.worldToViewMatrix = view.camera.worldToViewMatrix;
         //     perFrameShaderParameters.invViewMatrix = view.camera.invViewMatrix;

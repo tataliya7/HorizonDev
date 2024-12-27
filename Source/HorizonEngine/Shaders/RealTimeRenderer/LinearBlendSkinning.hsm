@@ -15,7 +15,7 @@ BIND_BYTE_ADDRESS_BUFFER_UAV(8, OutputVertexBuffer2);
 
 [shader("compute")]
 [numthreads(64, 1, 1)]
-void SkinningCS(uint3 dispatchThreadID : SV_DispatchThreadID)
+void LinearBlendSkinningCS(uint3 dispatchThreadID : SV_DispatchThreadID)
 {
     uint maxNumVertices = 0; // TODO
     if (dispatchThreadID.x >= maxNumVertices)
@@ -53,7 +53,6 @@ void SkinningCS(uint3 dispatchThreadID : SV_DispatchThreadID)
         float3 n = 0.0;
         float3 t = 0.0;
 
-        [unroll]
         for (uint i = 0; i < MAX_NUM_BONES_PER_VERTEX; i++)
         {
             boneMatrix[i] = GetRWByteAddressBuffer((boneTransformBufferIndex >> 16) & 0xffff).Load<float4x4>((boneTransformBufferIndex & 0xffff) + boneIndices[i] * sizeof(float4x4));

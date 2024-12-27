@@ -1,10 +1,14 @@
-// #pragma once
-//
-// #include "Core/CoreCommon.h"
-// #include "Core/Math/Math.h"
-//
-// namespace Horizon
-// {
+#pragma once
+
+#include "Foundation/FoundationModule.h"
+#include "Rendering/RenderingModule.h"
+//#include "Physics/PhysicsModule.h"
+#include "Engine/ECS/EntityManager.h"
+#include "Engine/Serialization/SerializationModule.h"
+
+namespace Horizon
+{
+
 //     class TriangleMeshRenderData
 //     {
 //     public:
@@ -48,4 +52,4 @@
 //
 //         std::vector<Material> materials;
 //     };
-// }
+}

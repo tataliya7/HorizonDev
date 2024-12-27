@@ -1698,7 +1698,8 @@ extern "C" { _declspec(dllexport) extern const char* D3D12SDKPath = /*u8*/".\\D3
 
         ID3D12GraphicsCommandList6* graphicsCommandList6 = commandList->GetID3D12GraphicsCommandList6();
 
-        ID3D12DescriptorHeap* descriptorHeaps[] = {
+        ID3D12DescriptorHeap* descriptorHeaps[] =
+        {
             device->resourceDescriptorHeap->GetID3D12DescriptorHeap(),
             device->samplerDescriptorHeap->GetID3D12DescriptorHeap(),
         };
