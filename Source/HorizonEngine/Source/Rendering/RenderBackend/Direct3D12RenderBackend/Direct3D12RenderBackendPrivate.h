@@ -2591,6 +2591,7 @@ namespace Horizon
         }
         bool useDebugLayers;
         bool useGPUBasedValidation;
+        bool enableRayTracingSupport;
         D3D12RenderBackendHandleManager handleManager;
     private:
         Microsoft::WRL::ComPtr<IDXGIFactory6> dxgiFactory;

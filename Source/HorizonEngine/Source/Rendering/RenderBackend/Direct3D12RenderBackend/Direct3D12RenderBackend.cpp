@@ -497,7 +497,6 @@ namespace Horizon
             ID3D12RootSignature* rootSignature = device->GetID3D12RootSignature();
 
             commandList->GetID3D12GraphicsCommandList6()->SetPipelineState(pipelineState->GetID3D12PipelineState());
-            commandList->GetID3D12GraphicsCommandList6()->SetComputeRootSignature(rootSignature);
 
             activeComputePipeline = pipelineState->GetID3D12PipelineState();
         }
@@ -606,9 +605,6 @@ namespace Horizon
     bool D3D12RenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandDispatchRays& command)
     {
         OPTICK_EVENT();
-
-        // TODO
-        commandList->GetID3D12GraphicsCommandList4()->SetComputeRootSignature(device->GetID3D12RootSignature());
 
         D3D12RayTracingPipelineStateObject* rayTracingPipelineStateObject = device->GetRayTracingPipelineStateObject(command.pipelineStateObject);
         if (activeRayTracingPipeline != rayTracingPipelineStateObject->GetID3D12StateObject())
@@ -864,7 +860,6 @@ namespace Horizon
             ID3D12RootSignature* rootSignature = device->rootSignature.Get();
 
             commandList->GetID3D12GraphicsCommandList6()->SetPipelineState(pipelineState->GetID3D12PipelineState());
-            commandList->GetID3D12GraphicsCommandList6()->SetGraphicsRootSignature(rootSignature);
 
             D3D_PRIMITIVE_TOPOLOGY primitiveTopology = ConvertToD3DPrimitiveTopology(topology);
             commandList->GetID3D12GraphicsCommandList6()->IASetPrimitiveTopology(primitiveTopology);
@@ -1038,6 +1033,13 @@ namespace Horizon
         };
         commandList->GetID3D12GraphicsCommandList()->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
 
+        commandList->GetID3D12GraphicsCommandList6()->SetGraphicsRootSignature(device->GetID3D12RootSignature());
+        commandList->GetID3D12GraphicsCommandList6()->SetComputeRootSignature(device->GetID3D12RootSignature());
+        if (device->backend->enableRayTracingSupport)
+        {
+            commandList->GetID3D12GraphicsCommandList4()->SetComputeRootSignature(device->GetID3D12RootSignature());
+        }
+
         return true;
     }
 
@@ -1169,6 +1171,8 @@ extern "C" { _declspec(dllexport) extern const char* D3D12SDKPath = /*u8*/".\\D3
                 }
             }
         }
+
+        enableRayTracingSupport = desc->useHardwareRayTracing;
 
         return true;
     }
@@ -1675,6 +1679,13 @@ extern "C" { _declspec(dllexport) extern const char* D3D12SDKPath = /*u8*/".\\D3
             device->samplerDescriptorHeap->GetID3D12DescriptorHeap(),
         };
         graphicsCommandList6->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
+
+        commandList->GetID3D12GraphicsCommandList6()->SetGraphicsRootSignature(device->GetID3D12RootSignature());
+        commandList->GetID3D12GraphicsCommandList6()->SetComputeRootSignature(device->GetID3D12RootSignature());
+        if (device->backend->enableRayTracingSupport)
+        {
+            commandList->GetID3D12GraphicsCommandList4()->SetComputeRootSignature(device->GetID3D12RootSignature());
+        }
 
         for (uint32 i = 0; i < numCommandLists; i++)
         {
