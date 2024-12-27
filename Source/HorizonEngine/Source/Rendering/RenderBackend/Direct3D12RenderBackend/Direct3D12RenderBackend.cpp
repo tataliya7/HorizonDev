@@ -1,6 +1,6 @@
 ﻿#include "Direct3D12RenderBackend.h"
 #include "Direct3D12RenderBackendDefinitions.h"
-#include "Direct3D12RenderBackendUtils.h"
+#include "Direct3D12RenderBackendUtility.h"
 #include "Direct3D12RenderBackendPrivate.h"
 
 #include <optick.h>

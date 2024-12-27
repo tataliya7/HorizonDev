@@ -46,6 +46,7 @@ namespace Horizon
         BuildRayTracingTopLevelAccelerationStructure,
         DispatchRays,
         DispatchRaysIndirect,
+        DispatchGraph,
         DispatchSuperSampling,
         Count,
     };
@@ -284,6 +285,11 @@ namespace Horizon
         RenderBackendBufferHandle shaderBindingTable;
         RenderBackendShaderConstants shaderConstants;
         RenderBackendBufferHandle argumentBuffer;
+    };
+
+    struct RenderBackendCommandDispatchGraph : RenderBackendCommand<RenderBackendCommandType::DispatchGraph, RenderBackendCommandQueueType::Graphics>
+    {
+
     };
 
     struct RenderBackendCommandDispatchSuperSampling : RenderBackendCommand<RenderBackendCommandType::DispatchSuperSampling, RenderBackendCommandQueueType::Compute>

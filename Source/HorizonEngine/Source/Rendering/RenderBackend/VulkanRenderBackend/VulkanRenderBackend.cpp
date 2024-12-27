@@ -1,7 +1,7 @@
 ﻿#include "VulkanRenderBackendCommon.h"
 #include "VulkanRenderBackend.h"
 #include "VulkanRenderBackendDefinitions.h"
-#include "VulkanRenderBackendUtils.h"
+#include "VulkanRenderBackendUtility.h"
 #include "VulkanRenderBackendPrivate.h"
 
 #define VMA_IMPLEMENTATION

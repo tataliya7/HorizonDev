@@ -4,8 +4,85 @@
 
 namespace Horizon
 {
-class VulkanRenderBackend;
+    class VulkanDevice;
+    class VulkanRenderBackend;
     class VulkanCommandBufferManager;
+
+    enum class VulkanDeviceExtensionType
+    {
+        KHR,      // Khronos (KHR) extensions
+        EXT,      // Multi-vendor extensions
+        Vendor    // Vendor-specific extensions
+    };
+
+    enum class VulkanDeviceExtensionRequirement
+    {
+        Required,
+        Optional
+    };
+
+    // class VulkanDeviceExtension
+    // {
+    // public:
+    //
+    //     VulkanDeviceExtension(const char* name, VulkanDeviceExtensionType type, VulkanDeviceExtensionRequirement requirement)
+    //         : name(name)
+    //         , type(type)
+    //         , requirement(requirement)
+    //     {
+    //
+    //     }
+    //
+    //     bool IsRequired() const
+    //     {
+    //         return requirement == VulkanDeviceExtensionRequirement::Required;
+    //     }
+    //
+    //     bool IsOptional() const
+    //     {
+    //         return requirement == VulkanDeviceExtensionRequirement::Optional;
+    //     }
+    //
+    //     bool IsKhronosExtension() const
+    //     {
+    //         return type == VulkanDeviceExtensionType::KHR;
+    //     }
+    //
+    //     bool IsMultiVendorExtension() const
+    //     {
+    //         return type == VulkanDeviceExtensionType::EXT;
+    //     }
+    //
+    //     bool IsVendorSpecificExtension() const
+    //     {
+    //         return type == VulkanDeviceExtensionType::Vendor;
+    //     }
+    //
+    //     virtual void OnProcessVkDeviceCreateInfo(VkDeviceCreateInfo& deviceCreateInfo) {}
+    //
+    // protected:
+    //     const char* name;
+    //     VulkanDeviceExtensionType type;
+    //     VulkanDeviceExtensionRequirement requirement;
+    // };
+    //
+    // class VulkanDeviceExtension_VK_KHR_synchronization2 : public VulkanDeviceExtension
+    // {
+    // public:
+    //     VulkanDeviceExtension_VK_KHR_synchronization2(VulkanDeviceExtensionType type, VulkanDeviceExtensionRequirement requirement)
+    //         : VulkanDeviceExtension(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME, type, requirement)
+    //     {
+    //
+    //     }
+    //
+    //     void* OnProcessVkDeviceCreateInfo() override
+    //     {
+    //         return &synchronization2Features;
+    //     }
+    //
+    // private:
+    //     VkPhysicalDeviceSynchronization2FeaturesKHR synchronization2Features = {};
+    // };
 
     struct VulkanRenderBackendHandleManager
     {
