@@ -95,8 +95,6 @@ namespace Horizon
         RenderMode renderMode = RenderMode::Rasterization;
         bool enableFixedPreExposure = false;
         float fixedPreExposure = 1.0f;
-        Vector3f indirectLightingTint = Vector3f(1.0f, 1.0f, 1.0f);
-        float indirectLightingIntensity = 1.0f;
         GlobalIlluminationSettings globalIlluminationSettings;
         SuperSamplingSettings superSamplingSettings;
         ShadowsTechnique shadowsTechnique;
@@ -105,5 +103,6 @@ namespace Horizon
         ScreenSpaceReflectionsSettings ssrSettings;
         GroundTruthAmbientOcclusionSettings gtaoSettings;
         PostProcessingSettings postProcessingSettings;
+        bool enableAsyncCompute = false;
     };
 }

@@ -935,13 +935,13 @@ namespace Horizon
             ImGui::Separator();
 
             ImGui::AlignTextToFramePadding();
-            ImGui::TextUnformatted("Renderer");
+            ImGui::TextUnformatted("Rendering Mode");
             ImGui::NextColumn();
             ImGui::PushItemWidth(-1);
 
             static const char* renderModeNames[] = { "Rasterization", "Hybrid Rendering", "Path Tracing (Real-Time)", "Path Tracing (Reference)" };
             int renderMode = (int)renderSettings.renderMode;
-            ImGui::Combo("##Renderer", &renderMode, renderModeNames, IM_ARRAYSIZE(renderModeNames));
+            ImGui::Combo("##Rendering Mode", &renderMode, renderModeNames, IM_ARRAYSIZE(renderModeNames));
             renderSettings.renderMode = (RenderMode)renderMode;
 
             ImGui::Columns(1);
@@ -977,10 +977,10 @@ namespace Horizon
                 ImGui::NextColumn();
 
                 ImGui::AlignTextToFramePadding();
-                ImGui::TextUnformatted("Indirect Lighting Tint");
+                ImGui::TextUnformatted("Indirect Lighting Color");
                 ImGui::NextColumn();
                 ImGui::PushItemWidth(-1);
-                if (ImGui::ColorEdit3("##indirectLightingTint", &renderSettings.indirectLightingTint.x))
+                if (ImGui::ColorEdit3("##indirectLightingColor", &renderSettings.globalIlluminationSettings.indirectLightingColor.x))
                 {
 
                 }
@@ -991,7 +991,7 @@ namespace Horizon
                 ImGui::TextUnformatted("Indirect Lighting Intensity");
                 ImGui::NextColumn();
                 ImGui::PushItemWidth(-1);
-                if (ImGui::DragFloat("##indirectLightingIntensity", &renderSettings.indirectLightingIntensity, 0.01f, 0.0f, 1000.0f))
+                if (ImGui::DragFloat("##indirectLightingIntensity", &renderSettings.globalIlluminationSettings.indirectLightingIntensity, 0.01f, 0.0f, 1000.0f))
                 {
 
                 }

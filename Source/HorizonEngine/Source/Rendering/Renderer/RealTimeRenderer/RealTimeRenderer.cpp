@@ -360,7 +360,7 @@ namespace Horizon
             // TODO: move this to other place?
             historyFrame.preExposure = preExposure;
 
-            perFrameShaderParameters.indirectLightingMultiplier = renderSettings.indirectLightingIntensity * renderSettings.indirectLightingTint;
+            perFrameShaderParameters.indirectLightingMultiplier = renderSettings.globalIlluminationSettings.indirectLightingIntensity * renderSettings.globalIlluminationSettings.indirectLightingColor;
 
             if (scene != nullptr)
             {
