@@ -27,7 +27,7 @@ namespace Horizon
         return false;
     }
 
-    void EditorCameraController::Update(const EditorCameraControllerUserImpulseData& userImpulseData, float deltaTimeInSeconds, float translationVelocityScale, Vector3& outCameraPosition, Vector3& outCameraRotation)
+    void EditorCameraController::Update(const EditorCameraControllerUserImpulseData& userImpulseData, float deltaTimeInSeconds, float translationVelocityScale, Vector3f& outCameraPosition, Vector3f& outCameraRotation)
     {
         // Translation
         UpdatePosition(userImpulseData, deltaTimeInSeconds, translationVelocityScale, outCameraRotation, outCameraPosition);
@@ -36,9 +36,9 @@ namespace Horizon
         UpdateRotation(userImpulseData, deltaTimeInSeconds, outCameraRotation);
     }
 
-    void EditorCameraController::UpdatePosition(const EditorCameraControllerUserImpulseData& userImpulseData, float deltaTimeInSeconds, float translationVelocityScale, const Vector3& cameraRotation, Vector3& outCameraPosition)
+    void EditorCameraController::UpdatePosition(const EditorCameraControllerUserImpulseData& userImpulseData, float deltaTimeInSeconds, float translationVelocityScale, const Vector3f& cameraRotation, Vector3f& outCameraPosition)
     {
-        Vector3 localSpaceTranslationImpulse = Vector3(
+        Vector3f localSpaceTranslationImpulse = Vector3f(
             userImpulseData.moveRightLeftImpulse,          // pitch
             userImpulseData.moveForwardBackwardImpulse,    // roll
             userImpulseData.moveUpDownImpulse              // yaw
@@ -46,8 +46,8 @@ namespace Horizon
 
         // Compute camera orientation, and then transform the translation impulse from local space to world space.
         const Quaternion cameraOrientation = Quaternion(Math::DegreesToRadians(cameraRotation));
-        Vector3 worldSpaceTranslationImpulse = cameraOrientation * localSpaceTranslationImpulse;
-        Vector3 translationAcceleration = worldSpaceTranslationImpulse * settings.translationAccelerationRate * translationVelocityScale;
+        Vector3f worldSpaceTranslationImpulse = cameraOrientation * localSpaceTranslationImpulse;
+        Vector3f translationAcceleration = worldSpaceTranslationImpulse * settings.translationAccelerationRate * translationVelocityScale;
 
         if (settings.enablePhysicallyBasedTranslation)
         {
@@ -73,15 +73,15 @@ namespace Horizon
 
         if (Math::LengthSquared(translationVelocity) < Math::Square(Epsilon))
         {
-            translationVelocity = Vector3(0.0f, 0.0f, 0.0f);
+            translationVelocity = Vector3f(0.0f, 0.0f, 0.0f);
         }
 
         outCameraPosition += translationVelocity * deltaTimeInSeconds;
     }
 
-    void EditorCameraController::UpdateRotation(const EditorCameraControllerUserImpulseData& userImpulseData, float deltaTimeInSeconds, Vector3& outCameraRotation)
+    void EditorCameraController::UpdateRotation(const EditorCameraControllerUserImpulseData& userImpulseData, float deltaTimeInSeconds, Vector3f& outCameraRotation)
     {
-        Vector3 rotationImpulse = Vector3(
+        Vector3f rotationImpulse = Vector3f(
             userImpulseData.rotatePitchImpulse,    // pitch
             userImpulseData.rotateRollImpulse,     // roll
             userImpulseData.rotateYawImpulse       // yaw
@@ -179,10 +179,10 @@ namespace Horizon
             userImpulseData.moveUpDownImpulse -= impulse;
         }
 
-        static Vector2 lastMousePos = { 0.0f, 0.0f };
-        Vector2 mousePos = lastMousePos;
+        static Vector2f lastMousePos = { 0.0f, 0.0f };
+        Vector2f mousePos = lastMousePos;
         Input::GetMousePosition(mousePos.x, mousePos.y);
-        Vector2 mouseMovement = (mousePos - lastMousePos);
+        Vector2f mouseMovement = (mousePos - lastMousePos);
         lastMousePos = mousePos;
 
         if (Input::GetMouseButtonDown(MouseButtonID::ButtonMiddle))

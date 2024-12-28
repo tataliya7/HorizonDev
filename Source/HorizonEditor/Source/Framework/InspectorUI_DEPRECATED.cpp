@@ -701,7 +701,7 @@ namespace Horizon
 
     //void DrawBoneNode(ArmatureComponent& component, uint32 boneIndex)
     //{
-    //    auto& bone = component.bones[boneIndex];
+    //    auto& bone = component.joints[boneIndex];
 
     //    ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth;
 

@@ -1,5 +1,5 @@
 #include "Streamline.h"
-#include "StreamlineUtils.h"
+#include "StreamlineUtility.h"
 
 #include <vulkan/vulkan.h>
 

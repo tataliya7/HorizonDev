@@ -14,10 +14,10 @@ namespace Horizon
 
     struct SkyAtmosphereShaderParameters
     {
-        Vector4 transmittanceLutSize;
-        Vector4 multipleScatteringLutSize;
-        Vector4 skyViewLutSize;
-        Vector2 aerialPerspectiveVolumeSize;
+        Vector4f transmittanceLutSize;
+        Vector4f multipleScatteringLutSize;
+        Vector4f skyViewLutSize;
+        Vector2f aerialPerspectiveVolumeSize;
 
         float transmittanceLutSampleCount;
         float multipleScatteringLutSampleCount;
@@ -26,14 +26,14 @@ namespace Horizon
 
         float bottomRadius;
         float topRadius;
-        Vector3 groundAlbedo;
+        Vector3f groundAlbedo;
 
-        Vector3 rayleighScattering;
+        Vector3f rayleighScattering;
         float rayleighDensityExpScale;
 
-        Vector3 mieScattering;
-        Vector3 mieExtinction;
-        Vector3 mieAbsorption;
+        Vector3f mieScattering;
+        Vector3f mieExtinction;
+        Vector3f mieAbsorption;
         float miePhaseG;
         float mieDensityExpScale;
 
@@ -42,15 +42,15 @@ namespace Horizon
         float absorptionDensity0LinearTerm;
         float absorptionDensity1ConstantTerm;
         float absorptionDensity1LinearTerm;
-        Vector3 absorptionExtinction;
+        Vector3f absorptionExtinction;
     };
 
     void SetupSkyAtmosphereShaderParameters(SkyAtmosphereShaderParameters& outParameters, const SkyAtmosphereRenderObject& renderObject);
 
     struct SkyAtmosphereViewRelatedParameters
     {
-        Matrix4x4 skyViewLutReferential;
+        Matrix4x4f skyViewLutReferential;
     };
 
-    void SetupSkyAtmosphereViewRelatedParameters(SkyAtmosphereViewRelatedParameters& outParameters, const SkyAtmosphereRenderObject& renderObject, const Vector3& worldSpaceCameraPosition, const Vector3& cameraForwardVector);
+    void SetupSkyAtmosphereViewRelatedParameters(SkyAtmosphereViewRelatedParameters& outParameters, const SkyAtmosphereRenderObject& renderObject, const Vector3f& worldSpaceCameraPosition, const Vector3f& cameraForwardVector);
 }

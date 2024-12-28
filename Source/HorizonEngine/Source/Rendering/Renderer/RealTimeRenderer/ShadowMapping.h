@@ -24,7 +24,7 @@ namespace Horizon
 
     struct CascadedShadowMapShaderParameters
     {
-        Matrix4x4 worldToClipMatrix[RendererMaxShadowMapCascadeCount];
+        Matrix4x4f worldToClipMatrix[RendererMaxShadowMapCascadeCount];
         float cascadeEndDistance[RendererMaxShadowMapCascadeCount];
         float transitionStartDistance[RendererMaxShadowMapCascadeCount];
         float inverseTransitionRange[RendererMaxShadowMapCascadeCount];

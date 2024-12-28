@@ -32,7 +32,7 @@ namespace Horizon
         void SetConstants(const TemporalSuperSamplingConstants& constants) override;
         TemporalSuperSamplingOptimalSettings GetOptimalSettings() const override;
         uint32 GetJitterPhaseCount(uint32 renderWidth, uint32 targetWidth) const override;
-        Vector2 GetJitterOffset(uint32 index, uint32 phaseCount) const override;
+        Vector2f GetJitterOffset(uint32 index, uint32 phaseCount) const override;
         RenderGraphTextureHandle Dispatch(RenderGraph& renderGraph, const SceneView& view, const TemporalSuperSamplingDispatchDescription& dispatchDescription) override;
 
     private:

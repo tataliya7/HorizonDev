@@ -16,25 +16,25 @@ namespace Horizon
     {
         return;
 
-        // Vector2 lightShaftsCenter;
+        // Vector2f lightShaftsCenter;
         // for (uint32 lightIndex = 0; lightIndex < renderEngine->numLights; lightIndex++)
         // {
         //     if (renderEngine->lightData[lightIndex].type == (uint32)LightComponent::LightType::Directional)
         //     {
         //         const LightComponent* light = renderEngine->lightInfo[lightIndex].component;
-        //         Vector3 dir = light->GetDirection();
-        //         dir = Vector3(sceneViewShaderParameters.atmosphericLightDirection.width, sceneViewShaderParameters.atmosphericLightDirection.height, sceneViewShaderParameters.atmosphericLightDirection.z);
-        //         Vector3 lightShaftsPostion = sceneViewShaderParameters.cameraPosition - dir;
-        //         Vector4 clippos = sceneViewShaderParameters.worldToClipMatrix * Vector4(lightShaftsPostion.width, lightShaftsPostion.height, lightShaftsPostion.z, 1.0f);
-        //         lightShaftsCenter = Vector2(clippos.width / clippos.w, clippos.height / clippos.w);
-        //         lightShaftsCenter = lightShaftsCenter * Vector2(0.5f, -0.5f) + 0.5f;
+        //         Vector3f dir = light->GetDirection();
+        //         dir = Vector3f(sceneViewShaderParameters.atmosphericLightDirection.width, sceneViewShaderParameters.atmosphericLightDirection.height, sceneViewShaderParameters.atmosphericLightDirection.z);
+        //         Vector3f lightShaftsPostion = sceneViewShaderParameters.cameraPosition - dir;
+        //         Vector4f clippos = sceneViewShaderParameters.worldToClipMatrix * Vector4f(lightShaftsPostion.width, lightShaftsPostion.height, lightShaftsPostion.z, 1.0f);
+        //         lightShaftsCenter = Vector2f(clippos.width / clippos.w, clippos.height / clippos.w);
+        //         lightShaftsCenter = lightShaftsCenter * Vector2f(0.5f, -0.5f) + 0.5f;
         //         break;
         //     }
         // }
         //
         // Extent2D lightShaftsTextureSize = DownsampleExtent2D(renderResolution, ScreenSpaceLightShaftsDownsampleFactor);
         //
-        // Vector2 aspectRatio = Vector2((float)lightShaftsTextureSize.width / (float)lightShaftsTextureSize.height, (float)lightShaftsTextureSize.height / (float)lightShaftsTextureSize.width);
+        // Vector2f aspectRatio = Vector2f((float)lightShaftsTextureSize.width / (float)lightShaftsTextureSize.height, (float)lightShaftsTextureSize.height / (float)lightShaftsTextureSize.width);
         //
         // RenderGraphTextureDesc lightShaftsTextureDesc = RenderGraphTextureDesc::Create2D(
         //     lightShaftsTextureSize.width,

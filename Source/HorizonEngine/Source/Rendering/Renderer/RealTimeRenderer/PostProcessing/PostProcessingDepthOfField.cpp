@@ -11,7 +11,7 @@ namespace Horizon
         return ring == 0 ? 1 : ringSampleFactor * ring;
     }
 
-    Vector2 OctawebSample(int ring, int s, int ringSampleCount, int ringCount)
+    Vector2f OctawebSample(int ring, int s, int ringSampleCount, int ringCount)
     {
         // Need to place n-1 rings along the radius since center is ring 0
         float ringSpacing = 1.0f / float(ringCount - 1);
@@ -26,7 +26,7 @@ namespace Horizon
         float x = r * cos(phi);
         float y = r * sin(phi);
 
-        return Vector2(x, y);
+        return Vector2f(x, y);
     }
 
     void GenerateOctawebSamples()
@@ -36,7 +36,7 @@ namespace Horizon
             int ringSampleCount = octawebRingSampleCount(ring);
             for (int si = 0; si < ringSampleCount; ++si)
             {
-                Vector2 sample = OctawebSample(ring, si, ringSampleCount, ringCount);
+                Vector2f sample = OctawebSample(ring, si, ringSampleCount, ringCount);
                 printf("float2(%.06f, %.06f)\n", sample.x, sample.y);
             }
         }

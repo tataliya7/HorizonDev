@@ -60,7 +60,7 @@ namespace Horizon
 
         void Transitions(const RenderBackendBarrier* transitions, uint32 transitionCount);
 
-        void BeginDebugLabel(const char* name, const Vector4& color);
+        void BeginDebugLabel(const char* name, const Vector4f& color);
 
         void EndDebugLabel();
 

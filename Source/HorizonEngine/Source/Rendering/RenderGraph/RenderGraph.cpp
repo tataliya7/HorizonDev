@@ -334,7 +334,7 @@ namespace Horizon
 
             uint32 currentPassTimingQueryRegion = gpuProfiler->BeginRegion(&commandList, pass->GetName());
 
-            commandList.BeginDebugLabel(pass->GetName(), Vector4(1.0f, 1.0f, 1.0f, 1.0f));
+            commandList.BeginDebugLabel(pass->GetName(), Vector4f(1.0f, 1.0f, 1.0f, 1.0f));
 
             for (RenderGraphPass::TextureState& state : pass->textureStates)
             {

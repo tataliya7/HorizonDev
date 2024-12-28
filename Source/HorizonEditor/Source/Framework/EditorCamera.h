@@ -51,7 +51,7 @@ namespace Horizon
 
         bool IsRotating() const;
 
-        void Update(const EditorCameraControllerUserImpulseData& userImpulseData, float deltaTimeInSeconds, float translationVelocityScale, Vector3& outCameraPosition, Vector3& outCameraRotation);
+        void Update(const EditorCameraControllerUserImpulseData& userImpulseData, float deltaTimeInSeconds, float translationVelocityScale, Vector3f& outCameraPosition, Vector3f& outCameraRotation);
 
         /** Camera controller settings. */
         EditorCameraControllerSettings settings;
@@ -60,15 +60,15 @@ namespace Horizon
 
         static constexpr float Epsilon = 1.e-4f;
 
-        void UpdatePosition(const EditorCameraControllerUserImpulseData& userImpulseData, float deltaTimeInSeconds, float translationVelocityScale, const Vector3& cameraRotation, Vector3& outCameraPosition);
+        void UpdatePosition(const EditorCameraControllerUserImpulseData& userImpulseData, float deltaTimeInSeconds, float translationVelocityScale, const Vector3f& cameraRotation, Vector3f& outCameraPosition);
 
-        void UpdateRotation(const EditorCameraControllerUserImpulseData& userImpulseData, float deltaTimeInSeconds, Vector3& outCameraRotation);
+        void UpdateRotation(const EditorCameraControllerUserImpulseData& userImpulseData, float deltaTimeInSeconds, Vector3f& outCameraRotation);
 
         /** Translation velocity in meters per second. */
-        Vector3 translationVelocity;
+        Vector3f translationVelocity;
 
         /** Rotation velocity (pitch, roll and yaw) in degrees per second. */
-        Vector3 rotationVelocity;
+        Vector3f rotationVelocity;
     };
 
     class EditorCamera
@@ -77,12 +77,12 @@ namespace Horizon
 
     public:
 
-        Vector3 GetPosition() const
+        Vector3f GetPosition() const
         {
             return position;
         }
 
-        Vector3 GetRotation() const
+        Vector3f GetRotation() const
         {
             return rotation;
         }
@@ -105,9 +105,9 @@ namespace Horizon
 
     //private:
 
-        Vector3 position;
+        Vector3f position;
 
-        Vector3 rotation;
+        Vector3f rotation;
 
         EditorCameraController controller;
 

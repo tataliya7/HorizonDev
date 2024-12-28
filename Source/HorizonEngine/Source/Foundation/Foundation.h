@@ -4,13 +4,6 @@
 
 namespace Horizon
 {
-    using Vector2 = Vector2f;
-    using Vector3 = Vector3f;
-    using Vector4 = Vector4f;
-
-    using Matrix3x3 = Matrix3x3f;
-    using Matrix4x4 = Matrix4x4f;
-
     template <typename T, uint64 N>
     FORCEINLINE constexpr uint64 ArraySize(T(&array)[N])
     {
@@ -20,7 +13,7 @@ namespace Horizon
     const float MetersToKilometers = 0.001f;
     const float KilometersToMeters = 1000.0f;
 
-    const Vector3 DefaultLightDirection = Vector3(0.0f, 0.0f, -1.0f);
+    const Vector3f DefaultLightDirection = Vector3f(0.0f, 0.0f, -1.0f);
 
     struct Point2D
     {
@@ -55,13 +48,13 @@ namespace Horizon
         {
 
         }
-        Vector3 GetExtent() const
+        Vector3f GetExtent() const
         {
             return (maximumPoint - minimumPoint);
         }
     private:
-        Vector3 minimumPoint;
-        Vector3 maximumPoint;
+        Vector3f minimumPoint;
+        Vector3f maximumPoint;
     };
 
     struct Extent2D
@@ -102,7 +95,7 @@ namespace Horizon
 
         Bounds3D() {}
 
-        Bounds3D(const Vector3& minimum, const Vector3& maximum) : minimum(minimum), maximum(maximum) {}
+        Bounds3D(const Vector3f& minimum, const Vector3f& maximum) : minimum(minimum), maximum(maximum) {}
 
         Bounds3D(const Bounds3D& other)
         {
@@ -110,14 +103,15 @@ namespace Horizon
             maximum = other.maximum;
         }
 
-        void operator=(const Bounds3D& other)
+        Bounds3D& operator=(const Bounds3D& other)
         {
             minimum = other.minimum;
             maximum = other.maximum;
+            return *this;
         }
 
-        Vector3 minimum;
-        Vector3 maximum;
+        Vector3f minimum;
+        Vector3f maximum;
     };
 
     class Plane

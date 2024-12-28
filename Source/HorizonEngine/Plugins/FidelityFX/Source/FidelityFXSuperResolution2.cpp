@@ -139,10 +139,10 @@ namespace Horizon
         return uint32(jitterPhaseCount);
     }
 
-    Vector2 FidelityFXSuperResolution2::GetJitterOffset(uint32 index, uint32 phaseCount) const
+    Vector2f FidelityFXSuperResolution2::GetJitterOffset(uint32 index, uint32 phaseCount) const
     {
         // TODO: Is it safe to cast index and phaseCount to int32_t?
-        Vector2 jitterOffset(0.0f, 0.0f);
+        Vector2f jitterOffset(0.0f, 0.0f);
         FfxErrorCode errorCode = ffxFsr2GetJitterOffset(&jitterOffset.x, &jitterOffset.y, int32_t(index), int32_t(phaseCount));
         FFX_ASSERT(errorCode == FFX_OK);
         return jitterOffset;

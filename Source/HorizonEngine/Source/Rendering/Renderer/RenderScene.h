@@ -13,7 +13,7 @@ namespace Horizon
         std::string name;
 
         // BxDF
-        Vector4 baseColor = Vector4(1.0f, 1.0f, 1.0f, 1.0f);
+        Vector4f baseColor = Vector4f(1.0f, 1.0f, 1.0f, 1.0f);
         float metallic = 0.0f;
         float roughness = 0.5f;
         float specular = 0.5f;
@@ -22,13 +22,13 @@ namespace Horizon
         float transmissionRoughness = 0.0f;
         float clearcoat = 0.0f;
         float clearcoatRoughness = 0.0f;
-        Vector4 emission = Vector4(0.0f, 0.0f, 0.0f, 1.0f);
+        Vector4f emission = Vector4f(0.0f, 0.0f, 0.0f, 1.0f);
         float emissionStrength = 1.0f;
         float alpha = 1.0f;
 
         // SSS
-        Vector4 sssSurfaceAlbedo = Vector4(1.0f, 1.0f, 1.0f, 1.0f);
-        Vector4 sssMFP = Vector4(1.0f, 1.0f, 1.0f, 1.0f);
+        Vector4f sssSurfaceAlbedo = Vector4f(1.0f, 1.0f, 1.0f, 1.0f);
+        Vector4f sssMFP = Vector4f(1.0f, 1.0f, 1.0f, 1.0f);
         float secondRoughness = 0.5f;
         float lobeMix = 0.0f;
 
@@ -58,7 +58,7 @@ namespace Horizon
         std::string name;
 
         // BxDF
-        Vector4 baseColor = Vector4(1.0f, 1.0f, 1.0f, 1.0f);
+        Vector4f baseColor = Vector4f(1.0f, 1.0f, 1.0f, 1.0f);
         float metallic = 0.0f;
         float roughness = 0.5f;
         float specular = 0.5f;
@@ -67,13 +67,13 @@ namespace Horizon
         float transmissionRoughness = 0.0f;
         float clearcoat = 0.0f;
         float clearcoatRoughness = 0.0f;
-        Vector4 emission = Vector4(0.0f, 0.0f, 0.0f, 1.0f);
+        Vector4f emission = Vector4f(0.0f, 0.0f, 0.0f, 1.0f);
         float emissionStrength = 1.0f;
         float alpha = 1.0f;
 
         // SSS
-        Vector4 sssSurfaceAlbedo = Vector4(1.0f, 1.0f, 1.0f, 1.0f);
-        Vector4 sssMFP = Vector4(1.0f, 1.0f, 1.0f, 1.0f);
+        Vector4f sssSurfaceAlbedo = Vector4f(1.0f, 1.0f, 1.0f, 1.0f);
+        Vector4f sssMFP = Vector4f(1.0f, 1.0f, 1.0f, 1.0f);
         float secondRoughness = 0.5f;
         float lobeMix = 0.0f;
 
@@ -103,8 +103,8 @@ namespace Horizon
 
         bool castDynamicShadow : 1;
 
-        Matrix4x4 localToWorldMatrix;
-        Matrix4x4 worldToLocalMatrix;
+        Matrix4x4f localToWorldMatrix;
+        Matrix4x4f worldToLocalMatrix;
 
         uint32 vertexCount;
         uint32 indexCount;
@@ -132,9 +132,9 @@ namespace Horizon
     struct LightRenderObjectDescription
     {
         LightType lightType;
-        Vector3 color;
-        Vector3 position;
-        Vector3 direction;
+        Vector3f color;
+        Vector3f position;
+        Vector3f direction;
         float radius;
         bool castDynamicShadows;
         uint32 shadowMapSize;
@@ -147,23 +147,23 @@ namespace Horizon
         float shadowMapDepthBiasSlopeFactor;
         bool usedAsAtmosphericLight;
         float halfApexAngleInRadians;
-        Vector3 atmosphericLightDiskColorFactor;
+        Vector3f atmosphericLightDiskColorFactor;
     };
 
     struct DistantLightRenderData
     {
-        Vector3 direction;
-        Vector3 tangent;
-        Vector3 color;
+        Vector3f direction;
+        Vector3f tangent;
+        Vector3f color;
     };
 
     struct LocalLightRenderData
     {
-        Vector3 position;
+        Vector3f position;
         float radius;
-        Vector3 direction;
-        Vector3 tangent;
-        Vector3 color;
+        Vector3f direction;
+        Vector3f tangent;
+        Vector3f color;
     };
 
     class LightRenderObject
@@ -198,12 +198,12 @@ namespace Horizon
             outRenderData.color = color;
         }
 
-        Vector3 GetPhysicalLightColor() const
+        Vector3f GetPhysicalLightColor() const
         {
             return color;
         }
 
-        Vector3 GetDirection() const
+        Vector3f GetDirection() const
         {
             return direction;
         }
@@ -213,7 +213,7 @@ namespace Horizon
             return halfApexAngleInRadians;
         }
 
-        Vector3 GetAtmosphericLightDiskColorFactor() const
+        Vector3f GetAtmosphericLightDiskColorFactor() const
         {
             return atmosphericLightDiskColorFactor;
         }
@@ -250,10 +250,10 @@ namespace Horizon
 
     //private:
         LightType lightType;
-        Vector3 color;
-        Vector3 position;
-        Vector3 direction;
-        Vector3 tangent;
+        Vector3f color;
+        Vector3f position;
+        Vector3f direction;
+        Vector3f tangent;
         Matrix4x4f worldToLight;
         float radius;
         bool castDynamicShadows;
@@ -267,7 +267,7 @@ namespace Horizon
         float shadowMapDepthBiasSlopeFactor;
         bool usedAsAtmosphericLight;
         float halfApexAngleInRadians;
-        Vector3 atmosphericLightDiskColorFactor;
+        Vector3f atmosphericLightDiskColorFactor;
     };
 
     class SkyLightRenderObject
@@ -290,25 +290,25 @@ namespace Horizon
         LocalFogVolumeRenderObject();
         ~LocalFogVolumeRenderObject();
 
-        Matrix4x4 transform;
+        Matrix4x4f transform;
 
-        Vector3 scattering;
-        Vector3 absorption;
-        Vector3 emission;
+        Vector3f scattering;
+        Vector3f absorption;
+        Vector3f emission;
     };
 
     struct AtmosphereParameters
     {
         float bottomRadius;
         float topRadius;
-        Vector3 groundAlbedo;
+        Vector3f groundAlbedo;
 
-        Vector3 rayleighScattering;
+        Vector3f rayleighScattering;
         float rayleighDensityExpScale;
 
-        Vector3 mieScattering;
-        Vector3 mieExtinction;
-        Vector3 mieAbsorption;
+        Vector3f mieScattering;
+        Vector3f mieExtinction;
+        Vector3f mieAbsorption;
         float miePhaseG;
         float mieDensityExpScale;
 
@@ -317,7 +317,7 @@ namespace Horizon
         float absorptionDensity0LinearTerm;
         float absorptionDensity1ConstantTerm;
         float absorptionDensity1LinearTerm;
-        Vector3 absorptionExtinction;
+        Vector3f absorptionExtinction;
     };
 
     class SkyAtmosphereRenderObject
@@ -338,12 +338,12 @@ namespace Horizon
             atmosphereParameters = newValue;
         }
 
-        Vector3 GetSkyLuminanceFactor() const
+        Vector3f GetSkyLuminanceFactor() const
         {
             return skyLuminanceFactor;
         }
 
-        void SetSkyLuminanceFactor(const Vector3& newValue)
+        void SetSkyLuminanceFactor(const Vector3f& newValue)
         {
             skyLuminanceFactor = newValue;
         }
@@ -352,7 +352,7 @@ namespace Horizon
 
         AtmosphereParameters atmosphereParameters;
 
-        Vector3 skyLuminanceFactor;
+        Vector3f skyLuminanceFactor;
     };
 
     struct GPUSceneGeometryData
@@ -371,10 +371,10 @@ namespace Horizon
 
     struct GPUSceneGeometryInstanceData
     {
-        Matrix4x4 localToWorldMatrix;
-        Matrix4x4 worldToLocalMatrix;
-        Matrix4x4 previousLocalToWorldMatrix;
-        Matrix4x4 previousWorldToLocalMatrix;
+        Matrix4x4f localToWorldMatrix;
+        Matrix4x4f worldToLocalMatrix;
+        Matrix4x4f previousLocalToWorldMatrix;
+        Matrix4x4f previousWorldToLocalMatrix;
         uint32 geometryID;
     };
 
@@ -559,7 +559,7 @@ namespace Horizon
         RenderBackendBufferHandle irradianceEnvironmentMapBufferFast;
 
         // Debug draw
-        // std::vector<Vector3> debugDrawLinesVertices;
+        // std::vector<Vector3f> debugDrawLinesVertices;
         // uint32 debugDrawLinesVertexBufferSize = 0;
         // RenderBackendBufferHandle debugDrawLinesVertexBuffer;
         // RenderBackendBufferHandle debugDrawLinesVertexUploadBuffer;

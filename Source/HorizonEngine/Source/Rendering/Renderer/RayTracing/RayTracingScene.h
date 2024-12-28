@@ -48,7 +48,7 @@ namespace Horizon
 
         uint32 transformMatrixCount = 0;
         uint64 transformBufferSize = 0;
-        std::vector<Matrix4x4> rowMajorTransforms;
+        std::vector<Matrix4x4f> rowMajorTransforms;
         RenderBackendBufferHandle transformBufferRowMajor;
         RenderBackendBufferHandle transformBufferRowMajorUpload;
         //std::vector<RayTracingInstance> instances;

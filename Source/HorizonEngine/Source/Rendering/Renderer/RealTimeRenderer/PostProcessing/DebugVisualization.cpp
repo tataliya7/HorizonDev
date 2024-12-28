@@ -327,7 +327,7 @@ namespace Horizon
         RenderGraphTextureHandle sceneColorTexture,
         RenderGraphTextureHandle sceneDepthTexture)
     {
-        uint32 newDebugDrawLinesVertexBufferSize = (uint32)debugDrawLinesVertices.size() * sizeof(Vector3);
+        uint32 newDebugDrawLinesVertexBufferSize = (uint32)debugDrawLinesVertices.size() * sizeof(Vector3f);
 
         if (newDebugDrawLinesVertexBufferSize == 0)
         {

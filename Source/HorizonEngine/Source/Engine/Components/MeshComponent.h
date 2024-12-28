@@ -25,10 +25,10 @@
          uint32 vertexCount;
          uint32 indexCount;
 
-         std::vector<Vector3> positions;
-         std::vector<Vector3> normals;
-         std::vector<Vector4> tangents;
-         std::vector<Vector2> texCoords;
+         std::vector<Vector3f> positions;
+         std::vector<Vector3f> normals;
+         std::vector<Vector4f> tangents;
+         std::vector<Vector2f> texCoords;
          std::vector<uint32> indices;
          std::vector<uint32> boneIndices;
          std::vector<float> boneWeights;
@@ -42,12 +42,12 @@
              uint32 numVertices;
              //uint32 materialIndex;
              //uint32 transformIndex;
-             Vector3 boundsMin;
-             Vector3 boundsMax;
+             Vector3f boundsMin;
+             Vector3f boundsMax;
          };
          std::vector<MeshSubset> subsets;
-         //std::vector<Matrix4x4> transformData;
-         //std::vector<Matrix4x4> transformDataTranspose;
+         //std::vector<Matrix4x4f> transformData;
+         //std::vector<Matrix4x4f> transformDataTranspose;
          Matrix4x4f localToWorldMatrix;
 
          std::vector<Material> materials;
@@ -67,8 +67,8 @@
 
          uint32 GetMaterialCount() const;
 
-         Vector3 boundsMin;
-         Vector3 boundsMax;
+         Vector3f boundsMin;
+         Vector3f boundsMax;
 
          //EntityHandle armature = EntityHandle::Null;
 

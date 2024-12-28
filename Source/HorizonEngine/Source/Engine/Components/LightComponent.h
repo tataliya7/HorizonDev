@@ -30,7 +30,7 @@ namespace Horizon
         /** Color temperature in Kelvin. */
         float colorTemperature = 6500.0f;
 
-        Vector3 color = Vector3(1.0f, 1.0f, 1.0f);
+        Vector3f color = Vector3f(1.0f, 1.0f, 1.0f);
 
         float luminousIntensity = 1.0f;
 
@@ -65,9 +65,9 @@ namespace Horizon
         bool usedAsAtmosphericLight = false;
 
         // Atmosphere
-        Vector3 atmosphericLightDiskColorFactor = Vector3(1.0f, 1.0f, 1.0f);
+        Vector3f atmosphericLightDiskColorFactor = Vector3f(1.0f, 1.0f, 1.0f);
 
-        Vector3 GetAtmosphericLightDiskColorFactor() const
+        Vector3f GetAtmosphericLightDiskColorFactor() const
         {
             return atmosphericLightDiskColorFactor;
         }
@@ -81,7 +81,7 @@ namespace Horizon
 
         // Area Light
 
-        static Vector3 GetLinearColorFromColorTemperature(float colorTemperature)
+        static Vector3f GetLinearColorFromColorTemperature(float colorTemperature)
         {
             colorTemperature = std::clamp(colorTemperature, 1000.0f, 15000.0f);
 
@@ -102,12 +102,12 @@ namespace Horizon
             float G = -0.9692660f * X +  1.8760108f * Y +  0.0415560f * Z;
             float B =  0.0556434f * X + -0.2040259f * Y +  1.0572252f * Z;
 
-            return Vector3(R, G, B);
+            return Vector3f(R, G, B);
         }
 
-        Vector3 GetPhysicalLightColor() const
+        Vector3f GetPhysicalLightColor() const
         {
-            Vector3 result = color * luminousIntensity;
+            Vector3f result = color * luminousIntensity;
             if (useColorTemperature)
             {
                 result *= GetLinearColorFromColorTemperature(colorTemperature);
@@ -140,16 +140,16 @@ namespace Horizon
             return shadowCascadeSplitLambda;
         }
 
-        Vector3 GetDirection() const
+        Vector3f GetDirection() const
         {
             return direction;
         }
 
         // Non-serialized
-        Vector3 position;
-        Vector3 direction;
-        Vector3 rightVec;
-        Vector3 upVec;
+        Vector3f position;
+        Vector3f direction;
+        Vector3f rightVec;
+        Vector3f upVec;
 
         bool IsRenderObjectValid() const;
         void CreateRenderObject(RenderScene* scene);

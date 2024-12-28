@@ -1,6 +1,6 @@
 #include "StreamlineDLSSSuperResolution.h"
 #include "StreamlineDLSSSuperResolutionPrivate.h"
-#include "StreamlineUtils.h"
+#include "StreamlineUtility.h"
 
 #include <sl.h>
 #include <sl_consts.h>
@@ -148,7 +148,7 @@ namespace Horizon
         return TemporalSuperSamplingGetJitterPhaseCount(renderWidth, targetWidth);
     }
 
-    Vector2 StreamlineDLSSSuperResolution::GetJitterOffset(uint32 index, uint32 phaseCount) const
+    Vector2f StreamlineDLSSSuperResolution::GetJitterOffset(uint32 index, uint32 phaseCount) const
     {
         return TemporalSuperSamplingGetJitterOffset(index, phaseCount);
     }

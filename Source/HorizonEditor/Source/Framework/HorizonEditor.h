@@ -5,6 +5,7 @@
 #include "HorizonEditorUI.h"
 #include "EditorCamera.h"
 #include "EditorSceneManager.h"
+#include "AssetDatabase.h"
 
 #define HORIZON_EDITOR_APPLICATION_NAME "Horizon Editor"
 
@@ -185,7 +186,7 @@ namespace Horizon
         //};
         //SceneViewportState sceneViewportState = SceneViewportState::Edit;
 
-        //Vector4 viewportPos;
+        //Vector4f viewportPos;
 
         EditorSceneManager* GetEditorSceneManager() const
         {
@@ -212,8 +213,8 @@ namespace Horizon
 
         float GetSnapValue();
 
-        Matrix4x4 viewMatrix_deprecated = IdentityMatrix4x4;
-        Matrix4x4 projectionMatrix_deprecated = IdentityMatrix4x4;
+        Matrix4x4f viewMatrix_deprecated = IdentityMatrix4x4;
+        Matrix4x4f projectionMatrix_deprecated = IdentityMatrix4x4;
 
         //bool showOverlay = true;
         //bool showConsoleWindow = true;
@@ -245,7 +246,7 @@ namespace Horizon
         HorizonEditorColorTheme colorTheme = HorizonEditorColorTheme::Light;
         RenderBackendTextureHandle fontTexture;
 
-        Vector2 viewportSize = Vector2(0.0f, 0.0f);
+        Vector2f viewportSize = Vector2f(0.0f, 0.0f);
         ImGuiContext* imguiContext = nullptr;
         RenderSettings renderSettings;
         // RenderBackendType renderBackendType = RenderBackendType::Vulkan;
@@ -257,6 +258,7 @@ namespace Horizon
 
         HorizonEngine* engine = nullptr;
         // RenderScene* renderScene;
+        AssetDatabase* assetDatabase = nullptr;
 
         // Begin Scene View Window
         uint32 frameIndex = 0;

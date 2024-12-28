@@ -22,6 +22,8 @@ project "HorizonEditor"
         "Source/Framework/EditorSceneManager.cpp",
         "Source/Framework/InspectorUI_DEPRECATED.h",
         "Source/Framework/InspectorUI_DEPRECATED.cpp",
+        "Source/Framework/AssetDatabase.h",
+        "Source/Framework/AssetDatabase.cpp",
         "Source/Framework/Gizmo.h",
         "Source/Framework/Gizmo.cpp",
 
@@ -32,12 +34,12 @@ project "HorizonEditor"
         "Source/Editor/**.cppm",
         "Source/Editor/**.inl",
 
-        "Plugins/USD/**.h",
-        "Plugins/USD/**.c",
-        "Plugins/USD/**.hpp",
-        "Plugins/USD/**.cpp",
-        "Plugins/USD/**.cppm",
-        "Plugins/USD/**.inl",
+        "Plugins/UniversalSceneDescription/**.h",
+        "Plugins/UniversalSceneDescription/**.c",
+        "Plugins/UniversalSceneDescription/**.hpp",
+        "Plugins/UniversalSceneDescription/**.cpp",
+        "Plugins/UniversalSceneDescription/**.cppm",
+        "Plugins/UniversalSceneDescription/**.inl",
 
         "Plugins/TimeOfDay/**.h",
         "Plugins/TimeOfDay/**.c",
@@ -62,7 +64,7 @@ project "HorizonEditor"
 
     includedirs {
         editorpath("Source"),
-        editorpath("Plugins/USD/Source"),
+        editorpath("Plugins/UniversalSceneDescription/Source"),
         editorpath("Plugins/RenderDoc/Source"),
         editorpath("Plugins/TimeOfDay/Source"),
         enginepath("Source"),

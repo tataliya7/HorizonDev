@@ -50,33 +50,33 @@ namespace Horizon
         //PostProcessingSettings postProcessingSettings;
 
         // Non-serialized
-        Vector3 position;
+        Vector3f position;
         Quaternion rotation;
-        Vector3 forwardVec;
-        Vector3 rightVec;
-        Vector3 upVec;
-        Matrix4x4 viewMatrix;
-        Matrix4x4 invViewMatrix;
-        Matrix4x4 projectionMatrix;
-        Matrix4x4 invProjectionMatrix;
+        Vector3f forwardVec;
+        Vector3f rightVec;
+        Vector3f upVec;
+        Matrix4x4f viewMatrix;
+        Matrix4x4f invViewMatrix;
+        Matrix4x4f projectionMatrix;
+        Matrix4x4f invProjectionMatrix;
         Frustum frustum;
 
         void Update()
         {
-            static Quaternion zUpQuat = glm::rotate(Quaternion(), Math::DegreesToRadians(90.0), Vector3(1.0, 0.0, 0.0));
+            static Quaternion zUpQuat = glm::rotate(Quaternion(), Math::DegreesToRadians(90.0), Vector3f(1.0, 0.0, 0.0));
 
-            invViewMatrix = Math::ComposeTransformationMatrix(position, rotation * zUpQuat, Vector3(1.0f, 1.0f, 1.0f));
+            invViewMatrix = Math::ComposeTransformationMatrix(position, rotation * zUpQuat, Vector3f(1.0f, 1.0f, 1.0f));
             viewMatrix = Math::InverseMatrix(invViewMatrix);
             projectionMatrix = Math::PerspectiveProjection_ReverseZ_RH_ZO(fieldOfView, aspectRatio, nearClippingPlane, farClippingPlane);
             invProjectionMatrix = Math::InverseMatrix(projectionMatrix);
 
-            //rightVec    = Math::Normalize(Vector3(1.0f, 0.0f, 0.0f) * rotation);
-            //forwardVec  = Math::Normalize(Vector3(0.0f, 1.0f, 0.0f) * rotation);
-            //upVec       = Math::Normalize(Vector3(0.0f, 0.0f, 1.0f) * rotation);
+            //rightVec    = Math::Normalize(Vector3f(1.0f, 0.0f, 0.0f) * rotation);
+            //forwardVec  = Math::Normalize(Vector3f(0.0f, 1.0f, 0.0f) * rotation);
+            //upVec       = Math::Normalize(Vector3f(0.0f, 0.0f, 1.0f) * rotation);
 
-            rightVec   = Math::Normalize(rotation * Vector3(1.0f, 0.0f, 0.0f));
-            forwardVec = Math::Normalize(rotation * Vector3(0.0f, 1.0f, 0.0f));
-            upVec      = Math::Normalize(rotation * Vector3(0.0f, 0.0f, 1.0f));
+            rightVec   = Math::Normalize(rotation * Vector3f(1.0f, 0.0f, 0.0f));
+            forwardVec = Math::Normalize(rotation * Vector3f(0.0f, 1.0f, 0.0f));
+            upVec      = Math::Normalize(rotation * Vector3f(0.0f, 0.0f, 1.0f));
 
             // Update frustum
             {
@@ -85,11 +85,11 @@ namespace Horizon
                 float halfFovRad = fieldOfView * 0.5f;
                 float uLen = distance * Math::Tan(halfFovRad);
                 float rLen = uLen * aspectRatio;
-                Vector3 farCenterPoint = position + distance * forwardVec;
-                Vector3 u = uLen * upVec;
-                Vector3 r = rLen * rightVec;
+                Vector3f farCenterPoint = position + distance * forwardVec;
+                Vector3f u = uLen * upVec;
+                Vector3f r = rLen * rightVec;
 
-                Vector3 corners[4];
+                Vector3f corners[4];
                 corners[0] = farCenterPoint - u - r; // left-bottom
                 corners[1] = farCenterPoint - u + r; // right-bottom
                 corners[2] = farCenterPoint + u - r; // left-up

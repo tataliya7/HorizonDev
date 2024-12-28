@@ -13,7 +13,7 @@ namespace Horizon
         RendererMaxMaterialTextureSlotCount = 16,
     };
 
-    //static const Matrix4x4 CubeFaceMatrices[6] =
+    //static const Matrix4x4f CubeFaceMatrices[6] =
     //{
     //    /* +X */
     //    {
@@ -61,7 +61,7 @@ namespace Horizon
 
     struct CubeShadowMapShaderParameters
     {
-        Matrix4x4 viewProjectionMatrix[6];
+        Matrix4x4f viewProjectionMatrix[6];
     };
 
     struct TextureShaderSlot
@@ -81,15 +81,15 @@ namespace Horizon
 
     struct MaterialShaderParameters
     {
-        Vector4 baseColor;
+        Vector4f baseColor;
         float metallic;
         float roughness;
         float specular;
         float specularTint;
-        Vector4 emission;
+        Vector4f emission;
         float emissionStrength;
-        Vector4 sssSurfaceAlbedo;
-        Vector4 sssMFP;
+        Vector4f sssSurfaceAlbedo;
+        Vector4f sssMFP;
         float secondRoughness;
         float lobeMix;
 
@@ -115,7 +115,7 @@ namespace Horizon
     //     uint32 vertexCount;
     //     uint32 baseIndex;
     //     uint32 indexCount;
-    //     Vector3 boundsMin;
-    //     Vector3 boundsMax;
+    //     Vector3f boundsMin;
+    //     Vector3f boundsMax;
     // };
 }

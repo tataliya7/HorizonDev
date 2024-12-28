@@ -12,9 +12,13 @@ namespace Horizon
         VULKAN_RENDER_BACKEND_CREATE_FLAGS_RAY_TRACING = (1 << 3),
     };
 
+    [[deprecated("Use RenderBackendCreateVulkan() instead.")]]
     typedef RenderBackend* (__stdcall* PFN_VulkanRenderBackendCreateBackend)(int flags);
+
+    [[deprecated("Use RenderBackendDestroyVulkan() instead.")]]
     typedef void(__stdcall* PFN_VulkanRenderBackendDestroyBackend)(RenderBackend* backend);
 
     RenderBackend* RenderBackendCreateVulkan(int flags);
+
     void RenderBackendDestroyVulkan(RenderBackend* backend);
 }

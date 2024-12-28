@@ -29,7 +29,7 @@ namespace Horizon
         float groundRadius;
 
         /** The average albedo of the ground. */
-        Vector3 groundAlbedo;
+        Vector3f groundAlbedo;
 
         /** The distance (kilometers) between the ground and the top of the atmosphere. */
         float atmosphereHeight;
@@ -38,7 +38,7 @@ namespace Horizon
         float rayleighScatteringScale;
 
         /** The scattering coefficient of air molecules at the altitude where their density is maximum (usually the bottom of the atmosphere). */
-        Vector3 rayleighScattering;
+        Vector3f rayleighScattering;
 
         /** TBD.*/
         float rayleighExponentialDistribution;
@@ -47,13 +47,13 @@ namespace Horizon
         float mieScatteringScale;
 
         /** The scattering coefficient of aerosols at the altitude where their density is maximum (usually the bottom of the atmosphere). */
-        Vector3 mieScattering;
+        Vector3f mieScattering;
 
         /** TBD.*/
         float mieAbsorptionScale;
 
         /** TBD.*/
-        Vector3 mieAbsorption;
+        Vector3f mieAbsorption;
 
         /** The asymmetry parameter for the Henyey Greenstein Phase Function. The value of this parameter must be in the range (-1, 1). */
         float mieAsymmetry;
@@ -72,7 +72,7 @@ namespace Horizon
          *
          * @details The extinction coefficient at altitude h is equal to 'absorption extinction' times 'absorption density' at this altitude.
          */
-        Vector3 absorptionExtinction;
+        Vector3f absorptionExtinction;
 
         /// The cosine of the maximum Sun zenith angle for which atmospheric scattering
         /// must be precomputed (for maximum precision, use the smallest Sun zenith
@@ -84,7 +84,7 @@ namespace Horizon
         float skyLuminanceScale;
 
         /** TBD.*/
-        Vector3 skyLuminanceColor;
+        Vector3f skyLuminanceColor;
 
         void Serialize(Archive& archive);
 

@@ -52,8 +52,8 @@ namespace Horizon
 
     void RealTimeRenderer::ResetHistoryFrame()
     {
-        historyFrame.cameraPosition = Vector3(0.0f, 0.0f, 0.0f);
-        historyFrame.cameraJitterOffset = Vector2(0.0f, 0.0f);
+        historyFrame.cameraPosition = Vector3f(0.0f, 0.0f, 0.0f);
+        historyFrame.cameraJitterOffset = Vector2f(0.0f, 0.0f);
         historyFrame.transformations.Reset();
         historyFrame.preExposure = 1.0f;
 
@@ -115,7 +115,7 @@ namespace Horizon
         targetResolution = Extent2D(view.targetWidth, view.targetHeight);
         displayResolution = Extent2D(view.targetWidth, view.targetHeight);
 
-        cameraJitterOffset = Vector2(0.0f, 0.0f);
+        cameraJitterOffset = Vector2f(0.0f, 0.0f);
 
         if (temporalSuperSamplingInterface != nullptr)
         {
@@ -156,13 +156,13 @@ namespace Horizon
 
         /*
 
-        Vector2 previousCameraJitterOffset = perFrameShaderParameters.cameraJitterOffset;
+        Vector2f previousCameraJitterOffset = perFrameShaderParameters.cameraJitterOffset;
         if (view.frameIndex == 0)
         {
             previousCameraJitterOffset = cameraJitterOffset;
         }
 
-        Vector3 previousCameraPosition = perFrameShaderParameters.cameraPosition;
+        Vector3f previousCameraPosition = perFrameShaderParameters.cameraPosition;
 
         enableFixedExposure = settings.exposureMethod == ExposureMethod::FixedExposure;*/
 
@@ -225,7 +225,7 @@ namespace Horizon
             tssConstants.renderWidth = renderResolution.width;
             tssConstants.renderHeight = renderResolution.height;
             tssConstants.jitterOffset = cameraJitterOffset;
-            tssConstants.motionVectorScale = Vector2(1.0f, 1.0f);
+            tssConstants.motionVectorScale = Vector2f(1.0f, 1.0f);
             tssConstants.cameraNearClippingPlane = view.nearClippingPlane;
             tssConstants.cameraFarClippingPlane = view.farClippingPlane;
             tssConstants.cameraFovAngleVertical = view.verticalFOV;
@@ -305,9 +305,9 @@ namespace Horizon
             perFrameShaderParameters.displayWidth = displayResolution.width;
             perFrameShaderParameters.displayHeight = displayResolution.height;
 
-            perFrameShaderParameters.renderResolution = Vector4(1.0f * renderResolution.width, 1.0f * renderResolution.height, 1.0f / renderResolution.width, 1.0f / renderResolution.height);
-            perFrameShaderParameters.targetResolution = Vector4(1.0f * targetResolution.width, 1.0f * targetResolution.height, 1.0f / targetResolution.width, 1.0f / targetResolution.height);
-            perFrameShaderParameters.displayResolution = Vector4(1.0f * displayResolution.width, 1.0f * displayResolution.height, 1.0f / displayResolution.width, 1.0f / displayResolution.height);
+            perFrameShaderParameters.renderResolution = Vector4f(1.0f * renderResolution.width, 1.0f * renderResolution.height, 1.0f / renderResolution.width, 1.0f / renderResolution.height);
+            perFrameShaderParameters.targetResolution = Vector4f(1.0f * targetResolution.width, 1.0f * targetResolution.height, 1.0f / targetResolution.width, 1.0f / targetResolution.height);
+            perFrameShaderParameters.displayResolution = Vector4f(1.0f * displayResolution.width, 1.0f * displayResolution.height, 1.0f / displayResolution.width, 1.0f / displayResolution.height);
 
             perFrameShaderParameters.cameraPosition = view.cameraPosition;
             perFrameShaderParameters.cameraUpVector = view.cameraUpVector;
@@ -355,7 +355,7 @@ namespace Horizon
             perFrameShaderParameters.inversePreExposure = 1.0f / preExposure;
             perFrameShaderParameters.preExposureCorrection = preExposure / historyFrame.preExposure;
 
-            perFrameShaderParameters.motionVectorScale = Vector2(float(renderResolution.width), float(renderResolution.height));
+            perFrameShaderParameters.motionVectorScale = Vector2f(float(renderResolution.width), float(renderResolution.height));
 
             // TODO: move this to other place?
             historyFrame.preExposure = preExposure;
@@ -371,8 +371,8 @@ namespace Horizon
                     const float cosHalfApexAngle = std::cos(halfApexAngle);
                     const float solidAngle = 2.0f * M_PI * (1.0f - cosHalfApexAngle); // https://en.wikipedia.org/wiki/Solid_angle
 
-                    const Vector3 atmosphericLightIlluminance = atmosphericLight->GetPhysicalLightColor();
-                    const Vector3 atmosphericLightDiskLuminance = atmosphericLight->GetAtmosphericLightDiskColorFactor() * atmosphericLightIlluminance / solidAngle; // approximation
+                    const Vector3f atmosphericLightIlluminance = atmosphericLight->GetPhysicalLightColor();
+                    const Vector3f atmosphericLightDiskLuminance = atmosphericLight->GetAtmosphericLightDiskColorFactor() * atmosphericLightIlluminance / solidAngle; // approximation
 
                     perFrameShaderParameters.atmosphericLightDirection = atmosphericLight->GetDirection();
                     perFrameShaderParameters.atmosphericLightDiskLuminance = atmosphericLightDiskLuminance;
@@ -382,9 +382,9 @@ namespace Horizon
                 else
                 {
                     perFrameShaderParameters.atmosphericLightDirection = DefaultLightDirection;
-                    perFrameShaderParameters.atmosphericLightDiskLuminance = Vector3(0.0f, 0.0f, 0.0f);
+                    perFrameShaderParameters.atmosphericLightDiskLuminance = Vector3f(0.0f, 0.0f, 0.0f);
                     perFrameShaderParameters.atmosphericLightDiskCosHalfApexAngle = 1.0f;
-                    perFrameShaderParameters.atmosphericLightOuterSpaceIlluminance = Vector3(0.0f, 0.0f, 0.0f);
+                    perFrameShaderParameters.atmosphericLightOuterSpaceIlluminance = Vector3f(0.0f, 0.0f, 0.0f);
                 }
 
                 if (IsSkyAtmosphereRenderingEnabled())

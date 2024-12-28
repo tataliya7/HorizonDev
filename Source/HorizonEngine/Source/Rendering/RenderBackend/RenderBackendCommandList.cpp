@@ -132,7 +132,7 @@ namespace Horizon
 
     void RenderBackendCommandList::BeginDebugLabel(
         const char* name,
-        const Vector4& color)
+        const Vector4f& color)
     {
         auto* command = AllocateCommand<RenderBackendCommandBeginDebugLabel>(RenderBackendCommandBeginDebugLabel::Type);
         memcpy(&command->labelName, name, std::min(std::strlen(name) + 1, 255ull));

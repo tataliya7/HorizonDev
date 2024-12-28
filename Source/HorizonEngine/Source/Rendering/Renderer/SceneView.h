@@ -39,7 +39,7 @@ namespace Horizon
             , nonJitteredClipToViewMatrix(IdentityMatrix4x4)
             , nonJitteredWorldToClipMatrix(IdentityMatrix4x4)
             , nonJitteredClipToWorldMatrix(IdentityMatrix4x4)
-            , viewSpaceDepthToNDCSpaceDepthTransform(Vector2(0.0f, 0.0f))
+            , viewSpaceDepthToNDCSpaceDepthTransform(Vector2f(0.0f, 0.0f))
         {
 
         }
@@ -56,19 +56,19 @@ namespace Horizon
             nonJitteredClipToViewMatrix = IdentityMatrix4x4;
             nonJitteredWorldToClipMatrix = IdentityMatrix4x4;
             nonJitteredClipToWorldMatrix = IdentityMatrix4x4;
-            viewSpaceDepthToNDCSpaceDepthTransform = Vector2(0.0f, 0.0f);
+            viewSpaceDepthToNDCSpaceDepthTransform = Vector2f(0.0f, 0.0f);
         }
 
-        void Update(const Vector3& position, const Vector3& rotation, float fieldOfView, float aspectRatio, float nearClippingPlane, float farClippingPlane)
+        void Update(const Vector3f& position, const Vector3f& rotation, float fieldOfView, float aspectRatio, float nearClippingPlane, float farClippingPlane)
         {
             // TODO: refactor this
             // TODO: make it constexpr
-            static Quaternion zUpQuat = glm::rotate(Quaternion(), Math::DegreesToRadians(90.0), Vector3(1.0, 0.0, 0.0));
+            static Quaternion zUpQuat = glm::rotate(Quaternion(), Math::DegreesToRadians(90.0), Vector3f(1.0, 0.0, 0.0));
 
             Quaternion cameraOrientation = Math::QuaternionFromEulerAngles(Math::DegreesToRadians(rotation));
 
             // TODO: calculate worldToViewMatrix first
-            // viewToWorldMatrix = Math::ComposeTransformationMatrix(position, cameraOrientation * zUpQuat, Vector3(1.0f, 1.0f, 1.0f));
+            // viewToWorldMatrix = Math::ComposeTransformationMatrix(position, cameraOrientation * zUpQuat, Vector3f(1.0f, 1.0f, 1.0f));
             // worldToViewMatrix = Math::InverseMatrix(viewToWorldMatrix);
             worldToViewMatrix = glm::transpose(glm::mat4_cast(glm::normalize(cameraOrientation * zUpQuat))) * glm::translate(glm::mat4(1), -position);
             //viewToWorldMatrix = Math::InverseMatrix(worldToViewMatrix);
@@ -93,10 +93,10 @@ namespace Horizon
             nonJitteredClipToWorldMatrix = Math::InverseMatrix(nonJitteredWorldToClipMatrix);
         }
 
-        void ApplyJitterOffset(const Vector2& jitterOffset, uint32 renderWidth, uint32 renderHeight)
+        void ApplyJitterOffset(const Vector2f& jitterOffset, uint32 renderWidth, uint32 renderHeight)
         {
             // -y for clip space to screen space
-            Vector2 offset = { jitterOffset.x * 2.0f / float(renderWidth), -jitterOffset.y * 2.0f / float(renderHeight) };
+            Vector2f offset = { jitterOffset.x * 2.0f / float(renderWidth), -jitterOffset.y * 2.0f / float(renderHeight) };
 
             /*
              * Horizon Engine uses righted-handed coordinate system,
@@ -111,8 +111,8 @@ namespace Horizon
 
         //
         // CameraTransformations(
-        //     const Matrix4x4& worldToViewMatrix,
-        //     const Matrix4x4& viewToClipMatrix)
+        //     const Matrix4x4f& worldToViewMatrix,
+        //     const Matrix4x4f& viewToClipMatrix)
         // {
         //     worldToViewMatrix = worldToViewMatrix;
         //     viewToWorldMatrix = Math::InverseMatrix(worldToViewMatrix);
@@ -126,11 +126,11 @@ namespace Horizon
         // }
         //
         // CameraTransformations(
-        //     const Matrix4x4& worldToViewMatrix,
-        //     const Matrix4x4& viewToClipMatrix,
-        //     const Vector2& jitterOffset)
+        //     const Matrix4x4f& worldToViewMatrix,
+        //     const Matrix4x4f& viewToClipMatrix,
+        //     const Vector2f& jitterOffset)
         // {
-        //     Matrix4x4 jitteredProjectionMatrix = viewToClipMatrix;
+        //     Matrix4x4f jitteredProjectionMatrix = viewToClipMatrix;
         //     jitteredProjectionMatrix[2][0] += -jitterOffset.x;
         //     jitteredProjectionMatrix[2][1] += -jitterOffset.y;
         //
@@ -155,52 +155,52 @@ namespace Horizon
         //     return isCameraJitteringApplied;
         // }
         //
-        // inline const Matrix4x4& GetWorldToViewMatrix() const
+        // inline const Matrix4x4f& GetWorldToViewMatrix() const
         // {
         //     return worldToViewMatrix;
         // }
         //
-        // inline const Matrix4x4& GetViewToWorldMatrix() const
+        // inline const Matrix4x4f& GetViewToWorldMatrix() const
         // {
         //     return viewToWorldMatrix;
         // }
         //
-        // inline const Matrix4x4& GetViewToClipMatrix() const
+        // inline const Matrix4x4f& GetViewToClipMatrix() const
         // {
         //     return viewToClipMatrix;
         // }
         //
-        // inline const Matrix4x4& GetClipToViewMatrix() const
+        // inline const Matrix4x4f& GetClipToViewMatrix() const
         // {
         //     return clipToViewMatrix;
         // }
         //
-        // inline const Matrix4x4& GetNonJitteredViewToClipMatrix() const
+        // inline const Matrix4x4f& GetNonJitteredViewToClipMatrix() const
         // {
         //     return nonJitteredViewToClipMatrix;
         // }
         //
-        // inline const Matrix4x4& GetWorldToClipMatrix() const
+        // inline const Matrix4x4f& GetWorldToClipMatrix() const
         // {
         //     return worldToClipMatrix;
         // }
         //
-        // inline const Matrix4x4& GetClipToWorldMatrix() const
+        // inline const Matrix4x4f& GetClipToWorldMatrix() const
         // {
         //     return clipToWorldMatrix;
         // }
 
-        Matrix4x4 worldToViewMatrix;
-        Matrix4x4 viewToWorldMatrix;
-        Matrix4x4 viewToClipMatrix;
-        Matrix4x4 clipToViewMatrix;
-        Matrix4x4 worldToClipMatrix;
-        Matrix4x4 clipToWorldMatrix;
-        Matrix4x4 nonJitteredViewToClipMatrix;
-        Matrix4x4 nonJitteredClipToViewMatrix;
-        Matrix4x4 nonJitteredWorldToClipMatrix;
-        Matrix4x4 nonJitteredClipToWorldMatrix;
-        Vector2 viewSpaceDepthToNDCSpaceDepthTransform;
+        Matrix4x4f worldToViewMatrix;
+        Matrix4x4f viewToWorldMatrix;
+        Matrix4x4f viewToClipMatrix;
+        Matrix4x4f clipToViewMatrix;
+        Matrix4x4f worldToClipMatrix;
+        Matrix4x4f clipToWorldMatrix;
+        Matrix4x4f nonJitteredViewToClipMatrix;
+        Matrix4x4f nonJitteredClipToViewMatrix;
+        Matrix4x4f nonJitteredWorldToClipMatrix;
+        Matrix4x4f nonJitteredClipToWorldMatrix;
+        Vector2f viewSpaceDepthToNDCSpaceDepthTransform;
     };
 
     /**
@@ -245,27 +245,27 @@ namespace Horizon
             return deltaTimeInSeconds;
         }
 
-        const Vector3& GetCameraPosition() const
+        const Vector3f& GetCameraPosition() const
         {
             return cameraPosition;
         }
 
-        const Vector3& GetCameraUpVector() const
+        const Vector3f& GetCameraUpVector() const
         {
             return cameraForwardVector;
         }
 
-        const Vector3& GetCameraRightVector() const
+        const Vector3f& GetCameraRightVector() const
         {
             return cameraForwardVector;
         }
 
-        const Vector3& GetCameraForwardVector() const
+        const Vector3f& GetCameraForwardVector() const
         {
             return cameraForwardVector;
         }
 
-        const Vector2& GetCameraJitterOffset() const
+        const Vector2f& GetCameraJitterOffset() const
         {
             return jitterOffset;
         }
@@ -362,11 +362,11 @@ namespace Horizon
          */
         bool enableSubpixelJitter;
 
-        Vector3 cameraPosition;
-        Vector3 cameraRotation;
-        Vector3 cameraUpVector;
-        Vector3 cameraRightVector;
-        Vector3 cameraForwardVector;
+        Vector3f cameraPosition;
+        Vector3f cameraRotation;
+        Vector3f cameraUpVector;
+        Vector3f cameraRightVector;
+        Vector3f cameraForwardVector;
 
         /**
          * Vertical field of view in degrees.
@@ -393,7 +393,7 @@ namespace Horizon
         /**
          * The color used to clear the scene color texture.
          */
-        Vector3 backgroundColor;
+        Vector3f backgroundColor;
 
         /**
          * The region of space in the scene that may appear on the screen.
@@ -402,7 +402,7 @@ namespace Horizon
 
         uint32 jitterPhaseCount;
 
-        Vector2 jitterOffset;
+        Vector2f jitterOffset;
 
         /**
          * Transformations of the current frame required for rasterization.

@@ -19,21 +19,21 @@ namespace Horizon
 
         // Ground
         component->groundRadius = earthRadius;
-        component->groundAlbedo = Vector3(0.401978f, 0.401978f, 0.401978f);
+        component->groundAlbedo = Vector3f(0.401978f, 0.401978f, 0.401978f);
 
         // Atmosphere Height
         component->atmosphereHeight = earthAtmosphereHeight;
 
         // Raleigh
-        constexpr Vector3 earthRayleighScattering = Vector3(0.005802f, 0.013558f, 0.033100f);
+        constexpr Vector3f earthRayleighScattering = Vector3f(0.005802f, 0.013558f, 0.033100f);
         component->rayleighScatteringScale = std::max(std::max(earthRayleighScattering.r, earthRayleighScattering.g), earthRayleighScattering.b);
         component->rayleighScattering = earthRayleighScattering / component->rayleighScatteringScale;
         component->rayleighExponentialDistribution = earthRayleighScaleHeight;
 
         // Mie
-        constexpr Vector3 earthMieScattering = Vector3(0.003996f, 0.003996f, 0.003996f);
-        constexpr Vector3 earthMieExtinction = Vector3(0.004440f, 0.004440f, 0.004440f);
-        constexpr Vector3 earthMieAbsorption = earthMieExtinction - earthMieScattering;
+        constexpr Vector3f earthMieScattering = Vector3f(0.003996f, 0.003996f, 0.003996f);
+        constexpr Vector3f earthMieExtinction = Vector3f(0.004440f, 0.004440f, 0.004440f);
+        constexpr Vector3f earthMieAbsorption = earthMieExtinction - earthMieScattering;
         component->mieScatteringScale = std::max(std::max(earthMieScattering.r, earthMieScattering.g), earthMieScattering.b);
         component->mieScattering = earthMieScattering / component->mieScatteringScale;
         component->mieAbsorptionScale = std::max(std::max(earthMieAbsorption.r, earthMieAbsorption.g), earthMieAbsorption.b);
@@ -42,7 +42,7 @@ namespace Horizon
         component->mieExponentialDistribution = earthMieScaleHeight;
 
         // Ozone
-        constexpr Vector3 earthAbsorptionExtinction = Vector3(0.000650f, 0.001881f, 0.000085f);
+        constexpr Vector3f earthAbsorptionExtinction = Vector3f(0.000650f, 0.001881f, 0.000085f);
         component->absorptionDensity[0] = { 25.0f, 0.0f, 0.0f, 1.0f / 15.0f, -2.0f / 3.0f };
         component->absorptionDensity[1] = { 0.0f, 0.0f, 0.0f, -1.0f / 15.0f, 8.0f / 3.0f };
         component->absorptionExtinctionScale = std::max(std::max(earthAbsorptionExtinction.r, earthAbsorptionExtinction.g), earthAbsorptionExtinction.b);
@@ -54,7 +54,7 @@ namespace Horizon
         SetupAtmosphereOfEarth(this);
 
         skyLuminanceScale = 1.0f;
-        skyLuminanceColor = Vector3(1.0f, 1.0f, 1.0f);
+        skyLuminanceColor = Vector3f(1.0f, 1.0f, 1.0f);
 
         renderObject = nullptr;
     }
@@ -117,7 +117,7 @@ namespace Horizon
             SetupAtmosphereParameters(atmosphereParameters, *this);
             renderObject->SetAtmosphereParameters(atmosphereParameters);
 
-            Vector3 skyLuminanceFactor = skyLuminanceScale * skyLuminanceColor;
+            Vector3f skyLuminanceFactor = skyLuminanceScale * skyLuminanceColor;
             renderObject->SetSkyLuminanceFactor(skyLuminanceFactor);
         }
     }

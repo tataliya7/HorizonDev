@@ -12,7 +12,7 @@ namespace Horizon
         return jitterPhaseCount;
     }
 
-    Vector2 TemporalSuperSamplingGetJitterOffset(uint32 index, uint32 phaseCount)
+    Vector2f TemporalSuperSamplingGetJitterOffset(uint32 index, uint32 phaseCount)
     {
         static const auto HaltonSequence = [](uint32 index, uint32 base)
         {
@@ -30,7 +30,7 @@ namespace Horizon
         float offsetY = HaltonSequence(index + 1, 3) - 0.5f;
 
         // Unit pixel space offset
-        Vector2 jitterOffset = Vector2(offsetX, offsetY);
+        Vector2f jitterOffset = Vector2f(offsetX, offsetY);
         return jitterOffset;
     }
 

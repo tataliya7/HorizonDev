@@ -2,7 +2,7 @@
 
 namespace Horizon
 {
-    Vector2 ComputeViewSpaceDepthToNDCSpaceDepthTransform(const Matrix4x4& projectionMatrix)
+    Vector2f ComputeViewSpaceDepthToNDCSpaceDepthTransform(const Matrix4x4f& projectionMatrix)
     {
         // Perspective projection matrix (right-handed coordinate system):
         // | A  0  0  0 |
@@ -20,7 +20,7 @@ namespace Horizon
         // Wview = 1
         // Zndc = Zclip / Wclip = -(C + D / Zview)
 
-        Vector2 transform = Vector2(projectionMatrix[2][2], projectionMatrix[3][2]);
+        Vector2f transform = Vector2f(projectionMatrix[2][2], projectionMatrix[3][2]);
         return transform;
     }
 

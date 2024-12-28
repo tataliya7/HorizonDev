@@ -2,44 +2,44 @@
 
 namespace Horizon
 {
-    Matrix4x4 ComputeRotationMatrixForCubeFace(uint32 faceIndex)
+    Matrix4x4f ComputeRotationMatrixForCubeFace(uint32 faceIndex)
     {
         // Basis
-        Vector3 up = Vector3(0.0f, 0.0f, 1.0f);
-        Vector3 right = Vector3(1.0f, 0.0f, 0.0f);
-        Vector3 forward = Vector3(1.0f, 0.0f, 0.0f);
+        Vector3f up = Vector3f(0.0f, 0.0f, 1.0f);
+        Vector3f right = Vector3f(1.0f, 0.0f, 0.0f);
+        Vector3f forward = Vector3f(1.0f, 0.0f, 0.0f);
 
         switch (faceIndex)
         {
         case 0: // X+
-            up = Vector3(0.0f, 0.0f, 1.0f);
-            right = Vector3(1.0f, 0.0f, 0.0f);
-            forward = Vector3(1.0f, 0.0f, 0.0f);
+            up = Vector3f(0.0f, 0.0f, 1.0f);
+            right = Vector3f(1.0f, 0.0f, 0.0f);
+            forward = Vector3f(1.0f, 0.0f, 0.0f);
             break;
         case 1: // X-
-            up = Vector3(0.0f, 0.0f, 1.0f);
-            right = Vector3(1.0f, 0.0f, 0.0f);
-            forward = Vector3(-1.0f, 0.0f, 0.0f);
+            up = Vector3f(0.0f, 0.0f, 1.0f);
+            right = Vector3f(1.0f, 0.0f, 0.0f);
+            forward = Vector3f(-1.0f, 0.0f, 0.0f);
             break;
         case 2: // Y+
-            up = Vector3(0.0f, 0.0f, 1.0f);
-            right = Vector3(1.0f, 0.0f, 0.0f);
-            forward = Vector3(0.0f, 1.0f, 0.0f);
+            up = Vector3f(0.0f, 0.0f, 1.0f);
+            right = Vector3f(1.0f, 0.0f, 0.0f);
+            forward = Vector3f(0.0f, 1.0f, 0.0f);
             break;
         case 3: // Y-
-            up = Vector3(0.0f, 0.0f, 1.0f);
-            right = Vector3(1.0f, 0.0f, 0.0f);
-            forward = Vector3(0.0f, -1.0f, 0.0f);
+            up = Vector3f(0.0f, 0.0f, 1.0f);
+            right = Vector3f(1.0f, 0.0f, 0.0f);
+            forward = Vector3f(0.0f, -1.0f, 0.0f);
             break;
         case 4: // Z+
-            up = Vector3(0.0f, 0.0f, 1.0f);
-            right = Vector3(1.0f, 0.0f, 0.0f);
-            forward = Vector3(0.0f, -1.0f, 0.0f);
+            up = Vector3f(0.0f, 0.0f, 1.0f);
+            right = Vector3f(1.0f, 0.0f, 0.0f);
+            forward = Vector3f(0.0f, -1.0f, 0.0f);
             break;
         case 5: // Z-
-            up = Vector3(0.0f, 0.0f, 1.0f);
-            right = Vector3(1.0f, 0.0f, 0.0f);
-            forward = Vector3(0.0f, -1.0f, 0.0f);
+            up = Vector3f(0.0f, 0.0f, 1.0f);
+            right = Vector3f(1.0f, 0.0f, 0.0f);
+            forward = Vector3f(0.0f, -1.0f, 0.0f);
             break;
         default:
             std::unreachable();
@@ -47,7 +47,7 @@ namespace Horizon
         }
 
         // RH
-        Matrix4x4 result;
+        Matrix4x4f result;
         result[0][0] = right.x;
         result[1][0] = right.y;
         result[2][0] = right.z;
@@ -93,7 +93,7 @@ namespace Horizon
         {
             for (uint32 faceIndex = 0; faceIndex < 6; faceIndex++)
             {
-                const Matrix4x4 rotationMatrix = ComputeRotationMatrixForCubeFace(faceIndex);
+                const Matrix4x4f rotationMatrix = ComputeRotationMatrixForCubeFace(faceIndex);
 
                 renderGraph.AddPass(
                     std::format("CaptureEnvironmentMap (Compute, Size={}, Face={})", environmentMapTextureSize, faceIndex),

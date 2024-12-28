@@ -199,10 +199,10 @@ namespace Horizon
 //             RenderBackendTextureCreateFlags::UnorderedAccess | RenderBackendTextureCreateFlags::ShaderResource);
 //         RenderGraphTextureHandle rayLengthTexture = renderGraph.CreateTexture(rayLengthTextureDesc, "SSRRayLengthTexture");
 //
-//         const Vector2 hzbUVFactor = Vector2(
+//         const Vector2f hzbUVFactor = Vector2f(
 //             float(perFrameData.paramaters.renderResolution.width) / float(hzbWidth),
 //             float(perFrameData.paramaters.renderResolution.height) / float(hzbHeight));
-//         Vector4 hzbUVFactorAndInvFactor = Vector4(hzbUVFactor.x, hzbUVFactor.y, 1.0f / hzbUVFactor.x, 1.0 / hzbUVFactor.y);
+//         Vector4f hzbUVFactorAndInvFactor = Vector4f(hzbUVFactor.x, hzbUVFactor.y, 1.0f / hzbUVFactor.x, 1.0 / hzbUVFactor.y);
 
         RenderGraphTextureHandle previousSceneColorTexture = defaultResources->ImportBlackDummyTexture2D(renderGraph);
         if (historyFrame.temporalSuperSamplingOutputTexture)

@@ -838,7 +838,7 @@ namespace Horizon
         {
             auto windowPos = ImGui::GetWindowPos();
             //auto viewportSize = ImGui::GetContentRegionAvail();
-            Vector2 viewportSize = { swapChainWidth, swapChainHeight };
+            Vector2f viewportSize = { swapChainWidth, swapChainHeight };
 
             if (selectedEntity && gizmoOperationType != -1)
             {
@@ -851,11 +851,11 @@ namespace Horizon
                 float snapValues[3] = { snapValue, snapValue, snapValue };
 
                 // Editor camera
-                Matrix4x4 cameraProjection = projectionMatrix_deprecated;
-                Matrix4x4 cameraView = viewMatrix_deprecated;
+                Matrix4x4f cameraProjection = projectionMatrix_deprecated;
+                Matrix4x4f cameraView = viewMatrix_deprecated;
 
                 // Entity transform
-                static Matrix4x4 transformMatrix = Matrix4x4(1.0f);
+                static Matrix4x4f transformMatrix = Matrix4x4f(1.0f);
                 TransformComponent& transformComponent = editorSceneManager->GetActiveScene()->GetEntityManager()->GetComponent<TransformComponent>(selectedEntity);
                 transformMatrix = transformComponent.localToWorldMatrix;
 
@@ -871,8 +871,8 @@ namespace Horizon
                     nullptr,
                     snap ? snapValues : nullptr);
 
-                /*static Quaternion zUpQuat = glm::rotate(glm::quat(), Math::DegreesToRadians(90.0), Vector3(1.0, 0.0, 0.0));
-                static Matrix4x4 preTransform = Math::Compose(Vector3(0.0f, 0.0f, 0.0f), zUpQuat, Vector3(1.0f, 1.0f, 1.0f));
+                /*static Quaternion zUpQuat = glm::rotate(glm::quat(), Math::DegreesToRadians(90.0), Vector3f(1.0, 0.0, 0.0));
+                static Matrix4x4f preTransform = Math::Compose(Vector3f(0.0f, 0.0f, 0.0f), zUpQuat, Vector3f(1.0f, 1.0f, 1.0f));
                 ImGuizmo::DrawGrid(glm::value_ptr(cameraView),
                     glm::value_ptr(cameraProjection),
                     glm::value_ptr(preTransform),
@@ -881,7 +881,7 @@ namespace Horizon
                 if (ImGuizmo::IsUsing())
                 {
                     TransformComponent& _transformComponent = editorSceneManager->GetActiveScene()->GetEntityManager()->GetComponent<TransformComponent>(selectedEntity);
-                    _transformComponent.position += Vector3(deltaTranslation.x, deltaTranslation.y, deltaTranslation.z);
+                    _transformComponent.position += Vector3f(deltaTranslation.x, deltaTranslation.y, deltaTranslation.z);
                     //editorSceneManager->GetActiveScene()->GetEntityManager()->ReplaceComponent<TransformComponent>(selectedEntity, transformComponent);
                 }
             }
@@ -917,7 +917,7 @@ namespace Horizon
         }
 
         ImVec2 contentRegionAvail = ImGui::GetContentRegionAvail();
-        viewportSize = Vector2(contentRegionAvail.x, contentRegionAvail.y);
+        viewportSize = Vector2f(contentRegionAvail.x, contentRegionAvail.y);
 
         ImGui::Image(previewTexture->GetHandle().ToUnit64(), ImVec2(viewportSize.x, viewportSize.y), ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f));
 
@@ -1946,7 +1946,7 @@ namespace Horizon
         //cursorPos = { 0, 0 };
         //ImVec2 windowPos = ImGui::GetWindowPos();
         //ImVec2 windowSize = ImGui::GetWindowSize();
-        //viewportPos = Vector4(cursorPos.x + windowPos.x, cursorPos.y + windowPos.y, cursorPos.x + windowPos.x + windowSize.x, cursorPos.y + windowPos.y + windowSize.y);
+        //viewportPos = Vector4f(cursorPos.x + windowPos.x, cursorPos.y + windowPos.y, cursorPos.x + windowPos.x + windowSize.x, cursorPos.y + windowPos.y + windowSize.y);
 
         if (showSceneHierarchyWindow)
         {

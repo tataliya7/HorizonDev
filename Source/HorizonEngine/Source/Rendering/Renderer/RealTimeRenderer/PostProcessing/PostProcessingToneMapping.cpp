@@ -35,7 +35,7 @@ namespace Horizon
         uint32 flags = 0;
 
         // Chromatic Aberration
-        Vector2 chromaticAberrationScale = Vector2(0.0f, 0.0f);
+        Vector2f chromaticAberrationScale = Vector2f(0.0f, 0.0f);
         // TODO: Implement chromatic aberration
         // {
         //     float chromaticAberrationIntensity = settings.postProcessingSettings.chromaticAberrationIntensity;
@@ -53,7 +53,7 @@ namespace Horizon
         //     {
         //         float offset = chromaticAberrationIntensity * 0.01f;
         //         float multiplier = 1.0f / (1.0f - chromaticAberrationOffset);
-        //         chromaticAberrationScale = Vector2(scaleR * offset * multiplier, scaleG * offset * multiplier);
+        //         chromaticAberrationScale = Vector2f(scaleR * offset * multiplier, scaleG * offset * multiplier);
         //     }
         // }
 

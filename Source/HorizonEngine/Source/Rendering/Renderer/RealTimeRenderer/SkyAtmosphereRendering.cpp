@@ -22,7 +22,7 @@ namespace Horizon
         outParameters.transmittanceLutSize = GetSizeAndInverseSize(TransmittanceLutWidth, TransmittanceLutHeight);
         outParameters.multipleScatteringLutSize = GetSizeAndInverseSize(MultipleScatteringLutWidth, MultipleScatteringLutHeight);
         outParameters.skyViewLutSize = GetSizeAndInverseSize(SkyViewLutWidth, SkyViewLutHeight);
-        outParameters.aerialPerspectiveVolumeSize = Vector2(float(AerialPerspectiveVolumeSize), 1.0f / float(AerialPerspectiveVolumeSize));
+        outParameters.aerialPerspectiveVolumeSize = Vector2f(float(AerialPerspectiveVolumeSize), 1.0f / float(AerialPerspectiveVolumeSize));
         outParameters.transmittanceLutSampleCount = float(TransmittanceLutSampleCount);
         outParameters.multipleScatteringLutSampleCount = float(MultipleScatteringLutSampleCount);
         outParameters.rayMarchingMinSampleCount = float(RayMarchingMinSampleCount);
@@ -52,29 +52,29 @@ namespace Horizon
      *
      * @see Tom Duff, James Burgess, Per Christensen, Christophe Hery, Andrew Kensler, Max Liani, and Ryusuke Villemin, Building an Orthonormal Basis, Revisited, Journal of Computer Graphics Techniques (JCGT), vol. 6, no. 1, 1-8, 2017
      */
-    static void BuildOrthonormalBasisBranchless(const Vector3& n, Vector3& b1, Vector3& b2)
+    static void BuildOrthonormalBasisBranchless(const Vector3f& n, Vector3f& b1, Vector3f& b2)
     {
         const float sign = copysignf(1.0f, n.z); // Using copysignf to eliminate the test
         //const float sign = n.z >= 0.0f ? 1.0f : -1.0f; // Explicitly writing
         const float a = -1.0f / (sign + n.z);
         const float b = n.x * n.y * a;
-        b1 = Vector3(1.0f + sign * n.x * n.x * a, sign * b, -sign * n.x);
-        b2 = Vector3(b, sign + n.y * n.y * a, -n.y);
+        b1 = Vector3f(1.0f + sign * n.x * n.x * a, sign * b, -sign * n.x);
+        b2 = Vector3f(b, sign + n.y * n.y * a, -n.y);
     }
 
-    void SetupSkyAtmosphereViewRelatedParameters(SkyAtmosphereViewRelatedParameters& outParameters, const SkyAtmosphereRenderObject& renderObject, const Vector3& worldSpaceCameraPosition, const Vector3& cameraForwardVector)
+    void SetupSkyAtmosphereViewRelatedParameters(SkyAtmosphereViewRelatedParameters& outParameters, const SkyAtmosphereRenderObject& renderObject, const Vector3f& worldSpaceCameraPosition, const Vector3f& cameraForwardVector)
     {
         const AtmosphereParameters& atmosphereParameters = renderObject.GetAtmosphereParameters();
         float bottomRadiusKm = atmosphereParameters.bottomRadius;
 
-        Vector3 worldSpacePlanetCenterKm = Vector3(0.0f, 0.0f, -bottomRadiusKm);
-        Vector3 worldSpacePlanetCenter = worldSpacePlanetCenterKm * KilometersToMeters;
+        Vector3f worldSpacePlanetCenterKm = Vector3f(0.0f, 0.0f, -bottomRadiusKm);
+        Vector3f worldSpacePlanetCenter = worldSpacePlanetCenterKm * KilometersToMeters;
 
-        Vector3 planetCenterToCameraPositionKm = (worldSpaceCameraPosition - worldSpacePlanetCenter) * MetersToKilometers;
+        Vector3f planetCenterToCameraPositionKm = (worldSpaceCameraPosition - worldSpacePlanetCenter) * MetersToKilometers;
 
-        Vector3 forwardVector = cameraForwardVector;
-        Vector3 upVector = Math::Normalize(planetCenterToCameraPositionKm);
-        Vector3 rightVector = Math::Normalize(Math::CrossProduct(forwardVector, upVector));
+        Vector3f forwardVector = cameraForwardVector;
+        Vector3f upVector = Math::Normalize(planetCenterToCameraPositionKm);
+        Vector3f rightVector = Math::Normalize(Math::CrossProduct(forwardVector, upVector));
 
         if (std::abs(Math::DotProduct(upVector, forwardVector)) > 0.999f)
         {
@@ -85,7 +85,7 @@ namespace Horizon
             forwardVector = Math::Normalize(Math::CrossProduct(upVector, rightVector));
         }
 
-        outParameters.skyViewLutReferential = Matrix3x3(forwardVector, rightVector, upVector);
+        outParameters.skyViewLutReferential = Matrix3x3f(forwardVector, rightVector, upVector);
     }
 
     bool RealTimeRenderer::IsSkyAtmosphereRenderingEnabled() const

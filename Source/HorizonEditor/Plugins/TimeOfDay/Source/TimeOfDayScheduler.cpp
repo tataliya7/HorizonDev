@@ -8,14 +8,14 @@ namespace Horizon
         entityHandle = scene->CreateEntity("TimeOfDayScheduler");
 
         transform = scene->GetEntityManager()->TryGetComponent<TransformComponent>(entityHandle);
-        transform->rotation = Vector3(11.0f, 6.0f, 0.0f);
+        transform->rotation = Vector3f(11.0f, 6.0f, 0.0f);
 
         {
             LightComponent& component = scene->GetEntityManager()->AddComponent<LightComponent>(entityHandle);
             component.type = LightComponent::Type::Distant;
             component.direction = DefaultLightDirection; //
-            component.direction = Math::Normalize(Vector3(-0.102607988f, 0.190808982f, -0.976249754f));
-            component.color = Vector3(1.0f, 1.0f, 1.0f);
+            component.direction = Math::Normalize(Vector3f(-0.102607988f, 0.190808982f, -0.976249754f));
+            component.color = Vector3f(1.0f, 1.0f, 1.0f);
             component.luminousIntensity = 120000.0f;
             component.apexAngleInDegrees = 0.5357f;
             component.castDynamicShadows = true;

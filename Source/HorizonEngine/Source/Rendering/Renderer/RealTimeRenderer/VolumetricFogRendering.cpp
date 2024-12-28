@@ -1,5 +1,5 @@
 #include "RealTimeRenderer.h"
-#include "Engine/Classes/Scene.h"
+#include "Engine/Core/Scene.h"
 
 namespace Horizon
 {

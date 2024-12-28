@@ -1,5 +1,5 @@
 #include "RealTimeRenderer.h"
-#include "Engine/Classes/Scene.h"
+#include "Engine/Core/Scene.h"
 
 namespace Horizon
 {
@@ -59,7 +59,7 @@ namespace Horizon
 
     void SetupVirtualShadowMapShaderParameters(VirtualShadowMapShaderParameters& outParameters, const SceneView& view, const LightRenderObject& light)
     {
-        const Vector3& lightDirection = light.GetDirection();
+        const Vector3f& lightDirection = light.GetDirection();
         const uint32 shadowCascadeCount = 1;//light.GetShadowCascadeCount();
         const float maxShadowDistance = light.GetMaxShadowDistance();
 

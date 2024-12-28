@@ -20,7 +20,7 @@ namespace Horizon
         RenderGraphTextureHandle outputTexture = bloomTexture;
         uint32 outputTextureWidth = targetResolution.width / 2;
         uint32 outputTextureHeight = targetResolution.height / 2;
-        const Vector4 outputTextureSize = Vector4(outputTextureWidth, outputTextureHeight, 1.0f / outputTextureWidth, 1.0f / outputTextureHeight);
+        const Vector4f outputTextureSize = Vector4f(outputTextureWidth, outputTextureHeight, 1.0f / outputTextureWidth, 1.0f / outputTextureHeight);
 
         RenderGraphTextureDesc lensFlareGhostTextureDesc = RenderGraphTextureDesc::Create2D(
             lensFlareTextureWidth,
@@ -29,7 +29,7 @@ namespace Horizon
             RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::UnorderedAccess | RenderBackendTextureCreateFlags::RenderTarget);
         RenderGraphTextureHandle lensFlareGhostTexture = renderGraph.CreateTexture(lensFlareGhostTextureDesc, "LensFlareGhostTexture");
 
-        const Vector4 lensFlareTextureSize = Vector4(lensFlareTextureWidth, lensFlareTextureHeight, 1.0f / lensFlareTextureWidth, 1.0f / lensFlareTextureHeight);
+        const Vector4f lensFlareTextureSize = Vector4f(lensFlareTextureWidth, lensFlareTextureHeight, 1.0f / lensFlareTextureWidth, 1.0f / lensFlareTextureHeight);
 
         renderGraph.AddPass(
             std::format("LensFlareGhost (Graphics, {}x{})", lensFlareTextureWidth, lensFlareTextureHeight),

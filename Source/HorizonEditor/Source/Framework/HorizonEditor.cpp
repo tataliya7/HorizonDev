@@ -65,12 +65,45 @@ namespace Horizon
         //window->keyReleaseEventCallback = BIND_FUNCTION(HorizonEditor::OnKeyReleasedEvent);
         //window->mouseButtonPressEventCallback = BIND_FUNCTION(HorizonEditor::OnMouseButtonPressedEvent);
         //window->mouseButtonReleaseEventCallback = BIND_FUNCTION(HorizonEditor::OnMouseButtonReleasedEvent);
-//
+
 //        PhysXInit();
 //        Audio::AudioEngineInit();
-//
+
         //RenderDocPluginInit();
-//
+
+        // UUID unit tests.
+        {
+            const UUID nil_uuid = UUID::NilUUID();
+            const UUID zeroes_uuid{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+            const UUID default_constructed{};
+            assert(nil_uuid.IsNil());
+            assert(zeroes_uuid.IsNil());
+            assert(default_constructed.IsNil());
+        }
+        {
+            UUID uuid = UUID::FromString("0C886E65-49E9-40B3-9E00-05649FF49C06");
+            std::string uuidString = UUID::ToString(uuid);
+            assert(uuidString == "0c886e65-49e9-40b3-9e00-05649ff49c06");
+        }
+        {
+            UUID uuid = UUID::FromString("d30a0e60-14a2-11ec-8b99-f7736944db8b1");
+            assert(uuid.IsNil());
+        }
+        {
+            UUID uuid = UUID::FromString("d30a0e60-14a2-11ec-8b99-f7736944db8b");
+            std::string uuidString = UUID::ToString(uuid);
+            assert(uuidString == "d30a0e60-14a2-11ec-8b99-f7736944db8b");
+        }
+        {
+            std::stringstream ss;
+            const UUID uuid1 = { 3540651616, 5282, 4588, 139, 153, 0xf7, 0x73, 0x69, 0x44, 0xdb, 0x8b };
+            //ss << uuid1;
+            assert(UUID::ToString(uuid1) == "d30a0e60-14a2-11ec-8b99-f7736944db8b");
+            UUID uuid2 = UUID::FromString("d30a0e60-14a2-11ec-8b99-f7736944db8b");
+            assert(uuid1 == uuid2);
+        }
+
+        assetDatabase = new AssetDatabase();
 
         InitializeEngine();
         streamlineContext = HorizonEngine::GetInstance()->streamlineContext;
@@ -134,14 +167,14 @@ namespace Horizon
             // EntityHandle sunLight = scene->CreateEntity("SunLight");
             // {
             //     TransformComponent& transformComponent = scene->GetEntityManager()->GetComponent<TransformComponent>(sunLight);
-            //     transformComponent.rotation = Vector3(11.0f, 6.0f, 0.0f);
-            //     //transformComponent.rotation = Vector3(0.0f, 0.0f, 0.0f);
+            //     transformComponent.rotation = Vector3f(11.0f, 6.0f, 0.0f);
+            //     //transformComponent.rotation = Vector3f(0.0f, 0.0f, 0.0f);
             //
             //     LightComponent& lightComponent = scene->GetEntityManager()->AddComponent<LightComponent>(sunLight);
             //     lightComponent.type = LightComponent::Type::Distant;
             //     lightComponent.direction = DefaultLightDirection; //
-            //     lightComponent.direction = Math::Normalize(Vector3(-0.102607988f, 0.190808982f, -0.976249754f));
-            //     lightComponent.color = Vector3(1.0f, 1.0f, 1.0f);
+            //     lightComponent.direction = Math::Normalize(Vector3f(-0.102607988f, 0.190808982f, -0.976249754f));
+            //     lightComponent.color = Vector3f(1.0f, 1.0f, 1.0f);
             //     lightComponent.luminousIntensity = 120000.0f;
             //     lightComponent.apexAngleInDegrees = 0.5357f;
             //     lightComponent.castDynamicShadows = true;
@@ -171,11 +204,11 @@ namespace Horizon
             EntityHandle pointLight0 = scene->CreateEntity("PointLight0");
             {
                 TransformComponent& transformComponent = scene->GetEntityManager()->GetComponent<TransformComponent>(pointLight0);
-                transformComponent.position = Vector3(9.0f, -3.0f, 1.5f);
+                transformComponent.position = Vector3f(9.0f, -3.0f, 1.5f);
 
                 LightComponent& lightComponent = scene->GetEntityManager()->AddComponent<LightComponent>(pointLight0);
                 lightComponent.type = LightComponent::Type::Point;
-                lightComponent.color = Vector4(255.0f / 255.0f, 41.0f / 255.0f, 0.0f / 255.0f, 1.0f);
+                lightComponent.color = Vector4f(255.0f / 255.0f, 41.0f / 255.0f, 0.0f / 255.0f, 1.0f);
                 lightComponent.luminousIntensity = 500.0f;
                 lightComponent.radius = 3.0f;
                 lightComponent.castDynamicShadows = true;
@@ -186,11 +219,11 @@ namespace Horizon
             EntityHandle pointLight1 = scene->CreateEntity("PointLight1");
             {
                 TransformComponent& transformComponent = scene->GetEntityManager()->GetComponent<TransformComponent>(pointLight1);
-                transformComponent.position = Vector3(-9.5f, 3.5f, 1.5f);
+                transformComponent.position = Vector3f(-9.5f, 3.5f, 1.5f);
 
                 LightComponent& lightComponent = scene->GetEntityManager()->AddComponent<LightComponent>(pointLight1);
                 lightComponent.type = LightComponent::Type::Point;
-                lightComponent.color = Vector4(0.0f, 7.0f / 255.0f, 255.0f / 255.0f, 1.0f);
+                lightComponent.color = Vector4f(0.0f, 7.0f / 255.0f, 255.0f / 255.0f, 1.0f);
                 lightComponent.luminousIntensity = 500.0f;
                 lightComponent.radius = 3.0f;
                 lightComponent.castDynamicShadows = true;
@@ -217,15 +250,12 @@ namespace Horizon
 
         timeOfDayScheduler = new TimeOfDayScheduler(scene);
 
-        // TODO: Test New Sponaza
-        USDImportSettings settings = {};
-        settings.importMeshes = true;
-        settings.importMaterials = true;
-        //USDImport("../../../Assets/Test/NewSponza/NewSponza.usdc", &settings, false);
-        USDImport(scene, "../../../Assets/Test/Sponza/sponza.usdc", &settings, false);
+        //std::filesystem::path assetPath = "../../../Assets/UsdSkelExamples/HumanFemale/HumanFemale.walk.usd";
+        std::filesystem::path assetPath = "../../../Assets/Test/Sponza/sponza.usdc";
+        assetDatabase->ImportAsset(assetPath, scene);
 
-        editorCamera.position = Vector3(0.0f, 0.0f, 5.0f);
-        editorCamera.rotation = Vector3(0.0f, 0.0f, 0.0f);
+        editorCamera.position = Vector3f(0.0f, 0.0f, 5.0f);
+        editorCamera.rotation = Vector3f(0.0f, 0.0f, 0.0f);
         editorCamera.fieldOfViewAxis = FieldOfViewAxis::Horizontal;
         editorCamera.fieldOfView = Math::DegreesToRadians(90.0f);
         editorCamera.aspectRatio = (float)swapChainWidth / (float)swapChainHeight;
@@ -242,7 +272,7 @@ namespace Horizon
         renderSettings.indirectLightingIntensity = 1.0f;
         renderSettings.shadowsTechnique = ShadowsTechnique::ShadowMap;
         renderSettings.reflectionsTechnique = ReflectionsTechnique::ScreenSpaceReflections;
-        renderSettings.superSamplingSettings.superSamplingTechnique = SuperSamplingTechnique::FSR;
+        renderSettings.superSamplingSettings.superSamplingTechnique = SuperSamplingTechnique::None;
         renderSettings.superSamplingSettings.qualityMode = 5;
         renderSettings.superSamplingSettings.desiredRenderResolutionPercentage = 1.0f;
 
@@ -336,9 +366,9 @@ namespace Horizon
 
         Quaternion cameraOrientation = Math::QuaternionFromEulerAngles(Math::DegreesToRadians(editorCamera.GetRotation()));
 
-        Vector3 cameraRightVector   = Math::Normalize(cameraOrientation * Vector3(1.0f, 0.0f, 0.0f));
-        Vector3 cameraForwardVector = Math::Normalize(cameraOrientation * Vector3(0.0f, 1.0f, 0.0f));
-        Vector3 cameraUpVector      = Math::Normalize(cameraOrientation * Vector3(0.0f, 0.0f, 1.0f));
+        Vector3f cameraRightVector   = Math::Normalize(cameraOrientation * Vector3f(1.0f, 0.0f, 0.0f));
+        Vector3f cameraForwardVector = Math::Normalize(cameraOrientation * Vector3f(0.0f, 1.0f, 0.0f));
+        Vector3f cameraUpVector      = Math::Normalize(cameraOrientation * Vector3f(0.0f, 0.0f, 1.0f));
 
         SceneView sceneView = {};
         sceneView.frameIndex = frameIndex;
@@ -361,7 +391,7 @@ namespace Horizon
         sceneView.tanHalfVerticalFOV = std::tan(editorCamera.fieldOfView * 0.5f);
         sceneView.nearClippingPlane = std::max(editorCamera.nearClippingPlane, MinNearClippingPlane);
         sceneView.farClippingPlane = editorCamera.farClippingPlane;
-        sceneView.backgroundColor = Vector3(0.0f, 0.0f, 0.0f);
+        sceneView.backgroundColor = Vector3f(0.0f, 0.0f, 0.0f);
         sceneView.targetWidth = swapChainWidth;
         sceneView.targetHeight = swapChainHeight;
         sceneView.targetTexture = targetTexture;
@@ -392,9 +422,9 @@ namespace Horizon
 
                 Quaternion previewCameraOrientation = Math::QuaternionFromEulerAngles(Math::DegreesToRadians(transform.rotation));
 
-                Vector3 preivewCameraUpVector = Math::Normalize(previewCameraOrientation * Vector3(0.0f, 0.0f, 1.0f));
-                Vector3 preivewCameraRightVector = Math::Normalize(previewCameraOrientation * Vector3(1.0f, 0.0f, 0.0f));
-                Vector3 preivewCameraForwardVector = Math::Normalize(previewCameraOrientation * Vector3(0.0f, 1.0f, 0.0f));
+                Vector3f preivewCameraUpVector = Math::Normalize(previewCameraOrientation * Vector3f(0.0f, 0.0f, 1.0f));
+                Vector3f preivewCameraRightVector = Math::Normalize(previewCameraOrientation * Vector3f(1.0f, 0.0f, 0.0f));
+                Vector3f preivewCameraForwardVector = Math::Normalize(previewCameraOrientation * Vector3f(0.0f, 1.0f, 0.0f));
 
                 previewSceneView.frameIndex = frameIndex;
                 previewSceneView.deltaTimeInSeconds = deltaTimeInSeconds;
@@ -416,7 +446,7 @@ namespace Horizon
                 previewSceneView.tanHalfVerticalFOV = std::tan(previewCamera.fieldOfView * 0.5f);
                 previewSceneView.nearClippingPlane = std::max(previewCamera.nearClippingPlane, MinNearClippingPlane);
                 previewSceneView.farClippingPlane = previewCamera.farClippingPlane;
-                previewSceneView.backgroundColor = Vector3(0.0f, 0.0f, 0.0f);
+                previewSceneView.backgroundColor = Vector3f(0.0f, 0.0f, 0.0f);
                 previewSceneView.targetWidth = previewTextureWidth;
                 previewSceneView.targetHeight = previewTextureHeight;
                 previewSceneView.targetTexture = previewTexture;
@@ -440,14 +470,14 @@ namespace Horizon
             float rLenNear = uLenNear * previewSceneView.aspectRatio;
             float uLenFar = distanceFar * previewSceneView.tanHalfVerticalFOV;
             float rLenFar = uLenFar * previewSceneView.aspectRatio;
-            Vector3 uNear = uLenNear * previewSceneView.cameraUpVector;
-            Vector3 rNear = rLenNear * previewSceneView.cameraRightVector;
-            Vector3 uFar = uLenFar * previewSceneView.cameraUpVector;
-            Vector3 rFar = rLenFar * previewSceneView.cameraRightVector;
-            Vector3 nearCenterPoint = previewSceneView.cameraPosition + distanceNear * previewSceneView.cameraForwardVector;
-            Vector3 farCenterPoint = previewSceneView.cameraPosition + distanceFar * previewSceneView.cameraForwardVector;
+            Vector3f uNear = uLenNear * previewSceneView.cameraUpVector;
+            Vector3f rNear = rLenNear * previewSceneView.cameraRightVector;
+            Vector3f uFar = uLenFar * previewSceneView.cameraUpVector;
+            Vector3f rFar = rLenFar * previewSceneView.cameraRightVector;
+            Vector3f nearCenterPoint = previewSceneView.cameraPosition + distanceNear * previewSceneView.cameraForwardVector;
+            Vector3f farCenterPoint = previewSceneView.cameraPosition + distanceFar * previewSceneView.cameraForwardVector;
 
-            Vector3 corners[8];
+            Vector3f corners[8];
             corners[0] = nearCenterPoint - uNear - rNear; // left-bottom
             corners[1] = nearCenterPoint - uNear + rNear; // right-bottom
             corners[2] = nearCenterPoint + uNear - rNear; // left-up
@@ -458,18 +488,18 @@ namespace Horizon
             corners[7] = farCenterPoint + uFar + rFar; // right-up
 
             renderer->debugDrawLinesVertices.clear();
-            renderer->DrawLine(corners[0], corners[1], Vector4(1.0f, 0.0f, 0.0f, 1.0f), 1.0f, 0);
-            renderer->DrawLine(corners[1], corners[3], Vector4(1.0f, 0.0f, 0.0f, 1.0f), 1.0f, 0);
-            renderer->DrawLine(corners[2], corners[3], Vector4(1.0f, 0.0f, 0.0f, 1.0f), 1.0f, 0);
-            renderer->DrawLine(corners[2], corners[0], Vector4(1.0f, 0.0f, 0.0f, 1.0f), 1.0f, 0);
-            renderer->DrawLine(corners[0+4], corners[1+4], Vector4(1.0f, 0.0f, 0.0f, 1.0f), 1.0f, 0);
-            renderer->DrawLine(corners[1+4], corners[3+4], Vector4(1.0f, 0.0f, 0.0f, 1.0f), 1.0f, 0);
-            renderer->DrawLine(corners[2+4], corners[3+4], Vector4(1.0f, 0.0f, 0.0f, 1.0f), 1.0f, 0);
-            renderer->DrawLine(corners[2+4], corners[0+4], Vector4(1.0f, 0.0f, 0.0f, 1.0f), 1.0f, 0);
-            renderer->DrawLine(corners[0], corners[4], Vector4(1.0f, 0.0f, 0.0f, 1.0f), 1.0f, 0);
-            renderer->DrawLine(corners[1], corners[5], Vector4(1.0f, 0.0f, 0.0f, 1.0f), 1.0f, 0);
-            renderer->DrawLine(corners[2], corners[6], Vector4(1.0f, 0.0f, 0.0f, 1.0f), 1.0f, 0);
-            renderer->DrawLine(corners[3], corners[7], Vector4(1.0f, 0.0f, 0.0f, 1.0f), 1.0f, 0);
+            renderer->DrawLine(corners[0], corners[1], Vector4f(1.0f, 0.0f, 0.0f, 1.0f), 1.0f, 0);
+            renderer->DrawLine(corners[1], corners[3], Vector4f(1.0f, 0.0f, 0.0f, 1.0f), 1.0f, 0);
+            renderer->DrawLine(corners[2], corners[3], Vector4f(1.0f, 0.0f, 0.0f, 1.0f), 1.0f, 0);
+            renderer->DrawLine(corners[2], corners[0], Vector4f(1.0f, 0.0f, 0.0f, 1.0f), 1.0f, 0);
+            renderer->DrawLine(corners[0+4], corners[1+4], Vector4f(1.0f, 0.0f, 0.0f, 1.0f), 1.0f, 0);
+            renderer->DrawLine(corners[1+4], corners[3+4], Vector4f(1.0f, 0.0f, 0.0f, 1.0f), 1.0f, 0);
+            renderer->DrawLine(corners[2+4], corners[3+4], Vector4f(1.0f, 0.0f, 0.0f, 1.0f), 1.0f, 0);
+            renderer->DrawLine(corners[2+4], corners[0+4], Vector4f(1.0f, 0.0f, 0.0f, 1.0f), 1.0f, 0);
+            renderer->DrawLine(corners[0], corners[4], Vector4f(1.0f, 0.0f, 0.0f, 1.0f), 1.0f, 0);
+            renderer->DrawLine(corners[1], corners[5], Vector4f(1.0f, 0.0f, 0.0f, 1.0f), 1.0f, 0);
+            renderer->DrawLine(corners[2], corners[6], Vector4f(1.0f, 0.0f, 0.0f, 1.0f), 1.0f, 0);
+            renderer->DrawLine(corners[3], corners[7], Vector4f(1.0f, 0.0f, 0.0f, 1.0f), 1.0f, 0);
 
             previewSceneView.transformations.Finalize();
 
@@ -542,10 +572,10 @@ namespace Horizon
                 Matrix4x4f viewMatrix = glm::lookAt(boundingSphereCenter, boundingSphereCenter + lightDirection, Vector3f(0.0f, 1.0f, 0.0f));
                 Matrix4x4f projectionMatrix = Math::OrthographicProjection_ReverseZ_ZO(-boundingSphereRadius, boundingSphereRadius, -boundingSphereRadius, boundingSphereRadius, minZ, maxZ);
 
-                renderer->DrawSphere(boundingSphereCenter, boundingSphereRadius, Vector4(1.0f, 0.0f, 0.0f, 1.0f));
+                renderer->DrawSphere(boundingSphereCenter, boundingSphereRadius, Vector4f(1.0f, 0.0f, 0.0f, 1.0f));
 
-                Vector3 fff = previewSceneView.cameraPosition + cascadeEndDistance * previewSceneView.cameraForwardVector;
-                renderer->DrawLine(previewSceneView.cameraPosition + float(cascadeIndex) * previewSceneView.cameraRightVector, fff + float(cascadeIndex) * previewSceneView.cameraRightVector, Vector4(1.0f, 0.0f, 0.0f, 1.0f), 1.0f, 0);
+                Vector3f fff = previewSceneView.cameraPosition + cascadeEndDistance * previewSceneView.cameraForwardVector;
+                renderer->DrawLine(previewSceneView.cameraPosition + float(cascadeIndex) * previewSceneView.cameraRightVector, fff + float(cascadeIndex) * previewSceneView.cameraRightVector, Vector4f(1.0f, 0.0f, 0.0f, 1.0f), 1.0f, 0);
             }
         }
 

@@ -1,5 +1,5 @@
 #include "ImageBasedLighting.h"
-#include "RenderUtils.h"
+#include "RenderUtility.h"
 #include "ShaderLibrary.h"
 
 namespace Horizon

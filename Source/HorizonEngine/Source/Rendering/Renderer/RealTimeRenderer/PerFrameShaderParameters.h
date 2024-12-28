@@ -4,11 +4,11 @@
 #include "Foundation/FoundationModule.h"
 namespace Horizon {
 #define uint Horizon::uint32
-#define float2 Horizon::Vector2
-#define float3 Horizon::Vector3
-#define float4 Horizon::Vector4
+#define float2 Horizon::Vector2f
+#define float3 Horizon::Vector3f
+#define float4 Horizon::Vector4f
 #define float3x3 Horizon::Matrix3x3
-#define float4x4 Horizon::Matrix4x4
+#define float4x4 Horizon::Matrix4x4f
 #endif // __cplusplus
 
 struct PerFrameShaderParameters

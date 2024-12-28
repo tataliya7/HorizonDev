@@ -1073,10 +1073,10 @@ namespace Horizon
 #define EXPORT_D3D12_REDIST_CONSTANT_DATA (_WIN64 && 1)
 
 #if EXPORT_D3D12_REDIST_CONSTANT_DATA
-// D3D12SDKVersion declares the SDK version of the D3D12 redistributable that the Application is targeting.
-extern "C" { _declspec(dllexport) extern const UINT D3D12SDKVersion = 614; }
-// D3D12SDKPath is a UTF-8 string that declares that D3D12Core.dll, D3D12SDKLayers.dll, and other D3D12 redist binaries are located in the subfolder D3D12 relative to the exe.
-extern "C" { _declspec(dllexport) extern const char* D3D12SDKPath = /*u8*/".\\D3D12\\"; }
+    // D3D12SDKVersion declares the SDK version of the D3D12 redistributable that the Application is targeting.
+    extern "C" { _declspec(dllexport) extern const UINT D3D12SDKVersion = 614; }
+    // D3D12SDKPath is a UTF-8 string that declares that D3D12Core.dll, D3D12SDKLayers.dll, and other D3D12 redist binaries are located in the subfolder D3D12 relative to the exe.
+    extern "C" { _declspec(dllexport) extern const char* D3D12SDKPath = /*u8*/".\\D3D12\\"; }
 #endif
 
     bool D3D12RenderBackend::Init(const D3D12RenderBackendDesc* desc)
@@ -1084,7 +1084,8 @@ extern "C" { _declspec(dllexport) extern const char* D3D12SDKPath = /*u8*/".\\D3
         if (false)
         {
 #if !HORIZON_CONFIGURATION_RELEASE
-            const UUID experimentalFeatures[] =
+            //const UUID experimentalFeatures[] =
+            const GUID experimentalFeatures[] =
             {
                 D3D12ExperimentalShaderModels
             };

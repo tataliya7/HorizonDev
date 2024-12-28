@@ -1294,7 +1294,7 @@ namespace Horizon
 
     struct RenderBackendRayTracingInstance
     {
-        Matrix4x4 transformMatrix;
+        Matrix4x4f transformMatrix;
         uint32 instanceID;
         uint32 instanceMask;
         uint32 instanceContributionToHitGroupIndex;

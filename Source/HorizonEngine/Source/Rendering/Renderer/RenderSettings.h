@@ -83,7 +83,7 @@ namespace Horizon
 
     struct GlobalIlluminationSettings
     {
-        Vector3 indirectLightingColor = Vector3(1.0f, 1.0f, 1.0f);
+        Vector3f indirectLightingColor = Vector3f(1.0f, 1.0f, 1.0f);
         float indirectLightingIntensity = 1.0f;
     };
 
@@ -95,7 +95,7 @@ namespace Horizon
         RendererType rendererType = RendererType::RealTime;
         bool enableFixedPreExposure = false;
         float fixedPreExposure = 1.0f;
-        Vector3 indirectLightingTint = Vector3(1.0f, 1.0f, 1.0f);
+        Vector3f indirectLightingTint = Vector3f(1.0f, 1.0f, 1.0f);
         float indirectLightingIntensity = 1.0f;
         GlobalIlluminationSettings globalIlluminationSettings;
         SuperSamplingSettings superSamplingSettings;

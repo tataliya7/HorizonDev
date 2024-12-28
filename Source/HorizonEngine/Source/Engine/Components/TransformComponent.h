@@ -11,11 +11,11 @@ namespace Horizon
 
         TransformComponent();
 
-        Vector3 position;
-        Vector3 rotation;
-        Vector3 scale;
-        Matrix4x4 relativeTransform;
-        Matrix4x4 localToWorldMatrix;
+        Vector3f position;
+        Vector3f rotation;
+        Vector3f scale;
+        Matrix4x4f relativeTransform;
+        Matrix4x4f localToWorldMatrix;
 
         void Update()
         {

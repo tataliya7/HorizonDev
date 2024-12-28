@@ -28,8 +28,8 @@ namespace Horizon
                         uint32 targetMipLevel = 0;
                         Vector2u inputTextureSize = Vector2u(renderResolution.width, renderResolution.height);
                         Vector2u outputTextureSize = Vector2u(depthPyramidTextureDesc.width, depthPyramidTextureDesc.height);
-                        Vector2 inverseInputTextureSize = Vector2(1.0f / float(inputTextureSize.x), 1.0f / float(inputTextureSize.y));
-                        Vector2 inverseOutputTextureSize = Vector2(1.0f / float(outputTextureSize.x), 1.0f / float(outputTextureSize.y));
+                        Vector2f inverseInputTextureSize = Vector2f(1.0f / float(inputTextureSize.x), 1.0f / float(inputTextureSize.y));
+                        Vector2f inverseOutputTextureSize = Vector2f(1.0f / float(outputTextureSize.x), 1.0f / float(outputTextureSize.y));
 
                         RenderBackendShaderConstants shaderConstants = {};
                         shaderConstants.BindTextureSRV(0, registry.GetTextureSRVBindlessResourceDescriptorIndex(sceneDepthTexture));
@@ -56,8 +56,8 @@ namespace Horizon
                         uint32 targetMipLevel = mipLevel;
                         Vector2u inputTextureSize = Vector2u(depthPyramidTextureDesc.width >> (mipLevel - 1), depthPyramidTextureDesc.height >> (mipLevel - 1));
                         Vector2u outputTextureSize = Vector2u(depthPyramidTextureDesc.width >> mipLevel, depthPyramidTextureDesc.height >> mipLevel);
-                        Vector2 inverseInputTextureSize = Vector2(1.0f / float(inputTextureSize.x), 1.0f / float(inputTextureSize.y));
-                        Vector2 inverseOutputTextureSize = Vector2(1.0f / float(outputTextureSize.x), 1.0f / float(outputTextureSize.y));
+                        Vector2f inverseInputTextureSize = Vector2f(1.0f / float(inputTextureSize.x), 1.0f / float(inputTextureSize.y));
+                        Vector2f inverseOutputTextureSize = Vector2f(1.0f / float(outputTextureSize.x), 1.0f / float(outputTextureSize.y));
 
                         std::vector<RenderBackendBarrier> transitions;
                         //transitions.emplace_back(RenderBackendBarrier(registry.GetRenderBackendTextureHandle(closestHZBTexture), RenderBackendTextureSubresourceRange(mipLevel - 1, 1, 0, 1), RenderBackendResourceState::UnorderedAccess, RenderBackendResourceState::ShaderResource));

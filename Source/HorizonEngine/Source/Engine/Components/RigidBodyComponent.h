@@ -23,8 +23,8 @@ namespace Horizon
 
         struct BoxCollider
         {
-            Vector3 halfExtent = Vector3(0.5f, 0.5f, 0.5f);
-            Vector3 offset = Vector3(0.0f, 0.0f, 0.0f);
+            Vector3f halfExtent = Vector3f(0.5f, 0.5f, 0.5f);
+            Vector3f offset = Vector3f(0.0f, 0.0f, 0.0f);
         };
 
         struct SphereCollider
@@ -52,7 +52,7 @@ namespace Horizon
         float linearDamping = 0.01f;
         float angularDamping = 0.05f;
 
-        void SetBoxCollider(const Vector3& halfExtent, const Vector3& offset)
+        void SetBoxCollider(const Vector3f& halfExtent, const Vector3f& offset)
         {
             shape = CollisionShape::Box;
             boxCollider.halfExtent = halfExtent;

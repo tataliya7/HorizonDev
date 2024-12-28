@@ -63,38 +63,6 @@ namespace Horizon
         }
     };
 
-    /**
-     * Implements a Universal Unique Identifier.
-     */
-    struct Guid
-    {
-        /** Generate a new Guid. */
-        static Guid Generate();
-        /** Convert Guid to std::string. */
-        static std::string ToString(const Guid& uuid);
-        /** The first component. */
-        uint64 a;
-        /** The second component. */
-        uint64 b;
-        Guid() : a(0), b(0) {}
-        Guid(uint64 a, uint64 b) : a(a), b(b) {}
-        FORCEINLINE operator bool() const noexcept
-        {
-            return (a != 0) || (b != 0);
-        }
-        FORCEINLINE bool operator==(const Guid& rhs) const noexcept
-        {
-            return (a == rhs.a) && (b == rhs.b);
-        }
-        FORCEINLINE bool operator!=(const Guid& rhs) const noexcept
-        {
-            return !(*this == rhs);
-        }
-    };
-
-    /** The Guid should be 128 bits. */
-    static_assert(sizeof(Guid) == 16, "Wrong Guid size");
-
     //class Timestep
     //{
     //public:

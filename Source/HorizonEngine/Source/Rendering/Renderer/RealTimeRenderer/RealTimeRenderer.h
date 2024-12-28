@@ -58,16 +58,16 @@ namespace Horizon
     // Surfel hot data
     struct SurfelHotData
     {
-        Vector3 position;
-        Vector3 normal;
+        Vector3f position;
+        Vector3f normal;
         float radius;
     };
 
     // Surfel cold data
     struct SurfelColdData
     {
-        Vector3 position;
-        Vector3 normal;
+        Vector3f position;
+        Vector3f normal;
         Vector2i primitiveID;
     };
 
@@ -510,10 +510,10 @@ namespace Horizon
         Extent2D targetResolution;
         Extent2D displayResolution;
 
-        Vector2 cameraJitterOffset;
+        Vector2f cameraJitterOffset;
 
-        Matrix4x4 reprojectionMatrix;
-        Matrix4x4 inverseReprojectionMatrix;
+        Matrix4x4f reprojectionMatrix;
+        Matrix4x4f inverseReprojectionMatrix;
 
         PostProcessingSettings finalPostProcessingSettings;
 
@@ -574,8 +574,8 @@ namespace Horizon
 
         struct HistoryFrame
         {
-            Vector3 cameraPosition;
-            Vector2 cameraJitterOffset;
+            Vector3f cameraPosition;
+            Vector2f cameraJitterOffset;
             CameraTransformations transformations;
             float preExposure;
             RenderGraphPersistentBuffer* autoExposureBuffer;
@@ -596,11 +596,11 @@ namespace Horizon
         uint32 debugDrawLinesVertexBufferSizes[3] = { 0, 0, 0 };
 
     public:
-        std::vector<Vector3> debugDrawLinesVertices;
+        std::vector<Vector3f> debugDrawLinesVertices;
         void DrawLine(
-            const Vector3& start,
-            const Vector3& end,
-            const Vector4& color,
+            const Vector3f& start,
+            const Vector3f& end,
+            const Vector4f& color,
             float width,
             uint8 depthPriorityGroup)
         {
@@ -609,9 +609,9 @@ namespace Horizon
         }
 
         void DrawSphere(
-            const Vector3& center,
+            const Vector3f& center,
             float radius,
-            const Vector4& color)
+            const Vector4f& color)
         {
             // x
             for (uint32 i = 0; i < 32; i++)

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Foundation/FoundationModule.h"
-#include "Engine/ECS/EntityManager.h"
+#include "Engine/EntityComponentSystem/EntityManager.h"
 #include "Engine/Serialization/Archive.h"
 
 namespace Horizon

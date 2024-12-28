@@ -9,9 +9,9 @@ namespace Horizon
     {
     public:
 
-        Vector3 scattering;
-        Vector3 absorption;
-        Vector3 emission;
+        Vector3f scattering;
+        Vector3f absorption;
+        Vector3f emission;
 
     private:
 
