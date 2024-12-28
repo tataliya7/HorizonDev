@@ -92,7 +92,7 @@ namespace Horizon
      */
     struct RenderSettings
     {
-        RendererType rendererType = RendererType::RealTime;
+        RenderMode renderMode = RenderMode::Rasterization;
         bool enableFixedPreExposure = false;
         float fixedPreExposure = 1.0f;
         Vector3f indirectLightingTint = Vector3f(1.0f, 1.0f, 1.0f);

@@ -792,12 +792,16 @@ namespace Horizon
                 sceneTextures.shadowMaskTexture = screenSpaceShadowMaskTexture;
             }
         }
+        else
+        {
+            sceneTextures.shadowMaskTexture = defaultResources->ImportWhiteDummyTexture2D(renderGraph);
+        }
 
         RenderGraphTextureHandle localLightShadowMapAtlas = RenderLocalLightShadows(renderGraph, view);
 
         AddDirectLightingPass(renderGraph, view, localLightShadowMapAtlas);
 
-        if (view.renderSettings.rendererType == RendererType::ReferencePathTracing)
+        if (view.renderSettings.renderMode == RenderMode::ReferencePathTracing)
         {
             DispatchPathTracing(renderGraph, view);
         }

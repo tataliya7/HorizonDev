@@ -21,14 +21,14 @@ namespace Horizon
 
         SceneRenderer* sceneRenderer = nullptr;
 
-        RendererType rendererType = sceneView->GetRenderSettings().rendererType;
+        RenderMode renderMode = sceneView->GetRenderSettings().renderMode;
 
-        if (rendererType == RendererType::ReferencePathTracing)
+        if (renderMode == RenderMode::ReferencePathTracing)
         {
             assert(false && "Path tracing renderer is not implemented yet.");
             sceneRenderer = nullptr;
         }
-        else if (rendererType == RendererType::RealTime)
+        else if (renderMode == RenderMode::Rasterization)
         {
             sceneRenderer = new RealTimeRenderer(sceneView);
         }

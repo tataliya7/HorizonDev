@@ -939,10 +939,10 @@ namespace Horizon
             ImGui::NextColumn();
             ImGui::PushItemWidth(-1);
 
-            static const char* rendererTypeNames[] = { "Real-Time", "Path Tracing (Real-Time)", "Path Tracing (Reference)" };
-            int rendererType = (int)renderSettings.rendererType;
-            ImGui::Combo("##Renderer", &rendererType, rendererTypeNames, IM_ARRAYSIZE(rendererTypeNames));
-            renderSettings.rendererType = (RendererType)rendererType;
+            static const char* renderModeNames[] = { "Rasterization", "Hybrid Rendering", "Path Tracing (Real-Time)", "Path Tracing (Reference)" };
+            int renderMode = (int)renderSettings.renderMode;
+            ImGui::Combo("##Renderer", &renderMode, renderModeNames, IM_ARRAYSIZE(renderModeNames));
+            renderSettings.renderMode = (RenderMode)renderMode;
 
             ImGui::Columns(1);
             ImGui::Separator();
