@@ -17,7 +17,7 @@
 // If you have feedback, or found this code useful, we'd love to hear from you.
 // https://www.bendstudio.com
 // https://www.twitter.com/bendstudio
-//
+// 
 // We are *always* looking for talented graphics and technical programmers!
 // https://www.bendstudio.com/careers
 
@@ -26,37 +26,37 @@
 //--------------------------------------------------------------
 
 // The main shadow generation function is WriteScreenSpaceShadow(), it will read a depth texture, and write to a shadow texture
-// This code is setup to target DX12 DXC shader compiler, but has also been tested on PS5 with appropriate API remapping.
+// This code is setup to target DX12 DXC shader compiler, but has also been tested on PS5 with appropriate API remapping. 
 // It can compile to DX11, but requires some modifications (e.g., early-out's use of wave intrinsics is not supported in DX11).
 // Note; you can customize the 'EarlyOutPixel' function to perform custom early-out logic to optimize this shader.
 
 // The following Macros must be defined in the compute shader file before including this header:
-//
-//
-//		#define WAVE_SIZE 64						// Wavefront size of the compute shader running this code.
+//		
+//		
+//		#define WAVE_SIZE 64						// Wavefront size of the compute shader running this code. 
 //													// numthreads[WAVE_SIZE, 1, 1]
 //													// Only tested with 64.
-//
+//		
 //		#define SAMPLE_COUNT 60						// Number of shadow samples per-pixel.
 //													// Determines overall cost, as this value controls the length of the shadow (in pixels).
 //													// The number of texture-reads performed per-thread will be (SAMPLE_COUNT / WAVE_SIZE + 2) * 2.
 //													// Recommended starting value is 60 (This would be 4 reads per thread if WAVE_SIZE is 64). A value of 64 would require 6 reads.
-//
+//		
 //		// Not all shadow samples are treated the same:
 //		//	The bulk of samples will average together in to groups of 4, to produce a slightly smoothed result (so one sample cannot fully show the pixel)
 //		//	However, the samples very close to the start pixel can optionally be forced to disable this averaging, so a single sample can fully shadow the pixel (HardShadowSamples)
 //		//	Plus, a number of the last (most distant) samples can (for a small cost) apply a fade-out effect to soften a hash shadow cutoff (FadeOutSamples)
-//
+//		
 //		#define HARD_SHADOW_SAMPLES 4				// Number of initial shadow samples that will produce a hard shadow, and not perform sample-averaging.
 //													// This trades aliasing for grounding pixels very close to the shadow caster.
 //													// Recommended starting value: 4
-//
+//		
 //		#define FADE_OUT_SAMPLES 8					// Number of samples that will fade out at the end of the shadow (for a minor cost).
 //													// Recommended starting value: 8
 
 
 #if defined(__HLSL_VERSION) || defined(__hlsl_dx_compiler)
-
+	
 	#define USE_HALF_PIXEL_OFFSET 1		// Apply a 0.5 texel offset when sampling a texture. Toggle this macro if the output shadow has odd, regular grid-like artefacts.
 
 	// HLSL enforces that a pixel offset in a Sample() call must be a compile time constant, which isn't always required - and in some cases can give a small perf boost if used.
@@ -68,7 +68,7 @@
 // Forward declare:
 // Generate the shadow
 //	Call this function from a compute shader with thread dimensions: numthreads[WAVE_SIZE, 1, 1]
-//
+// 
 //	(int3)	inGroupID:			Compute shader group id register (SV_GroupID)
 //	(int)	inGroupThreadId:	Compute shader group thread id register (SV_GroupThreadID)
 void WriteScreenSpaceShadow(struct DispatchParameters inParameters, int3 inGroupID, int inGroupThreadID);
@@ -171,9 +171,9 @@ struct DispatchParameters
 
 		// Example:
 		// return inParameters.CustomShadowMapTerm[pixel_xy] == 0;
-#if 0
+
 		(void)pixel_xy;	//unused by this implementation, avoid potential compiler warning.
-#endif
+
 		// The compiled code will be more optimal if the 'depth' value is not referenced.
 		return depth >= inParameters.DepthBounds.y || depth <= inParameters.DepthBounds.x;
 	}
@@ -240,7 +240,7 @@ struct DispatchParameters
 
 	// Generate the shadow
 	//	Call this function from a compute shader with thread dimensions: numthreads[WAVE_SIZE, 1, 1]
-	//
+	// 
 	//	(int3)	inGroupID:			Compute shader group id register (SV_GroupID)
 	//	(int)	inGroupThreadId:	Compute shader group thread id register (SV_GroupThreadID)
 	void WriteScreenSpaceShadow(DispatchParameters inParameters, int3 inGroupID, int inGroupThreadID)
@@ -412,7 +412,7 @@ struct DispatchParameters
 		float4 shadow_value = 1;
 		float hard_shadow = 1;
 
-		// This is the inverse of how large the shadowing window is for the projected sample data.
+		// This is the inverse of how large the shadowing window is for the projected sample data. 
 		// All values in the LDS sample list are scaled by 1.0 / sample_distance, such that all light directions become parallel.
 		// The multiply by sample_distance[0] here is to compensate for the projection divide in the data.
 		// The 1.0 / inParameters.SurfaceThickness is to adjust user selected thickness. So a 0.5% thickness will scale depth values from [0,1] to [0,200]. The shadow window is always 1 wide.
@@ -455,7 +455,7 @@ struct DispatchParameters
 
 		// Apply the contrast value.
 		// A value of 0 indicates a sample was exactly matched to the reference depth (and the result is fully shadowed)
-		// We want some boost to this range, so samples don't have to exactly match to produce a full shadow.
+		// We want some boost to this range, so samples don't have to exactly match to produce a full shadow. 
 		shadow_value = saturate(shadow_value * (inParameters.ShadowContrast) + (1 - inParameters.ShadowContrast));
 		hard_shadow = saturate(hard_shadow * (inParameters.ShadowContrast) + (1 - inParameters.ShadowContrast));
 
@@ -473,9 +473,9 @@ struct DispatchParameters
 				result = is_edge ? 1 : 0;
 			if (inParameters.DebugOutputThreadIndex)
 				result = (inGroupThreadID / (float)WAVE_SIZE);
-			if (inParameters.DebugOutputWaveIndex)
+			if (inParameters.DebugOutputWaveIndex)			
 				result = frac(inGroupID.x / (float)WAVE_SIZE);
-
+			
 			// Asking the GPU to write scattered single-byte pixels isn't great,
 			// But thankfully the latency is hidden by all the work we're doing...
 			inParameters.OutputTexture[(int2)write_xy] = result;
