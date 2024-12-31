@@ -171,9 +171,9 @@ struct DispatchParameters
 
 		// Example:
 		// return inParameters.CustomShadowMapTerm[pixel_xy] == 0;
-
+#if 0
 		(void)pixel_xy;	//unused by this implementation, avoid potential compiler warning.
-
+#endif
 		// The compiled code will be more optimal if the 'depth' value is not referenced.
 		return depth >= inParameters.DepthBounds.y || depth <= inParameters.DepthBounds.x;
 	}
