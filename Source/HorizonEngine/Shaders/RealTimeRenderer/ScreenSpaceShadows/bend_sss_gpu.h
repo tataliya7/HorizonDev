@@ -55,8 +55,8 @@
 //													// Recommended starting value: 8
 
 
-#if defined(__HLSL_VERSION) || defined(__hlsl_dx_compiler)
 	
+#if defined(__HLSL_VERSION) || defined(__hlsl_dx_compiler) || 1
 	#define USE_HALF_PIXEL_OFFSET 1		// Apply a 0.5 texel offset when sampling a texture. Toggle this macro if the output shadow has odd, regular grid-like artefacts.
 
 	// HLSL enforces that a pixel offset in a Sample() call must be a compile time constant, which isn't always required - and in some cases can give a small perf boost if used.
