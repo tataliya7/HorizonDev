@@ -82,8 +82,8 @@ namespace Horizon
 
                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
                 {
-                    uint32 threadGroupCountX = CeilDiv(outputTextureDesc.width, PostProcessingThreadGroupSizeX);
-                    uint32 threadGroupCountY = CeilDiv(outputTextureDesc.height, PostProcessingThreadGroupSizeY);
+                    uint32 threadGroupCountX = ComputeShaderThreadGroupCount(outputTextureDesc.width, PostProcessingThreadGroupSizeX);
+                    uint32 threadGroupCountY = ComputeShaderThreadGroupCount(outputTextureDesc.height, PostProcessingThreadGroupSizeY);
                     uint32 threadGroupCountZ = 1;
 
                     RenderBackendShaderConstants shaderConstants = {};

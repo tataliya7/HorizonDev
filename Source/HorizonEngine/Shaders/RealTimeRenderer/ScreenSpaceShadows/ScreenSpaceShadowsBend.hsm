@@ -1,7 +1,3 @@
-#define INTENSITY_MODE_PRIMITIVE_FLAG 0
-#define INTENSITY_MODE_DEPTH_BASED_APPROXIMATION 1
-#define INTENSITY_MODE_FORCE_CASTING_INTENSITY 2
-
 #define WAVE_SIZE 64
 #define SAMPLE_COUNT 60
 #define HARD_SHADOW_SAMPLES 4
@@ -10,29 +6,30 @@
 #include "bend_sss_gpu.h"
 
 #include "../../ShaderCommon.hsh"
-#include "../../Random.hsh"
 #include "../RealTimeRendererCommon.hsh"
 
 SHADER_CONSTANTS_STRUCT_BEGIN();
 SHADER_CONSTANTS_TEXTURE_2D_SRV(0, float, DepthTextureSRV);
 SHADER_CONSTANTS_TEXTURE_2D_UAV(1, float, OutputTextureUAV);
 SHADER_CONSTANTS_SCALAR(2, float, SurfaceThickness);
-SHADER_CONSTANTS_SCALAR(3, float, LightCoordinateX);
-SHADER_CONSTANTS_SCALAR(4, float, LightCoordinateY);
-SHADER_CONSTANTS_SCALAR(5, float, LightCoordinateZ);
-SHADER_CONSTANTS_SCALAR(6, float, LightCoordinateW);
-SHADER_CONSTANTS_SCALAR(7, int, WaveOffsetX);
-SHADER_CONSTANTS_SCALAR(8, int, WaveOffsetY);
-SHADER_CONSTANTS_SCALAR(9, float, InvDepthBufferSizeX);
-SHADER_CONSTANTS_SCALAR(10, float, InvDepthBufferSizeY);
+SHADER_CONSTANTS_SCALAR(3, float, ShadowContrast);
+SHADER_CONSTANTS_SCALAR(4, float, LightCoordinateX);
+SHADER_CONSTANTS_SCALAR(5, float, LightCoordinateY);
+SHADER_CONSTANTS_SCALAR(6, float, LightCoordinateZ);
+SHADER_CONSTANTS_SCALAR(7, float, LightCoordinateW);
+SHADER_CONSTANTS_SCALAR(8, int, WaveOffsetX);
+SHADER_CONSTANTS_SCALAR(9, int, WaveOffsetY);
+SHADER_CONSTANTS_SCALAR(10, float, InvDepthBufferSizeX);
+SHADER_CONSTANTS_SCALAR(11, float, InvDepthBufferSizeY);
 SHADER_CONSTANTS_STRUCT_END();
 
 DispatchParameters CreateBendSSSDispatchParameters(
     in float SurfaceThickness,
+    in float ShadowContrast,
     in float4 LightCoordinate,
     in int2 WaveOffset,
-    in float FarDepthVal,
-    in float NearDepthVal,
+    in float FarDepthValue,
+    in float NearDepthValue,
     in float2 InvDepthTextureSize,
     in Texture2D<float> DepthTexture,
     in RWTexture2D<float> OutputTexture)
@@ -40,14 +37,19 @@ DispatchParameters CreateBendSSSDispatchParameters(
     DispatchParameters Parameters;
     Parameters.SetDefaults();
     Parameters.SurfaceThickness = SurfaceThickness;
+    Parameters.ShadowContrast = ShadowContrast;
     Parameters.LightCoordinate = LightCoordinate;
     Parameters.WaveOffset = WaveOffset;
-    Parameters.FarDepthValue = FarDepthVal;
-    Parameters.NearDepthValue = NearDepthVal;
-    Parameters.InvDepthTextureSize = InvDepthTextureSize;
+    Parameters.FarDepthValue = FarDepthValue;
+    Parameters.NearDepthValue = NearDepthValue;
+    Parameters.InvDepthTextureSize = float2(1.0/3840, 1.0/2054);
     Parameters.DepthTexture = DepthTexture;
     Parameters.OutputTexture = OutputTexture;
     Parameters.PointBorderSampler = GlobalSamplerPointBorder;
+    //Parameters.DebugOutputEdgeMask = true;
+    //Parameters.DebugOutputThreadIndex = true;
+    //Parameters.DebugOutputWaveIndex = true;
+    Parameters.UseEarlyOut = true;
     return Parameters;
 }
 
@@ -58,18 +60,20 @@ void ScreenSpaceShadowsBendCS(uint3 GroupID : SV_GroupID, uint3 GroupThreadID : 
     Texture2D<float> depthTexture = ShaderConstants.GetDepthTextureSRV();
     RWTexture2D<float> outputTexture = ShaderConstants.GetOutputTextureUAV();
 
-    const float surfaceThickness = ShaderConstants.GetSurfaceThickness();
-    const float4 lightCoordinate = float4(ShaderConstants.GetLightCoordinateX(), ShaderConstants.GetLightCoordinateY(), ShaderConstants.GetLightCoordinateZ(), ShaderConstants.GetLightCoordinateW());
-    const int2 waveOffset = int2(ShaderConstants.GetWaveOffsetX(), ShaderConstants.GetWaveOffsetY());
-    const float2 inverseDepthTextureSize = int2(ShaderConstants.GetInvDepthBufferSizeX(), ShaderConstants.GetInvDepthBufferSizeY());
+    float surfaceThickness = ShaderConstants.GetSurfaceThickness();
+    float shadowContrast = ShaderConstants.GetShadowContrast();
+    float4 lightCoordinate = float4(ShaderConstants.GetLightCoordinateX(), ShaderConstants.GetLightCoordinateY(), ShaderConstants.GetLightCoordinateZ(), ShaderConstants.GetLightCoordinateW());
+    int2 waveOffset = int2(ShaderConstants.GetWaveOffsetX(), ShaderConstants.GetWaveOffsetY());
+    float2 invDepthTextureSize = int2(ShaderConstants.GetInvDepthBufferSizeX(), ShaderConstants.GetInvDepthBufferSizeY());
 
     DispatchParameters parameters = CreateBendSSSDispatchParameters(
         surfaceThickness,
+        shadowContrast,
         lightCoordinate,
         waveOffset,
         FAR_CLIPPING_PLANE_DEPTH_VALUE,
         NEAR_CLIPPING_PLANE_DEPTH_VALUE,
-        inverseDepthTextureSize,
+        invDepthTextureSize,
         depthTexture,
         outputTexture);
 

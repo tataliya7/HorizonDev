@@ -111,6 +111,8 @@ void GaussianBloomDownsampleCS(uint3 dispatchThreadID : SV_DispatchThreadID)
     // float preExposure = frameShaderParameters.preExposure;
     // float inversePreExposure = frameShaderParameters.inversePreExposure;
 
+    // @todo Anti-fireflies
+
 #if COD_METHOD == 0
     [unroll]
     for(uint sampleIndex = 0; sampleIndex < 13; sampleIndex++)
@@ -121,6 +123,7 @@ void GaussianBloomDownsampleCS(uint3 dispatchThreadID : SV_DispatchThreadID)
     }
 #else
     // TODO: Use shader permutation
+    // TODO: Use Karis HDR Weight
     [branch]
     if (useKarisAverage)
     {

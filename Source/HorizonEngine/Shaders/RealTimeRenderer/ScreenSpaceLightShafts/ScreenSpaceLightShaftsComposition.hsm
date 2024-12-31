@@ -1,0 +1,26 @@
+#include "../../ShaderCommon.hsh"
+#include "../RealTimeRendererCommon.hsh"
+
+SHADER_CONSTANTS_STRUCT_BEGIN();
+SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferSRV);
+SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(1, LightShaftsTextureSRV);
+SHADER_CONSTANTS_SCALAR(2, float, LightShaftsIntensity);
+SHADER_CONSTANTS_SCALAR(3, float, LightShaftsColorFactorX);
+SHADER_CONSTANTS_SCALAR(4, float, LightShaftsColorFactorY);
+SHADER_CONSTANTS_SCALAR(5, float, LightShaftsColorFactorZ);
+SHADER_CONSTANTS_STRUCT_END();
+
+[shader("pixel")]
+void ScreenSpaceLightShaftsCompositionPS(in float4 position : SV_Position, out float4 outColor : SV_Target0)
+{
+    StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
+    PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
+    Texture2D lightShaftsTexture = ShaderConstants.GetLightShaftsTextureSRV();
+    float lightShaftsIntensity = ShaderConstants.GetLightShaftsIntensity();
+    float3 lightShaftsColorFactor = float3(ShaderConstants.GetLightShaftsColorFactorX(), ShaderConstants.GetLightShaftsColorFactorY(), ShaderConstants.GetLightShaftsColorFactorZ());
+
+    float2 uv = position.xy * frameShaderParameters.renderResolution.zw;
+    float3 lightShaftsColor = lightShaftsIntensity * lightShaftsColorFactor * lightShaftsTexture.SampleLevel(GlobalSamplerLinearClamp, uv, 0).rgb;
+
+    outColor = float4(lightShaftsColor, 1.0f);
+}

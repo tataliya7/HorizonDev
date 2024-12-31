@@ -62,8 +62,8 @@ namespace Horizon
 
                     return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
                     {
-                        uint32 threadGroupCountX = CeilDiv(renderResolution.width, 8);
-                        uint32 threadGroupCountY = CeilDiv(renderResolution.height, 4);
+                        uint32 threadGroupCountX = ComputeShaderThreadGroupCount(renderResolution.width, 8);
+                        uint32 threadGroupCountY = ComputeShaderThreadGroupCount(renderResolution.height, 4);
                         uint32 threadGroupCountZ = 1;
 
                         RayTracingScene* rayTracingScene = view.scene->GetRayTracingScene();

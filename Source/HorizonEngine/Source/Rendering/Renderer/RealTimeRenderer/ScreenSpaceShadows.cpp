@@ -10,12 +10,12 @@ namespace Horizon
         const SceneView& view,
         const LightRenderObject& light,
         const Extent2D& renderResolution,
-        RenderGraphTextureHandle screenSpaceShadowMaskTexture)
+        RenderGraphTextureHandle& screenSpaceShadowMaskTexture)
     {
-        // TODO
-        const float surfaceThickness = 0.005f;
+        const float surfaceThickness = light.screenSpaceShadowsSurfaceThickness;
+        const float shadowContrast = light.screenSpaceShadowsShadowContrast;
 
-        const Vector4f lightDirection = view.transformations.worldToClipMatrix * Vector4f(light.GetDirection(), 0.0f);
+        const Vector4f lightDirection = view.transformations.worldToClipMatrix * Vector4f(-light.GetDirection(), 0.0f);
 
         float lightProjection[4] = { lightDirection.x, lightDirection.y, lightDirection.z, lightDirection.w };
         int viewportSize[2] = { int(renderResolution.width), int(renderResolution.height) };
@@ -52,16 +52,17 @@ namespace Horizon
 
                         RenderBackendShaderConstants shaderConstants = {};
                         shaderConstants.BindTextureSRV(0, registry.GetTextureSRVBindlessResourceDescriptorIndex(sceneDepthTexture));
-                        shaderConstants.BindTextureUAV(1, registry.GetTextureSRVBindlessResourceDescriptorIndex(outputTexture, 0));
+                        shaderConstants.BindTextureUAV(1, registry.GetTextureUAVBindlessResourceDescriptorIndex(outputTexture, 0));
                         shaderConstants.BindScalar(2, surfaceThickness);
-                        shaderConstants.BindScalar(3, dispatchList.LightCoordinate_Shader[0]);
-                        shaderConstants.BindScalar(4, dispatchList.LightCoordinate_Shader[1]);
-                        shaderConstants.BindScalar(5, dispatchList.LightCoordinate_Shader[2]);
-                        shaderConstants.BindScalar(6, dispatchList.LightCoordinate_Shader[3]);
-                        shaderConstants.BindScalar(7, dispatchData.WaveOffset_Shader[0]);
-                        shaderConstants.BindScalar(8, dispatchData.WaveOffset_Shader[1]);
-                        shaderConstants.BindScalar(9, 1.0f / float(renderResolution.width));
-                        shaderConstants.BindScalar(10, 1.0f / float(renderResolution.height));
+                        shaderConstants.BindScalar(3, shadowContrast);
+                        shaderConstants.BindScalar(4, dispatchList.LightCoordinate_Shader[0]);
+                        shaderConstants.BindScalar(5, dispatchList.LightCoordinate_Shader[1]);
+                        shaderConstants.BindScalar(6, dispatchList.LightCoordinate_Shader[2]);
+                        shaderConstants.BindScalar(7, dispatchList.LightCoordinate_Shader[3]);
+                        shaderConstants.BindScalar(8, dispatchData.WaveOffset_Shader[0]);
+                        shaderConstants.BindScalar(9, dispatchData.WaveOffset_Shader[1]);
+                        shaderConstants.BindScalar(10, 1.0f / float(renderResolution.width));
+                        shaderConstants.BindScalar(11, 1.0f / float(renderResolution.height));
 
                         RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::ScreenSpaceShadowsBend);
 
@@ -74,6 +75,49 @@ namespace Horizon
                     };
                 });
         }
+
+        // @todo Spatial or temporal filter
+        renderGraph.AddPass(
+            std::format("ScreenSpaceShadowsComposition (Compute, {}x{})", renderResolution.width, renderResolution.height),
+            RenderGraphPassFlags::Graphics,
+            [&](RenderGraphBuilder& builder)
+            {
+                outputTexture = builder.ReadTexture(outputTexture, RenderBackendResourceState::ShaderResource);
+                screenSpaceShadowMaskTexture = builder.WriteTexture(screenSpaceShadowMaskTexture, RenderBackendResourceState::RenderTarget);
+
+                builder.BindRenderTarget(0, screenSpaceShadowMaskTexture, RenderBackendRenderPassBeginningAccessType::Preserve, RenderBackendRenderPassEndingAccessType::Preserve);
+
+                return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
+                {
+                    RenderBackendGraphicsPipelineState graphicsPipelineState = {};
+                    graphicsPipelineState.rasterizationState.cullMode = RenderBackendRasterizationCullMode::None;
+                    graphicsPipelineState.depthStencilState.depthTestEnable = false;
+                    graphicsPipelineState.colorBlendState.targetBlends[0].blendEnable = true;
+                    graphicsPipelineState.colorBlendState.targetBlends[0].srcColorBlendFactor = RenderBackendBlendFactor::One;
+                    graphicsPipelineState.colorBlendState.targetBlends[0].dstColorBlendFactor = RenderBackendBlendFactor::One;
+                    graphicsPipelineState.colorBlendState.targetBlends[0].colorBlendOp = RenderBackendBlendOp::Min;
+                    graphicsPipelineState.colorBlendState.targetBlends[0].srcAlphaBlendFactor = RenderBackendBlendFactor::One;
+                    graphicsPipelineState.colorBlendState.targetBlends[0].dstAlphaBlendFactor = RenderBackendBlendFactor::One;
+                    graphicsPipelineState.colorBlendState.targetBlends[0].alphaBlendOp = RenderBackendBlendOp::Min;
+                    graphicsPipelineState.colorBlendState.targetBlends[0].writeMask = RenderBackendColorComponentFlags::R;
+
+                    RenderBackendShaderConstants shaderConstants = {};
+                    shaderConstants.BindTextureSRV(0, registry.GetTextureSRVBindlessResourceDescriptorIndex(outputTexture));
+                    shaderConstants.BindScalar(1, 1.0f / float(renderResolution.width));
+                    shaderConstants.BindScalar(2, 1.0f/ float(renderResolution.height));
+
+                    RenderBackendShaderHandle vertexShader = shaderLibrary->GetShader(ShaderID::FullScreenQuadVS);
+                    RenderBackendShaderHandle pixelShader = shaderLibrary->GetShader(ShaderID::ScreenSpaceShadowsComposition);
+
+                    commandList.Draw(
+                        vertexShader,
+                        pixelShader,
+                        graphicsPipelineState,
+                        shaderConstants,
+                        3, 1, 0, 0,
+                        RenderBackendPrimitiveTopology::TriangleList);
+                };
+            });
     }
 
     void RealTimeRenderer::DispatchScreenSpaceShadows(
@@ -90,7 +134,7 @@ namespace Horizon
 #endif
 
         RealTimeRendererSceneTextures& sceneTextures = renderGraph.blackboard.Get<RealTimeRendererSceneTextures>();
-        RenderGraphTextureHandle screenSpaceShadowMaskTexture = sceneTextures.shadowMaskTexture;
+        RenderGraphTextureHandle& screenSpaceShadowMaskTexture = sceneTextures.shadowMaskTexture;
 
         //if ()
         //{
@@ -99,6 +143,8 @@ namespace Horizon
         //else
         {
             DispatchScreenSpaceShadowsBend(renderGraph, shaderLibrary, view, light, renderResolution, screenSpaceShadowMaskTexture);
+
+            sceneTextures.shadowMaskTexture = screenSpaceShadowMaskTexture;
         }
     }
 }

@@ -62,7 +62,7 @@ void LocalFogVolumeVS(
 void LocalFogVolumePS(
     in LocalFogVolumeVSOutput input,
     in float4 position : SV_Position,
-    out float4 outputColor : SV_Target0)
+    out float4 outColor : SV_Target0)
 {
     uint instanceID = input.instanceID;
     StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
@@ -79,5 +79,5 @@ void LocalFogVolumePS(
     float depth = depthTexture.SampleLevel(GlobalSamplerPointClamp, uv, 0).r;
     float3 worldSpacePosition = ReconstructWorldSpacePositionFromUVZ(uv, depth, frameShaderParameters.clipToWorldMatrix);
 
-    outputColor = float4(instanceData.emission, 1.0f);
+    outColor = float4(instanceData.emission, 1.0f);
 }

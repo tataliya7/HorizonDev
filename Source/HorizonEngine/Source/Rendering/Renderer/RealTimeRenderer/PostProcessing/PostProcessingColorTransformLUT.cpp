@@ -3,23 +3,23 @@
 
 namespace Horizon
 {
-    static constexpr uint32 GColorLUTTextureSize = 32;
+    static constexpr uint32 GColorTransformLUTTextureSize = 32;
 
-    RenderGraphTextureHandle RealTimeRenderer::RenderColorLUT(
+    RenderGraphTextureHandle RealTimeRenderer::RenderColorTransformLUT(
         RenderGraph& renderGraph,
         const SceneView& view)
     {
-        constexpr uint32 threadGroupCountX = GColorLUTTextureSize / 8;
-        constexpr uint32 threadGroupCountY = GColorLUTTextureSize / 8;
-        constexpr uint32 threadGroupCountZ = GColorLUTTextureSize / 8;
+        constexpr uint32 threadGroupCountX = GColorTransformLUTTextureSize / 8;
+        constexpr uint32 threadGroupCountY = GColorTransformLUTTextureSize / 8;
+        constexpr uint32 threadGroupCountZ = GColorTransformLUTTextureSize / 8;
 
         RenderGraphTextureDesc colorLUTTextureDesc = RenderGraphTextureDesc::Create3D(
-            GColorLUTTextureSize,
-            GColorLUTTextureSize,
-            GColorLUTTextureSize,
+            GColorTransformLUTTextureSize,
+            GColorTransformLUTTextureSize,
+            GColorTransformLUTTextureSize,
             RenderBackendTextureFormat::R16G16B16A16Float,
             RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::UnorderedAccess);
-        RenderGraphTextureHandle colorLUTTexture = renderGraph.CreateTexture(colorLUTTextureDesc, "ColorLUTTexture");
+        RenderGraphTextureHandle colorLUTTexture = renderGraph.CreateTexture(colorLUTTextureDesc, "ColorTransformLUTTexture");
 
         //ToneMappingOperatorType toneMappingOperator = settings.toneMappingOperator;
 
@@ -29,7 +29,7 @@ namespace Horizon
         }
 
         renderGraph.AddPass(
-            std::format("ColorLUT (Compute, {}x{}x{})", GColorLUTTextureSize, GColorLUTTextureSize, GColorLUTTextureSize),
+            std::format("ColorTransformLUT (Compute, {}x{}x{})", GColorTransformLUTTextureSize, GColorTransformLUTTextureSize, GColorTransformLUTTextureSize),
             RenderGraphPassFlags::Compute,
             [&](RenderGraphBuilder& builder)
             {
@@ -42,7 +42,7 @@ namespace Horizon
                     shaderConstants.BindTextureUAV(1, registry.GetTextureUAVBindlessResourceDescriptorIndex(colorLUTTexture, 0));
                     //shaderConstants.PushConstants(0, (float)toneMappingOperator);
 
-                    RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::ColorLUT);
+                    RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::ColorTransformLUT);
                     commandList.Dispatch(
                         computeShader,
                         shaderConstants,

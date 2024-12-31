@@ -357,7 +357,7 @@ float3 F_Schlick(float3 f0, float f90, float VoH)
 }
 
 [shader("pixel")]
-void DirectLightingPS(in float4 position : SV_Position, out float4 outputColor : SV_Target0)
+void DirectLightingPS(in float4 position : SV_Position, out float4 outColor : SV_Target0)
 {
     StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
     PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
@@ -449,5 +449,5 @@ void DirectLightingPS(in float4 position : SV_Position, out float4 outputColor :
 
     finalColor += ComputeLocalLightDirectLightingContribution(frameShaderParameters, surface) * frameShaderParameters.preExposure;
 
-    outputColor = float4(finalColor, 1.0f);
+    outColor = float4(finalColor, 1.0f);
 }

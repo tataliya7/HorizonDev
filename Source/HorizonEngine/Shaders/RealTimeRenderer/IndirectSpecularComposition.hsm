@@ -58,7 +58,7 @@ float3 ComputeImageBasedLightingSpecular(Surface surface)
 }
 
 [shader("pixel")]
-void IndirectSpecularCompositionPS(in float4 position : SV_Position, out float4 outputColor : SV_Target0)
+void IndirectSpecularCompositionPS(in float4 position : SV_Position, out float4 outColor : SV_Target0)
 {
     StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
     PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
@@ -114,6 +114,6 @@ void IndirectSpecularCompositionPS(in float4 position : SV_Position, out float4 
 
     // Multiply by FG after temporal filtering
 
-    outputColor = 0;
-    outputColor.rgb += indirectSpecular;
+    outColor = 0;
+    outColor.rgb += indirectSpecular;
 }

@@ -34,9 +34,9 @@ void DepthOfFieldRecombineCS(uint3 dispatchThreadID : SV_DispatchThreadID)
     float coc = cocTexture.SampleLevel(GlobalSamplerLinearClamp, uv, 0).r;
     coc = abs(coc * 2 - 1);
 
-    float3 outputColor = sceneColorInFocus.rgb;
+    float3 outColor = sceneColorInFocus.rgb;
     float blendFactor = saturate(5.82141639886 * coc - 0.333333333333);
-    outputColor.rgb = lerp(outputColor.rgb, blurredSceneColor.rgb, blendFactor);
+    outColor.rgb = lerp(outColor.rgb, blurredSceneColor.rgb, blendFactor);
 
-    dofOutputTexture[pixelCoord] = float4(outputColor.rgb, sceneColorInFocus.a);
+    dofOutputTexture[pixelCoord] = float4(outColor.rgb, sceneColorInFocus.a);
 }

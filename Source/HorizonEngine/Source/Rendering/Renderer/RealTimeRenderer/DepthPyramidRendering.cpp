@@ -37,8 +37,8 @@ namespace Horizon
                         shaderConstants.BindScalar(3, inverseInputTextureSize.x);
                         shaderConstants.BindScalar(4, inverseInputTextureSize.y);
 
-                        uint32 threadGroupCountX = CeilDiv(outputTextureSize.x, 8);
-                        uint32 threadGroupCountY = CeilDiv(outputTextureSize.y, 8);
+                        uint32 threadGroupCountX = ComputeShaderThreadGroupCount(outputTextureSize.x, 8);
+                        uint32 threadGroupCountY = ComputeShaderThreadGroupCount(outputTextureSize.y, 8);
                         uint32 threadGroupCountZ = 1;
 
                         commandList.Dispatch(
@@ -70,8 +70,8 @@ namespace Horizon
                         shaderConstants.BindScalar(3, inverseInputTextureSize.x);
                         shaderConstants.BindScalar(4, inverseInputTextureSize.y);
 
-                        uint32 threadGroupCountX = CeilDiv(outputTextureSize.x, 8);
-                        uint32 threadGroupCountY = CeilDiv(outputTextureSize.y, 8);
+                        uint32 threadGroupCountX = ComputeShaderThreadGroupCount(outputTextureSize.x, 8);
+                        uint32 threadGroupCountY = ComputeShaderThreadGroupCount(outputTextureSize.y, 8);
                         uint32 threadGroupCountZ = 1;
 
                         commandList.Dispatch(

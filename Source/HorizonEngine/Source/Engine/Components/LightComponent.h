@@ -62,7 +62,20 @@ namespace Horizon
 
         float shadowSharpness;
 
+        // Screen Space Shadows
+        bool enableScreenSpaceShadows = false;
+
+        float screenSpaceShadowsSurfaceThickness = 0.005f;
+
+        float screenSpaceShadowsShadowContrast = 4.0f;
+
         bool usedAsAtmosphericLight = false;
+
+        bool enableLightShafts = false;
+
+        float lightShaftsIntensity = 1.0f;
+
+        Vector3f lightShaftsColor = Vector3f(1.0f, 1.0f, 1.0f);
 
         // Atmosphere
         Vector3f atmosphericLightDiskColorFactor = Vector3f(1.0f, 1.0f, 1.0f);

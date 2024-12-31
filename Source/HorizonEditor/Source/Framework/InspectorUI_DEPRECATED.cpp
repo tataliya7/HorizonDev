@@ -407,6 +407,41 @@ namespace Horizon
             ImGui::PopItemWidth();
             ImGui::NextColumn();
 
+            {
+                ImGui::AlignTextToFramePadding();
+                ImGui::TextUnformatted("Enable Screen Space Shadows");
+                ImGui::NextColumn();
+                ImGui::PushItemWidth(-1);
+                if (ImGui::Checkbox("##enableScreenSpaceShadows", &component.enableScreenSpaceShadows))
+                {
+
+                }
+                ImGui::PopItemWidth();
+                ImGui::NextColumn();
+
+                ImGui::AlignTextToFramePadding();
+                ImGui::TextUnformatted("Screen Space Shadows Surface Thickness");
+                ImGui::NextColumn();
+                ImGui::PushItemWidth(-1);
+                if (ImGui::DragFloat("##screenSpaceShadowsSurfaceThickness", &component.screenSpaceShadowsSurfaceThickness, 0.001f, 0.0f, 1.0f))
+                {
+
+                }
+                ImGui::PopItemWidth();
+                ImGui::NextColumn();
+
+                ImGui::AlignTextToFramePadding();
+                ImGui::TextUnformatted("Screen Space Shadows Shadow Contrast");
+                ImGui::NextColumn();
+                ImGui::PushItemWidth(-1);
+                if (ImGui::DragFloat("##screenSpaceShadowsShadowContrast", &component.screenSpaceShadowsShadowContrast, 0.001f, 0.0f, 100.0f))
+                {
+
+                }
+                ImGui::PopItemWidth();
+                ImGui::NextColumn();
+            }
+
             if (component.type == LightComponent::Type::Distant)
             {
                 ImGui::AlignTextToFramePadding();
@@ -416,6 +451,42 @@ namespace Horizon
                 if (ImGui::ColorEdit3("##atmosphericLightDiskColorFactor", &component.atmosphericLightDiskColorFactor.r))
                 {
 
+                }
+                ImGui::PopItemWidth();
+                ImGui::NextColumn();
+            }
+
+            if (component.type == LightComponent::Type::Distant)
+            {
+                ImGui::AlignTextToFramePadding();
+                ImGui::TextUnformatted("Enable Light Shafts");
+                ImGui::NextColumn();
+                ImGui::PushItemWidth(-1);
+                if (ImGui::Checkbox("##enableLightShafts", &component.enableLightShafts))
+                {
+                    dirty = true;
+                }
+                ImGui::PopItemWidth();
+                ImGui::NextColumn();
+
+                ImGui::AlignTextToFramePadding();
+                ImGui::TextUnformatted("Light Shafts Intensity");
+                ImGui::NextColumn();
+                ImGui::PushItemWidth(-1);
+                if (ImGui::DragFloat("##lightShaftsIntensity", &component.lightShaftsIntensity, 0.001f, 0.0f, 100.0f))
+                {
+                    dirty = true;
+                }
+                ImGui::PopItemWidth();
+                ImGui::NextColumn();
+
+                ImGui::AlignTextToFramePadding();
+                ImGui::TextUnformatted("Light Shafts Color");
+                ImGui::NextColumn();
+                ImGui::PushItemWidth(-1);
+                if (ImGui::ColorEdit3("##lightShaftsColor", &component.lightShaftsColor.x))
+                {
+                    dirty = true;
                 }
                 ImGui::PopItemWidth();
                 ImGui::NextColumn();

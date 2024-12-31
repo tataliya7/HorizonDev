@@ -40,9 +40,7 @@ void VisibilityBufferVS(
     position = clipSpaceVertexPosition;
 }
 
-// TODO: Turning on [earlydepthstencil] will cause alpha cutoff to work inproperly
-// [earlydepthstencil]
-
+//[earlydepthstencil]
 [shader("pixel")]
 void VisibilityBufferPS(
     in VisibilityBufferVSOutput input,

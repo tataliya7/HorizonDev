@@ -23,7 +23,10 @@ namespace Horizon
             component.colorTemperature = 6500.0f;
             component.usedAsAtmosphericLight = true;
             //component.shadowMapSize = 4096;
+            component.maxShadowDistance = 45.0f;
             component.shadowCascadeSplitLambda = 0.8f;
+            component.enableScreenSpaceShadows = true;
+            component.enableLightShafts = true;
             component.CreateRenderObject(scene->GetRenderScene());
         }
         sunLight = scene->GetEntityManager()->TryGetComponent<LightComponent>(entityHandle);

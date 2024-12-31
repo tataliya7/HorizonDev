@@ -172,8 +172,8 @@ namespace Horizon
                     shaderConstants.BindTextureUAV(6, registry.GetTextureUAVBindlessResourceDescriptorIndex(gbuffer1, 0));
                     shaderConstants.BindTextureUAV(7, registry.GetTextureUAVBindlessResourceDescriptorIndex(gbuffer2, 0));
 
-                    uint32 threadGroupCountX = CeilDiv(renderResolution.width, 8);
-                    uint32 threadGroupCountY = CeilDiv(renderResolution.height, 8);
+                    uint32 threadGroupCountX = ComputeShaderThreadGroupCount(renderResolution.width, 8);
+                    uint32 threadGroupCountY = ComputeShaderThreadGroupCount(renderResolution.height, 8);
                     uint32 threadGroupCountZ = 1;
 
                     RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::GBuffer);
@@ -207,8 +207,8 @@ namespace Horizon
 
                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
                 {
-                    uint32 threadGroupCountX = CeilDiv(renderResolution.width, 8);
-                    uint32 threadGroupCountY = CeilDiv(renderResolution.height, 8);
+                    uint32 threadGroupCountX = ComputeShaderThreadGroupCount(renderResolution.width, 8);
+                    uint32 threadGroupCountY = ComputeShaderThreadGroupCount(renderResolution.height, 8);
                     uint32 threadGroupCountZ = 1;
 
                     RenderBackendShaderConstants shaderConstants = {};

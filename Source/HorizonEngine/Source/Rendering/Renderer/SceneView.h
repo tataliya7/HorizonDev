@@ -29,16 +29,16 @@ namespace Horizon
     struct CameraTransformations
     {
         CameraTransformations()
-            : worldToViewMatrix(IdentityMatrix4x4)
-            , viewToWorldMatrix(IdentityMatrix4x4)
-            , viewToClipMatrix(IdentityMatrix4x4)
-            , clipToViewMatrix(IdentityMatrix4x4)
-            , worldToClipMatrix(IdentityMatrix4x4)
-            , clipToWorldMatrix(IdentityMatrix4x4)
-            , nonJitteredViewToClipMatrix(IdentityMatrix4x4)
-            , nonJitteredClipToViewMatrix(IdentityMatrix4x4)
-            , nonJitteredWorldToClipMatrix(IdentityMatrix4x4)
-            , nonJitteredClipToWorldMatrix(IdentityMatrix4x4)
+            : worldToViewMatrix(IdentityMatrix4x4f)
+            , viewToWorldMatrix(IdentityMatrix4x4f)
+            , viewToClipMatrix(IdentityMatrix4x4f)
+            , clipToViewMatrix(IdentityMatrix4x4f)
+            , worldToClipMatrix(IdentityMatrix4x4f)
+            , clipToWorldMatrix(IdentityMatrix4x4f)
+            , nonJitteredViewToClipMatrix(IdentityMatrix4x4f)
+            , nonJitteredClipToViewMatrix(IdentityMatrix4x4f)
+            , nonJitteredWorldToClipMatrix(IdentityMatrix4x4f)
+            , nonJitteredClipToWorldMatrix(IdentityMatrix4x4f)
             , viewSpaceDepthToNDCSpaceDepthTransform(Vector2f(0.0f, 0.0f))
         {
 
@@ -46,16 +46,16 @@ namespace Horizon
 
         void Reset()
         {
-            worldToViewMatrix = IdentityMatrix4x4;
-            viewToWorldMatrix = IdentityMatrix4x4;
-            viewToClipMatrix = IdentityMatrix4x4;
-            clipToViewMatrix = IdentityMatrix4x4;
-            worldToClipMatrix = IdentityMatrix4x4;
-            clipToWorldMatrix = IdentityMatrix4x4;
-            nonJitteredViewToClipMatrix = IdentityMatrix4x4;
-            nonJitteredClipToViewMatrix = IdentityMatrix4x4;
-            nonJitteredWorldToClipMatrix = IdentityMatrix4x4;
-            nonJitteredClipToWorldMatrix = IdentityMatrix4x4;
+            worldToViewMatrix = IdentityMatrix4x4f;
+            viewToWorldMatrix = IdentityMatrix4x4f;
+            viewToClipMatrix = IdentityMatrix4x4f;
+            clipToViewMatrix = IdentityMatrix4x4f;
+            worldToClipMatrix = IdentityMatrix4x4f;
+            clipToWorldMatrix = IdentityMatrix4x4f;
+            nonJitteredViewToClipMatrix = IdentityMatrix4x4f;
+            nonJitteredClipToViewMatrix = IdentityMatrix4x4f;
+            nonJitteredWorldToClipMatrix = IdentityMatrix4x4f;
+            nonJitteredClipToWorldMatrix = IdentityMatrix4x4f;
             viewSpaceDepthToNDCSpaceDepthTransform = Vector2f(0.0f, 0.0f);
         }
 
@@ -121,7 +121,7 @@ namespace Horizon
         //     nonJitteredViewToClipMatrix = viewToClipMatrix;
         //     worldToClipMatrix = viewToClipMatrix * worldToViewMatrix;
         //     clipToWorldMatrix = viewToWorldMatrix * clipToViewMatrix;
-        //     cameraJitterOffset = ZeroVector2;
+        //     cameraJitterOffset = ZeroVector2f;
         //     isCameraJitteringApplied = false;
         // }
         //

@@ -15,8 +15,8 @@ namespace Horizon
         RenderBackendBarrier transition(environmentBrdfLutTexture, RenderBackendTextureSubresourceRange::All, RenderBackendResourceState::Undefined, RenderBackendResourceState::UnorderedAccess);
         commandList.Transitions(&transition, 1);
 
-        uint32 threadGroupCountX = CeilDiv(GEnvironmentBrdfLutTextureSize, 8);
-        uint32 threadGroupCountY = CeilDiv(GEnvironmentBrdfLutTextureSize, 8);
+        uint32 threadGroupCountX = ComputeShaderThreadGroupCount(GEnvironmentBrdfLutTextureSize, 8);
+        uint32 threadGroupCountY = ComputeShaderThreadGroupCount(GEnvironmentBrdfLutTextureSize, 8);
         uint32 threadGroupCountZ = 1;
 
         RenderBackendShaderConstants shaderConstants = {};
@@ -45,8 +45,8 @@ namespace Horizon
             };
             commandList.Transitions(transitions, 1);
 
-            uint32 threadGroupCountX = CeilDiv(1 << (mipLevelCount - mipLevel - 1), 8);
-            uint32 threadGroupCountY = CeilDiv(1 << (mipLevelCount - mipLevel - 1), 8);
+            uint32 threadGroupCountX = ComputeShaderThreadGroupCount(1 << (mipLevelCount - mipLevel - 1), 8);
+            uint32 threadGroupCountY = ComputeShaderThreadGroupCount(1 << (mipLevelCount - mipLevel - 1), 8);
             uint32 threadGroupCountZ = 1;
 
             RenderBackendShaderConstants shaderConstants = {};
@@ -73,8 +73,8 @@ namespace Horizon
         RenderBackendBarrier transition(irradianceEnvironmentMap, RenderBackendTextureSubresourceRange(0, 1, 0, 6), RenderBackendResourceState::Undefined, RenderBackendResourceState::UnorderedAccess);
         commandList.Transitions(&transition, 1);
 
-        uint32 threadGroupCountX = CeilDiv(GIrradianceEnvironmentMapSize, 8);
-        uint32 threadGroupCountY = CeilDiv(GIrradianceEnvironmentMapSize, 8);
+        uint32 threadGroupCountX = ComputeShaderThreadGroupCount(GIrradianceEnvironmentMapSize, 8);
+        uint32 threadGroupCountY = ComputeShaderThreadGroupCount(GIrradianceEnvironmentMapSize, 8);
         uint32 threadGroupCountZ = 1;
 
         RenderBackendShaderConstants shaderConstants = {};
@@ -160,8 +160,8 @@ namespace Horizon
 
         for (uint32 mipLevel = 0; mipLevel < numMipLevels; mipLevel++)
         {
-            uint32 threadGroupCountX = CeilDiv(1 << (numMipLevels - mipLevel - 1), 8);
-            uint32 threadGroupCountY = CeilDiv(1 << (numMipLevels - mipLevel - 1), 8);
+            uint32 threadGroupCountX = ComputeShaderThreadGroupCount(1 << (numMipLevels - mipLevel - 1), 8);
+            uint32 threadGroupCountY = ComputeShaderThreadGroupCount(1 << (numMipLevels - mipLevel - 1), 8);
             uint32 threadGroupCountZ = 1;
 
             float roughness = (float)mipLevel / (float)(numMipLevels - 1);
@@ -214,8 +214,8 @@ namespace Horizon
         RenderBackendBarrier transition(cubemapTexture, RenderBackendTextureSubresourceRange::All, RenderBackendResourceState::Undefined, RenderBackendResourceState::UnorderedAccess);
         commandList.Transitions(&transition, 1);
 
-        uint32 threadGroupCountX = CeilDiv(cubemapTextureSize, 8);
-        uint32 threadGroupCountY = CeilDiv(cubemapTextureSize, 8);
+        uint32 threadGroupCountX = ComputeShaderThreadGroupCount(cubemapTextureSize, 8);
+        uint32 threadGroupCountY = ComputeShaderThreadGroupCount(cubemapTextureSize, 8);
         uint32 threadGroupCountZ = 1;
 
         RenderBackendShaderConstants shaderConstants = {};

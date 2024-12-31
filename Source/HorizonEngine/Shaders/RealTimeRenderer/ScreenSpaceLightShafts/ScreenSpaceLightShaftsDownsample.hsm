@@ -1,18 +1,16 @@
-#include "../ShaderCommon.hsh"
-#include "RealTimeRendererCommon.hsh"
+#include "../../ShaderCommon.hsh"
+#include "../RealTimeRendererCommon.hsh"
 
-BIND_BUFFER_CBV(0, PerFrameShaderParameters);
-BIND_TEXTURE_2D_SRV(1, SceneColorTexture);
-BIND_TEXTURE_2D_SRV(2, SceneDepthTexture);
-BIND_TEXTURE_2D_UAV(3, float3, OutputTexture);
-
-struct ScreenSpaceLightShaftsDownsapmpleShaderArguments
-{
-   float2 AspectRatioAndInvAspectRatio;
-   float2 TextureSpaceBlurOrigin;
-   float4 BloomTintAndThreshold;
-   float2 LightShaftParameters;
-};
+SHADER_CONSTANTS_STRUCT_BEGIN();
+SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferSRV);
+SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(1, ColorTextureSRV);
+SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(2, DepthTextureSRV);
+SHADER_CONSTANTS_TEXTURE_2D_UAV(3, float3, OutputTextureUAV);
+SHADER_CONSTANTS_SCALAR(4, float, LightShaftsOriginX);
+SHADER_CONSTANTS_SCALAR(5, float, LightShaftsOriginY);
+SHADER_CONSTANTS_SCALAR(6, float, AspectRatio);
+SHADER_CONSTANTS_SCALAR(7, float, InverseAspectRatio);
+SHADER_CONSTANTS_STRUCT_END();
 
 [shader("compute")]
 [numthreads(8, 8, 1)]
@@ -20,65 +18,44 @@ void ScreenSpaceLightShaftsDownsampleCS(uint3 dispatchThreadID : SV_DispatchThre
 {
     StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
     PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
-    Texture2D sceneColorTexture = GetSceneColorTextureSRV();
-    Texture2D sceneDepthTexture = GetSceneDepthTextureSRV();
-    RWTexture2D<float3> outputTexture = GetOutputTextureUAV();
+    Texture2D colorTexture = ShaderConstants.GetColorTextureSRV();
+    Texture2D depthTexture = ShaderConstants.GetDepthTextureSRV();
+    RWTexture2D<float3> outputTexture = ShaderConstants.GetOutputTextureUAV();
 
-    ScreenSpaceLightShaftsDownsapmpleShaderArguments parameters = (ScreenSpaceLightShaftsDownsapmpleShaderArguments)0;
-    // parameters.AspectRatioAndInvAspectRatio = (2);
-    // parameters.TextureSpaceBlurOrigin;
-    // parameters.BloomTintAndThreshold;
-    // parameters.LightShaftParameters;
-
+#if 1
     uint outputTextureWidth, outputTextureHeight;
     outputTexture.GetDimensions(outputTextureWidth, outputTextureHeight);
     if (dispatchThreadID.x >= outputTextureWidth || dispatchThreadID.y >= outputTextureHeight)
     {
         return;
     }
+#endif
 
     uint2 pixelCoord = dispatchThreadID.xy;
-    float2 uv = (pixelCoord.xy + 0.5f) * float2(1.0f / outputTextureWidth, 1.0f / outputTextureHeight);
+    float2 uv = (float2(pixelCoord.x, pixelCoord.y) + 0.5f) * float2(1.0f / outputTextureWidth, 1.0f / outputTextureHeight);
 
-    float3 sceneColor = sceneColorTexture.SampleLevel(GlobalSamplerLinearClamp, uv, 0).rgb;
-    float sceneDepth = sceneDepthTexture.SampleLevel(GlobalSamplerPointClamp, uv, 0).r;
+    float3 color = colorTexture.SampleLevel(GlobalSamplerPointClamp, uv, 0).rgb;
+    float depth = depthTexture.SampleLevel(GlobalSamplerPointClamp, uv, 0).r;
 
-    sceneDepth = ComputeCameraSpaceDepth(sceneDepth, frameShaderParameters.nearClippingPlane, frameShaderParameters.farClippingPlane);
+    //depth = ComputeCameraSpaceDepth(depth, frameShaderParameters.nearClippingPlane, frameShaderParameters.farClippingPlane);
 
-    float2 TextureSpaceBlurOrigin;
-    TextureSpaceBlurOrigin.x = (2);
-    TextureSpaceBlurOrigin.y = (3);
+    float2 lightShaftsOrigin = float2(ShaderConstants.GetLightShaftsOriginX(), ShaderConstants.GetLightShaftsOriginY());
+    float2 aspectRatioAndInverseAspectRatio = float2(ShaderConstants.GetAspectRatio(), ShaderConstants.GetInverseAspectRatio());
 
-    float2 aspectRatioAndInvAspectRatio;
-    aspectRatioAndInvAspectRatio.x = (4);
-    aspectRatioAndInvAspectRatio.y = (5);
+    // @todo Aspect Ratio Correction
+    float2 aspectRatioCorrectedUV = uv * aspectRatioAndInverseAspectRatio.y;
 
-    float BloomMaxBrightness = 4;
-    float4 BloomTintAndThreshold = float4(1.0, 0.7991, 0, 0);
-    float4 LightShaftParameters = float4(80, 1, 1, 0.05);
+    // Extract the light source. @todo Needs a threshold?
+    // Screen out all solid geometry, only accepts backgroud pixels.
+    float occlusion = depth > 0.0f ? 0.0f : 1.0f;
 
-    float2 NormalizedCoordinates = uv;
-    // Setup a mask that is 1 at the edges of the screen and 0 at the center
-    float EdgeMask = 1.0f - NormalizedCoordinates.x * (1.0f - NormalizedCoordinates.x) * NormalizedCoordinates.y * (1.0f - NormalizedCoordinates.y) * 8.0f;
-    EdgeMask = EdgeMask * EdgeMask * EdgeMask * EdgeMask;
+    // Screen space distance attenuation.
+    // 1 if uv equals the light shafts origin, 0 if uv is half a screen away from the origin.
+    // @todo Aspect Ratio Correction
+    float distanceAttenuation = 1.0f - saturate(length(uv - lightShaftsOrigin.xy) * 2.0f);
+    distanceAttenuation *= distanceAttenuation;
 
-    // Only bloom colors according if post exposure brightness is over BloomThreshold,
-    // and if brightness is greater than BloomMaxBrightness, scale it down to BloomMaxBrightness to avoid saturated artefacts.
-    float luminance = max(RelativeLuminance(sceneColor * frameShaderParameters.inversePreExposure), 6.10352e-5);
-    float adjustedLuminance = clamp(luminance - BloomTintAndThreshold.a, 0.0f, BloomMaxBrightness);
-    float3 BloomColor = LightShaftParameters.y * sceneColor / luminance * adjustedLuminance * 2.0f;
-
-    float InvOcclusionDepthRange = 1.0 / LightShaftParameters.x;
-
-    // Only allow bloom from pixels whose depth are in the far half of OcclusionDepthRange
-    float BloomDistanceMask = saturate(sceneDepth * InvOcclusionDepthRange - 0.5);
-
-    // Setup a mask that is 0 at TextureSpaceBlurOrigin and increases to 1 over distance
-    //float BlurOriginDistanceMask = 1.0f - saturate(length(TextureSpaceBlurOrigin.xy - uv * float2(1.0, aspectRatioAndInvAspectRatio.x)) * 2.0f);
-    float BlurOriginDistanceMask = 1.0f - saturate(length(TextureSpaceBlurOrigin.xy - uv) * 2.0f);
-
-    // Calculate bloom color with masks applied
-    float3 result = BloomColor * BloomTintAndThreshold.rgb * BloomDistanceMask * BlurOriginDistanceMask * BlurOriginDistanceMask;
+    float3 result = color * occlusion * distanceAttenuation;
 
     outputTexture[pixelCoord] = result;
 }

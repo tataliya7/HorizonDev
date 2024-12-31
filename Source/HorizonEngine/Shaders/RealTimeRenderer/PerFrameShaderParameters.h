@@ -7,7 +7,7 @@ namespace Horizon {
 #define float2 Horizon::Vector2f
 #define float3 Horizon::Vector3f
 #define float4 Horizon::Vector4f
-#define float3x3 Horizon::Matrix3x3
+#define float3x3 Horizon::Matrix3x3f
 #define float4x4 Horizon::Matrix4x4f
 #endif // __cplusplus
 
@@ -35,6 +35,10 @@ struct PerFrameShaderParameters
 
     float2 cameraJitterOffset;
     float2 previousCameraJitterOffset;
+
+    float2 motionVectorJitterCancellation;
+    float padding99;
+    float padding98;
 
     float3 cameraUpVector;
     float padding1;

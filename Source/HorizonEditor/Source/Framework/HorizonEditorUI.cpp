@@ -1925,6 +1925,30 @@ namespace Horizon
 
                     ImGui::TreePop();
                 }
+
+                if (ImGui::TreeNode("Vignetting"))
+                {
+                    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(2, 2));
+                    ImGui::Columns(2);
+                    ImGui::Separator();
+
+                    ImGui::AlignTextToFramePadding();
+                    ImGui::TextUnformatted("Intensity");
+                    ImGui::NextColumn();
+                    ImGui::PushItemWidth(-1);
+                    if (ImGui::DragFloat("##vignetteIntensity", &renderSettings.postProcessingSettings.vignetteIntensity, 0.1f, 0.0f, 100.0f))
+                    {
+
+                    }
+                    ImGui::PopItemWidth();
+                    ImGui::NextColumn();
+
+                    ImGui::Columns(1);
+                    ImGui::Separator();
+                    ImGui::PopStyleVar();
+
+                    ImGui::TreePop();
+                }
             }
         }
         ImGui::End();

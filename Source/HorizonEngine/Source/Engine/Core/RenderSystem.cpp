@@ -21,7 +21,7 @@ namespace Horizon
     {
         // TODO: make it configurable
         RenderBackendType renderBackendType = RenderBackendType::D3D12;
-        bool enableDebugLayers = false;
+        bool enableDebugLayers = true;
         bool enableHardwareRayTracing = false;
 
 #if HORIZON_CONFIGURATION_RELEASE

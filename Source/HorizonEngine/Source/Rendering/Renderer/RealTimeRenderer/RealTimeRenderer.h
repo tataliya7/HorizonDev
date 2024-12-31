@@ -358,7 +358,7 @@ namespace Horizon
         RenderGraphBufferHandle DispatchHistogramBasedAutoExposure(
             RenderGraph& renderGraph,
             const SceneView& view,
-            RenderGraphTextureHandle autoExposureHistogramTexture,
+            RenderGraphTextureHandle colorTexture,
             RenderGraphBufferHandle previousAutoExposureBuffer);
 
         RenderGraphTextureHandle AddCopyExposurePass(
@@ -372,7 +372,7 @@ namespace Horizon
             RenderGraphTextureHandle sceneColorTexture,
             RenderGraphTextureHandle autoExposureTexture);
 
-        RenderGraphTextureHandle RenderColorLUT(
+        RenderGraphTextureHandle RenderColorTransformLUT(
             RenderGraph& renderGraph,
             const SceneView& view);
 
@@ -578,11 +578,12 @@ namespace Horizon
             Vector2f cameraJitterOffset;
             CameraTransformations transformations;
             float preExposure;
-            RenderGraphPersistentBuffer* autoExposureBuffer;
-            RenderGraphPersistentTexture* sceneDepthTexture;
-            RenderGraphPersistentTexture* ambientOcclusionTexture;
-            RenderGraphPersistentTexture* volumetricFogLightScatteringTexture;
-            RenderGraphPersistentTexture* temporalSuperSamplingOutputTexture;
+            RenderGraphPersistentBuffer* autoExposureBuffer = nullptr;
+            RenderGraphPersistentTexture* sceneDepthTexture = nullptr;
+            RenderGraphPersistentTexture* ambientOcclusionTexture = nullptr;
+            RenderGraphPersistentTexture* screenSpaceLightShaftsTemporalFilteringTexture = nullptr;
+            RenderGraphPersistentTexture* volumetricFogLightScatteringTexture = nullptr;
+            RenderGraphPersistentTexture* temporalSuperSamplingOutputTexture = nullptr;
         };
 
         HistoryFrame historyFrame;

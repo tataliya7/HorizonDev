@@ -193,8 +193,9 @@ namespace Horizon
             scene->HasAtmosphericLight() &&
             scene->HasActiveSkyAtmosphere();
 
+        features.enableScreenSpaceShadows = true;
         features.enableScreenSpaceAmbientOcclusion = false;
-        features.enableScreenSpaceLightShafts = false;
+        features.enableScreenSpaceLightShafts = true;
 
         features.enableDepthOfField = false;// finalPostProcessingSettings.depthOfFieldScale > 0.0f;
         features.enableMotionBlur = finalPostProcessingSettings.motionBlurIntensity > 0.0f;
@@ -319,9 +320,10 @@ namespace Horizon
             perFrameShaderParameters.farClippingPlane = view.farClippingPlane;
 
             perFrameShaderParameters.cameraJitterOffset = cameraJitterOffset;
+            perFrameShaderParameters.previousCameraJitterOffset = historyFrame.cameraJitterOffset;
+            perFrameShaderParameters.motionVectorJitterCancellation = (historyFrame.cameraJitterOffset - cameraJitterOffset) * Vector2f(1.0f / renderResolution.width, 1.0f / renderResolution.height);
 
             perFrameShaderParameters.previousCameraPosition = historyFrame.cameraPosition;
-            perFrameShaderParameters.previousCameraJitterOffset = historyFrame.cameraJitterOffset;
 
             perFrameShaderParameters.viewSpaceDepthToNDCSpaceDepthTransform = view.transformations.viewSpaceDepthToNDCSpaceDepthTransform;
 
@@ -396,7 +398,7 @@ namespace Horizon
 
                     SkyAtmosphereViewRelatedParameters skyAtmosphereViewRelatedParameters =
                     {
-                        .skyViewLutReferential = IdentityMatrix3x3,
+                        .skyViewLutReferential = IdentityMatrix3x3f,
                     };
                     SetupSkyAtmosphereViewRelatedParameters(skyAtmosphereViewRelatedParameters, skyAtmosphere, view.cameraPosition, view.cameraForwardVector);
 
@@ -752,7 +754,7 @@ namespace Horizon
             renderResolution.width,
             renderResolution.height,
             RenderBackendTextureFormat::R8G8B8A8Unorm,
-            RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::UnorderedAccess);
+            RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::UnorderedAccess | RenderBackendTextureCreateFlags::RenderTarget);
         RenderGraphTextureHandle screenSpaceShadowMaskTexture = renderGraph.CreateTexture(screenSpaceShadowMaskTextureDesc, "ScreenSpaceShadowMaskTexture");
 
         //if (view.visualizationMode == SceneViewVisualizationMode::ShadowMask)
@@ -773,7 +775,7 @@ namespace Horizon
             DispatchShadowMapProjection(renderGraph, view);
 
             const LightRenderObject* light = view.scene->GetAtmosphericLight();
-            if (light)
+            if (light && light->enableScreenSpaceShadows)
             {
                 DispatchScreenSpaceShadows(renderGraph, view, *light);
             }

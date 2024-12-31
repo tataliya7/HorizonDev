@@ -24,9 +24,15 @@ namespace Horizon
         , shadowFadeOutFactor(description.shadowFadeOutFactor)
         , shadowMapDepthBiasConstantFactor(description.shadowMapDepthBiasConstantFactor)
         , shadowMapDepthBiasSlopeFactor(description.shadowMapDepthBiasSlopeFactor)
+        , enableScreenSpaceShadows(description.enableScreenSpaceShadows)
+        , screenSpaceShadowsSurfaceThickness(description.screenSpaceShadowsSurfaceThickness)
+        , screenSpaceShadowsShadowContrast(description.screenSpaceShadowsShadowContrast)
         , usedAsAtmosphericLight(description.usedAsAtmosphericLight)
         , halfApexAngleInRadians(description.halfApexAngleInRadians)
         , atmosphericLightDiskColorFactor(description.atmosphericLightDiskColorFactor)
+        , enableLightShafts(description.enableLightShafts)
+        , lightShaftsIntensity(description.lightShaftsIntensity)
+        , lightShaftsColor(description.lightShaftsColor)
     {
 
     }
@@ -45,7 +51,7 @@ namespace Horizon
     }
 
     LocalFogVolumeRenderObject::LocalFogVolumeRenderObject()
-        : transform(IdentityMatrix4x4)
+        : transform(IdentityMatrix4x4f)
         , emission(Vector3f(0.0f, 0.0f, 0.0f))
     {
 
@@ -73,7 +79,8 @@ namespace Horizon
         , activeSkyAtmosphere(nullptr)
     {
         gpuScene = new GPUScene();
-        rayTracingScene = new RayTracingScene();
+
+        rayTracingScene = nullptr;
     }
 
     RenderScene::~RenderScene()
@@ -207,6 +214,12 @@ namespace Horizon
         outParameters.direction = light->direction;
         outParameters.tangent = light->tangent;
         outParameters.color = light->color;
+    }
+
+    RayTracingScene* RenderScene::CreateRayTracingScene()
+    {
+        //rayTracingScene = new RayTracingScene();
+        return rayTracingScene;
     }
 
     void RenderScene::UpdateGPUScene(RenderBackendCommandList* commandList)

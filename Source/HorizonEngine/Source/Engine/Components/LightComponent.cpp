@@ -25,6 +25,12 @@ namespace Horizon
             description.shadowFadeOutFactor = shadowFadeOutFactor;
             description.shadowMapDepthBiasConstantFactor = shadowMapDepthBiasConstantFactor;
             description.shadowMapDepthBiasSlopeFactor = shadowMapDepthBiasSlopeFactor;
+            description.enableScreenSpaceShadows = enableScreenSpaceShadows;
+            description.screenSpaceShadowsSurfaceThickness = screenSpaceShadowsSurfaceThickness;
+            description.screenSpaceShadowsShadowContrast = screenSpaceShadowsShadowContrast;
+            description.enableLightShafts = enableLightShafts;
+            description.lightShaftsIntensity = lightShaftsIntensity;
+            description.lightShaftsColor = lightShaftsColor;
 
             if (type == Type::Distant)
             {
@@ -69,6 +75,12 @@ namespace Horizon
             renderObject->shadowFadeOutFactor = shadowFadeOutFactor;
             renderObject->shadowMapDepthBiasConstantFactor = shadowMapDepthBiasConstantFactor;
             renderObject->shadowMapDepthBiasSlopeFactor = shadowMapDepthBiasSlopeFactor;
+            renderObject->enableScreenSpaceShadows = enableScreenSpaceShadows;
+            renderObject->screenSpaceShadowsSurfaceThickness = screenSpaceShadowsSurfaceThickness;
+            renderObject->screenSpaceShadowsShadowContrast = screenSpaceShadowsShadowContrast;
+            renderObject->enableLightShafts = enableLightShafts;
+            renderObject->lightShaftsIntensity = lightShaftsIntensity;
+            renderObject->lightShaftsColor = lightShaftsColor;
 
             if (type == Type::Distant)
             {

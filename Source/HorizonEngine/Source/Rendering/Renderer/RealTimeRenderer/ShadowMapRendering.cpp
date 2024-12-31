@@ -115,7 +115,7 @@ namespace Horizon
             renderResolution.width,
             renderResolution.height,
             RenderBackendTextureFormat::R8G8B8A8Unorm,
-            RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::UnorderedAccess);
+            RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::UnorderedAccess | RenderBackendTextureCreateFlags::RenderTarget);
         RenderGraphTextureHandle screenSpaceShadowMaskTexture = renderGraph.CreateTexture(screenSpaceShadowMaskTextureDesc, "ScreenSpaceShadowMaskTexture");
 
         renderGraph.AddPass(
@@ -131,8 +131,8 @@ namespace Horizon
 
                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
                 {
-                    uint32 threadGroupCountX = CeilDiv(renderResolution.width, 8);
-                    uint32 threadGroupCountY = CeilDiv(renderResolution.height, 8);
+                    uint32 threadGroupCountX = ComputeShaderThreadGroupCount(renderResolution.width, 8);
+                    uint32 threadGroupCountY = ComputeShaderThreadGroupCount(renderResolution.height, 8);
                     uint32 threadGroupCountZ = 1;
 
                     RenderBackendShaderConstants shaderConstants = {};

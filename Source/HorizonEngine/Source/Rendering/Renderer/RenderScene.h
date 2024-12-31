@@ -145,9 +145,15 @@ namespace Horizon
         float shadowFadeOutFactor;
         float shadowMapDepthBiasConstantFactor;
         float shadowMapDepthBiasSlopeFactor;
+        bool enableScreenSpaceShadows;
+        float screenSpaceShadowsSurfaceThickness;
+        float screenSpaceShadowsShadowContrast;
         bool usedAsAtmosphericLight;
         float halfApexAngleInRadians;
         Vector3f atmosphericLightDiskColorFactor;
+        bool enableLightShafts;
+        float lightShaftsIntensity;
+        Vector3f lightShaftsColor;
     };
 
     struct DistantLightRenderData
@@ -248,6 +254,21 @@ namespace Horizon
             return shadowCascadeSplitLambda;
         }
 
+        bool IsLightShaftsEnabled() const
+        {
+            return enableLightShafts;
+        }
+
+        float GetLightShaftsIntensity() const
+        {
+            return lightShaftsIntensity;
+        }
+
+        Vector3f GetLightShaftsColor() const
+        {
+            return lightShaftsColor;
+        }
+
     //private:
         LightType lightType;
         Vector3f color;
@@ -265,9 +286,17 @@ namespace Horizon
         float shadowFadeOutFactor;
         float shadowMapDepthBiasConstantFactor;
         float shadowMapDepthBiasSlopeFactor;
+        bool enableScreenSpaceShadows;
+        float screenSpaceShadowsSurfaceThickness;
+        float screenSpaceShadowsShadowContrast;
+
         bool usedAsAtmosphericLight;
         float halfApexAngleInRadians;
         Vector3f atmosphericLightDiskColorFactor;
+
+        float enableLightShafts;
+        float lightShaftsIntensity;
+        Vector3f lightShaftsColor;
     };
 
     class SkyLightRenderObject
@@ -488,6 +517,8 @@ namespace Horizon
         {
             return gpuScene;
         }
+
+        RayTracingScene* CreateRayTracingScene();
 
         RayTracingScene* GetRayTracingScene() const
         {

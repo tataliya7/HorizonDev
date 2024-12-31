@@ -26,4 +26,13 @@ namespace Horizon
         .alphaBlendOp = RenderBackendBlendOp::Add,
         .writeMask = RenderBackendColorComponentFlags::RGBA,
     };
+
+    const RenderBackendColorBlendAttachmentState RenderBackendColorBlendAttachmentState::AdditiveRGB =
+    {
+        .blendEnable = true,
+        .srcColorBlendFactor = RenderBackendBlendFactor::One,
+        .dstColorBlendFactor = RenderBackendBlendFactor::One,
+        .colorBlendOp = RenderBackendBlendOp::Add,
+        .writeMask = RenderBackendColorComponentFlags::RGB,
+    };
 }

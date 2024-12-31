@@ -75,9 +75,9 @@ namespace Horizon
         return ret;
     }
 
-    static inline uint32 CeilDiv(uint32 x, uint32 d)
+    static inline uint32 ComputeShaderThreadGroupCount(uint32 threads, uint32 threadsPerGroup)
     {
-        return ((x + d - 1) / d);
+        return ((threads + threadsPerGroup - 1) / threadsPerGroup);
     }
 
     static inline Extent2D DownsampleExtent2D(Extent2D srcExtent, uint32 downsampleFactor)

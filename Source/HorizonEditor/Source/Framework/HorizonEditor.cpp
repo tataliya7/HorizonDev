@@ -69,7 +69,7 @@ namespace Horizon
 //        PhysXInit();
 //        Audio::AudioEngineInit();
 
-        //RenderDocPluginInit();
+        RenderDocPluginInit();
 
         // UUID unit tests.
         {

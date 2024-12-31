@@ -136,6 +136,11 @@ namespace Horizon
 
     RenderGraphTextureHandle RenderGraph::ImportExternalTexture(RenderGraphPersistentTexture* externalTexture, char const* name)
     {
+        if (!externalTexture)
+        {
+            return RenderGraphTextureHandle::Null;
+        }
+
         RenderBackendTextureHandle renderBackendTextureHandle = externalTexture->GetHandle();
         RenderGraphTextureHandle found = FindExternalTexture(renderBackendTextureHandle);
         if (found)
@@ -162,6 +167,11 @@ namespace Horizon
 
     RenderGraphBufferHandle RenderGraph::ImportExternalBuffer(RenderGraphPersistentBuffer* externalBuffer, char const* name)
     {
+        if (!externalBuffer)
+        {
+            return RenderGraphBufferHandle::Null;
+        }
+
         RenderBackendBufferHandle renderBackendBufferHandle = externalBuffer->GetHandle();
         RenderGraphBufferHandle found = FindExternalBuffer(renderBackendBufferHandle);
         if (found)

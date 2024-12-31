@@ -72,13 +72,12 @@ float3 ToneMappingOperatorHable()
 
 // Fast reversible tonemapper
 // https://gpuopen.com/learn/optimized-reversible-tonemapper-for-resolve/
-
 float3 FastToneMapping(float3 c)
 {
     return c * rcp(max(c.r, max(c.g, c.b)) + 1.0f);
 }
 
-float3 FastToneMappingInverse(float3 c)
+float3 FastInverseToneMapping(float3 c)
 {
     return c * rcp(1.0f - max(c.r, max(c.g, c.b)));
 }

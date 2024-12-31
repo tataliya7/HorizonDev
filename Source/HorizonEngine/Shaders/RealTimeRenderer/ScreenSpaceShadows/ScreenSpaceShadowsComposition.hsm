@@ -1,0 +1,19 @@
+#include "../../ShaderCommon.hsh"
+#include "../RealTimeRendererCommon.hsh"
+
+SHADER_CONSTANTS_STRUCT_BEGIN();
+SHADER_CONSTANTS_TEXTURE_2D_SRV(0, float, ScreenSpaceShadowsTextureSRV);
+SHADER_CONSTANTS_SCALAR(1, float, InverseOutputTextureSizeX);
+SHADER_CONSTANTS_SCALAR(2, float, InverseOutputTextureSizeY);
+SHADER_CONSTANTS_STRUCT_END();
+
+[shader("pixel")]
+void ScreenSpaceShadowsCompositionPS(in float4 position : SV_Position, out float4 outColor : SV_Target0)
+{
+    Texture2D<float> screenSpaceShadowsTexture = ShaderConstants.GetScreenSpaceShadowsTextureSRV();
+
+    float2 inverseOutputTextureSize = float2(ShaderConstants.GetInverseOutputTextureSizeX(), ShaderConstants.GetInverseOutputTextureSizeY());
+    float2 uv = position.xy * inverseOutputTextureSize;
+
+    outColor = screenSpaceShadowsTexture.SampleLevel(GlobalSamplerPointClamp, uv, 0.0f);
+}

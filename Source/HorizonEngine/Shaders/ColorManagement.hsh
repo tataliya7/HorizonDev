@@ -1,0 +1,23 @@
+#pragma once
+
+float3 RGBToYCoCg(float3 RGB)
+{
+    float Y  = dot(RGB, float3( 1.0f, 2.0f,  1.0f));
+    float Co = dot(RGB, float3( 2.0f, 0.0f, -2.0f));
+    float Cg = dot(RGB, float3(-1.0f, 2.0f, -1.0f));
+
+    return float3(Y, Co, Cg);
+}
+
+float3 YCoCgToRGB(float3 YCoCg)
+{
+    float Y  = YCoCg.x * 0.25f;
+    float Co = YCoCg.y * 0.25f;
+    float Cg = YCoCg.z * 0.25f;
+
+    float R = Y + Co - Cg;
+    float G = Y + Cg;
+    float B = Y - Co - Cg;
+
+    return float3(R, G, B);
+}

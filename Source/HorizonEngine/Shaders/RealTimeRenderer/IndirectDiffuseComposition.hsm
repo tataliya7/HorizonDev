@@ -27,7 +27,7 @@ float3 GTAOMultiBounce(float ao, float3 albedo)
 }
 
 [shader("pixel")]
-void IndirectDiffuseCompositionPS(in float4 position : SV_Position, out float4 outputColor : SV_Target0)
+void IndirectDiffuseCompositionPS(in float4 position : SV_Position, out float4 outColor : SV_Target0)
 {
     StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
     PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
@@ -75,6 +75,6 @@ void IndirectDiffuseCompositionPS(in float4 position : SV_Position, out float4 o
     indirectDiffuse *= frameShaderParameters.indirectLightingMultiplier;
     indirectDiffuse *= frameShaderParameters.preExposure;
 
-    outputColor = 0;
-    outputColor.rgb += indirectDiffuse;
+    outColor = 0;
+    outColor.rgb += indirectDiffuse;
 }

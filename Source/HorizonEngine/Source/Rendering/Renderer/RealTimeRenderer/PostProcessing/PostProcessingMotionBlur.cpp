@@ -18,8 +18,8 @@ namespace Horizon
         RenderGraphTextureHandle sceneDepthTexture,
         RenderGraphTextureHandle motionVectorTexture)
     {
-        const uint32 tileCountX = CeilDiv(renderResolution.width, GMotionBlurTileSize);
-        const uint32 tileCountY = CeilDiv(renderResolution.height, GMotionBlurTileSize);
+        const uint32 tileCountX = Math::CeilDiv(renderResolution.width, GMotionBlurTileSize);
+        const uint32 tileCountY = Math::CeilDiv(renderResolution.height, GMotionBlurTileSize);
         const uint32 tileCount = tileCountX * tileCountY;
 
         RenderGraphTextureDesc velocityAndDepthTextureDesc = RenderGraphTextureDesc::Create2D(
@@ -113,7 +113,7 @@ namespace Horizon
                     RenderBackendShaderHandle pixelShader = shaderLibrary->GetShader(ShaderID::MotionBlurVelocityDilationScatterPS);
 
                     uint32 vertexCount = 6 * GMotionBlurVelocityDilationQuadCountPerInstance;
-                    uint32 instanceCount = CeilDiv(tileCount, GMotionBlurVelocityDilationQuadCountPerInstance);
+                    uint32 instanceCount = Math::CeilDiv(tileCount, GMotionBlurVelocityDilationQuadCountPerInstance);
 
                     for (uint32 scatterPassIndex = 0; scatterPassIndex < 2; scatterPassIndex++)
                     {
@@ -166,8 +166,8 @@ namespace Horizon
 
                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
                 {
-                    uint32 threadGroupCountX = CeilDiv(motionBlurColorTextureDesc.width, GMotionBlurTileSize);
-                    uint32 threadGroupCountY = CeilDiv(motionBlurColorTextureDesc.height, GMotionBlurTileSize);
+                    uint32 threadGroupCountX = ComputeShaderThreadGroupCount(motionBlurColorTextureDesc.width, GMotionBlurTileSize);
+                    uint32 threadGroupCountY = ComputeShaderThreadGroupCount(motionBlurColorTextureDesc.height, GMotionBlurTileSize);
                     uint32 threadGroupCountZ = 1;
 
                     RenderBackendShaderConstants shaderConstants = {};

@@ -28,7 +28,7 @@ void SubsurfaceScatteringRecombineVS(uint VertexID : SV_VertexID, uint InstanceI
 }
 
 [shader("pixel")]
-void SubsurfaceScatteringRecombinePS(SubsurfaceScatteringRecombineVSOutput vsOutput, out float4 outputColor : SV_Target0)
+void SubsurfaceScatteringRecombinePS(SubsurfaceScatteringRecombineVSOutput vsOutput, out float4 outColor : SV_Target0)
 {
     Texture2D sceneColorTexture = GetSceneColorTextureSRV();
     Texture2D burleyNormalizedTexture = GetBurleyNormalizedTextureSRV();
@@ -40,7 +40,7 @@ void SubsurfaceScatteringRecombinePS(SubsurfaceScatteringRecombineVSOutput vsOut
     bool useSubsurfaceScattering = true;
     if (!useSubsurfaceScattering)
     {
-        outputColor = sceneColor;
+        outColor = sceneColor;
         return;
     }
 
@@ -50,5 +50,5 @@ void SubsurfaceScatteringRecombinePS(SubsurfaceScatteringRecombineVSOutput vsOut
 
     SubsurfaceScatteringDiffuseAndSpecluar diffuseAndSpecluar = ReconstructDiffuseAndSpecluar(sceneColor.rgb, sceneColor.a);
 
-    outputColor = float4(subsurfaceScatteringColor * baseColor + diffuseAndSpecluar.specular, 0.0f);
+    outColor = float4(subsurfaceScatteringColor * baseColor + diffuseAndSpecluar.specular, 0.0f);
 }

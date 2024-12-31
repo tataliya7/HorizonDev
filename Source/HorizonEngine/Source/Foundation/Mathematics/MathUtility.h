@@ -18,34 +18,19 @@
 #include <glm/gtx/matrix_decompose.hpp>
 #include <glm/gtx/matrix_major_storage.hpp>
 
-#define M_PI                   (3.1415926535897932f)
-#define M_INV_PI              (0.3183098861837067f)
-#define M_HALF_PI              (1.5707963267948966f)
-#define M_TWO_PI              (6.2831853071795864f)
-#define M_PI_SQUARED          (9.8696044010893580f)
+#define M_PI                     (3.1415926535897932f)
+#define M_INV_PI                 (0.3183098861837067f)
+#define M_HALF_PI                (1.5707963267948966f)
+#define M_TWO_PI                 (6.2831853071795864f)
+#define M_PI_SQUARED             (9.8696044010893580f)
 #define M_SQRT_PI                (1.4142135623730950f)
-#define SMALL_NUMBER          (1.e-8f)
-#define KINDA_SMALL_NUMBER    (1.e-4f)
-#define BIG_NUMBER              (3.4e+38f)
-#define DELTA                  (0.00001f)
-// #define FLOAT_MIN              (1.175494351e-38f)
-// #define FLOAT_MAX              (3.402823466e+38f)
+#define SMALL_NUMBER             (1.e-8f)
+#define KINDA_SMALL_NUMBER       (1.e-4f)
+#define BIG_NUMBER               (3.4e+38f)
+#define DELTA                    (0.00001f)
 
 namespace Horizon
 {
-    //extern const float M_PI = 3.1415926535897932f;
-    //extern const float M_INV_PI = 0.3183098861837067f;
-    //extern const float M_HALF_PI = 1.5707963267948966f;
-    //extern const float M_TWO_PI = 6.2831853071795864f;
-    //extern const float M_PI_SQUARED = 9.8696044010893580f;
-    //extern const float M_SQRT_PI = 1.4142135623730950f;
-    //extern const float FLOAT_MIN = 1.175494351e-38f;
-    //extern const float FLOAT_MAX = 3.402823466e+38f;
-    //extern const float SMALL_NUMBER = 1.e-8f;
-    //extern const float KINDA_SMALL_NUMBER = 1.e-4f;
-    //extern const float DELTA = 3.4e+38f;
-    //extern const float BIG_NUMBER = 0.00001f;
-
     using Vector2i = glm::ivec2;
     using Vector3i = glm::ivec3;
     using Vector4i = glm::ivec4;
@@ -70,16 +55,21 @@ namespace Horizon
 
     using Quaternion = glm::quat;
 
-    static const Matrix3x3f IdentityMatrix3x3 = glm::identity<glm::fmat3>();
-    static const Matrix4x4f IdentityMatrix4x4 = glm::identity<glm::fmat4>();
+    static const Matrix3x3f IdentityMatrix3x3f = glm::identity<glm::fmat3>();
+    static const Matrix4x4f IdentityMatrix4x4f = glm::identity<glm::fmat4>();
 
-    static const Vector2f ZeroVector2 = Vector2f(0.0f, 0.0f);
-    static const Vector3f ZeroVector3 = Vector3f(0.0f, 0.0f, 0.0f);
-    static const Vector4f ZeroVector4 = Vector4f(0.0f, 0.0f, 0.0f, 0.0f);
+    static const Vector2f ZeroVector2f = Vector2f(0.0f, 0.0f);
+    static const Vector3f ZeroVector3f = Vector3f(0.0f, 0.0f, 0.0f);
+    static const Vector4f ZeroVector4f = Vector4f(0.0f, 0.0f, 0.0f, 0.0f);
 }
 
 namespace Horizon::Math
 {
+    static inline uint32 CeilDiv(uint32 x, uint32 d)
+    {
+        return ((x + d - 1) / d);
+    }
+
     FORCEINLINE Vector4f GetPlane(Vector3f normal, Vector3f point)
     {
         return Vector4f(normal.x, normal.y, normal.z, -glm::dot(normal, point));

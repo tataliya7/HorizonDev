@@ -1,12 +1,15 @@
-#include "../ShaderCommon.hsh"
-#include "RealTimeRendererCommon.hsh"
+#include "../../ShaderCommon.hsh"
+#include "../RealTimeRendererCommon.hsh"
 
-BIND_BUFFER_CBV(0, PerFrameShaderParameters);
-BIND_TEXTURE_2D_SRV(1, InputTexture);
-BIND_TEXTURE_2D_UAV(2, float3, OutputTexture);
-
-// TODO: Promote to parameter
-static const uint SampleCount = 16;
+SHADER_CONSTANTS_STRUCT_BEGIN();
+SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferSRV);
+SHADER_CONSTANTS_TEXTURE_2D_SRV(1, float3, InputTextureSRV);
+SHADER_CONSTANTS_TEXTURE_2D_UAV(2, float3, OutputTextureUAV);
+SHADER_CONSTANTS_SCALAR(3, float, LightShaftsOriginX);
+SHADER_CONSTANTS_SCALAR(4, float, LightShaftsOriginY);
+SHADER_CONSTANTS_SCALAR(5, uint, PassIndex);
+SHADER_CONSTANTS_SCALAR(6, uint, SampleCount);
+SHADER_CONSTANTS_STRUCT_END();
 
 [shader("compute")]
 [numthreads(8, 8, 1)]
@@ -14,45 +17,48 @@ void ScreenSpaceLightShaftsRadialBlurCS(uint3 dispatchThreadID : SV_DispatchThre
 {
     StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
     PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
-    Texture2D inputTexture = GetInputTextureSRV();
-    RWTexture2D<float3> outputTexture = GetOutputTextureUAV();
+    Texture2D<float3> inputTexture = ShaderConstants.GetInputTextureSRV();
+    RWTexture2D<float3> outputTexture = ShaderConstants.GetOutputTextureUAV();
 
-    uint width = 1920;//asuint((0));
-    uint height = 1027;//asuint((1));
-    if (dispatchThreadID.x >= width || dispatchThreadID.y >= height)
+    uint outputTextureWidth, outputTextureHeight;
+    outputTexture.GetDimensions(outputTextureWidth, outputTextureHeight);
+    if (dispatchThreadID.x >= outputTextureWidth || dispatchThreadID.y >= outputTextureHeight)
     {
         return;
     }
 
-    float2 textureSpaceBlurOrigin;
-    textureSpaceBlurOrigin.x = (2);
-    textureSpaceBlurOrigin.y = (3);
+    float2 lightShaftsOrigin = float2(ShaderConstants.GetLightShaftsOriginX(), ShaderConstants.GetLightShaftsOriginY());
+    uint passIndex = ShaderConstants.GetPassIndex();
+    uint sampleCount = ShaderConstants.GetSampleCount();
+    sampleCount = 8;
 
-    float passIndex = (4);
-    float passScale = pow(0.4f * SampleCount, passIndex);
+    float passScale = pow(0.4f * sampleCount, passIndex);
 
     uint2 pixelCoord = dispatchThreadID.xy;
-    float2 uv = (pixelCoord + 0.5f) * float2(1.0 / width, 1.0 / height);
-    float2 aspectCorrectedUV = uv;
+    float2 uv = (float2(pixelCoord.x, pixelCoord.y) + 0.5f) * float2(1.0f / outputTextureWidth, 1.0f / outputTextureHeight);
+
+    // @todo Aspect Ratio Correction
+    float2 aspectRatioCorrectedUV = uv;
 
     float GLightShaftFirstPassDistance = 0.1f;
-    float2 blurDirection = (textureSpaceBlurOrigin.xy - aspectCorrectedUV) * min(GLightShaftFirstPassDistance * passScale, 1);
+    float2 blurVector = (lightShaftsOrigin - uv) * 0.2;//* min(GLightShaftFirstPassDistance * passScale, 1);
 
-    float2 centerUV = 0;
+    float2 sampleCenterUV = uv;
 
-    float3 blurredColor = 0;
+    float3 color = float3(0.0f, 0.0f, 0.0f);
 
-    [unroll]
-    for (uint sampleIndex = 0; sampleIndex < SampleCount; sampleIndex++)
+    [loop]
+    for (uint sampleIndex = 0; sampleIndex < sampleCount; sampleIndex++)
     {
-        float2 sampleOffset = blurDirection * sampleIndex / float(SampleCount);
-        float2 sampleUV = centerUV + sampleOffset;
+        float2 sampleUVOffset = blurVector * sampleIndex / float(sampleCount);
+        float2 sampleUV = sampleCenterUV + sampleUVOffset;
+
         float3 sampleColor = inputTexture.SampleLevel(GlobalSamplerLinearClamp, sampleUV, 0).rgb;
 
-        blurredColor += sampleColor;
+        color += sampleColor;
     }
 
-    blurredColor /= float(SampleCount);
+    color /= float(sampleCount);
 
-    outputTexture[pixelCoord] = blurredColor;
+    outputTexture[pixelCoord] = color;
 }

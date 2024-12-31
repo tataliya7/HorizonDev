@@ -1,6 +1,8 @@
 #pragma once
 
-#include "Foundation/Math.h"
+#include "Foundation/StdHeaders.h"
+#include "Foundation/Definitions.h"
+#include "Foundation/FundamentalTypes.h"
 
 namespace Horizon
 {

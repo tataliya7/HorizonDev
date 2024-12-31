@@ -74,7 +74,7 @@ void MotionBlurReconstructionFilterCS(uint3 dispatchThreadID : SV_DispatchThread
     float pixelToSampleUnitsScale = stepCount * rsqrt(dot(maxVelocity, maxVelocity));
 
     float4 sum = 0.0f;
-    float3 outputColor = 0.0f;
+    float3 outColor = 0.0f;
 
     [loop]
     for (uint i = 0; i < stepCount; i++)
@@ -122,7 +122,7 @@ void MotionBlurReconstructionFilterCS(uint3 dispatchThreadID : SV_DispatchThread
 
     sum *= 1.0f / float(sampleCount);
 
-    outputColor.rgb = sum.rgb + (1.0f - sum.a) * centerColor.rgb;
+    outColor.rgb = sum.rgb + (1.0f - sum.a) * centerColor.rgb;
 
-    outputTexture[pixelCoord] = outputColor.rgb;
+    outputTexture[pixelCoord] = outColor.rgb;
 }

@@ -3,11 +3,11 @@
 #include "../RealTimeRendererCommon.hsh"
 #include "PostProcessingCommon.hsh"
 #include "ToneMappingCommon.hsh"
-#include "ColorLUTCommon.hsh"
+#include "ColorTransformLUTCommon.hsh"
 
 SHADER_CONSTANTS_STRUCT_BEGIN();
 SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferSRV);
-SHADER_CONSTANTS_TEXTURE_3D_UAV(1, float4, ColorLUTTextureUAV);
+SHADER_CONSTANTS_TEXTURE_3D_UAV(1, float4, ColorTransformLUTTextureUAV);
 SHADER_CONSTANTS_STRUCT_END();
 
 // Accurate for 4000K < Temp < 25000K
@@ -113,17 +113,17 @@ float3 PurkinjeShift(float3 linearRGB)
 
 [shader("compute")]
 [numthreads(8, 8, 8)]
-void ColorLUTCS(uint3 dispatchThreadID : SV_DispatchThreadID)
+void ColorTransformLUTCS(uint3 dispatchThreadID : SV_DispatchThreadID)
 {
     StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
     PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
-    RWTexture3D<float4> colorLUTTexture = ShaderConstants.GetColorLUTTextureUAV();
+    RWTexture3D<float4> colorLUTTexture = ShaderConstants.GetColorTransformLUTTextureUAV();
 
     float whiteBalance = frameShaderParameters.whiteBalance;
 
     uint3 pixelCoord = dispatchThreadID;
 
-    float3 encodedColor = float3(pixelCoord) / float(ColorLUTSize - 1);
+    float3 encodedColor = float3(pixelCoord) / float(ColorTransformLUTSize - 1);
     float3 linearColor = LogToLinear(encodedColor.rgb) - LogToLinear(0);
 
     //linearColor = PurkinjeShift(linearColor);
@@ -135,13 +135,13 @@ void ColorLUTCS(uint3 dispatchThreadID : SV_DispatchThreadID)
 
     float3 acescg = mul(sRGB_2_AP1_MAT, linearColor);
 
-    float3 outputColor = max(0.0f, mul(AP1_2_sRGB_MAT, acescg));
+    float3 finalColor = max(0.0f, mul(AP1_2_sRGB_MAT, acescg));
 
     // uint toneMappingOperator = (uint)(0);
     // if (toneMappingOperator == 0)
     // {
-    //     outputColor = saturate(linearColor);
-    //     outputColor = GammaCorrection(outputColor);
+    //     finalColor = saturate(linearColor);
+    //     finalColor = GammaCorrection(finalColor);
     // }
     // if (toneMappingOperator == 1)
     {
@@ -153,7 +153,7 @@ void ColorLUTCS(uint3 dispatchThreadID : SV_DispatchThreadID)
         float3 aces = mul(AP1_2_AP0_MAT, acescg);
         float3 oces = RRT(aces);
         float3 odt = ODT_sRGB_100nits_dim(oces);
-        outputColor = odt;
+        finalColor = odt;
     }
     // if (toneMappingOperator == 2)
     // {
@@ -164,7 +164,5 @@ void ColorLUTCS(uint3 dispatchThreadID : SV_DispatchThreadID)
     //     // acescg = ToneMappingOperatorCustom();
     // }
 
-    float4 outColor = float4(outputColor / 1.05, 1.0f);
-
-    colorLUTTexture[pixelCoord] = outColor;
+    colorLUTTexture[pixelCoord] = float4(finalColor / 1.05f, 1.0f);
 }

@@ -33,7 +33,7 @@ void SubsurfaceScatteringGatherTilesCS(uint3 dispatchThreadID : SV_DispatchThrea
     float2 pixelPosition = float2(pixelCoord) + 0.5f;
     float2 uv = pixelPosition * frameShaderParameters.renderResolution.zw;
 
-    float4 outputColor = 0;
+    float4 outColor = 0;
 
     bool hasSubsurfaceProfile = true;
     if (hasSubsurfaceProfile)
@@ -50,10 +50,10 @@ void SubsurfaceScatteringGatherTilesCS(uint3 dispatchThreadID : SV_DispatchThrea
         //float noise = InterleavedGradientNoiseEX(pixelPosition, frameShaderParameters.frameIndexMod8);
         //float depth = linearSceneDepth + noise * (linearSceneDepth / 1024.0f);
 
-        outputColor = float4(diffuse, linearSceneDepth);
+        outColor = float4(diffuse, linearSceneDepth);
     }
 
-    outputTexture[pixelCoord] = outputColor;
+    outputTexture[pixelCoord] = outColor;
 
     if (GroupIndex == 0)
     {

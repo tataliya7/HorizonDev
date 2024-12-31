@@ -20,8 +20,8 @@ namespace Horizon
 
         assert((renderResolution.width == sceneColorTextureDesc.width) && (renderResolution.height == sceneColorTextureDesc.height));
 
-        const uint32 tileCountX = CeilDiv(sceneColorTextureDesc.width, GSubsurfaceScatteringTileSize);
-        const uint32 tileCountY = CeilDiv(sceneColorTextureDesc.height, GSubsurfaceScatteringTileSize);
+        const uint32 tileCountX = Math::CeilDiv(sceneColorTextureDesc.width, GSubsurfaceScatteringTileSize);
+        const uint32 tileCountY = Math::CeilDiv(sceneColorTextureDesc.height, GSubsurfaceScatteringTileSize);
         const uint32 tileCount = tileCountX * tileCountY;
 
         RenderGraphTextureHandle subsurfaceScatteringTexture = renderGraph.CreateTexture(sceneColorTextureDesc, "SubsurfaceScatteringTexture");
@@ -67,8 +67,8 @@ namespace Horizon
 
                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
                 {
-                    uint32 threadGroupCountX = CeilDiv(sceneColorTextureDesc.width, GSubsurfaceScatteringTileSize);
-                    uint32 threadGroupCountY = CeilDiv(sceneColorTextureDesc.height, GSubsurfaceScatteringTileSize);
+                    uint32 threadGroupCountX = ComputeShaderThreadGroupCount(sceneColorTextureDesc.width, GSubsurfaceScatteringTileSize);
+                    uint32 threadGroupCountY = ComputeShaderThreadGroupCount(sceneColorTextureDesc.height, GSubsurfaceScatteringTileSize);
                     uint32 threadGroupCountZ = 1;
 
                     RenderBackendShaderConstants shaderConstants = {};

@@ -17,7 +17,7 @@ namespace Horizon
         RenderGraphBufferHandle previousAutoExposureBuffer = renderGraph.ImportExternalBuffer(historyFrame.autoExposureBuffer, "PreviousAutoExposureBuffer");
         RenderGraphBufferHandle autoExposureBuffer = previousAutoExposureBuffer;
 
-        const bool shouldRenderSceneColorPyramid = IsBloomEnabled();
+        const bool shouldRenderSceneColorPyramid = true;// IsBloomEnabled();
 
 #if HORIZON_EDITOR
         const bool isEditorSelectionOutlineEnabled = true;
@@ -71,7 +71,7 @@ namespace Horizon
         // The auto exposure pass is always executed.
         // When fixed exposure is enabled, the auto exposure pass will force output the specified exposure.
         {
-            autoExposureBuffer = DispatchHistogramBasedAutoExposure(renderGraph, view, sceneColorTexture, previousAutoExposureBuffer);
+            autoExposureBuffer = DispatchHistogramBasedAutoExposure(renderGraph, view, sceneColorMipChain.textures[0], previousAutoExposureBuffer);
         }
 
         RenderGraphTextureHandle localExposureTexture = RenderGraphTextureHandle::Null;
@@ -101,7 +101,7 @@ namespace Horizon
 
         if (true) // Tone mapping is always enabled.
         {
-            RenderGraphTextureHandle colorLUTTexture = RenderColorLUT(renderGraph, view);
+            RenderGraphTextureHandle colorLUTTexture = RenderColorTransformLUT(renderGraph, view);
 
             bool outputInHDR = false;
 

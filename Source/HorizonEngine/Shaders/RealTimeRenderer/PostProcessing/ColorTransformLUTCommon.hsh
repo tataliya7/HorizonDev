@@ -1,0 +1,17 @@
+#pragma once
+
+static const uint ColorTransformLUTSize = 32;
+
+static const float ColorTransformLUTLinearRange = 14.0;
+static const float ColorTransformLUTLinearGray = 0.18;
+static const float ColorTransformLUTExposureGray = 444.0;
+
+float3 LogToLinear(float3 encodedColor)
+{
+    return exp2((encodedColor - ColorTransformLUTExposureGray / 1023.0) * ColorTransformLUTLinearRange) * ColorTransformLUTLinearGray;
+}
+
+float3 LinearToLog(float3 linearColor)
+{
+    return saturate(log2(linearColor) / ColorTransformLUTLinearRange - log2(ColorTransformLUTLinearGray) / ColorTransformLUTLinearRange + ColorTransformLUTExposureGray / 1023.0);
+}

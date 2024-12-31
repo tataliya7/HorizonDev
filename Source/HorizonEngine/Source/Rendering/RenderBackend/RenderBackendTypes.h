@@ -1002,6 +1002,7 @@ namespace Horizon
     struct RenderBackendColorBlendAttachmentState
     {
         static const RenderBackendColorBlendAttachmentState Additive;
+        static const RenderBackendColorBlendAttachmentState AdditiveRGB;
 
         bool blendEnable                             = false;
         RenderBackendBlendFactor srcColorBlendFactor = RenderBackendBlendFactor::One;

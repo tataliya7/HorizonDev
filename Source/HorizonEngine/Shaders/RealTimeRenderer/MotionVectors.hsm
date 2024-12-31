@@ -49,11 +49,7 @@ void MotionVectorsCS(uint3 dispatchThreadID : SV_DispatchThreadID)
     float2 invSize = frameShaderParameters.renderResolution.zw;
     float2 uv = (pixelCoord + 0.5f) * invSize;
     float2 jitteredUV = (pixelCoord + 0.5f + frameShaderParameters.cameraJitterOffset) * invSize;
-
-    // TODO: move this to per frame shader paramters
-    float2 motionVectorJitterCancellation = frameShaderParameters.previousCameraJitterOffset - frameShaderParameters.cameraJitterOffset;
-    // Transform to screen UV space
-    motionVectorJitterCancellation = motionVectorJitterCancellation * invSize;
+    float2 motionVectorJitterCancellation = frameShaderParameters.motionVectorJitterCancellation;
 
     Texture2D sceneDepthTexture = ShaderConstants.GetSceneDepthTextureSRV();
     Texture2D<uint2> visibilityBuffer = ShaderConstants.GetVisibilityBufferSRV();

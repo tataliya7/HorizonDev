@@ -32,10 +32,10 @@ namespace Horizon
     RenderGraphBufferHandle RealTimeRenderer::DispatchHistogramBasedAutoExposure(
         RenderGraph& renderGraph,
         const SceneView& view,
-        RenderGraphTextureHandle sceneColorTexture,
+        RenderGraphTextureHandle colorTexture,
         RenderGraphBufferHandle previousAutoExposureBuffer)
     {
-        const RenderGraphTextureDesc& sceneColorTextureDesc = renderGraph.GetTextureDesc(sceneColorTexture);
+        const RenderGraphTextureDesc& colorTextureDesc = renderGraph.GetTextureDesc(colorTexture);
 
         RenderGraphTextureDesc autoExposureHistogramTextureDesc = RenderGraphTextureDesc::Create1D(
             GHistogramBinCount,
@@ -44,24 +44,22 @@ namespace Horizon
         RenderGraphTextureHandle autoExposureHistogramTexture = renderGraph.CreateTexture(autoExposureHistogramTextureDesc, "AutoExposureHistogramTexture");
 
         renderGraph.AddPass(
-            std::format("AutoExposureBuildHistogram (Compute, {}x{})", sceneColorTextureDesc.width, sceneColorTextureDesc.height),
+            std::format("AutoExposureBuildHistogram (Compute, {}x{})", colorTextureDesc.width, colorTextureDesc.height),
             RenderGraphPassFlags::Compute,
             [&](RenderGraphBuilder& builder)
             {
-                sceneColorTexture = builder.ReadTexture(sceneColorTexture, RenderBackendResourceState::ShaderResource);
+                colorTexture = builder.ReadTexture(colorTexture, RenderBackendResourceState::ShaderResource);
                 autoExposureHistogramTexture = builder.WriteTexture(autoExposureHistogramTexture, RenderBackendResourceState::UnorderedAccess);
 
                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
                 {
-                    // Quarter resolution
-                    // TODO: change to 1/2 resolution
-                    uint32 threadGroupCountX = CeilDiv(sceneColorTextureDesc.width, 16);
-                    uint32 threadGroupCountY = CeilDiv(sceneColorTextureDesc.height, 16);
+                    uint32 threadGroupCountX = ComputeShaderThreadGroupCount(colorTextureDesc.width, 16);
+                    uint32 threadGroupCountY = ComputeShaderThreadGroupCount(colorTextureDesc.height, 16);
                     uint32 threadGroupCountZ = 1;
 
                     RenderBackendShaderConstants shaderConstants = {};
                     shaderConstants.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
-                    shaderConstants.BindTextureSRV(1, registry.GetTextureSRVBindlessResourceDescriptorIndex(sceneColorTexture));
+                    shaderConstants.BindTextureSRV(1, registry.GetTextureSRVBindlessResourceDescriptorIndex(colorTexture));
                     shaderConstants.BindTextureUAV(2, registry.GetTextureUAVBindlessResourceDescriptorIndex(autoExposureHistogramTexture, 0));
 
                     commandList.ClearTextureUAV(RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(autoExposureHistogramTexture), 0), RenderBackendTextureClearValue::CreateColorValueFloat4(0.0f, 0.0f, 0.0f, 0.0f));

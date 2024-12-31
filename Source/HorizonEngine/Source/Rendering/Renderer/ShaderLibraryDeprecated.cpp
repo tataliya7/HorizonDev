@@ -213,6 +213,10 @@ namespace Horizon
             shaderLibrary->LoadShader(ShaderID::ScreenSpaceShadowsBend, shaderDesc);
         }
         {
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Pixel, "Shaders/RealTimeRenderer/ScreenSpaceShadows/ScreenSpaceShadowsComposition.hsm", "ScreenSpaceShadowsCompositionPS");
+            shaderLibrary->LoadShader(ShaderID::ScreenSpaceShadowsComposition, shaderDesc);
+        }
+        {
             ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/ScreenSpaceRayTracing/ScreenSpaceIndirectDiffuse.hsm", "ScreenSpaceIndirectDiffuseCS");
             shaderLibrary->LoadShader(ShaderID::ScreenSpaceIndirectDiffuse, shaderDesc);
         }
@@ -346,19 +350,22 @@ namespace Horizon
         //     ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/SurfelGI/SurfelGIVisualization.hsm", "SurfelGIVisualizationCS");
         //     shaderLibrary->LoadShader(ShaderID::SurfelGIVisualization, shaderDesc);
         // }
-
-        // {
-        //     ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/LightShaftsDownsample.hsm", "LightShaftsDownsampleCS");
-        //     shaderLibrary->LoadShader(ShaderID::LightShaftsDownsample, shaderDesc);
-        // }
-        // {
-        //     ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/LightShaftsRadialBlur.hsm", "LightShaftsRadialBlurCS");
-        //     shaderLibrary->LoadShader(ShaderID::LightShaftsRadialBlur, shaderDesc);
-        // }
-        // {
-        //     ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Pixel, "Shaders/RealTimeRenderer/LightShaftsApply.hsm", "LightShaftsApplyPS");
-        //     shaderLibrary->LoadShader(ShaderID::LightShaftsApply, shaderDesc);
-        // }
+        {
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/ScreenSpaceLightShafts/ScreenSpaceLightShaftsDownsample.hsm", "ScreenSpaceLightShaftsDownsampleCS");
+            shaderLibrary->LoadShader(ShaderID::ScreenSpaceLightShaftsDownsample, shaderDesc);
+        }
+        {
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/ScreenSpaceLightShafts/ScreenSpaceLightShaftsTemporalFiltering.hsm", "ScreenSpaceLightShaftsTemporalFilteringCS");
+            shaderLibrary->LoadShader(ShaderID::ScreenSpaceLightShaftsTemporalFiltering, shaderDesc);
+        }
+        {
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/ScreenSpaceLightShafts/ScreenSpaceLightShaftsRadialBlur.hsm", "ScreenSpaceLightShaftsRadialBlurCS");
+            shaderLibrary->LoadShader(ShaderID::ScreenSpaceLightShaftsRadialBlur, shaderDesc);
+        }
+        {
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Pixel, "Shaders/RealTimeRenderer/ScreenSpaceLightShafts/ScreenSpaceLightShaftsComposition.hsm", "ScreenSpaceLightShaftsCompositionPS");
+            shaderLibrary->LoadShader(ShaderID::ScreenSpaceLightShaftsComposition, shaderDesc);
+        }
         {
             ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/VolumetricFog/VolumetricFogVoxelization.hsm", "VolumetricFogVoxelizationCS");
             shaderLibrary->LoadShader(ShaderID::VolumetricFogVoxelization, shaderDesc);
@@ -488,8 +495,8 @@ namespace Horizon
         //     shaderLibrary->LoadShader(ShaderID::LocalExposureGuidedUpsampling, shaderDesc);
         // }
         {
-            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/PostProcessing/ColorLUT.hsm", "ColorLUTCS");
-            shaderLibrary->LoadShader(ShaderID::ColorLUT, shaderDesc);
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/PostProcessing/ColorTransformLUT.hsm", "ColorTransformLUTCS");
+            shaderLibrary->LoadShader(ShaderID::ColorTransformLUT, shaderDesc);
         }
         {
             ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/PostProcessing/ToneMapping.hsm", "ToneMappingCS");

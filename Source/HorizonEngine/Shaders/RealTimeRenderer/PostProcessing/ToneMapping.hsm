@@ -3,7 +3,7 @@
 #include "../RealTimeRendererCommon.hsh"
 #include "PostProcessingCommon.hsh"
 #include "ToneMappingCommon.hsh"
-#include "ColorLUTCommon.hsh"
+#include "ColorTransformLUTCommon.hsh"
 
 SHADER_CONSTANTS_STRUCT_BEGIN();
 SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferSRV);
@@ -11,15 +11,15 @@ SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(1, SceneColorTextureSRV);
 SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(2, LensDirtTextureSRV);
 SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(3, BloomTextureSRV);
 SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(4, LocalExposureTextureSRV);
-SHADER_CONSTANTS_TEXTURE_3D_DEFAULT_SRV(5, ColorLUTTextureSRV);
+SHADER_CONSTANTS_TEXTURE_3D_DEFAULT_SRV(5, ColorTransformLUTTextureSRV);
 SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_SRV(6, AutoExposureBufferSRV);
 SHADER_CONSTANTS_TEXTURE_2D_UAV(7, float4, OutputTextureUAV);
 //BIND_TEXTURE_2D_SRV(10, TestTexture);
 SHADER_CONSTANTS_STRUCT_END();
 
-float3 Lookup3DColorLUT(Texture3D colorLUT, float3 linearColor)
+float3 Lookup3DColorTransformLUT(Texture3D colorLUT, float3 linearColor)
 {
-    float size = ColorLUTSize;
+    float size = ColorTransformLUTSize;
     float3 encodedColor = LinearToLog(linearColor + LogToLinear(0));
     float3 uvw = encodedColor * (size - 1.0) / size + 0.5 / size;
     float3 color = colorLUT.SampleLevel(GlobalSamplerLinearClamp, uvw, 0).rgb;
@@ -116,8 +116,8 @@ void ToneMappingCS(uint3 dispatchThreadID : SV_DispatchThreadID)
     float3 oces = RRT(aces);
     float3 outColor = ODT_sRGB_100nits_dim(oces);
 #else
-    Texture3D colorLUTTexture = ShaderConstants.GetColorLUTTextureSRV();
-    float3 outColor = Lookup3DColorLUT(colorLUTTexture, hdrColor.rgb);
+    Texture3D colorLUTTexture = ShaderConstants.GetColorTransformLUTTextureSRV();
+    float3 outColor = Lookup3DColorTransformLUT(colorLUTTexture, hdrColor.rgb);
 #endif
 
     outputTexture[pixelCoord] = float4(outColor, 1.0f);

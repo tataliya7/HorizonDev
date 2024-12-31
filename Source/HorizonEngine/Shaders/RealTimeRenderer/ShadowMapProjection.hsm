@@ -108,7 +108,7 @@ void ShadowMapProjectionForDistantLightCS(uint3 dispatchThreadID : SV_DispatchTh
     float transitionStartDistance = cascadedShadowMapShaderParameters.transitionStartDistance[cascadeIndex];
     float inverseTransitionRange = cascadedShadowMapShaderParameters.inverseTransitionRange[cascadeIndex];
 
-#define SHADOW_CASCADE_BLEND_METHOD 2
+#define SHADOW_CASCADE_BLEND_METHOD 1
 
 #if SHADOW_CASCADE_BLEND_METHOD == 1
     bool useDitherTransition = /*(cascadedShadowMapShaderParameters.useTransition > 0) &&*/
@@ -148,23 +148,23 @@ void ShadowMapProjectionForDistantLightCS(uint3 dispatchThreadID : SV_DispatchTh
     }
 #endif
 
-    float3 shadowRayOrigin = worldSpacePosition;
-    float3 shadowRayDirection = -normalize(frameShaderParameters.atmosphericLightDirection);
-    float shadowRayLength = 0.1f;
+    // float3 shadowRayOrigin = worldSpacePosition;
+    // float3 shadowRayDirection = -normalize(frameShaderParameters.atmosphericLightDirection);
+    // float shadowRayLength = 0.1f;
 
-    if (shadowRayLength > 0.0f)
-    {
-        float screenSpaceShadow = CastScreenSpaceShadowRay(
-            sceneDepthTexture,
-            shadowRayOrigin,
-            shadowRayDirection,
-            shadowRayLength,
-            frameShaderParameters.worldToClipMatrix,
-            frameShaderParameters.viewToClipMatrix,
-            noise);
+    // if (shadowRayLength > 0.0f)
+    // {
+    //     float screenSpaceShadow = CastScreenSpaceShadowRay(
+    //         sceneDepthTexture,
+    //         shadowRayOrigin,
+    //         shadowRayDirection,
+    //         shadowRayLength,
+    //         frameShaderParameters.worldToClipMatrix,
+    //         frameShaderParameters.viewToClipMatrix,
+    //         noise);
 
-        shadowFactor = screenSpaceShadow * shadowFactor;
-    }
+    //     shadowFactor = screenSpaceShadow * shadowFactor;
+    // }
 
     float fadeOut = saturate((cameraSpaceDepth - cascadedShadowMapShaderParameters.shadowFadeOutParameters.x) * cascadedShadowMapShaderParameters.shadowFadeOutParameters.y);
     shadowFactor = lerp(shadowFactor, 1.0f, fadeOut * fadeOut);

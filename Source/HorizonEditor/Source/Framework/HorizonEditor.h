@@ -213,8 +213,8 @@ namespace Horizon
 
         float GetSnapValue();
 
-        Matrix4x4f viewMatrix_deprecated = IdentityMatrix4x4;
-        Matrix4x4f projectionMatrix_deprecated = IdentityMatrix4x4;
+        Matrix4x4f viewMatrix_deprecated = IdentityMatrix4x4f;
+        Matrix4x4f projectionMatrix_deprecated = IdentityMatrix4x4f;
 
         //bool showOverlay = true;
         //bool showConsoleWindow = true;

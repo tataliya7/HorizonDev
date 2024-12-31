@@ -128,7 +128,7 @@ namespace Horizon
         }
 
         renderGraph.AddPass(
-            std::format("GenerateEnvironmentMapMips (Compute, MipLevelCount={})", environmentMapTextureMipLevelCount),
+            std::format("GenerateEnvironmentMipmaps (Compute, MipLevelCount={})", environmentMapTextureMipLevelCount),
             RenderGraphPassFlags::Compute,
             [&](RenderGraphBuilder& builder)
             {
@@ -147,8 +147,8 @@ namespace Horizon
                             RenderBackendResourceState::ShaderResource);
                         commandList.Transitions(&transitions, 1);
 
-                        uint32 threadGroupCountX = CeilDiv(1 << (environmentMapTextureMipLevelCount - mipLevel - 1), 8);
-                        uint32 threadGroupCountY = CeilDiv(1 << (environmentMapTextureMipLevelCount - mipLevel - 1), 8);
+                        uint32 threadGroupCountX = ComputeShaderThreadGroupCount(1 << (environmentMapTextureMipLevelCount - mipLevel - 1), 8);
+                        uint32 threadGroupCountY = ComputeShaderThreadGroupCount(1 << (environmentMapTextureMipLevelCount - mipLevel - 1), 8);
                         uint32 threadGroupCountZ = 1;
 
                         RenderBackendShaderConstants shaderConstants = {};
@@ -225,8 +225,8 @@ namespace Horizon
 
                     for (uint32 targetMipLevel = 0; targetMipLevel < environmentMapTextureMipLevelCount; targetMipLevel++)
                     {
-                        uint32 threadGroupCountX = CeilDiv(1 << (environmentMapTextureMipLevelCount - targetMipLevel - 1), 8);
-                        uint32 threadGroupCountY = CeilDiv(1 << (environmentMapTextureMipLevelCount - targetMipLevel - 1), 8);
+                        uint32 threadGroupCountX = ComputeShaderThreadGroupCount(1 << (environmentMapTextureMipLevelCount - targetMipLevel - 1), 8);
+                        uint32 threadGroupCountY = ComputeShaderThreadGroupCount(1 << (environmentMapTextureMipLevelCount - targetMipLevel - 1), 8);
                         uint32 threadGroupCountZ = 1;
 
                         float roughness = float(targetMipLevel) / float(environmentMapTextureMipLevelCount - 1);

@@ -85,8 +85,8 @@ namespace Horizon
                 };
             });
 
-        const uint32 lightGridSizeX = CeilDiv(renderResolution.width, GLightGridPixelCount);
-        const uint32 lightGridSizeY = CeilDiv(renderResolution.height, GLightGridPixelCount);
+        const uint32 lightGridSizeX = Math::CeilDiv(renderResolution.width, GLightGridPixelCount);
+        const uint32 lightGridSizeY = Math::CeilDiv(renderResolution.height, GLightGridPixelCount);
         const uint32 lightGridSizeZ = GLightGridSizeZ;
 
         uint32 cellCount = lightGridSizeX * lightGridSizeY * lightGridSizeZ;
@@ -135,9 +135,9 @@ namespace Horizon
 
                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
                 {
-                    uint32 threadGroupCountX = CeilDiv(lightGridSizeX, GLocalLightCullingThreadGroupSize);
-                    uint32 threadGroupCountY = CeilDiv(lightGridSizeY, GLocalLightCullingThreadGroupSize);
-                    uint32 threadGroupCountZ = CeilDiv(lightGridSizeZ, GLocalLightCullingThreadGroupSize);
+                    uint32 threadGroupCountX = ComputeShaderThreadGroupCount(lightGridSizeX, GLocalLightCullingThreadGroupSize);
+                    uint32 threadGroupCountY = ComputeShaderThreadGroupCount(lightGridSizeY, GLocalLightCullingThreadGroupSize);
+                    uint32 threadGroupCountZ = ComputeShaderThreadGroupCount(lightGridSizeZ, GLocalLightCullingThreadGroupSize);
 
                     RenderBackendShaderConstants shaderConstants = {};
                     shaderConstants.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));

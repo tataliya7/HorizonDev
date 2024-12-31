@@ -4,7 +4,7 @@
 #include "Foundation/Definitions.h"
 #include "Foundation/FundamentalTypes.h"
 #include "Foundation/EnumClass.h"
-#include "Foundation/Math.h"
+#include "Foundation/Mathematics/MathematicsModule.h"
 #include "Foundation/Foundation.h"
 #include "Foundation/UUID.h"
 #include "Foundation/Memory/Memory.h"

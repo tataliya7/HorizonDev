@@ -97,8 +97,8 @@ namespace Horizon
 
 
         const uint32 volumetricFogTileSize = VolumetricFogTileSize;
-        const uint32 volumetricFogTileCountX = CeilDiv(renderResolution.width, volumetricFogTileSize);
-        const uint32 volumetricFogTileCountY = CeilDiv(renderResolution.height, volumetricFogTileSize);
+        const uint32 volumetricFogTileCountX = Math::CeilDiv(renderResolution.width, volumetricFogTileSize);
+        const uint32 volumetricFogTileCountY = Math::CeilDiv(renderResolution.height, volumetricFogTileSize);
         const uint32 volumetricFogDepthSliceCount = VolumetricFogDepthSliceCount;
 
         uint32 volumetricFogShaderParameterBufferSize = sizeof(VolumetricFogShaderParameters);
@@ -158,9 +158,9 @@ namespace Horizon
 
                  return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
                  {
-                     uint32 threadGroupCountX = CeilDiv(volumetricFogTileCountX, 4);
-                     uint32 threadGroupCountY = CeilDiv(volumetricFogTileCountY, 4);
-                     uint32 threadGroupCountZ = CeilDiv(volumetricFogDepthSliceCount, 4);
+                     uint32 threadGroupCountX = ComputeShaderThreadGroupCount(volumetricFogTileCountX, 4);
+                     uint32 threadGroupCountY = ComputeShaderThreadGroupCount(volumetricFogTileCountY, 4);
+                     uint32 threadGroupCountZ = ComputeShaderThreadGroupCount(volumetricFogDepthSliceCount, 4);
 
                      RenderBackendShaderConstants shaderConstants = {};
                      shaderConstants.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
@@ -201,9 +201,9 @@ namespace Horizon
 
                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
                 {
-                    uint32 threadGroupCountX = CeilDiv(volumetricFogTileCountX, 4);
-                    uint32 threadGroupCountY = CeilDiv(volumetricFogTileCountY, 4);
-                    uint32 threadGroupCountZ = CeilDiv(volumetricFogDepthSliceCount, 4);
+                    uint32 threadGroupCountX = ComputeShaderThreadGroupCount(volumetricFogTileCountX, 4);
+                    uint32 threadGroupCountY = ComputeShaderThreadGroupCount(volumetricFogTileCountY, 4);
+                    uint32 threadGroupCountZ = ComputeShaderThreadGroupCount(volumetricFogDepthSliceCount, 4);
 
                     RenderBackendShaderConstants shaderConstants = {};
                     shaderConstants.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
@@ -239,8 +239,8 @@ namespace Horizon
 
                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
                 {
-                    uint32 threadGroupCountX = CeilDiv(volumetricFogTileCountX, 8);
-                    uint32 threadGroupCountY = CeilDiv(volumetricFogTileCountY, 8);
+                    uint32 threadGroupCountX = ComputeShaderThreadGroupCount(volumetricFogTileCountX, 8);
+                    uint32 threadGroupCountY = ComputeShaderThreadGroupCount(volumetricFogTileCountY, 8);
                     uint32 threadGroupCountZ = 1;
 
                     RenderBackendShaderConstants shaderConstants = {};

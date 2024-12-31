@@ -24,8 +24,8 @@ namespace Horizon
 
                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
                 {
-                    uint32 threadGroupCountX = CeilDiv(targetResolution.width, PostProcessingThreadGroupSizeX);
-                    uint32 threadGroupCountY = CeilDiv(targetResolution.height, PostProcessingThreadGroupSizeY);
+                    uint32 threadGroupCountX = ComputeShaderThreadGroupCount(targetResolution.width, PostProcessingThreadGroupSizeX);
+                    uint32 threadGroupCountY = ComputeShaderThreadGroupCount(targetResolution.height, PostProcessingThreadGroupSizeY);
                     uint32 threadGroupCountZ = 1;
 
                     RenderBackendShaderConstants shaderConstants = {};
@@ -68,8 +68,8 @@ namespace Horizon
 
                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
                 {
-                    uint32 threadGroupCountX = CeilDiv(targetResolution.width, PostProcessingThreadGroupSizeX);
-                    uint32 threadGroupCountY = CeilDiv(targetResolution.height, PostProcessingThreadGroupSizeY);
+                    uint32 threadGroupCountX = ComputeShaderThreadGroupCount(targetResolution.width, PostProcessingThreadGroupSizeX);
+                    uint32 threadGroupCountY = ComputeShaderThreadGroupCount(targetResolution.height, PostProcessingThreadGroupSizeY);
                     uint32 threadGroupCountZ = 1;
 
                     RenderBackendShaderConstants shaderConstants = {};
@@ -112,8 +112,8 @@ namespace Horizon
 
                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
                 {
-                    uint32 threadGroupCountX = CeilDiv(targetResolution.width, PostProcessingThreadGroupSizeX);
-                    uint32 threadGroupCountY = CeilDiv(targetResolution.height, PostProcessingThreadGroupSizeY);
+                    uint32 threadGroupCountX = ComputeShaderThreadGroupCount(targetResolution.width, PostProcessingThreadGroupSizeX);
+                    uint32 threadGroupCountY = ComputeShaderThreadGroupCount(targetResolution.height, PostProcessingThreadGroupSizeY);
                     uint32 threadGroupCountZ = 1;
 
                     RenderBackendShaderConstants shaderConstants = {};
@@ -158,8 +158,8 @@ namespace Horizon
 
                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
                 {
-                    uint32 threadGroupCountX = CeilDiv(targetResolution.width, PostProcessingThreadGroupSizeX);
-                    uint32 threadGroupCountY = CeilDiv(targetResolution.height, PostProcessingThreadGroupSizeY);
+                    uint32 threadGroupCountX = ComputeShaderThreadGroupCount(targetResolution.width, PostProcessingThreadGroupSizeX);
+                    uint32 threadGroupCountY = ComputeShaderThreadGroupCount(targetResolution.height, PostProcessingThreadGroupSizeY);
                     uint32 threadGroupCountZ = 1;
 
                     RenderBackendShaderConstants shaderConstants = {};
@@ -202,8 +202,8 @@ namespace Horizon
 
                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
                 {
-                    uint32 threadGroupCountX = CeilDiv(targetResolution.width, PostProcessingThreadGroupSizeX);
-                    uint32 threadGroupCountY = CeilDiv(targetResolution.height, PostProcessingThreadGroupSizeY);
+                    uint32 threadGroupCountX = ComputeShaderThreadGroupCount(targetResolution.width, PostProcessingThreadGroupSizeX);
+                    uint32 threadGroupCountY = ComputeShaderThreadGroupCount(targetResolution.height, PostProcessingThreadGroupSizeY);
                     uint32 threadGroupCountZ = 1;
 
                     RenderBackendShaderConstants shaderConstants = {};
@@ -244,8 +244,8 @@ namespace Horizon
 
                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
                 {
-                    uint32 threadGroupCountX = CeilDiv(targetResolution.width, PostProcessingThreadGroupSizeX);
-                    uint32 threadGroupCountY = CeilDiv(targetResolution.height, PostProcessingThreadGroupSizeY);
+                    uint32 threadGroupCountX = ComputeShaderThreadGroupCount(targetResolution.width, PostProcessingThreadGroupSizeX);
+                    uint32 threadGroupCountY = ComputeShaderThreadGroupCount(targetResolution.height, PostProcessingThreadGroupSizeY);
                     uint32 threadGroupCountZ = 1;
 
                     RenderBackendShaderConstants shaderConstants = {};
@@ -298,8 +298,8 @@ namespace Horizon
         //
         //         return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
         //         {
-        //             uint32 threadGroupCountX = CeilDiv(targetResolution.width, PostProcessingThreadGroupSizeX);
-        //             uint32 threadGroupCountY = CeilDiv(targetResolution.height, PostProcessingThreadGroupSizeY);
+        //             uint32 threadGroupCountX = ComputeShaderThreadGroupCount(targetResolution.width, PostProcessingThreadGroupSizeX);
+        //             uint32 threadGroupCountY = ComputeShaderThreadGroupCount(targetResolution.height, PostProcessingThreadGroupSizeY);
         //             uint32 threadGroupCountZ = 1;
         //
         //             RenderBackendShaderConstants shaderConstants = {};

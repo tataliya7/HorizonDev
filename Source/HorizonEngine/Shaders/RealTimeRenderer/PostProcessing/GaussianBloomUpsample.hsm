@@ -10,6 +10,8 @@
  * - https://learnopengl.com/Guest-Articles/2022/Phys.-Based-Bloom
  *-------------------------------------------------------------------------------------*/
 
+// @todo Consistent performance at any resolution.
+
 #include "../../ShaderCommon.hsh"
 #include "../RealTimeRendererCommon.hsh"
 #include "PostProcessingCommon.hsh"
