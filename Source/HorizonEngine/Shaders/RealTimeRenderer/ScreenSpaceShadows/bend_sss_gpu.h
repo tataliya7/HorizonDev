@@ -55,7 +55,7 @@
 //													// Recommended starting value: 8
 
 
-#if defined(__HLSL_VERSION) || defined(__hlsl_dx_compiler) || 1
+#if 1 // defined(__HLSL_VERSION) || defined(__hlsl_dx_compiler)
 
 	#define USE_HALF_PIXEL_OFFSET 1		// Apply a 0.5 texel offset when sampling a texture. Toggle this macro if the output shadow has odd, regular grid-like artefacts.
 
