@@ -30,6 +30,21 @@ namespace Horizon
             RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::UnorderedAccess);
         RenderGraphTextureHandle outputTexture = renderGraph.CreateTexture(outputTextureDesc, "BendSSSOutputTexture");
 
+        renderGraph.AddPass(
+            std::format("ClearBendSSSOutputTexture"),
+            RenderGraphPassFlags::Compute,
+            [&](RenderGraphBuilder& builder)
+            {
+                outputTexture = builder.WriteTexture(outputTexture, RenderBackendResourceState::UnorderedAccess);
+
+                return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
+                {
+                    RenderBackendTextureClearValue clearValue = RenderBackendTextureClearValue::Black;
+                    RenderBackendTextureUAVDesc outputTextureUAVDesc = RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(outputTexture), 0);
+                    commandList.ClearTextureUAV(outputTextureUAVDesc, clearValue);
+                };
+            });
+
         for (int dispatchIndex = 0; dispatchIndex < dispatchList.DispatchCount; dispatchIndex++)
         {
             const Bend::DispatchData& dispatchData = dispatchList.Dispatch[dispatchIndex];
