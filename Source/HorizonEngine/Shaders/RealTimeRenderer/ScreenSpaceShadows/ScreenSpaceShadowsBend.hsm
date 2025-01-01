@@ -42,7 +42,7 @@ DispatchParameters CreateBendSSSDispatchParameters(
     Parameters.WaveOffset = WaveOffset;
     Parameters.FarDepthValue = FarDepthValue;
     Parameters.NearDepthValue = NearDepthValue;
-    Parameters.InvDepthTextureSize = float2(1.0/3840, 1.0/2054);
+    Parameters.InvDepthTextureSize = InvDepthTextureSize;
     Parameters.DepthTexture = DepthTexture;
     Parameters.OutputTexture = OutputTexture;
     Parameters.PointBorderSampler = GlobalSamplerPointBorder;
@@ -64,7 +64,7 @@ void ScreenSpaceShadowsBendCS(uint3 GroupID : SV_GroupID, uint3 GroupThreadID : 
     float shadowContrast = ShaderConstants.GetShadowContrast();
     float4 lightCoordinate = float4(ShaderConstants.GetLightCoordinateX(), ShaderConstants.GetLightCoordinateY(), ShaderConstants.GetLightCoordinateZ(), ShaderConstants.GetLightCoordinateW());
     int2 waveOffset = int2(ShaderConstants.GetWaveOffsetX(), ShaderConstants.GetWaveOffsetY());
-    float2 invDepthTextureSize = int2(ShaderConstants.GetInvDepthBufferSizeX(), ShaderConstants.GetInvDepthBufferSizeY());
+    float2 invDepthTextureSize = float2(ShaderConstants.GetInvDepthBufferSizeX(), ShaderConstants.GetInvDepthBufferSizeY());
 
     DispatchParameters parameters = CreateBendSSSDispatchParameters(
         surfaceThickness,
