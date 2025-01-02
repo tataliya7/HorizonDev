@@ -53,6 +53,8 @@ DispatchParameters CreateBendSSSDispatchParameters(
     return Parameters;
 }
 
+// @todo Make WAVE_SIZE equals to hardware's wave size
+
 [shader("compute")]
 [numthreads(WAVE_SIZE, 1, 1)]
 void ScreenSpaceShadowsBendCS(uint3 GroupID : SV_GroupID, uint3 GroupThreadID : SV_GroupThreadID)
