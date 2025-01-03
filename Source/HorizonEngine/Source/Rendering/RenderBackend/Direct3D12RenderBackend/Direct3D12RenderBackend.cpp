@@ -6,7 +6,6 @@
 #include <optick.h>
 #include <pix.h>
 
-#pragma comment(lib,"dxgi.lib")
 #pragma comment(lib,"d3d12.lib")
 #pragma comment(lib,"dxguid.lib")
 
@@ -1149,7 +1148,16 @@ namespace Horizon
             }
         }
 
-        HRESULT hr = CreateDXGIFactory2(dxgiFactoryFlags, IID_PPV_ARGS(&dxgiFactory));
+        dxgiDllHandle = LoadLibraryW(L"dxgi.dll");
+
+        // @todo cleanup
+
+        typedef HRESULT(WINAPI *PFN_CreateDXGIFactory2)(UINT, REFIID, _COM_Outptr_ void**);
+
+        PFN_CreateDXGIFactory2 pfnCreateDXGIFactory2 = reinterpret_cast<PFN_CreateDXGIFactory2>(reinterpret_cast<void*>(GetProcAddress(dxgiDllHandle, "CreateDXGIFactory2")));
+        assert(pfnCreateDXGIFactory2);
+
+        HRESULT hr = pfnCreateDXGIFactory2(dxgiFactoryFlags, IID_PPV_ARGS(&dxgiFactory));
         if (FAILED(hr))
         {
             LogWarning(GLogger, std::format("Error: CreateDXGIFactory2 failed!"));
@@ -1205,6 +1213,8 @@ namespace Horizon
     void D3D12RenderBackend::Exit()
     {
         DestroyRenderDevices();
+
+        FreeLibrary(dxgiDllHandle);
     }
 
     void D3D12RenderBackend::Tick()
@@ -2093,7 +2103,7 @@ namespace Horizon
             drawIndirectArgumentDesc.Type = D3D12_INDIRECT_ARGUMENT_TYPE_DRAW;
 
             D3D12_COMMAND_SIGNATURE_DESC commandSignatureDesc = {};
-            commandSignatureDesc.ByteStride = sizeof(RenderBackendDrawIndirectArguments);
+            commandSignatureDesc.ByteStride = sizeof(D3D12_DRAW_ARGUMENTS);
             commandSignatureDesc.NumArgumentDescs = 1;
             commandSignatureDesc.pArgumentDescs = &drawIndirectArgumentDesc;
             commandSignatureDesc.NodeMask = 0;
@@ -2104,7 +2114,7 @@ namespace Horizon
             drawIndexedIndirectArgumentDesc.Type = D3D12_INDIRECT_ARGUMENT_TYPE_DRAW_INDEXED;
 
             D3D12_COMMAND_SIGNATURE_DESC commandSignatureDesc = {};
-            commandSignatureDesc.ByteStride = sizeof(RenderBackendDrawIndexedIndirectArguments);
+            commandSignatureDesc.ByteStride = sizeof(D3D12_DRAW_INDEXED_ARGUMENTS);
             commandSignatureDesc.NumArgumentDescs = 1;
             commandSignatureDesc.pArgumentDescs = &drawIndexedIndirectArgumentDesc;
             commandSignatureDesc.NodeMask = 0;
@@ -2115,7 +2125,7 @@ namespace Horizon
             dispatchIndirectArgumentDesc.Type = D3D12_INDIRECT_ARGUMENT_TYPE_DISPATCH;
 
             D3D12_COMMAND_SIGNATURE_DESC commandSignatureDesc = {};
-            commandSignatureDesc.ByteStride = sizeof(RenderBackendDispatchIndirectArguments);
+            commandSignatureDesc.ByteStride = sizeof(D3D12_DISPATCH_ARGUMENTS);
             commandSignatureDesc.NumArgumentDescs = 1;
             commandSignatureDesc.pArgumentDescs = &dispatchIndirectArgumentDesc;
             commandSignatureDesc.NodeMask = 0;
@@ -2127,7 +2137,7 @@ namespace Horizon
             dispatchRaysIndirectArgumentDesc.Type = D3D12_INDIRECT_ARGUMENT_TYPE_DISPATCH_RAYS;
 
             D3D12_COMMAND_SIGNATURE_DESC commandSignatureDesc = {};
-            commandSignatureDesc.ByteStride = sizeof(RenderBackendDispatchRaysIndirectArguments);
+            commandSignatureDesc.ByteStride = sizeof(D3D12_DISPATCH_RAYS_DESC);
             commandSignatureDesc.NumArgumentDescs = 1;
             commandSignatureDesc.pArgumentDescs = &dispatchRaysIndirectArgumentDesc;
             commandSignatureDesc.NodeMask = 0;
@@ -2139,7 +2149,7 @@ namespace Horizon
             dispatchMeshIndirectArgumentDesc.Type = D3D12_INDIRECT_ARGUMENT_TYPE_DISPATCH_MESH;
 
             D3D12_COMMAND_SIGNATURE_DESC commandSignatureDesc = {};
-            commandSignatureDesc.ByteStride = sizeof(RenderBackendDispatchMeshIndirectArguments);
+            commandSignatureDesc.ByteStride = sizeof(D3D12_DISPATCH_ARGUMENTS);
             commandSignatureDesc.NumArgumentDescs = 1;
             commandSignatureDesc.pArgumentDescs = &dispatchMeshIndirectArgumentDesc;
             commandSignatureDesc.NodeMask = 0;

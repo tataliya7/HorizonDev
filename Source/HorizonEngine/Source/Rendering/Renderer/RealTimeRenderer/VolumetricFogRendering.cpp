@@ -34,7 +34,6 @@ namespace Horizon
         RenderGraph& renderGraph,
         const SceneView& view)
     {
-        return;
         uint32 localFogVolumeInstanceCount = uint32(view.scene->localFogVolumes.size());
 
         if (localFogVolumeInstanceCount == 0)
@@ -93,8 +92,6 @@ namespace Horizon
                         localFogVolumeInstanceDataBufferSize);
                 };
             });
-
-
 
         const uint32 volumetricFogTileSize = VolumetricFogTileSize;
         const uint32 volumetricFogTileCountX = Math::CeilDiv(renderResolution.width, volumetricFogTileSize);

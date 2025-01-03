@@ -68,7 +68,6 @@ void VolumetricFogLightScatteringCS(uint3 groupID : SV_GroupID, uint3 groupThrea
     CascadedShadowMapShaderParameters cascadedShadowMapParameters = cascadedShadowMapShaderParameterBuffer[0];
 
     uint3 voxelCoordinate = dispatchThreadID;
-
     if (any(voxelCoordinate >= volumetricFogShaderParameters.volumeResolution))
     {
         return;
