@@ -202,8 +202,8 @@ namespace Horizon
         Microsoft::WRL::ComPtr<D3D12MA::Allocation> allocation;
         RenderBackendBufferCreateFlags flags;
         RenderBackendBufferDesc desc;
-        D3D12_RESOURCE_DESC resourceDesc;
-        D3D12_RESOURCE_STATES initialState;
+        D3D12_RESOURCE_DESC1 resourceDesc;
+        D3D12_BARRIER_LAYOUT initialLayout;
         D3D12_GPU_VIRTUAL_ADDRESS gpuAddress;
         uint64 size;
         void* mappedData;
@@ -639,7 +639,7 @@ namespace Horizon
             uint32 index = AllocateBuffer();
             D3D12Buffer* buffer = buffers[index];
 
-            D3D12_RESOURCE_DESC resourceDesc =
+            D3D12_RESOURCE_DESC1 resourceDesc =
             {
                 .Dimension = D3D12_RESOURCE_DIMENSION_BUFFER,
                 .Alignment = 0,
@@ -666,27 +666,18 @@ namespace Horizon
                 .pPrivateData = nullptr,
             };
 
-            D3D12_RESOURCE_STATES initialState = D3D12_RESOURCE_STATE_COMMON;
-            if (EnumClassHasFlags(desc->flags, RenderBackendBufferCreateFlags::Readback))
-            {
-                initialState = D3D12_RESOURCE_STATE_COPY_DEST;
-            }
-            else if (EnumClassHasFlags(desc->flags, RenderBackendBufferCreateFlags::Upload))
-            {
-                initialState = D3D12_RESOURCE_STATE_GENERIC_READ;
-            }
-            //else if (EnumClassHasFlags(desc->flags, RenderBackendBufferCreateFlags::UniformBuffer))
-            //{
-            //    initialState = D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER;
-            //}
+            // Buffer resources must specify an initial layout of D3D12_BARRIER_LAYOUT_UNDEFINED.
+            D3D12_BARRIER_LAYOUT initialLayout = D3D12_BARRIER_LAYOUT_UNDEFINED;
 
             assert(buffer->resource == nullptr);
             assert(buffer->allocation == nullptr);
 
-            D3D12_CHECK(allocator->CreateResource(
+            D3D12_CHECK(allocator->CreateResource3(
                 &allocationDesc,
                 &resourceDesc,
-                initialState,
+                initialLayout,
+                nullptr,
+                0,
                 nullptr,
                 &buffer->allocation,
                 IID_PPV_ARGS(&buffer->resource)));
@@ -695,7 +686,7 @@ namespace Horizon
             buffer->debugName = name;
             buffer->desc = *desc;
             buffer->resourceDesc = resourceDesc;
-            buffer->initialState = initialState;
+            buffer->initialLayout = initialLayout;
             buffer->gpuAddress = buffer->resource->GetGPUVirtualAddress();
             buffer->flags = desc->flags;
             buffer->size = desc->size;
@@ -736,12 +727,33 @@ namespace Horizon
                     memcpy(copyWorkload.uploadBuffer->mappedData, data, buffer->size);
 
                     copyWorkload.commandList->Reset(copyWorkload.commandAllocator.Get(), nullptr);
+                    {
+                        D3D12_BUFFER_BARRIER BufBarriers[] =
+                        {
+                            CD3DX12_BUFFER_BARRIER(
+                                D3D12_BARRIER_SYNC_ALL,
+                                D3D12_BARRIER_SYNC_ALL,
+                                D3D12_BARRIER_ACCESS_NO_ACCESS,
+                                D3D12_BARRIER_ACCESS_COPY_DEST,
+                                buffer->GetID3D12Resource()
+                            )
+                        };
+
+                        D3D12_BARRIER_GROUP BufBarrierGroups[] =
+                        {
+                            CD3DX12_BARRIER_GROUP(1, BufBarriers)
+                        };
+
+                        copyWorkload.commandList7->Barrier(1, BufBarrierGroups);
+                    }
+
                     copyWorkload.commandList->CopyBufferRegion(
                         buffer->GetID3D12Resource(),
                         0,
                         copyWorkload.uploadBuffer->GetID3D12Resource(),
                         0,
                         buffer->size);
+
                     SubmitCopyWorkload(copyWorkload);
                 }
             }
@@ -850,10 +862,12 @@ namespace Horizon
 
             buffer->resourceDesc.Width = size;
 
-            D3D12_CHECK(allocator->CreateResource(
+            D3D12_CHECK(allocator->CreateResource3(
                 &allocationDesc,
                 &buffer->resourceDesc,
-                buffer->initialState,
+                buffer->initialLayout,
+                nullptr,
+                0,
                 nullptr,
                 &buffer->allocation,
                 IID_PPV_ARGS(&buffer->resource)));
@@ -995,7 +1009,7 @@ namespace Horizon
             uint32 index = AllocateTexture();
             D3D12Texture* texture = textures[index];
 
-            D3D12_RESOURCE_DESC resourceDesc = {
+            D3D12_RESOURCE_DESC1 resourceDesc = {
                 .Dimension = GetD3D12ResourceDimension(desc->type),
                 .Alignment = 0,
                 .Width = desc->width,
@@ -1019,7 +1033,7 @@ namespace Horizon
                 .pPrivateData = nullptr,
             };
 
-            D3D12_RESOURCE_STATES initialResourceState = ConvertToD3D12ResourceState(desc->initialState);
+            D3D12_BARRIER_LAYOUT initialLayout = ConvertToD3D12BarrierLayout(desc->initialState);
 
             D3D12_CLEAR_VALUE optimizedClearValue = {};
             optimizedClearValue.Color[0] = desc->clearValue.colorValue.float32[0];
@@ -1031,11 +1045,13 @@ namespace Horizon
             optimizedClearValue.Format = resourceDesc.Format;
             bool useClearValue = EnumClassHasFlags(desc->flags, RenderBackendTextureCreateFlags::RenderTarget) || EnumClassHasFlags(desc->flags, RenderBackendTextureCreateFlags::DepthStencil);
 
-            D3D12_CHECK(allocator->CreateResource(
+            D3D12_CHECK(allocator->CreateResource3(
                 &allocationDesc,
                 &resourceDesc,
-                initialResourceState,
+                initialLayout,
                 useClearValue ? &optimizedClearValue : nullptr,
+                0,
+                nullptr,
                 &texture->allocation,
                 IID_PPV_ARGS(&texture->resource)));
 
@@ -1059,7 +1075,7 @@ namespace Horizon
             texture->footprints.resize(numSubresources);
             texture->rowSizesInBytes.resize(numSubresources);
             texture->numRows.resize(numSubresources);
-            device->GetCopyableFootprints(
+            device10->GetCopyableFootprints1(
                 &resourceDesc,
                 0,
                 numSubresources,
@@ -1124,6 +1140,32 @@ namespace Horizon
                 CopyWorkload copyWorkload = AllocateCopyWorkload(std::max(texture->totalSize, UINT64(4)));
                 copyWorkload.commandList->Reset(copyWorkload.commandAllocator.Get(), nullptr);
 
+                {
+                    D3D12_TEXTURE_BARRIER TexBarriers[] =
+                    {
+                        CD3DX12_TEXTURE_BARRIER(
+                            D3D12_BARRIER_SYNC_ALL,
+                            D3D12_BARRIER_SYNC_ALL,
+                            D3D12_BARRIER_ACCESS_NO_ACCESS,
+                            D3D12_BARRIER_ACCESS_COPY_DEST,
+                            D3D12_BARRIER_LAYOUT_UNDEFINED,
+                            D3D12_BARRIER_LAYOUT_COPY_DEST,
+                            texture->GetID3D12Resource(),
+                            CD3DX12_BARRIER_SUBRESOURCE_RANGE(0xffffffff),
+                            D3D12_TEXTURE_BARRIER_FLAG_DISCARD)
+                    };
+
+                    D3D12_BARRIER_GROUP TexBarrierGroups[] =
+                    {
+                        CD3DX12_BARRIER_GROUP(1, TexBarriers)
+                    };
+
+                    // @todo Needs a buffer barrier here?
+
+                    copyWorkload.commandList7->Barrier(1, TexBarrierGroups);
+                    //copyWorkload.commandList7->Barrier(1, BufBarrierGroups);
+                }
+
                 void* mappedData = copyWorkload.uploadBuffer->mappedData;
                 for (uint32 subresourceIndex = 0; subresourceIndex < 1; subresourceIndex++)
                 {
@@ -1136,6 +1178,7 @@ namespace Horizon
 
                     CD3DX12_TEXTURE_COPY_LOCATION dstTextureCopyLocation(texture->GetID3D12Resource(), subresourceIndex);
                     CD3DX12_TEXTURE_COPY_LOCATION srcTextureCopyLocation(copyWorkload.uploadBuffer->GetID3D12Resource(), texture->footprints[subresourceIndex]);
+
                     copyWorkload.commandList->CopyTextureRegion(
                         &dstTextureCopyLocation,
                         0,
@@ -1144,6 +1187,30 @@ namespace Horizon
                         &srcTextureCopyLocation,
                         nullptr);
                 }
+
+                {
+                    D3D12_TEXTURE_BARRIER TexBarriers[] =
+                    {
+                        CD3DX12_TEXTURE_BARRIER(
+                            D3D12_BARRIER_SYNC_ALL,
+                            D3D12_BARRIER_SYNC_ALL,
+                            D3D12_BARRIER_ACCESS_COPY_DEST,
+                            D3D12_BARRIER_ACCESS_SHADER_RESOURCE,
+                            D3D12_BARRIER_LAYOUT_COPY_DEST,
+                            D3D12_BARRIER_LAYOUT_SHADER_RESOURCE,
+                            texture->GetID3D12Resource(),
+                            CD3DX12_BARRIER_SUBRESOURCE_RANGE(0xffffffff),
+                            D3D12_TEXTURE_BARRIER_FLAG_NONE)
+                    };
+
+                    D3D12_BARRIER_GROUP TexBarrierGroups[] =
+                    {
+                        CD3DX12_BARRIER_GROUP(1, TexBarriers)
+                    };
+
+                    copyWorkload.commandList7->Barrier(1, TexBarrierGroups);
+                }
+
                 SubmitCopyWorkload(copyWorkload);
 #endif
             }
@@ -1891,6 +1958,7 @@ namespace Horizon
 
         Microsoft::WRL::ComPtr<ID3D12Device> device;
         Microsoft::WRL::ComPtr<ID3D12Device5> device5;
+        Microsoft::WRL::ComPtr<ID3D12Device10> device10;
 
         D3D12CommandQueue* commandQueues[(uint32)D3D12CommandQueueType::Count];
 
@@ -2280,6 +2348,7 @@ namespace Horizon
         {
             Microsoft::WRL::ComPtr<ID3D12CommandAllocator> commandAllocator;
             Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> commandList;
+            Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList7> commandList7;
             Microsoft::WRL::ComPtr<ID3D12Fence> fence;
             D3D12Buffer* uploadBuffer;
         };
@@ -2305,9 +2374,12 @@ namespace Horizon
                 }
             }
 
-            D3D12_CHECK(device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_COPY, IID_PPV_ARGS(&workload.commandAllocator)));
-            D3D12_CHECK(device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_COPY, workload.commandAllocator.Get(), nullptr, IID_PPV_ARGS(&workload.commandList)));
+            // @todo use copy queue
+            D3D12_CHECK(device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&workload.commandAllocator)));
+            D3D12_CHECK(device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, workload.commandAllocator.Get(), nullptr, IID_PPV_ARGS(&workload.commandList)));
             D3D12_CHECK(device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&workload.fence)));
+
+            D3D12_CHECK(workload.commandList->QueryInterface(IID_PPV_ARGS(&workload.commandList7)));
 
             D3D12_CHECK(workload.commandList->Close());
 
@@ -2322,7 +2394,7 @@ namespace Horizon
         {
             workload.commandList->Close();
             ID3D12CommandList* commandlists[] = { workload.commandList.Get() };
-            GetCommandQueue(D3D12CommandQueueType::Copy)->GetID3D12CommandQueue()->ExecuteCommandLists(1, commandlists);
+            GetCommandQueue(D3D12CommandQueueType::Direct)->GetID3D12CommandQueue()->ExecuteCommandLists(1, commandlists);
             WaitIdle();
 
             // TODO
@@ -2639,7 +2711,6 @@ namespace Horizon
         bool CompileRenderBackendCommand(const RenderBackendCommandClearBufferUAV& command);
         bool CompileRenderBackendCommand(const RenderBackendCommandClearTextureUAV& command);
         bool CompileRenderBackendCommand(const RenderBackendCommandBarriers& command);
-        bool CompileRenderBackendCommand(const RenderBackendCommandTransitions& command);
         bool CompileRenderBackendCommand(const RenderBackendCommandBeginTimingQuery& command);
         bool CompileRenderBackendCommand(const RenderBackendCommandEndTimingQuery& command);
         bool CompileRenderBackendCommand(const RenderBackendCommandResolveTimingQueryResults& command);

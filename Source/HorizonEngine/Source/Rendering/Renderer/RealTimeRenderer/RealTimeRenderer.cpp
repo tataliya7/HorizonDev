@@ -521,7 +521,7 @@ namespace Horizon
                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
                 {
                     //RenderBackendBarrier transitionBefore = RenderBackendBarrier(perFrameConstantBuffer, RenderBackendBufferSubresourceRange::Whole, RenderBackendResourceState::Undefined, RenderBackendResourceState::CopyDst);
-                    //commandList.Transitions(&transitionBefore, 1);
+                    //commandList.Barriers(&transitionBefore, 1);
 
                     commandList.CopyBuffer(
                         perFrameConstantUploadBuffer,
@@ -531,7 +531,7 @@ namespace Horizon
                         sizeof(PerFrameShaderParameters));
 
                     //RenderBackendBarrier transitionAfter = RenderBackendBarrier(perFrameConstantBuffer, RenderBackendBufferSubresourceRange::Whole, RenderBackendResourceState::CopyDst, RenderBackendResourceState::ShaderResource);
-                    //commandList.Transitions(&transitionAfter, 1);
+                    //commandList.Barriers(&transitionAfter, 1);
                 };
             });
 

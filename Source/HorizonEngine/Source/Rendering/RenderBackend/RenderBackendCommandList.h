@@ -58,7 +58,7 @@ namespace Horizon
         void ClearBufferUAV(RenderBackendBufferHandle buffer, uint32 data);
         void ClearTextureUAV(const RenderBackendTextureUAVDesc& uav, const RenderBackendTextureClearValue& clearColor);
 
-        void Transitions(const RenderBackendBarrier* transitions, uint32 transitionCount);
+        void Barriers(const RenderBackendBarrier* barriers, uint32 barrierCount);
 
         void BeginDebugLabel(const char* name, const Vector4f& color);
 

@@ -103,20 +103,6 @@ namespace Horizon
                     RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::UnorderedAccess | RenderBackendTextureCreateFlags::RenderTarget);
                 RenderGraphTextureHandle outputTexture = renderGraph.CreateTexture(outputTextureDesc, "GaussianBloomUpsampleTexture");
 
-                // When a resource has the D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET flag, DiscardResource must be called when the discarded subresource regions are in the D3D12_RESOURCE_STATE_RENDER_TARGET resource barrier state.
-                renderGraph.AddPass(
-                   std::format("DummyPass (Compute, {}x{})", outputTextureWidth, outputTextureHeight),
-                   RenderGraphPassFlags::Compute,
-                   [&](RenderGraphBuilder& builder)
-                   {
-                        outputTexture = builder.WriteTexture(outputTexture, RenderBackendResourceState::RenderTarget);
-
-                        return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
-                        {
-
-                        };
-                   });
-
                 renderGraph.AddPass(
                     std::format("GaussianBloomUpsample (Compute, {}x{})", outputTextureWidth, outputTextureHeight),
                     RenderGraphPassFlags::Compute,

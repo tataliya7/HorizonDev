@@ -596,7 +596,7 @@ namespace Horizon
                 RenderBackendBarrier(targetTexture->GetHandle(), RenderBackendTextureSubresourceRange(0, 1, 0, 1), RenderBackendResourceState::ShaderResource, RenderBackendResourceState::CopySrc),
                 RenderBackendBarrier(swapChainTexture, RenderBackendTextureSubresourceRange(0, 1, 0, 1), RenderBackendResourceState::Undefined, RenderBackendResourceState::CopyDst)
             };
-            commandList->Transitions(transitions, 2);
+            commandList->Barriers(transitions, 2);
         }
 
         commandList->CopyTexture2D(
@@ -614,7 +614,7 @@ namespace Horizon
                 RenderBackendBarrier(targetTexture->GetHandle(), RenderBackendTextureSubresourceRange(0, 1, 0, 1), RenderBackendResourceState::CopySrc, RenderBackendResourceState::ShaderResource),
                 RenderBackendBarrier(swapChainTexture, RenderBackendTextureSubresourceRange(0, 1, 0, 1), RenderBackendResourceState::CopyDst, RenderBackendResourceState::Present)
             };
-            commandList->Transitions(transitions, 2);
+            commandList->Barriers(transitions, 2);
         }
 
         renderBackend->SubmitCommandLists(&commandList, 1, swapChain);

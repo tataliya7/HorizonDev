@@ -172,6 +172,7 @@ namespace Horizon
 
         frameInFlightCounter = (frameInFlightCounter + 1) % 3;
 
+        // @todo Underlying buffer
         currentVertexBufferDataSize[frameInFlightCounter] = 0;
         currentIndexBufferDataSize[frameInFlightCounter] = 0;
         if (drawData->TotalVtxCount > 0)
@@ -224,7 +225,7 @@ namespace Horizon
                 {
                     RenderBackendBarrier(vertexBuffer[frameInFlightCounter], RenderBackendBufferSubresourceRange::Whole, RenderBackendResourceState::Undefined, RenderBackendResourceState::CopyDst)
                 };
-                commandList->Transitions(barrier1, 1);
+                commandList->Barriers(barrier1, 1);
                 commandList->CopyBuffer(
                     vertexBufferUpload[frameInFlightCounter],
                     0,
@@ -235,7 +236,7 @@ namespace Horizon
                 {
                     RenderBackendBarrier(vertexBuffer[frameInFlightCounter], RenderBackendBufferSubresourceRange::Whole, RenderBackendResourceState::CopyDst, RenderBackendResourceState::UnorderedAccess)
                 };
-                commandList->Transitions(barrier2, 1);
+                commandList->Barriers(barrier2, 1);
             }
 
             if (currentIndexBufferDataSize[frameInFlightCounter] > 0)
@@ -244,7 +245,7 @@ namespace Horizon
                 {
                     RenderBackendBarrier(indexBuffer[frameInFlightCounter], RenderBackendBufferSubresourceRange::Whole, RenderBackendResourceState::Undefined, RenderBackendResourceState::CopyDst)
                 };
-                commandList->Transitions(barrier1, 1);
+                commandList->Barriers(barrier1, 1);
                 commandList->CopyBuffer(
                     indexBufferUpload[frameInFlightCounter],
                     0,
@@ -255,7 +256,7 @@ namespace Horizon
                 {
                     RenderBackendBarrier(indexBuffer[frameInFlightCounter], RenderBackendBufferSubresourceRange::Whole, RenderBackendResourceState::CopyDst, RenderBackendResourceState::IndexBuffer)
                 };
-                commandList->Transitions(barrier2, 1);
+                commandList->Barriers(barrier2, 1);
             }
         }
     }

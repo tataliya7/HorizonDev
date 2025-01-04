@@ -3679,40 +3679,39 @@ namespace Horizon
 
     bool VulkanRenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandBarriers& command)
     {
-        return true;
-    }
-
-    bool VulkanRenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandTransitions& command)
-    {
-        for (uint32 i = 0; i < command.transitionCount; i++)
+        for (uint32 i = 0; i < command.barrierCount; i++)
         {
-            const auto& transition = command.transitions[i];
+            const RenderBackendBarrier& barrier = command.barriers[i];
 
             // TODO: remove this
-            if (transition.stateAfter == RenderBackendResourceState::Undefined)
+            if (barrier.stateAfter == RenderBackendResourceState::Undefined)
             {
                 continue;
             }
 
-            switch (transition.type)
+            switch (barrier.type)
             {
             case RenderBackendBarrier::Type::Texture:
             {
-                VulkanTexture* texture = device->GetTexture(transition.texture);
+                VulkanTexture* texture = device->GetTexture(barrier.texture);
+
                 VkPipelineStageFlags2 srcStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
                 VkPipelineStageFlags2 dstStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
                 VkAccessFlags2 srcAccessMask, dstAccessMask;
                 VkImageLayout oldLayout, newLayout;
+
                 GetBarrierInfo2(
-                    transition.stateBefore,
-                    transition.stateAfter,
+                    barrier.stateBefore,
+                    barrier.stateAfter,
                     &oldLayout,
                     &newLayout,
                     &srcStageMask,
                     &dstStageMask,
                     &srcAccessMask,
                     &dstAccessMask);
-                VkImageMemoryBarrier2 imageBarrier = {
+
+                VkImageMemoryBarrier2 imageBarrier =
+                {
                     .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
                     .srcStageMask = srcStageMask,
                     .srcAccessMask = srcAccessMask,
@@ -3723,12 +3722,13 @@ namespace Horizon
                     .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
                     .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
                     .image = texture->handle,
-                    .subresourceRange = {
+                    .subresourceRange =
+                    {
                         .aspectMask = GetVkImageAspectFlags(texture->format),
-                        .baseMipLevel = transition.textureRange.firstLevel,
-                        .levelCount = transition.textureRange.mipLevels,
-                        .baseArrayLayer = transition.textureRange.firstLayer,
-                        .layerCount = transition.textureRange.arrayLayers,
+                        .baseMipLevel = barrier.textureRange.firstLevel,
+                        .levelCount = barrier.textureRange.mipLevels,
+                        .baseArrayLayer = barrier.textureRange.firstLayer,
+                        .layerCount = barrier.textureRange.arrayLayers,
                     },
                 };
                 imageBarriers.push_back(std::move(imageBarrier));
@@ -3736,13 +3736,13 @@ namespace Horizon
             break;
             case RenderBackendBarrier::Type::Buffer:
             {
-                VulkanBuffer* buffer = device->GetBuffer(transition.buffer);
+                VulkanBuffer* buffer = device->GetBuffer(barrier.buffer);
                 VkPipelineStageFlags2 srcStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
                 VkPipelineStageFlags2 dstStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
                 VkAccessFlags2 srcAccessMask, dstAccessMask;
                 GetBarrierInfo2(
-                    transition.stateBefore,
-                    transition.stateAfter,
+                    barrier.stateBefore,
+                    barrier.stateAfter,
                     nullptr,
                     nullptr,
                     &srcStageMask,
@@ -3758,8 +3758,8 @@ namespace Horizon
                     .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
                     .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
                     .buffer = buffer->handle,
-                    .offset = transition.bufferRange.offset,
-                    .size = transition.bufferRange.size,
+                    .offset = barrier.bufferRange.offset,
+                    .size = barrier.bufferRange.size,
                 };
                 bufferBarriers.push_back(std::move(bufferMemoryBarrier));
             }
@@ -4312,7 +4312,6 @@ namespace Horizon
             COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandClearBufferUAV);
             COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandClearTextureUAV);
             COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandBarriers);
-            COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandTransitions);
             COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandBeginTimingQuery);
             COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandEndTimingQuery);
             COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandResolveTimingQueryResults);

@@ -46,11 +46,11 @@ namespace Horizon
             RenderBackendTextureHandle environmentMapTexture = renderBackend->CreateTexture(&environmentMapTextureDesc, nullptr, "EnvironmentMapTexture");
 
             RenderBackendCommandList* commandList = new RenderBackendCommandList(GArena);
-            // RenderBackendBarrier transitions[] =
+            // RenderBackendBarrier barriers[] =
             // {
             //     RenderBackendBarrier(targetTexture->GetHandle(), RenderBackendTextureSubresourceRange(0, 1, 0, 1), RenderBackendResourceState::Undefined, RenderBackendResourceState::ShaderResource),
             // };
-            // commandList->Transitions(transitions, 1);
+            // commandList->Barriers(barriers, 1);
 
             ConvertLatLongToCubemap(renderBackend, renderSystem->GetShaderLibrary(), *commandList, environmentMapTextureLatLong, environmentMapTexture, environmentMapTextureSize);
             GenerateCubemapMips(renderBackend, renderSystem->GetShaderLibrary(), *commandList, environmentMapTexture, environmentMapTextureMipLevelCount);

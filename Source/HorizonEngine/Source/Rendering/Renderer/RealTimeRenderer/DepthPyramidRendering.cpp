@@ -60,9 +60,9 @@ namespace Horizon
                         Vector2f inverseOutputTextureSize = Vector2f(1.0f / float(outputTextureSize.x), 1.0f / float(outputTextureSize.y));
 
                         std::vector<RenderBackendBarrier> transitions;
-                        //transitions.emplace_back(RenderBackendBarrier(registry.GetRenderBackendTextureHandle(closestHZBTexture), RenderBackendTextureSubresourceRange(mipLevel - 1, 1, 0, 1), RenderBackendResourceState::UnorderedAccess, RenderBackendResourceState::ShaderResource));
+                        //barriers.emplace_back(RenderBackendBarrier(registry.GetRenderBackendTextureHandle(closestHZBTexture), RenderBackendTextureSubresourceRange(mipLevel - 1, 1, 0, 1), RenderBackendResourceState::UnorderedAccess, RenderBackendResourceState::ShaderResource));
                         transitions.emplace_back(RenderBackendBarrier(registry.GetRenderBackendTextureHandle(minDepthPyramidTexture), RenderBackendTextureSubresourceRange(mipLevel - 1, 1, 0, 1), RenderBackendResourceState::UnorderedAccess, RenderBackendResourceState::ShaderResource));
-                        commandList.Transitions(transitions.data(), (uint32)transitions.size());
+                        commandList.Barriers(transitions.data(), (uint32)transitions.size());
 
                         RenderBackendShaderConstants shaderConstants = {};
                         shaderConstants.BindTextureSRV(0, registry.GetTextureSRVBindlessResourceDescriptorIndex(minDepthPyramidTexture, sourceMipLevel));
@@ -84,9 +84,9 @@ namespace Horizon
 
                     // TODO: Find better way to do this
                     std::vector<RenderBackendBarrier> transitions;
-                    //transitions.emplace_back(RenderBackendBarrier(registry.GetRenderBackendTextureHandle(closestHZBTexture), RenderBackendTextureSubresourceRange(0, std::max(hzbMipLevels - 1, 0u), 0, 1), RenderBackendResourceState::ShaderResource, RenderBackendResourceState::UnorderedAccess));
+                    //barriers.emplace_back(RenderBackendBarrier(registry.GetRenderBackendTextureHandle(closestHZBTexture), RenderBackendTextureSubresourceRange(0, std::max(hzbMipLevels - 1, 0u), 0, 1), RenderBackendResourceState::ShaderResource, RenderBackendResourceState::UnorderedAccess));
                     transitions.emplace_back(RenderBackendBarrier(registry.GetRenderBackendTextureHandle(minDepthPyramidTexture), RenderBackendTextureSubresourceRange(0, std::max(depthPyramidTextureDesc.mipLevelCount - 1, 0u), 0, 1), RenderBackendResourceState::ShaderResource, RenderBackendResourceState::UnorderedAccess));
-                    commandList.Transitions(transitions.data(), (uint32)transitions.size());
+                    commandList.Barriers(transitions.data(), (uint32)transitions.size());
                 };
             });
     }

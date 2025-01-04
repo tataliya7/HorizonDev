@@ -86,9 +86,6 @@ namespace Horizon
 
         RealTimeRendererSceneTextures& sceneTextures = renderGraph.blackboard.Get<RealTimeRendererSceneTextures>();
 
-        // test
-        capturedEnvironmentMapTexture = renderGraph.ImportExternalTexture(&skyLight->environmentMapTexture, "TestEnvironmentMapTexture");
-
         if (IsSkyAtmosphereRenderingEnabled())
         {
             for (uint32 faceIndex = 0; faceIndex < 6; faceIndex++)
@@ -145,7 +142,7 @@ namespace Horizon
                             RenderBackendTextureSubresourceRange(mipLevel - 1, 1, 0, RenderBackendTextureSubresourceRange::RemainingArrayLayers),
                             RenderBackendResourceState::UnorderedAccess,
                             RenderBackendResourceState::ShaderResource);
-                        commandList.Transitions(&transitions, 1);
+                        commandList.Barriers(&transitions, 1);
 
                         uint32 threadGroupCountX = ComputeShaderThreadGroupCount(1 << (environmentMapTextureMipLevelCount - mipLevel - 1), 8);
                         uint32 threadGroupCountY = ComputeShaderThreadGroupCount(1 << (environmentMapTextureMipLevelCount - mipLevel - 1), 8);
@@ -169,9 +166,12 @@ namespace Horizon
                         RenderBackendTextureSubresourceRange(environmentMapTextureMipLevelCount - 1, 1, 0, RenderBackendTextureSubresourceRange::RemainingArrayLayers),
                         RenderBackendResourceState::UnorderedAccess,
                         RenderBackendResourceState::ShaderResource);
-                    commandList.Transitions(&transition, 1);
+                    commandList.Barriers(&transition, 1);
                 };
             });
+
+        // test
+        capturedEnvironmentMapTexture = renderGraph.ImportExternalTexture(&skyLight->environmentMapTexture, "TestEnvironmentMapTexture");
 
         sceneTextures.environmentMapTexture = capturedEnvironmentMapTexture;
 

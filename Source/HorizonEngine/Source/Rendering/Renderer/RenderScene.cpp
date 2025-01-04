@@ -283,7 +283,7 @@ namespace Horizon
             //     {
             //         RenderBackendBarrier(gpuScene->geometryDataBuffer, RenderBackendBufferSubresourceRange::Whole, RenderBackendResourceState::Undefined, RenderBackendResourceState::CopyDst)
             //     };
-            //     commandList->Transitions(barrier, 1);
+            //     commandList->Barriers(barrier, 1);
             // }
             commandList->CopyBuffer(
                 gpuScene->geometryDataUploadBuffer,
@@ -296,7 +296,7 @@ namespace Horizon
             //     {
             //         RenderBackendBarrier(gpuScene->geometryDataBuffer, RenderBackendBufferSubresourceRange::Whole, RenderBackendResourceState::CopyDst, RenderBackendResourceState::ShaderResource)
             //     };
-            //     commandList->Transitions(barrier, 1);
+            //     commandList->Barriers(barrier, 1);
             // }
         }
 
@@ -330,7 +330,7 @@ namespace Horizon
             // {
             //     RenderBackendBarrier(gpuScene->geometryInstanceDataBuffer, RenderBackendBufferSubresourceRange::Whole, RenderBackendResourceState::CopyDst, RenderBackendResourceState::ShaderResource)
             // };
-            // commandList->Transitions(barrier, 1);
+            // commandList->Barriers(barrier, 1);
         }
 
         DistantLightRenderData distantLightShaderParameters;
@@ -355,7 +355,7 @@ namespace Horizon
             // {
             //     RenderBackendBarrier(distantLightDataBuffer, RenderBackendBufferSubresourceRange::Whole, RenderBackendResourceState::CopyDst, RenderBackendResourceState::ShaderResource)
             // };
-            // commandList->Transitions(barrier, 1);
+            // commandList->Barriers(barrier, 1);
         }
 
         static int first = 0;
@@ -434,7 +434,7 @@ namespace Horizon
                     {
                         RenderBackendBarrier(rayTracingScene->transformBufferRowMajor, RenderBackendBufferSubresourceRange::Whole, RenderBackendResourceState::Undefined, RenderBackendResourceState::CopyDst)
                     };
-                    commandList->Transitions(barrier1, 1);
+                    commandList->Barriers(barrier1, 1);
 
                     commandList->CopyBuffer(
                         rayTracingScene->transformBufferRowMajorUpload,
@@ -447,7 +447,7 @@ namespace Horizon
                     {
                         RenderBackendBarrier(rayTracingScene->transformBufferRowMajor, RenderBackendBufferSubresourceRange::Whole, RenderBackendResourceState::CopyDst, RenderBackendResourceState::UnorderedAccess)
                     };
-                    commandList->Transitions(barrier2, 1);
+                    commandList->Barriers(barrier2, 1);
                 }
             }
 

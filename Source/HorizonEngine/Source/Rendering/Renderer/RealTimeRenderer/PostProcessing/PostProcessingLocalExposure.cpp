@@ -121,20 +121,20 @@ namespace Horizon
                         {
                             if (mipLevel == 1)
                             {
-                                RenderBackendBarrier transitions[] =
+                                RenderBackendBarrier barriers[] =
                                 {
                                     RenderBackendBarrier(textureHandle, RenderBackendTextureSubresourceRange(mipLevel, 1, 0, RenderBackendTextureSubresourceRange::RemainingArrayLayers), RenderBackendResourceState::Undefined, RenderBackendResourceState::UnorderedAccess)
                                 };
-                                commandList.Transitions(transitions, 1);
+                                commandList.Barriers(barriers, 1);
                             }
                             else
                             {
-                                RenderBackendBarrier transitions[] =
+                                RenderBackendBarrier barriers[] =
                                 {
                                     RenderBackendBarrier(textureHandle, RenderBackendTextureSubresourceRange(mipLevel - 1, 1, 0, RenderBackendTextureSubresourceRange::RemainingArrayLayers), RenderBackendResourceState::UnorderedAccess, RenderBackendResourceState::ShaderResource),
                                     RenderBackendBarrier(textureHandle, RenderBackendTextureSubresourceRange(mipLevel, 1, 0, RenderBackendTextureSubresourceRange::RemainingArrayLayers), RenderBackendResourceState::Undefined, RenderBackendResourceState::UnorderedAccess)
                                 };
-                                commandList.Transitions(transitions, 2);
+                                commandList.Barriers(barriers, 2);
                             }
 
                             w = w >> 1;
@@ -155,7 +155,7 @@ namespace Horizon
                                 groupCountY);
                         }
                         RenderBackendBarrier transition = RenderBackendBarrier(textureHandle, RenderBackendTextureSubresourceRange(mipLevelCount - 1, RenderBackendTextureSubresourceRange::RemainingMipLevels, 0, RenderBackendTextureSubresourceRange::RemainingArrayLayers), RenderBackendResourceState::UnorderedAccess, RenderBackendResourceState::ShaderResource);
-                        commandList.Transitions(&transition, 1);
+                        commandList.Barriers(&transition, 1);
                     };
             });
 
@@ -177,20 +177,20 @@ namespace Horizon
                         {
                             if (mipLevel == 1)
                             {
-                                RenderBackendBarrier transitions[] =
+                                RenderBackendBarrier barriers[] =
                                 {
                                     RenderBackendBarrier(textureHandle, RenderBackendTextureSubresourceRange(mipLevel, 1, 0, RenderBackendTextureSubresourceRange::RemainingArrayLayers), RenderBackendResourceState::Undefined, RenderBackendResourceState::UnorderedAccess)
                                 };
-                                commandList.Transitions(transitions, 1);
+                                commandList.Barriers(barriers, 1);
                             }
                             else
                             {
-                                RenderBackendBarrier transitions[] =
+                                RenderBackendBarrier barriers[] =
                                 {
                                     RenderBackendBarrier(textureHandle, RenderBackendTextureSubresourceRange(mipLevel - 1, 1, 0, RenderBackendTextureSubresourceRange::RemainingArrayLayers), RenderBackendResourceState::UnorderedAccess, RenderBackendResourceState::ShaderResource),
                                     RenderBackendBarrier(textureHandle, RenderBackendTextureSubresourceRange(mipLevel, 1, 0, RenderBackendTextureSubresourceRange::RemainingArrayLayers), RenderBackendResourceState::Undefined, RenderBackendResourceState::UnorderedAccess)
                                 };
-                                commandList.Transitions(transitions, 2);
+                                commandList.Barriers(barriers, 2);
                             }
 
                             w = w >> 1;
@@ -211,7 +211,7 @@ namespace Horizon
                                 groupCountY);
                         }
                         RenderBackendBarrier transition = RenderBackendBarrier(textureHandle, RenderBackendTextureSubresourceRange(mipLevelCount - 1, RenderBackendTextureSubresourceRange::RemainingMipLevels, 0, RenderBackendTextureSubresourceRange::RemainingArrayLayers), RenderBackendResourceState::UnorderedAccess, RenderBackendResourceState::ShaderResource);
-                        commandList.Transitions(&transition, 1);
+                        commandList.Barriers(&transition, 1);
                     };
             });
 
@@ -263,11 +263,11 @@ namespace Horizon
 
                         for (int32 mipLevel = coarsestMipLevel; mipLevel > displayMipLevel; mipLevel--)
                         {
-                            RenderBackendBarrier transitions[] =
+                            RenderBackendBarrier barriers[] =
                             {
                                 RenderBackendBarrier(registry.GetRenderBackendTextureHandle(localExposureAssemble), RenderBackendTextureSubresourceRange(mipLevel, 1, 0, RenderBackendTextureSubresourceRange::RemainingArrayLayers), RenderBackendResourceState::UnorderedAccess, RenderBackendResourceState::ShaderResource),
                             };
-                            commandList.Transitions(transitions, 1);
+                            commandList.Barriers(barriers, 1);
 
                             w = w << 1;
                             h = h << 1;
@@ -293,11 +293,11 @@ namespace Horizon
 
                         if ((coarsestMipLevel - displayMipLevel > 0) && (coarsestMipLevel < (int)mipLevelCount - 1))
                         {
-                            RenderBackendBarrier transitions[] =
+                            RenderBackendBarrier barriers[] =
                             {
                                 RenderBackendBarrier(registry.GetRenderBackendTextureHandle(localExposureAssemble), RenderBackendTextureSubresourceRange(displayMipLevel + 1, coarsestMipLevel - displayMipLevel, 0, RenderBackendTextureSubresourceRange::RemainingArrayLayers), RenderBackendResourceState::ShaderResource, RenderBackendResourceState::UnorderedAccess),
                             };
-                            commandList.Transitions(transitions, 1);
+                            commandList.Barriers(barriers, 1);
                         }
                     };
             });

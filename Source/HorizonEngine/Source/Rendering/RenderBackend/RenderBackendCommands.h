@@ -25,7 +25,6 @@ namespace Horizon
         ClearBuffer,
         ClearTexture,
         Barriers,
-        Transitions,
         BeginTiming,
         EndTiming,
         ResolveTimingQueryResults,
@@ -91,11 +90,6 @@ namespace Horizon
         RenderBackendTextureHandle texture;
     };
 
-    struct RenderBackendCommandBarriers : RenderBackendCommand<RenderBackendCommandType::Barriers, RenderBackendCommandQueueType::All>
-    {
-        uint32 numBarriers;
-    };
-
     struct RenderBackendCommandClearBufferUAV : RenderBackendCommand<RenderBackendCommandType::ClearBuffer, RenderBackendCommandQueueType::All>
     {
         RenderBackendBufferHandle buffer;
@@ -108,10 +102,10 @@ namespace Horizon
         RenderBackendTextureClearValue clearValue;
     };
 
-    struct RenderBackendCommandTransitions : RenderBackendCommand<RenderBackendCommandType::Transitions, RenderBackendCommandQueueType::All>
+    struct RenderBackendCommandBarriers : RenderBackendCommand<RenderBackendCommandType::Barriers, RenderBackendCommandQueueType::All>
     {
-        uint32 transitionCount;
-        RenderBackendBarrier* transitions;
+        uint32 barrierCount;
+        RenderBackendBarrier* barriers;
     };
 
     struct RenderBackendCommandBeginTimingQuery : RenderBackendCommand<RenderBackendCommandType::BeginTiming, RenderBackendCommandQueueType::All>

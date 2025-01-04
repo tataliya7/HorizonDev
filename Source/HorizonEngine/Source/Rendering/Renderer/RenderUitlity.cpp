@@ -29,6 +29,7 @@ namespace Horizon
             RenderBackendTextureFormat::B8G8R8A8Unorm,
             RenderBackendTextureCreateFlags::ShaderResource);
 
+        // @todo refactor name 'dummy'
         const uint8 blackColor[4] = { 0, 0, 0, 0 };
         RenderBackendTextureHandle blackDummyTexture2DHandle = renderBackend->CreateTexture(&dummyTextureDesc, &blackColor, "BlackDummyTexture2D");
         blackDummyTexture2D = renderGraphResourcePool->CacheTexture(blackDummyTexture2DHandle, dummyTextureDesc, "BlackDummyTexture2D");
@@ -133,7 +134,7 @@ namespace Horizon
                 {
                     RenderBackendBarrier(textureHandle, RenderBackendTextureSubresourceRange(mipLevel, 1, 0, RenderBackendTextureSubresourceRange::RemainingArrayLayers), RenderBackendResourceState::Undefined, RenderBackendResourceState::RenderTarget)
                 };
-                commandList.Transitions(transitions, 1);
+                commandList.Barriers(transitions, 1);
             }
             else
             {
@@ -142,7 +143,7 @@ namespace Horizon
                     RenderBackendBarrier(textureHandle, RenderBackendTextureSubresourceRange(mipLevel - 1, 1, 0, RenderBackendTextureSubresourceRange::RemainingArrayLayers), RenderBackendResourceState::RenderTarget, RenderBackendResourceState::ShaderResource),
                     RenderBackendBarrier(textureHandle, RenderBackendTextureSubresourceRange(mipLevel, 1, 0, RenderBackendTextureSubresourceRange::RemainingArrayLayers), RenderBackendResourceState::Undefined, RenderBackendResourceState::RenderTarget)
                 };
-                commandList.Transitions(transitions, 2);
+                commandList.Barriers(transitions, 2);
             }
 
             RenderBackendRenderPassInfo renderPass =
@@ -190,6 +191,6 @@ namespace Horizon
             //    threadGroupCountZ);
         }
         RenderBackendBarrier transition(textureHandle, RenderBackendTextureSubresourceRange(numMipLevels - 1, RenderBackendTextureSubresourceRange::RemainingMipLevels, 0, RenderBackendTextureSubresourceRange::RemainingArrayLayers), RenderBackendResourceState::RenderTarget, RenderBackendResourceState::ShaderResource);
-        commandList.Transitions(&transition, 1);
+        commandList.Barriers(&transition, 1);
     }
 }

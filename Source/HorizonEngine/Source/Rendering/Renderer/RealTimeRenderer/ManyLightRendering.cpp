@@ -81,7 +81,7 @@ namespace Horizon
                     {
                         RenderBackendBarrier(localLightDataBuffer, RenderBackendBufferSubresourceRange::Whole, RenderBackendResourceState::CopyDst, RenderBackendResourceState::ShaderResource)
                     };
-                    commandList.Transitions(barrier, 1);
+                    commandList.Barriers(barrier, 1);
                 };
             });
 

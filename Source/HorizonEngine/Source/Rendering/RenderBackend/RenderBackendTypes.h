@@ -82,6 +82,8 @@ namespace Horizon
         CopyDst = 9,
         UnorderedAccess = 10,
         DepthStencil = 11,
+        RayTracingAccelerationStructureReadOnly = 12,
+        RayTracingAccelerationStructure = 13,
     };
 
     enum class RenderBackendResourceStateFlags
@@ -1110,7 +1112,7 @@ namespace Horizon
     {
         enum class Type
         {
-            Memory,
+            Global,
             Texture,
             Buffer,
         };

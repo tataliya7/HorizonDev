@@ -87,14 +87,14 @@ namespace Horizon
         command->clearValue = clearColor;
     }
 
-    void RenderBackendCommandList::Transitions(
-        const RenderBackendBarrier* transitions,
-        uint32 transitionCount)
+    void RenderBackendCommandList::Barriers(
+        const RenderBackendBarrier* barriers,
+        uint32 barrierCount)
     {
-        RenderBackendCommandTransitions* command = AllocateCommand<RenderBackendCommandTransitions>(RenderBackendCommandTransitions::Type, sizeof(RenderBackendCommandTransitions) + transitionCount * sizeof(RenderBackendBarrier));
-        command->transitionCount = transitionCount;
-        command->transitions = (RenderBackendBarrier*)(((uint8*)command) + sizeof(RenderBackendCommandTransitions));
-        memcpy(command->transitions, transitions, transitionCount * sizeof(RenderBackendBarrier));
+        RenderBackendCommandBarriers* command = AllocateCommand<RenderBackendCommandBarriers>(RenderBackendCommandBarriers::Type, sizeof(RenderBackendCommandBarriers) + barrierCount * sizeof(RenderBackendBarrier));
+        command->barrierCount = barrierCount;
+        command->barriers = (RenderBackendBarrier*)(((uint8*)command) + sizeof(RenderBackendCommandBarriers));
+        memcpy(command->barriers, barriers, barrierCount * sizeof(RenderBackendBarrier));
     }
 
     void RenderBackendCommandList::BeginTimingQuery(

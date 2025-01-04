@@ -910,7 +910,6 @@ namespace Horizon
         bool CompileRenderBackendCommand(const RenderBackendCommandClearBufferUAV& command);
         bool CompileRenderBackendCommand(const RenderBackendCommandClearTextureUAV& command);
         bool CompileRenderBackendCommand(const RenderBackendCommandBarriers& command);
-        bool CompileRenderBackendCommand(const RenderBackendCommandTransitions& command);
         bool CompileRenderBackendCommand(const RenderBackendCommandBeginTimingQuery& command);
         bool CompileRenderBackendCommand(const RenderBackendCommandEndTimingQuery& command);
         bool CompileRenderBackendCommand(const RenderBackendCommandResolveTimingQueryResults& command);

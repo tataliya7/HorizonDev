@@ -137,7 +137,7 @@ namespace Horizon
         {
             this->internalTexture = texture;
             this->initialState = initialState;
-            this->finalState = texture->GetDesc().initialState;
+            this->finalState = initialState;
             this->intermediateState = initialState;
         }
         const RenderGraphTextureDesc desc;

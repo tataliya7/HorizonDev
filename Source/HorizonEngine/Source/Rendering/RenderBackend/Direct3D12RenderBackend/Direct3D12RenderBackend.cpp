@@ -59,7 +59,6 @@ namespace Horizon
                 COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandClearBufferUAV);
                 COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandClearTextureUAV);
                 COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandBarriers);
-                COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandTransitions);
                 COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandBeginTimingQuery);
                 COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandEndTimingQuery);
                 COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandResolveTimingQueryResults);
@@ -95,7 +94,6 @@ namespace Horizon
                 COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandClearBufferUAV);
                 COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandClearTextureUAV);
                 COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandBarriers);
-                COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandTransitions);
                 //COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandBeginTimingQuery);
                 //COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandEndTimingQuery);
                 //COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandResolveTimingQueryResults);
@@ -230,12 +228,7 @@ namespace Horizon
 
     bool D3D12RenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandBarriers& command)
     {
-        return true;
-    }
-
-    bool D3D12RenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandTransitions& command)
-    {
-#if 1
+#if 0
         struct D3D12DiscardResourceDesc
         {
             ID3D12Resource* resource = nullptr;
@@ -246,9 +239,9 @@ namespace Horizon
         std::vector<D3D12DiscardResourceDesc> resourcesToDiscard;
 
         std::vector<D3D12_RESOURCE_BARRIER> barriers;
-        for (uint32 i = 0; i < command.transitionCount; i++)
+        for (uint32 i = 0; i < command.barrierCount; i++)
         {
-            const RenderBackendBarrier& transition = command.transitions[i];
+            const RenderBackendBarrier& transition = command.barriers[i];
 
             // Before and after states must be different.
             bool isTransitionBarrier = transition.stateBefore != transition.stateAfter;
@@ -277,7 +270,7 @@ namespace Horizon
 
                     // LogVerbose(GLogger, std::format("Processing Texture State Transition: {}, initial stateObject: {}, stateObject before: {}, stateObject after: {}, firstLevel: {}, mipLevels: {}, firstLayer: {}, arraySlices: {}",
                     //     texture->debugName,
-                    //     int(texture->initialState),
+                    //     int(texture->initialLayout),
                     //     int(transition.stateBefore),
                     //     int(transition.stateAfter),
                     //     firstLevel,
@@ -291,7 +284,7 @@ namespace Horizon
                         barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
                         barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
                         barrier.Transition.pResource = texture->GetID3D12Resource();
-                        barrier.Transition.StateBefore = (transition.stateBefore != RenderBackendResourceState::Undefined) ? ConvertToD3D12ResourceState(transition.stateBefore) : ConvertToD3D12ResourceState(texture->initialState);
+                        barrier.Transition.StateBefore = (transition.stateBefore != RenderBackendResourceState::Undefined) ? ConvertToD3D12ResourceState(transition.stateBefore) : ConvertToD3D12ResourceState(texture->initialLayout);
                         barrier.Transition.StateAfter = ConvertToD3D12ResourceState(transition.stateAfter);
                         barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
 
@@ -312,7 +305,7 @@ namespace Horizon
                                 barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
                                 barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
                                 barrier.Transition.pResource = texture->GetID3D12Resource();
-                                barrier.Transition.StateBefore = (transition.stateBefore != RenderBackendResourceState::Undefined) ? ConvertToD3D12ResourceState(transition.stateBefore) : ConvertToD3D12ResourceState(texture->initialState);
+                                barrier.Transition.StateBefore = (transition.stateBefore != RenderBackendResourceState::Undefined) ? ConvertToD3D12ResourceState(transition.stateBefore) : ConvertToD3D12ResourceState(texture->initialLayout);
                                 barrier.Transition.StateAfter = ConvertToD3D12ResourceState(transition.stateAfter);
                                 barrier.Transition.Subresource = D3D12CalcSubresource(mipSlice, arraySlice, planeSlice, texture->mipLevels, texture->arraySize);
 
@@ -400,41 +393,87 @@ namespace Horizon
         std::vector<D3D12_GLOBAL_BARRIER> globalBarriers;
         std::vector<D3D12_TEXTURE_BARRIER> textureBarriers;
         std::vector<D3D12_BUFFER_BARRIER> bufferBarriers;
-        for (uint32 i = 0; i < command.numTransitions; i++)
-        {
-            const auto& transition = command.transitions[i];
-            assert(transition.stateBefore != transition.stateAfter);
 
-            switch (transition.type)
+        for (uint32 i = 0; i < command.barrierCount; i++)
+        {
+            const RenderBackendBarrier& barrier = command.barriers[i];
+            //assert(barrier.stateBefore != barrier.stateAfter);
+
+            switch (barrier.type)
             {
+            case RenderBackendBarrier::Type::Global:
+            {
+
+            } break;
             case RenderBackendBarrier::Type::Texture:
             {
-                D3D12Texture* texture = device->GetTexture(transition.texture);
-                D3D12_TEXTURE_BARRIER& textureBarrier = textureBarriers.emplace_back();
+                D3D12Texture* texture = device->GetTexture(barrier.texture);
 
-                D3D12_BARRIER_SUBRESOURCE_RANGE subresourceRange =
-                {
-                    .IndexOrFirstMipLevel = transition.textureRange.firstLevel,
-                    .NumMipLevels = (transition.textureRange.mipLevelCount == RenderBackendTextureSubresourceRange::RemainingMipLevels) ? (texture->mipLevelCount - transition.textureRange.firstLevel) : transition.textureRange.mipLevelCount,
-                    .FirstArraySlice = transition.textureRange.firstLayer,
-                    .NumArraySlices = (transition.textureRange.arrayLayerCount == RenderBackendTextureSubresourceRange::RemainingArrayLayers) ? (texture->arrayLayerCount - transition.textureRange.firstLayer) : transition.textureRange.arrayLayerCount,
-                    .FirstPlane = 0,
-                    .NumPlanes = 1
-                };
-                textureBarrier.SyncBefore = D3D12_BARRIER_SYNC_ALL; // TODO
-                textureBarrier.SyncAfter = D3D12_BARRIER_SYNC_ALL; // TODO
-                textureBarrier.AccessBefore = D3D12_BARRIER_ACCESS_COMMON; // TODO
-                textureBarrier.AccessAfter = D3D12_BARRIER_ACCESS_COMMON; // TODO
-                textureBarrier.LayoutBefore = ConvertToD3D12BarrierLayout(transition.stateBefore);
-                textureBarrier.LayoutAfter = ConvertToD3D12BarrierLayout(transition.stateAfter);
+                D3D12_BARRIER_SUBRESOURCE_RANGE subresourceRange = {};
+                subresourceRange.IndexOrFirstMipLevel = barrier.textureRange.firstLevel;
+                subresourceRange.NumMipLevels = (barrier.textureRange.mipLevels == RenderBackendTextureSubresourceRange::RemainingMipLevels) ? (texture->mipLevels - barrier.textureRange.firstLevel) : barrier.textureRange.mipLevels;
+                subresourceRange.FirstArraySlice = barrier.textureRange.firstLayer;
+                subresourceRange.NumArraySlices = (barrier.textureRange.arrayLayers == RenderBackendTextureSubresourceRange::RemainingArrayLayers) ? (texture->arraySize - barrier.textureRange.firstLayer) : barrier.textureRange.arrayLayers;
+                subresourceRange.FirstPlane = 0;
+                subresourceRange.NumPlanes = 1; // @todo
+
+                D3D12_BARRIER_SYNC syncBefore = D3D12_BARRIER_SYNC_ALL;
+                D3D12_BARRIER_SYNC syncAfter = D3D12_BARRIER_SYNC_ALL;
+                D3D12_BARRIER_ACCESS accessBefore = D3D12_BARRIER_ACCESS_COMMON;
+                D3D12_BARRIER_ACCESS accessAfter = D3D12_BARRIER_ACCESS_COMMON;
+                D3D12_BARRIER_LAYOUT layoutBefore = D3D12_BARRIER_LAYOUT_UNDEFINED;
+                D3D12_BARRIER_LAYOUT layoutAfter = D3D12_BARRIER_LAYOUT_UNDEFINED;
+                D3D12_TEXTURE_BARRIER_FLAGS flags = D3D12_TEXTURE_BARRIER_FLAG_NONE;
+
+                ConvertToD3D12TextureBarrier(
+                    barrier.stateBefore,
+                    barrier.stateAfter,
+                    syncBefore,
+                    syncAfter,
+                    accessBefore,
+                    accessAfter,
+                    layoutBefore,
+                    layoutAfter,
+                    flags);
+
+                D3D12_TEXTURE_BARRIER& textureBarrier = textureBarriers.emplace_back();
+                textureBarrier.SyncBefore = syncBefore;
+                textureBarrier.SyncAfter = syncAfter;
+                textureBarrier.AccessBefore = accessBefore;
+                textureBarrier.AccessAfter = accessAfter;
+                textureBarrier.LayoutBefore = layoutBefore;
+                textureBarrier.LayoutAfter = layoutAfter;
                 textureBarrier.pResource = texture->GetID3D12Resource();
                 textureBarrier.Subresources = subresourceRange;
-                textureBarrier.Flags = D3D12_TEXTURE_BARRIER_FLAG_NONE; // TODO
+                textureBarrier.Flags = flags;
             } break;
             case RenderBackendBarrier::Type::Buffer:
             {
+                D3D12Buffer* buffer = device->GetBuffer(barrier.buffer);
 
+                D3D12_BARRIER_SYNC syncBefore = D3D12_BARRIER_SYNC_ALL;
+                D3D12_BARRIER_SYNC syncAfter = D3D12_BARRIER_SYNC_ALL;
+                D3D12_BARRIER_ACCESS accessBefore = D3D12_BARRIER_ACCESS_COMMON;
+                D3D12_BARRIER_ACCESS accessAfter = D3D12_BARRIER_ACCESS_COMMON;
+
+                ConvertToD3D12BufferBarrier(
+                    barrier.stateBefore,
+                    barrier.stateAfter,
+                    syncBefore,
+                    syncAfter,
+                    accessBefore,
+                    accessAfter);
+
+                D3D12_BUFFER_BARRIER& bufferBarrier = bufferBarriers.emplace_back();
+                bufferBarrier.SyncBefore = syncBefore;
+                bufferBarrier.SyncAfter = syncAfter;
+                bufferBarrier.AccessBefore = accessBefore;
+                bufferBarrier.AccessAfter = accessAfter;
+                bufferBarrier.pResource = buffer->GetID3D12Resource();
+                bufferBarrier.Offset = barrier.bufferRange.offset;
+                bufferBarrier.Size = barrier.bufferRange.size;
             } break;
+            default: std::unreachable(); break;
             }
         }
 
@@ -1999,6 +2038,20 @@ namespace Horizon
 
         D3D12_FEATURE_DATA_D3D12_OPTIONS11 options11 = {};
         device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS11, &options11, sizeof(options11));
+
+        D3D12_FEATURE_DATA_D3D12_OPTIONS12 options12 = {};
+        device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS12, &options12, sizeof(options12));
+
+        if (options12.EnhancedBarriersSupported != TRUE)
+        {
+            LogInfo(GLogger, std::format("Enhanced Barriers are not supported."));
+        }
+        else
+        {
+            LogInfo(GLogger, std::format("Enhanced Barriers are supported."));
+
+            device->QueryInterface(IID_PPV_ARGS(&device10));
+        }
 
         D3D12_FEATURE_DATA_D3D12_OPTIONS18 options18 = {};
         device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS18, &options18, sizeof(options18));

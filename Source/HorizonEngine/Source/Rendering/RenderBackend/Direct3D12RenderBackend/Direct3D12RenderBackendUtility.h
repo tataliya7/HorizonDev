@@ -334,33 +334,6 @@ namespace Horizon
     }
 
     // TODO: reorder
-    static inline D3D12_BARRIER_LAYOUT ConvertToD3D12BarrierLayout(RenderBackendResourceState state)
-    {
-        switch (state)
-        {
-        case RenderBackendResourceState::Undefined:
-            return D3D12_BARRIER_LAYOUT_UNDEFINED;
-        case RenderBackendResourceState::Present:
-            return D3D12_BARRIER_LAYOUT_PRESENT;
-        case RenderBackendResourceState::ShaderResource:
-            return D3D12_BARRIER_LAYOUT_SHADER_RESOURCE;
-        case RenderBackendResourceState::CopySrc:
-            return D3D12_BARRIER_LAYOUT_COPY_SOURCE;
-        case RenderBackendResourceState::CopyDst:
-            return D3D12_BARRIER_LAYOUT_COPY_DEST;
-        case RenderBackendResourceState::DepthStencilReadOnly:
-            return D3D12_BARRIER_LAYOUT_DEPTH_STENCIL_READ;
-        case RenderBackendResourceState::DepthStencil:
-            return D3D12_BARRIER_LAYOUT_DEPTH_STENCIL_WRITE;
-        case RenderBackendResourceState::RenderTarget:
-            return D3D12_BARRIER_LAYOUT_RENDER_TARGET;
-        case RenderBackendResourceState::UnorderedAccess:
-            return D3D12_BARRIER_LAYOUT_UNORDERED_ACCESS;
-        default: return D3D12_BARRIER_LAYOUT_UNDEFINED;
-        }
-    }
-
-    // TODO: reorder
     static inline D3D12_RESOURCE_STATES ConvertToD3D12ResourceState(RenderBackendResourceState state)
     {
         switch (state)
@@ -818,5 +791,235 @@ namespace Horizon
             result |= D3D12_RAYTRACING_GEOMETRY_FLAG_NO_DUPLICATE_ANYHIT_INVOCATION;
         }
         return result;
+    }
+
+    inline void ConvertToD3D12TextureBarrier(
+        RenderBackendResourceState srcState,
+        RenderBackendResourceState dstState,
+        D3D12_BARRIER_SYNC& outSyncBefore,
+        D3D12_BARRIER_SYNC& outSyncAfter,
+        D3D12_BARRIER_ACCESS& outAccessBefore,
+        D3D12_BARRIER_ACCESS& outAccessAfter,
+        D3D12_BARRIER_LAYOUT& outLayoutBefore,
+        D3D12_BARRIER_LAYOUT& outLayoutAfter,
+        D3D12_TEXTURE_BARRIER_FLAGS& outFlags)
+    {
+        switch (srcState)
+        {
+        case RenderBackendResourceState::Undefined:
+            outSyncBefore = D3D12_BARRIER_SYNC_ALL;
+            outAccessBefore = D3D12_BARRIER_ACCESS_NO_ACCESS;
+            outLayoutBefore = D3D12_BARRIER_LAYOUT_UNDEFINED;
+            outFlags |= D3D12_TEXTURE_BARRIER_FLAG_DISCARD;
+            break;
+        case RenderBackendResourceState::VertexBuffer:
+        case RenderBackendResourceState::IndexBuffer:
+        case RenderBackendResourceState::ShaderResource:
+            outSyncBefore = D3D12_BARRIER_SYNC_ALL;
+            outAccessBefore = D3D12_BARRIER_ACCESS_SHADER_RESOURCE;
+            outLayoutBefore = D3D12_BARRIER_LAYOUT_SHADER_RESOURCE;
+            break;
+        case RenderBackendResourceState::Present:
+            outSyncBefore = D3D12_BARRIER_SYNC_ALL;
+            outAccessBefore = D3D12_BARRIER_ACCESS_COMMON;
+            outLayoutBefore = D3D12_BARRIER_LAYOUT_PRESENT;
+            break;
+        case RenderBackendResourceState::RenderTarget:
+            outSyncBefore = D3D12_BARRIER_SYNC_ALL;
+            outAccessBefore = D3D12_BARRIER_ACCESS_RENDER_TARGET;
+            outLayoutBefore = D3D12_BARRIER_LAYOUT_RENDER_TARGET;
+            break;
+        case RenderBackendResourceState::DepthStencilReadOnly:
+            outSyncBefore = D3D12_BARRIER_SYNC_ALL;
+            outAccessBefore = D3D12_BARRIER_ACCESS_DEPTH_STENCIL_READ;
+            outLayoutBefore = D3D12_BARRIER_LAYOUT_DEPTH_STENCIL_READ;
+            break;
+        case RenderBackendResourceState::DepthStencil:
+            outSyncBefore = D3D12_BARRIER_SYNC_ALL;
+            outAccessBefore = D3D12_BARRIER_ACCESS_DEPTH_STENCIL_WRITE;
+            outLayoutBefore = D3D12_BARRIER_LAYOUT_DEPTH_STENCIL_WRITE;
+            break;
+        case RenderBackendResourceState::CopySrc:
+            outSyncBefore = D3D12_BARRIER_SYNC_ALL;
+            outAccessBefore = D3D12_BARRIER_ACCESS_COPY_SOURCE;
+            outLayoutBefore = D3D12_BARRIER_LAYOUT_COPY_SOURCE;
+            break;
+        case RenderBackendResourceState::CopyDst:
+            outSyncBefore = D3D12_BARRIER_SYNC_ALL;
+            outAccessBefore = D3D12_BARRIER_ACCESS_COPY_DEST;
+            outLayoutBefore = D3D12_BARRIER_LAYOUT_COPY_DEST;
+            break;
+        case RenderBackendResourceState::UnorderedAccess:
+            outSyncBefore = D3D12_BARRIER_SYNC_ALL;
+            outAccessBefore = D3D12_BARRIER_ACCESS_UNORDERED_ACCESS;
+            outLayoutBefore = D3D12_BARRIER_LAYOUT_UNORDERED_ACCESS;
+            break;
+        case RenderBackendResourceState::IndirectArgument:
+            outSyncBefore = D3D12_BARRIER_SYNC_ALL;
+            outAccessBefore = D3D12_BARRIER_ACCESS_INDIRECT_ARGUMENT;
+            outLayoutBefore = D3D12_BARRIER_LAYOUT_SHADER_RESOURCE;
+            break;
+        default: std::unreachable(); break;
+        }
+
+        switch (dstState)
+        {
+        case RenderBackendResourceState::Undefined:
+            outSyncAfter = D3D12_BARRIER_SYNC_ALL;
+            outAccessAfter = D3D12_BARRIER_ACCESS_NO_ACCESS;
+            outLayoutAfter = D3D12_BARRIER_LAYOUT_UNDEFINED;
+            break;
+        case RenderBackendResourceState::VertexBuffer:
+        case RenderBackendResourceState::IndexBuffer:
+        case RenderBackendResourceState::ShaderResource:
+            outSyncAfter = D3D12_BARRIER_SYNC_ALL;
+            outAccessAfter = D3D12_BARRIER_ACCESS_SHADER_RESOURCE;
+            outLayoutAfter = D3D12_BARRIER_LAYOUT_SHADER_RESOURCE;
+            break;
+        case RenderBackendResourceState::Present:
+            outSyncAfter = D3D12_BARRIER_SYNC_ALL;
+            outAccessAfter = D3D12_BARRIER_ACCESS_COMMON;
+            outLayoutAfter = D3D12_BARRIER_LAYOUT_PRESENT;
+            break;
+        case RenderBackendResourceState::RenderTarget:
+            outSyncAfter = D3D12_BARRIER_SYNC_ALL;
+            outAccessAfter = D3D12_BARRIER_ACCESS_RENDER_TARGET;
+            outLayoutAfter = D3D12_BARRIER_LAYOUT_RENDER_TARGET;
+            break;
+        case RenderBackendResourceState::DepthStencilReadOnly:
+            outSyncAfter = D3D12_BARRIER_SYNC_ALL;
+            outAccessAfter = D3D12_BARRIER_ACCESS_DEPTH_STENCIL_READ;
+            outLayoutAfter = D3D12_BARRIER_LAYOUT_DEPTH_STENCIL_READ;
+            break;
+        case RenderBackendResourceState::DepthStencil:
+            outSyncAfter = D3D12_BARRIER_SYNC_ALL;
+            outAccessAfter = D3D12_BARRIER_ACCESS_DEPTH_STENCIL_WRITE;
+            outLayoutAfter = D3D12_BARRIER_LAYOUT_DEPTH_STENCIL_WRITE;
+            break;
+        case RenderBackendResourceState::CopySrc:
+            outSyncAfter = D3D12_BARRIER_SYNC_ALL;
+            outAccessAfter = D3D12_BARRIER_ACCESS_COPY_SOURCE;
+            outLayoutAfter = D3D12_BARRIER_LAYOUT_COPY_SOURCE;
+            break;
+        case RenderBackendResourceState::CopyDst:
+            outSyncAfter = D3D12_BARRIER_SYNC_ALL;
+            outAccessAfter = D3D12_BARRIER_ACCESS_COPY_DEST;
+            outLayoutAfter = D3D12_BARRIER_LAYOUT_COPY_DEST;
+            break;
+        case RenderBackendResourceState::UnorderedAccess:
+            outSyncAfter = D3D12_BARRIER_SYNC_ALL;
+            outAccessAfter = D3D12_BARRIER_ACCESS_UNORDERED_ACCESS;
+            outLayoutAfter = D3D12_BARRIER_LAYOUT_UNORDERED_ACCESS;
+            break;
+        case RenderBackendResourceState::IndirectArgument:
+            outSyncAfter = D3D12_BARRIER_SYNC_ALL;
+            outAccessAfter = D3D12_BARRIER_ACCESS_INDIRECT_ARGUMENT;
+            outLayoutAfter = D3D12_BARRIER_LAYOUT_SHADER_RESOURCE;
+            break;
+        default: std::unreachable(); break;
+        }
+    }
+
+    inline D3D12_BARRIER_LAYOUT ConvertToD3D12BarrierLayout(RenderBackendResourceState state)
+    {
+        switch (state)
+        {
+        case RenderBackendResourceState::Undefined:
+            return D3D12_BARRIER_LAYOUT_UNDEFINED;
+        case RenderBackendResourceState::Present:
+            return D3D12_BARRIER_LAYOUT_PRESENT;
+        case RenderBackendResourceState::RenderTarget:
+            return D3D12_BARRIER_LAYOUT_RENDER_TARGET;
+        case RenderBackendResourceState::UnorderedAccess:
+            return D3D12_BARRIER_LAYOUT_UNORDERED_ACCESS;
+        case RenderBackendResourceState::DepthStencil:
+            return D3D12_BARRIER_LAYOUT_DEPTH_STENCIL_WRITE; // TODO
+        case RenderBackendResourceState::DepthStencilReadOnly:
+            return D3D12_BARRIER_LAYOUT_DEPTH_STENCIL_READ;
+        case RenderBackendResourceState::ShaderResource:
+        case RenderBackendResourceState::IndirectArgument:
+            return D3D12_BARRIER_LAYOUT_SHADER_RESOURCE;
+        case RenderBackendResourceState::VertexBuffer:
+            return D3D12_BARRIER_LAYOUT_COMMON;
+        case RenderBackendResourceState::IndexBuffer:
+            return D3D12_BARRIER_LAYOUT_COMMON;
+        case RenderBackendResourceState::CopySrc:
+            return D3D12_BARRIER_LAYOUT_COPY_SOURCE;
+        case RenderBackendResourceState::CopyDst:
+            return D3D12_BARRIER_LAYOUT_COPY_DEST;
+        default:
+            std::unreachable();
+        }
+    }
+
+    inline void ConvertToD3D12BufferBarrier(
+        RenderBackendResourceState srcState,
+        RenderBackendResourceState dstState,
+        D3D12_BARRIER_SYNC& outSyncBefore,
+        D3D12_BARRIER_SYNC& outSyncAfter,
+        D3D12_BARRIER_ACCESS& outAccessBefore,
+        D3D12_BARRIER_ACCESS& outAccessAfter)
+    {
+        switch (srcState)
+        {
+        case RenderBackendResourceState::Undefined:
+            outSyncBefore = D3D12_BARRIER_SYNC_ALL;
+            outAccessBefore = D3D12_BARRIER_ACCESS_NO_ACCESS;
+            break;
+        case RenderBackendResourceState::VertexBuffer:
+        case RenderBackendResourceState::IndexBuffer:
+        case RenderBackendResourceState::ShaderResource:
+            outSyncBefore = D3D12_BARRIER_SYNC_ALL;
+            outAccessBefore = D3D12_BARRIER_ACCESS_SHADER_RESOURCE;
+            break;
+        case RenderBackendResourceState::CopySrc:
+            outSyncBefore = D3D12_BARRIER_SYNC_ALL;
+            outAccessBefore = D3D12_BARRIER_ACCESS_COPY_SOURCE;
+            break;
+        case RenderBackendResourceState::CopyDst:
+            outSyncBefore = D3D12_BARRIER_SYNC_ALL;
+            outAccessBefore = D3D12_BARRIER_ACCESS_COPY_DEST;
+            break;
+        case RenderBackendResourceState::UnorderedAccess:
+            outSyncBefore = D3D12_BARRIER_SYNC_ALL;
+            outAccessBefore = D3D12_BARRIER_ACCESS_UNORDERED_ACCESS;
+            break;
+        case RenderBackendResourceState::IndirectArgument:
+            outSyncBefore = D3D12_BARRIER_SYNC_ALL;
+            outAccessBefore = D3D12_BARRIER_ACCESS_INDIRECT_ARGUMENT;
+            break;
+        default: std::unreachable(); break;
+        }
+
+        switch (dstState)
+        {
+        case RenderBackendResourceState::Undefined:
+            outSyncAfter = D3D12_BARRIER_SYNC_ALL;
+            outAccessAfter = D3D12_BARRIER_ACCESS_NO_ACCESS;
+            break;
+        case RenderBackendResourceState::VertexBuffer:
+        case RenderBackendResourceState::IndexBuffer:
+        case RenderBackendResourceState::ShaderResource:
+            outSyncAfter = D3D12_BARRIER_SYNC_ALL;
+            outAccessAfter = D3D12_BARRIER_ACCESS_SHADER_RESOURCE;
+            break;
+        case RenderBackendResourceState::CopySrc:
+            outSyncAfter = D3D12_BARRIER_SYNC_ALL;
+            outAccessAfter = D3D12_BARRIER_ACCESS_COPY_SOURCE;
+            break;
+        case RenderBackendResourceState::CopyDst:
+            outSyncAfter = D3D12_BARRIER_SYNC_ALL;
+            outAccessAfter = D3D12_BARRIER_ACCESS_COPY_DEST;
+            break;
+        case RenderBackendResourceState::UnorderedAccess:
+            outSyncAfter = D3D12_BARRIER_SYNC_ALL;
+            outAccessAfter = D3D12_BARRIER_ACCESS_UNORDERED_ACCESS;
+            break;
+        case RenderBackendResourceState::IndirectArgument:
+            outSyncAfter = D3D12_BARRIER_SYNC_ALL;
+            outAccessAfter = D3D12_BARRIER_ACCESS_INDIRECT_ARGUMENT;
+            break;
+        default: std::unreachable(); break;
+        }
     }
 }

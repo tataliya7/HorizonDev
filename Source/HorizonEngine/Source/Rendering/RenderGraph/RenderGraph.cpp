@@ -412,7 +412,7 @@ namespace Horizon
 
             if (!pass->barriers.empty())
             {
-                commandList.Transitions(pass->barriers.data(), (uint32)pass->barriers.size());
+                commandList.Barriers(pass->barriers.data(), (uint32)pass->barriers.size());
             }
 
             if (EnumClassHasFlags(passFlags, RenderGraphPassFlags::Graphics) && !EnumClassHasFlags(passFlags, RenderGraphPassFlags::SkipRenderPass))
@@ -469,7 +469,13 @@ namespace Horizon
                 {
                     RenderBackendBarrier(texture->GetRenderBackendTextureHandle(), RenderBackendTextureSubresourceRange::All, texture->intermediateState, texture->finalState)
                 };
-                commandList.Transitions(barriers.data(), (uint32)barriers.size());
+                commandList.Barriers(barriers.data(), (uint32)barriers.size());
+
+                // LogVerbose(GLogger, std::format("Render Graph: Texture State Transition: {}, initial state: {}, state before: {}, state after: {}",
+                //     texture->GetName(),
+                //     int(texture->initialState),
+                //     int(texture->intermediateState),
+                //     int(texture->finalState)));
             }
         }
 

@@ -714,7 +714,7 @@ namespace Horizon
         }
     }
 
-    static inline void GetBarrierInfo2(
+    inline void GetBarrierInfo2(
         RenderBackendResourceState srcState,
         RenderBackendResourceState dstState,
         VkImageLayout* outOldLayout,
