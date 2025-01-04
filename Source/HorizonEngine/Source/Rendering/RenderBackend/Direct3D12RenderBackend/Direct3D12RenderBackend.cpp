@@ -40,13 +40,13 @@ static void D3D12MessageCallback(
 
 namespace Horizon
 {
-#define COMPILE_RENDER_COMMAND(command, RenderBackendCommandStruct)                                        \
-        case RenderBackendCommandStruct::Type:                                                             \
-        if (!CompileRenderBackendCommand(*reinterpret_cast<const RenderBackendCommandStruct*>(command)))   \
-        {                                                                                                  \
-            return false;                                                                                  \
-        }                                                                                                  \
-        break
+#define COMPILE_RENDER_COMMAND(command, RenderBackendCommandStruct)                                     \
+    case RenderBackendCommandStruct::Type:                                                              \
+    if (!CompileRenderBackendCommand(*reinterpret_cast<const RenderBackendCommandStruct*>(command)))    \
+    {                                                                                                   \
+        return false;                                                                                   \
+    }                                                                                                   \
+    break
 
     bool D3D12RenderBackendCommandListContext::CompileRenderBackendCommands(const RenderBackendCommandContainer& container)
     {
