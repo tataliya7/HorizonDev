@@ -7,7 +7,9 @@
 #include <pix.h>
 
 #pragma comment(lib,"d3d12.lib")
-#pragma comment(lib,"dxguid.lib")
+
+static constexpr GUID DXGI_DEBUG_ID_ALL = { 0xe48ae283, 0xda80, 0x490b, { 0x87, 0xe6, 0x43, 0xe9, 0xa9, 0xcf, 0xda, 0x8 } }; // DXGI_DEBUG_ALL
+static constexpr GUID DXGI_DEBUG_ID_DXGI = { 0x25cddaa4, 0xb1c6, 0x47e1, { 0xac, 0x3e, 0x98, 0x87, 0x5b, 0x5a, 0x2e, 0x2a } }; // DXGI_DEBUG_DXGI
 
 static void D3D12MessageCallback(
     D3D12_MESSAGE_CATEGORY Category,
@@ -1167,9 +1169,9 @@ namespace Horizon
                 {
                     dxgiFactoryFlags = DXGI_CREATE_FACTORY_DEBUG;
 
-                    dxgiInfoQueue->SetBreakOnSeverity(DXGI_DEBUG_ALL, DXGI_INFO_QUEUE_MESSAGE_SEVERITY_CORRUPTION, true);
-                    dxgiInfoQueue->SetBreakOnSeverity(DXGI_DEBUG_ALL, DXGI_INFO_QUEUE_MESSAGE_SEVERITY_WARNING, true);
-                    dxgiInfoQueue->SetBreakOnSeverity(DXGI_DEBUG_ALL, DXGI_INFO_QUEUE_MESSAGE_SEVERITY_ERROR, true);
+                    dxgiInfoQueue->SetBreakOnSeverity(DXGI_DEBUG_ID_ALL, DXGI_INFO_QUEUE_MESSAGE_SEVERITY_CORRUPTION, true);
+                    dxgiInfoQueue->SetBreakOnSeverity(DXGI_DEBUG_ID_ALL, DXGI_INFO_QUEUE_MESSAGE_SEVERITY_ERROR, true);
+                    dxgiInfoQueue->SetBreakOnSeverity(DXGI_DEBUG_ID_ALL, DXGI_INFO_QUEUE_MESSAGE_SEVERITY_WARNING, true);
 
                     DXGI_INFO_QUEUE_MESSAGE_ID hide[] =
                     {
@@ -1178,7 +1180,8 @@ namespace Horizon
                     DXGI_INFO_QUEUE_FILTER filter = {};
                     filter.DenyList.NumIDs = _countof(hide);
                     filter.DenyList.pIDList = hide;
-                    dxgiInfoQueue->AddStorageFilterEntries(DXGI_DEBUG_DXGI, &filter);
+
+                    dxgiInfoQueue->AddStorageFilterEntries(DXGI_DEBUG_ID_DXGI, &filter);
                 }
             }
             else
@@ -1262,7 +1265,7 @@ namespace Horizon
                 Microsoft::WRL::ComPtr<IDXGIDebug1> dxgiDebugInterface;
                 if (SUCCEEDED(pfnDXGIGetDebugInterface1(0, IID_PPV_ARGS(&dxgiDebugInterface))))
                 {
-                    dxgiDebugInterface->ReportLiveObjects(DXGI_DEBUG_ALL, static_cast<DXGI_DEBUG_RLO_FLAGS>(DXGI_DEBUG_RLO_SUMMARY | DXGI_DEBUG_RLO_IGNORE_INTERNAL));
+                    dxgiDebugInterface->ReportLiveObjects(DXGI_DEBUG_ID_ALL, static_cast<DXGI_DEBUG_RLO_FLAGS>(DXGI_DEBUG_RLO_SUMMARY | DXGI_DEBUG_RLO_IGNORE_INTERNAL));
                 }
             }
         }

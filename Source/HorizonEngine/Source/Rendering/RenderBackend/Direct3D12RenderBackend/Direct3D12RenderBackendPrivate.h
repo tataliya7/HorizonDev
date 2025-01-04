@@ -4,17 +4,11 @@
 
 #include <wrl/client.h>
 
-//#include <dxgi1_3.h>
-//#include <dxgi1_4.h>
-//#include <dxgi1_5.h>
 #include <dxgi1_6.h>
-//#ifdef _DEBUG
+#include <dxgiformat.h>
 #include <dxgidebug.h>
-//#endif
 
 #include <d3dcommon.h>
-#include <dxgiformat.h>
-
 #include <d3d12.h>
 #include <d3d12compatibility.h>
 #include <d3d12sdklayers.h>
