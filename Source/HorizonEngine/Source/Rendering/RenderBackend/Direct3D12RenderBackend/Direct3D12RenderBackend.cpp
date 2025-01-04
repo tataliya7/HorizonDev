@@ -1187,13 +1187,14 @@ namespace Horizon
             }
         }
 
-        dxgiDllHandle = LoadLibraryW(L"dxgi.dll");
+        dxgiLibraryHandle = LoadLibraryW(L"dxgi.dll");
 
         // @todo cleanup
 
+
         typedef HRESULT(WINAPI *PFN_CreateDXGIFactory2)(UINT, REFIID, _COM_Outptr_ void**);
 
-        PFN_CreateDXGIFactory2 pfnCreateDXGIFactory2 = reinterpret_cast<PFN_CreateDXGIFactory2>(reinterpret_cast<void*>(GetProcAddress(dxgiDllHandle, "CreateDXGIFactory2")));
+        PFN_CreateDXGIFactory2 pfnCreateDXGIFactory2 = reinterpret_cast<PFN_CreateDXGIFactory2>(reinterpret_cast<void*>(GetProcAddress(dxgiLibraryHandle, "CreateDXGIFactory2")));
         assert(pfnCreateDXGIFactory2);
 
         HRESULT hr = pfnCreateDXGIFactory2(dxgiFactoryFlags, IID_PPV_ARGS(&dxgiFactory));
@@ -1253,7 +1254,20 @@ namespace Horizon
     {
         DestroyRenderDevices();
 
-        FreeLibrary(dxgiDllHandle);
+        {
+            typedef HRESULT(WINAPI *PFN_DXGIGetDebugInterface1)(UINT, REFIID, _COM_Outptr_ void**);
+            PFN_DXGIGetDebugInterface1 pfnDXGIGetDebugInterface1 = reinterpret_cast<PFN_DXGIGetDebugInterface1>(reinterpret_cast<void*>(GetProcAddress(dxgiLibraryHandle, "DXGIGetDebugInterface1")));
+            if (pfnDXGIGetDebugInterface1 != nullptr)
+            {
+                Microsoft::WRL::ComPtr<IDXGIDebug1> dxgiDebugInterface;
+                if (SUCCEEDED(pfnDXGIGetDebugInterface1(0, IID_PPV_ARGS(&dxgiDebugInterface))))
+                {
+                    dxgiDebugInterface->ReportLiveObjects(DXGI_DEBUG_ALL, static_cast<DXGI_DEBUG_RLO_FLAGS>(DXGI_DEBUG_RLO_SUMMARY | DXGI_DEBUG_RLO_IGNORE_INTERNAL));
+                }
+            }
+        }
+
+        FreeLibrary(dxgiLibraryHandle);
     }
 
     void D3D12RenderBackend::Tick()

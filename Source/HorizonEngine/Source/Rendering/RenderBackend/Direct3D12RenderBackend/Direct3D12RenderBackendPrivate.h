@@ -2681,7 +2681,7 @@ namespace Horizon
         Microsoft::WRL::ComPtr<ID3D12Device> d3d12Devices[RenderBackendMaxDeviceCount];
         bool tearingSupported;
 
-        HMODULE dxgiDllHandle = NULL;
+        HMODULE dxgiLibraryHandle = NULL;
     };
 
     class D3D12RenderBackendCommandListContext
