@@ -129,7 +129,7 @@ namespace Horizon
 
         // TODO: rewrite this
         io.IniFilename = "../../../Assets/Test/imgui.ini";
-        io.IniSavingRate = 600;
+        io.IniSavingRate = 60;
         io.FontDefault = io.Fonts->AddFontFromFileTTF("../../../Assets/Fonts/OpenSans/OpenSans-Regular.ttf", 26.0f);
 
         // Upload fonts
@@ -948,59 +948,194 @@ namespace Horizon
             ImGui::Separator();
             ImGui::PopStyleVar();
 
-            if (ImGui::CollapsingHeader("General", ImGuiTreeNodeFlags_None))
+            if (ImGui::CollapsingHeader("Lighting", ImGuiTreeNodeFlags_None))
             {
-                ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(2, 2));
-                ImGui::Columns(2);
-                ImGui::Separator();
-
-                ImGui::AlignTextToFramePadding();
-                ImGui::TextUnformatted("Fixed Pre-Exposure");
-                ImGui::NextColumn();
-                ImGui::PushItemWidth(-1);
-                if (ImGui::Checkbox("##FixedPreExposure", &renderSettings.enableFixedPreExposure))
+                if (ImGui::TreeNode("Shadows"))
                 {
+                    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(2, 2));
+                    ImGui::Columns(2);
+                    ImGui::Separator();
 
+                    ImGui::AlignTextToFramePadding();
+                    ImGui::TextUnformatted("Technique");
+                    ImGui::NextColumn();
+                    ImGui::PushItemWidth(-1);
+
+                    const char* items[] = { "None", "Shadow Map", "Virtual Shadow Map", "Ray Tracing Shadows" };
+                    int item = (int)renderSettings.shadowsTechnique;
+                    ImGui::Combo("##ShadowsTechnique", &item, items, IM_ARRAYSIZE(items));
+                    renderSettings.shadowsTechnique = (ShadowsTechnique)item;
+
+                    ImGui::PopItemWidth();
+                    ImGui::NextColumn();
+
+                    ImGui::Columns(1);
+                    ImGui::Separator();
+                    ImGui::PopStyleVar();
+
+                    ImGui::TreePop();
                 }
-                ImGui::PopItemWidth();
-                ImGui::NextColumn();
 
-                ImGui::AlignTextToFramePadding();
-                ImGui::TextUnformatted("Pre-Exposure");
-                ImGui::NextColumn();
-                ImGui::PushItemWidth(-1);
-                if (ImGui::DragFloat("##PreExposure", &renderSettings.fixedPreExposure))
+                if (ImGui::TreeNode("Global Illumination"))
                 {
+                    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(2, 2));
+                    ImGui::Columns(2);
+                    ImGui::Separator();
 
+                    ImGui::AlignTextToFramePadding();
+                    ImGui::TextUnformatted("Indirect Lighting Color");
+                    ImGui::NextColumn();
+                    ImGui::PushItemWidth(-1);
+                    if (ImGui::ColorEdit3("##indirectLightingColor", &renderSettings.globalIlluminationSettings.indirectLightingColor.x))
+                    {
+
+                    }
+                    ImGui::PopItemWidth();
+                    ImGui::NextColumn();
+
+                    ImGui::AlignTextToFramePadding();
+                    ImGui::TextUnformatted("Indirect Lighting Intensity");
+                    ImGui::NextColumn();
+                    ImGui::PushItemWidth(-1);
+                    if (ImGui::DragFloat("##indirectLightingIntensity", &renderSettings.globalIlluminationSettings.indirectLightingIntensity, 0.01f, 0.0f, 1000.0f))
+                    {
+
+                    }
+                    ImGui::PopItemWidth();
+                    ImGui::NextColumn();
+
+                    ImGui::Columns(1);
+                    ImGui::Separator();
+                    ImGui::PopStyleVar();
+
+                    ImGui::TreePop();
                 }
-                ImGui::PopItemWidth();
-                ImGui::NextColumn();
 
-                ImGui::AlignTextToFramePadding();
-                ImGui::TextUnformatted("Indirect Lighting Color");
-                ImGui::NextColumn();
-                ImGui::PushItemWidth(-1);
-                if (ImGui::ColorEdit3("##indirectLightingColor", &renderSettings.globalIlluminationSettings.indirectLightingColor.x))
+                if (ImGui::TreeNode("Reflections"))
                 {
+                    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(2, 2));
+                    ImGui::Columns(2);
+                    ImGui::Separator();
 
+                    ImGui::AlignTextToFramePadding();
+                    ImGui::TextUnformatted("Technique");
+                    ImGui::NextColumn();
+                    ImGui::PushItemWidth(-1);
+
+                    const char* items[] = { "None", "Screen Space Reflections", "Ray Tracing Reflections" };
+                    int item = int(renderSettings.reflectionsTechnique);
+                    ImGui::Combo("##ReflectionsTechnique", &item, items, IM_ARRAYSIZE(items));
+                    renderSettings.reflectionsTechnique = (ReflectionsTechnique)item;
+
+                    ImGui::PopItemWidth();
+                    ImGui::NextColumn();
+
+                    ImGui::AlignTextToFramePadding();
+                    ImGui::TextUnformatted("Denosing");
+                    ImGui::NextColumn();
+                    ImGui::PushItemWidth(-1);
+                    if (ImGui::Checkbox("##SSRDenosing", &renderSettings.ssrSettings.enableDenoising))
+                    {
+
+                    }
+                    ImGui::PopItemWidth();
+                    ImGui::NextColumn();
+
+                    ImGui::AlignTextToFramePadding();
+                    ImGui::TextUnformatted("Quality");
+                    ImGui::NextColumn();
+                    ImGui::PushItemWidth(-1);
+
+                    const char* items2[] = { "Low", "Medium", "High", "    Epic" };
+                    static int item2 = 0;
+                    ImGui::Combo("##SSRQuality", &item2, items2, IM_ARRAYSIZE(items2));
+                    renderSettings.ssrSettings.quality = (ScreenSpaceReflectionsQuality)item2;
+
+                    ImGui::PopItemWidth();
+                    ImGui::NextColumn();
+
+                    ImGui::Columns(1);
+                    ImGui::Separator();
+                    ImGui::PopStyleVar();
+
+                    ImGui::TreePop();
                 }
-                ImGui::PopItemWidth();
-                ImGui::NextColumn();
 
-                ImGui::AlignTextToFramePadding();
-                ImGui::TextUnformatted("Indirect Lighting Intensity");
-                ImGui::NextColumn();
-                ImGui::PushItemWidth(-1);
-                if (ImGui::DragFloat("##indirectLightingIntensity", &renderSettings.globalIlluminationSettings.indirectLightingIntensity, 0.01f, 0.0f, 1000.0f))
+                if (ImGui::TreeNode("Ambient Occlusion"))
                 {
+                    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(2, 2));
+                    ImGui::Columns(2);
+                    ImGui::Separator();
 
+                    bool gtaoEnabled = (renderSettings.ambientOcclusionTechnique == AmbientOcclusionTechnique::GroundTruthAmbientOcclusion) ? true : false;
+                    ImGui::AlignTextToFramePadding();
+                    ImGui::TextUnformatted("Enable");
+                    ImGui::NextColumn();
+                    ImGui::PushItemWidth(-1);
+                    if (ImGui::Checkbox("##Enable", &gtaoEnabled))
+                    {
+                        if (gtaoEnabled)
+                        {
+                            renderSettings.ambientOcclusionTechnique = AmbientOcclusionTechnique::GroundTruthAmbientOcclusion;
+                        }
+                        else
+                        {
+                            renderSettings.ambientOcclusionTechnique = AmbientOcclusionTechnique::None;
+                        }
+                    }
+                    ImGui::PopItemWidth();
+                    ImGui::NextColumn();
+
+                    ImGui::AlignTextToFramePadding();
+                    ImGui::TextUnformatted("Radius");
+                    ImGui::NextColumn();
+                    ImGui::PushItemWidth(-1);
+                    if (ImGui::DragFloat("##Radius", &renderSettings.gtaoSettings.radius))
+                    {
+
+                    }
+                    ImGui::PopItemWidth();
+                    ImGui::NextColumn();
+
+                    ImGui::AlignTextToFramePadding();
+                    ImGui::TextUnformatted("Factor");
+                    ImGui::NextColumn();
+                    ImGui::PushItemWidth(-1);
+                    if (ImGui::DragFloat("##Factor", &renderSettings.gtaoSettings.factor))
+                    {
+
+                    }
+                    ImGui::PopItemWidth();
+                    ImGui::NextColumn();
+
+                    ImGui::AlignTextToFramePadding();
+                    ImGui::TextUnformatted("Thickness");
+                    ImGui::NextColumn();
+                    ImGui::PushItemWidth(-1);
+                    if (ImGui::DragFloat("##Thickness", &renderSettings.gtaoSettings.thickness))
+                    {
+
+                    }
+                    ImGui::PopItemWidth();
+                    ImGui::NextColumn();
+
+                    ImGui::AlignTextToFramePadding();
+                    ImGui::TextUnformatted("Multiple-Bounce");
+                    ImGui::NextColumn();
+                    ImGui::PushItemWidth(-1);
+                    if (ImGui::Checkbox("##MultipleBounce", &renderSettings.gtaoSettings.multiBounce))
+                    {
+
+                    }
+                    ImGui::PopItemWidth();
+                    ImGui::NextColumn();
+
+                    ImGui::Columns(1);
+                    ImGui::Separator();
+                    ImGui::PopStyleVar();
+
+                    ImGui::TreePop();
                 }
-                ImGui::PopItemWidth();
-                ImGui::NextColumn();
-
-                ImGui::Columns(1);
-                ImGui::Separator();
-                ImGui::PopStyleVar();
             }
 
 #if HE_ENBALE_STREAMLINE_SUPPORT
@@ -1076,151 +1211,6 @@ namespace Horizon
                 ImGui::PopStyleVar();
             }
 #endif
-            if (ImGui::CollapsingHeader("Shadows", ImGuiTreeNodeFlags_DefaultOpen))
-            {
-                ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(2, 2));
-                ImGui::Columns(2);
-                ImGui::Separator();
-
-                ImGui::AlignTextToFramePadding();
-                ImGui::TextUnformatted("Technique");
-                ImGui::NextColumn();
-                ImGui::PushItemWidth(-1);
-
-                const char* items[] = { "None", "Shadow Map", "Virtual Shadow Map", "Ray Tracing Shadows" };
-                int item = (int)renderSettings.shadowsTechnique;
-                ImGui::Combo("##ShadowsTechnique", &item, items, IM_ARRAYSIZE(items));
-                renderSettings.shadowsTechnique = (ShadowsTechnique)item;
-
-                ImGui::PopItemWidth();
-                ImGui::NextColumn();
-
-                ImGui::Columns(1);
-                ImGui::Separator();
-                ImGui::PopStyleVar();
-            }
-
-            if (ImGui::CollapsingHeader("Reflections", ImGuiTreeNodeFlags_DefaultOpen))
-            {
-                ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(2, 2));
-                ImGui::Columns(2);
-                ImGui::Separator();
-
-                ImGui::AlignTextToFramePadding();
-                ImGui::TextUnformatted("Technique");
-                ImGui::NextColumn();
-                ImGui::PushItemWidth(-1);
-
-                const char* items[] = { "None", "Screen Space Reflections", "Ray Tracing Reflections" };
-                int item = int(renderSettings.reflectionsTechnique);
-                ImGui::Combo("##ReflectionsTechnique", &item, items, IM_ARRAYSIZE(items));
-                renderSettings.reflectionsTechnique = (ReflectionsTechnique)item;
-
-                ImGui::PopItemWidth();
-                ImGui::NextColumn();
-
-                ImGui::AlignTextToFramePadding();
-                ImGui::TextUnformatted("Denosing");
-                ImGui::NextColumn();
-                ImGui::PushItemWidth(-1);
-                if (ImGui::Checkbox("##SSRDenosing", &renderSettings.ssrSettings.enableDenoising))
-                {
-
-                }
-                ImGui::PopItemWidth();
-                ImGui::NextColumn();
-
-                ImGui::AlignTextToFramePadding();
-                ImGui::TextUnformatted("Quality");
-                ImGui::NextColumn();
-                ImGui::PushItemWidth(-1);
-
-                const char* items2[] = { "Low", "Medium", "High", "    Epic" };
-                static int item2 = 0;
-                ImGui::Combo("##SSRQuality", &item2, items2, IM_ARRAYSIZE(items2));
-                renderSettings.ssrSettings.quality = (ScreenSpaceReflectionsQuality)item2;
-
-                ImGui::PopItemWidth();
-                ImGui::NextColumn();
-
-                ImGui::Columns(1);
-                ImGui::Separator();
-                ImGui::PopStyleVar();
-            }
-
-            if (ImGui::CollapsingHeader("Ambient Occlusion", ImGuiTreeNodeFlags_DefaultOpen))
-            {
-                ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(2, 2));
-                ImGui::Columns(2);
-                ImGui::Separator();
-
-                bool gtaoEnabled = (renderSettings.ambientOcclusionTechnique == AmbientOcclusionTechnique::GroundTruthAmbientOcclusion) ? true : false;
-                ImGui::AlignTextToFramePadding();
-                ImGui::TextUnformatted("Enable");
-                ImGui::NextColumn();
-                ImGui::PushItemWidth(-1);
-                if (ImGui::Checkbox("##Enable", &gtaoEnabled))
-                {
-                    if (gtaoEnabled)
-                    {
-                        renderSettings.ambientOcclusionTechnique = AmbientOcclusionTechnique::GroundTruthAmbientOcclusion;
-                    }
-                    else
-                    {
-                        renderSettings.ambientOcclusionTechnique = AmbientOcclusionTechnique::None;
-                    }
-                }
-                ImGui::PopItemWidth();
-                ImGui::NextColumn();
-
-                ImGui::AlignTextToFramePadding();
-                ImGui::TextUnformatted("Radius");
-                ImGui::NextColumn();
-                ImGui::PushItemWidth(-1);
-                if (ImGui::DragFloat("##Radius", &renderSettings.gtaoSettings.radius))
-                {
-
-                }
-                ImGui::PopItemWidth();
-                ImGui::NextColumn();
-
-                ImGui::AlignTextToFramePadding();
-                ImGui::TextUnformatted("Factor");
-                ImGui::NextColumn();
-                ImGui::PushItemWidth(-1);
-                if (ImGui::DragFloat("##Factor", &renderSettings.gtaoSettings.factor))
-                {
-
-                }
-                ImGui::PopItemWidth();
-                ImGui::NextColumn();
-
-                ImGui::AlignTextToFramePadding();
-                ImGui::TextUnformatted("Thickness");
-                ImGui::NextColumn();
-                ImGui::PushItemWidth(-1);
-                if (ImGui::DragFloat("##Thickness", &renderSettings.gtaoSettings.thickness))
-                {
-
-                }
-                ImGui::PopItemWidth();
-                ImGui::NextColumn();
-
-                ImGui::AlignTextToFramePadding();
-                ImGui::TextUnformatted("Multiple-Bounce");
-                ImGui::NextColumn();
-                ImGui::PushItemWidth(-1);
-                if (ImGui::Checkbox("##MultipleBounce", &renderSettings.gtaoSettings.multiBounce))
-                {
-
-                }
-                ImGui::PopItemWidth();
-                ImGui::NextColumn();
-
-                ImGui::Columns(1);
-                ImGui::Separator();
-                ImGui::PopStyleVar();
-            }
 
             if (ImGui::CollapsingHeader("Super Sampling", ImGuiTreeNodeFlags_DefaultOpen))
             {
@@ -1949,6 +1939,39 @@ namespace Horizon
 
                     ImGui::TreePop();
                 }
+            }
+
+            if (ImGui::CollapsingHeader("Misc", ImGuiTreeNodeFlags_None))
+            {
+                ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(2, 2));
+                ImGui::Columns(2);
+                ImGui::Separator();
+
+                ImGui::AlignTextToFramePadding();
+                ImGui::TextUnformatted("Fixed Pre-Exposure");
+                ImGui::NextColumn();
+                ImGui::PushItemWidth(-1);
+                if (ImGui::Checkbox("##FixedPreExposure", &renderSettings.enableFixedPreExposure))
+                {
+
+                }
+                ImGui::PopItemWidth();
+                ImGui::NextColumn();
+
+                ImGui::AlignTextToFramePadding();
+                ImGui::TextUnformatted("Pre-Exposure");
+                ImGui::NextColumn();
+                ImGui::PushItemWidth(-1);
+                if (ImGui::DragFloat("##PreExposure", &renderSettings.fixedPreExposure))
+                {
+
+                }
+                ImGui::PopItemWidth();
+                ImGui::NextColumn();
+
+                ImGui::Columns(1);
+                ImGui::Separator();
+                ImGui::PopStyleVar();
             }
         }
         ImGui::End();
