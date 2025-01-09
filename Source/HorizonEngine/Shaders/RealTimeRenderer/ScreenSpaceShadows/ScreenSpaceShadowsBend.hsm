@@ -35,25 +35,31 @@ DispatchParameters CreateBendSSSDispatchParameters(
     in RWTexture2D<float> OutputTexture)
 {
     DispatchParameters Parameters;
-    Parameters.SetDefaults();
-    Parameters.SurfaceThickness = SurfaceThickness;
-    Parameters.ShadowContrast = ShadowContrast;
-    Parameters.LightCoordinate = LightCoordinate;
-    Parameters.WaveOffset = WaveOffset;
-    Parameters.FarDepthValue = FarDepthValue;
-    Parameters.NearDepthValue = NearDepthValue;
-    Parameters.InvDepthTextureSize = InvDepthTextureSize;
-    Parameters.DepthTexture = DepthTexture;
-    Parameters.OutputTexture = OutputTexture;
-    Parameters.PointBorderSampler = GlobalSamplerPointBorder;
-    //Parameters.DebugOutputEdgeMask = true;
-    //Parameters.DebugOutputThreadIndex = true;
-    //Parameters.DebugOutputWaveIndex = true;
-    Parameters.UseEarlyOut = true;
+    //Parameters.SetDefaults();
+    Parameters.SurfaceThickness              = SurfaceThickness;
+    Parameters.BilinearThreshold             = 0.02f;
+    Parameters.ShadowContrast                = ShadowContrast;
+    Parameters.IgnoreEdgePixels              = true; // Avoiding self-shadowing.
+    Parameters.UsePrecisionOffset            = false;
+    Parameters.BilinearSamplingOffsetMode    = false;
+    Parameters.DebugOutputEdgeMask           = false;
+    Parameters.DebugOutputThreadIndex        = false;
+    Parameters.DebugOutputWaveIndex          = false;
+    Parameters.DepthBounds                   = float2(0.0f, 1.0f);
+    Parameters.UseEarlyOut                   = true;
+    Parameters.LightCoordinate               = LightCoordinate;
+    Parameters.WaveOffset                    = WaveOffset;
+    Parameters.FarDepthValue                 = FarDepthValue;
+    Parameters.NearDepthValue                = NearDepthValue;
+    Parameters.InvDepthTextureSize           = InvDepthTextureSize;
+    Parameters.DepthTexture                  = DepthTexture;
+    Parameters.OutputTexture                 = OutputTexture;
+    Parameters.PointBorderSampler            = GlobalSamplerPointBorder;
+
     return Parameters;
 }
 
-// @todo Make WAVE_SIZE equals to hardware's wave size
+// @todo Test whether there is a performance improvement when WAVE_SIZE equals the hardware's wave size.
 
 [shader("compute")]
 [numthreads(WAVE_SIZE, 1, 1)]
