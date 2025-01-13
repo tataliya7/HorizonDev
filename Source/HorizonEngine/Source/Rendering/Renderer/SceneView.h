@@ -19,6 +19,7 @@ namespace Horizon
         MotionVectors,
         AmbientOcclusion,
         ShadowMask,
+        VirtualShadowMapMipmap,
         SurfelGISurfel,
         SurfelGIHeatmap,
     };
@@ -369,9 +370,11 @@ namespace Horizon
         Vector3f cameraForwardVector;
 
         /**
-         * Vertical field of view in degrees.
+         * Vertical field of view in radians.
          */
         float verticalFOV;
+
+        float tanHalfVerticalFOV;
 
         /**
          * The aspect ratio of the scene color texture (expressed as a ratio of width to height).
@@ -387,8 +390,6 @@ namespace Horizon
          * The far plane of the view frustum.
          */
         float farClippingPlane;
-
-        float tanHalfVerticalFOV;
 
         /**
          * The color used to clear the scene color texture.
@@ -425,6 +426,29 @@ namespace Horizon
          * A point that represents the cursor's position in screen coordinates.
          */
         Vector2u cursorPosition;
+
+        void SetupViewFrustum()
+        {
+            float distance = farClippingPlane;
+            float uLen = distance * tanHalfVerticalFOV;
+            float rLen = uLen * aspectRatio;
+            Vector3f farCenterPoint = cameraPosition + distance * cameraForwardVector;
+            Vector3f u = uLen * cameraUpVector;
+            Vector3f r = rLen * cameraRightVector;
+
+            Vector3f corners[4];
+            corners[0] = farCenterPoint - u - r; // left-bottom
+            corners[1] = farCenterPoint - u + r; // right-bottom
+            corners[2] = farCenterPoint + u - r; // left-up
+            corners[3] = farCenterPoint + u + r; // right-up
+
+            viewFrustum.planes[0] = Plane(cameraPosition, corners[0], corners[2]); // left
+            viewFrustum.planes[1] = Plane(cameraPosition, corners[3], corners[1]); // right
+            viewFrustum.planes[2] = Plane(cameraPosition, corners[1], corners[0]); // bottom
+            viewFrustum.planes[3] = Plane(cameraPosition, corners[2], corners[3]); // up
+            viewFrustum.planes[4] = Plane(-cameraForwardVector, cameraPosition + cameraForwardVector * nearClippingPlane); // near
+            viewFrustum.planes[5] = Plane(cameraForwardVector, cameraPosition + cameraForwardVector * farClippingPlane);  // far
+        }
     };
 
     /*

@@ -127,7 +127,7 @@ namespace Horizon
                 frustumCorners[i] = frustumCorners[i] + (dist * lastSplitDist);
             }
 
-            // Get frustum center
+            // Get frustum position
             glm::vec3 frustumCenter = glm::vec3(0.0f);
             for (uint32 i = 0; i < 8; i++)
             {
@@ -467,5 +467,48 @@ namespace Horizon
             });
 
         sceneTextures.shadowMaskTexture = screenSpaceShadowMaskTexture;
+    }
+
+    RenderGraphTextureHandle RealTimeRenderer::AddVisualizeVirtualShadowMapPass(RenderGraph& renderGraph, const SceneView& view)
+    {
+        return RenderGraphTextureHandle::Null;
+        // const RealTimeRendererSceneTextures& sceneTextures = renderGraph.blackboard.Get<RealTimeRendererSceneTextures>();
+        //
+        // // TODO
+        // RenderGraphTextureHandle outputTexture = renderGraph.ImportExternalTexture(view.targetTexture, "TargetTexture");
+        // //RenderGraphTextureHandle outputTexture = renderGraph.CreateTexture(view.targetTexture->GetDesc(), "VisualizeAmbientOcclusionTexture");
+        //
+        // renderGraph.AddPass(
+        //     std::format("VisualizeAmbientOcclusion (Compute, {}x{}->{}x{})", renderResolution.width, renderResolution.height, targetResolution.width, targetResolution.height),
+        //     RenderGraphPassFlags::Compute,
+        //     [&](RenderGraphBuilder& builder)
+        //     {
+        //         RenderGraphTextureHandle ambientOcclusionTexture = builder.ReadTexture(sceneTextures.ambientOcclusionTexture, RenderBackendResourceState::ShaderResource);
+        //
+        //         outputTexture = builder.WriteTexture(outputTexture, RenderBackendResourceState::UnorderedAccess);
+        //
+        //         return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
+        //         {
+        //             uint32 threadGroupCountX = ComputeShaderThreadGroupCount(targetResolution.width, PostProcessingThreadGroupSizeX);
+        //             uint32 threadGroupCountY = ComputeShaderThreadGroupCount(targetResolution.height, PostProcessingThreadGroupSizeY);
+        //             uint32 threadGroupCountZ = 1;
+        //
+        //             RenderBackendShaderConstants shaderConstants = {};
+        //             shaderConstants.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
+        //             shaderConstants.BindTextureSRV(1, registry.GetTextureSRVBindlessResourceDescriptorIndex(ambientOcclusionTexture));
+        //             shaderConstants.BindTextureUAV(2, registry.GetTextureUAVBindlessResourceDescriptorIndex(outputTexture, 0));
+        //
+        //             RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::VisualizeAmbientOcclusion);
+        //
+        //             commandList.Dispatch(
+        //                 computeShader,
+        //                 shaderConstants,
+        //                 threadGroupCountX,
+        //                 threadGroupCountY,
+        //                 threadGroupCountZ);
+        //         };
+        //     });
+        //
+        // return outputTexture;
     }
 }

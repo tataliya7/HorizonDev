@@ -3,14 +3,12 @@
 
 namespace Horizon
 {
-    static void SetupLocalLightShaderParameters(
-        LocalLightShaderParameters& outParameters,
-        const LocalLightRenderData& lightRenderData)
+    static void SetupLocalLightShaderParameters(LocalLightShaderParameters& outParameters, const LightRenderObject& light)
     {
-        outParameters.data0 = Vector4f(lightRenderData.position, lightRenderData.radius);
-        outParameters.data1 = Vector4f(lightRenderData.direction, 0.0f);
-        outParameters.data2 = Vector4f(lightRenderData.tangent, 0.0f);
-        outParameters.data3 = Vector4f(lightRenderData.color, 0.0f);
+        outParameters.data0 = Vector4f(light.position, light.radius);
+        outParameters.data1 = Vector4f(light.direction, 0.0f);
+        outParameters.data2 = Vector4f(light.tangent, 0.0f);
+        outParameters.data3 = Vector4f(light.color, 0.0f);
         outParameters.data4 = Vector4f(0.0f);
     }
 
@@ -32,12 +30,8 @@ namespace Horizon
 
             if (lightRenderObject->IsLocalLight())
             {
-                LocalLightRenderData localLightRenderData;
-                lightRenderObject->SetupLocalLightRenderData(localLightRenderData);
-
                 LocalLightShaderParameters& localLightShaderParameters = localLightData.emplace_back();
-
-                SetupLocalLightShaderParameters(localLightShaderParameters, localLightRenderData);
+                SetupLocalLightShaderParameters(localLightShaderParameters, *lightRenderObject);
             }
         }
 

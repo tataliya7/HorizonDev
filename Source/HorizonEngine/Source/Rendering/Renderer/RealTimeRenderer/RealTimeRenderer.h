@@ -77,6 +77,24 @@ namespace Horizon
         uint32 offset;
     };
 
+    struct DistantLightShaderParameters
+    {
+        Vector3f direction;
+        Vector3f tangent;
+        Vector3f color;
+    };
+
+    struct DistantLightRenderData
+    {
+        CascadedShadowMapRenderData* cascadedShadowMapRenderData;
+        //VirtualShadowMapClipmapRenderData* virtualShadowMapClipmapRenderData;
+    };
+
+    struct LocalLightRenderData
+    {
+
+    };
+
     struct RealTimeRendererSceneTextures
     {
         RenderGraphTextureHandle vbuffer0;
@@ -198,6 +216,8 @@ namespace Horizon
     private:
 
         void UpdatePerFrameDataBuffer();
+
+        void GatherVisibleLights();
 
         void CreateDynamicShadowData();
 
@@ -465,6 +485,10 @@ namespace Horizon
             const SceneView& view,
             RenderGraphTextureHandle sceneColorTexture);
 
+        RenderGraphTextureHandle AddVisualizeVirtualShadowMapPass(
+            RenderGraph& renderGraph,
+            const SceneView& view);
+
         RenderGraphTextureHandle AddDebugDrawPass(
             RenderGraph& renderGraph,
             const SceneView& view,
@@ -571,6 +595,11 @@ namespace Horizon
 
         // TODO
         CascadedShadowMapRenderData cascadedShadowMapRenderData;
+
+        std::vector<DistantLightRenderData> distanceLights;
+        std::vector<LocalLightRenderData> visibleLocalLights;
+
+        std::vector<CascadedShadowMapRenderData> cascadedShadowMaps;
 
         struct HistoryFrame
         {

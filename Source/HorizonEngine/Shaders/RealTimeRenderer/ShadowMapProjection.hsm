@@ -3,7 +3,6 @@
 #include "RealTimeRendererCommon.hsh"
 #include "ShadowMapCommon.hsh"
 #include "ShadowFilteringCommon.hsh"
-#include "ScreenSpaceRayTracing/ScreenSpaceRayTracingCommon.hsh"
 
 SHADER_CONSTANTS_STRUCT_BEGIN();
 SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferSRV);
@@ -147,24 +146,6 @@ void ShadowMapProjectionForDistantLightCS(uint3 dispatchThreadID : SV_DispatchTh
         shadowFactor = lerp(shadowFactor, secondaryShadowFactor, transitionFactor);
     }
 #endif
-
-    // float3 shadowRayOrigin = worldSpacePosition;
-    // float3 shadowRayDirection = -normalize(frameShaderParameters.atmosphericLightDirection);
-    // float shadowRayLength = 0.1f;
-
-    // if (shadowRayLength > 0.0f)
-    // {
-    //     float screenSpaceShadow = CastScreenSpaceShadowRay(
-    //         sceneDepthTexture,
-    //         shadowRayOrigin,
-    //         shadowRayDirection,
-    //         shadowRayLength,
-    //         frameShaderParameters.worldToClipMatrix,
-    //         frameShaderParameters.viewToClipMatrix,
-    //         noise);
-
-    //     shadowFactor = screenSpaceShadow * shadowFactor;
-    // }
 
     float fadeOut = saturate((cameraSpaceDepth - cascadedShadowMapShaderParameters.shadowFadeOutParameters.x) * cascadedShadowMapShaderParameters.shadowFadeOutParameters.y);
     shadowFactor = lerp(shadowFactor, 1.0f, fadeOut * fadeOut);

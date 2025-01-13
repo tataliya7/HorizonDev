@@ -70,17 +70,6 @@ namespace Horizon::Math
         return ((x + d - 1) / d);
     }
 
-    FORCEINLINE Vector4f GetPlane(Vector3f normal, Vector3f point)
-    {
-        return Vector4f(normal.x, normal.y, normal.z, -glm::dot(normal, point));
-    }
-
-    FORCEINLINE Vector4f GetPlane(Vector3f a, Vector3f b, Vector3f c)
-    {
-        Vector3f normal = glm::normalize(glm::cross(b - a, c - a));
-        return GetPlane(normal, a);
-    }
-
     // TODO
     FORCEINLINE float Halton(int32 index, int32 base)
     {

@@ -25,7 +25,7 @@ namespace Horizon
 
         ~SkyAtmosphereComponent();
 
-        /** The distance (kilometers) between the planet center and the ground. */
+        /** The distance (kilometers) between the planet position and the ground. */
         float groundRadius;
 
         /** The average albedo of the ground. */

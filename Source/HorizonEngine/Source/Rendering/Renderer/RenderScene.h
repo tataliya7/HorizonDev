@@ -156,22 +156,6 @@ namespace Horizon
         Vector3f lightShaftsColor;
     };
 
-    struct DistantLightRenderData
-    {
-        Vector3f direction;
-        Vector3f tangent;
-        Vector3f color;
-    };
-
-    struct LocalLightRenderData
-    {
-        Vector3f position;
-        float radius;
-        Vector3f direction;
-        Vector3f tangent;
-        Vector3f color;
-    };
-
     class LightRenderObject
     {
     public:
@@ -188,22 +172,6 @@ namespace Horizon
             return lightType == LightType::PointLight || lightType == LightType::SpotLight;
         }
 
-        void SetupDistantLightRenderData(DistantLightRenderData& outRenderData) const
-        {
-            outRenderData.direction = direction;
-            outRenderData.tangent = tangent;
-            outRenderData.color = color;
-        }
-
-        void SetupLocalLightRenderData(LocalLightRenderData& outRenderData) const
-        {
-            outRenderData.position = position;
-            outRenderData.radius = radius;
-            outRenderData.direction = direction;
-            outRenderData.tangent = tangent;
-            outRenderData.color = color;
-        }
-
         Vector3f GetPhysicalLightColor() const
         {
             return color;
@@ -212,6 +180,11 @@ namespace Horizon
         Vector3f GetDirection() const
         {
             return direction;
+        }
+
+        Sphere GetBoundingSphere() const
+        {
+            return { position, radius };
         }
 
         float GetHalfApexAngleInRadians() const
@@ -269,6 +242,10 @@ namespace Horizon
             return lightShaftsColor;
         }
 
+        float GetCullDistance() const
+        {
+            return cullDistance;
+        }
     //private:
         LightType lightType;
         Vector3f color;
@@ -277,6 +254,8 @@ namespace Horizon
         Vector3f tangent;
         Matrix4x4f worldToLight;
         float radius;
+        float cullDistance = 1000.0f;
+        //float fadeRange = ;
         bool castDynamicShadows;
         uint32 shadowMapSize;
         uint32 shadowCascadeCount;

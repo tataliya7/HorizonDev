@@ -250,6 +250,42 @@ namespace Horizon
         SetupGeometryPasses();
     }
 
+    void RealTimeRenderer::GatherVisibleLights()
+    {
+        const SceneView& view = *sceneView;
+        const RenderScene* scene = view.scene;
+        const RenderSettings& renderSettings = view.renderSettings;
+
+        visibleLocalLights.reserve(scene->lights.size());
+
+        for (LightRenderObject* light : scene->lights)
+        {
+            if (light->IsDistantLight())
+            {
+
+            }
+
+            // @todo When considering accurate global illumination, light sources outside the view frustum also contribute to the final scene.
+            if (light->IsLocalLight() && (renderSettings.renderMode != RenderMode::ReferencePathTracing))
+            {
+                const Sphere lightBoundingSphere = light->GetBoundingSphere();
+                const bool frustumCullingTest = FrustumSphereIntersectionTest(view.viewFrustum, lightBoundingSphere);
+
+                const float distanceSquared = Math::DotProduct(lightBoundingSphere.position, view.cameraPosition);
+                const float cullDistance = light->GetCullDistance();
+
+                const bool distanceCullingTest = distanceSquared < cullDistance * cullDistance;
+
+                const bool visible = frustumCullingTest && distanceCullingTest;
+
+                if (visible)
+                {
+                    //visibleLocalLights.push_back();
+                }
+            }
+        }
+    }
+
     void RealTimeRenderer::DispatchDynamicShadowSetupJobs()
     {
         CreateDynamicShadowData();

@@ -11,6 +11,7 @@ namespace Horizon
         RendererMaxCascadedShadowMapCount = 2,
         RendererMaxCubeShadowMapCount = 8,
         RendererMaxMaterialTextureSlotCount = 16,
+        RendererMaxAtmosphericLightCount = 2,
     };
 
     //static const Matrix4x4f CubeFaceMatrices[6] =

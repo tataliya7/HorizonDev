@@ -209,7 +209,7 @@ namespace Horizon
 
     }
 
-    void SetupDistantLightShaderParameters(DistantLightRenderData& outParameters, const LightRenderObject* light)
+    void SetupDistantLightShaderParameters(DistantLightShaderParameters& outParameters, const LightRenderObject* light)
     {
         outParameters.direction = light->direction;
         outParameters.tangent = light->tangent;
@@ -333,24 +333,24 @@ namespace Horizon
             // commandList->Barriers(barrier, 1);
         }
 
-        DistantLightRenderData distantLightShaderParameters;
+        DistantLightShaderParameters distantLightShaderParameters;
         SetupDistantLightShaderParameters(distantLightShaderParameters, atmosphericLight);
 
         if (!distantLightDataBuffer)
         {
-            RenderBackendBufferDesc distantLightDataUploadBufferDesc = RenderBackendBufferDesc::CreateUpload(sizeof(DistantLightRenderData));
+            RenderBackendBufferDesc distantLightDataUploadBufferDesc = RenderBackendBufferDesc::CreateUpload(sizeof(DistantLightShaderParameters));
             distantLightDataUploadBuffer = renderBackend->CreateBuffer(&distantLightDataUploadBufferDesc, nullptr, "DistantLightDataUploadBuffer");
-            RenderBackendBufferDesc distantLightDataBufferDesc = RenderBackendBufferDesc::CreateStructured(sizeof(DistantLightRenderData), 1);
+            RenderBackendBufferDesc distantLightDataBufferDesc = RenderBackendBufferDesc::CreateStructured(sizeof(DistantLightShaderParameters), 1);
             distantLightDataBuffer = renderBackend->CreateBuffer(&distantLightDataBufferDesc, nullptr, "DistantLightDataBuffer");
         }
         {
-            renderBackend->UpdateBuffer(distantLightDataUploadBuffer, 0, &distantLightShaderParameters, sizeof(DistantLightRenderData));
+            renderBackend->UpdateBuffer(distantLightDataUploadBuffer, 0, &distantLightShaderParameters, sizeof(DistantLightShaderParameters));
             commandList->CopyBuffer(
                 distantLightDataUploadBuffer,
                 0,
                 distantLightDataBuffer,
                 0,
-                sizeof(DistantLightRenderData));
+                sizeof(DistantLightShaderParameters));
             // RenderBackendBarrier barrier[] =
             // {
             //     RenderBackendBarrier(distantLightDataBuffer, RenderBackendBufferSubresourceRange::Whole, RenderBackendResourceState::CopyDst, RenderBackendResourceState::ShaderResource)

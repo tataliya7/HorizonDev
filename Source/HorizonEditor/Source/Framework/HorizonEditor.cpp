@@ -399,6 +399,7 @@ namespace Horizon
         sceneView.displayHeight = swapChainHeight;
 
         sceneView.transformations.Update(sceneView.cameraPosition, sceneView.cameraRotation, sceneView.verticalFOV, sceneView.aspectRatio, sceneView.nearClippingPlane, sceneView.farClippingPlane);
+        sceneView.SetupViewFrustum();
 
         viewMatrix_deprecated = sceneView.transformations.worldToViewMatrix;
         projectionMatrix_deprecated = sceneView.transformations.viewToClipMatrix;
@@ -408,7 +409,6 @@ namespace Horizon
         sceneView.scene->UpdateGPUScene(commandListUpload);
         renderBackend->SubmitCommandLists(&commandListUpload, 1, RenderBackendSwapChainHandle::Null);
         delete commandListUpload;
-
 
         SceneView previewSceneView = {};
 
@@ -453,6 +453,7 @@ namespace Horizon
                 previewSceneView.displayWidth = previewTextureWidth;
                 previewSceneView.displayHeight = previewTextureHeight;
                 previewSceneView.transformations.Update(previewSceneView.cameraPosition, previewSceneView.cameraRotation, previewSceneView.verticalFOV, previewSceneView.aspectRatio, previewSceneView.nearClippingPlane, previewSceneView.farClippingPlane);
+                previewSceneView.SetupViewFrustum();
 
                 renderPreview = true;
             }

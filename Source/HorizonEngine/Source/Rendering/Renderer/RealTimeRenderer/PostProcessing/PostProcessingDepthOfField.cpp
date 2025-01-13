@@ -13,7 +13,7 @@ namespace Horizon
 
     Vector2f OctawebSample(int ring, int s, int ringSampleCount, int ringCount)
     {
-        // Need to place n-1 rings along the radius since center is ring 0
+        // Need to place n-1 rings along the radius since position is ring 0
         float ringSpacing = 1.0f / float(ringCount - 1);
         float r = float(ring) * ringSpacing;
 

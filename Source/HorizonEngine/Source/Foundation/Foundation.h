@@ -116,14 +116,53 @@ namespace Horizon
         Vector3f maximum;
     };
 
-    class Plane
+    struct Sphere
     {
-
+        Vector3f position;
+        float radius;
     };
 
-    class Frustum
+    struct Plane
     {
-    private:
+        Vector3f normal;
+        float distance;
+
+        Plane() = default;
+
+        FORCEINLINE Plane(const Vector3f& normal, const Vector3f& point)
+            : normal(normal)
+            , distance(-glm::dot(normal, point))
+        {
+
+        }
+
+        FORCEINLINE Plane(const Vector3f& a, const Vector3f& b, const Vector3f& c)
+            : normal(glm::normalize(glm::cross(b - a, c - a)))
+            , distance(-glm::dot(normal, a))
+        {
+
+        }
+    };
+
+    struct Frustum
+    {
         Plane planes[6];
     };
+
+    // @todo SIMD optimization
+    inline bool FrustumSphereIntersectionTest(const Frustum& frustum, const Sphere& sphere)
+    {
+        for (uint32 i = 0; i < 6; i++)
+        {
+            Vector3f normal = frustum.planes[i].normal;
+            float dist = frustum.planes[i].distance;
+            float side = Math::DotProduct(sphere.position, normal) + dist;
+            if (side < -sphere.radius)
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
 }
