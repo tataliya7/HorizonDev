@@ -13,7 +13,7 @@ SHADER_CONSTANTS_STRUCT_END();
 
 [shader("compute")]
 [numthreads(8, 8, 1)]
-void BuildDepthPyramidCS(uint2 dispatchThreadID : SV_DispatchThreadID, uint GroupIndex : SV_GroupIndex)
+void BuildDepthPyramidCS(uint2 dispatchThreadID : SV_DispatchThreadID, uint groupIndex : SV_GroupIndex)
 {
     Texture2D inputTexture = ShaderConstants.GetInputTextureSRV();
 

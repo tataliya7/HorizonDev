@@ -915,7 +915,9 @@ namespace Horizon
             "Screen Space Shadow Mask",
             "Virtual Shadow Map Mipmap",
             "Surfel GI Surfel",
-            "Surfel GI Heatmap" };
+            "Surfel GI Heatmap"
+        };
+
         static int currentViewModeIndex = 0;
         ImGui::Combo("##ViewMode", &currentViewModeIndex, viewModes, IM_ARRAYSIZE(viewModes));
         currentDebugVisualizationMode = (SceneViewDebugVisualizationMode)currentViewModeIndex;
@@ -1391,6 +1393,41 @@ namespace Horizon
                     ImGui::NextColumn();
                     ImGui::PushItemWidth(-1);
                     if (ImGui::DragFloat("##BloomRadius", &renderSettings.postProcessingSettings.bloomRadius, 0.001f, 0.0f, 1.0f))
+                    {
+
+                    }
+                    ImGui::PopItemWidth();
+                    ImGui::NextColumn();
+
+                    ImGui::Columns(1);
+                    ImGui::Separator();
+                    ImGui::PopStyleVar();
+
+                    ImGui::TreePop();
+                }
+
+                if (ImGui::TreeNode("Motion Blur"))
+                {
+                    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(2, 2));
+                    ImGui::Columns(2);
+                    ImGui::Separator();
+
+                    ImGui::AlignTextToFramePadding();
+                    ImGui::TextUnformatted("Strength");
+                    ImGui::NextColumn();
+                    ImGui::PushItemWidth(-1);
+                    if (ImGui::DragFloat("##motionBlurIntensity", &renderSettings.postProcessingSettings.motionBlurIntensity, 0.001f, 0.0f, 1.0f))
+                    {
+
+                    }
+                    ImGui::PopItemWidth();
+                    ImGui::NextColumn();
+
+                    ImGui::AlignTextToFramePadding();
+                    ImGui::TextUnformatted("Max Velocity Length");
+                    ImGui::NextColumn();
+                    ImGui::PushItemWidth(-1);
+                    if (ImGui::DragFloat("##motionBlurMaxVelocityLength", &renderSettings.postProcessingSettings.motionBlurMaxVelocityLength, 0.001f, 0.0f, 100.0f))
                     {
 
                     }

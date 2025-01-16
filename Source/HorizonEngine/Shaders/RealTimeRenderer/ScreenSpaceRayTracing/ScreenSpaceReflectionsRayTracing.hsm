@@ -67,21 +67,21 @@ inline uint2 unflatten2D(uint idx, uint2 dim)
     return uint2(idx % dim.x, idx / dim.x);
 }
 
-uint2 GetReflectionIndirectDispatchCoord(uint3 GroupID, uint3 GroupThreadID, Texture2D<uint> tilesBuffer)
+uint2 GetReflectionIndirectDispatchCoord(uint3 groupID, uint3 groupThreadID, Texture2D<uint> tilesBuffer)
 {
     uint tile_replicate = (SSR_TILE_SIZE / SSR_DOWNSAMPLE_FACTOR / SSR_THREAD_GROUP_SIZE) * (SSR_TILE_SIZE / SSR_DOWNSAMPLE_FACTOR / SSR_THREAD_GROUP_SIZE);
-    uint tile_idx = GroupID.x / tile_replicate;
+    uint tile_idx = groupID.x / tile_replicate;
     uint tile_packed = tilesBuffer[uint2(tile_idx, 0)].r;
     uint2 tile = uint2(tile_packed & 0xFFFF, (tile_packed >> 16) & 0xFFFF);
-    uint subtile_idx = GroupID.x % tile_replicate;
+    uint subtile_idx = groupID.x % tile_replicate;
     uint2 subtile = unflatten2D(subtile_idx, SSR_TILE_SIZE / SSR_DOWNSAMPLE_FACTOR / SSR_THREAD_GROUP_SIZE);
     uint2 subtile_upperleft = tile * SSR_TILE_SIZE / SSR_DOWNSAMPLE_FACTOR + subtile * SSR_THREAD_GROUP_SIZE;
-    return subtile_upperleft + unflatten2D(GroupThreadID.x, SSR_THREAD_GROUP_SIZE);
+    return subtile_upperleft + unflatten2D(groupThreadID.x, SSR_THREAD_GROUP_SIZE);
 }
 
 [shader("compute")]
 [numthreads(SSR_THREAD_GROUP_SIZE * SSR_THREAD_GROUP_SIZE, 1, 1)]
-void ScreenSpaceReflectionsRayTracingCS(uint3 GroupID : SV_GroupID, uint3 GroupThreadID : SV_GroupThreadID)
+void ScreenSpaceReflectionsRayTracingCS(uint3 groupID : SV_GroupID, uint3 groupThreadID : SV_GroupThreadID)
 {
     StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
     PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
@@ -100,7 +100,7 @@ void ScreenSpaceReflectionsRayTracingCS(uint3 GroupID : SV_GroupID, uint3 GroupT
     float4 hzbSizeAndInvSize = float4(float(hzbWidth), float(hzbHeight), 1.0 / float(hzbWidth), 1.0 / float(hzbHeight));
     float4 hzbUVFactorAndInvFactor = float4((2), (3), (4), (5));
 
-    uint2 pixelCoord = GetReflectionIndirectDispatchCoord(GroupID, GroupThreadID, tilesBuffer);
+    uint2 pixelCoord = GetReflectionIndirectDispatchCoord(groupID, groupThreadID, tilesBuffer);
     float2 uv = (pixelCoord + 0.5) * float2(1.0 / resolution.x, 1.0 / resolution.y);
 
     RWTexture2D<float4> rayIndirectSpecular = GetRayIndirectSpecularUAV();

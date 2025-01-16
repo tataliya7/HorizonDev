@@ -25,11 +25,11 @@ groupshared int GroupSharedSurfelSpawnCountPerTile;
 [numthreads(SurfelGIScreenTileSize, SurfelGIScreenTileSize, 1)]
 void SurfelGISurfelApplicationCS(
     uint3 dispatchThreadID : SV_DispatchThreadID,
-    uint3 GroupID : SV_GroupID,
-    uint3 GroupThreadID : SV_GroupThreadID,
-    uint GroupIndex : SV_GroupIndex)
+    uint3 groupID : SV_GroupID,
+    uint3 groupThreadID : SV_GroupThreadID,
+    uint groupIndex : SV_GroupIndex)
 {
-    if (GroupIndex == 0)
+    if (groupIndex == 0)
     {
         GroupSharedLowestCoverage = 0xFFFFFFFF;
         GroupSharedSurfelSpawnCountPerTile = 1;

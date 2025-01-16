@@ -16,7 +16,7 @@ SHADER_CONSTANTS_STRUCT_END();
 
 [shader("compute")]
 [numthreads(8, 8, 1)]
-void ScreenSpaceIndirectDiffuseCS(uint3 GroupID : SV_GroupID, uint3 GroupThreadID : SV_GroupThreadID, uint3 dispatchThreadID : SV_DispatchThreadID)
+void ScreenSpaceIndirectDiffuseCS(uint3 groupID : SV_GroupID, uint3 groupThreadID : SV_GroupThreadID, uint3 dispatchThreadID : SV_DispatchThreadID)
 {
     StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
     Texture2D gbuffer0 = ShaderConstants.GetGBuffer0SRV();
@@ -53,7 +53,7 @@ void ScreenSpaceIndirectDiffuseCS(uint3 GroupID : SV_GroupID, uint3 GroupThreadI
     float4 cameraSpacePosition = mul(frameShaderParameters.worldToViewMatrix, float4(worldSpacePosition, 1.0f));
     float cameraSpaceDepth = -cameraSpacePosition.z;
 
-	const float noise = InterleavedGradientNoiseEX(pixelCoord, frameShaderParameters.frameIndexMod8);
+    const float noise = InterleavedGradientNoiseEX(pixelCoord, frameShaderParameters.frameIndexMod8);
 
     float3x3 TBN = CreateTangentSpaceBasis(normal);
 

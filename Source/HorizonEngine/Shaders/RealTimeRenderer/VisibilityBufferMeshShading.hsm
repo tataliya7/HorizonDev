@@ -101,15 +101,15 @@ void VisibilityBufferAS(uint dispatchThreadID : SV_DispatchThreadID)
 [outputtopology("triangle")]
 [numthreads(128, 1, 1)]
 void VisibilityBufferMS(
-    uint GroupThreadID : SV_GroupThreadID,
-    uint GroupID : SV_GroupID,
+    uint groupThreadID : SV_GroupThreadID,
+    uint groupID : SV_GroupID,
     in payload MeshPayload payload,
     out vertices VertexAttributes outVertices[256],
     out indices uint3 outIndices[128],
     out primitives PrimitiveAttributes outPrimitives[128])
 {
-    uint meshletIndex = payload.meshletIndices[GroupID];
-    uint triangleIndex = GroupThreadID;
+    uint meshletIndex = payload.meshletIndices[groupID];
+    uint triangleIndex = groupThreadID;
 
     // TODO
     uint meshletCount = 1;
@@ -129,7 +129,7 @@ void VisibilityBufferMS(
     uint triangleCount = meshletDesc.triangleCount;
     SetMeshOutputCounts(vertexCount, triangleCount);
 
-    uint vertexOutputIndex = GroupThreadID;
+    uint vertexOutputIndex = groupThreadID;
     if (vertexOutputIndex < vertexCount)
     {
         VertexAttributes vertex = GetVertexAttributes(frameShaderParameters, meshletDesc, vertexOutputIndex);

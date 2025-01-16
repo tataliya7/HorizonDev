@@ -16,9 +16,9 @@ BIND_TEXTURE_2D_UAV(7, float4, OutputTexture);
 [numthreads(SurfelGIScreenTileSize, SurfelGIScreenTileSize, 1)]
 void SurfelGIVisualizationCS(
     uint3 dispatchThreadID : SV_DispatchThreadID,
-    uint3 GroupID : SV_GroupID,
-    uint3 GroupThreadID : SV_GroupThreadID,
-    uint GroupIndex : SV_GroupIndex)
+    uint3 groupID : SV_GroupID,
+    uint3 groupThreadID : SV_GroupThreadID,
+    uint groupIndex : SV_GroupIndex)
 {
     StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
     PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];

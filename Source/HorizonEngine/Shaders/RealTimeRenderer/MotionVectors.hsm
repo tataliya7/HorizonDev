@@ -145,4 +145,11 @@ void MotionVectorsCS(uint3 dispatchThreadID : SV_DispatchThreadID)
 
         motionVectorTexture[pixelCoord] = motionVector;
     }
+
+    float linearDepth = ComputeCameraSpaceDepth(sceneDepth, frameShaderParameters.nearClippingPlane, frameShaderParameters.farClippingPlane);
+    if (linearDepth < 10)
+    {
+        //motionVectorTexture[pixelCoord] = float2(5 * frameShaderParameters.renderResolution.z, 0);
+        //motionVectorTexture[pixelCoord] = float2(0, 5*frameShaderParameters.renderResolution.w);
+    }
 }

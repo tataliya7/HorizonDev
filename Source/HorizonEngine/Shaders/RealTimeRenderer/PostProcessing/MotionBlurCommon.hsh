@@ -1,22 +1,46 @@
+/**
+ * Motion Blur
+ *
+ * References
+ * - Morgan McGuire et al. 2012. A reconstruction filter for plausible motion blur.
+ * - Jean-Philippe Guertin et al. 2013. A fast and stable feature-aware motion blur filter.
+ * - Jorge Jimenez. 2014. Next Generation Post Processing in Call of Duty: Advanced Warfare.
+ */
+
 #pragma once
 
-#define MOTION_BLUR_MIRROR_FILTER 1
-
-// Must match c++ side
+// Must match c++
 #define MOTION_BLUR_TILE_SIZE 16
 #define MOTION_BLUR_VELOCITY_DILATION_QUAD_COUNT_PER_INSTANCE 8
 
-float2 CartesianToPolar(float2 c)
+#define MOTION_BLUR_RECONSTRUCTION_FILTER_SAMPLE_COUNT 16
+#define MOTION_BLUR_DEPTH_SCALE 100.0f // 1cm
+#define MOTION_BLUR_MIRROR_FILTER 1
+
+float2 MotionBlurCartesianToPolar(float2 c)
 {
     float r = length(c); // r is the distance from the origin.
     float theta = r > 0.0f ? atan2(c.y, c.x) : 0.0f; // theta is the counterclockwise angle in radians from the positive x-axis.
     return float2(r, theta);
 }
 
-float2 PolarToCartesian(float2 c)
+float2 MotionBlurPolarToCartesian(float2 c)
 {
     float r = c.x; // r is the distance from the origin.
     float theta = c.y; // theta is the counterclockwise angle in radians from the positive x-axis.
     sincos(theta, c.y, c.x);
     return r * c;
+}
+
+// @todo Investigate how to minimize floating point precision loss.
+
+void MotionBlurEncodeVelocityAndDepth(out float2 encodedVelocityAndDepth, in float2 velocity, in float depth)
+{
+    encodedVelocityAndDepth = float2(asfloat((f32tof16(velocity.x) << 16) | (f32tof16(velocity.y) & 0x0000ffff)), depth);
+}
+
+void MotionBlurDecodeVelocityAndDepth(in float2 encodedVelocityAndDepth, out float2 velocity, out float depth)
+{
+    velocity = float2(f16tof32(asuint(encodedVelocityAndDepth.x) >> 16), f16tof32(asuint(encodedVelocityAndDepth.x) & 0x0000ffff));
+    depth = encodedVelocityAndDepth.y;
 }

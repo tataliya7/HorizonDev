@@ -415,9 +415,9 @@ namespace Horizon
         RenderGraphTextureHandle DispatchMotionBlur(
             RenderGraph& renderGraph,
             const SceneView& view,
-            RenderGraphTextureHandle sceneColorTexture,
-            RenderGraphTextureHandle sceneDepthTexture,
-            RenderGraphTextureHandle motionVectorTexture);
+            RenderGraphTextureHandle colorTexture,
+            RenderGraphTextureHandle depthTexture,
+            RenderGraphTextureHandle velocityTexture);
 
         RenderGraphTextureHandle AddLensFlarePass(
             RenderGraph& renderGraph,

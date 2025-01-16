@@ -258,7 +258,7 @@ float GTAOComputeInnerIntegral(float2 horizons, float2 searchDirection, float3 v
 
 [shader("compute")]
 [numthreads(8, 8, 1)]
-void GTAOHorizonSearchAndIntegralCS(uint3 dispatchThreadID : SV_DispatchThreadID, uint2 GroupThreadID : SV_GroupThreadID, uint2 GroupID : SV_GroupID)
+void GTAOHorizonSearchAndIntegralCS(uint3 dispatchThreadID : SV_DispatchThreadID, uint2 groupThreadID : SV_GroupThreadID, uint2 groupID : SV_GroupID)
 {
     StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
     PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];

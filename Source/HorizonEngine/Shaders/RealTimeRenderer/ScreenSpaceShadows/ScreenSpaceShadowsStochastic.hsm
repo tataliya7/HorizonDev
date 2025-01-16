@@ -5,7 +5,7 @@
 
 [shader("compute")]
 [numthreads(8, 8, 1)]
-void ScreenSpaceShadowsStochasticCS(uint3 GroupID : SV_GroupID, uint3 GroupThreadID : SV_GroupThreadID)
+void ScreenSpaceShadowsStochasticCS(uint3 groupID : SV_GroupID, uint3 groupThreadID : SV_GroupThreadID)
 {
     // float3 shadowRayOrigin = worldSpacePosition;
     // float3 shadowRayDirection = -normalize(frameShaderParameters.atmosphericLightDirection);

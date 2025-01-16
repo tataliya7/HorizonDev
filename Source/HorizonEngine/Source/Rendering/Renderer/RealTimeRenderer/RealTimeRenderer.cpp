@@ -470,7 +470,7 @@ namespace Horizon
             // TODO: Move post processing settings form PerFrameShaderParameters to other place
             {
                 perFrameShaderParameters.motionBlurIntensity = finalPostProcessingSettings.motionBlurIntensity;
-                perFrameShaderParameters.motionBlurMaxVelocityLengthInPixels = finalPostProcessingSettings.motionBlurMaxVelocityLength / 100.0f * 0.5f * std::max(targetResolution.width, targetResolution.height);
+                perFrameShaderParameters.motionBlurMaxVelocityLengthInPixels = finalPostProcessingSettings.motionBlurMaxVelocityLength / 100.0f * std::max(targetResolution.width, targetResolution.height);
 
                 perFrameShaderParameters.autoExposureExposureCompensation = finalPostProcessingSettings.autoExposureExposureCompensation;
                 perFrameShaderParameters.autoExposureMinExposureValue = finalPostProcessingSettings.autoExposureMinExposureValue;

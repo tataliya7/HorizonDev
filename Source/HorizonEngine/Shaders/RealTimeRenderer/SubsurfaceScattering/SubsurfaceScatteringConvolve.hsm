@@ -21,7 +21,7 @@ struct SubsurfaceScatteringSample
 
 [shader("compute")]
 [numthreads(SUBSURFACE_SCATTERING_TILE_SIZE * SUBSURFACE_SCATTERING_TILE_SIZE, 1, 1)]
-void SubsurfaceScatteringConvolveCS(uint3 GroupID : SV_GroupID, uint GroupIndex : SV_GroupIndex)
+void SubsurfaceScatteringConvolveCS(uint3 groupID : SV_GroupID, uint groupIndex : SV_GroupIndex)
 {
     // PerFrameShaderParameters frameShaderParameters = perFrameDataBuffer.Load<PerFrameShaderParameters>(0);
     // Texture2D gbuffer0 = GetGBuffer0SRV();
@@ -31,8 +31,8 @@ void SubsurfaceScatteringConvolveCS(uint3 GroupID : SV_GroupID, uint GroupIndex 
     // uint width, height;
     // outputTexture.GetDimensions(width, height);
 
-    // uint2 tileIndex = tileDataBuffer.Load<uint2>(GroupID * sizeof(uint2));
-    uint2 pixelCoord = tileIndex * uint2(SUBSURFACE_SCATTERING_TILE_SIZE, SUBSURFACE_SCATTERING_TILE_SIZE) + uint2(GroupIndex / 8, GroupIndex % 8);
+    // uint2 tileIndex = tileDataBuffer.Load<uint2>(groupID * sizeof(uint2));
+    uint2 pixelCoord = tileIndex * uint2(SUBSURFACE_SCATTERING_TILE_SIZE, SUBSURFACE_SCATTERING_TILE_SIZE) + uint2(groupIndex / 8, groupIndex % 8);
     float2 centerUV = (pixelCoord + 0.5f) * frameShaderParameters.renderResolution.zw;
 
     // if (pixelCoord.x >= width || pixelCoord.y >= height)

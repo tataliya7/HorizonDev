@@ -391,8 +391,8 @@ namespace Horizon
             shaderLibrary->LoadShader(ShaderID::LocalFogVolumePS, shaderDesc);
         }
         {
-            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/PostProcessing/MotionBlurSetup.hsm", "MotionBlurSetupCS");
-            shaderLibrary->LoadShader(ShaderID::MotionBlurSetupCS, shaderDesc);
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/PostProcessing/MotionBlurTileClassification.hsm", "MotionBlurTileClassificationCS");
+            shaderLibrary->LoadShader(ShaderID::MotionBlurTileClassificationCS, shaderDesc);
         }
         {
             ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Vertex, "Shaders/RealTimeRenderer/PostProcessing/MotionBlurVelocityDilation.hsm", "MotionBlurVelocityDilationScatterVS");

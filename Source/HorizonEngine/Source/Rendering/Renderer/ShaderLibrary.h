@@ -107,7 +107,7 @@ namespace Horizon
         LocalFogVolumeVS,
         LocalFogVolumePS,
         TemporalSuperSampling,
-        MotionBlurSetupCS,
+        MotionBlurTileClassificationCS,
         MotionBlurVelocityDilationScatterVS,
         MotionBlurVelocityDilationScatterPS,
         MotionBlurReconstructionFilterCS,

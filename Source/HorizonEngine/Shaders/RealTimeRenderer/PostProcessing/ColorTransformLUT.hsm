@@ -117,7 +117,7 @@ void ColorTransformLUTCS(uint3 dispatchThreadID : SV_DispatchThreadID)
 {
     StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
     PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
-    RWTexture3D<float4> colorLUTTexture = ShaderConstants.GetColorTransformLUTTextureUAV();
+    RWTexture3D<float4> colorTransformLUTTexture = ShaderConstants.GetColorTransformLUTTextureUAV();
 
     float whiteBalance = frameShaderParameters.whiteBalance;
 
@@ -164,5 +164,5 @@ void ColorTransformLUTCS(uint3 dispatchThreadID : SV_DispatchThreadID)
     //     // acescg = ToneMappingOperatorCustom();
     // }
 
-    colorLUTTexture[pixelCoord] = float4(finalColor / 1.05f, 1.0f);
+    colorTransformLUTTexture[pixelCoord] = float4(finalColor / 1.05f, 1.0f);
 }

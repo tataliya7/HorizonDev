@@ -54,12 +54,10 @@ namespace Horizon
             renderGraph.ExportTextureDeferred(sceneColorTexture, &historyFrame.temporalSuperSamplingOutputTexture);
         }
 
-#if 0
         if (IsMotionBlurEnabled())
         {
             sceneColorTexture = DispatchMotionBlur(renderGraph, view, sceneColorTexture, sceneDepthTexture, motionVectorTexture);
         }
-#endif
 
         //sceneColorTexture = renderGraph.ImportExternalTexture(localExposureTestTexture, localExposureTestTextureDesc, RenderBackendResourceState::ShaderResource, "Test");
         PostProcessingSceneColorMipChain sceneColorMipChain;

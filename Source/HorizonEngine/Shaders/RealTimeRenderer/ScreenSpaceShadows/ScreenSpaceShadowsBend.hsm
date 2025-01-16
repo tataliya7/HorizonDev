@@ -63,7 +63,7 @@ DispatchParameters CreateBendSSSDispatchParameters(
 
 [shader("compute")]
 [numthreads(WAVE_SIZE, 1, 1)]
-void ScreenSpaceShadowsBendCS(uint3 GroupID : SV_GroupID, uint3 GroupThreadID : SV_GroupThreadID)
+void ScreenSpaceShadowsBendCS(uint3 groupID : SV_GroupID, uint3 groupThreadID : SV_GroupThreadID)
 {
     Texture2D<float> depthTexture = ShaderConstants.GetDepthTextureSRV();
     RWTexture2D<float> outputTexture = ShaderConstants.GetOutputTextureUAV();
@@ -85,5 +85,5 @@ void ScreenSpaceShadowsBendCS(uint3 GroupID : SV_GroupID, uint3 GroupThreadID : 
         depthTexture,
         outputTexture);
 
-    WriteScreenSpaceShadow(parameters, GroupID, GroupThreadID.x);
+    WriteScreenSpaceShadow(parameters, groupID, groupThreadID.x);
 }
