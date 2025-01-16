@@ -499,8 +499,8 @@ namespace Horizon
             shaderLibrary->LoadShader(ShaderID::ColorTransformLUT, shaderDesc);
         }
         {
-            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/PostProcessing/ToneMapping.hsm", "ToneMappingCS");
-            shaderLibrary->LoadShader(ShaderID::ToneMapping, shaderDesc);
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/PostProcessing/FinalComposition.hsm", "FinalCompositionCS");
+            shaderLibrary->LoadShader(ShaderID::FinalComposition, shaderDesc);
         }
         // {
         //     ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Vertex, "Shaders/RealTimeRenderer/PostProcessing/SelectionOutlineMask.hsm", "SelectionOutlineMaskVS");
@@ -564,27 +564,6 @@ namespace Horizon
         }
 
         {
-            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::RayGen, "Shaders/RealTimeRenderer/HardwareRayTracing/PathTracing.hsm", "PathTracingRayGen");
-            shaderDesc.AddDefine("RAY_TRACING_ENABLED", 1);
-            shaderLibrary->LoadShader(ShaderID::PathTracingRayGen, shaderDesc);
-        }
-        {
-            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Miss, "Shaders/RealTimeRenderer/HardwareRayTracing/PathTracing.hsm", "PathTracingDefaultMiss");
-            shaderDesc.AddDefine("RAY_TRACING_ENABLED", 1);
-            shaderLibrary->LoadShader(ShaderID::PathTracingDefaultMiss, shaderDesc);
-        }
-        {
-            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Miss, "Shaders/RealTimeRenderer/HardwareRayTracing/PathTracing.hsm", "PathTracingShadowRayMiss");
-            shaderDesc.AddDefine("RAY_TRACING_ENABLED", 1);
-            shaderLibrary->LoadShader(ShaderID::PathTracingShadowRayMiss, shaderDesc);
-        }
-        {
-            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::ClosestHit, "Shaders/RealTimeRenderer/HardwareRayTracing/PathTracing.hsm", "PathTracingDefaultOpaqueClosestHit");
-            shaderDesc.AddDefine("RAY_TRACING_ENABLED", 1);
-            shaderLibrary->LoadShader(ShaderID::PathTracingDefaultOpaqueClosestHit, shaderDesc);
-        }
-
-        {
             ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::RayGen, "Shaders/RealTimeRenderer/HardwareRayTracing/RayTracingShadows.hsm", "RayTracingShadowsRayGen");
             shaderDesc.AddDefine("RAY_TRACING_ENABLED", 1);
             shaderLibrary->LoadShader(ShaderID::RayTracingShadowsRayGen, shaderDesc);
@@ -600,6 +579,29 @@ namespace Horizon
             shaderDesc.AddDefine("RAY_TRACING_ENABLED", 1);
             shaderDesc.shaderCompilerOptions.inlineRayTracing = true;
             shaderLibrary->LoadShader(ShaderID::RayTracingShadowsInlineRayTracing, shaderDesc);
+        }
+
+        {
+            {
+                ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::RayGen, "Shaders/PathTracingRenderer/PathTracing.hsm", "PathTracingRayGen");
+                shaderDesc.AddDefine("RAY_TRACING_ENABLED", 1);
+                shaderLibrary->LoadShader(ShaderID::PathTracingRayGen, shaderDesc);
+            }
+            {
+                ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Miss, "Shaders/PathTracingRenderer/PathTracing.hsm", "PathTracingDefaultMiss");
+                shaderDesc.AddDefine("RAY_TRACING_ENABLED", 1);
+                shaderLibrary->LoadShader(ShaderID::PathTracingDefaultMiss, shaderDesc);
+            }
+            {
+                ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Miss, "Shaders/PathTracingRenderer/PathTracing.hsm", "PathTracingShadowRayMiss");
+                shaderDesc.AddDefine("RAY_TRACING_ENABLED", 1);
+                shaderLibrary->LoadShader(ShaderID::PathTracingShadowRayMiss, shaderDesc);
+            }
+            {
+                ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::ClosestHit, "Shaders/PathTracingRenderer/PathTracing.hsm", "PathTracingDefaultOpaqueClosestHit");
+                shaderDesc.AddDefine("RAY_TRACING_ENABLED", 1);
+                shaderLibrary->LoadShader(ShaderID::PathTracingDefaultOpaqueClosestHit, shaderDesc);
+            }
         }
     }
 }

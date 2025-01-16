@@ -97,14 +97,11 @@ namespace Horizon
             }
         }
 
-        if (true) // Tone mapping is always enabled.
-        {
-            RenderGraphTextureHandle colorLUTTexture = RenderColorTransformLUT(renderGraph, view);
+        RenderGraphTextureHandle colorLUTTexture = RenderColorTransformLUT(renderGraph, view);
 
-            bool outputInHDR = false;
+        bool outputInHDR = false;
 
-            sceneColorTexture = AddToneMappingPass(renderGraph, view, sceneColorTexture, bloomTexture, localExposureTexture, colorLUTTexture, autoExposureBuffer, outputInHDR);
-        }
+        sceneColorTexture = DispatchFinalComposition(renderGraph, view, sceneColorTexture, bloomTexture, localExposureTexture, colorLUTTexture, autoExposureBuffer, outputInHDR);
 
         RenderGraphTextureHandle sceneColorTextureAfterToneMapping = sceneColorTexture;
 

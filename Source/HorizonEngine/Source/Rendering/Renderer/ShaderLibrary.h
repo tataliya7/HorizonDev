@@ -133,7 +133,7 @@ namespace Horizon
         LocalExposureBlendLaplacian,
         LocalExposureGuidedUpsampling,
         ColorTransformLUT,
-        ToneMapping,
+        FinalComposition,
         SelectionOutlineMaskVS,
         SelectionOutlineMaskPS,
         SelectionOutlineSetup,

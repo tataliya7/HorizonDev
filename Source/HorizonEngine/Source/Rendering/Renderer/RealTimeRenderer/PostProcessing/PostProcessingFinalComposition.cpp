@@ -3,18 +3,18 @@
 
 namespace Horizon
 {
-    RenderGraphTextureHandle RealTimeRenderer::AddToneMappingPass(
+    RenderGraphTextureHandle RealTimeRenderer::DispatchFinalComposition(
         RenderGraph& renderGraph,
         const SceneView& view,
-        RenderGraphTextureHandle sceneColorTexture,
+        RenderGraphTextureHandle colorTexture,
         RenderGraphTextureHandle bloomTexture,
         RenderGraphTextureHandle localExposureTexture,
-        RenderGraphTextureHandle colorLUTTexture,
+        RenderGraphTextureHandle colorTransformLUTTexture,
         RenderGraphBufferHandle autoExposureBuffer,
         bool outputInHDR)
     {
-        assert(sceneColorTexture);
-        assert(colorLUTTexture);
+        assert(colorTexture);
+        assert(colorTransformLUTTexture);
         assert(autoExposureBuffer);
 
         const bool isBloomTextureValid = !bloomTexture.IsNullHandle();
@@ -69,14 +69,14 @@ namespace Horizon
         RenderGraphTextureHandle outputTexture = renderGraph.ImportExternalTexture(view.targetTexture, "TargetTexture");
 
         renderGraph.AddPass(
-            std::format("ToneMapping (Compute, {}x{})", outputTextureDesc.width, outputTextureDesc.height),
+            std::format("FinalComposition (Compute, {}x{})", outputTextureDesc.width, outputTextureDesc.height),
             RenderGraphPassFlags::Compute,
             [&](RenderGraphBuilder& builder)
             {
-                sceneColorTexture = builder.ReadTexture(sceneColorTexture, RenderBackendResourceState::ShaderResource);
+                colorTexture = builder.ReadTexture(colorTexture, RenderBackendResourceState::ShaderResource);
                 bloomTexture = builder.ReadTexture(bloomTexture, RenderBackendResourceState::ShaderResource);
                 localExposureTexture = builder.ReadTexture(localExposureTexture, RenderBackendResourceState::ShaderResource);
-                colorLUTTexture = builder.ReadTexture(colorLUTTexture, RenderBackendResourceState::ShaderResource);
+                colorTransformLUTTexture = builder.ReadTexture(colorTransformLUTTexture, RenderBackendResourceState::ShaderResource);
                 autoExposureBuffer = builder.ReadBuffer(autoExposureBuffer, RenderBackendResourceState::ShaderResource);
                 outputTexture = builder.WriteTexture(outputTexture, RenderBackendResourceState::UnorderedAccess);
 
@@ -88,11 +88,11 @@ namespace Horizon
 
                     RenderBackendShaderConstants shaderConstants = {};
                     shaderConstants.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
-                    shaderConstants.BindTextureSRV(1, registry.GetTextureSRVBindlessResourceDescriptorIndex(sceneColorTexture));
+                    shaderConstants.BindTextureSRV(1, registry.GetTextureSRVBindlessResourceDescriptorIndex(colorTexture));
                     shaderConstants.BindTextureSRV(2, renderBackend->GetTextureSRVBindlessResourceDescriptorIndex(lensDirtTexture));
                     shaderConstants.BindTextureSRV(3, registry.GetTextureSRVBindlessResourceDescriptorIndex(bloomTexture));
                     shaderConstants.BindTextureSRV(4, registry.GetTextureSRVBindlessResourceDescriptorIndex(localExposureTexture));
-                    shaderConstants.BindTextureSRV(5, registry.GetTextureSRVBindlessResourceDescriptorIndex(colorLUTTexture));
+                    shaderConstants.BindTextureSRV(5, registry.GetTextureSRVBindlessResourceDescriptorIndex(colorTransformLUTTexture));
                     shaderConstants.BindBufferSRV(6, registry.GetBufferSRVBindlessResourceDescriptorIndex(autoExposureBuffer));
                     shaderConstants.BindTextureUAV(7, registry.GetTextureUAVBindlessResourceDescriptorIndex(outputTexture, 0));
 
@@ -102,7 +102,7 @@ namespace Horizon
                     //shaderConstants.BindScalar(1, chromaticAberrationScale.x);
                     //shaderConstants.BindScalar(2, chromaticAberrationScale.y);
 
-                    RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::ToneMapping);
+                    RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::FinalComposition);
 
                     commandList.Dispatch(
                         computeShader,

@@ -1,8 +1,8 @@
 #include "../../ShaderCommon.hsh"
-#include "../../ACES.hsh" // TODO: Remove this
+#include "../../ACES.hsh"
 #include "../RealTimeRendererCommon.hsh"
 #include "PostProcessingCommon.hsh"
-#include "ToneMappingCommon.hsh"
+#include "ToneMappingCommon.hsh" // TODO: remove this
 #include "ColorTransformLUTCommon.hsh"
 
 SHADER_CONSTANTS_STRUCT_BEGIN();
@@ -28,7 +28,7 @@ float3 Lookup3DColorTransformLUT(Texture3D colorLUT, float3 linearColor)
 
 [shader("compute")]
 [numthreads(POST_PROCESSING_THREAD_GROUP_SIZE_X, POST_PROCESSING_THREAD_GROUP_SIZE_Y, 1)]
-void ToneMappingCS(uint3 dispatchThreadID : SV_DispatchThreadID)
+void FinalCompositionCS(uint3 dispatchThreadID : SV_DispatchThreadID)
 {
     StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
     PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];

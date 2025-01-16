@@ -396,13 +396,13 @@ namespace Horizon
             RenderGraph& renderGraph,
             const SceneView& view);
 
-        RenderGraphTextureHandle AddToneMappingPass(
+        RenderGraphTextureHandle DispatchFinalComposition(
             RenderGraph& renderGraph,
             const SceneView& view,
-            RenderGraphTextureHandle sceneColorTexture,
+            RenderGraphTextureHandle colorTexture,
             RenderGraphTextureHandle bloomTexture,
             RenderGraphTextureHandle localExposureTexture,
-            RenderGraphTextureHandle colorLUTTexture,
+            RenderGraphTextureHandle colorTransformLUTTexture,
             RenderGraphBufferHandle autoExposureBuffer,
             bool outputInHDR);
 
