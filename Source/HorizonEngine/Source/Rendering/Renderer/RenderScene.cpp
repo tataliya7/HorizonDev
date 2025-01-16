@@ -218,7 +218,7 @@ namespace Horizon
 
     RayTracingScene* RenderScene::CreateRayTracingScene()
     {
-        //rayTracingScene = new RayTracingScene();
+        rayTracingScene = new RayTracingScene();
         return rayTracingScene;
     }
 

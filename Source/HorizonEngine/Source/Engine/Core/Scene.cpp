@@ -29,7 +29,11 @@ namespace Horizon
         ShaderLibrary* shaderLibrary = renderSystem->GetShaderLibrary();
 
         renderScene = new RenderScene(renderBackend, shaderLibrary);
-        renderScene->CreateRayTracingScene();
+
+        if (renderSystem->enableHardwareRayTracing)
+        {
+            renderScene->CreateRayTracingScene();
+        }
     }
 
     Scene::~Scene()
