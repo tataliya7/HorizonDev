@@ -25,7 +25,7 @@ SHADER_CONSTANTS_TEXTURE_2D_SRV(3, float2, VelocityAndDepthTextureSRV);
 SHADER_CONSTANTS_TEXTURE_2D_UAV(4, float3, OutputTextureUAV);
 SHADER_CONSTANTS_STRUCT_END();
 
-// Depth compare function returns two weights (background and foreground) that sum one.
+// Depth compare function.
 float2 DepthCompare(float centerDepth, float sampleDepth, float depthScale)
 {
     return saturate(0.5f + float2(depthScale, -depthScale) * (sampleDepth - centerDepth));
@@ -85,89 +85,118 @@ void MotionBlurReconstructionFilterCS(uint3 dispatchThreadID : SV_DispatchThread
 
     float2 dominantVelocityVector = maxVelocity * frameShaderParameters.renderResolution.zw;
 
+    float minVelocityLength = length(minVelocity);
     float maxVelocityLength = length(maxVelocity);
 
-    // [branch]
-    // if () // No blur
-    // {
-    //     outputTexture[pixelCoord] = centerColor;
-    //     return;
-    // }
+    [branch]
+    if (maxVelocityLength < 0.5f) // No blur
+    {
+        outputTexture[pixelCoord] = centerColor;
+        return;
+    }
 
-    float noise = InterleavedGradientNoise(float2(pixelCoord) + 0.5f);
+    float noise = InterleavedGradientNoise(float2(pixelCoord.x, pixelCoord.y) + 0.5f);
 
     const uint sampleCount = MOTION_BLUR_RECONSTRUCTION_FILTER_SAMPLE_COUNT;
     const uint iterations = sampleCount >> 1;
 
-    const float pixelToSampleUnitsScale = iterations * rsqrt(dot(maxVelocity, maxVelocity));
+	[branch]
+	if (minVelocityLength > MOTION_BLUR_SIMPLE_COLOR_AVERAGE_MIN_VELOCITY_THRESHOLD * maxVelocityLength) // Simple color average
+	{
+        float4 finalColor = 0.0f;
 
-    // Accumulated color (rgb) and weights (a).
-    float4 sum = 0.0f;
+		[unroll]
+		for (uint i = 0; i < iterations; i++)
+		{
+            float offsetLength = float(i) + 0.5f + (noise - 0.5f);
+            float sampleOffset = offsetLength * rcp(float(iterations));
 
-    // Apply a variable-width directional blur along the dominant velocity vector.
-    [loop]
-    for (uint i = 0; i < iterations; i++)
+            float2 sampleUV0 = centerUV - sampleOffset * dominantVelocityVector;
+            float2 sampleUV1 = centerUV + sampleOffset * dominantVelocityVector;
+
+            float4 sampleColor0 = colorTexture.SampleLevel(GlobalSamplerPointClamp, sampleUV0, 0.0f);
+            float4 sampleColor1 = colorTexture.SampleLevel(GlobalSamplerPointClamp, sampleUV1, 0.0f);
+
+            finalColor += sampleColor0;
+            finalColor += sampleColor1;
+		}
+
+        finalColor *= 1.0f / float(sampleCount);
+
+        outputTexture[pixelCoord] = finalColor.rgb;
+	}
+    else // Loop
     {
-        // The first two samples are 0.5 steps away from the center.
-        // Add random noise to mask the undersampling artifacts.
-        float offsetLength = float(i) + 0.5f + (noise - 0.5f);
+        float pixelToSampleUnitsScale = iterations * rsqrt(dot(maxVelocity, maxVelocity));
 
-        float sampleOffset = offsetLength * rcp(float(iterations));
+        // Accumulated color (rgb) and weight (a).
+        float4 sum = 0.0f;
 
-        // The original paper assumes that V_Y is along V_N. Is was better to sometimes blur in the wrong direction than not blur at all.
-        float2 sampleUV0 = centerUV - sampleOffset * dominantVelocityVector;
-        float2 sampleUV1 = centerUV + sampleOffset * dominantVelocityVector;
+        // Apply a variable-width directional blur along the dominant velocity vector.
+        [loop]
+        for (uint i = 0; i < iterations; i++)
+        {
+            // The first two samples are 0.5 steps away from the center.
+            // Add random noise to mask the undersampling artifacts.
+            float offsetLength = float(i) + 0.5f + (noise - 0.5f);
+            float sampleOffset = offsetLength * rcp(float(iterations));
 
-        // Use point sampling to avoid bleeding.
-        float4 sampleColor0 = colorTexture.SampleLevel(GlobalSamplerPointClamp, sampleUV0, 0);
-        float4 sampleColor1 = colorTexture.SampleLevel(GlobalSamplerPointClamp, sampleUV1, 0);
+            // As in the original paper "A reconstruction filter for plausible motion blur", we assumes that V_Y is along V_N.
+            // Is was better to sometimes blur in the wrong direction than not blur at all.
+            float2 sampleUV0 = centerUV - sampleOffset * dominantVelocityVector;
+            float2 sampleUV1 = centerUV + sampleOffset * dominantVelocityVector;
 
-        // Unpack velocity and depth from a R32G32_FLOAT texture.
-        // Reduces taps per sample from 3 (color, velocity, depth) to 2 (color, velocity & depth).
-        float2 sampleVelocityAndDepth0 = velocityAndDepthTexture.SampleLevel(GlobalSamplerPointClamp, sampleUV0, 0);
-        float2 sampleVelocityAndDepth1 = velocityAndDepthTexture.SampleLevel(GlobalSamplerPointClamp, sampleUV1, 0);
+            // Use point sampling to avoid bleeding.
+            float4 sampleColor0 = colorTexture.SampleLevel(GlobalSamplerPointClamp, sampleUV0, 0.0f);
+            float4 sampleColor1 = colorTexture.SampleLevel(GlobalSamplerPointClamp, sampleUV1, 0.0f);
 
-        float2 sampleVelocity0; float sampleDepth0;
-        MotionBlurDecodeVelocityAndDepth(sampleVelocityAndDepth0, sampleVelocity0, sampleDepth0);
+            // Unpack velocity and depth from a R32G32_FLOAT texture.
+            // Reduces taps per sample from 3 (color, velocity, depth) to 2 (color, velocity & depth).
+            float2 sampleVelocityAndDepth0 = velocityAndDepthTexture.SampleLevel(GlobalSamplerPointClamp, sampleUV0, 0.0f);
+            float2 sampleVelocityAndDepth1 = velocityAndDepthTexture.SampleLevel(GlobalSamplerPointClamp, sampleUV1, 0.0f);
 
-        float2 sampleVelocity1; float sampleDepth1;
-        MotionBlurDecodeVelocityAndDepth(sampleVelocityAndDepth1, sampleVelocity1, sampleDepth1);
+            float2 sampleVelocity0; float sampleDepth0;
+            MotionBlurDecodeVelocityAndDepth(sampleVelocityAndDepth0, sampleVelocity0, sampleDepth0);
 
-        float sampleVelocityLength0 = sampleVelocity0.x;
-        float sampleVelocityLength1 = sampleVelocity1.x;
+            float2 sampleVelocity1; float sampleDepth1;
+            MotionBlurDecodeVelocityAndDepth(sampleVelocityAndDepth1, sampleVelocity1, sampleDepth1);
 
-        float weight0 = SampleWeight(
-            centerDepth,
-            centerVelocityLength,
-            sampleDepth0,
-            sampleVelocityLength0,
-            offsetLength,
-            pixelToSampleUnitsScale,
-            MOTION_BLUR_DEPTH_SCALE);
+            float sampleVelocityLength0 = sampleVelocity0.x;
+            float sampleVelocityLength1 = sampleVelocity1.x;
 
-        float weight1 = SampleWeight(
-            centerDepth,
-            centerVelocityLength,
-            sampleDepth1,
-            sampleVelocityLength1,
-            offsetLength,
-            pixelToSampleUnitsScale,
-            MOTION_BLUR_DEPTH_SCALE);
+            float weight0 = SampleWeight(
+                centerDepth,
+                centerVelocityLength,
+                sampleDepth0,
+                sampleVelocityLength0,
+                offsetLength,
+                pixelToSampleUnitsScale,
+                MOTION_BLUR_DEPTH_SCALE);
 
-        #if MOTION_BLUR_MIRROR_FILTER
-            bool2 mirror = bool2(sampleDepth0 > sampleDepth1, sampleVelocityLength1 > sampleVelocityLength0);
-            weight0 = all(mirror) ? weight1 : weight0;
-            weight1 = any(mirror) ? weight1 : weight0;
-        #endif
+            float weight1 = SampleWeight(
+                centerDepth,
+                centerVelocityLength,
+                sampleDepth1,
+                sampleVelocityLength1,
+                offsetLength,
+                pixelToSampleUnitsScale,
+                MOTION_BLUR_DEPTH_SCALE);
 
-        sum += weight0 * float4(sampleColor0.rgb, 1.0f);
-        sum += weight1 * float4(sampleColor1.rgb, 1.0f);
+            #if MOTION_BLUR_MIRROR_FILTER
+                bool2 mirror = bool2(sampleDepth0 > sampleDepth1, sampleVelocityLength1 > sampleVelocityLength0);
+                weight0 = all(mirror) ? weight1 : weight0;
+                weight1 = any(mirror) ? weight1 : weight0;
+            #endif
+
+            sum += weight0 * float4(sampleColor0.rgb, 1.0f);
+            sum += weight1 * float4(sampleColor1.rgb, 1.0f);
+        }
+
+        sum *= 1.0f / float(sampleCount);
+
+        // Foreground + (1 - Alpha) * Background
+        float3 finalColor = sum.rgb + (1.0f - sum.a) * centerColor.rgb;
+
+        outputTexture[pixelCoord] = finalColor;
     }
-
-    sum *= 1.0f / float(sampleCount);
-
-    // Foreground + (1 - Alpha) * Background
-    float3 finalColor = sum.rgb + (1.0f - sum.a) * centerColor.rgb;
-
-    outputTexture[pixelCoord] = finalColor;
 }
