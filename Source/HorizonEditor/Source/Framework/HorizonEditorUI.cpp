@@ -922,12 +922,12 @@ namespace Horizon
         ImGui::Combo("##ViewMode", &currentViewModeIndex, viewModes, IM_ARRAYSIZE(viewModes));
         currentDebugVisualizationMode = (SceneViewDebugVisualizationMode)currentViewModeIndex;
 
-        static RenderBackendTextureHandle renderDocLogoTexture = RenderBackendTextureHandle::Null;
-        if (renderDocLogoTexture == RenderBackendTextureHandle::Null)
+        static RenderBackendTextureHandle renderDocIconTexture = RenderBackendTextureHandle::Null;
+        if (renderDocIconTexture == RenderBackendTextureHandle::Null)
         {
-            renderDocLogoTexture = LoadTextureFromFile(renderBackend, nullptr, "../../../Source/HorizonEditor/Plugins/RenderDoc/Resources/renderdoc_logo.png", false, false);
+            renderDocIconTexture = LoadTextureFromFile(renderBackend, nullptr, "../../../Source/HorizonEditor/Plugins/DevelopmentTools/RenderDoc/Resources/renderdoc_icon_256x256.png", false, false);
         }
-        if (ImGui::ImageButtonEx(ImGui::GetID("##RenderDocCapture"), renderDocLogoTexture.ToUnit64(), ImVec2(25, 25), ImVec2(0, 0), ImVec2(1, 1), ImVec4(0, 0, 0, 0), ImVec4(1, 1, 1, 1)))
+        if (ImGui::ImageButtonEx(ImGui::GetID("##RenderDocCapture"), renderDocIconTexture.ToUnit64(), ImVec2(25, 25), ImVec2(0, 0), ImVec2(1, 1), ImVec4(0, 0, 0, 0), ImVec4(1, 1, 1, 1)))
         {
             RenderDocPluginTriggerCapture();
         }
