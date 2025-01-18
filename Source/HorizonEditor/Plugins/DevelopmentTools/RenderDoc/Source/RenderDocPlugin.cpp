@@ -38,10 +38,12 @@ namespace Horizon
         int patch = 0;
         renderdocAPI->GetAPIVersion(&major, &minor, &patch);
 
+        // Disable the overlay. 
+        renderdocAPI->MaskOverlayBits(eRENDERDOC_Overlay_None, eRENDERDOC_Overlay_None);
+
         renderdocAPI->SetCaptureFilePathTemplate("RenderDocCaptures/capture");
         renderdocAPI->SetFocusToggleKeys(nullptr, 0);
         //renderdocAPI->SetCaptureKeys(nullptr, 0);
-        renderdocAPI->MaskOverlayBits(eRENDERDOC_Overlay_None, eRENDERDOC_Overlay_None);
         renderdocAPI->SetCaptureOptionU32(eRENDERDOC_Option_DebugOutputMute, 0);
 
         LogInfo(GLogger, std::format("Found renderdoc library, API version: {}.{}.{}.", major, minor, patch));
