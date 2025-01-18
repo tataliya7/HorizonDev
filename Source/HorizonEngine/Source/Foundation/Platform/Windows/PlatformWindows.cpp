@@ -1,6 +1,8 @@
 #include "../PlatformGenericAPI.h"
 #include "PlatformWindows.h"
 
+#include "Foundation/Logging/Logging.h"
+
 namespace Horizon
 {
     void OSYieldCPUProcessor()
@@ -83,5 +85,53 @@ namespace Horizon
     {
         // x86
         _mm_sfence();
+    }
+
+    OSLibraryHandle OSLoadLibrary(const char* filename)
+    {
+        std::filesystem::path absolutePath = std::filesystem::absolute(filename);
+
+        if (std::filesystem::exists(absolutePath))
+        {
+            // Try to find a loaded library.
+            HMODULE handle = GetModuleHandleW(absolutePath.wstring().c_str());
+
+            if (handle != NULL)
+            {
+                return handle;
+            }
+
+            handle = LoadLibraryW(absolutePath.wstring().c_str());
+
+            if (handle != NULL)
+            {
+                LogVerbose(GLogger, std::format("Loaded: {}.", absolutePath.string()));
+            }
+            else
+            {
+                DWORD lastError = GetLastError();
+                LogError(GLogger, std::format("Failed to load library: {}. Error: {}.", absolutePath.string(), lastError));
+            }
+
+            return handle;
+        }
+
+        return NULL;
+    }
+
+    void OSFreeLibrary(OSLibraryHandle handle)
+    {
+        FreeLibrary(static_cast<HMODULE>(handle));
+    }
+
+    void* OSGetSymbolAddressFromLibrary(OSLibraryHandle handle, const char* name)
+    {
+        FARPROC proc = GetProcAddress(static_cast<HMODULE>(handle), name);
+        if (proc == NULL)
+        {
+            DWORD lastError = GetLastError();
+            return nullptr;
+        }
+        return reinterpret_cast<void*>(proc);
     }
 }

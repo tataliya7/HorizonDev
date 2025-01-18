@@ -25,5 +25,5 @@ namespace Horizon
 
     TemporalSuperSamplingInterface* StreamlineDLSSSuperResolutionCreate(RenderBackend* renderBackend);
 
-    void StreamlineDLSSSuperResolutionDestroy(TemporalSuperSamplingInterface* interface);
+    void StreamlineDLSSSuperResolutionDestroy(TemporalSuperSamplingInterface* temporalSuperSamplingInterface);
 }

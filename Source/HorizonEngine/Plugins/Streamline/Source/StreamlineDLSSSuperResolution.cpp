@@ -207,8 +207,8 @@ namespace Horizon
         return new StreamlineDLSSSuperResolution(renderBackend);
     }
 
-    void StreamlineDLSSSuperResolutionDestroy(TemporalSuperSamplingInterface* interface)
+    void StreamlineDLSSSuperResolutionDestroy(TemporalSuperSamplingInterface* temporalSuperSamplingInterface)
     {
-        delete reinterpret_cast<StreamlineDLSSSuperResolution*>(interface);
+        delete reinterpret_cast<StreamlineDLSSSuperResolution*>(temporalSuperSamplingInterface);
     }
 }

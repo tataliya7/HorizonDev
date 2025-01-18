@@ -39,9 +39,9 @@ namespace Horizon
         return features.enableSuperResolution;
     }
 
-    RenderGraphTextureHandle DispatchCustomTemporalSuperSampling(TemporalSuperSamplingInterface* interface, RenderGraph& renderGraph, const SceneView& view, const TemporalSuperSamplingDispatchDescription& dispatchDescription)
+    RenderGraphTextureHandle DispatchCustomTemporalSuperSampling(TemporalSuperSamplingInterface* temporalSuperSamplingInterface, RenderGraph& renderGraph, const SceneView& view, const TemporalSuperSamplingDispatchDescription& dispatchDescription)
     {
-        RenderGraphTextureHandle outputTexture = interface->Dispatch(renderGraph, view, dispatchDescription);
+        RenderGraphTextureHandle outputTexture = temporalSuperSamplingInterface->Dispatch(renderGraph, view, dispatchDescription);
 
         return outputTexture;
     }

@@ -36,5 +36,5 @@
 //
 //     TemporalSuperSamplingInterface* FidelityFXSuperResolution2Create(RenderBackend* renderBackend);
 //
-//     void FidelityFXSuperResolution2Destroy(TemporalSuperSamplingInterface* interface);
+//     void FidelityFXSuperResolution2Destroy(TemporalSuperSamplingInterface* temporalSuperSamplingInterface);
 // }

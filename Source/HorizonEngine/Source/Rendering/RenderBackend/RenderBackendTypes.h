@@ -1589,7 +1589,7 @@ namespace Horizon
 
     typedef bool(*RenderBackendDispatchSuperSamplingCallback)(
         void* commandList,
-        void* interface,
+        void* temporalSuperSamplingInterface,
         const RenderBackendTextureResource& output,
         const RenderBackendTextureResource& color,
         const RenderBackendTextureResource& depth,

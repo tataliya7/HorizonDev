@@ -17,9 +17,9 @@ namespace Horizon
         return new FidelityFXSuperResolution2(renderBackend);
     }
 
-    void FidelityFXSuperResolution2Destroy(TemporalSuperSamplingInterface* interface)
+    void FidelityFXSuperResolution2Destroy(TemporalSuperSamplingInterface* temporalSuperSamplingInterface)
     {
-        delete reinterpret_cast<FidelityFXSuperResolution2*>(interface);
+        delete reinterpret_cast<FidelityFXSuperResolution2*>(temporalSuperSamplingInterface);
     }
 
     static FfxFsr2QualityMode GetFfxFsr2QualityMode(uint32 qualityMode)

@@ -31,4 +31,12 @@ namespace Horizon
     extern void OSSignalEvent(OSEventHandle event);
     extern void OSResetEvent(OSEventHandle event);
     extern bool OSWaitEvent(OSEventHandle event, uint32 waitTime);
+
+    using OSLibraryHandle = void*;
+
+    OSLibraryHandle OSLoadLibrary(const char* filename);
+
+    void OSFreeLibrary(OSLibraryHandle handle);
+
+    void* OSGetSymbolAddressFromLibrary(OSLibraryHandle handle, const char* name);
 }

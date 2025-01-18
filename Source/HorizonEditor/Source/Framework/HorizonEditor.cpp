@@ -36,6 +36,9 @@ namespace Horizon
 
         // Initialize logging system
         CreateConsoleLogger_Deprecated();
+
+        RenderDocPluginInit();
+
 //
 //        JobSystemInit(HE::GetNumberOfProcessors(), HE_JOB_SYSTEM_NUM_FIBIERS, HE_JOB_SYSTEM_FIBER_STACK_SIZE);
 //
@@ -68,8 +71,6 @@ namespace Horizon
 
 //        PhysXInit();
 //        Audio::AudioEngineInit();
-
-        //RenderDocPluginInit();
 
         // UUID unit tests.
         {

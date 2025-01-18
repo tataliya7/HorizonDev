@@ -48,6 +48,13 @@ project "HorizonEditor"
         "Plugins/TimeOfDay/**.cppm",
         "Plugins/TimeOfDay/**.inl",
 
+        "Plugins/DevelopmentTools/RenderDoc/**.h",
+        "Plugins/DevelopmentTools/RenderDoc/**.c",
+        "Plugins/DevelopmentTools/RenderDoc/**.hpp",
+        "Plugins/DevelopmentTools/RenderDoc/**.cpp",
+        "Plugins/DevelopmentTools/RenderDoc/**.cppm",
+        "Plugins/DevelopmentTools/RenderDoc/**.inl",
+
         -- "MaterialGraph/**.h",
         -- "MaterialGraph/**.c",
         -- "MaterialGraph/**.hpp",
@@ -63,10 +70,11 @@ project "HorizonEditor"
     }
 
     includedirs {
+        "C:/Program Files/RenderDoc", -- remove this
         editorpath("Source"),
         editorpath("Plugins/UniversalSceneDescription/Source"),
-        editorpath("Plugins/RenderDoc/Source"),
         editorpath("Plugins/TimeOfDay/Source"),
+        editorpath("Plugins/DevelopmentTools/RenderDoc/Source"),
         enginepath("Source"),
         thirdpartypath("glm/include"),
         thirdpartypath("glfw/glfw-3.3.9.bin.WIN64/include"),
@@ -95,8 +103,8 @@ project "HorizonEditor"
         defines { "USE_OPTICK=0" }
 
 group "EditorPlugins"
-    include "Plugins/RenderDoc"
     -- include "Plugins/USD"
     -- include "Plugins/TimeOfDay"
     -- include "Plugins/LookDevStudio"
+    include "Plugins/DevelopmentTools/RenderDoc"
 group ""

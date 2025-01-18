@@ -11,6 +11,7 @@ project "RenderDoc"
         "**.cpp",
         "**.cppm",
         "**.lua",
+        "**.ini",
     }
 
     includedirs {

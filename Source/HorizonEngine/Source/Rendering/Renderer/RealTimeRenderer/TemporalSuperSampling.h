@@ -74,5 +74,5 @@ namespace Horizon
 
     Vector2f TemporalSuperSamplingGetJitterOffset(uint32 index, uint32 phaseCount);
 
-    RenderGraphTextureHandle DispatchCustomTemporalSuperSampling(TemporalSuperSamplingInterface* interface, RenderGraph& renderGraph, const SceneView& view, const TemporalSuperSamplingDispatchDescription& dispatchDescription);
+    RenderGraphTextureHandle DispatchCustomTemporalSuperSampling(TemporalSuperSamplingInterface* temporalSuperSamplingInterface, RenderGraph& renderGraph, const SceneView& view, const TemporalSuperSamplingDispatchDescription& dispatchDescription);
 }
