@@ -123,6 +123,11 @@ filter "platforms:Win64"
     disablewarnings {
     }
 
+filter "kind:SharedLib"
+    defines {
+        "HORIZON_BUILD_SHARED_LIB=1"
+    }
+
 group "Editor"
     include "Source/HorizonEditor"
     include "Source/HorizonEditorLauncher"

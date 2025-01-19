@@ -225,10 +225,12 @@ namespace Horizon
         VkPhysicalDeviceFragmentShaderBarycentricFeaturesKHR fragmentShaderBarycentricFeatures;
         VkPhysicalDeviceMultiviewFeaturesKHR multiviewFeatures;
         VkPhysicalDeviceSeparateDepthStencilLayoutsFeaturesKHR separateDepthStencilLayoutsFeatures;
-        VkPhysicalDeviceShaderDemoteToHelperInvocationFeaturesEXT shaderDemoteToHelperInvocationFeatures;
+        VkPhysicalDeviceShaderDemoteToHelperInvocationFeaturesEXT shaderDemoteToHelperInvocationFeaturesEXT;
         VkPhysicalDeviceScalarBlockLayoutFeaturesEXT scalarBlockLayoutFeaturesEXT;
         VkPhysicalDeviceMeshShaderFeaturesEXT meshShaderFeaturesEXT;
-        VkPhysicalDeviceHostQueryResetFeaturesEXT hostQueryResetFeatures;
+        VkPhysicalDeviceHostQueryResetFeaturesEXT hostQueryResetFeaturesEXT;
+
+        VkPhysicalDeviceShaderRelaxedExtendedInstructionFeaturesKHR shaderRelaxedExtendedInstructionFeatures;
 
         void* featuresEntry;
         VkPhysicalDeviceFeatures2 enabledFeatures;
@@ -280,7 +282,7 @@ namespace Horizon
         VkImage handle;
         bool swapchainBuffer;
         VmaAllocation allocation;
-        VkDeviceMemory deivceMemory;
+        VmaAllocationInfo allocationInfo;
         uint32 width;
         uint32 height;
         uint32 depth;

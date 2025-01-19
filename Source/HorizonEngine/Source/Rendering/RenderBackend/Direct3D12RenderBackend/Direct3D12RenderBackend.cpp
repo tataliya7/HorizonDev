@@ -1119,7 +1119,7 @@ namespace Horizon
     extern "C" { _declspec(dllexport) extern const char* D3D12SDKPath = /*u8*/".\\D3D12\\"; }
 #endif
 
-    bool D3D12RenderBackend::Init(const D3D12RenderBackendDesc* desc)
+    bool D3D12RenderBackend::Init(const Direct3D12RenderBackendDesc* desc)
     {
         if (false)
         {
@@ -2458,7 +2458,7 @@ namespace Horizon
         }
     }
 
-    RenderBackend* RenderBackendCreateD3D12(const D3D12RenderBackendDesc* desc)
+    RenderBackend* RenderBackendCreateDirect3D12(const Direct3D12RenderBackendDesc* desc)
     {
         D3D12RenderBackend* d3d12Backend = new D3D12RenderBackend();
         if (!d3d12Backend->Init(desc))
@@ -2469,7 +2469,7 @@ namespace Horizon
         return d3d12Backend;
     }
 
-    void RenderBackendDestroyD3D12(RenderBackend* backend)
+    void RenderBackendDestroyDirect3D12(RenderBackend* backend)
     {
         D3D12RenderBackend* d3d12Backend = (D3D12RenderBackend*)backend;
         d3d12Backend->Exit();

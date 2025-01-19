@@ -146,8 +146,8 @@ namespace Horizon
         // TODO: refactor
         RenderBackendGPUProfiler* gpuProfiler;
 
-        RenderBackendType renderBackendType = RenderBackendType::D3D12;
-        bool enableDebugLayers = true;
+        RenderBackendType renderBackendType = RenderBackendType::Direct3D12;
+        bool enableValidationLayers = true;
         bool enableHardwareRayTracing = true;
 
     private:
@@ -158,7 +158,6 @@ namespace Horizon
 
         // TODO: rename
         RendererDefaultResources* rendererDefaultResources;
-
 
         //
         // void CompileShaders_Deprecated();

@@ -257,7 +257,7 @@ except Exception as e:
     print ("Error: {}.".format(str(e)))
     sys.exit(1)
 
-vulkan_sdk_version = "1.3.290.0"
+vulkan_sdk_version = "1.4.304.0"
 vulkan_sdk_path = os.path.join("C:/VulkanSDK", vulkan_sdk_version)
 
 # Copy Vulkan SDK

@@ -7,15 +7,8 @@
 
 namespace Horizon
 {
-    enum class RenderBackendGraphicsAPI
-    {
-        Unknown,
-        D3D12,
-        Vulkan,
-    };
-
     /**
-     * @see: https://pcisig.com/membership/member-companies
+     * @see https://pcisig.com/membership/member-companies
      */
     enum class RenderBackendGPUVendorID
     {

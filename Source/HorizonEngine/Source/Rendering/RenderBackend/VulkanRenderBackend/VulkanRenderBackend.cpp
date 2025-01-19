@@ -4,9 +4,6 @@
 #include "VulkanRenderBackendUtility.h"
 #include "VulkanRenderBackendPrivate.h"
 
-#define VMA_IMPLEMENTATION
-#include <vk_mem_alloc.h>
-
 #include <optick.h>
 
 namespace Horizon
@@ -159,9 +156,9 @@ namespace Horizon
             };
             physicalDevice.float16StorageFeatures = {
                 .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_16BIT_STORAGE_FEATURES_KHR,
-                .pNext = &physicalDevice.hostQueryResetFeatures,
+                .pNext = &physicalDevice.hostQueryResetFeaturesEXT,
             };
-            physicalDevice.hostQueryResetFeatures = {
+            physicalDevice.hostQueryResetFeaturesEXT = {
                 .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_HOST_QUERY_RESET_FEATURES_EXT,
                 .pNext = &physicalDevice.fragmentShaderBarycentricFeatures,
             };
@@ -175,16 +172,24 @@ namespace Horizon
             };
             physicalDevice.multiviewFeatures = {
                 .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_FEATURES_KHR,
-                .pNext = &physicalDevice.separateDepthStencilLayoutsFeatures,
+                .pNext = &physicalDevice.shaderRelaxedExtendedInstructionFeatures,
             };
+
+            {
+                physicalDevice.shaderRelaxedExtendedInstructionFeatures = {
+                    .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_RELAXED_EXTENDED_INSTRUCTION_FEATURES_KHR,
+                    .pNext = &physicalDevice.separateDepthStencilLayoutsFeatures,
+                };
+            }
+
             physicalDevice.separateDepthStencilLayoutsFeatures = {
                 .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SEPARATE_DEPTH_STENCIL_LAYOUTS_FEATURES_KHR,
-                .pNext = &physicalDevice.shaderDemoteToHelperInvocationFeatures,
+                .pNext = &physicalDevice.shaderDemoteToHelperInvocationFeaturesEXT,
             };
 
             if (enableMeshShaderSupport)
             {
-                physicalDevice.shaderDemoteToHelperInvocationFeatures = {
+                physicalDevice.shaderDemoteToHelperInvocationFeaturesEXT = {
                     .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_DEMOTE_TO_HELPER_INVOCATION_FEATURES_EXT,
                     .pNext = &physicalDevice.meshShaderFeaturesEXT,
                 };
@@ -195,7 +200,7 @@ namespace Horizon
             }
             else
             {
-                physicalDevice.shaderDemoteToHelperInvocationFeatures = {
+                physicalDevice.shaderDemoteToHelperInvocationFeaturesEXT = {
                     .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_DEMOTE_TO_HELPER_INVOCATION_FEATURES_EXT,
                     .pNext = nullptr,
                 };
@@ -1284,8 +1289,7 @@ namespace Horizon
             {
                 memoryInfo.preferredFlags = VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT;
             }
-            VK_CHECK(vmaCreateImage(vmaAllocator, &imageInfo, &memoryInfo, &texture.handle, &texture.allocation, VULKAN_ALLOCATION_CALLBACKS));
-            texture.deivceMemory = texture.allocation->GetMemory();
+            VK_CHECK(vmaCreateImage(vmaAllocator, &imageInfo, &memoryInfo, &texture.handle, &texture.allocation, &texture.allocationInfo));
             texture.info = imageInfo;
         }
 
@@ -1404,7 +1408,8 @@ namespace Horizon
             texture.renderTargetViews.resize(texture.mipLevels);
             for (uint32 i = 0; i < texture.mipLevels; i++)
             {
-                VkImageViewCreateInfo imageViewInfo = {
+                VkImageViewCreateInfo imageViewInfo =
+                {
                     .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
                     .image = texture.handle,
                     .viewType = ConvertToVkImageViewType(desc->type, false),
@@ -1434,7 +1439,7 @@ namespace Horizon
 
         if (data != nullptr)
         {
-            RenderBackendBufferDesc uploadBufferDesc = RenderBackendBufferDesc::CreateUpload((uint32)texture.allocation->GetSize());
+            RenderBackendBufferDesc uploadBufferDesc = RenderBackendBufferDesc::CreateUpload((uint32)texture.allocationInfo.size);
             uint32 bufferIndex = CreateBuffer(&uploadBufferDesc, nullptr, "UploadBuffer");
             VulkanBuffer& uploadBuffer = buffers[bufferIndex];
             MapBuffer(bufferIndex);
@@ -3096,7 +3101,6 @@ namespace Horizon
             requiredDeviceExtensions.push_back(VK_KHR_EXTERNAL_SEMAPHORE_WIN32_EXTENSION_NAME);
             requiredDeviceExtensions.push_back(VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME);
             requiredDeviceExtensions.push_back(VK_KHR_EXTERNAL_MEMORY_WIN32_EXTENSION_NAME);
-            //requiredDeviceExtensions.push_back(VK_KHR_SHADER_RELAXED_EXTENDED_INSTRUCTION_EXTENSION_NAME);
             requiredDeviceExtensions.push_back(VK_KHR_SEPARATE_DEPTH_STENCIL_LAYOUTS_EXTENSION_NAME); // Required if VK_KHR_synchronization2 is enabled.
             requiredDeviceExtensions.push_back(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
             requiredDeviceExtensions.push_back(VK_EXT_SCALAR_BLOCK_LAYOUT_EXTENSION_NAME);
@@ -3104,6 +3108,11 @@ namespace Horizon
             requiredDeviceExtensions.push_back(VK_EXT_HOST_QUERY_RESET_EXTENSION_NAME);
             requiredDeviceExtensions.push_back(VK_EXT_SHADER_VIEWPORT_INDEX_LAYER_EXTENSION_NAME);
             requiredDeviceExtensions.push_back(VK_EXT_SHADER_DEMOTE_TO_HELPER_INVOCATION_EXTENSION_NAME);
+
+            if (true)
+            {
+                requiredDeviceExtensions.push_back(VK_KHR_SHADER_RELAXED_EXTENDED_INSTRUCTION_EXTENSION_NAME);
+            }
 
 #if HORIZON_EXPERIMENTAL_STREAMLINE // TODO
             requiredDeviceExtensions.push_back(VK_NVX_IMAGE_VIEW_HANDLE_EXTENSION_NAME);
@@ -4213,7 +4222,7 @@ namespace Horizon
             RenderBackendTextureResource textureResource = {};
             textureResource.texture = texture->handle;
             textureResource.info = &texture->info;
-            textureResource.memory = texture->allocation->GetMemory();
+            textureResource.memory = texture->allocationInfo.deviceMemory;
             textureResource.view = uav ? texture->uavs[0].uav : texture->defaultView;
             textureResource.width = texture->width;
             textureResource.height = texture->height;

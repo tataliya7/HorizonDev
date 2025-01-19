@@ -1,5 +1,5 @@
 project "RenderDoc"
-    kind "StaticLib"
+    kind "SharedLib"
     language "C++"
     cppdialect "C++latest"
     staticruntime "Off"
@@ -21,4 +21,8 @@ project "RenderDoc"
         thirdpartypath("entt/include"),
         thirdpartypath("imgui/imgui-1.89.9-docking"),
         thirdpartypath("python/310/include"),
+    }
+
+    links {
+        "HorizonEngine",
     }

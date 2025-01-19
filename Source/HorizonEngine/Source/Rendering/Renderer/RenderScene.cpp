@@ -404,7 +404,7 @@ namespace Horizon
                 rayTracingScene->transformMatrixCount = uint32(meshes.size());
                 RenderBackendBufferDesc transformBufferRowMajorUploadDesc = RenderBackendBufferDesc::CreateUpload(rayTracingScene->transformMatrixCount * uint32(sizeof(float)) * 16);
                 rayTracingScene->transformBufferRowMajorUpload = renderBackend->CreateBuffer(&transformBufferRowMajorUploadDesc, nullptr, "RowMajorTransformUploadBuffer");
-                RenderBackendBufferDesc transformBufferRowMajorDesc = RenderBackendBufferDesc::Create(uint32(sizeof(float)) * 16, rayTracingScene->transformMatrixCount, RenderBackendBufferCreateFlags::UnorderedAccess | RenderBackendBufferCreateFlags::ShaderResource | RenderBackendBufferCreateFlags::RayTracingAccelerationStructure);
+                RenderBackendBufferDesc transformBufferRowMajorDesc = RenderBackendBufferDesc::Create(uint32(sizeof(float)) * 16, rayTracingScene->transformMatrixCount, RenderBackendBufferCreateFlags::ShaderResource);
                 rayTracingScene->transformBufferRowMajor = renderBackend->CreateBuffer(&transformBufferRowMajorDesc, nullptr, "RowMajorTransformBuffer");
 
                 for (const MeshRenderObject* mesh : meshes)
@@ -445,7 +445,7 @@ namespace Horizon
 
                     RenderBackendBarrier barrier2[] =
                     {
-                        RenderBackendBarrier(rayTracingScene->transformBufferRowMajor, RenderBackendBufferSubresourceRange::Whole, RenderBackendResourceState::CopyDst, RenderBackendResourceState::UnorderedAccess)
+                        RenderBackendBarrier(rayTracingScene->transformBufferRowMajor, RenderBackendBufferSubresourceRange::Whole, RenderBackendResourceState::CopyDst, RenderBackendResourceState::ShaderResource)
                     };
                     commandList->Barriers(barrier2, 1);
                 }

@@ -294,8 +294,7 @@ float3 UintToColor(uint index)
     float3 color = float3(
         ((hash >>  0) & 0xFF) / 255.0f,
         ((hash >>  8) & 0xFF) / 255.0f,
-        ((hash >> 16) & 0xFF) / 255.0f
-    );
+        ((hash >> 16) & 0xFF) / 255.0f);
     return color;
 }
 

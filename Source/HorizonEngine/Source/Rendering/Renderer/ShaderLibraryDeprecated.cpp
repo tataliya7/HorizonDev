@@ -177,6 +177,11 @@ namespace Horizon
         }
         {
             ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Pixel, "Shaders/RealTimeRenderer/VirtualShadowMap/VirtualShadowMapDepth.hsm", "VirtualShadowMapDepthPS");
+            if (shaderLibrary->renderBackend->GetType() == RenderBackendType::Vulkan) // Avoid vulkan validation errors.
+            {
+                shaderDesc.shaderCompilerOptions.skipOptimization = false;
+                shaderDesc.shaderCompilerOptions.generateDebugInfo = false;
+            }
             shaderLibrary->LoadShader(ShaderID::VirtualShadowMapDepthPS, shaderDesc);
         }
         {
@@ -276,6 +281,11 @@ namespace Horizon
         }
         {
             ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Pixel, "Shaders/RealTimeRenderer/DirectLighting.hsm", "DirectLightingPS");
+            if (shaderLibrary->renderBackend->GetType() == RenderBackendType::Vulkan) // Avoid vulkan validation errors.
+            {
+                shaderDesc.shaderCompilerOptions.skipOptimization = false;
+                shaderDesc.shaderCompilerOptions.generateDebugInfo = false;
+            }
             shaderLibrary->LoadShader(ShaderID::DirectLighting, shaderDesc);
         }
         // {
@@ -428,6 +438,11 @@ namespace Horizon
         }
         {
             ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/PostProcessing/AutoExposureBuildHistogram.hsm", "AutoExposureBuildHistogramCS");
+            if (shaderLibrary->renderBackend->GetType() == RenderBackendType::Vulkan) // Avoid vulkan validation errors.
+            {
+                shaderDesc.shaderCompilerOptions.skipOptimization = false;
+                shaderDesc.shaderCompilerOptions.generateDebugInfo = false;
+            }
             shaderLibrary->LoadShader(ShaderID::AutoExposureBuildHistogram, shaderDesc);
         }
         {
@@ -496,6 +511,11 @@ namespace Horizon
         // }
         {
             ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/PostProcessing/ColorTransformLUT.hsm", "ColorTransformLUTCS");
+            if (shaderLibrary->renderBackend->GetType() == RenderBackendType::Vulkan) // Avoid vulkan validation errors.
+            {
+                shaderDesc.shaderCompilerOptions.skipOptimization = false;
+                shaderDesc.shaderCompilerOptions.generateDebugInfo = false;
+            }
             shaderLibrary->LoadShader(ShaderID::ColorTransformLUT, shaderDesc);
         }
         {
@@ -528,6 +548,11 @@ namespace Horizon
         }
         {
             ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/DebugVisualization/VisualizePrimitiveID.hsm", "VisualizePrimitiveIDCS");
+            if (shaderLibrary->renderBackend->GetType() == RenderBackendType::Vulkan) // Avoid vulkan validation errors.
+            {
+                shaderDesc.shaderCompilerOptions.skipOptimization = false;
+                shaderDesc.shaderCompilerOptions.generateDebugInfo = false;
+            }
             shaderLibrary->LoadShader(ShaderID::VisualizePrimitiveID, shaderDesc);
         }
         {
@@ -566,18 +591,33 @@ namespace Horizon
         {
             ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::RayGen, "Shaders/RealTimeRenderer/HardwareRayTracing/RayTracingShadows.hsm", "RayTracingShadowsRayGen");
             shaderDesc.AddDefine("RAY_TRACING_ENABLED", 1);
+            //if (shaderLibrary->renderBackend->GetType() == RenderBackendType::Vulkan) // Avoid vulkan validation errors.
+            //{
+            //    shaderDesc.shaderCompilerOptions.skipOptimization = false;
+            //    shaderDesc.shaderCompilerOptions.generateDebugInfo = false;
+            //}
             shaderLibrary->LoadShader(ShaderID::RayTracingShadowsRayGen, shaderDesc);
         }
         {
             ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Miss, "Shaders/RealTimeRenderer/HardwareRayTracing/RayTracingShadows.hsm", "RayTracingShadowsMiss");
             shaderDesc.AddDefine("RAY_TRACING_ENABLED", 1);
+            if (shaderLibrary->renderBackend->GetType() == RenderBackendType::Vulkan) // Avoid vulkan validation errors.
+            {
+                shaderDesc.shaderCompilerOptions.skipOptimization = false;
+                shaderDesc.shaderCompilerOptions.generateDebugInfo = false;
+            }
             shaderLibrary->LoadShader(ShaderID::RayTracingShadowsMiss, shaderDesc);
         }
 
         {
             ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/HardwareRayTracing/RayTracingShadows.hsm", "RayTracingShadowsInlineRayTracingCS");
             shaderDesc.AddDefine("RAY_TRACING_ENABLED", 1);
-            shaderDesc.shaderCompilerOptions.inlineRayTracing = true;
+            //shaderDesc.shaderCompilerOptions.inlineRayTracing = true;
+            //if (shaderLibrary->renderBackend->GetType() == RenderBackendType::Vulkan) // Avoid vulkan validation errors.
+            {
+                shaderDesc.shaderCompilerOptions.skipOptimization = false;
+                shaderDesc.shaderCompilerOptions.generateDebugInfo = false;
+            }
             shaderLibrary->LoadShader(ShaderID::RayTracingShadowsInlineRayTracing, shaderDesc);
         }
 
@@ -585,21 +625,41 @@ namespace Horizon
             {
                 ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::RayGen, "Shaders/PathTracingRenderer/PathTracing.hsm", "PathTracingRayGen");
                 shaderDesc.AddDefine("RAY_TRACING_ENABLED", 1);
+                if (shaderLibrary->renderBackend->GetType() == RenderBackendType::Vulkan) // Avoid vulkan validation errors.
+                {
+                    shaderDesc.shaderCompilerOptions.skipOptimization = false;
+                    shaderDesc.shaderCompilerOptions.generateDebugInfo = false;
+                }
                 shaderLibrary->LoadShader(ShaderID::PathTracingRayGen, shaderDesc);
             }
             {
                 ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Miss, "Shaders/PathTracingRenderer/PathTracing.hsm", "PathTracingDefaultMiss");
                 shaderDesc.AddDefine("RAY_TRACING_ENABLED", 1);
+                if (shaderLibrary->renderBackend->GetType() == RenderBackendType::Vulkan) // Avoid vulkan validation errors.
+                {
+                    shaderDesc.shaderCompilerOptions.skipOptimization = false;
+                    shaderDesc.shaderCompilerOptions.generateDebugInfo = false;
+                }
                 shaderLibrary->LoadShader(ShaderID::PathTracingDefaultMiss, shaderDesc);
             }
             {
                 ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Miss, "Shaders/PathTracingRenderer/PathTracing.hsm", "PathTracingShadowRayMiss");
                 shaderDesc.AddDefine("RAY_TRACING_ENABLED", 1);
+                if (shaderLibrary->renderBackend->GetType() == RenderBackendType::Vulkan) // Avoid vulkan validation errors.
+                {
+                    shaderDesc.shaderCompilerOptions.skipOptimization = false;
+                    shaderDesc.shaderCompilerOptions.generateDebugInfo = false;
+                }
                 shaderLibrary->LoadShader(ShaderID::PathTracingShadowRayMiss, shaderDesc);
             }
             {
                 ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::ClosestHit, "Shaders/PathTracingRenderer/PathTracing.hsm", "PathTracingDefaultOpaqueClosestHit");
                 shaderDesc.AddDefine("RAY_TRACING_ENABLED", 1);
+                if (shaderLibrary->renderBackend->GetType() == RenderBackendType::Vulkan) // Avoid vulkan validation errors.
+                {
+                    shaderDesc.shaderCompilerOptions.skipOptimization = false;
+                    shaderDesc.shaderCompilerOptions.generateDebugInfo = false;
+                }
                 shaderLibrary->LoadShader(ShaderID::PathTracingDefaultOpaqueClosestHit, shaderDesc);
             }
         }

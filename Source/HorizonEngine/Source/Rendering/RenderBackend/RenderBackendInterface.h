@@ -13,7 +13,7 @@ namespace Horizon
     enum class RenderBackendType
     {
         Unknown,
-        D3D12,
+        Direct3D12,
         Vulkan,
     };
 

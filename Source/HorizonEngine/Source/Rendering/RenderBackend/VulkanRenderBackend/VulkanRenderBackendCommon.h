@@ -4,6 +4,10 @@
 #include "Rendering/RenderBackend/RenderBackendCommands.h"
 #include "Rendering/RenderBackend/RenderBackendCommandList.h"
 
+#if _WIN64
 #define VK_USE_PLATFORM_WIN32_KHR 1
+#endif
+
 #include <vulkan/vulkan.h>
-#include <vk_mem_alloc.h>
+
+#include <vma/vk_mem_alloc.h>

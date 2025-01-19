@@ -37,7 +37,7 @@ namespace Horizon
         // Initialize logging system
         CreateConsoleLogger_Deprecated();
 
-        RenderDocPluginInit();
+        //RenderDocPluginInit();
 
 //
 //        JobSystemInit(HE::GetNumberOfProcessors(), HE_JOB_SYSTEM_NUM_FIBIERS, HE_JOB_SYSTEM_FIBER_STACK_SIZE);

@@ -32,7 +32,7 @@ project "HorizonEditorLauncher"
         --"RenderDoc",
         thirdpartypath("glfw/glfw-3.3.9.bin.WIN64/lib-vc2022/glfw3.lib"),
         thirdpartypath("dxc/dxc_2024_07_31/lib/x64/dxcompiler.lib"),
-        thirdpartypath("vulkan/1.3.290.0/Lib/vulkan-1.lib"),
+        thirdpartypath("vulkan/1.4.304.0/Lib/vulkan-1.lib"),
         thirdpartypath("optick/Optick_1.4.0/lib/x64/release/OptickCore.lib"),
         thirdpartypath("python/310/libs/python310.lib"),
         thirdpartypath("streamline/Streamline-2.4.15/lib/x64/sl.interposer.lib"),
@@ -66,8 +66,7 @@ project "HorizonEditorLauncher"
         thirdpartypath("stb/include"),
         thirdpartypath("physx/include"),
         thirdpartypath("optick/Optick_1.4.0/include"),
-        thirdpartypath("vulkan/1.3.290.0/Include"),
-        thirdpartypath("vma/include"),
+        thirdpartypath("vulkan/1.4.304.0/Include"),
         thirdpartypath("python/310/include"),
         thirdpartypath("miniaudio/include"),
     }

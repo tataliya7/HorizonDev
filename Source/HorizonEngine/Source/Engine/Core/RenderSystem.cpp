@@ -20,13 +20,13 @@ namespace Horizon
     void RenderSystem::Init()
     {
 #if HORIZON_CONFIGURATION_RELEASE
-        enableDebugLayers = false;
+        enableValidationLayers = false;
 #endif
 
         if (renderBackendType == RenderBackendType::Vulkan)
         {
             int flags = VULKAN_RENDER_BACKEND_CREATE_FLAGS_SURFACE;
-            if (enableDebugLayers)
+            if (enableValidationLayers)
             {
                 flags |= VULKAN_RENDER_BACKEND_CREATE_FLAGS_VALIDATION_LAYERS;
             }
@@ -36,15 +36,15 @@ namespace Horizon
             }
             renderBackend = RenderBackendCreateVulkan(flags);
         }
-        else if (renderBackendType == RenderBackendType::D3D12)
+        else if (renderBackendType == RenderBackendType::Direct3D12)
         {
-            D3D12RenderBackendDesc d3d12RenderBackendDesc =
+            Direct3D12RenderBackendDesc d3d12RenderBackendDesc =
             {
-                .useDebugLayers = enableDebugLayers,
-                .useGPUBasedValidation = enableDebugLayers,
+                .useDebugLayers = enableValidationLayers,
+                .useGPUBasedValidation = enableValidationLayers,
                 .useHardwareRayTracing = enableHardwareRayTracing
             };
-            renderBackend = RenderBackendCreateD3D12(&d3d12RenderBackendDesc);
+            renderBackend = RenderBackendCreateDirect3D12(&d3d12RenderBackendDesc);
         }
         else
         {
@@ -96,9 +96,9 @@ namespace Horizon
         {
             RenderBackendDestroyVulkan(renderBackend);
         }
-        else if (renderBackendType == RenderBackendType::D3D12)
+        else if (renderBackendType == RenderBackendType::Direct3D12)
         {
-            RenderBackendDestroyD3D12(renderBackend);
+            RenderBackendDestroyDirect3D12(renderBackend);
         }
     }
 

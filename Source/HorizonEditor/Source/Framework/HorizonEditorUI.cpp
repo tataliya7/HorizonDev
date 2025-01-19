@@ -929,7 +929,7 @@ namespace Horizon
         }
         if (ImGui::ImageButtonEx(ImGui::GetID("##RenderDocCapture"), renderDocIconTexture.ToUnit64(), ImVec2(25, 25), ImVec2(0, 0), ImVec2(1, 1), ImVec4(0, 0, 0, 0), ImVec4(1, 1, 1, 1)))
         {
-            RenderDocPluginTriggerCapture();
+            //RenderDocPluginTriggerCapture();
         }
 
         ImVec2 contentRegionAvail = ImGui::GetContentRegionAvail();

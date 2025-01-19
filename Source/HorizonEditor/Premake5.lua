@@ -48,13 +48,6 @@ project "HorizonEditor"
         "Plugins/TimeOfDay/**.cppm",
         "Plugins/TimeOfDay/**.inl",
 
-        "Plugins/DevelopmentTools/RenderDoc/**.h",
-        "Plugins/DevelopmentTools/RenderDoc/**.c",
-        "Plugins/DevelopmentTools/RenderDoc/**.hpp",
-        "Plugins/DevelopmentTools/RenderDoc/**.cpp",
-        "Plugins/DevelopmentTools/RenderDoc/**.cppm",
-        "Plugins/DevelopmentTools/RenderDoc/**.inl",
-
         -- "MaterialGraph/**.h",
         -- "MaterialGraph/**.c",
         -- "MaterialGraph/**.hpp",
@@ -66,11 +59,9 @@ project "HorizonEditor"
 
     links {
         "HorizonEngine",
-        "RenderDoc",
     }
 
     includedirs {
-        "C:/Program Files/RenderDoc", -- remove this
         editorpath("Source"),
         editorpath("Plugins/UniversalSceneDescription/Source"),
         editorpath("Plugins/TimeOfDay/Source"),

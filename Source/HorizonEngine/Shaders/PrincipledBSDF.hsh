@@ -1,12 +1,15 @@
 #pragma once
 
-float sqr(float x) { return x*x; }
+float sqr(float x)
+{
+    return x * x;
+}
 
 float SchlickFresnel(float u)
 {
-    float m = clamp(1-u, 0, 1);
-    float m2 = m*m;
-    return m2*m2*m; // pow(m,5)
+    float m = saturate(1 - u);
+    float m2 = m * m;
+    return m2 * m2 * m; // pow(m, 5)
 }
 
 float GTR1(float NdotH, float a)
@@ -60,8 +63,8 @@ float3 PrincipledBSDF(
     float clearcoat,
     float clearcoatGloss)
 {
-    metallic = clamp(metallic, 0.0, 1.0);
-    roughness = clamp(roughness, 0.0, 1.0);
+    metallic = saturate(metallic);
+    roughness = saturate(roughness);
     //ior = max(ior, 1e-5);
 
     float3 X;
@@ -70,9 +73,9 @@ float3 PrincipledBSDF(
 
     float NdotL = dot(N, L);
     float NdotV = dot(N, V);
-    if (NdotL < 0 || NdotV < 0)
+    if (NdotL < 0.0f || NdotV < 0.0f)
     {
-        return 0;
+        return float3(0.0f, 0.0f, 0.0f);
     }
 
     float3 H = normalize(L + V);
@@ -85,61 +88,54 @@ float3 PrincipledBSDF(
 #else
     float3 Cdlin = mon2lin(baseColor.rgb);
 #endif
-    float Cdlum = .3*Cdlin[0] + .6*Cdlin[1]  + .1*Cdlin[2]; // luminance approx.
+    float Cdlum = 0.3f * Cdlin.x + 0.6f * Cdlin.y  + 0.1f * Cdlin.z; // luminance approx.
 
-    float3 Ctint = Cdlum > 0 ? Cdlin/Cdlum : 1; // normalize lum. to isolate hue+sat
+    float3 Ctint = Cdlum > 0.0f ? Cdlin / Cdlum : float3(1.0f, 1.0f, 1.0f); // normalize lum. to isolate hue+sat
 
-    sheen = 1;
-    sheenTint = 1;
     // Sheen
-    float3 sheenTerm = 0;
-    if (sheen > 0)
+    float3 sheenTerm = float3(0.0f, 0.0f, 0.0f);
+    if (sheen > 0.0f)
     {
-        float3 sheenColor = lerp(1, Ctint, sheenTint);
+        float3 sheenColor = lerp(float3(1.0f, 1.0f, 1.0f), Ctint, sheenTint);
         sheenTerm = FH * sheen * sheenColor;
     }
 
     // Clearcoat (ior = 1.5 -> F0 = 0.04)
-    float clearcoatTerm = 0;
-    if (clearcoat > 0)
+    float clearcoatTerm = 0.0f;
+    if (clearcoat > 0.0f)
     {
-        float Dr = GTR1(NdotH, lerp(0.1, 0.001, clearcoatGloss));
-        float Fr = lerp(0.04, 1.0, FH);
-        float Gr = smithG_GGX(NdotL, 0.25) * smithG_GGX(NdotV, 0.25);
-        clearcoatTerm = 0.25 * clearcoat * Gr * Fr * Dr;
+        float Dr = GTR1(NdotH, lerp(0.1f, 0.001f, clearcoatGloss));
+        float Fr = lerp(0.04f, 1.0f, FH);
+        float Gr = smithG_GGX(NdotL, 0.25f) * smithG_GGX(NdotV, 0.25f);
+        clearcoatTerm = 0.25f * clearcoat * Gr * Fr * Dr;
     }
 
-    // Diffuse fresnel - go from 1 at normal incidence to .5 at grazing
+    // Diffuse fresnel - go from 1 at normal incidence to 0.5 at grazing
     // and mix in diffuse retro-reflection based on roughness
     float FL = SchlickFresnel(NdotL);
     float FV = SchlickFresnel(NdotV);
-    float Fd90 = 0.5 + 2.0 * LdotH * LdotH * roughness;
-    float Fd = lerp(1.0, Fd90, FL) * lerp(1.0, Fd90, FV);
-
-    if (true)
-    {
-
-    }
+    float Fd90 = 0.5f + 2.0f * LdotH * LdotH * roughness;
+    float Fd = lerp(1.0f, Fd90, FL) * lerp(1.0f, Fd90, FV);
 
     // Based on Hanrahan-Krueger brdf approximation of isotropic bssrdf
     // 1.25 scale is used to (roughly) preserve albedo
     // Fss90 used to "flatten" retroreflection based on roughness
-    float Fss90 = LdotH*LdotH*roughness;
-    float Fss = lerp(1.0, Fss90, FL) * lerp(1.0, Fss90, FV);
-    float ss = 1.25 * (Fss * (1 / (NdotL + NdotV) - 0.5) + 0.5);
+    float Fss90 = LdotH * LdotH * roughness;
+    float Fss = lerp(1.0f, Fss90, FL) * lerp(1.0f, Fss90, FV);
+    float ss = 1.25f * (Fss * (1.0f / (NdotL + NdotV) - 0.5f) + 0.5f);
 
-    // specular
-    float3 Cspec0 = lerp(specular * 0.08 * lerp(1, Ctint, specularTint), Cdlin, metallic);
-    float aspect = sqrt(1 - anisotropic * 0.9);
-    float ax = max(0.001, sqr(roughness) / aspect);
-    float ay = max(0.001, sqr(roughness) * aspect);
+    // Specular
+    float3 Cspec0 = lerp(specular * 0.08f * lerp(float3(1.0f, 1.0f, 1.0f), Ctint, specularTint), Cdlin, metallic);
+    float aspect = sqrt(1.0f - anisotropic * 0.9f);
+    float ax = max(0.001f, sqr(roughness) / aspect);
+    float ay = max(0.001f, sqr(roughness) * aspect);
     float Ds = GTR2_aniso(NdotH, dot(H, X), dot(H, Y), ax, ay);
-    float3 Fs = lerp(Cspec0, 1, FH);
+    float3 Fs = lerp(Cspec0, float3(1.0f, 1.0f, 1.0f), FH);
     float Gs;
     Gs  = smithG_GGX_aniso(NdotL, dot(L, X), dot(L, Y), ax, ay);
     Gs *= smithG_GGX_aniso(NdotV, dot(V, X), dot(V, Y), ax, ay);
 
     return (INV_PI * lerp(Fd, ss, subsurface) * baseColor.rgb + sheenTerm)
-        * (1 - metallic)
+        * (1.0f - metallic)
         + Gs * Fs * Ds + clearcoatTerm;
 }

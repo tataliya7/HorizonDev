@@ -69,7 +69,7 @@ namespace Horizon
     //class ProjectSettings
     //{
     //public:
-    //    RenderBackendGraphicsAPI graphicsAPI;
+    //    RenderBackendType graphicsAPI;
     //};
 
     class HorizonEditor

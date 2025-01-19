@@ -196,7 +196,6 @@ namespace Horizon
                 .skipOptimization = true,
                 .warningAreErrors = true,
                 .enable16BitTypes = false,
-                .inlineRayTracing = false,
                 .optimizationLevel = ShaderOptimizationLevel::O3
             };
         }
@@ -220,9 +219,10 @@ namespace Horizon
         bool HotReload();
         bool LoadShader(ShaderID id, ShaderDesc& desc);
         RenderBackendShaderHandle GetShader(ShaderID id) const;
+        RenderBackend* renderBackend;
+
     private:
         std::string rootDirectory;
-        RenderBackend* renderBackend;
         ShadingLanguage shadingLanguage;
         std::vector<Shader> loadedShaders;
 

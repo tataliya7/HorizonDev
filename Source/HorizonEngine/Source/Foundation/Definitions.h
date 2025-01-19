@@ -17,3 +17,15 @@
 #else
     #define FORCEINLINE inline
 #endif
+
+#if defined(_MSC_VER)
+    #define HORIZON_DLL_EXPORT __declspec(dllexport)
+#else
+    #define HORIZON_DLL_EXPORT
+#endif
+
+#if HORIZON_BUILD_SHARED_LIB
+    #define HORIZON_API HORIZON_DLL_EXPORT
+#else
+    #define HORIZON_API
+#endif

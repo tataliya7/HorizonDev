@@ -2610,10 +2610,10 @@ namespace Horizon
 
         RenderBackendType GetType() const override
         {
-            return RenderBackendType::D3D12;
+            return RenderBackendType::Direct3D12;
         }
 
-        bool Init(const D3D12RenderBackendDesc* desc);
+        bool Init(const Direct3D12RenderBackendDesc* desc);
         void Exit();
         void Tick() override;
         void CreateRenderDevices(PhysicalDeviceID* physicalDeviceIDs, uint32 numDevices, uint32* outDeviceMasks) override;

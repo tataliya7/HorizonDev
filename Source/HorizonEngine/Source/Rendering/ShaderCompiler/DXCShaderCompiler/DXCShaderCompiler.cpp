@@ -201,8 +201,7 @@ namespace Horizon
             break;
         }
 
-        if (options.generateDebugInfo
-            && !options.inlineRayTracing) // TODO: fix this
+        if (options.generateDebugInfo)
         {
             arguments.push_back(L"-Zi");
             arguments.push_back(L"-Zss");
@@ -211,6 +210,7 @@ namespace Horizon
             if (language == ShadingLanguage::SPIRV)
             {
                 arguments.push_back(L"-fspv-debug=vulkan-with-source");
+                //arguments.push_back(L"-fspv-print-all");
             }
 
             if (language == ShadingLanguage::DXIL)

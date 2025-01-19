@@ -76,7 +76,6 @@ namespace Horizon
         bool skipOptimization;
         bool warningAreErrors;
         bool enable16BitTypes;
-        bool inlineRayTracing;
         ShaderOptimizationLevel optimizationLevel;
     };
 

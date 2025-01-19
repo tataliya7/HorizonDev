@@ -9,7 +9,7 @@ namespace Horizon
         std::string installationFolder;
     };
 
-    void RenderDocPluginInit();
+    HORIZON_API void RenderDocPluginInit();
 
-    void RenderDocPluginTriggerCapture();
+    HORIZON_API void RenderDocPluginTriggerCapture();
 }

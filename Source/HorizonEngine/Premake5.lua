@@ -10,6 +10,7 @@ project "HorizonEngine"
 
     files {
         "**.lua",
+        "**.ini",
         "Shaders/**.h",
         "Shaders/**.hsh",
         "Shaders/**.hsm",
@@ -71,8 +72,7 @@ project "HorizonEngine"
         thirdpartypath("stb/include"),
         thirdpartypath("physx/include"),
         thirdpartypath("optick/Optick_1.4.0/include"),
-        thirdpartypath("vulkan/1.3.290.0/Include"),
-        thirdpartypath("vma/include"),
+        thirdpartypath("vulkan/1.4.304.0/Include"),
         thirdpartypath("D3D12SDK/include"),
         thirdpartypath("python/310/include"),
         thirdpartypath("miniaudio/include"),
