@@ -1,10 +1,5 @@
 #pragma once
 
-float sqr(float x)
-{
-    return x * x;
-}
-
 float SchlickFresnel(float u)
 {
     float m = saturate(1 - u);

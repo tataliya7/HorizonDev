@@ -9,7 +9,7 @@
 #define HALF_POS_MIN     6.103515625e-5  // 2^-14, the same value for 10, 11 and 16-bit: https://www.khronos.org/opengl/wiki/Small_Float_Formats
 #define HALF_POS_INF     65504.0
 
-float square(float x)
+float sqr(float x)
 {
     return x * x;
 }
