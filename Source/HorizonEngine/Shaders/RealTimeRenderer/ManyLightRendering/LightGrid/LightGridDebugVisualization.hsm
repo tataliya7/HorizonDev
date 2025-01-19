@@ -1,5 +1,5 @@
-#include "../../ShaderCommon.hsh"
-#include "../RealTimeRendererCommon.hsh"
+#include "../../../ShaderCommon.hsh"
+#include "../../RealTimeRendererCommon.hsh"
 #include "LightGridCommon.hsh"
 
 SHADER_CONSTANTS_STRUCT_BEGIN();
@@ -8,7 +8,7 @@ SHADER_CONSTANTS_STRUCT_END();
 
 [shader("compute")]
 [numthreads(1, 1, 1)]
-void LightGridBufferInitializationCS()
+void LightGridDebugVisualizationCS()
 {
     RWStructuredBuffer<uint> lightListStartOffsetBuffer = ShaderConstants.GetLightGridLightListStartOffsetBufferUAV();
 

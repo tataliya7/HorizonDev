@@ -2,6 +2,7 @@
 #include "../RealTimeRendererCommon.hsh"
 #include "../ShadowMapCommon.hsh"
 #include "../GPUScene.hsh"
+#include "../ManyLightRendering/LightGrid/LightGridCommon.hsh"
 #include "VolumetricFogCommon.hsh"
 
 SHADER_CONSTANTS_STRUCT_BEGIN();

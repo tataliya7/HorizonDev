@@ -5,7 +5,7 @@
 #include "GPUScene.hsh"
 //#include "LightingCommon.hsh"
 #include "ShadowMapCommon.hsh"
-#include "LightGrid/LightGridCommon.hsh"
+#include "ManyLightRendering/LightGrid/LightGridCommon.hsh"
 #include "SkyAtmosphere/SkyAtmosphereCommon.hsh"
 
 SHADER_CONSTANTS_STRUCT_BEGIN();
