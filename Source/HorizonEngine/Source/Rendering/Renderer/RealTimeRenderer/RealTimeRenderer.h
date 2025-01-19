@@ -389,7 +389,7 @@ namespace Horizon
         RenderGraphTextureHandle DispatchLocalExposure(
             RenderGraph& renderGraph,
             const SceneView& view,
-            RenderGraphTextureHandle sceneColorTexture,
+            RenderGraphTextureHandle colorTexture,
             RenderGraphTextureHandle autoExposureTexture);
 
         RenderGraphTextureHandle RenderColorTransformLUT(

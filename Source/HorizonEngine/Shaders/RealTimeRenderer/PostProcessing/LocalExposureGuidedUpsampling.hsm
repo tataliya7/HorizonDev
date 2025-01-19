@@ -3,20 +3,30 @@
 #include "PostProcessingCommon.hsh"
 #include "ToneMappingCommon.hsh"
 
-BIND_BUFFER_CBV(0, PerFrameShaderParameters);
-BIND_TEXTURE_2D_SRV(1, SceneColorTexture);
-BIND_TEXTURE_2D_SRV(2, LuminanceTexture);
-BIND_TEXTURE_2D_SRV(3, AssembleTexture);
-BIND_TEXTURE_2D_UAV(4, float4, OutputTexture);
-BIND_TEXTURE_2D_TYPED_SRV(5, float, AutoExposureTexture);
+SHADER_CONSTANTS_STRUCT_BEGIN();
+SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferSRV);
+SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(1, ColorTextureSRV);
+SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(2, LuminanceTextureSRV);
+SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(3, AssembleTextureSRV);
+SHADER_CONSTANTS_TEXTURE_2D_SRV(5, float, AutoExposureTexture);
+SHADER_CONSTANTS_TEXTURE_2D_UAV(4, float4, OutputTextureUAV);
+SHADER_CONSTANTS_STRUCT_END();
 
 [shader("compute")]
 [numthreads(POST_PROCESSING_THREAD_GROUP_SIZE_X, POST_PROCESSING_THREAD_GROUP_SIZE_Y, 1)]
 void LocalExposureGuidedUpsamplingCS(uint3 dispatchThreadID : SV_DispatchThreadID)
 {
-    RWTexture2D<float4> outputTexture = GetOutputTextureUAV();
+    StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
+    PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
+    Texture2D colorTexture = ShaderConstants.GetColorTextureSRV();
+    Texture2D luminanceTexture = ShaderConstants.GetLuminanceTextureSRV();
+    Texture2D assembleTexture = ShaderConstants.GetAssembleTextureSRV();
+    //Texture2D<float> autoExposureTexture = GetAutoExposureTextureSRV();
+    RWTexture2D<float4> outputTexture = ShaderConstants.GetOutputTextureUAV();
+
     uint width, height;
     outputTexture.GetDimensions(width, height);
+
     if (dispatchThreadID.x >= width || dispatchThreadID.y >= height)
     {
         return;
@@ -25,13 +35,6 @@ void LocalExposureGuidedUpsamplingCS(uint3 dispatchThreadID : SV_DispatchThreadI
     uint2 pixelCoord = dispatchThreadID.xy;
     float2 uv = (pixelCoord + 0.5) / float2(width, height);
 
-    StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
-    PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
-    Texture2D sceneColorTexture = GetSceneColorTextureSRV();
-    Texture2D luminanceTexture = GetLuminanceTextureSRV();
-    Texture2D assembleTexture = GetAssembleTextureSRV();
-
-    //Texture2D<float> autoExposureTexture = GetAutoExposureTextureSRV();
     //float exposure = autoExposureTexture[uint2(1, 0)];
     float exposure = 1;//frameShaderParameters.exposure;
 
@@ -72,7 +75,7 @@ void LocalExposureGuidedUpsamplingCS(uint3 dispatchThreadID : SV_DispatchThreadI
 
     // Apply local exposure adjustment as a crude multiplier on all RGB channels.
     // This is... generally pretty wrong, but enough for the demo purpose.
-    float3 texelOriginal = sqrt(max(FastToneMapping(sceneColorTexture.SampleLevel(GlobalSamplerLinearClamp, uv, 0).rgb * exposure), 0.0));
+    float3 texelOriginal = sqrt(max(FastToneMapping(colorTexture.SampleLevel(GlobalSamplerLinearClamp, uv, 0).rgb * exposure), 0.0));
     float luminance = dot(texelOriginal.xyz, float3(0.1, 0.7, 0.2)) + 0.00001;
     float finalMultiplier = max(A * luminance + B, 0.0) / luminance;
     // This is a hack to prevent super dark pixels getting boosted by a lot and showing compression artifacts.

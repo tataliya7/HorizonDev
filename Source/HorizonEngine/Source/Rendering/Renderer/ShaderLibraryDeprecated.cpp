@@ -489,26 +489,26 @@ namespace Horizon
             ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Pixel, "Shaders/RealTimeRenderer/PostProcessing/LensFlareCombine.hsm", "LensFlareCombinePS");
             shaderLibrary->LoadShader(ShaderID::LensFlareCombine, shaderDesc);
         }
-        // {
-        //     ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/PostProcessing/LocalExposureComputeLuminance.hsm", "LocalExposureComputeLuminanceCS");
-        //     shaderLibrary->LoadShader(ShaderID::LocalExposureComputeLuminance, shaderDesc);
-        // }
-        // {
-        //     ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/PostProcessing/LocalExposureComputeWeights.hsm", "LocalExposureComputeWeightsCS");
-        //     shaderLibrary->LoadShader(ShaderID::LocalExposureComputeWeights, shaderDesc);
-        // }
-        // {
-        //     ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/PostProcessing/LocalExposureBlendExposures.hsm", "LocalExposureBlendExposuresCS");
-        //     shaderLibrary->LoadShader(ShaderID::LocalExposureBlendExposures, shaderDesc);
-        // }
-        // {
-        //     ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/PostProcessing/LocalExposureBlendLaplacian.hsm", "LocalExposureBlendLaplacianCS");
-        //     shaderLibrary->LoadShader(ShaderID::LocalExposureBlendLaplacian, shaderDesc);
-        // }
-        // {
-        //     ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/PostProcessing/LocalExposureGuidedUpsampling.hsm", "LocalExposureGuidedUpsamplingCS");
-        //     shaderLibrary->LoadShader(ShaderID::LocalExposureGuidedUpsampling, shaderDesc);
-        // }
+         {
+             ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/PostProcessing/LocalExposureComputeLuminance.hsm", "LocalExposureComputeLuminanceCS");
+             shaderLibrary->LoadShader(ShaderID::LocalExposureComputeLuminance, shaderDesc);
+         }
+         {
+             ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/PostProcessing/LocalExposureComputeWeights.hsm", "LocalExposureComputeWeightsCS");
+             shaderLibrary->LoadShader(ShaderID::LocalExposureComputeWeights, shaderDesc);
+         }
+         {
+             ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/PostProcessing/LocalExposureBlendExposures.hsm", "LocalExposureBlendExposuresCS");
+             shaderLibrary->LoadShader(ShaderID::LocalExposureBlendExposures, shaderDesc);
+         }
+         {
+             ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/PostProcessing/LocalExposureBlendLaplacian.hsm", "LocalExposureBlendLaplacianCS");
+             shaderLibrary->LoadShader(ShaderID::LocalExposureBlendLaplacian, shaderDesc);
+         }
+         {
+             ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/PostProcessing/LocalExposureGuidedUpsampling.hsm", "LocalExposureGuidedUpsamplingCS");
+             shaderLibrary->LoadShader(ShaderID::LocalExposureGuidedUpsampling, shaderDesc);
+         }
         {
             ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/PostProcessing/ColorTransformLUT.hsm", "ColorTransformLUTCS");
             if (shaderLibrary->renderBackend->GetType() == RenderBackendType::Vulkan) // Avoid vulkan validation errors.

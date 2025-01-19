@@ -2,17 +2,19 @@
 #include "../RealTimeRendererCommon.hsh"
 #include "PostProcessingCommon.hsh"
 
-BIND_BUFFER_CBV(0, PerFrameShaderParameters);
-BIND_TEXTURE_2D_SRV(1, InputTexture1);
-BIND_TEXTURE_2D_SRV(2, InputTexture2);
-BIND_TEXTURE_2D_SRV(3, InputTexture3);
-BIND_TEXTURE_2D_UAV(4, float4, OutputTexture);
+SHADER_CONSTANTS_STRUCT_BEGIN();
+SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferSRV);
+SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(1, InputTexture1SRV);
+SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(2, InputTexture2SRV);
+SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(3, InputTexture3SRV);
+SHADER_CONSTANTS_TEXTURE_2D_UAV(4, float4, OutputTextureUAV);
+SHADER_CONSTANTS_STRUCT_END();
 
 [shader("compute")]
 [numthreads(POST_PROCESSING_THREAD_GROUP_SIZE_X, POST_PROCESSING_THREAD_GROUP_SIZE_Y, 1)]
 void LocalExposureBlendLaplacianCS(uint3 dispatchThreadID : SV_DispatchThreadID)
 {
-    RWTexture2D<float4> outputTexture = GetOutputTextureUAV();
+    RWTexture2D<float4> outputTexture = ShaderConstants.GetOutputTextureUAV();
     uint width, height;
     outputTexture.GetDimensions(width, height);
     if (dispatchThreadID.x >= width || dispatchThreadID.y >= height)
@@ -23,9 +25,9 @@ void LocalExposureBlendLaplacianCS(uint3 dispatchThreadID : SV_DispatchThreadID)
     uint2 pixelCoord = dispatchThreadID.xy;
     float2 uv = (pixelCoord + 0.5) / float2(width, height);
 
-    Texture2D inputTexture1 = GetInputTexture1SRV();
-    Texture2D inputTexture2 = GetInputTexture2SRV();
-    Texture2D inputTexture3 = GetInputTexture3SRV();
+    Texture2D inputTexture1 = ShaderConstants.GetInputTexture1SRV();
+    Texture2D inputTexture2 = ShaderConstants.GetInputTexture2SRV();
+    Texture2D inputTexture3 = ShaderConstants.GetInputTexture3SRV();
 
     float srcMip = (0);
 

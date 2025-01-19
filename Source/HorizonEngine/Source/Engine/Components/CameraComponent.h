@@ -104,4 +104,19 @@ namespace Horizon
             }
         }
     };
+
+    struct CinemaCameraComponent
+    {
+        // Lens
+
+        // mm
+        float focalLength;
+
+        float aperture;
+
+        float shutterSpeed;
+
+        float ISO;
+        //
+    };
 }
