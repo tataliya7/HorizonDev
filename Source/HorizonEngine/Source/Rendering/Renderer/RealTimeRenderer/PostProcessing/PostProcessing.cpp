@@ -41,9 +41,8 @@ namespace Horizon
 
         if (IsSuperResolutionEnabled()) // TODO
         {
-            RenderGraphTextureHandle exposureTexture = AddCopyExposurePass(renderGraph, view, autoExposureBuffer);
+            RenderGraphTextureHandle exposureTexture = AddCopyExposurePass(renderGraph, view, previousAutoExposureBuffer);
 
-            // Currently, only third-party temporal super sampling methods are supported.
             TemporalSuperSamplingDispatchDescription tssDispatchDescription;
             tssDispatchDescription.colorTexture = sceneColorTexture;
             tssDispatchDescription.depthTexture = sceneDepthTexture;
@@ -59,7 +58,7 @@ namespace Horizon
             sceneColorTexture = DispatchMotionBlur(renderGraph, view, sceneColorTexture, sceneDepthTexture, motionVectorTexture);
         }
 
-        //sceneColorTexture = renderGraph.ImportExternalTexture(localExposureTestTexture, localExposureTestTextureDesc, RenderBackendResourceState::ShaderResource, "Test");
+        //sceneColorTexture = renderGraph.ImportExternalTexture(localToneMappingTestTexture, localToneMappingTestTextureDesc, RenderBackendResourceState::ShaderResource, "Test");
         PostProcessingSceneColorMipChain sceneColorMipChain;
         if (shouldRenderSceneColorPyramid)
         {
@@ -71,11 +70,12 @@ namespace Horizon
         {
             autoExposureBuffer = DispatchHistogramBasedAutoExposure(renderGraph, view, sceneColorMipChain.textures[0], previousAutoExposureBuffer);
         }
+        RenderGraphTextureHandle exposureTexture = AddCopyExposurePass(renderGraph, view, autoExposureBuffer);
 
-        RenderGraphTextureHandle localExposureTexture = RenderGraphTextureHandle::Null;
-        if (IsLocalExposureEnabled())
+        RenderGraphTextureHandle exposureFusionOuptutTexture = RenderGraphTextureHandle::Null;
+        if (IsLocalToneMappingEnabled())
         {
-            localExposureTexture = DispatchLocalExposure(renderGraph, view, sceneColorTexture, RenderGraphTextureHandle::Null);
+            exposureFusionOuptutTexture = DispatchExposureFusion(renderGraph, view, sceneColorTexture, exposureTexture);
         }
 
         RenderGraphTextureHandle bloomTexture = RenderGraphTextureHandle::Null;
@@ -101,7 +101,7 @@ namespace Horizon
 
         bool outputInHDR = false;
 
-        sceneColorTexture = DispatchFinalComposition(renderGraph, view, sceneColorTexture, bloomTexture, localExposureTexture, colorLUTTexture, autoExposureBuffer, outputInHDR);
+        sceneColorTexture = DispatchFinalComposition(renderGraph, view, sceneColorTexture, bloomTexture, exposureFusionOuptutTexture, colorLUTTexture, autoExposureBuffer, outputInHDR);
 
         RenderGraphTextureHandle sceneColorTextureAfterToneMapping = sceneColorTexture;
 
@@ -147,50 +147,5 @@ namespace Horizon
         }
 
         sceneTextures.hudLessColorTexture = sceneColorTexture;
-
-        // TODO: distortion, screenshot
-
-#if 0
-        if (false)
-        {
-            renderGraph.AddPass("DebugDrawLinesPass", RenderGraphPassFlags::Graphics,
-                [&](RenderGraphBuilder& builder)
-                {
-                    auto& sceneTextures = renderGraph.blackboard.Get<RealTimeRendererSceneTextures>();
-                    auto& finalTextureData = renderGraph.blackboard.Get<RenderGraphFinalTexture>();
-
-                    auto sceneDepthTexture = sceneTextures.sceneDepthTexture = builder.WriteTexture(sceneTextures.sceneDepthTexture, RenderBackendResourceState::DepthStencil);
-                    auto finalTexture = finalTextureData.finalTexture = builder.WriteTexture(finalTextureData.finalTexture, RenderBackendResourceState::RenderTarget);
-
-                    builder.BindColorTarget(0, finalTexture, RenderBackendRenderPassBeginningAccessType::Preserve, RenderBackendRenderPassEndingAccessType::Preserve);
-                    builder.BindDepthTarget(sceneDepthTexture, RenderBackendRenderPassBeginningAccessType::Preserve, RenderBackendRenderPassEndingAccessType::Preserve);
-
-                    return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
-                    {
-                        RenderBackendGraphicsPipelineState graphicsPipelineState = {};
-                        graphicsPipelineState.rasterizationState.cullMode = RenderBackendRasterizationCullMode::None;
-                        graphicsPipelineState.rasterizationState.lineWidth = 2.0f;
-                        graphicsPipelineState.depthStencilState.depthTestEnable = true;
-                        graphicsPipelineState.depthStencilState.depthWriteEnable = true;
-                        graphicsPipelineState.depthStencilState.depthCompareFunction = RenderBackendCompareOp::GreaterOrEqual;
-
-                        RenderBackendShaderConstants shaderConstants = {};
-                        shaderConstants.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
-                        shaderConstants.BindBuffer(1, renderEngine->debugDrawLinesVertexBuffer, 0);
-
-                        RenderBackendShaderHandle graphicsShader = shaderLibrary->GetShader(ShaderID::DebugDraw);
-                        commandList.Draw(
-                            graphicsShader,
-                            graphicsPipelineState,
-                            shaderConstants,
-                            (uint32)renderEngine->debugDrawLinesVertices.size(),
-                            1,
-                            0,
-                            0,
-                            RenderBackendPrimitiveTopology::LineList);
-                    };
-                });
-        }
-#endif
     }
 }

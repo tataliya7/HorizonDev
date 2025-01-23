@@ -1,6 +1,6 @@
-#include "../../ShaderCommon.hsh"
-#include "../RealTimeRendererCommon.hsh"
-#include "PostProcessingCommon.hsh"
+#include "../../../ShaderCommon.hsh"
+#include "../../RealTimeRendererCommon.hsh"
+#include "../PostProcessingCommon.hsh"
 
 SHADER_CONSTANTS_STRUCT_BEGIN();
 SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferSRV);
@@ -11,7 +11,7 @@ SHADER_CONSTANTS_STRUCT_END();
 
 [shader("compute")]
 [numthreads(POST_PROCESSING_THREAD_GROUP_SIZE_X, POST_PROCESSING_THREAD_GROUP_SIZE_Y, 1)]
-void LocalExposureBlendExposuresCS(uint3 dispatchThreadID : SV_DispatchThreadID)
+void LocalToneMappingBlendExposuresCS(uint3 dispatchThreadID : SV_DispatchThreadID)
 {
     Texture2D exposureTexture = ShaderConstants.GetExposureTextureSRV();
     Texture2D weightTexture = ShaderConstants.GetWeightTextureSRV();

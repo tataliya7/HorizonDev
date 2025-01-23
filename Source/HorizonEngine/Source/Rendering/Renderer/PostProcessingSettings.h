@@ -18,6 +18,13 @@ namespace Horizon
         Custom,
     };
 
+    enum class LocalToneMappingMethod
+    {
+        None,
+        BilateralGrid,
+        ExposureFusion,
+    };
+
     /**
      * A collection of configurable parameters for all post-processing effects.
      */
@@ -61,6 +68,12 @@ namespace Horizon
 
         /** Histogram maximum exposure value. This property is expressed in EV100. */
         float autoExposureHistogramMaxEV100 = 20.0f;
+
+        LocalToneMappingMethod localToneMappingMethod = LocalToneMappingMethod::None;
+
+        float exposureFusionShadows = 1.0f;
+
+        float exposureFusionHighlights = 1.0f;
 
         /** Overall intensity of the bloom effect. */
         float bloomIntensity = 1.0f;

@@ -207,15 +207,18 @@ namespace Horizon
             arguments.push_back(L"-Zss");
             arguments.push_back(L"-Qembed_debug");
 
-            if (language == ShadingLanguage::SPIRV)
+            switch (language)
             {
+            case ShadingLanguage::DXIL:
+                // @todo
+                break;
+            case ShadingLanguage::SPIRV:
                 arguments.push_back(L"-fspv-debug=vulkan-with-source");
                 //arguments.push_back(L"-fspv-print-all");
-            }
-
-            if (language == ShadingLanguage::DXIL)
-            {
-                // TODO
+                break;
+            default:
+                std::unreachable();
+                break;
             }
         }
 

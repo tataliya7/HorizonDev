@@ -1,7 +1,7 @@
-#include "../../ShaderCommon.hsh"
-#include "../RealTimeRendererCommon.hsh"
-#include "PostProcessingCommon.hsh"
-#include "ToneMappingCommon.hsh"
+#include "../../../ShaderCommon.hsh"
+#include "../../RealTimeRendererCommon.hsh"
+#include "../PostProcessingCommon.hsh"
+#include "../ToneMappingCommon.hsh"
 
 SHADER_CONSTANTS_STRUCT_BEGIN();
 SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferSRV);
@@ -14,7 +14,7 @@ SHADER_CONSTANTS_STRUCT_END();
 
 [shader("compute")]
 [numthreads(POST_PROCESSING_THREAD_GROUP_SIZE_X, POST_PROCESSING_THREAD_GROUP_SIZE_Y, 1)]
-void LocalExposureGuidedUpsamplingCS(uint3 dispatchThreadID : SV_DispatchThreadID)
+void ExposureFusionGuidedUpsamplingCS(uint3 dispatchThreadID : SV_DispatchThreadID)
 {
     StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
     PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];

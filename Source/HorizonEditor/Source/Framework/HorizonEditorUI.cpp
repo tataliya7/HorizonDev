@@ -1670,20 +1670,22 @@ namespace Horizon
 
                     ImGui::TreePop();
                 }
-#if 0
-                if (ImGui::TreeNode("Local Exposure"))
+
+                if (ImGui::TreeNode("Local Tone Mapping"))
                 {
                     ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(2, 2));
                     ImGui::Columns(2);
                     ImGui::Separator();
 
                     ImGui::AlignTextToFramePadding();
-                    ImGui::TextUnformatted("Enable");
+                    ImGui::TextUnformatted("Method");
                     ImGui::NextColumn();
                     ImGui::PushItemWidth(-1);
-                    if (ImGui::Checkbox("##LocalExposure", &renderSettings.postProcessingSettings.localExposureEnabled))
                     {
-
+                        static const char* localToneMappingMethodNames[] = { "None", "Bilateral Grid", "Exposure Fusion" };
+                        int localToneMappingMethod = (int)renderSettings.postProcessingSettings.localToneMappingMethod;
+                        ImGui::Combo("##LocalToneMappingMethod", &localToneMappingMethod, localToneMappingMethodNames, IM_ARRAYSIZE(localToneMappingMethodNames));
+                        renderSettings.postProcessingSettings.localToneMappingMethod = (LocalToneMappingMethod)localToneMappingMethod;
                     }
                     ImGui::PopItemWidth();
                     ImGui::NextColumn();
@@ -1692,7 +1694,7 @@ namespace Horizon
                     ImGui::TextUnformatted("Shadows");
                     ImGui::NextColumn();
                     ImGui::PushItemWidth(-1);
-                    if (ImGui::DragFloat("##LocalExposureShadows", &renderSettings.postProcessingSettings.localExposureShadows, 0.01f, 0.0f, 4.0f))
+                    if (ImGui::DragFloat("##ExposureFusionShadows", &renderSettings.postProcessingSettings.exposureFusionShadows, 0.001f, 0.0f, 1.0f))
                     {
 
                     }
@@ -1703,40 +1705,7 @@ namespace Horizon
                     ImGui::TextUnformatted("Highlights");
                     ImGui::NextColumn();
                     ImGui::PushItemWidth(-1);
-                    if (ImGui::DragFloat("##LocalExposureHighlights", &renderSettings.postProcessingSettings.localExposureHighlights, 0.01f, 0.0f, 4.0f))
-                    {
-
-                    }
-                    ImGui::PopItemWidth();
-                    ImGui::NextColumn();
-
-                    ImGui::AlignTextToFramePadding();
-                    ImGui::TextUnformatted("Coarsest Mip Level");
-                    ImGui::NextColumn();
-                    ImGui::PushItemWidth(-1);
-                    if (ImGui::DragInt("##LocalExposureCoarsestMipLevel", &renderSettings.postProcessingSettings.localExposureCoarsestMipLevel, 1.0f, 0, 32))
-                    {
-
-                    }
-                    ImGui::PopItemWidth();
-                    ImGui::NextColumn();
-
-                    ImGui::AlignTextToFramePadding();
-                    ImGui::TextUnformatted("Display Mip Level");
-                    ImGui::NextColumn();
-                    ImGui::PushItemWidth(-1);
-                    if (ImGui::DragInt("##LocalExposureDisplayMipLevel", &renderSettings.postProcessingSettings.localExposureDisplayMipLevel, 1.0f, 0, 32))
-                    {
-
-                    }
-                    ImGui::PopItemWidth();
-                    ImGui::NextColumn();
-
-                    ImGui::AlignTextToFramePadding();
-                    ImGui::TextUnformatted("Exposure Preference Sigma");
-                    ImGui::NextColumn();
-                    ImGui::PushItemWidth(-1);
-                    if (ImGui::DragFloat("##LocalExposurePreferenceSigma", &renderSettings.postProcessingSettings.localExposurePreferenceSigma))
+                    if (ImGui::DragFloat("##ExposureFusionHighlights", &renderSettings.postProcessingSettings.exposureFusionHighlights, 0.001f, 0.0f, 1.0f))
                     {
 
                     }
@@ -1749,7 +1718,7 @@ namespace Horizon
 
                     ImGui::TreePop();
                 }
-
+#if 0
                 if (ImGui::TreeNode("Depth Of Field"))
                 {
                     ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(2, 2));

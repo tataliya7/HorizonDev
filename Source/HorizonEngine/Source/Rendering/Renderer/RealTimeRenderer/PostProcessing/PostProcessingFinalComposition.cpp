@@ -8,7 +8,7 @@ namespace Horizon
         const SceneView& view,
         RenderGraphTextureHandle colorTexture,
         RenderGraphTextureHandle bloomTexture,
-        RenderGraphTextureHandle localExposureTexture,
+        RenderGraphTextureHandle localToneMappingTexture,
         RenderGraphTextureHandle colorTransformLUTTexture,
         RenderGraphBufferHandle autoExposureBuffer,
         bool outputInHDR)
@@ -18,16 +18,16 @@ namespace Horizon
         assert(autoExposureBuffer);
 
         const bool isBloomTextureValid = !bloomTexture.IsNullHandle();
-        const bool isLocalExposureTextureValid = !localExposureTexture.IsNullHandle();
+        const bool isLocalToneMappingTextureValid = !localToneMappingTexture.IsNullHandle();
 
         if (!isBloomTextureValid)
         {
             bloomTexture = defaultResources->ImportBlackDummyTexture2D(renderGraph);
         }
 
-        if (!isLocalExposureTextureValid)
+        if (!isLocalToneMappingTextureValid)
         {
-            localExposureTexture = defaultResources->ImportBlackDummyTexture2D(renderGraph);
+            localToneMappingTexture = defaultResources->ImportBlackDummyTexture2D(renderGraph);
         }
         // TODO: Implement lens dirt
         RenderBackendTextureHandle lensDirtTexture = defaultResources->GetBlackDummyTexture2D()->GetHandle();
@@ -75,7 +75,7 @@ namespace Horizon
             {
                 colorTexture = builder.ReadTexture(colorTexture, RenderBackendResourceState::ShaderResource);
                 bloomTexture = builder.ReadTexture(bloomTexture, RenderBackendResourceState::ShaderResource);
-                localExposureTexture = builder.ReadTexture(localExposureTexture, RenderBackendResourceState::ShaderResource);
+                localToneMappingTexture = builder.ReadTexture(localToneMappingTexture, RenderBackendResourceState::ShaderResource);
                 colorTransformLUTTexture = builder.ReadTexture(colorTransformLUTTexture, RenderBackendResourceState::ShaderResource);
                 autoExposureBuffer = builder.ReadBuffer(autoExposureBuffer, RenderBackendResourceState::ShaderResource);
                 outputTexture = builder.WriteTexture(outputTexture, RenderBackendResourceState::UnorderedAccess);
@@ -91,7 +91,7 @@ namespace Horizon
                     shaderConstants.BindTextureSRV(1, registry.GetTextureSRVBindlessResourceDescriptorIndex(colorTexture));
                     shaderConstants.BindTextureSRV(2, renderBackend->GetTextureSRVBindlessResourceDescriptorIndex(lensDirtTexture));
                     shaderConstants.BindTextureSRV(3, registry.GetTextureSRVBindlessResourceDescriptorIndex(bloomTexture));
-                    shaderConstants.BindTextureSRV(4, registry.GetTextureSRVBindlessResourceDescriptorIndex(localExposureTexture));
+                    shaderConstants.BindTextureSRV(4, registry.GetTextureSRVBindlessResourceDescriptorIndex(localToneMappingTexture));
                     shaderConstants.BindTextureSRV(5, registry.GetTextureSRVBindlessResourceDescriptorIndex(colorTransformLUTTexture));
                     shaderConstants.BindBufferSRV(6, registry.GetBufferSRVBindlessResourceDescriptorIndex(autoExposureBuffer));
                     shaderConstants.BindTextureUAV(7, registry.GetTextureUAVBindlessResourceDescriptorIndex(outputTexture, 0));

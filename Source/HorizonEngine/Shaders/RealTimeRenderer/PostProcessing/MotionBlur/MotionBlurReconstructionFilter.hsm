@@ -7,10 +7,10 @@
  * - Jorge Jimenez. 2014. Next Generation Post Processing in Call of Duty: Advanced Warfare.
  */
 
-#include "../../ShaderCommon.hsh"
-#include "../../Random.hsh"
-#include "../RealTimeRendererCommon.hsh"
-#include "PostProcessingCommon.hsh"
+#include "../../../ShaderCommon.hsh"
+#include "../../../Random.hsh"
+#include "../../RealTimeRendererCommon.hsh"
+#include "../PostProcessingCommon.hsh"
 #include "MotionBlurCommon.hsh"
 
 #if (MOTION_BLUR_RECONSTRUCTION_FILTER_SAMPLE_COUNT % 2)

@@ -175,7 +175,7 @@ namespace Horizon
 
         bool IsAutoExposureEnabled() const;
 
-        bool IsLocalExposureEnabled() const;
+        bool IsLocalToneMappingEnabled() const;
 
         bool IsSkyAtmosphereRenderingEnabled() const;
 
@@ -386,11 +386,11 @@ namespace Horizon
             const SceneView& view,
             RenderGraphBufferHandle autoExposureBuffer);
 
-        RenderGraphTextureHandle DispatchLocalExposure(
+        RenderGraphTextureHandle DispatchExposureFusion(
             RenderGraph& renderGraph,
             const SceneView& view,
             RenderGraphTextureHandle colorTexture,
-            RenderGraphTextureHandle autoExposureTexture);
+            RenderGraphTextureHandle exposureTexture);
 
         RenderGraphTextureHandle RenderColorTransformLUT(
             RenderGraph& renderGraph,
@@ -401,7 +401,7 @@ namespace Horizon
             const SceneView& view,
             RenderGraphTextureHandle colorTexture,
             RenderGraphTextureHandle bloomTexture,
-            RenderGraphTextureHandle localExposureTexture,
+            RenderGraphTextureHandle localToneMappingTexture,
             RenderGraphTextureHandle colorTransformLUTTexture,
             RenderGraphBufferHandle autoExposureBuffer,
             bool outputInHDR);
@@ -521,7 +521,7 @@ namespace Horizon
             bool enableSurfelGI;
             bool enableMotionBlur;
             bool enableAutoExposure;
-            bool enableLocalExposure;
+            bool enableLocalToneMapping;
             bool enableDepthOfField;
             bool enableLensFlare;
             bool enableGaussianBloom;

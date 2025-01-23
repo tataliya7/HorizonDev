@@ -401,19 +401,19 @@ namespace Horizon
             shaderLibrary->LoadShader(ShaderID::LocalFogVolumePS, shaderDesc);
         }
         {
-            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/PostProcessing/MotionBlurTileClassification.hsm", "MotionBlurTileClassificationCS");
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/PostProcessing/MotionBlur/MotionBlurTileClassification.hsm", "MotionBlurTileClassificationCS");
             shaderLibrary->LoadShader(ShaderID::MotionBlurTileClassificationCS, shaderDesc);
         }
         {
-            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Vertex, "Shaders/RealTimeRenderer/PostProcessing/MotionBlurVelocityDilation.hsm", "MotionBlurVelocityDilationScatterVS");
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Vertex, "Shaders/RealTimeRenderer/PostProcessing/MotionBlur/MotionBlurVelocityDilation.hsm", "MotionBlurVelocityDilationScatterVS");
             shaderLibrary->LoadShader(ShaderID::MotionBlurVelocityDilationScatterVS, shaderDesc);
         }
         {
-            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Pixel, "Shaders/RealTimeRenderer/PostProcessing/MotionBlurVelocityDilation.hsm", "MotionBlurVelocityDilationScatterPS");
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Pixel, "Shaders/RealTimeRenderer/PostProcessing/MotionBlur/MotionBlurVelocityDilation.hsm", "MotionBlurVelocityDilationScatterPS");
             shaderLibrary->LoadShader(ShaderID::MotionBlurVelocityDilationScatterPS, shaderDesc);
         }
         {
-            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/PostProcessing/MotionBlurReconstructionFilter.hsm", "MotionBlurReconstructionFilterCS");
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/PostProcessing/MotionBlur/MotionBlurReconstructionFilter.hsm", "MotionBlurReconstructionFilterCS");
             shaderLibrary->LoadShader(ShaderID::MotionBlurReconstructionFilterCS, shaderDesc);
         }
         {
@@ -490,24 +490,20 @@ namespace Horizon
             shaderLibrary->LoadShader(ShaderID::LensFlareCombine, shaderDesc);
         }
          {
-             ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/PostProcessing/LocalExposureComputeLuminance.hsm", "LocalExposureComputeLuminanceCS");
-             shaderLibrary->LoadShader(ShaderID::LocalExposureComputeLuminance, shaderDesc);
+             ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/PostProcessing/LocalToneMapping/ExposureFusionComputeLuminanceAndWeight.hsm", "ExposureFusionComputeLuminanceAndWeightCS");
+             shaderLibrary->LoadShader(ShaderID::ExposureFusionComputeLuminanceAndWeight, shaderDesc);
          }
          {
-             ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/PostProcessing/LocalExposureComputeWeights.hsm", "LocalExposureComputeWeightsCS");
-             shaderLibrary->LoadShader(ShaderID::LocalExposureComputeWeights, shaderDesc);
+             ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/PostProcessing/LocalToneMapping/LocalToneMappingBlendExposures.hsm", "LocalToneMappingBlendExposuresCS");
+             shaderLibrary->LoadShader(ShaderID::LocalToneMappingBlendExposures, shaderDesc);
          }
          {
-             ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/PostProcessing/LocalExposureBlendExposures.hsm", "LocalExposureBlendExposuresCS");
-             shaderLibrary->LoadShader(ShaderID::LocalExposureBlendExposures, shaderDesc);
+             ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/PostProcessing/LocalToneMapping/LocalToneMappingBlendLaplacian.hsm", "LocalToneMappingBlendLaplacianCS");
+             shaderLibrary->LoadShader(ShaderID::LocalToneMappingBlendLaplacian, shaderDesc);
          }
          {
-             ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/PostProcessing/LocalExposureBlendLaplacian.hsm", "LocalExposureBlendLaplacianCS");
-             shaderLibrary->LoadShader(ShaderID::LocalExposureBlendLaplacian, shaderDesc);
-         }
-         {
-             ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/PostProcessing/LocalExposureGuidedUpsampling.hsm", "LocalExposureGuidedUpsamplingCS");
-             shaderLibrary->LoadShader(ShaderID::LocalExposureGuidedUpsampling, shaderDesc);
+             ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/PostProcessing/LocalToneMapping/ExposureFusionGuidedUpsampling.hsm", "ExposureFusionGuidedUpsamplingCS");
+             shaderLibrary->LoadShader(ShaderID::ExposureFusionGuidedUpsampling, shaderDesc);
          }
         {
             ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/PostProcessing/ColorTransformLUT.hsm", "ColorTransformLUTCS");

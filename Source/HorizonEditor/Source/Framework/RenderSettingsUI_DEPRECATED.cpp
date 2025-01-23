@@ -697,7 +697,7 @@ namespace Horizon
                     ImGui::TextUnformatted("Enable");
                     ImGui::NextColumn();
                     ImGui::PushItemWidth(-1);
-                    if (ImGui::Checkbox("##LocalExposure", &renderSettings.postProcessingSettings.localExposureEnabled))
+                    if (ImGui::Checkbox("##LocalToneMapping", &renderSettings.postProcessingSettings.localToneMappingEnabled))
                     {
 
                     }
@@ -708,7 +708,7 @@ namespace Horizon
                     ImGui::TextUnformatted("Shadows");
                     ImGui::NextColumn();
                     ImGui::PushItemWidth(-1);
-                    if (ImGui::DragFloat("##LocalExposureShadows", &renderSettings.postProcessingSettings.localExposureShadows, 0.01f, 0.0f, 4.0f))
+                    if (ImGui::DragFloat("##LocalToneMappingShadows", &renderSettings.postProcessingSettings.localToneMappingShadows, 0.01f, 0.0f, 4.0f))
                     {
 
                     }
@@ -719,7 +719,7 @@ namespace Horizon
                     ImGui::TextUnformatted("Highlights");
                     ImGui::NextColumn();
                     ImGui::PushItemWidth(-1);
-                    if (ImGui::DragFloat("##LocalExposureHighlights", &renderSettings.postProcessingSettings.localExposureHighlights, 0.01f, 0.0f, 4.0f))
+                    if (ImGui::DragFloat("##LocalToneMappingHighlights", &renderSettings.postProcessingSettings.localToneMappingHighlights, 0.01f, 0.0f, 4.0f))
                     {
 
                     }
@@ -730,7 +730,7 @@ namespace Horizon
                     ImGui::TextUnformatted("Coarsest Mip Level");
                     ImGui::NextColumn();
                     ImGui::PushItemWidth(-1);
-                    if (ImGui::DragInt("##LocalExposureCoarsestMipLevel", &renderSettings.postProcessingSettings.localExposureCoarsestMipLevel, 1.0f, 0, 32))
+                    if (ImGui::DragInt("##LocalToneMappingCoarsestMipLevel", &renderSettings.postProcessingSettings.localToneMappingCoarsestMipLevel, 1.0f, 0, 32))
                     {
 
                     }
@@ -741,7 +741,7 @@ namespace Horizon
                     ImGui::TextUnformatted("Display Mip Level");
                     ImGui::NextColumn();
                     ImGui::PushItemWidth(-1);
-                    if (ImGui::DragInt("##LocalExposureDisplayMipLevel", &renderSettings.postProcessingSettings.localExposureDisplayMipLevel, 1.0f, 0, 32))
+                    if (ImGui::DragInt("##LocalToneMappingDisplayMipLevel", &renderSettings.postProcessingSettings.localToneMappingDisplayMipLevel, 1.0f, 0, 32))
                     {
 
                     }
@@ -752,7 +752,7 @@ namespace Horizon
                     ImGui::TextUnformatted("Exposure Preference Sigma");
                     ImGui::NextColumn();
                     ImGui::PushItemWidth(-1);
-                    if (ImGui::DragFloat("##LocalExposurePreferenceSigma", &renderSettings.postProcessingSettings.localExposurePreferenceSigma))
+                    if (ImGui::DragFloat("##LocalToneMappingPreferenceSigma", &renderSettings.postProcessingSettings.localToneMappingPreferenceSigma))
                     {
 
                     }

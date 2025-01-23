@@ -3,26 +3,24 @@
 
 namespace Horizon
 {
-    bool RealTimeRenderer::IsLocalExposureEnabled() const
+    bool RealTimeRenderer::IsLocalToneMappingEnabled() const
     {
-        return features.enableLocalExposure;
+        return features.enableLocalToneMapping;
     }
 
-    RenderGraphTextureHandle RealTimeRenderer::DispatchLocalExposure(
+    RenderGraphTextureHandle RealTimeRenderer::DispatchExposureFusion(
         RenderGraph& renderGraph,
         const SceneView& view,
         RenderGraphTextureHandle colorTexture,
-        RenderGraphTextureHandle autoExposureTexture)
+        RenderGraphTextureHandle exposureTexture)
     {
         const PostProcessingSettings& postProcessingSettings = view.renderSettings.postProcessingSettings;
 
-        float highlights = 1.0f;//std::pow(2.0f, -postProcessingSettings.localExposureHighlights);
-        float shadows = 0.0f;//std::pow(2.0f, postProcessingSettings.localExposureShadows);
-        float sigma = 0.25f;//postProcessingSettings.localExposurePreferenceSigma * postProcessingSettings.localExposurePreferenceSigma;
-        int32 coarsestMipLevel = 0;//postProcessingSettings.localExposureCoarsestMipLevel;
-        int32 displayMipLevel = 1;//postProcessingSettings.localExposureDisplayMipLevel;
-
-        bool isAutoExposureTextureValid = !autoExposureTexture.IsNullHandle();
+        float highlights = 1.0f;//std::pow(2.0f, -postProcessingSettings.localToneMappingHighlights);
+        float shadows = 0.0f;//std::pow(2.0f, postProcessingSettings.localToneMappingShadows);
+        float sigma = 0.25f;//postProcessingSettings.localToneMappingPreferenceSigma * postProcessingSettings.localToneMappingPreferenceSigma;
+        int32 coarsestMipLevel = 0;//postProcessingSettings.localToneMappingCoarsestMipLevel;
+        int32 displayMipLevel = 1;//postProcessingSettings.localToneMappingDisplayMipLevel;
 
         uint32 downsampleFactor = 2;
 
@@ -33,7 +31,7 @@ namespace Horizon
         coarsestMipLevel = std::clamp(coarsestMipLevel, 0, (int)mipLevelCount - 1);
         displayMipLevel = std::clamp(std::min(displayMipLevel, coarsestMipLevel), 0, (int)mipLevelCount - 1);
 
-        RenderGraphTextureDesc localExposureTextureDesc = RenderGraphTextureDesc::Create2D(
+        RenderGraphTextureDesc localToneMappingTextureDesc = RenderGraphTextureDesc::Create2D(
             width,
             height,
             RenderBackendTextureFormat::R16G16B16A16Float,
@@ -41,20 +39,29 @@ namespace Horizon
             RenderBackendTextureClearValue::Black,
             mipLevelCount);
 
-        RenderGraphTextureHandle localExposureLuminance = renderGraph.CreateTexture(localExposureTextureDesc, "LocalExposureLuminance");
-        RenderGraphTextureHandle localExposureWeights = renderGraph.CreateTexture(localExposureTextureDesc, "LocalExposureWeights");
-        RenderGraphTextureHandle localExposureAssemble = renderGraph.CreateTexture(localExposureTextureDesc, "LocalExposureAssemble");
-        RenderGraphTextureHandle localExposureTexture = renderGraph.CreateTexture(localExposureTextureDesc, "LocalExposureTexture");
+        RenderGraphTextureDesc exposureFusionLuminanceTextureDesc = RenderGraphTextureDesc::Create2D(
+           width,
+           height,
+           RenderBackendTextureFormat::R11G11B10Float,
+           RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::UnorderedAccess,
+           RenderBackendTextureClearValue::Black,
+           mipLevelCount);
+        RenderGraphTextureDesc exposureFusionWeightTextureDesc = exposureFusionLuminanceTextureDesc;
+
+        RenderGraphTextureHandle exposureFusionLuminanceTexture = renderGraph.CreateTexture(exposureFusionLuminanceTextureDesc, "ExposureFusionLuminanceTexture");
+        RenderGraphTextureHandle exposureFusionWeightTexture = renderGraph.CreateTexture(exposureFusionWeightTextureDesc, "ExposureFusionWeightTexture");
+        RenderGraphTextureHandle localToneMappingAssemble = renderGraph.CreateTexture(localToneMappingTextureDesc, "LocalToneMappingAssemble");
+        RenderGraphTextureHandle localToneMappingTexture = renderGraph.CreateTexture(localToneMappingTextureDesc, "LocalToneMappingTexture");
 
         renderGraph.AddPass(
-            std::format("LocalExposureComputeLuminance (Compute, {}x{})", width, height),
+            std::format("ExposureFusionComputeLuminanceAndWeight (Compute, {}x{})", width, height),
             RenderGraphPassFlags::Compute,
             [&](RenderGraphBuilder& builder)
             {
                 colorTexture = builder.ReadTexture(colorTexture, RenderBackendResourceState::ShaderResource);
-                if (isAutoExposureTextureValid) builder.ReadTexture(autoExposureTexture, RenderBackendResourceState::ShaderResource);
-
-                localExposureLuminance = builder.WriteTexture(localExposureLuminance, RenderBackendResourceState::UnorderedAccess);
+                exposureTexture = builder.ReadTexture(exposureTexture, RenderBackendResourceState::ShaderResource);
+                exposureFusionLuminanceTexture = builder.WriteTexture(exposureFusionLuminanceTexture, RenderBackendResourceState::UnorderedAccess);
+                exposureFusionWeightTexture = builder.WriteTexture(exposureFusionWeightTexture, RenderBackendResourceState::UnorderedAccess);
 
                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
                 {
@@ -65,41 +72,11 @@ namespace Horizon
                     RenderBackendShaderConstants shaderConstants = {};
                     shaderConstants.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
                     shaderConstants.BindTextureSRV(1, registry.GetTextureSRVBindlessResourceDescriptorIndex(colorTexture));
-                    if (isAutoExposureTextureValid) shaderConstants.BindTextureSRV(2, registry.GetTextureSRVBindlessResourceDescriptorIndex(autoExposureTexture));
-                    shaderConstants.BindTextureUAV(3, registry.GetTextureUAVBindlessResourceDescriptorIndex(localExposureLuminance, 0));
+                    shaderConstants.BindTextureSRV(2, registry.GetTextureSRVBindlessResourceDescriptorIndex(exposureTexture));
+                    shaderConstants.BindTextureUAV(3, registry.GetTextureUAVBindlessResourceDescriptorIndex(exposureFusionLuminanceTexture, 0));
+                    shaderConstants.BindTextureUAV(4, registry.GetTextureUAVBindlessResourceDescriptorIndex(exposureFusionWeightTexture, 0));
 
-                    RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::LocalExposureComputeLuminance);
-
-                    commandList.Dispatch(
-                        computeShader,
-                        shaderConstants,
-                        threadGroupCountX,
-                        threadGroupCountY,
-                        threadGroupCountZ);
-                };
-            });
-
-        renderGraph.AddPass(
-            std::format("LocalExposureComputeWeights (Compute, {}x{})", width, height),
-            RenderGraphPassFlags::Compute,
-            [&](RenderGraphBuilder& builder)
-            {
-                builder.ReadTexture(localExposureLuminance, RenderBackendResourceState::ShaderResource);
-
-                localExposureWeights = builder.WriteTexture(localExposureWeights, RenderBackendResourceState::UnorderedAccess);
-
-                return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
-                {
-                    uint32 threadGroupCountX = ComputeShaderThreadGroupCount(width, PostProcessingThreadGroupSizeX);
-                    uint32 threadGroupCountY = ComputeShaderThreadGroupCount(height, PostProcessingThreadGroupSizeY);
-                    uint32 threadGroupCountZ = 1;
-
-                    RenderBackendShaderConstants shaderConstants = {};
-                    shaderConstants.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
-                    shaderConstants.BindTextureSRV(1, registry.GetTextureSRVBindlessResourceDescriptorIndex(localExposureLuminance));
-                    shaderConstants.BindTextureUAV(2, registry.GetTextureUAVBindlessResourceDescriptorIndex(localExposureWeights, 0));
-
-                    RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::LocalExposureComputeWeights);
+                    RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::ExposureFusionComputeLuminanceAndWeight);
 
                     commandList.Dispatch(
                         computeShader,
@@ -109,19 +86,20 @@ namespace Horizon
                         threadGroupCountZ);
                 };
             });
+
 #if 0
         renderGraph.AddPass(
-            std::format("LocalExposureGenerateMipChain (Compute, {}x{})", width, height),
+            std::format("LocalToneMappingGenerateMipChain (Compute, {}x{})", width, height),
             RenderGraphPassFlags::Compute,
             [&](RenderGraphBuilder& builder)
             {
-                localExposureLuminance = builder.ReadWriteTexture(localExposureLuminance, RenderBackendResourceState::ShaderResource);
+                localToneMappingLuminance = builder.ReadWriteTexture(localToneMappingLuminance, RenderBackendResourceState::ShaderResource);
 
                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
                 {
                     uint32 w = width;
                     uint32 h = height;
-                    RenderBackendTextureHandle textureHandle = registry.GetRenderBackendTextureHandle(localExposureLuminance);
+                    RenderBackendTextureHandle textureHandle = registry.GetRenderBackendTextureHandle(localToneMappingLuminance);
 
                     RenderBackendShaderHandle downsampleTexture2DCS = shaderLibrary->GetShader(ShaderID::DownsampleTexture);
 
@@ -173,17 +151,17 @@ namespace Horizon
 
         // TODO: Create mips in one pass
         renderGraph.AddPass(
-            std::format("LocalExposureGenerateMipChain (Compute, {}x{})", width, height),
+            std::format("LocalToneMappingGenerateMipChain (Compute, {}x{})", width, height),
             RenderGraphPassFlags::Compute,
             [&](RenderGraphBuilder& builder)
             {
-                localExposureWeights = builder.ReadWriteTexture(localExposureWeights, RenderBackendResourceState::ShaderResource);
+                localToneMappingWeights = builder.ReadWriteTexture(localToneMappingWeights, RenderBackendResourceState::ShaderResource);
 
                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
                 {
                     uint32 w = width;
                     uint32 h = height;
-                    RenderBackendTextureHandle textureHandle = registry.GetRenderBackendTextureHandle(localExposureWeights);
+                    RenderBackendTextureHandle textureHandle = registry.GetRenderBackendTextureHandle(localToneMappingWeights);
 
                     RenderBackendShaderHandle downsampleTexture2DCS = renderEngine->GetShaderLibrary()->GetShader((uint32)ShaderPipelineID::DownsampleTexture2D);
 
@@ -236,14 +214,14 @@ namespace Horizon
 
         // Blend the coarsest level - Gaussian.
         renderGraph.AddPass(
-            std::format("LocalExposureBlendExposures (Compute, {}x{})", coarsestMipLevelWidth, coarsestMipLevelHeight),
+            std::format("LocalToneMappingBlendExposures (Compute, {}x{})", coarsestMipLevelWidth, coarsestMipLevelHeight),
             RenderGraphPassFlags::Compute,
             [&](RenderGraphBuilder& builder)
             {
-                builder.ReadTexture(localExposureLuminance, RenderBackendResourceState::ShaderResource);
-                builder.ReadTexture(localExposureWeights, RenderBackendResourceState::ShaderResource);
+                builder.ReadTexture(exposureFusionLuminanceTexture, RenderBackendResourceState::ShaderResource);
+                builder.ReadTexture(exposureFusionWeightTexture, RenderBackendResourceState::ShaderResource);
 
-                localExposureAssemble = builder.WriteTexture(localExposureAssemble, RenderBackendResourceState::UnorderedAccess);
+                localToneMappingAssemble = builder.WriteTexture(localToneMappingAssemble, RenderBackendResourceState::UnorderedAccess);
 
                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
                 {
@@ -253,12 +231,12 @@ namespace Horizon
 
                     RenderBackendShaderConstants shaderConstants = {};
                     shaderConstants.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
-                    shaderConstants.BindTextureSRV(1, registry.GetTextureSRVBindlessResourceDescriptorIndex(localExposureLuminance));
-                    shaderConstants.BindTextureSRV(2, registry.GetTextureSRVBindlessResourceDescriptorIndex(localExposureWeights));
-                    shaderConstants.BindTextureUAV(3, registry.GetTextureUAVBindlessResourceDescriptorIndex(localExposureAssemble, coarsestMipLevel));
+                    shaderConstants.BindTextureSRV(1, registry.GetTextureSRVBindlessResourceDescriptorIndex(exposureFusionLuminanceTexture));
+                    shaderConstants.BindTextureSRV(2, registry.GetTextureSRVBindlessResourceDescriptorIndex(exposureFusionWeightTexture));
+                    shaderConstants.BindTextureUAV(3, registry.GetTextureUAVBindlessResourceDescriptorIndex(localToneMappingAssemble, coarsestMipLevel));
                     //shaderConstants.PushConstants(0, (float)coarsestMipLevel);
 
-                    RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::LocalExposureBlendExposures);
+                    RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::LocalToneMappingBlendExposures);
 
                     commandList.Dispatch(
                         computeShader,
@@ -270,14 +248,14 @@ namespace Horizon
             });
 
         renderGraph.AddPass(
-            std::format("LocalExposureBlendLaplacian (Compute, {}x{})", width, height),
+            std::format("LocalToneMappingBlendLaplacian (Compute, {}x{})", width, height),
             RenderGraphPassFlags::Compute,
             [&](RenderGraphBuilder& builder)
             {
-                builder.ReadTexture(localExposureLuminance, RenderBackendResourceState::ShaderResource);
-                builder.ReadTexture(localExposureWeights, RenderBackendResourceState::ShaderResource);
+                builder.ReadTexture(exposureFusionLuminanceTexture, RenderBackendResourceState::ShaderResource);
+                builder.ReadTexture(exposureFusionWeightTexture, RenderBackendResourceState::ShaderResource);
 
-                localExposureAssemble = builder.ReadWriteTexture(localExposureAssemble, RenderBackendResourceState::UnorderedAccess);
+                localToneMappingAssemble = builder.ReadWriteTexture(localToneMappingAssemble, RenderBackendResourceState::UnorderedAccess);
 
                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
                 {
@@ -288,7 +266,7 @@ namespace Horizon
                     {
                         RenderBackendBarrier barriers[] =
                         {
-                            RenderBackendBarrier(registry.GetRenderBackendTextureHandle(localExposureAssemble), RenderBackendTextureSubresourceRange(mipLevel, 1, 0, RenderBackendTextureSubresourceRange::RemainingArrayLayers), RenderBackendResourceState::UnorderedAccess, RenderBackendResourceState::ShaderResource),
+                            RenderBackendBarrier(registry.GetRenderBackendTextureHandle(localToneMappingAssemble), RenderBackendTextureSubresourceRange(mipLevel, 1, 0, RenderBackendTextureSubresourceRange::RemainingArrayLayers), RenderBackendResourceState::UnorderedAccess, RenderBackendResourceState::ShaderResource),
                         };
                         commandList.Barriers(barriers, 1);
 
@@ -301,13 +279,13 @@ namespace Horizon
 
                         RenderBackendShaderConstants shaderConstants = {};
                         shaderConstants.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
-                        shaderConstants.BindTextureSRV(1, registry.GetTextureSRVBindlessResourceDescriptorIndex(localExposureLuminance));
-                        shaderConstants.BindTextureSRV(2, registry.GetTextureSRVBindlessResourceDescriptorIndex(localExposureWeights));
-                        shaderConstants.BindTextureSRV(3, registry.GetTextureSRVBindlessResourceDescriptorIndex(localExposureAssemble));
-                        shaderConstants.BindTextureUAV(4, registry.GetTextureUAVBindlessResourceDescriptorIndex(localExposureAssemble, mipLevel - 1));
+                        shaderConstants.BindTextureSRV(1, registry.GetTextureSRVBindlessResourceDescriptorIndex(exposureFusionLuminanceTexture));
+                        shaderConstants.BindTextureSRV(2, registry.GetTextureSRVBindlessResourceDescriptorIndex(exposureFusionWeightTexture));
+                        shaderConstants.BindTextureSRV(3, registry.GetTextureSRVBindlessResourceDescriptorIndex(localToneMappingAssemble));
+                        shaderConstants.BindTextureUAV(4, registry.GetTextureUAVBindlessResourceDescriptorIndex(localToneMappingAssemble, mipLevel - 1));
                         //shaderConstants.PushConstants(0, (float)mipLevel);
 
-                        RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::LocalExposureBlendLaplacian);
+                        RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::LocalToneMappingBlendLaplacian);
 
                         commandList.Dispatch(
                             computeShader,
@@ -321,7 +299,7 @@ namespace Horizon
                     {
                         RenderBackendBarrier barriers[] =
                         {
-                            RenderBackendBarrier(registry.GetRenderBackendTextureHandle(localExposureAssemble), RenderBackendTextureSubresourceRange(displayMipLevel + 1, coarsestMipLevel - displayMipLevel, 0, RenderBackendTextureSubresourceRange::RemainingArrayLayers), RenderBackendResourceState::ShaderResource, RenderBackendResourceState::UnorderedAccess),
+                            RenderBackendBarrier(registry.GetRenderBackendTextureHandle(localToneMappingAssemble), RenderBackendTextureSubresourceRange(displayMipLevel + 1, coarsestMipLevel - displayMipLevel, 0, RenderBackendTextureSubresourceRange::RemainingArrayLayers), RenderBackendResourceState::ShaderResource, RenderBackendResourceState::UnorderedAccess),
                         };
                         commandList.Barriers(barriers, 1);
                     }
@@ -332,15 +310,15 @@ namespace Horizon
         uint32 displayMipLevelHeight = height >> displayMipLevel;
 
         renderGraph.AddPass(
-            std::format("LocalExposureGuidedUpsampling (Compute, {}x{} -> {}x{})", displayMipLevelWidth, displayMipLevelHeight, targetResolution.width, targetResolution.height),
+            std::format("ExposureFusionGuidedUpsampling (Compute, {}x{} -> {}x{})", displayMipLevelWidth, displayMipLevelHeight, targetResolution.width, targetResolution.height),
             RenderGraphPassFlags::Compute,
             [&](RenderGraphBuilder& builder)
             {
                 builder.ReadTexture(colorTexture, RenderBackendResourceState::ShaderResource);
-                builder.ReadTexture(localExposureLuminance, RenderBackendResourceState::ShaderResource);
-                builder.ReadTexture(localExposureAssemble, RenderBackendResourceState::ShaderResource);
+                builder.ReadTexture(exposureFusionLuminanceTexture, RenderBackendResourceState::ShaderResource);
+                builder.ReadTexture(localToneMappingAssemble, RenderBackendResourceState::ShaderResource);
 
-                localExposureAssemble = builder.WriteTexture(localExposureAssemble, RenderBackendResourceState::UnorderedAccess);
+                localToneMappingAssemble = builder.WriteTexture(localToneMappingAssemble, RenderBackendResourceState::UnorderedAccess);
 
                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
                 {
@@ -351,17 +329,17 @@ namespace Horizon
                     RenderBackendShaderConstants shaderConstants = {};
                     shaderConstants.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
                     shaderConstants.BindTextureSRV(1, registry.GetTextureSRVBindlessResourceDescriptorIndex(colorTexture));
-                    if (isAutoExposureTextureValid) shaderConstants.BindTextureSRV(5, registry.GetTextureSRVBindlessResourceDescriptorIndex(autoExposureTexture));
-                    shaderConstants.BindTextureSRV(2, registry.GetTextureSRVBindlessResourceDescriptorIndex(localExposureLuminance));
-                    shaderConstants.BindTextureSRV(3, registry.GetTextureSRVBindlessResourceDescriptorIndex(localExposureAssemble));
-                    shaderConstants.BindTextureUAV(4, registry.GetTextureUAVBindlessResourceDescriptorIndex(localExposureTexture, 0));
+                    shaderConstants.BindTextureSRV(5, registry.GetTextureSRVBindlessResourceDescriptorIndex(exposureTexture));
+                    shaderConstants.BindTextureSRV(2, registry.GetTextureSRVBindlessResourceDescriptorIndex(exposureFusionLuminanceTexture));
+                    shaderConstants.BindTextureSRV(3, registry.GetTextureSRVBindlessResourceDescriptorIndex(localToneMappingAssemble));
+                    shaderConstants.BindTextureUAV(4, registry.GetTextureUAVBindlessResourceDescriptorIndex(localToneMappingTexture, 0));
                     ///shaderConstants.PushConstants(0, (float)displayMipLevel);
                     ///shaderConstants.PushConstants(1, (float)displayMipLevelWidth);
                     ///shaderConstants.PushConstants(2, (float)displayMipLevelHeight);
                     ///shaderConstants.PushConstants(3, 1.0f / (float)displayMipLevelWidth);
                     ///shaderConstants.PushConstants(4, 1.0f / (float)displayMipLevelHeight);
 
-                    RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::LocalExposureGuidedUpsampling);
+                    RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::ExposureFusionGuidedUpsampling);
 
                     commandList.Dispatch(
                         computeShader,
@@ -372,6 +350,6 @@ namespace Horizon
                 };
             });
 
-        return localExposureTexture;
+        return localToneMappingTexture;
     }
 }
