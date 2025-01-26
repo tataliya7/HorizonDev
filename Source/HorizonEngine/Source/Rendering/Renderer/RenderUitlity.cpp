@@ -60,6 +60,17 @@ namespace Horizon
             globalSamplerLinearClamp = renderBackend->CreateSampler(&globalSamplerLinearClampDesc, "GlobalSamplerLinearClamp");
             RenderBackendSamplerDesc globalSamplerLinearBorderDesc = RenderBackendSamplerDesc::CreateLinearBorder(0.0f, -std::numeric_limits<float>::max(), std::numeric_limits<float>::max(), 1);
             globalSamplerLinearBorder = renderBackend->CreateSampler(&globalSamplerLinearBorderDesc, "GlobalSamplerLinearBorder");
+            RenderBackendSamplerDesc globalSamplerLinearMirrorDesc(
+                RenderBackendTextureFilter::MinMagLinearMipPoint,
+                RenderBackendTextureAddressMode::Mirror,
+                RenderBackendTextureAddressMode::Mirror,
+                RenderBackendTextureAddressMode::Clamp,
+                0.0f,
+                -std::numeric_limits<float>::max(),
+                std::numeric_limits<float>::max(),
+                1,
+                RenderBackendCompareOp::Never);
+            globalSamplerLinearMirror = renderBackend->CreateSampler(&globalSamplerLinearMirrorDesc, "GlobalSamplerLinearMirror");
 
             RenderBackendSamplerDesc globalSamplerComparisonGreaterLinearClampDesc = RenderBackendSamplerDesc::CreateComparisonLinearClamp(0.0f, -std::numeric_limits<float>::max(), std::numeric_limits<float>::max(), 1, RenderBackendCompareOp::Greater);
             globalSamplerComparisonGreaterLinearClamp = renderBackend->CreateSampler(&globalSamplerComparisonGreaterLinearClampDesc, "GlobalSamplerComparisonGreaterLinearClamp");

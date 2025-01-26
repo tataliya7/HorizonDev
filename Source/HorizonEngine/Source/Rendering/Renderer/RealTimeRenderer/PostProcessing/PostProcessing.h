@@ -10,14 +10,15 @@ namespace Horizon
         PostProcessingThreadGroupSizeY = 8,
     };
 
-    struct PostProcessingSceneColorMipChain
+    struct PostProcessingColorPyramid
     {
-        static constexpr uint32 MaxMipCount = 4;
+        static constexpr uint32 MaxMipLevelCount = 5;
 
         /** Number of generated mip level count. */
-        uint32 mipCount = 0;
+        uint32 mipLevelCount = 0;
 
-        /** 1/2, 1/4, 1/8, 1/16 */
-        RenderGraphTextureHandle textures[MaxMipCount] = {};
+        /** 1/2, 1/4, 1/8, 1/16, 1/32 */
+        RenderGraphTextureDesc textureDescs[MaxMipLevelCount] = {};
+        RenderGraphTextureHandle textures[MaxMipLevelCount] = {};
     };
 }

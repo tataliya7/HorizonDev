@@ -121,7 +121,7 @@ Complex CooleyTukeyFFT(in bool inverse, in Complex f_n, in uint index)
 
     v[reverseIndex] = f_n;
 
-    for(uint N=2; N<=SIGNAL_LENGTH; N*=2)
+    for (uint N=2; N<=SIGNAL_LENGTH; N*=2)
     {
         uint i = index % N;
         uint k = index % (N / 2);
@@ -201,7 +201,7 @@ void SharedMemoryComplexFFTCS(uint3 groupID : SV_GroupID, uint3 groupThreadID : 
 
     //RemoveNANs(inputs);
 
-    for(uint channel = 0; channel < 4; channel++)
+    for (uint channel = 0; channel < 4; channel++)
     {
         Complex fn = inputs[channel];
         Complex Fk = CooleyTukeyFFT(false, fn, groupThreadIndex);
@@ -227,7 +227,7 @@ void SharedMemoryComplexFFTCS(uint3 groupID : SV_GroupID, uint3 groupThreadID : 
 
     //RemoveNANs(inputs);
 
-    for(uint channel = 0; channel < 2; channel++)
+    for (uint channel = 0; channel < 2; channel++)
     {
         Complex fn = inputs[channel];
         Complex Fk = CooleyTukeyFFT(false, fn, groupThreadIndex);
@@ -263,7 +263,7 @@ void SharedMemoryComplexIFFTCS(uint3 groupID : SV_GroupID, uint3 groupThreadID :
 
     //RemoveNANs(inputs);
 
-    for(uint channel = 0; channel < 4; channel++)
+    for (uint channel = 0; channel < 4; channel++)
     {
         Complex fn = inputs[channel];
         Complex Fk = CooleyTukeyFFT(true, fn, groupThreadIndex);
@@ -289,7 +289,7 @@ void SharedMemoryComplexIFFTCS(uint3 groupID : SV_GroupID, uint3 groupThreadID :
 
     //RemoveNANs(inputs);
 
-    for(uint channel = 0; channel < 2; channel++)
+    for (uint channel = 0; channel < 2; channel++)
     {
         Complex fn = inputs[channel];
         Complex Fk = CooleyTukeyFFT(true, fn, groupThreadIndex);
@@ -329,7 +329,7 @@ void SharedMemoryTwoForOneRealFFTCS(uint3 groupID : SV_GroupID, uint3 groupThrea
     Complex inputs[4]  = { Complex(srcValue.r, 0), Complex(srcValue.g, 0), Complex(srcValue.b, 0), Complex(srcValue.a, 0) };
     Complex outputs[4] = { Complex(0, 0), Complex(0, 0), Complex(0, 0), Complex(0, 0)};
 
-    for(uint channel = 0; channel < 4; channel++)
+    for (uint channel = 0; channel < 4; channel++)
     {
         Complex fn = inputs[channel];
         Complex Fk = CooleyTukeyFFT(false, fn, groupThreadIndex);
@@ -351,7 +351,7 @@ void SharedMemoryTwoForOneRealFFTCS(uint3 groupID : SV_GroupID, uint3 groupThrea
     Complex inputs[2]  = { Complex(srcValue.r, srcValue.g), Complex(srcValue.b, srcValue.a) };
     Complex outputs[2] = { Complex(0, 0), Complex(0, 0) };
 
-    for(uint channel = 0; channel < 2; channel++)
+    for (uint channel = 0; channel < 2; channel++)
     {
         Complex fn = inputs[channel];
         Complex Fk = CooleyTukeyFFT(false, fn, groupThreadIndex);
@@ -390,7 +390,7 @@ void SharedMemoryTwoForOneRealIFFTCS(uint3 groupID : SV_GroupID, uint3 groupThre
     Complex inputs[4]  = { Complex(srcValueRG.x, srcValueRG.y), Complex(srcValueRG.z, srcValueRG.w), Complex(srcValueBA.x, srcValueBA.y), Complex(srcValueBA.z, srcValueBA.w) };
     Complex outputs[4] = { Complex(0, 0), Complex(0, 0), Complex(0, 0), Complex(0, 0)};
 
-    for(uint channel = 0; channel < 4; channel++)
+    for (uint channel = 0; channel < 4; channel++)
     {
         Complex Fk = inputs[channel];
         Complex fn = CooleyTukeyFFT(true, Fk, groupThreadIndex);
@@ -413,7 +413,7 @@ void SharedMemoryTwoForOneRealIFFTCS(uint3 groupID : SV_GroupID, uint3 groupThre
     Complex inputs[2]  = { Complex(srcValue.r, srcValue.g), Complex(srcValue.b, srcValue.a) };
     Complex outputs[2] = { Complex(0, 0), Complex(0, 0) };
 
-    for(uint channel = 0; channel < 2; channel++)
+    for (uint channel = 0; channel < 2; channel++)
     {
         Complex fn = inputs[channel];
         Complex Fk = CooleyTukeyFFT(false, fn, groupThreadIndex);

@@ -41,7 +41,7 @@ void SelectionOutlineJumpFloodCS(uint3 dispatchThreadID : SV_DispatchThreadID)
     uint2 size = uint2(frameShaderParameters.targetWidth, frameShaderParameters.targetHeight);
 
     float4 center = inputTexture[pixelCoord];
-    [unroll] for(int sampleIndex = 0; sampleIndex < 8; sampleIndex++)
+    [unroll] for (int sampleIndex = 0; sampleIndex < 8; sampleIndex++)
     {
         int2 sampleCoord = int2(pixelCoord) + JumpFloodSampleOffsets3x3[sampleIndex] * stepWidth;
         sampleCoord = clamp(sampleCoord, int2(0, 0), int2(size) - int2(1, 1));

@@ -34,10 +34,10 @@ namespace Horizon
         // Initialize path to executable
         executablePath = argv[0];
 
+        RenderDocPluginInit();
+
         // Initialize logging system
         CreateConsoleLogger_Deprecated();
-
-        //RenderDocPluginInit();
 
 //
 //        JobSystemInit(HE::GetNumberOfProcessors(), HE_JOB_SYSTEM_NUM_FIBIERS, HE_JOB_SYSTEM_FIBER_STACK_SIZE);

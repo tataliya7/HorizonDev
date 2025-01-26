@@ -45,29 +45,33 @@ namespace Horizon
         return outputTexture;
     }
 
-    void RealTimeRenderer::RenderSceneColorPyramid(
+    void RealTimeRenderer::DispatchColorPyramidGeneration(
         RenderGraph& renderGraph,
         const SceneView& view,
         RenderGraphTextureHandle sceneColorTexture,
-        PostProcessingSceneColorMipChain* outMipChain)
+        PostProcessingColorPyramid* outMipChain)
     {
-        assert(outMipChain->mipCount == 0);
+        assert(outMipChain->mipLevelCount == 0);
 
         RenderGraphTextureHandle inputTexture = sceneColorTexture;
         uint32 inputTextureWidth = targetResolution.width;
         uint32 inputTextureHeight = targetResolution.height;
 
-        for (uint32 passIndex = 0; passIndex < PostProcessingSceneColorMipChain::MaxMipCount; passIndex++)
+        for (uint32 passIndex = 0; passIndex < PostProcessingColorPyramid::MaxMipLevelCount; passIndex++)
         {
             RenderGraphTextureDesc outputTextureDesc = RenderGraphTextureDesc::Create2D(
                 inputTextureWidth / 2,
                 inputTextureHeight / 2,
                 RenderBackendTextureFormat::R11G11B10Float,
                 RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::UnorderedAccess);
-            RenderGraphTextureHandle outputTexture = renderGraph.CreateTexture(outputTextureDesc, "DownsampledSceneColorTexture");
 
-            outMipChain->textures[passIndex] = AddDownsamplePass(renderGraph, view, inputTextureWidth, inputTextureHeight, inputTextureWidth / 2, inputTextureHeight / 2, inputTexture, outputTexture);
-            outMipChain->mipCount++;
+            RenderGraphTextureHandle outputTexture = renderGraph.CreateTexture(outputTextureDesc, "DownsampledColorTexture");
+
+            outputTexture = AddDownsamplePass(renderGraph, view, inputTextureWidth, inputTextureHeight, inputTextureWidth / 2, inputTextureHeight / 2, inputTexture, outputTexture);
+
+            outMipChain->textureDescs[passIndex] = outputTextureDesc;
+            outMipChain->textures[passIndex] = outputTexture;
+            outMipChain->mipLevelCount++;
 
             inputTexture = outMipChain->textures[passIndex];
             inputTextureWidth = inputTextureWidth / 2;

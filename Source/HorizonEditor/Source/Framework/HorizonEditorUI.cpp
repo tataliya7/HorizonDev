@@ -677,51 +677,6 @@ namespace Horizon
         return 0.0f;
     }
 
-    //void HorizonEditor::DrawOverlay()
-    //{
-    //    static int corner = 0;
-    //    ImGuiIO& io = ImGui::GetIO();
-    //    ImGuiWindowFlags windowFags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav;
-    //    if (corner != -1)
-    //    {
-    //        const float padding = 10.0f;
-    //        const ImGuiViewport* viewport = ImGui::GetMainViewport();
-    //        ImVec2 workPos = viewport->WorkPos; // Use work area to avoid menu-bar/task-bar, if any!
-    //        ImVec2 workSize = viewport->WorkSize;
-    //        ImVec2 windowPos, windowPosPivot;
-    //        windowPos.x = (corner & 1) ? (workPos.x + workSize.x - padding) : (workPos.x + padding);
-    //        windowPos.y = (corner & 2) ? (workPos.y + workSize.y - padding) : (workPos.y + padding);
-    //        windowPosPivot.x = (corner & 1) ? 1.0f : 0.0f;
-    //        windowPosPivot.y = (corner & 2) ? 1.0f : 0.0f;
-    //        ImGui::SetNextWindowPos(windowPos, ImGuiCond_Always, windowPosPivot);
-    //        ImGui::SetNextWindowViewport(viewport->ID);
-    //        windowFags |= ImGuiWindowFlags_NoMove;
-    //    }
-    //    ImGui::SetNextWindowBgAlpha(0.35f); // Transparent background
-    //    static bool open = true;
-    //    if (ImGui::Begin("Overlay", &open, windowFags))
-    //    {
-    //        ImGui::Text(HORIZON_ENGINE_NAME);
-    //        ImGui::Separator();
-    //        ImGui::Text("FPS: %.1f (%.2f ms/frame)", ImGui::GetIO().Framerate, (1000.0f / ImGui::GetIO().Framerate));
-
-    //        static RenderBackendTextureHandle renderDocLogoTexture = RenderBackendTextureHandle::Null;
-    //        if (renderDocLogoTexture == RenderBackendTextureHandle::Null)
-    //        {
-    //            renderDocLogoTexture = LoadTextureFromFile(GRenderBackend, "../../../Source/Editor/Plugins/RenderDoc/Resources/renderdoc_logo.png", false, false);
-    //        }
-
-    //        if (UI::ImageButton("##RenderDocTriggerCapture", renderDocLogoTexture.ToUnit64(), ImVec2(25, 25)))
-    //        {
-    //            RenderDocPluginTriggerCapture();
-    //        }
-
-    //        // TODO
-    //        DrawViewSettings();
-    //    }
-    //    ImGui::End();
-    //}
-
     void HorizonEditor::DrawProfilerWindow(bool* open)
     {
         RenderBackendGPUProfiler* gpuProfiler = engine->GetSubsystem<RenderSystem>()->gpuProfiler;
@@ -929,7 +884,7 @@ namespace Horizon
         }
         if (ImGui::ImageButtonEx(ImGui::GetID("##RenderDocCapture"), renderDocIconTexture.ToUnit64(), ImVec2(25, 25), ImVec2(0, 0), ImVec2(1, 1), ImVec4(0, 0, 0, 0), ImVec4(1, 1, 1, 1)))
         {
-            //RenderDocPluginTriggerCapture();
+            RenderDocPluginTriggerCapture();
         }
 
         ImVec2 contentRegionAvail = ImGui::GetContentRegionAvail();
@@ -1690,27 +1645,77 @@ namespace Horizon
                     ImGui::PopItemWidth();
                     ImGui::NextColumn();
 
-                    ImGui::AlignTextToFramePadding();
-                    ImGui::TextUnformatted("Shadows");
-                    ImGui::NextColumn();
-                    ImGui::PushItemWidth(-1);
-                    if (ImGui::DragFloat("##ExposureFusionShadows", &renderSettings.postProcessingSettings.exposureFusionShadows, 0.001f, 0.0f, 1.0f))
+                    if (renderSettings.postProcessingSettings.localToneMappingMethod == LocalToneMappingMethod::BilateralGrid)
                     {
+                        ImGui::AlignTextToFramePadding();
+                        ImGui::TextUnformatted("Shadows");
+                        ImGui::NextColumn();
+                        ImGui::PushItemWidth(-1);
+                        if (ImGui::DragFloat("##bilateralGridLocalToneMappingShadows", &renderSettings.postProcessingSettings.bilateralGridLocalToneMappingShadows, 0.001f, 0.0f, 1.0f))
+                        {
 
+                        }
+                        ImGui::PopItemWidth();
+                        ImGui::NextColumn();
+
+                        ImGui::AlignTextToFramePadding();
+                        ImGui::TextUnformatted("Highlights");
+                        ImGui::NextColumn();
+                        ImGui::PushItemWidth(-1);
+                        if (ImGui::DragFloat("##bilateralGridLocalToneMappingHighlights", &renderSettings.postProcessingSettings.bilateralGridLocalToneMappingHighlights, 0.001f, 0.0f, 1.0f))
+                        {
+
+                        }
+                        ImGui::PopItemWidth();
+                        ImGui::NextColumn();
+
+                        ImGui::AlignTextToFramePadding();
+                        ImGui::TextUnformatted("Detail Strength");
+                        ImGui::NextColumn();
+                        ImGui::PushItemWidth(-1);
+                        if (ImGui::DragFloat("##bilateralGridLocalToneMappingDetailStrength", &renderSettings.postProcessingSettings.bilateralGridLocalToneMappingDetailStrength, 0.001f, 0.0f, 10.0f))
+                        {
+
+                        }
+                        ImGui::PopItemWidth();
+                        ImGui::NextColumn();
+
+                        ImGui::AlignTextToFramePadding();
+                        ImGui::TextUnformatted("Gaussian Filter Weight");
+                        ImGui::NextColumn();
+                        ImGui::PushItemWidth(-1);
+                        if (ImGui::DragFloat("##bilateralGridLocalToneMappingGaussianFilterWeight", &renderSettings.postProcessingSettings.bilateralGridLocalToneMappingGaussianFilterWeight, 0.001f, 0.0f, 1.0f))
+                        {
+
+                        }
+                        ImGui::PopItemWidth();
+                        ImGui::NextColumn();
                     }
-                    ImGui::PopItemWidth();
-                    ImGui::NextColumn();
 
-                    ImGui::AlignTextToFramePadding();
-                    ImGui::TextUnformatted("Highlights");
-                    ImGui::NextColumn();
-                    ImGui::PushItemWidth(-1);
-                    if (ImGui::DragFloat("##ExposureFusionHighlights", &renderSettings.postProcessingSettings.exposureFusionHighlights, 0.001f, 0.0f, 1.0f))
+                    if (renderSettings.postProcessingSettings.localToneMappingMethod == LocalToneMappingMethod::ExposureFusion)
                     {
+                        ImGui::AlignTextToFramePadding();
+                        ImGui::TextUnformatted("Shadows");
+                        ImGui::NextColumn();
+                        ImGui::PushItemWidth(-1);
+                        if (ImGui::DragFloat("##ExposureFusionLocalToneMappingShadows", &renderSettings.postProcessingSettings.exposureFusionLocalToneMappingShadows, 0.001f, 0.0f, 1.0f))
+                        {
 
+                        }
+                        ImGui::PopItemWidth();
+                        ImGui::NextColumn();
+
+                        ImGui::AlignTextToFramePadding();
+                        ImGui::TextUnformatted("Highlights");
+                        ImGui::NextColumn();
+                        ImGui::PushItemWidth(-1);
+                        if (ImGui::DragFloat("##ExposureFusionLocalToneMappingHighlights", &renderSettings.postProcessingSettings.exposureFusionLocalToneMappingHighlights, 0.001f, 0.0f, 1.0f))
+                        {
+
+                        }
+                        ImGui::PopItemWidth();
+                        ImGui::NextColumn();
                     }
-                    ImGui::PopItemWidth();
-                    ImGui::NextColumn();
 
                     ImGui::Columns(1);
                     ImGui::Separator();

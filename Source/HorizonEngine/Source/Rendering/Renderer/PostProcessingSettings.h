@@ -71,9 +71,17 @@ namespace Horizon
 
         LocalToneMappingMethod localToneMappingMethod = LocalToneMappingMethod::None;
 
-        float exposureFusionShadows = 1.0f;
+        float bilateralGridLocalToneMappingShadows = 1.0f;
 
-        float exposureFusionHighlights = 1.0f;
+        float bilateralGridLocalToneMappingHighlights = 1.0f;
+
+        float bilateralGridLocalToneMappingDetailStrength = 1.0f;
+
+        float bilateralGridLocalToneMappingGaussianFilterWeight = 0.6f;
+
+        float exposureFusionLocalToneMappingShadows = 1.0f;
+
+        float exposureFusionLocalToneMappingHighlights = 1.0f;
 
         /** Overall intensity of the bloom effect. */
         float bloomIntensity = 1.0f;

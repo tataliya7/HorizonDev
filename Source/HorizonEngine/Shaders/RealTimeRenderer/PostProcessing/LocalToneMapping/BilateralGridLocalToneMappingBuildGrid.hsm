@@ -1,0 +1,109 @@
+#include "../../../ShaderCommon.hsh"
+#include "../../RealTimeRendererCommon.hsh"
+#include "../PostProcessingCommon.hsh"
+#include "BilateralGridLocalToneMappingCommon.hsh"
+
+SHADER_CONSTANTS_STRUCT_BEGIN();
+SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferSRV);
+SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(1, InputColorTextureSRV);
+SHADER_CONSTANTS_TEXTURE_2D_UAV(2, float2, GridTextureUAV);
+SHADER_CONSTANTS_STRUCT_END();
+
+groupshared uint SharedHistogram[8][8][BILATERAL_GRID_LOCAL_TONE_MAPPING_GRID_TEXTURE_DEPTH];
+
+uint PackHomogeneousLogLuminanceValues(float wiVi, float wi)
+{
+	uint h = uint(wiVi * float(1 << 9)) & 0x0000ffff;
+	uint l = uint(wi * float(1 << 9)) & 0x0000ffff;
+	return (h << 16) | l;
+}
+
+[shader("compute")]
+[numthreads(8, 8, 1)]
+void BilateralGridLocalToneMappingBuildGridCS(uint3 dispatchThreadID : SV_DispatchThreadID, uint3 groupID : SV_GroupID, uint groupIndex : SV_GroupIndex)
+{
+    [unroll]
+    for (uint i = 0; i < BILATERAL_GRID_LOCAL_TONE_MAPPING_GRID_TEXTURE_DEPTH; i++)
+	{
+		SharedHistogram[dispatchThreadID.x][dispatchThreadID.y][i] = 0;
+	}
+
+	GroupMemoryBarrierWithGroupSync();
+
+    StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
+    PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
+    Texture2D inputColorTexture = ShaderConstants.GetInputColorTextureSRV();
+
+    float inversePreExposure = frameShaderParameters.inversePreExposure;
+
+    for (uint x = 0; x < 8 * 8; x += 8 * 2)
+    {
+        for (uint y = 0; y < 8 * 8; y += 8 * 2)
+        {
+			uint2 texelPosition = LeftTop + uint2(x, y) + GroupThreadId.xy * NumPixelsPerIter;
+
+			if (all(TexelPos < Input_ViewportMax - 1))
+			{
+				float2 uv = (float2(texelPosition.x, texelPosition.y) + float2(1.0f, 1.0f)) * InvExtent;
+
+				float4 inputColorR = inputColorTexture.GatherRed(GlobalSamplerPointClamp, uv) * inversePreExposure;
+				float4 inputColorG = inputColorTexture.GatherGreen(GlobalSamplerPointClamp, uv) * inversePreExposure;
+				float4 inputColorB = inputColorTexture.GatherBlue(GlobalSamplerPointClamp, uv) * inversePreExposure;
+
+                float luminance[4];
+                luminance[0] = RelativeLuminance(float3(inputColorR.x, inputColorG.x, inputColorB.x));
+                luminance[1] = RelativeLuminance(float3(inputColorR.y, inputColorG.y, inputColorB.y));
+                luminance[2] = RelativeLuminance(float3(inputColorR.z, inputColorG.z, inputColorB.z));
+                luminance[3] = RelativeLuminance(float3(inputColorR.w, inputColorG.w, inputColorB.w));
+
+                [unroll(4)]
+                for (uint i = 0; i < 4; i++)
+                {
+                    float logLuminance = log2(luminance[i]);
+
+                    float inverseLogLuminanceRange = 1.0f / (histogramMaxEV100 - histogramMinEV100);
+
+                    float histogramPosition = saturate((logLuminance - histogramMinEV100) * inverseLogLuminanceRange);
+                    uint currentBinIndex = uint(histogramPosition * (BILATERAL_GRID_LOCAL_TONE_MAPPING_GRID_TEXTURE_DEPTH - 1));
+
+                    uint histogramBinIndex0 = min(currentBinIndex + 0, BILATERAL_GRID_LOCAL_TONE_MAPPING_GRID_TEXTURE_DEPTH - 1);
+                    uint histogramBinIndex1 = min(currentBinIndex + 1, BILATERAL_GRID_LOCAL_TONE_MAPPING_GRID_TEXTURE_DEPTH - 1);
+
+                    float histogramBinWeight0 = 1.0f - frac(histogramPosition);
+                    float histogramBinWeight1 = 1.0f - histogramBinWeight0;
+
+                    uint packedHomogeneousLogLuminanceValues0 = PackHomogeneousLogLuminanceValues(histogramBinWeight0 * , histogramBinWeight0);
+                    uint packedHomogeneousLogLuminanceValues1 = PackHomogeneousLogLuminanceValues(histogramBinWeight1 * , histogramBinWeight1);
+
+                    InterlockedAdd(SharedHistogram[dispatchThreadID.x][dispatchThreadID.y][histogramBinIndex0], packedHomogeneousLogLuminanceValues0);
+                    InterlockedAdd(SharedHistogram[dispatchThreadID.x][dispatchThreadID.y][histogramBinIndex1], packedHomogeneousLogLuminanceValues1);
+                }
+            }
+        }
+    }
+
+    GroupMemoryBarrierWithGroupSync();
+
+	if (groupIndex < BILATERAL_GRID_LOCAL_TONE_MAPPING_GRID_TEXTURE_DEPTH)
+    {
+		float weightSum = 0.0f;
+		float weightedLuminanceSum = 0.0f;
+
+		for (uint x = 0; x < 8; x++)
+		{
+			for (uint y = 0; y < 8; y++)
+			{
+				float SumWeight;
+				float SumLumHist;
+				UnpackUINT32ToTwoFloat(SharedHistogram[GroupIndex][x][y], SumWeight, SumLumHist);
+
+				float SumLum = (SumLumHist - SumWeight * EyeAdaptation_HistogramBias) / EyeAdaptation_HistogramScale;
+				Sum += SumWeight;
+				Sum += SumLum;
+			}
+		}
+
+        Texture2D<float2> gridTexture = ShaderConstants.GetGridTextureUAV();
+		gridTexture[uint3(groupID.xy, groupIndex)] = float2(weightedLuminanceSum, weightSum);
+    }
+}

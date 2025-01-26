@@ -7,10 +7,10 @@
 
 SHADER_CONSTANTS_STRUCT_BEGIN();
 SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferSRV);
-SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(1, SceneColorTextureSRV);
+SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(1, InputColorTextureSRV);
 SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(2, LensDirtTextureSRV);
 SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(3, BloomTextureSRV);
-SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(4, LocalExposureTextureSRV);
+SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(4, LocalToneMappingTextureSRV);
 SHADER_CONSTANTS_TEXTURE_3D_DEFAULT_SRV(5, ColorTransformLUTTextureSRV);
 SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_SRV(6, AutoExposureBufferSRV);
 SHADER_CONSTANTS_TEXTURE_2D_UAV(7, float4, OutputTextureUAV);
@@ -32,11 +32,12 @@ void FinalCompositionCS(uint3 dispatchThreadID : SV_DispatchThreadID)
 {
     StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
     PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
-    Texture2D sceneColorTexture = ShaderConstants.GetSceneColorTextureSRV();
+    Texture2D inputColorTexture = ShaderConstants.GetInputColorTextureSRV();
     RWTexture2D<float4> outputTexture = ShaderConstants.GetOutputTextureUAV();
 
     uint width = frameShaderParameters.targetWidth;
     uint height = frameShaderParameters.targetHeight;
+
     if (dispatchThreadID.x >= width || dispatchThreadID.y >= height)
     {
         return;
@@ -45,12 +46,18 @@ void FinalCompositionCS(uint3 dispatchThreadID : SV_DispatchThreadID)
     uint2 pixelCoord = dispatchThreadID.xy;
     float2 uv = (pixelCoord + 0.5f) * frameShaderParameters.targetResolution.zw;
 
+    float inversePreExposure = frameShaderParameters.inversePreExposure;
+
     ByteAddressBuffer autoExposureBuffer = ShaderConstants.GetAutoExposureBufferSRV();
     float exposure = autoExposureBuffer.Load<float>(0);
 
-    float4 sceneColor = 0;
+    Texture2D localToneMappingTexture = ShaderConstants.GetLocalToneMappingTextureSRV();
+    float localExposureMultiplier = localToneMappingTexture.SampleLevel(GlobalSamplerPointClamp, uv, 0).r;
+
+    float4 inputColor = 0;
 
     float2 chromaticAberrationScale = 0;//float2((1), (2));
+
     if (any(chromaticAberrationScale) > 0)
     {
         float chromaticAberrationOffset = frameShaderParameters.chromaticAberrationOffset;
@@ -62,25 +69,16 @@ void FinalCompositionCS(uint3 dispatchThreadID : SV_DispatchThreadID)
         chromaticAberrationUV.xy = NDCSpaceXYToScreenSpaceUV(chromaticAberrationUV.xy);
         chromaticAberrationUV.zw = NDCSpaceXYToScreenSpaceUV(chromaticAberrationUV.zw);
 
-        sceneColor.r = sceneColorTexture.SampleLevel(GlobalSamplerLinearClamp, chromaticAberrationUV.xy, 0).r;
-        sceneColor.g = sceneColorTexture.SampleLevel(GlobalSamplerLinearClamp, chromaticAberrationUV.zw, 0).g;
-        sceneColor.b = sceneColorTexture.SampleLevel(GlobalSamplerLinearClamp, uv, 0).b;
+        inputColor.r = inputColorTexture.SampleLevel(GlobalSamplerLinearClamp, chromaticAberrationUV.xy, 0).r;
+        inputColor.g = inputColorTexture.SampleLevel(GlobalSamplerLinearClamp, chromaticAberrationUV.zw, 0).g;
+        inputColor.b = inputColorTexture.SampleLevel(GlobalSamplerLinearClamp, uv, 0).b;
     }
     else
     {
-        sceneColor = sceneColorTexture[pixelCoord];
+        inputColor = inputColorTexture[pixelCoord];
     }
 
-    float inversePreExposure = frameShaderParameters.inversePreExposure;
-    float4 hdrColor = sceneColor;
-
-    // Apply local toneMapping
-    // if (GetShaderConstantValue(6) >= 0)
-    // {
-    //     Texture2D localExposureTexture = GetLocalExposureTextureSRV();
-    //     float localExposureMultiplier = localExposureTexture.SampleLevel(GlobalSamplerLinearClamp, uv, 0).r;
-    //     hdrColor.rgb *= localExposureMultiplier;
-    // }
+    float4 hdrColor = inputColor;
 
     Texture2D bloomTexture = ShaderConstants.GetBloomTextureSRV();
     float3 bloomColor = bloomTexture.SampleLevel(GlobalSamplerLinearClamp, uv, 0).rgb;
@@ -97,7 +95,7 @@ void FinalCompositionCS(uint3 dispatchThreadID : SV_DispatchThreadID)
     hdrColor.rgb = lerp(hdrColor.rgb, bloomColor.rgb, bloomMask);
 
     float vignetting = NaturalVignetting(uv, frameShaderParameters.aspectRatio, frameShaderParameters.vignetteIntensity);
-    hdrColor.rgb = hdrColor.rgb * (inversePreExposure * exposure) * vignetting;
+    hdrColor.rgb = hdrColor.rgb * (inversePreExposure * exposure * localExposureMultiplier) * vignetting;
 
 // #if 1
 //     Texture2D testTexture = GetTestTextureSRV();
@@ -114,11 +112,11 @@ void FinalCompositionCS(uint3 dispatchThreadID : SV_DispatchThreadID)
 #if 0
     float3 aces = mul(sRGB_2_AP0_MAT, hdrColor.rgb);
     float3 oces = RRT(aces);
-    float3 outColor = ODT_sRGB_100nits_dim(oces);
+    float3 outputColor = ODT_sRGB_100nits_dim(oces);
 #else
     Texture3D colorLUTTexture = ShaderConstants.GetColorTransformLUTTextureSRV();
-    float3 outColor = Lookup3DColorTransformLUT(colorLUTTexture, hdrColor.rgb);
+    float3 outputColor = Lookup3DColorTransformLUT(colorLUTTexture, hdrColor.rgb);
 #endif
 
-    outputTexture[pixelCoord] = float4(outColor, 1.0f);
+    outputTexture[pixelCoord] = float4(outputColor, 1.0f);
 }

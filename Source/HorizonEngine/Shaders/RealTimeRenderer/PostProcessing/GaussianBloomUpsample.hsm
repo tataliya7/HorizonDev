@@ -65,7 +65,7 @@ void GaussianBloomUpsampleCS(uint3 dispatchThreadID : SV_DispatchThreadID)
 #define COD_METHOD 0
 #if COD_METHOD == 0
     [unroll]
-    for(uint sampleIndex = 0; sampleIndex < 9; sampleIndex++)
+    for (uint sampleIndex = 0; sampleIndex < 9; sampleIndex++)
     {
         float2 sampleUV = uv + GaussianBloomUpsampleOffset[sampleIndex] * outputTextureInvSize * 2.0f;
         upsampledColor += GaussianBloomUpsampleWeights[sampleIndex] * lowResolutionInputTexture.SampleLevel(GlobalSamplerLinearClamp, sampleUV, 0).rgb;
@@ -73,7 +73,7 @@ void GaussianBloomUpsampleCS(uint3 dispatchThreadID : SV_DispatchThreadID)
     outputTexture[pixelCoord] = lerp(downsampledColor, upsampledColor, radius);
 #else
     [unroll]
-    for(uint sampleIndex = 0; sampleIndex < 9; sampleIndex++)
+    for (uint sampleIndex = 0; sampleIndex < 9; sampleIndex++)
     {
         float2 sampleUV = uv + GaussianBloomUpsampleOffset[sampleIndex] * outputTextureInvSize * 2.0f * radius;
         upsampledColor += GaussianBloomUpsampleWeights[sampleIndex] * lowResolutionInputTexture.SampleLevel(GlobalSamplerLinearClamp, sampleUV, 0).rgb;

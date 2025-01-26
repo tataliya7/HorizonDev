@@ -386,7 +386,14 @@ namespace Horizon
             const SceneView& view,
             RenderGraphBufferHandle autoExposureBuffer);
 
-        RenderGraphTextureHandle DispatchExposureFusion(
+        RenderGraphTextureHandle DispatchBilateralGridToneMapping(
+            RenderGraph& renderGraph,
+            const SceneView& view,
+            const PostProcessingColorPyramid& colorPyramid,
+            RenderGraphTextureHandle colorTexture,
+            RenderGraphBufferHandle autoExposureBuffer);
+
+        RenderGraphTextureHandle DispatchExposureFusionLocalToneMapping(
             RenderGraph& renderGraph,
             const SceneView& view,
             RenderGraphTextureHandle colorTexture,
@@ -445,11 +452,11 @@ namespace Horizon
             RenderGraphTextureHandle inputTexture,
             RenderGraphTextureHandle outputTexture);
 
-        void RenderSceneColorPyramid(
+        void DispatchColorPyramidGeneration(
             RenderGraph& renderGraph,
             const SceneView& view,
             RenderGraphTextureHandle sceneColorTexture,
-            PostProcessingSceneColorMipChain* outMipChain);
+            PostProcessingColorPyramid* outMipChain);
 
         RenderGraphTextureHandle AddEditorSelectionOutlinePass(
             RenderGraph& renderGraph,

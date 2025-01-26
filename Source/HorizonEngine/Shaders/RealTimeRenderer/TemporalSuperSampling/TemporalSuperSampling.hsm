@@ -169,7 +169,7 @@ void ComputeNeighborhoodBoundingbox(
     float4 neighborhoodMax = 0.0;
 
     [unroll]
-    for(i = 0; i < TemporalAASampleCount; i++)
+    for (i = 0; i < TemporalAASampleCount; i++)
     {
         neighborhoodMin += neighborhoods[i];
         neighborhoodMax += neighborhoods[i] * neighborhoods[i];
@@ -200,7 +200,7 @@ void ComputeNeighborhoodBoundingbox(
     float DistThreshold = 1.51;
 
     [unroll]
-    for(i = 0; i < TemporalAASampleCount; i++)
+    for (i = 0; i < TemporalAASampleCount; i++)
     {
         if (i != 4)
         {

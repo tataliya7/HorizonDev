@@ -903,6 +903,7 @@ namespace Horizon
                 maxAnisotropy,
                 compareOp);
         }
+
         RenderBackendSamplerDesc(
             RenderBackendTextureFilter filter,
             RenderBackendTextureAddressMode addressModeU,
@@ -922,6 +923,7 @@ namespace Horizon
             , maxLod(maxLod)
             , maxAnisotropy(maxAnisotropy)
             , compareOp(compareOp) {}
+
         RenderBackendTextureFilter filter;
         RenderBackendTextureAddressMode addressModeU;
         RenderBackendTextureAddressMode addressModeV;

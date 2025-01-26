@@ -85,7 +85,7 @@ void AutoExposureComputeExposureCS(uint3 dispatchThreadID : SV_DispatchThreadID)
 
     float minExposure = (EV100ToLuminance(minExposureValue) / MiddleGray);
     float maxExposure = (EV100ToLuminance(maxExposureValue) / MiddleGray);
-    exposureCompensation = pow(2, exposureCompensation);
+    exposureCompensation = pow(2.0f, exposureCompensation);
 
     Texture2D<uint> histogramTexture = ShaderConstants.GetAutoExposureHistogramTextureSRV();
     ByteAddressBuffer previousAutoExposureBuffer = ShaderConstants.GetPreviousAutoExposureBufferSRV();

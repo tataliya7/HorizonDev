@@ -241,8 +241,9 @@ Texture2D GetTexture2DNonUniform(int index)
 #define GlobalSamplerLinearWarp                                  BindlessResources_SamplerState[3]
 #define GlobalSamplerLinearClamp                                 BindlessResources_SamplerState[4]
 #define GlobalSamplerLinearBorder                                BindlessResources_SamplerState[5]
-#define GlobalSamplerComparisonGreaterLinearClamp                BindlessResources_SamplerComparisonState[6]
-#define GlobalSamplerComparisonLessLinearClamp                   BindlessResources_SamplerComparisonState[7]
+#define GlobalSamplerLinearMirror                                BindlessResources_SamplerState[6]
+#define GlobalSamplerComparisonGreaterLinearClamp                BindlessResources_SamplerComparisonState[7]
+#define GlobalSamplerComparisonLessLinearClamp                   BindlessResources_SamplerComparisonState[8]
 #else // TODO: SamplerDescriptorHeap
 SamplerState GlobalSamplerPointWarp                              : register(s100, space0);
 SamplerState GlobalSamplerPointClamp                             : register(s101, space0);
@@ -250,8 +251,9 @@ SamplerState GlobalSamplerPointBorder                            : register(s102
 SamplerState GlobalSamplerLinearWarp                             : register(s103, space0);
 SamplerState GlobalSamplerLinearClamp                            : register(s104, space0);
 SamplerState GlobalSamplerLinearBorder                           : register(s105, space0);
-SamplerComparisonState GlobalSamplerComparisonGreaterLinearClamp : register(s106, space0);
-SamplerComparisonState GlobalSamplerComparisonLessLinearClamp    : register(s107, space0);
+SamplerState GlobalSamplerLinearMirror                           : register(s106, space0);
+SamplerComparisonState GlobalSamplerComparisonGreaterLinearClamp : register(s107, space0);
+SamplerComparisonState GlobalSamplerComparisonLessLinearClamp    : register(s108, space0);
 #endif
 
 // It must match the values on the C++ side

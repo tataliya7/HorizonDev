@@ -115,7 +115,7 @@ void GaussianBloomDownsampleCS(uint3 dispatchThreadID : SV_DispatchThreadID)
 
 #if COD_METHOD == 0
     [unroll]
-    for(uint sampleIndex = 0; sampleIndex < 13; sampleIndex++)
+    for (uint sampleIndex = 0; sampleIndex < 13; sampleIndex++)
     {
         float2 sampleUV = uv + GaussianBloomDownsampleOffsets[sampleIndex] * outputTextureInvSize * 0.5f;
         float3 sampleColor = inputTexture.SampleLevel(GlobalSamplerLinearBorder, sampleUV, 0).rgb;
@@ -151,7 +151,7 @@ void GaussianBloomDownsampleCS(uint3 dispatchThreadID : SV_DispatchThreadID)
 #if 0
         float totalWeight = 0.0f;
         [unroll]
-        for(uint sampleIndex = 0; sampleIndex < 13; sampleIndex++)
+        for (uint sampleIndex = 0; sampleIndex < 13; sampleIndex++)
         {
             float2 sampleUV = uv + GaussianBloomDownsampleOffsets[sampleIndex] * outputTextureInvSize * 0.5f;
             float3 sampleColor = inputTexture.SampleLevel(GlobalSamplerPointClamp, sampleUV, 0).rgb;
@@ -180,7 +180,7 @@ void GaussianBloomDownsampleCS(uint3 dispatchThreadID : SV_DispatchThreadID)
     else
     {
         [unroll]
-        for(uint sampleIndex = 0; sampleIndex < 13; sampleIndex++)
+        for (uint sampleIndex = 0; sampleIndex < 13; sampleIndex++)
         {
             float2 sampleUV = uv + GaussianBloomDownsampleOffsets[sampleIndex] * outputTextureInvSize * 0.5f;
             float3 sampleColor = inputTexture.SampleLevel(GlobalSamplerLinearBorder, sampleUV, 0).rgb;

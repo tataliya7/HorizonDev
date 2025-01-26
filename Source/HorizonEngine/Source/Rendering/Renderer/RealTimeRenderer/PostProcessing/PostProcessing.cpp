@@ -10,14 +10,14 @@ namespace Horizon
     {
         RealTimeRendererSceneTextures& sceneTextures = renderGraph.blackboard.Get<RealTimeRendererSceneTextures>();
 
-        RenderGraphTextureHandle sceneColorTexture = sceneTextures.sceneColorTexture;
-        RenderGraphTextureHandle sceneDepthTexture = sceneTextures.sceneDepthTexture;
+        RenderGraphTextureHandle colorTexture = sceneTextures.sceneColorTexture;
+        RenderGraphTextureHandle depthTexture = sceneTextures.sceneDepthTexture;
         RenderGraphTextureHandle motionVectorTexture = sceneTextures.motionVectorTexture;
 
         RenderGraphBufferHandle previousAutoExposureBuffer = renderGraph.ImportExternalBuffer(historyFrame.autoExposureBuffer, "PreviousAutoExposureBuffer");
         RenderGraphBufferHandle autoExposureBuffer = previousAutoExposureBuffer;
 
-        const bool shouldRenderSceneColorPyramid = true;// IsBloomEnabled();
+        const bool shouldBuildColorPyramid = true;// IsBloomEnabled();
 
 #if HORIZON_EDITOR
         const bool isEditorSelectionOutlineEnabled = true;
@@ -34,48 +34,55 @@ namespace Horizon
 
         if (IsDepthOfFieldEnabled())
         {
-            sceneColorTexture = DispatchDepthOfField(renderGraph, view, sceneColorTexture);
+            colorTexture = DispatchDepthOfField(renderGraph, view, colorTexture);
         }
 
-        sceneColorTexture = AddDebugDrawPass(renderGraph, view, sceneColorTexture, sceneDepthTexture);
+        colorTexture = AddDebugDrawPass(renderGraph, view, colorTexture, depthTexture);
 
         if (IsSuperResolutionEnabled()) // TODO
         {
             RenderGraphTextureHandle exposureTexture = AddCopyExposurePass(renderGraph, view, previousAutoExposureBuffer);
 
             TemporalSuperSamplingDispatchDescription tssDispatchDescription;
-            tssDispatchDescription.colorTexture = sceneColorTexture;
-            tssDispatchDescription.depthTexture = sceneDepthTexture;
+            tssDispatchDescription.colorTexture = colorTexture;
+            tssDispatchDescription.depthTexture = depthTexture;
             tssDispatchDescription.motionVectorTexture = motionVectorTexture;
             tssDispatchDescription.exposureTexture = exposureTexture;
-            sceneColorTexture = DispatchCustomTemporalSuperSampling(temporalSuperSamplingInterface, renderGraph, view, tssDispatchDescription);
+            colorTexture = DispatchCustomTemporalSuperSampling(temporalSuperSamplingInterface, renderGraph, view, tssDispatchDescription);
 
-            renderGraph.ExportTextureDeferred(sceneColorTexture, &historyFrame.temporalSuperSamplingOutputTexture);
+            renderGraph.ExportTextureDeferred(colorTexture, &historyFrame.temporalSuperSamplingOutputTexture);
         }
 
         if (IsMotionBlurEnabled())
         {
-            sceneColorTexture = DispatchMotionBlur(renderGraph, view, sceneColorTexture, sceneDepthTexture, motionVectorTexture);
+            colorTexture = DispatchMotionBlur(renderGraph, view, colorTexture, depthTexture, motionVectorTexture);
         }
 
         //sceneColorTexture = renderGraph.ImportExternalTexture(localToneMappingTestTexture, localToneMappingTestTextureDesc, RenderBackendResourceState::ShaderResource, "Test");
-        PostProcessingSceneColorMipChain sceneColorMipChain;
-        if (shouldRenderSceneColorPyramid)
+        PostProcessingColorPyramid colorPyramid;
+        if (shouldBuildColorPyramid)
         {
-            RenderSceneColorPyramid(renderGraph, view, sceneColorTexture, &sceneColorMipChain);
+            DispatchColorPyramidGeneration(renderGraph, view, colorTexture, &colorPyramid);
         }
 
         // The auto exposure pass is always executed.
         // When fixed exposure is enabled, the auto exposure pass will force output the specified exposure.
         {
-            autoExposureBuffer = DispatchHistogramBasedAutoExposure(renderGraph, view, sceneColorMipChain.textures[0], previousAutoExposureBuffer);
+            autoExposureBuffer = DispatchHistogramBasedAutoExposure(renderGraph, view, colorPyramid.textures[0], previousAutoExposureBuffer);
         }
         RenderGraphTextureHandle exposureTexture = AddCopyExposurePass(renderGraph, view, autoExposureBuffer);
 
-        RenderGraphTextureHandle exposureFusionOuptutTexture = RenderGraphTextureHandle::Null;
+        RenderGraphTextureHandle localToneMappingTexture = defaultResources->ImportWhiteDummyTexture2D(renderGraph);
         if (IsLocalToneMappingEnabled())
         {
-            exposureFusionOuptutTexture = DispatchExposureFusion(renderGraph, view, sceneColorTexture, exposureTexture);
+            if (finalPostProcessingSettings.localToneMappingMethod == LocalToneMappingMethod::BilateralGrid)
+            {
+                localToneMappingTexture = DispatchBilateralGridToneMapping(renderGraph, view, colorPyramid, colorTexture, autoExposureBuffer);
+            }
+            else if (finalPostProcessingSettings.localToneMappingMethod == LocalToneMappingMethod::ExposureFusion)
+            {
+                localToneMappingTexture = DispatchExposureFusionLocalToneMapping(renderGraph, view, colorTexture, exposureTexture);
+            }
         }
 
         RenderGraphTextureHandle bloomTexture = RenderGraphTextureHandle::Null;
@@ -83,17 +90,17 @@ namespace Horizon
         {
             if (IsGaussianBloomEnabled())
             {
-                bloomTexture = DispatchGaussianBloom(renderGraph, view, sceneColorMipChain.textures[0]);
+                bloomTexture = DispatchGaussianBloom(renderGraph, view, colorPyramid.textures[0]);
             }
             else
             {
                 assert(IsConvolutionBloomEnabled());
-                bloomTexture = DispatchConvolutionBloom(renderGraph, view, sceneColorMipChain.textures[0]);
+                bloomTexture = DispatchConvolutionBloom(renderGraph, view, colorPyramid.textures[0]);
             }
 
             if (IsLensFlareEnabled())
             {
-                bloomTexture = AddLensFlarePass(renderGraph, view, sceneColorMipChain.textures[1], bloomTexture);
+                bloomTexture = AddLensFlarePass(renderGraph, view, colorPyramid.textures[1], bloomTexture);
             }
         }
 
@@ -101,9 +108,17 @@ namespace Horizon
 
         bool outputInHDR = false;
 
-        sceneColorTexture = DispatchFinalComposition(renderGraph, view, sceneColorTexture, bloomTexture, exposureFusionOuptutTexture, colorLUTTexture, autoExposureBuffer, outputInHDR);
+        colorTexture = DispatchFinalComposition(
+            renderGraph,
+            view,
+            colorTexture,
+            bloomTexture,
+            localToneMappingTexture,
+            colorLUTTexture,
+            autoExposureBuffer,
+            outputInHDR);
 
-        RenderGraphTextureHandle sceneColorTextureAfterToneMapping = sceneColorTexture;
+        RenderGraphTextureHandle colorTextureAfterToneMapping = colorTexture;
 
 #if WITH_HORIZON_EDITOR
         // if (isEditorSelectionOutlineEnabled)
@@ -119,33 +134,33 @@ namespace Horizon
 
         if (isVisualizeDepthEnabled)
         {
-            sceneColorTexture = AddVisualizeDepthPass(renderGraph, view);
+            colorTexture = AddVisualizeDepthPass(renderGraph, view);
         }
         if (isVisualizePrimitiveIDEnabled)
         {
-            sceneColorTexture = AddVisualizePrimitiveIDPass(renderGraph, view);
+            colorTexture = AddVisualizePrimitiveIDPass(renderGraph, view);
         }
         if (isVisualizeMaterialIDEnabled)
         {
-            sceneColorTexture = AddVisualizeMaterialIDPass(renderGraph, view);
+            colorTexture = AddVisualizeMaterialIDPass(renderGraph, view);
         }
         if (isVisualizeWorldSpaceNormalEnabled)
         {
-            sceneColorTexture = AddVisualizeWorldSpaceNormalPass(renderGraph, view);
+            colorTexture = AddVisualizeWorldSpaceNormalPass(renderGraph, view);
         }
         if (isVisualizeMotionVectorsEnabled)
         {
-            sceneColorTexture = AddVisualizeMotionVectorsPass(renderGraph, view);
+            colorTexture = AddVisualizeMotionVectorsPass(renderGraph, view);
         }
         if (isVisualizeAmbientOcclusionEnabled)
         {
-            sceneColorTexture = AddVisualizeAmbientOcclusionPass(renderGraph, view);
+            colorTexture = AddVisualizeAmbientOcclusionPass(renderGraph, view);
         }
         if (isVisualizeShadowMaskEnabled)
         {
-            sceneColorTexture = AddVisualizeShadowMaskPass(renderGraph, view, sceneColorTexture);
+            colorTexture = AddVisualizeShadowMaskPass(renderGraph, view, colorTexture);
         }
 
-        sceneTextures.hudLessColorTexture = sceneColorTexture;
+        sceneTextures.hudLessColorTexture = colorTexture;
     }
 }

@@ -154,11 +154,20 @@ float3 GammaCorrection(float3 linearColor)
     return float3(GammaCorrection(linearColor.r), GammaCorrection(linearColor.g), GammaCorrection(linearColor.b));
 }
 
+// Luma is the weighted sum of gamma-compressed R′G′B′ components of a color video.
+// https://en.wikipedia.org/wiki/Luma_(video)
+float Luma(float3 sRGB)
+{
+    // Y = 0.2126390059(R) + 0.7151686788(G) + 0.0721923154(B)
+    return dot(sRGB, float3(0.2126390059, 0.7151686788, 0.0721923154));
+}
+
+// Luminance normalized with respect to a reference white.
 // https://en.wikipedia.org/wiki/Relative_luminance
-// form the middle row of the RGB-to-XYZ color transformation matrix: http://brucelindbloom.com/index.html?Eqn_RGB_XYZ_Matrix.html
 float RelativeLuminance(float3 linearRGB)
 {
-    return dot(linearRGB, float3(0.2126729, 0.7151522, 0.0721750));
+    // Y' = 0.2126390059(R') + 0.7151686788(G') + 0.0721923154(B')
+    return dot(linearRGB, float3(0.2126390059, 0.7151686788, 0.0721923154));
 }
 
 float RelativeLuminance(float4 linearRGBA)

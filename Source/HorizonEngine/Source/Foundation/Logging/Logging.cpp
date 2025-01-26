@@ -86,60 +86,70 @@ namespace Horizon
 
     void LogVerbose(Logger* logger, std::wstring_view message)
     {
+        if (!logger) return;
         SPDLOG_LOGGER_CALL((spdlog::logger*)logger, spdlog::level::level_enum::debug, message);
         ((spdlog::logger*)logger)->flush();
     }
 
     void LogInfo(Logger* logger, std::wstring_view message)
     {
+        if (!logger) return;
         SPDLOG_LOGGER_CALL((spdlog::logger*)logger, spdlog::level::level_enum::info, message);
         ((spdlog::logger*)logger)->flush();
     }
 
     void LogWarning(Logger* logger, std::wstring_view message)
     {
+        if (!logger) return;
         SPDLOG_LOGGER_CALL((spdlog::logger*)logger, spdlog::level::level_enum::warn, message);
         ((spdlog::logger*)logger)->flush();
     }
 
     void LogError(Logger* logger, std::wstring_view message)
     {
+        if (!logger) return;
         SPDLOG_LOGGER_CALL((spdlog::logger*)logger, spdlog::level::level_enum::err, message);
         ((spdlog::logger*)logger)->flush();
     }
 
     void LogFatal(Logger* logger, std::wstring_view message)
     {
+        if (!logger) return;
         SPDLOG_LOGGER_CALL((spdlog::logger*)logger, spdlog::level::level_enum::critical, message);
         ((spdlog::logger*)logger)->flush();
     }
 
     void LogVerbose(Logger* logger, std::string_view message)
     {
+        if (!logger) return;
         SPDLOG_LOGGER_CALL((spdlog::logger*)logger, spdlog::level::level_enum::debug, message);
         ((spdlog::logger*)logger)->flush();
     }
 
     void LogInfo(Logger* logger, std::string_view message)
     {
+        if (!logger) return;
         SPDLOG_LOGGER_CALL((spdlog::logger*)logger, spdlog::level::level_enum::info, message);
         ((spdlog::logger*)logger)->flush();
     }
 
     void LogWarning(Logger* logger, std::string_view message)
     {
+        if (!logger) return;
         SPDLOG_LOGGER_CALL((spdlog::logger*)logger, spdlog::level::level_enum::warn, message);
         ((spdlog::logger*)logger)->flush();
     }
 
     void LogError(Logger* logger, std::string_view message)
     {
+        if (!logger) return;
         SPDLOG_LOGGER_CALL((spdlog::logger*)logger, spdlog::level::level_enum::err, message);
         ((spdlog::logger*)logger)->flush();
     }
 
     void LogFatal(Logger* logger, std::string_view message)
     {
+        if (!logger) return;
         SPDLOG_LOGGER_CALL((spdlog::logger*)logger, spdlog::level::level_enum::critical, message);
         ((spdlog::logger*)logger)->flush();
     }

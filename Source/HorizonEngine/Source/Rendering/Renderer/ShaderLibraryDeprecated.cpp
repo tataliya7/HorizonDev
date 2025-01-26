@@ -489,6 +489,26 @@ namespace Horizon
             ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Pixel, "Shaders/RealTimeRenderer/PostProcessing/LensFlareCombine.hsm", "LensFlareCombinePS");
             shaderLibrary->LoadShader(ShaderID::LensFlareCombine, shaderDesc);
         }
+        {
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/PostProcessing/LocalToneMapping/BilateralGridLocalToneMappingBuildGrid.hsm", "BilateralGridLocalToneMappingBuildGridCS");
+            shaderLibrary->LoadShader(ShaderID::BilateralGridLocalToneMappingBuildGrid, shaderDesc);
+        }
+        {
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/PostProcessing/LocalToneMapping/BilateralGridLocalToneMappingComputeLogLuminance.hsm", "BilateralGridLocalToneMappingComputeLogLuminanceCS");
+            shaderLibrary->LoadShader(ShaderID::BilateralGridLocalToneMappingComputeLogLuminance, shaderDesc);
+        }
+        {
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/PostProcessing/LocalToneMapping/BilateralGridLocalToneMappingGaussianDistribution.hsm", "BilateralGridLocalToneMappingGaussianDistributionCS");
+            shaderLibrary->LoadShader(ShaderID::BilateralGridLocalToneMappingGaussianDistribution, shaderDesc);
+        }
+        {
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/PostProcessing/LocalToneMapping/BilateralGridLocalToneMappingGaussianFilter.hsm", "BilateralGridLocalToneMappingGaussianFilterCS");
+            shaderLibrary->LoadShader(ShaderID::BilateralGridLocalToneMappingGaussianFilter, shaderDesc);
+        }
+        {
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/PostProcessing/LocalToneMapping/BilateralGridLocalToneMappingUpsampling.hsm", "BilateralGridLocalToneMappingUpsamplingCS");
+            shaderLibrary->LoadShader(ShaderID::BilateralGridLocalToneMappingUpsampling, shaderDesc);
+        }
          {
              ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/PostProcessing/LocalToneMapping/ExposureFusionComputeLuminanceAndWeight.hsm", "ExposureFusionComputeLuminanceAndWeightCS");
              shaderLibrary->LoadShader(ShaderID::ExposureFusionComputeLuminanceAndWeight, shaderDesc);
@@ -619,7 +639,7 @@ namespace Horizon
 
         {
             {
-                ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::RayGen, "Shaders/PathTracingRenderer/PathTracing.hsm", "PathTracingRayGen");
+                ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::RayGen, "Shaders/PathTracingRenderer/PathTracing.hslib", "PathTracingRayGen");
                 shaderDesc.AddDefine("RAY_TRACING_ENABLED", 1);
                 if (shaderLibrary->renderBackend->GetType() == RenderBackendType::Vulkan) // Avoid vulkan validation errors.
                 {
@@ -629,7 +649,7 @@ namespace Horizon
                 shaderLibrary->LoadShader(ShaderID::PathTracingRayGen, shaderDesc);
             }
             {
-                ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Miss, "Shaders/PathTracingRenderer/PathTracing.hsm", "PathTracingDefaultMiss");
+                ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Miss, "Shaders/PathTracingRenderer/PathTracing.hslib", "PathTracingDefaultMiss");
                 shaderDesc.AddDefine("RAY_TRACING_ENABLED", 1);
                 if (shaderLibrary->renderBackend->GetType() == RenderBackendType::Vulkan) // Avoid vulkan validation errors.
                 {
@@ -639,7 +659,7 @@ namespace Horizon
                 shaderLibrary->LoadShader(ShaderID::PathTracingDefaultMiss, shaderDesc);
             }
             {
-                ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Miss, "Shaders/PathTracingRenderer/PathTracing.hsm", "PathTracingShadowRayMiss");
+                ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Miss, "Shaders/PathTracingRenderer/PathTracing.hslib", "PathTracingShadowRayMiss");
                 shaderDesc.AddDefine("RAY_TRACING_ENABLED", 1);
                 if (shaderLibrary->renderBackend->GetType() == RenderBackendType::Vulkan) // Avoid vulkan validation errors.
                 {
@@ -649,7 +669,7 @@ namespace Horizon
                 shaderLibrary->LoadShader(ShaderID::PathTracingShadowRayMiss, shaderDesc);
             }
             {
-                ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::ClosestHit, "Shaders/PathTracingRenderer/PathTracing.hsm", "PathTracingDefaultOpaqueClosestHit");
+                ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::ClosestHit, "Shaders/PathTracingRenderer/PathTracing.hslib", "PathTracingDefaultOpaqueClosestHit");
                 shaderDesc.AddDefine("RAY_TRACING_ENABLED", 1);
                 if (shaderLibrary->renderBackend->GetType() == RenderBackendType::Vulkan) // Avoid vulkan validation errors.
                 {

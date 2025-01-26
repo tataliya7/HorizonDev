@@ -41,6 +41,7 @@ namespace Horizon
         RenderBackendSamplerHandle globalSamplerLinearWarp;
         RenderBackendSamplerHandle globalSamplerLinearClamp;
         RenderBackendSamplerHandle globalSamplerLinearBorder;
+        RenderBackendSamplerHandle globalSamplerLinearMirror;
         RenderBackendSamplerHandle globalSamplerPointWarp;
         RenderBackendSamplerHandle globalSamplerPointClamp;
         RenderBackendSamplerHandle globalSamplerPointBorder;

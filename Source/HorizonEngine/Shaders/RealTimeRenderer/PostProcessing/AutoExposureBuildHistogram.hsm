@@ -9,6 +9,7 @@ SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(1, ColorTextureSRV);
 SHADER_CONSTANTS_TEXTURE_2D_UAV(2, uint, AutoExposureHistogramTextureUAV);
 SHADER_CONSTANTS_STRUCT_END();
 
+// Luminance histogram
 // References:
 // https://bruop.github.io/exposure/
 // https://en.wikipedia.org/wiki/Exposure_value
@@ -16,11 +17,6 @@ SHADER_CONSTANTS_STRUCT_END();
 // @todo: Performance optimization
 
 groupshared uint SharedHistogram[AUTO_EXPOSURE_HISTOGRAM_BIN_COUNT];
-
-float ComputeColorLuminance(float3 color)
-{
-    return dot(color, float3(1.0f, 1.0f, 1.0f) / 3.0f);
-}
 
 [shader("compute")]
 [numthreads(AUTO_EXPOSURE_BUILD_HISTOGRAM_CS_NUM_THREADS_X, AUTO_EXPOSURE_BUILD_HISTOGRAM_CS_NUM_THREADS_Y, 1)]
@@ -55,15 +51,14 @@ void AutoExposureBuildHistogramCS(uint3 dispatchThreadID : SV_DispatchThreadID, 
         float3 color = colorTexture.SampleLevel(GlobalSamplerLinearClamp, uv, 0).rgb;
         color.rgb *= frameShaderParameters.inversePreExposure;
 
-        float colorLuminance = ComputeColorLuminance(color);
+        float luminance = RelativeLuminance(color);
 
-        float logColorLuminance = log2(colorLuminance);
+        float logLuminance = log2(luminance);
 
         float inverseLogLuminanceRange = 1.0f / (histogramMaxEV100 - histogramMinEV100);
 
         // Calculate the log_2 luminance and express it as a value in [0, 1]
-        float histogramPosition = (logColorLuminance - histogramMinEV100) * inverseLogLuminanceRange;
-        histogramPosition = saturate(histogramPosition);
+        float histogramPosition = saturate((logLuminance - histogramMinEV100) * inverseLogLuminanceRange);
 
         // Map [0, 1] to [0, AUTO_EXPOSURE_HISTOGRAM_BIN_COUNT - 1]
         histogramPosition = histogramPosition * (AUTO_EXPOSURE_HISTOGRAM_BIN_COUNT - 1);

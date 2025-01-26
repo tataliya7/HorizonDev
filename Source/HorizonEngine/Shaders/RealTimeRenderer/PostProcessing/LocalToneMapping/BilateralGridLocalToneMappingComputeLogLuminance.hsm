@@ -1,0 +1,33 @@
+#include "../../../ShaderCommon.hsh"
+#include "../../RealTimeRendererCommon.hsh"
+#include "../PostProcessingCommon.hsh"
+#include "BilateralGridLocalToneMappingCommon.hsh"
+
+SHADER_CONSTANTS_STRUCT_BEGIN();
+SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferSRV);
+SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(1, InputTextureSRV);
+SHADER_CONSTANTS_TEXTURE_2D_UAV(2, float, OutputTextureUAV);
+SHADER_CONSTANTS_STRUCT_END();
+
+[shader("compute")]
+[numthreads(8, 8, 1)]
+void BilateralGridLocalToneMappingComputeLogLuminanceCS(uint3 dispatchThreadID : SV_DispatchThreadID)
+{
+    StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
+    PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
+
+    Texture2D inputTexture = ShaderConstants.GetInputTextureSRV();
+    RWTexture2D<float> outputTexture = ShaderConstants.GetOutputTextureUAV();
+
+    uint width, height;
+    outputTexture.GetDimensions(width, height);
+
+    uint2 pixelCoord = uint2(min(dispatchThreadID.x, width), min(dispatchThreadID.y, height));
+
+    float inversePreExposure = frameShaderParameters.inversePreExposure;
+
+    float luminance = RelativeLuminance(inputTexture[pixelCoord].rgb * inversePreExposure);
+    float logLuminance = log2(luminance);
+
+    outputTexture[pixelCoord] = luminance;
+}

@@ -25,10 +25,10 @@ namespace Horizon
             bloomTexture = defaultResources->ImportBlackDummyTexture2D(renderGraph);
         }
 
-        if (!isLocalToneMappingTextureValid)
-        {
-            localToneMappingTexture = defaultResources->ImportBlackDummyTexture2D(renderGraph);
-        }
+        // if (!isLocalToneMappingTextureValid)
+        // {
+        //     localToneMappingTexture = defaultResources->ImportBlackDummyTexture2D(renderGraph);
+        // }
         // TODO: Implement lens dirt
         RenderBackendTextureHandle lensDirtTexture = defaultResources->GetBlackDummyTexture2D()->GetHandle();
 

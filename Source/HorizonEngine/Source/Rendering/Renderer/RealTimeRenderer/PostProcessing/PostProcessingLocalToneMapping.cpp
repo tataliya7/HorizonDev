@@ -8,7 +8,264 @@ namespace Horizon
         return features.enableLocalToneMapping;
     }
 
-    RenderGraphTextureHandle RealTimeRenderer::DispatchExposureFusion(
+    RenderGraphTextureHandle RealTimeRenderer::DispatchBilateralGridToneMapping(
+        RenderGraph& renderGraph,
+        const SceneView& view,
+        const PostProcessingColorPyramid& colorPyramid,
+        RenderGraphTextureHandle colorTexture,
+        RenderGraphBufferHandle autoExposureBuffer)
+    {
+        const uint32 bilateralGridTextureWidth = Math::CeilDiv(renderResolution.width, 8 * 8);
+        const uint32 bilateralGridTextureHeight = Math::CeilDiv(renderResolution.height, 8 * 8);
+        const uint32 bilateralGridTextureDepth = 64;
+
+        RenderGraphTextureDesc gridTextureDesc = RenderGraphTextureDesc::Create3D(
+            bilateralGridTextureWidth,
+            bilateralGridTextureHeight,
+            bilateralGridTextureDepth,
+            RenderBackendTextureFormat::R32G32Float,
+            RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::UnorderedAccess);
+
+        RenderGraphTextureHandle gridTexture = renderGraph.CreateTexture(gridTextureDesc, "BilateralGridLocalToneMappingGridTexture");
+        RenderGraphTextureHandle bilaterallyFilteredGridTexture = renderGraph.CreateTexture(gridTextureDesc, "BilateralGridLocalToneMappingBilaterallyFilteredGridTexture");
+
+        renderGraph.AddPass(
+            std::format("BilateralGridLocalToneMappingBuildGrid (Compute, {}x{}x{})", bilateralGridTextureWidth, bilateralGridTextureHeight, bilateralGridTextureDepth),
+            RenderGraphPassFlags::Compute,
+            [&](RenderGraphBuilder& builder)
+            {
+                colorTexture = builder.ReadTexture(colorTexture, RenderBackendResourceState::ShaderResource);
+                gridTexture = builder.WriteTexture(gridTexture, RenderBackendResourceState::UnorderedAccess);
+
+                return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
+                {
+                    uint32 threadGroupCountX = ComputeShaderThreadGroupCount(bilateralGridTextureWidth, 8);
+                    uint32 threadGroupCountY = ComputeShaderThreadGroupCount(bilateralGridTextureHeight, 8);
+                    uint32 threadGroupCountZ = 1;
+
+                    RenderBackendShaderConstants shaderConstants = {};
+                    shaderConstants.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
+                    shaderConstants.BindTextureSRV(1, registry.GetTextureSRVBindlessResourceDescriptorIndex(colorTexture));
+                    shaderConstants.BindTextureUAV(2, registry.GetTextureUAVBindlessResourceDescriptorIndex(gridTexture, 0));
+
+                    //commandList.ClearTextureUAV(RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(autoExposureHistogramTexture), 0), RenderBackendTextureClearValue::CreateColorValueFloat4(0.0f, 0.0f, 0.0f, 0.0f));
+
+                    RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::BilateralGridLocalToneMappingBuildGrid);
+
+                    commandList.Dispatch(
+                        computeShader,
+                        shaderConstants,
+                        threadGroupCountX,
+                        threadGroupCountY,
+                        threadGroupCountZ);
+                };
+            });
+
+        // @todo
+        const RenderGraphTextureDesc gaussianFilterInputColorTextureDesc = colorPyramid.textureDescs[4];
+        RenderGraphTextureHandle gaussianFilterInputColorTexture = colorPyramid.textures[4];
+
+        RenderGraphTextureDesc gaussianFilteredLogLuminanceTextureDesc = RenderGraphTextureDesc::Create2D(
+            gaussianFilterInputColorTextureDesc.width,
+            gaussianFilterInputColorTextureDesc.height,
+            RenderBackendTextureFormat::R16Float,
+            RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::UnorderedAccess);
+
+        RenderGraphTextureHandle lowResolutionLogLuminanceTexture = renderGraph.CreateTexture(gaussianFilteredLogLuminanceTextureDesc, "LowResolutionLogLuminanceTexture");
+        RenderGraphTextureHandle intermediateGaussianFilteredLogLuminanceTexture = renderGraph.CreateTexture(gaussianFilteredLogLuminanceTextureDesc, "IntermediateGaussianFilteredLogLuminanceTexture");
+        RenderGraphTextureHandle gaussianFilteredLogLuminanceTexture = renderGraph.CreateTexture(gaussianFilteredLogLuminanceTextureDesc, "GaussianFilteredLogLuminanceTexture");
+
+        renderGraph.AddPass(
+            std::format("BilateralGridLocalToneMappingComputeLogLuminance (Compute, {}x{}x{})", gaussianFilteredLogLuminanceTextureDesc.width, gaussianFilteredLogLuminanceTextureDesc.height, 1),
+            RenderGraphPassFlags::Compute,
+            [&](RenderGraphBuilder& builder)
+            {
+                gaussianFilterInputColorTexture = builder.ReadTexture(gaussianFilterInputColorTexture, RenderBackendResourceState::ShaderResource);
+                lowResolutionLogLuminanceTexture = builder.WriteTexture(lowResolutionLogLuminanceTexture, RenderBackendResourceState::UnorderedAccess);
+
+                return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
+                {
+                    uint32 threadGroupCountX = ComputeShaderThreadGroupCount(gaussianFilteredLogLuminanceTextureDesc.width, 8);
+                    uint32 threadGroupCountY = ComputeShaderThreadGroupCount(gaussianFilteredLogLuminanceTextureDesc.height, 8);
+                    uint32 threadGroupCountZ = 1;
+
+                    RenderBackendShaderConstants shaderConstants = {};
+                    shaderConstants.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
+                    shaderConstants.BindTextureSRV(1, registry.GetTextureSRVBindlessResourceDescriptorIndex(gaussianFilterInputColorTexture));
+                    shaderConstants.BindTextureUAV(2, registry.GetTextureUAVBindlessResourceDescriptorIndex(lowResolutionLogLuminanceTexture, 0));
+
+                    RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::BilateralGridLocalToneMappingComputeLogLuminance);
+
+                    commandList.Dispatch(
+                        computeShader,
+                        shaderConstants,
+                        threadGroupCountX,
+                        threadGroupCountY,
+                        threadGroupCountZ);
+                };
+            });
+
+        // 2D Gaussian blur must be wide enough to avoid noticeable haloing.
+        const uint32 GaussianFilterMaxRadius = 32u;
+        const uint32 GaussianFilterMaxKernelSize = 2 * GaussianFilterMaxRadius + 1;
+
+        float radius = float(std::max(gaussianFilterInputColorTextureDesc.width, gaussianFilterInputColorTextureDesc.height)) * 0.25f;
+        const uint32 gaussianFilterRadius = std::clamp(uint32(std::ceil(radius)), 1u, GaussianFilterMaxRadius);
+
+        const uint32 gaussianFilterKernelSize = 2 * gaussianFilterRadius + 1;
+        const float gaussianFilterSigma = 0.3f * (float(gaussianFilterKernelSize - 1) * 0.5f - 1.0f) + 0.8f;
+
+        RenderGraphBufferDesc gaussianDistributionBufferDesc = RenderGraphBufferDesc::CreateByteAddress(2 * sizeof(float) * GaussianFilterMaxKernelSize);
+        RenderGraphBufferHandle gaussianDistributionBuffer = renderGraph.CreateBuffer(gaussianDistributionBufferDesc, "GaussianDistributionBuffer");
+
+        renderGraph.AddPass(
+            std::format("BilateralGridLocalToneMappingGaussianDistribution (Compute, {}x{}x{})", gaussianFilterKernelSize, 1, 1),
+            RenderGraphPassFlags::Compute,
+            [&](RenderGraphBuilder& builder)
+            {
+                gaussianDistributionBuffer = builder.WriteBuffer(gaussianDistributionBuffer, RenderBackendResourceState::UnorderedAccess);
+
+                return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
+                {
+                    uint32 threadGroupCountX = 1;
+                    uint32 threadGroupCountY = 1;
+                    uint32 threadGroupCountZ = 1;
+
+                    RenderBackendShaderConstants shaderConstants = {};
+                    shaderConstants.BindBufferUAV(0, registry.GetBufferUAVBindlessResourceDescriptorIndex(gaussianDistributionBuffer));
+                    shaderConstants.BindScalar(1, gaussianFilterKernelSize);
+                    shaderConstants.BindScalar(2, gaussianFilterSigma);
+
+                    RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::BilateralGridLocalToneMappingGaussianDistribution);
+
+                    commandList.Dispatch(
+                        computeShader,
+                        shaderConstants,
+                        threadGroupCountX,
+                        threadGroupCountY,
+                        threadGroupCountZ);
+                };
+            });
+
+        renderGraph.AddPass(
+            std::format("BilateralGridLocalToneMappingGaussianFilter-Horizontal (Compute, {}x{}x{})", gaussianFilteredLogLuminanceTextureDesc.width, gaussianFilteredLogLuminanceTextureDesc.height, 1),
+            RenderGraphPassFlags::Compute,
+            [&](RenderGraphBuilder& builder)
+            {
+                gaussianDistributionBuffer = builder.ReadBuffer(gaussianDistributionBuffer, RenderBackendResourceState::ShaderResource);
+                lowResolutionLogLuminanceTexture = builder.ReadTexture(lowResolutionLogLuminanceTexture, RenderBackendResourceState::ShaderResource);
+                intermediateGaussianFilteredLogLuminanceTexture = builder.WriteTexture(intermediateGaussianFilteredLogLuminanceTexture, RenderBackendResourceState::UnorderedAccess);
+
+                return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
+                {
+                    uint32 threadGroupCountX = ComputeShaderThreadGroupCount(gaussianFilteredLogLuminanceTextureDesc.width, 8);
+                    uint32 threadGroupCountY = ComputeShaderThreadGroupCount(gaussianFilteredLogLuminanceTextureDesc.height, 8);
+                    uint32 threadGroupCountZ = 1;
+
+                    RenderBackendShaderConstants shaderConstants = {};
+                    shaderConstants.BindBufferSRV(0, registry.GetBufferSRVBindlessResourceDescriptorIndex(gaussianDistributionBuffer));
+                    shaderConstants.BindTextureSRV(1, registry.GetTextureSRVBindlessResourceDescriptorIndex(lowResolutionLogLuminanceTexture));
+                    shaderConstants.BindTextureUAV(2, registry.GetTextureUAVBindlessResourceDescriptorIndex(intermediateGaussianFilteredLogLuminanceTexture, 0));
+                    shaderConstants.BindScalar(3, 0u);
+                    shaderConstants.BindScalar(4, gaussianFilterKernelSize);
+
+                    RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::BilateralGridLocalToneMappingGaussianFilter);
+
+                    commandList.Dispatch(
+                        computeShader,
+                        shaderConstants,
+                        threadGroupCountX,
+                        threadGroupCountY,
+                        threadGroupCountZ);
+                };
+            });
+
+        renderGraph.AddPass(
+            std::format("BilateralGridLocalToneMappingGaussianFilter-Vertical (Compute, {}x{}x{})", gaussianFilteredLogLuminanceTextureDesc.width, gaussianFilteredLogLuminanceTextureDesc.height, 1),
+            RenderGraphPassFlags::Compute,
+            [&](RenderGraphBuilder& builder)
+            {
+                intermediateGaussianFilteredLogLuminanceTexture = builder.ReadTexture(intermediateGaussianFilteredLogLuminanceTexture, RenderBackendResourceState::ShaderResource);
+                gaussianFilteredLogLuminanceTexture = builder.WriteTexture(gaussianFilteredLogLuminanceTexture, RenderBackendResourceState::UnorderedAccess);
+
+                return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
+                {
+                    uint32 threadGroupCountX = ComputeShaderThreadGroupCount(gaussianFilteredLogLuminanceTextureDesc.width, 8);
+                    uint32 threadGroupCountY = ComputeShaderThreadGroupCount(gaussianFilteredLogLuminanceTextureDesc.height, 8);
+                    uint32 threadGroupCountZ = 1;
+
+                    RenderBackendShaderConstants shaderConstants = {};
+                    shaderConstants.BindBufferSRV(0, registry.GetBufferSRVBindlessResourceDescriptorIndex(gaussianDistributionBuffer));
+                    shaderConstants.BindTextureSRV(1, registry.GetTextureSRVBindlessResourceDescriptorIndex(intermediateGaussianFilteredLogLuminanceTexture));
+                    shaderConstants.BindTextureUAV(2, registry.GetTextureUAVBindlessResourceDescriptorIndex(gaussianFilteredLogLuminanceTexture, 0));
+                    shaderConstants.BindScalar(3, 1u);
+                    shaderConstants.BindScalar(4, gaussianFilterKernelSize);
+
+                    RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::BilateralGridLocalToneMappingGaussianFilter);
+
+                    commandList.Dispatch(
+                        computeShader,
+                        shaderConstants,
+                        threadGroupCountX,
+                        threadGroupCountY,
+                        threadGroupCountZ);
+                };
+            });
+
+        RenderGraphTextureDesc localToneMappingTextureDesc = RenderGraphTextureDesc::Create2D(
+            targetResolution.width,
+            targetResolution.height,
+            RenderBackendTextureFormat::R32Float,
+            RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::UnorderedAccess);
+
+        RenderGraphTextureHandle localToneMappingTexture = renderGraph.CreateTexture(localToneMappingTextureDesc, "LocalToneMappingTexture");
+
+        renderGraph.AddPass(
+            std::format("BilateralGridLocalToneMappingUpsampling (Compute, {}x{}x{})", localToneMappingTextureDesc.width, localToneMappingTextureDesc.height, 1),
+            RenderGraphPassFlags::Compute,
+            [&](RenderGraphBuilder& builder)
+            {
+                colorTexture = builder.ReadTexture(colorTexture, RenderBackendResourceState::ShaderResource);
+                bilaterallyFilteredGridTexture = builder.ReadTexture(bilaterallyFilteredGridTexture, RenderBackendResourceState::ShaderResource);
+                gaussianFilteredLogLuminanceTexture = builder.ReadTexture(gaussianFilteredLogLuminanceTexture, RenderBackendResourceState::ShaderResource);
+                autoExposureBuffer = builder.ReadBuffer(autoExposureBuffer, RenderBackendResourceState::ShaderResource);
+                localToneMappingTexture = builder.WriteTexture(localToneMappingTexture, RenderBackendResourceState::UnorderedAccess);
+
+                return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
+                {
+                    uint32 threadGroupCountX = ComputeShaderThreadGroupCount(localToneMappingTextureDesc.width, 8);
+                    uint32 threadGroupCountY = ComputeShaderThreadGroupCount(localToneMappingTextureDesc.height, 8);
+                    uint32 threadGroupCountZ = 1;
+
+                    RenderBackendShaderConstants shaderConstants = {};
+                    shaderConstants.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
+                    shaderConstants.BindTextureSRV(1, registry.GetTextureSRVBindlessResourceDescriptorIndex(colorTexture));
+                    shaderConstants.BindTextureSRV(2, registry.GetTextureSRVBindlessResourceDescriptorIndex(bilaterallyFilteredGridTexture));
+                    shaderConstants.BindTextureSRV(3, registry.GetTextureSRVBindlessResourceDescriptorIndex(gaussianFilteredLogLuminanceTexture));
+                    shaderConstants.BindBufferSRV(4, registry.GetBufferSRVBindlessResourceDescriptorIndex(autoExposureBuffer));
+                    shaderConstants.BindTextureUAV(5, registry.GetTextureUAVBindlessResourceDescriptorIndex(localToneMappingTexture, 0));
+                    shaderConstants.BindScalar(6, view.renderSettings.postProcessingSettings.bilateralGridLocalToneMappingShadows);
+                    shaderConstants.BindScalar(7, view.renderSettings.postProcessingSettings.bilateralGridLocalToneMappingHighlights);
+                    shaderConstants.BindScalar(8, view.renderSettings.postProcessingSettings.bilateralGridLocalToneMappingDetailStrength);
+                    shaderConstants.BindScalar(9, view.renderSettings.postProcessingSettings.bilateralGridLocalToneMappingGaussianFilterWeight);
+                    shaderConstants.BindScalar(10, 1.0f / float(bilateralGridTextureWidth));
+                    shaderConstants.BindScalar(11, 1.0f / float(bilateralGridTextureHeight));
+
+                    RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::BilateralGridLocalToneMappingUpsampling);
+
+                    commandList.Dispatch(
+                        computeShader,
+                        shaderConstants,
+                        threadGroupCountX,
+                        threadGroupCountY,
+                        threadGroupCountZ);
+                };
+            });
+
+        return localToneMappingTexture;
+    }
+
+    RenderGraphTextureHandle RealTimeRenderer::DispatchExposureFusionLocalToneMapping(
         RenderGraph& renderGraph,
         const SceneView& view,
         RenderGraphTextureHandle colorTexture,
