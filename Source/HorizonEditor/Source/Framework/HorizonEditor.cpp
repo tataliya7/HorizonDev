@@ -34,7 +34,7 @@ namespace Horizon
         // Initialize path to executable
         executablePath = argv[0];
 
-        RenderDocPluginInit();
+        //RenderDocPluginInit();
 
         // Initialize logging system
         CreateConsoleLogger_Deprecated();
