@@ -17,8 +17,8 @@ namespace Horizon
         assert(colorTransformLUTTexture);
         assert(autoExposureBuffer);
 
-        const bool isBloomTextureValid = !bloomTexture.IsNullHandle();
-        const bool isLocalToneMappingTextureValid = !localToneMappingTexture.IsNullHandle();
+        const bool isBloomTextureValid = !bloomTexture.IsNull();
+        const bool isLocalToneMappingTextureValid = !localToneMappingTexture.IsNull();
 
         if (!isBloomTextureValid)
         {

@@ -7,22 +7,67 @@ namespace Horizon
     class RenderGraphHandleBase
     {
     public:
-        RenderGraphHandleBase() : index(InvalidIndex), version(0) {}
-        explicit RenderGraphHandleBase(uint64 value) : index((uint32)(value >> 32)), version((uint32)value) {}
-        explicit RenderGraphHandleBase(uint32 index, uint32 version = 0) : index(index), version(version) {}
-        FORCEINLINE bool IsNullHandle()  const { return index == InvalidIndex; }
-        FORCEINLINE bool IsValid()  const { return !IsNullHandle(); }
-        FORCEINLINE operator bool() const { return !IsNullHandle(); }
-        FORCEINLINE bool operator==(const RenderGraphHandleBase& rhs) const { return ((index == rhs.index) && (version == rhs.version)); }
-        FORCEINLINE bool operator!=(const RenderGraphHandleBase& rhs) const { return ((index != rhs.index) || (version != rhs.version)); }
-        FORCEINLINE RenderGraphHandleBase& operator=(const RenderGraphHandleBase& rhs) = default;
-        FORCEINLINE RenderGraphHandleBase& operator++() { index++; return *this; }
-        FORCEINLINE RenderGraphHandleBase& operator--() { index--; return *this; }
-        FORCEINLINE uint32 GetIndex() const { return index; }
-        FORCEINLINE uint32 GetVersion() const { return version; }
+
+        RenderGraphHandleBase()
+            : index(InvalidIndex)
+            , version(0)
+        {
+
+        }
+
+        explicit RenderGraphHandleBase(uint32 index, uint32 version = 0)
+            : index(index)
+            , version(version)
+        {
+
+        }
+
+        uint32 GetIndex() const
+        {
+            return index;
+        }
+
+        uint32 GetVersion() const
+        {
+            return version;
+        }
+
+        bool IsNull()  const
+        {
+            return index == InvalidIndex;
+        }
+
+        explicit operator bool() const
+        {
+            return !IsNull();
+        }
+
+        bool operator==(const RenderGraphHandleBase& rhs) const
+        {
+            return ((index == rhs.index) && (version == rhs.version));
+        }
+
+        bool operator!=(const RenderGraphHandleBase& rhs) const
+        {
+            return ((index != rhs.index) || (version != rhs.version));
+        }
+
+        RenderGraphHandleBase& operator++()
+        {
+            index++; return *this;
+        }
+
+        RenderGraphHandleBase& operator--()
+        {
+            index--; return *this;
+        }
+
     private:
-        static const uint32 InvalidIndex = UINT32_MAX;
+
+        static constexpr uint32 InvalidIndex = UINT32_MAX;
+
         uint32 index;
+
         uint32 version;
     };
 
@@ -30,14 +75,22 @@ namespace Horizon
     class RenderGraphHandle : public RenderGraphHandleBase
     {
     public:
+
         static const RenderGraphHandle Null;
+
         static RenderGraphHandle CreateNewVersion(RenderGraphHandle oldHandle)
         {
+            assert(oldHandle.GetVersion() + 1 <= UINT32_MAX);
             return RenderGraphHandle(oldHandle.GetIndex(), oldHandle.GetVersion() + 1);
         }
+
         RenderGraphHandle() = default;
-        explicit RenderGraphHandle(uint64 value) : RenderGraphHandleBase(value) {}
-        explicit RenderGraphHandle(uint32 index, uint32 version = 0) : RenderGraphHandleBase(index, version) {}
+
+        explicit RenderGraphHandle(uint32 index, uint32 version = 0)
+            : RenderGraphHandleBase(index, version)
+        {
+
+        }
     };
 
     template<typename ObjectType>
