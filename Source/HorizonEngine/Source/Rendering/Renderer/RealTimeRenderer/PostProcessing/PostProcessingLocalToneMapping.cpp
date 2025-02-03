@@ -39,16 +39,14 @@ namespace Horizon
 
                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
                 {
-                    uint32 threadGroupCountX = ComputeShaderThreadGroupCount(bilateralGridTextureWidth, 8);
-                    uint32 threadGroupCountY = ComputeShaderThreadGroupCount(bilateralGridTextureHeight, 8);
+                    uint32 threadGroupCountX = bilateralGridTextureWidth;
+                    uint32 threadGroupCountY = bilateralGridTextureHeight;
                     uint32 threadGroupCountZ = 1;
 
                     RenderBackendShaderConstants shaderConstants = {};
                     shaderConstants.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
                     shaderConstants.BindTextureSRV(1, registry.GetTextureSRVBindlessResourceDescriptorIndex(colorTexture));
                     shaderConstants.BindTextureUAV(2, registry.GetTextureUAVBindlessResourceDescriptorIndex(gridTexture, 0));
-
-                    //commandList.ClearTextureUAV(RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(autoExposureHistogramTexture), 0), RenderBackendTextureClearValue::CreateColorValueFloat4(0.0f, 0.0f, 0.0f, 0.0f));
 
                     RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::BilateralGridLocalToneMappingBuildGrid);
 
@@ -60,6 +58,8 @@ namespace Horizon
                         threadGroupCountZ);
                 };
             });
+
+        bilaterallyFilteredGridTexture = gridTexture;
 
         // @todo
         const RenderGraphTextureDesc gaussianFilterInputColorTextureDesc = colorPyramid.textureDescs[4];

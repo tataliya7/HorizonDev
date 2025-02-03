@@ -6,29 +6,27 @@
 SHADER_CONSTANTS_STRUCT_BEGIN();
 SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferSRV);
 SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(1, InputColorTextureSRV);
-SHADER_CONSTANTS_TEXTURE_2D_UAV(2, float2, GridTextureUAV);
+SHADER_CONSTANTS_TEXTURE_3D_UAV(2, float2, GridTextureUAV);
 SHADER_CONSTANTS_STRUCT_END();
 
-groupshared uint SharedHistogram[8][8][BILATERAL_GRID_LOCAL_TONE_MAPPING_GRID_TEXTURE_DEPTH];
-
-uint PackHomogeneousLogLuminanceValues(float wiVi, float wi)
-{
-	uint h = uint(wiVi * float(1 << 9)) & 0x0000ffff;
-	uint l = uint(wi * float(1 << 9)) & 0x0000ffff;
-	return (h << 16) | l;
-}
+// 32 KiB
+groupshared float2 SharedHistogram[8][8][BILATERAL_GRID_LOCAL_TONE_MAPPING_GRID_TEXTURE_DEPTH];
 
 [shader("compute")]
 [numthreads(8, 8, 1)]
-void BilateralGridLocalToneMappingBuildGridCS(uint3 dispatchThreadID : SV_DispatchThreadID, uint3 groupID : SV_GroupID, uint groupIndex : SV_GroupIndex)
+void BilateralGridLocalToneMappingBuildGridCS(
+    uint3 dispatchThreadID : SV_DispatchThreadID,
+    uint3 groupID : SV_GroupID,
+    uint groupIndex : SV_GroupIndex,
+    uint3 groupThreadID : SV_GroupThreadID)
 {
     [unroll]
     for (uint i = 0; i < BILATERAL_GRID_LOCAL_TONE_MAPPING_GRID_TEXTURE_DEPTH; i++)
 	{
-		SharedHistogram[dispatchThreadID.x][dispatchThreadID.y][i] = 0;
+		SharedHistogram[groupThreadID.x][groupThreadID.y][i] = float2(0.0f, 0.0f);
 	}
 
-	GroupMemoryBarrierWithGroupSync();
+	//GroupMemoryBarrierWithGroupSync();
 
     StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
     PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
@@ -36,15 +34,27 @@ void BilateralGridLocalToneMappingBuildGridCS(uint3 dispatchThreadID : SV_Dispat
 
     float inversePreExposure = frameShaderParameters.inversePreExposure;
 
+    float histogramMinEV100 = frameShaderParameters.autoExposureHistogramMinEV100;
+    float histogramMaxEV100 = frameShaderParameters.autoExposureHistogramMaxEV100;
+
+    uint inputColorTextureWidth, inputColorTextureHeight;
+    inputColorTexture.GetDimensions(inputColorTextureWidth, inputColorTextureHeight);
+
+    uint2 inputExtent = uint2(inputColorTextureWidth, inputColorTextureHeight);
+    float2 inverseInputExtent = float2(1.0f / float(inputColorTextureWidth), 1.0f / float(inputColorTextureHeight));
+
+    const uint2 tileSize = uint2(8 * 8, 8 * 8);
+	const uint2 tileTopLeft = groupID.xy * tileSize;
+
     for (uint x = 0; x < 8 * 8; x += 8 * 2)
     {
         for (uint y = 0; y < 8 * 8; y += 8 * 2)
         {
-			uint2 texelPosition = LeftTop + uint2(x, y) + GroupThreadId.xy * NumPixelsPerIter;
+			uint2 texelPosition = tileTopLeft + uint2(x, y) + groupThreadID.xy * 2;
 
-			if (all(TexelPos < Input_ViewportMax - 1))
+			if (all(texelPosition < inputExtent))
 			{
-				float2 uv = (float2(texelPosition.x, texelPosition.y) + float2(1.0f, 1.0f)) * InvExtent;
+				float2 uv = (float2(texelPosition.x, texelPosition.y) + float2(1.0f, 1.0f)) * inverseInputExtent;
 
 				float4 inputColorR = inputColorTexture.GatherRed(GlobalSamplerPointClamp, uv) * inversePreExposure;
 				float4 inputColorG = inputColorTexture.GatherGreen(GlobalSamplerPointClamp, uv) * inversePreExposure;
@@ -72,11 +82,8 @@ void BilateralGridLocalToneMappingBuildGridCS(uint3 dispatchThreadID : SV_Dispat
                     float histogramBinWeight0 = 1.0f - frac(histogramPosition);
                     float histogramBinWeight1 = 1.0f - histogramBinWeight0;
 
-                    uint packedHomogeneousLogLuminanceValues0 = PackHomogeneousLogLuminanceValues(histogramBinWeight0 * , histogramBinWeight0);
-                    uint packedHomogeneousLogLuminanceValues1 = PackHomogeneousLogLuminanceValues(histogramBinWeight1 * , histogramBinWeight1);
-
-                    InterlockedAdd(SharedHistogram[dispatchThreadID.x][dispatchThreadID.y][histogramBinIndex0], packedHomogeneousLogLuminanceValues0);
-                    InterlockedAdd(SharedHistogram[dispatchThreadID.x][dispatchThreadID.y][histogramBinIndex1], packedHomogeneousLogLuminanceValues1);
+                    SharedHistogram[groupThreadID.x][groupThreadID.y][histogramBinIndex0] += float2(histogramBinWeight0 * logLuminance, histogramBinWeight0);
+                    SharedHistogram[groupThreadID.x][groupThreadID.y][histogramBinIndex1] += float2(histogramBinWeight1 * logLuminance, histogramBinWeight1);
                 }
             }
         }
@@ -84,26 +91,23 @@ void BilateralGridLocalToneMappingBuildGridCS(uint3 dispatchThreadID : SV_Dispat
 
     GroupMemoryBarrierWithGroupSync();
 
-	if (groupIndex < BILATERAL_GRID_LOCAL_TONE_MAPPING_GRID_TEXTURE_DEPTH)
+	//if (groupIndex < BILATERAL_GRID_LOCAL_TONE_MAPPING_GRID_TEXTURE_DEPTH)
     {
-		float weightSum = 0.0f;
 		float weightedLuminanceSum = 0.0f;
+		float weightSum = 0.0f;
 
 		for (uint x = 0; x < 8; x++)
 		{
 			for (uint y = 0; y < 8; y++)
 			{
-				float SumWeight;
-				float SumLumHist;
-				UnpackUINT32ToTwoFloat(SharedHistogram[GroupIndex][x][y], SumWeight, SumLumHist);
+                float2 luminanceValues = SharedHistogram[x][y][groupIndex];
 
-				float SumLum = (SumLumHist - SumWeight * EyeAdaptation_HistogramBias) / EyeAdaptation_HistogramScale;
-				Sum += SumWeight;
-				Sum += SumLum;
+				weightedLuminanceSum += luminanceValues.x;
+				weightSum += luminanceValues.y;
 			}
 		}
 
-        Texture2D<float2> gridTexture = ShaderConstants.GetGridTextureUAV();
+        RWTexture3D<float2> gridTexture = ShaderConstants.GetGridTextureUAV();
 		gridTexture[uint3(groupID.xy, groupIndex)] = float2(weightedLuminanceSum, weightSum);
     }
 }

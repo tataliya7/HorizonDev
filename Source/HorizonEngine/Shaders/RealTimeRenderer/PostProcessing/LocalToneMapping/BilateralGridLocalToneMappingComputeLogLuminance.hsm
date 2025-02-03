@@ -29,5 +29,5 @@ void BilateralGridLocalToneMappingComputeLogLuminanceCS(uint3 dispatchThreadID :
     float luminance = RelativeLuminance(inputTexture[pixelCoord].rgb * inversePreExposure);
     float logLuminance = log2(luminance);
 
-    outputTexture[pixelCoord] = luminance;
+    outputTexture[pixelCoord] = logLuminance;
 }

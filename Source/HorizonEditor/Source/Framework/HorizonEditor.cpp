@@ -276,6 +276,8 @@ namespace Horizon
         renderSettings.superSamplingSettings.superSamplingTechnique = SuperSamplingTechnique::None;
         renderSettings.superSamplingSettings.qualityMode = 5;
         renderSettings.superSamplingSettings.desiredRenderResolutionPercentage = 1.0f;
+        renderSettings.postProcessingSettings.localToneMappingMethod = LocalToneMappingMethod::BilateralGrid;
+        renderSettings.postProcessingSettings.bilateralGridLocalToneMappingShadows = 0.8f;
 
 //        ShaderGraphSystemInit();
 //

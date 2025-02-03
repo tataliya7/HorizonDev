@@ -35,6 +35,10 @@ void BilateralGridLocalToneMappingUpsamplingCS(uint3 dispatchThreadID : SV_Dispa
 
     float inversePreExposure = frameShaderParameters.inversePreExposure;
 
+    float histogramMinEV100 = frameShaderParameters.autoExposureHistogramMinEV100;
+    float histogramMaxEV100 = frameShaderParameters.autoExposureHistogramMaxEV100;
+    float inverseLogLuminanceRange = 1.0f / (histogramMaxEV100 - histogramMinEV100);
+
     float4 autoExposureData = autoExposureBuffer.Load<float4>(0);
     float logGlobalExposure = log2(autoExposureData.x);
     float exposureCompensation = autoExposureData.z;
@@ -44,11 +48,13 @@ void BilateralGridLocalToneMappingUpsamplingCS(uint3 dispatchThreadID : SV_Dispa
     float inputLogLuminance = log2(inputLuminance) + logGlobalExposure;
 
     float2 inverseGridTextureSize = float2(ShaderConstants.GetInverseGridTextureWidth(), ShaderConstants.GetInverseGridTextureHeight());
-    float3 bilateralGridUVW = float3(uv * inverseGridTextureSize, 0.0f);
-    float2 bilaterallyFilteredValue = bilaterallyFilteredGridTexture.SampleLevel(GlobalSamplerLinearClamp, bilateralGridUVW, 0.0f).xy;
-    float bilaterallyFilteredLogLuminance = bilaterallyFilteredValue.x / bilaterallyFilteredValue.y; // Normalize
 
+    float bilateralGridTextureW = (saturate((log2(inputLuminance) - histogramMinEV100) * inverseLogLuminanceRange) * (BILATERAL_GRID_LOCAL_TONE_MAPPING_GRID_TEXTURE_DEPTH - 1) + 0.5f) / BILATERAL_GRID_LOCAL_TONE_MAPPING_GRID_TEXTURE_DEPTH;
+    float3 bilateralGridTextureUVW = float3(uv, bilateralGridTextureW);
+    float2 bilaterallyFilteredValue = bilaterallyFilteredGridTexture.SampleLevel(GlobalSamplerLinearClamp, bilateralGridTextureUVW, 0.0f).xy;
     float gaussianFilteredLogLuminance = gaussianFilteredLogLuminanceTexture.SampleLevel(GlobalSamplerLinearClamp, uv, 0.0f).x;
+
+    float bilaterallyFilteredLogLuminance = bilaterallyFilteredValue.y > 0.0f ? bilaterallyFilteredValue.x / bilaterallyFilteredValue.y : gaussianFilteredLogLuminance; // Normalize
 
     float shadowContrastScale = ShaderConstants.GetShadowContrastScale();
     float highlightContrastScale = ShaderConstants.GetHighlightContrastScale();
@@ -57,7 +63,6 @@ void BilateralGridLocalToneMappingUpsamplingCS(uint3 dispatchThreadID : SV_Dispa
 
     // Blend between bilateral filter and very wide 2D Gaussian to eliminate ringing artifacts.
     float filteredLogLuminance = lerp(bilaterallyFilteredLogLuminance, gaussianFilteredLogLuminance, gaussianFilterWeight) + logGlobalExposure;
-    filteredLogLuminance = gaussianFilteredLogLuminance + logGlobalExposure;
 
     float midpointLogLuminace = log2(MiddleGray * exposureCompensation);
 

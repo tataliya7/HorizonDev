@@ -172,7 +172,7 @@ namespace Horizon
             };
             physicalDevice.multiviewFeatures = {
                 .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_FEATURES_KHR,
-                .pNext = &physicalDevice.shaderRelaxedExtendedInstructionFeatures,
+                .pNext = &physicalDevice.separateDepthStencilLayoutsFeatures,
             };
 
             {
@@ -547,8 +547,8 @@ namespace Horizon
         requiredInstanceExtensions.push_back(VK_KHR_EXTERNAL_MEMORY_CAPABILITIES_EXTENSION_NAME);
         requiredInstanceExtensions.push_back(VK_KHR_EXTERNAL_SEMAPHORE_CAPABILITIES_EXTENSION_NAME);
         requiredInstanceExtensions.push_back(VK_KHR_DEVICE_GROUP_CREATION_EXTENSION_NAME);
-        requiredInstanceExtensions.push_back(VK_KHR_DISPLAY_EXTENSION_NAME);
-        requiredInstanceExtensions.push_back(VK_KHR_GET_DISPLAY_PROPERTIES_2_EXTENSION_NAME);
+        //requiredInstanceExtensions.push_back(VK_KHR_DISPLAY_EXTENSION_NAME);
+        //requiredInstanceExtensions.push_back(VK_KHR_GET_DISPLAY_PROPERTIES_2_EXTENSION_NAME);
 
         for (const auto& requiredInstanceExtension : requiredInstanceExtensions)
         {
@@ -3109,7 +3109,7 @@ namespace Horizon
             requiredDeviceExtensions.push_back(VK_EXT_SHADER_VIEWPORT_INDEX_LAYER_EXTENSION_NAME);
             requiredDeviceExtensions.push_back(VK_EXT_SHADER_DEMOTE_TO_HELPER_INVOCATION_EXTENSION_NAME);
 
-            if (true)
+            if (false)
             {
                 requiredDeviceExtensions.push_back(VK_KHR_SHADER_RELAXED_EXTENDED_INSTRUCTION_EXTENSION_NAME);
             }
