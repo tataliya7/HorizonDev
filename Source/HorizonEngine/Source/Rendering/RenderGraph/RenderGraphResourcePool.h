@@ -9,18 +9,22 @@ namespace Horizon
     class RenderGraphPersistentTexture
     {
     public:
+
         RenderGraphPersistentTexture()
         {
 
         }
-        RenderGraphPersistentTexture(const char* name, const RenderBackendTextureDesc& desc, RenderBackendTextureHandle handle)
+
+        RenderGraphPersistentTexture(const char* name, RenderBackend* backend, const RenderBackendTextureDesc& desc, RenderBackendTextureHandle handle)
             : active(false)
             , name(name)
+            , backend(backend)
             , desc(desc)
             , handle(handle)
         {
 
         }
+
         bool IsValid() const
         {
             return handle.IsValid();
@@ -41,6 +45,7 @@ namespace Horizon
         friend class RenderGraphResourcePool;
         bool active;
         std::string name;
+        RenderBackend* backend;
         RenderBackendTextureDesc desc;
         RenderBackendTextureHandle handle;
     };

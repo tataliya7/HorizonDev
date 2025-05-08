@@ -49,7 +49,7 @@ namespace Horizon
 
     RenderGraphPersistentTexture* RenderGraphResourcePool::CacheTexture(RenderBackendTextureHandle handle, const RenderBackendTextureDesc& desc, const char* name)
     {
-        RenderGraphPersistentTexture* persistentTexture = new RenderGraphPersistentTexture(name, desc, handle);
+        RenderGraphPersistentTexture* persistentTexture = new RenderGraphPersistentTexture(name, backend, desc, handle);
         persistentTexture->active = true;
         allocatedTextures.push_back(persistentTexture);
         return persistentTexture;
@@ -82,7 +82,7 @@ namespace Horizon
 
         RenderBackendTextureHandle textureHandle = backend->CreateTexture(&desc, nullptr, name);
 
-        RenderGraphPersistentTexture* persistentTexture = new RenderGraphPersistentTexture(name, desc, textureHandle);
+        RenderGraphPersistentTexture* persistentTexture = new RenderGraphPersistentTexture(name, backend, desc, textureHandle);
         persistentTexture->active = true;
 
         allocatedTextures.push_back(persistentTexture);

@@ -388,7 +388,7 @@ namespace Horizon
                 shaderLibrary,
                 *commandList,
                 skyLight->cubemapSize,
-                skyLight->environmentMapTexture.GetHandle(),
+                skyLight->environmentMapTexture->GetHandle(),
                 convolvedEnvironmentMapTexture,
                 irradianceEnvironmentMapTexture,
                 irradianceEnvironmentMapBuffer,

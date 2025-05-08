@@ -19,7 +19,7 @@ namespace Horizon
 
         uint32 cubemapSize = 128;
 
-        RenderGraphPersistentTexture environmentMapTexture;
+        RenderGraphPersistentTexture* environmentMapTexture;
 
     private:
         SkyLightRenderObject* renderObject = nullptr;

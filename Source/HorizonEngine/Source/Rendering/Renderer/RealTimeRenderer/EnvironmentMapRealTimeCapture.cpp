@@ -171,7 +171,7 @@ namespace Horizon
             });
 
         // test
-        capturedEnvironmentMapTexture = renderGraph.ImportExternalTexture(&skyLight->environmentMapTexture, "TestEnvironmentMapTexture");
+        capturedEnvironmentMapTexture = renderGraph.ImportExternalTexture(skyLight->environmentMapTexture, "TestEnvironmentMapTexture");
 
         sceneTextures.environmentMapTexture = capturedEnvironmentMapTexture;
 

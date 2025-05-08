@@ -286,7 +286,7 @@ namespace Horizon
 
         uint32 cubemapSize = 0;
 
-        RenderGraphPersistentTexture environmentMapTexture;
+        RenderGraphPersistentTexture* environmentMapTexture;
 
     private:
     };

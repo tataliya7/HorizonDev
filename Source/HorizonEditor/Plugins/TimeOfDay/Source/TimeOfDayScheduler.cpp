@@ -59,7 +59,7 @@ namespace Horizon
 
             SkyLightComponent& component = scene->GetEntityManager()->AddComponent<SkyLightComponent>(entityHandle);
             component.cubemapSize = environmentMapTextureSize;
-            component.environmentMapTexture = RenderGraphPersistentTexture("EnvironmentMapTexture", environmentMapTextureDesc, environmentMapTexture);
+            component.environmentMapTexture = new RenderGraphPersistentTexture("EnvironmentMapTexture", renderBackend, environmentMapTextureDesc, environmentMapTexture);
             component.CreateRenderObject(scene->GetRenderScene());
         }
         skyLight = scene->GetEntityManager()->TryGetComponent<SkyLightComponent>(entityHandle);
