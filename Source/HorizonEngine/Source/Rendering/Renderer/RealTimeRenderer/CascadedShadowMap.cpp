@@ -89,7 +89,7 @@ namespace Horizon
         outParameters.cascadeCount = data.cascadeCount;
     }
 
-    void SetupViewDependentCascadedShadowMapRenderDataForLight(CascadedShadowMapRenderData& outCascadedShadowMapRenderData, const SceneView& view, const LightRenderObject& light)
+    void SetupViewSpecificCascadedShadowMapRenderDataForLight(CascadedShadowMapRenderData& outCascadedShadowMapRenderData, const SceneView& view, const LightRenderObject& light)
     {
         const Matrix4x4f& inverseViewMatrix = view.transformations.viewToWorldMatrix;
         const float cameraNearClippingPlane = view.nearClippingPlane;
