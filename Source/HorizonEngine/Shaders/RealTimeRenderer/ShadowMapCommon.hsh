@@ -23,10 +23,12 @@ struct CubeShadowMapShaderParameters
 
 uint ComputeCascadeIndex(float cameraSpacePositionZ, CascadedShadowMapShaderParameters parameters)
 {
-    float4 depths = cameraSpacePositionZ.xxxx;
-    float4 distances = float4(parameters.cascadeEndDistance[0], parameters.cascadeEndDistance[1], parameters.cascadeEndDistance[2], parameters.cascadeEndDistance[3]);
-    float4 count = float4(depths >= distances);
+    const float4 depths = cameraSpacePositionZ.xxxx;
+    const float4 distances = float4(parameters.cascadeEndDistance[0], parameters.cascadeEndDistance[1], parameters.cascadeEndDistance[2], parameters.cascadeEndDistance[3]);
+
+    uint4 count = uint4(depths >= distances);
     uint cascadeIndex = uint(count.x + count.y + count.z + count.w);
+
     return cascadeIndex;
 }
 
