@@ -22,6 +22,14 @@ namespace Horizon
         Matrix4x4f worldToClipMatrix;
     };
 
+    struct CascadedShadowMapRenderData
+    {
+        uint32 resolution;
+        uint32 cascadeCount;
+        float shadowFadeOutRange;
+        ShadowMapCascadeData cascadeData[RendererMaxShadowMapCascadeCount];
+    };
+
     struct CascadedShadowMapShaderParameters
     {
         Matrix4x4f worldToClipMatrix[RendererMaxShadowMapCascadeCount];
@@ -33,14 +41,6 @@ namespace Horizon
         Vector2f shadowFadeOutParameters;
         float maxShadowDistance;
         uint32 cascadeCount;
-    };
-
-    struct CascadedShadowMapRenderData
-    {
-        uint32 resolution;
-        uint32 cascadeCount;
-        float shadowFadeOutRange;
-        ShadowMapCascadeData cascadeData[RendererMaxShadowMapCascadeCount];
     };
 
     void SetupViewDependentCascadedShadowMapRenderDataForLight(CascadedShadowMapRenderData& outCascadedShadowMapRenderData, const SceneView& view, const LightRenderObject& light);
