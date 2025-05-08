@@ -149,7 +149,7 @@ namespace Horizon
                 float distance = glm::length(Vector3f(cascadeFrustumCorners[i].x, cascadeFrustumCorners[i].y, cascadeFrustumCorners[i].z) - boundingSphereCenter);
                 boundingSphereRadius = glm::max(boundingSphereRadius, distance);
             }
-            boundingSphereRadius = std::ceil(boundingSphereRadius); // Use the ceilling function to increase stability.
+            boundingSphereRadius = std::ceil(boundingSphereRadius); // Use the ceiling function to increase stability.
 
             Vector4f boundingSphere = Vector4f(boundingSphereCenter.x, boundingSphereCenter.y, boundingSphereCenter.z, boundingSphereRadius);
 #else
