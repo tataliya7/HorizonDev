@@ -849,7 +849,7 @@ namespace Horizon
             activeRenderPass.numRenderTargets = numRenderTargets;
             activeRenderPass.renderTargetFormats[numRenderTargets - 1] = texture->format;
 
-            if (renderTarget.loadOp == RenderBackendRenderPassBeginningAccessType::Clear)
+            if (renderTarget.loadOp == RenderBackendRenderPassLoadOperation::Clear)
             {
                 D3D12_RECT clearRect = {};
                 clearRect.left = 0;
@@ -875,12 +875,12 @@ namespace Horizon
 
             D3D12_CLEAR_FLAGS clearFlags = D3D12_CLEAR_FLAGS(0);
 
-            if (depthStencil.depthLoadOp == RenderBackendRenderPassBeginningAccessType::Clear)
+            if (depthStencil.depthLoadOp == RenderBackendRenderPassLoadOperation::Clear)
             {
                 clearFlags |= D3D12_CLEAR_FLAG_DEPTH;
             }
 
-            if (depthStencil.stencilLoadOp == RenderBackendRenderPassBeginningAccessType::Clear)
+            if (depthStencil.stencilLoadOp == RenderBackendRenderPassLoadOperation::Clear)
             {
                 clearFlags |= D3D12_CLEAR_FLAG_STENCIL;
             }

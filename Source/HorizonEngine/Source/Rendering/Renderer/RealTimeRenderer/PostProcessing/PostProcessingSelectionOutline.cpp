@@ -34,7 +34,7 @@ namespace Horizon
             {
                 maskTexture = builder.WriteTexture(maskTexture, RenderBackendResourceState::RenderTarget);
 
-                builder.BindRenderTarget(0, maskTexture, RenderBackendRenderPassBeginningAccessType::Clear, RenderBackendRenderPassEndingAccessType::Preserve);
+                builder.BindRenderTarget(0, maskTexture, RenderBackendRenderPassLoadOperation::Clear, RenderBackendRenderPassStoreOperation::Store);
 
                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
                     {

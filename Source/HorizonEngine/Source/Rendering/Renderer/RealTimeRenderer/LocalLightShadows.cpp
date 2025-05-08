@@ -26,7 +26,7 @@ namespace Horizon
         //     {
         //         localLightShadowMapAtlas = builder.WriteTexture(localLightShadowMapAtlas, RenderBackendResourceState::DepthStencil);
         //
-        //         builder.BindDepthTarget(localLightShadowMapAtlas, RenderBackendRenderPassBeginningAccessType::Clear, RenderBackendRenderPassEndingAccessType::Preserve);
+        //         builder.BindDepthTarget(localLightShadowMapAtlas, RenderBackendRenderPassLoadOperation::Clear, RenderBackendRenderPassStoreOperation::Load);
         //
         //         return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
         //         {

@@ -68,18 +68,18 @@ namespace Horizon
             RenderGraphTextureHandle texture;
             uint32 mipLevel;
             uint32 arrayLayer;
-            RenderBackendRenderPassBeginningAccessType loadOp;
-            RenderBackendRenderPassEndingAccessType storeOp;
+            RenderBackendRenderPassLoadOperation loadOp;
+            RenderBackendRenderPassStoreOperation storeOp;
         };
         struct DepthStencil
         {
             RenderGraphTextureHandle texture;
             uint32 mipLevel;
             uint32 arrayLayer;
-            RenderBackendRenderPassBeginningAccessType depthLoadOp;
-            RenderBackendRenderPassEndingAccessType depthStoreOp;
-            RenderBackendRenderPassBeginningAccessType stencilLoadOp;
-            RenderBackendRenderPassEndingAccessType stencilStoreOp;
+            RenderBackendRenderPassLoadOperation depthLoadOp;
+            RenderBackendRenderPassStoreOperation depthStoreOp;
+            RenderBackendRenderPassLoadOperation stencilLoadOp;
+            RenderBackendRenderPassStoreOperation stencilStoreOp;
             RenderBackendDepthStencilAccessType depthStencilAccessType;
         };
         bool allowUAVWrites = false;

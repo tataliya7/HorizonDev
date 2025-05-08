@@ -322,23 +322,23 @@ namespace Horizon
         }
     }
 
-    static inline VkAttachmentLoadOp ConvertToVkAttachmentLoadOp(RenderBackendRenderPassBeginningAccessType loadOp)
+    static inline VkAttachmentLoadOp ConvertToVkAttachmentLoadOp(RenderBackendRenderPassLoadOperation loadOp)
     {
         switch (loadOp)
         {
-        case RenderBackendRenderPassBeginningAccessType::Discard: return VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-        case RenderBackendRenderPassBeginningAccessType::Preserve: return VK_ATTACHMENT_LOAD_OP_LOAD;
-        case RenderBackendRenderPassBeginningAccessType::Clear: return VK_ATTACHMENT_LOAD_OP_CLEAR;
+        case RenderBackendRenderPassLoadOperation::Discard: return VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+        case RenderBackendRenderPassLoadOperation::Load: return VK_ATTACHMENT_LOAD_OP_LOAD;
+        case RenderBackendRenderPassLoadOperation::Clear: return VK_ATTACHMENT_LOAD_OP_CLEAR;
         default: std::unreachable(); return VK_ATTACHMENT_LOAD_OP_MAX_ENUM;
         }
     }
 
-    static inline VkAttachmentStoreOp ConvertToVkAttachmentStoreOp(RenderBackendRenderPassEndingAccessType storeOp)
+    static inline VkAttachmentStoreOp ConvertToVkAttachmentStoreOp(RenderBackendRenderPassStoreOperation storeOp)
     {
         switch (storeOp)
         {
-        case RenderBackendRenderPassEndingAccessType::Discard: return VK_ATTACHMENT_STORE_OP_DONT_CARE;
-        case RenderBackendRenderPassEndingAccessType::Preserve: return VK_ATTACHMENT_STORE_OP_STORE;
+        case RenderBackendRenderPassStoreOperation::Discard: return VK_ATTACHMENT_STORE_OP_DONT_CARE;
+        case RenderBackendRenderPassStoreOperation::Store: return VK_ATTACHMENT_STORE_OP_STORE;
         default: std::unreachable(); return VK_ATTACHMENT_STORE_OP_MAX_ENUM;
         }
     }

@@ -19,6 +19,9 @@ namespace Horizon
 
     void RenderSystem::Init()
     {
+        enableHardwareRayTracing = false;
+        renderBackendType = RenderBackendType::Direct3D12;
+
 #if HORIZON_CONFIGURATION_RELEASE
         enableValidationLayers = false;
 #endif
@@ -277,8 +280,8 @@ namespace Horizon
                 {
                     .texture = output,
                     .mipLevel = 0,
-                    .loadOp = RenderBackendRenderPassBeginningAccessType::Clear,
-                    .storeOp = RenderBackendRenderPassEndingAccessType::Preserve
+                    .loadOp = RenderBackendRenderPassLoadOperation::Clear,
+                    .storeOp = RenderBackendRenderPassStoreOperation::Store
                 }
             },
         };
@@ -386,7 +389,7 @@ namespace Horizon
             {
                 uiColorAndAlphaTexture = builder.WriteTexture(uiColorAndAlphaTexture, RenderBackendResourceState::RenderTarget);
 
-                builder.BindRenderTarget(0, uiColorAndAlphaTexture, RenderBackendRenderPassBeginningAccessType::Clear, RenderBackendRenderPassEndingAccessType::Preserve);
+                builder.BindRenderTarget(0, uiColorAndAlphaTexture, RenderBackendRenderPassLoadOperation::Clear, RenderBackendRenderPassStoreOperation::Store);
 
                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
                 {
@@ -404,7 +407,7 @@ namespace Horizon
                 uiColorAndAlphaTexture = builder.ReadTexture(uiColorAndAlphaTexture, RenderBackendResourceState::ShaderResource);
                 displayTexture = builder.WriteTexture(displayTexture, RenderBackendResourceState::RenderTarget);
 
-                builder.BindRenderTarget(0, displayTexture, RenderBackendRenderPassBeginningAccessType::Preserve, RenderBackendRenderPassEndingAccessType::Preserve);
+                builder.BindRenderTarget(0, displayTexture, RenderBackendRenderPassLoadOperation::Load, RenderBackendRenderPassStoreOperation::Store);
 
                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
                 {

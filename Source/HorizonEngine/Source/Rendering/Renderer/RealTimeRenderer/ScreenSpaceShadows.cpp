@@ -100,7 +100,7 @@ namespace Horizon
                 outputTexture = builder.ReadTexture(outputTexture, RenderBackendResourceState::ShaderResource);
                 screenSpaceShadowMaskTexture = builder.WriteTexture(screenSpaceShadowMaskTexture, RenderBackendResourceState::RenderTarget);
 
-                builder.BindRenderTarget(0, screenSpaceShadowMaskTexture, RenderBackendRenderPassBeginningAccessType::Preserve, RenderBackendRenderPassEndingAccessType::Preserve);
+                builder.BindRenderTarget(0, screenSpaceShadowMaskTexture, RenderBackendRenderPassLoadOperation::Load, RenderBackendRenderPassStoreOperation::Store);
 
                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
                 {

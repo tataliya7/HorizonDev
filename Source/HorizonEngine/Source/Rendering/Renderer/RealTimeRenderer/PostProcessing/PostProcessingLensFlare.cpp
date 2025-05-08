@@ -39,7 +39,7 @@ namespace Horizon
                 bloomTexture = builder.ReadTexture(bloomTexture, RenderBackendResourceState::ShaderResource);
                 lensFlareGhostTexture = builder.WriteTexture(lensFlareGhostTexture, RenderBackendResourceState::RenderTarget);
 
-                builder.BindRenderTarget(0, lensFlareGhostTexture, RenderBackendRenderPassBeginningAccessType::Clear, RenderBackendRenderPassEndingAccessType::Preserve);
+                builder.BindRenderTarget(0, lensFlareGhostTexture, RenderBackendRenderPassLoadOperation::Clear, RenderBackendRenderPassStoreOperation::Store);
 
                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
                 {
@@ -123,7 +123,7 @@ namespace Horizon
 
         //        lensFlareGlareTexture = builder.WriteTexture(lensFlareGlareTexture, RenderBackendResourceState::RenderTarget);
 
-        //        builder.BindColorTarget(0, lensFlareGlareTexture, RenderBackendRenderPassBeginningAccessType::Clear, RenderBackendRenderPassEndingAccessType::Preserve);
+        //        builder.BindColorTarget(0, lensFlareGlareTexture, RenderBackendRenderPassLoadOperation::Clear, RenderBackendRenderPassStoreOperation::Load);
 
         //        return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
         //        {
@@ -165,7 +165,7 @@ namespace Horizon
                 lensFlareGlareTexture = builder.ReadTexture(lensFlareGlareTexture, RenderBackendResourceState::ShaderResource);
                 outputTexture = builder.WriteTexture(outputTexture, RenderBackendResourceState::RenderTarget);
 
-                builder.BindRenderTarget(0, outputTexture, RenderBackendRenderPassBeginningAccessType::Preserve, RenderBackendRenderPassEndingAccessType::Preserve);
+                builder.BindRenderTarget(0, outputTexture, RenderBackendRenderPassLoadOperation::Load, RenderBackendRenderPassStoreOperation::Store);
 
                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
                 {

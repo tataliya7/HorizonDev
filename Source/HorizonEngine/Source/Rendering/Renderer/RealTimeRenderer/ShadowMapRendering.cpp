@@ -69,10 +69,10 @@ namespace Horizon
                 cascadedShadowMapDepthTexture = builder.WriteTexture(cascadedShadowMapDepthTexture, RenderBackendResourceState::DepthStencil);
 
                 builder.BindDepthStencil(cascadedShadowMapDepthTexture,
-                    RenderBackendRenderPassBeginningAccessType::Clear,
-                    RenderBackendRenderPassEndingAccessType::Preserve,
-                    RenderBackendRenderPassBeginningAccessType::NoAccess,
-                    RenderBackendRenderPassEndingAccessType::NoAccess,
+                    RenderBackendRenderPassLoadOperation::Clear,
+                    RenderBackendRenderPassStoreOperation::Store,
+                    RenderBackendRenderPassLoadOperation::None,
+                    RenderBackendRenderPassStoreOperation::None,
                     RenderBackendDepthStencilAccessType::DepthWrite_StencilNoAccess);
 
                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)

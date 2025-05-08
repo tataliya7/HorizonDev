@@ -139,7 +139,11 @@ namespace Horizon
 
         RenderBackendBufferSubresourceRange(uint64 offset, uint64 size)
             : offset(offset)
-            , size(size) {}
+            , size(size)
+        {
+
+        }
+
         uint64 offset;
         uint64 size;
     };
@@ -429,23 +433,29 @@ namespace Horizon
 
         RenderBackendTextureSubresourceRange()
             : firstLevel(0), mipLevels(RemainingMipLevels), firstLayer(0), arrayLayers(RemainingArrayLayers) {}
+
         RenderBackendTextureSubresourceRange(uint32 firstLevel, uint32 mipLevels, uint32 firstLayer, uint32 arrayLayers)
             : firstLevel(firstLevel), mipLevels(mipLevels), firstLayer(firstLayer), arrayLayers(arrayLayers) {}
 
         bool IsAll() const
         {
-            return firstLevel  == 0
-                && mipLevels   == RemainingMipLevels
-                && firstLayer  == 0
-                && arrayLayers == RemainingArrayLayers;
+            return (firstLevel == 0)
+                && (mipLevels == RemainingMipLevels)
+                && (firstLayer == 0)
+                && (arrayLayers == RemainingArrayLayers);
+        }
+
+        bool IsArray() const
+        {
+            return (arrayLayers > 0) && (arrayLayers != RemainingArrayLayers);
         }
 
         bool operator==(const RenderBackendTextureSubresourceRange& rhs) const
         {
-            return firstLevel  == rhs.firstLevel
-                && mipLevels   == rhs.mipLevels
-                && firstLayer  == rhs.firstLayer
-                && arrayLayers == rhs.arrayLayers;
+            return (firstLevel == rhs.firstLevel)
+                && (mipLevels == rhs.mipLevels)
+                && (firstLayer == rhs.firstLayer)
+                && (arrayLayers == rhs.arrayLayers);
         }
 
         uint32 firstLevel;
@@ -1016,19 +1026,19 @@ namespace Horizon
         RenderBackendColorBlendAttachmentState targetBlends[RenderBackendMaxRenderTargetCount];
     };
 
-    enum class RenderBackendRenderPassBeginningAccessType
+    enum class RenderBackendRenderPassLoadOperation
     {
-        Discard,
-        Preserve,
+        Load,
         Clear,
-        NoAccess
+        Discard,
+        None
     };
 
-    enum class RenderBackendRenderPassEndingAccessType
+    enum class RenderBackendRenderPassStoreOperation
     {
+        Store,
         Discard,
-        Preserve,
-        NoAccess
+        None
     };
 
     enum class RenderBackendDepthStencilAccessType
@@ -1244,23 +1254,42 @@ namespace Horizon
         SlotData data[RenderBackendPushConstantsSlotCount];
     };
 
+#if 0
+    struct RenderBackendRenderTargetBinding
+    {
+        RenderBackendTextureViewHandle renderTargetView;
+        RenderBackendRenderPassLoadOperation loadOperation;
+        RenderBackendRenderPassStoreOperation storeOperation;
+    };
+
+    struct RenderBackendDepthStencilBinding
+    {
+        RenderBackendTextureViewHandle depthStencilView;
+        RenderBackendRenderPassLoadOperation depthLoadOperation;
+        RenderBackendRenderPassStoreOperation depthStoreOperation;
+        RenderBackendRenderPassLoadOperation stencilLoadOperation;
+        RenderBackendRenderPassStoreOperation stencilStoreOperation;
+        RenderBackendDepthStencilAccessType depthStencilAccessType;
+    };
+#endif
+
     struct alignas(64) RenderBackendRenderPassInfo
     {
         struct RenderTargetBinding
         {
             RenderBackendTextureHandle texture;
             uint32 mipLevel;
-            RenderBackendRenderPassBeginningAccessType loadOp;
-            RenderBackendRenderPassEndingAccessType storeOp;
+            RenderBackendRenderPassLoadOperation loadOp;
+            RenderBackendRenderPassStoreOperation storeOp;
         };
         struct DepthStencilBinding
         {
             RenderBackendTextureHandle texture;
             uint32 mipLevel;
-            RenderBackendRenderPassBeginningAccessType depthLoadOp;
-            RenderBackendRenderPassEndingAccessType depthStoreOp;
-            RenderBackendRenderPassBeginningAccessType stencilLoadOp;
-            RenderBackendRenderPassEndingAccessType stencilStoreOp;
+            RenderBackendRenderPassLoadOperation depthLoadOp;
+            RenderBackendRenderPassStoreOperation depthStoreOp;
+            RenderBackendRenderPassLoadOperation stencilLoadOp;
+            RenderBackendRenderPassStoreOperation stencilStoreOp;
             RenderBackendDepthStencilAccessType depthStencilAccessType;
         };
         Rect renderArea;

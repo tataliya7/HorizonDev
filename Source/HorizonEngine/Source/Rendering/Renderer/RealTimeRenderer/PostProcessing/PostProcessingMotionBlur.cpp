@@ -93,12 +93,12 @@ namespace Horizon
                 dilatedVelocityRangeTexture = builder.WriteTexture(dilatedVelocityRangeTexture, RenderBackendResourceState::RenderTarget);
                 velocityDilationDepthTexture = builder.WriteTexture(velocityDilationDepthTexture, RenderBackendResourceState::DepthStencil);
 
-                builder.BindRenderTarget(0, dilatedVelocityRangeTexture, RenderBackendRenderPassBeginningAccessType::Discard, RenderBackendRenderPassEndingAccessType::Preserve);
+                builder.BindRenderTarget(0, dilatedVelocityRangeTexture, RenderBackendRenderPassLoadOperation::Discard, RenderBackendRenderPassStoreOperation::Store);
                 builder.BindDepthStencil(velocityDilationDepthTexture,
-                    RenderBackendRenderPassBeginningAccessType::Clear,
-                    RenderBackendRenderPassEndingAccessType::Discard,
-                    RenderBackendRenderPassBeginningAccessType::NoAccess,
-                    RenderBackendRenderPassEndingAccessType::NoAccess,
+                    RenderBackendRenderPassLoadOperation::Clear,
+                    RenderBackendRenderPassStoreOperation::Discard,
+                    RenderBackendRenderPassLoadOperation::None,
+                    RenderBackendRenderPassStoreOperation::None,
                     RenderBackendDepthStencilAccessType::DepthWrite_StencilNoAccess);
 
                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
