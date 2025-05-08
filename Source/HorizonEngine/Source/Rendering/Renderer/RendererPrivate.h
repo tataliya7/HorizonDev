@@ -12,6 +12,7 @@ namespace Horizon
         RendererMaxCubeShadowMapCount = 8,
         RendererMaxMaterialTextureSlotCount = 16,
         RendererMaxAtmosphericLightCount = 2,
+        TriangleWindingOrder = 0,
     };
 
     //static const Matrix4x4f CubeFaceMatrices[6] =
