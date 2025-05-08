@@ -2288,7 +2288,7 @@ namespace Horizon
         rootSignatureFlags |= D3D12_ROOT_SIGNATURE_FLAG_CBV_SRV_UAV_HEAP_DIRECTLY_INDEXED;
         rootSignatureFlags |= D3D12_ROOT_SIGNATURE_FLAG_SAMPLER_HEAP_DIRECTLY_INDEXED;
 
-        D3D12_STATIC_SAMPLER_DESC staticSamplers[8] = {};
+        D3D12_STATIC_SAMPLER_DESC staticSamplers[9] = {};
         {
             RenderBackendSamplerDesc desc = RenderBackendSamplerDesc::CreatePointWarp(0.0f, -FLT_MAX, FLT_MAX, 1);
             staticSamplers[0].Filter = ConvertToD3D12Filter(desc.filter);
@@ -2386,7 +2386,7 @@ namespace Horizon
             staticSamplers[5].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
         }
         {
-            RenderBackendSamplerDesc desc = RenderBackendSamplerDesc::CreateComparisonLinearClamp(0.0f, -FLT_MAX, FLT_MAX, 0, RenderBackendCompareOp::Greater);
+            RenderBackendSamplerDesc desc = RenderBackendSamplerDesc::CreateLinearMirror(0.0f, -FLT_MAX, FLT_MAX, 1);
             staticSamplers[6].Filter = ConvertToD3D12Filter(desc.filter);
             staticSamplers[6].AddressU = ConvertToD3D12TextureAddressMode(desc.addressModeU);
             staticSamplers[6].AddressV = ConvertToD3D12TextureAddressMode(desc.addressModeV);
@@ -2402,7 +2402,7 @@ namespace Horizon
             staticSamplers[6].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
         }
         {
-            RenderBackendSamplerDesc desc = RenderBackendSamplerDesc::CreateComparisonLinearClamp(0.0f, -FLT_MAX, FLT_MAX, 1, RenderBackendCompareOp::Less);
+            RenderBackendSamplerDesc desc = RenderBackendSamplerDesc::CreateComparisonLinearClamp(0.0f, -FLT_MAX, FLT_MAX, 0, RenderBackendCompareOp::Greater);
             staticSamplers[7].Filter = ConvertToD3D12Filter(desc.filter);
             staticSamplers[7].AddressU = ConvertToD3D12TextureAddressMode(desc.addressModeU);
             staticSamplers[7].AddressV = ConvertToD3D12TextureAddressMode(desc.addressModeV);
@@ -2416,6 +2416,22 @@ namespace Horizon
             staticSamplers[7].ShaderRegister = 107;
             staticSamplers[7].RegisterSpace = 0;
             staticSamplers[7].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+        }
+        {
+            RenderBackendSamplerDesc desc = RenderBackendSamplerDesc::CreateComparisonLinearClamp(0.0f, -FLT_MAX, FLT_MAX, 1, RenderBackendCompareOp::Less);
+            staticSamplers[8].Filter = ConvertToD3D12Filter(desc.filter);
+            staticSamplers[8].AddressU = ConvertToD3D12TextureAddressMode(desc.addressModeU);
+            staticSamplers[8].AddressV = ConvertToD3D12TextureAddressMode(desc.addressModeV);
+            staticSamplers[8].AddressW = ConvertToD3D12TextureAddressMode(desc.addressModeW);
+            staticSamplers[8].MipLODBias = desc.mipLodBias;
+            staticSamplers[8].MaxAnisotropy = desc.maxAnisotropy;
+            staticSamplers[8].ComparisonFunc = ConvertToD3D12ComparisonFunc(desc.compareOp);
+            staticSamplers[8].BorderColor = D3D12_STATIC_BORDER_COLOR_TRANSPARENT_BLACK;
+            staticSamplers[8].MinLOD = desc.minLod;
+            staticSamplers[8].MaxLOD = desc.maxLod;
+            staticSamplers[8].ShaderRegister = 108;
+            staticSamplers[8].RegisterSpace = 0;
+            staticSamplers[8].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
         }
 
         CD3DX12_VERSIONED_ROOT_SIGNATURE_DESC versionedRootSignatureDesc;

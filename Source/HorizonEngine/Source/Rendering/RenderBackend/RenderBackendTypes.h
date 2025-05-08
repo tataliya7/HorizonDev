@@ -822,45 +822,6 @@ namespace Horizon
 
     struct RenderBackendSamplerDesc
     {
-        static RenderBackendSamplerDesc CreateLinearWarp(float mipLodBias, float minLod, float maxLod, uint32 maxAnisotropy)
-        {
-            return RenderBackendSamplerDesc(
-                RenderBackendTextureFilter::MinMagMipLinear,
-                RenderBackendTextureAddressMode::Warp,
-                RenderBackendTextureAddressMode::Warp,
-                RenderBackendTextureAddressMode::Warp,
-                mipLodBias,
-                minLod,
-                maxLod,
-                maxAnisotropy,
-                RenderBackendCompareOp::Never);
-        }
-        static RenderBackendSamplerDesc CreateLinearClamp(float mipLodBias, float minLod, float maxLod, uint32 maxAnisotropy)
-        {
-            return RenderBackendSamplerDesc(
-                RenderBackendTextureFilter::MinMagMipLinear,
-                RenderBackendTextureAddressMode::Clamp,
-                RenderBackendTextureAddressMode::Clamp,
-                RenderBackendTextureAddressMode::Clamp,
-                mipLodBias,
-                minLod,
-                maxLod,
-                maxAnisotropy,
-                RenderBackendCompareOp::Never);
-        }
-        static RenderBackendSamplerDesc CreateLinearBorder(float mipLodBias, float minLod, float maxLod, uint32 maxAnisotropy)
-        {
-            return RenderBackendSamplerDesc(
-                RenderBackendTextureFilter::MinMagMipLinear,
-                RenderBackendTextureAddressMode::Border,
-                RenderBackendTextureAddressMode::Border,
-                RenderBackendTextureAddressMode::Border,
-                mipLodBias,
-                minLod,
-                maxLod,
-                maxAnisotropy,
-                RenderBackendCompareOp::Never);
-        }
         static RenderBackendSamplerDesc CreatePointWarp(float mipLodBias, float minLod, float maxLod, uint32 maxAnisotropy)
         {
             return RenderBackendSamplerDesc(
@@ -874,6 +835,7 @@ namespace Horizon
                 maxAnisotropy,
                 RenderBackendCompareOp::Never);
         }
+
         static RenderBackendSamplerDesc CreatePointClamp(float mipLodBias, float minLod, float maxLod, uint32 maxAnisotropy)
         {
             return RenderBackendSamplerDesc(
@@ -887,6 +849,7 @@ namespace Horizon
                 maxAnisotropy,
                 RenderBackendCompareOp::Never);
         }
+
         static RenderBackendSamplerDesc CreatePointBorder(float mipLodBias, float minLod, float maxLod, uint32 maxAnisotropy)
         {
             return RenderBackendSamplerDesc(
@@ -900,6 +863,63 @@ namespace Horizon
                 maxAnisotropy,
                 RenderBackendCompareOp::Never);
         }
+
+        static RenderBackendSamplerDesc CreateLinearWarp(float mipLodBias, float minLod, float maxLod, uint32 maxAnisotropy)
+        {
+            return RenderBackendSamplerDesc(
+                RenderBackendTextureFilter::MinMagMipLinear,
+                RenderBackendTextureAddressMode::Warp,
+                RenderBackendTextureAddressMode::Warp,
+                RenderBackendTextureAddressMode::Warp,
+                mipLodBias,
+                minLod,
+                maxLod,
+                maxAnisotropy,
+                RenderBackendCompareOp::Never);
+        }
+
+        static RenderBackendSamplerDesc CreateLinearClamp(float mipLodBias, float minLod, float maxLod, uint32 maxAnisotropy)
+        {
+            return RenderBackendSamplerDesc(
+                RenderBackendTextureFilter::MinMagMipLinear,
+                RenderBackendTextureAddressMode::Clamp,
+                RenderBackendTextureAddressMode::Clamp,
+                RenderBackendTextureAddressMode::Clamp,
+                mipLodBias,
+                minLod,
+                maxLod,
+                maxAnisotropy,
+                RenderBackendCompareOp::Never);
+        }
+
+        static RenderBackendSamplerDesc CreateLinearBorder(float mipLodBias, float minLod, float maxLod, uint32 maxAnisotropy)
+        {
+            return RenderBackendSamplerDesc(
+                RenderBackendTextureFilter::MinMagMipLinear,
+                RenderBackendTextureAddressMode::Border,
+                RenderBackendTextureAddressMode::Border,
+                RenderBackendTextureAddressMode::Border,
+                mipLodBias,
+                minLod,
+                maxLod,
+                maxAnisotropy,
+                RenderBackendCompareOp::Never);
+        }
+
+        static RenderBackendSamplerDesc CreateLinearMirror(float mipLodBias, float minLod, float maxLod, uint32 maxAnisotropy)
+        {
+            return RenderBackendSamplerDesc(
+                RenderBackendTextureFilter::MinMagMipLinear,
+                RenderBackendTextureAddressMode::Mirror,
+                RenderBackendTextureAddressMode::Mirror,
+                RenderBackendTextureAddressMode::Mirror,
+                mipLodBias,
+                minLod,
+                maxLod,
+                maxAnisotropy,
+                RenderBackendCompareOp::Never);
+        }
+
         static RenderBackendSamplerDesc CreateComparisonLinearClamp(float mipLodBias, float minLod, float maxLod, uint32 maxAnisotropy, RenderBackendCompareOp compareOp)
         {
             return RenderBackendSamplerDesc(
