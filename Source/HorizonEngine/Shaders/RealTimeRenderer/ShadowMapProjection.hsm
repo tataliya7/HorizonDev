@@ -14,6 +14,9 @@ SHADER_CONSTANTS_STRUCT_END();
 
 #define SHADOW_FILTERING_METHOD 0
 
+#define CSM_CASCADE_SELECTION_METHOD 1
+#define CSM_CASCADE_BLENDING_METHOD 1
+
 float CSMShadow(
     CascadedShadowMapShaderParameters cascadedShadowMapShaderParameters,
     Texture2DArray shadowMapTexture,
@@ -95,7 +98,11 @@ void ShadowMapProjectionForDistantLightCS(uint3 dispatchThreadID : SV_DispatchTh
         return;
     }
 
+#if CSM_CASCADE_SELECTION_METHOD == 0 // View distance selection
     uint cascadeIndex = ComputeCascadeIndex(cameraSpaceDepth, cascadedShadowMapShaderParameters);
+#else // Bounding sphere selection
+    uint cascadeIndex = ComputeCascadeIndexBoundingSphereSelection(worldSpacePosition, cascadedShadowMapShaderParameters);
+#endif
 
     const float noise = InterleavedGradientNoise(pixelCoord);
     uint randSeed = RandInit(pixelCoord.x + pixelCoord.y * width, frameShaderParameters.frameIndex);
@@ -107,13 +114,12 @@ void ShadowMapProjectionForDistantLightCS(uint3 dispatchThreadID : SV_DispatchTh
     float transitionStartDistance = cascadedShadowMapShaderParameters.transitionStartDistance[cascadeIndex];
     float inverseTransitionRange = cascadedShadowMapShaderParameters.inverseTransitionRange[cascadeIndex];
 
-#define SHADOW_CASCADE_BLEND_METHOD 1
-
-#if SHADOW_CASCADE_BLEND_METHOD == 1
+#if CSM_CASCADE_BLENDING_METHOD == 1
     bool useDitherTransition = /*(cascadedShadowMapShaderParameters.useTransition > 0) &&*/
         (cameraSpaceDepth > transitionStartDistance) &&
         ((cascadeIndex + 1) < cascadedShadowMapShaderParameters.cascadeCount);
 
+    useDitherTransition = false;
     if (useDitherTransition)
     {
         float transitionFactor = saturate((cameraSpaceDepth - transitionStartDistance) * inverseTransitionRange);
@@ -128,7 +134,7 @@ void ShadowMapProjectionForDistantLightCS(uint3 dispatchThreadID : SV_DispatchTh
         worldSpacePosition,
         rotation);
 
-#if SHADOW_CASCADE_BLEND_METHOD == 2
+#if CSM_CASCADE_BLENDING_METHOD == 2
     bool transition = /*(cascadedShadowMapShaderParameters.useTransition > 0) &&*/
        (cameraSpaceDepth > transitionStartDistance) &&
        ((cascadeIndex + 1) < cascadedShadowMapShaderParameters.cascadeCount);

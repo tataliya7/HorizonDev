@@ -77,6 +77,7 @@ namespace Horizon
             outParameters.transitionStartDistance[cascadeIndex] = data.cascadeData[cascadeIndex].endDistance - data.cascadeData[cascadeIndex].transitionRange;
             outParameters.inverseTransitionRange[cascadeIndex] = 1.0f / std::max(data.cascadeData[cascadeIndex].transitionRange, 0.0001f);
             outParameters.depthBiasParameters[cascadeIndex] = Vector4f(depthBias * data.cascadeData[cascadeIndex].boundingSphere.w / float(data.resolution), slopeScaledDepthBias * data.cascadeData[cascadeIndex].boundingSphere.w / float(data.resolution), 0.0f, 0.0f);
+            outParameters.cascadeBoundingSphere[cascadeIndex] = data.cascadeData[cascadeIndex].boundingSphere;
         }
 
         float shadowRange = light.maxShadowDistance - view.nearClippingPlane;
