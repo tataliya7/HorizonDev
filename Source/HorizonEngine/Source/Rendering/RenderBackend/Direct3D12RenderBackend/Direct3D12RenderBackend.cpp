@@ -764,7 +764,8 @@ namespace Horizon
 
         for (uint32 index = 0; index < RenderBackendMaxRenderTargetCount; index++)
         {
-            const auto& renderTarget = command.renderPassInfo.renderTargets[index];
+            const RenderBackendRenderTargetBinding& renderTarget = command.renderPassInfo.renderTargets[index];
+
             // TODO: remove this
             if (!renderTarget.texture)
             {
@@ -775,9 +776,9 @@ namespace Horizon
 
             D3D12_RENDER_PASS_RENDER_TARGET_DESC& renderTargetDesc = renderTargetDescs[numRenderTargets];
             renderTargetDesc.cpuDescriptor = texture->GetRenderTargetView(renderTarget.mipLevel)->descriptor;
-            renderTargetDesc.BeginningAccess.Type = ConvertToD3D12RenderPassBeginningAccessType(renderTarget.loadOp);
+            renderTargetDesc.BeginningAccess.Type = ConvertToD3D12RenderPassBeginningAccessType(renderTarget.loadOperation);
             renderTargetDesc.BeginningAccess.Clear.ClearValue = texture->clearValue;
-            renderTargetDesc.EndingAccess.Type = ConvertToD3D12RenderPassEndingAccessType(renderTarget.storeOp);
+            renderTargetDesc.EndingAccess.Type = ConvertToD3D12RenderPassEndingAccessType(renderTarget.storeOperation);
 
             numRenderTargets++;
             activeRenderPass.numRenderTargets = numRenderTargets;
@@ -786,16 +787,16 @@ namespace Horizon
 
         if (command.renderPassInfo.depthStencil.texture)
         {
-            const auto& depthStencil = command.renderPassInfo.depthStencil;
+            const RenderBackendDepthStencilBinding& depthStencil = command.renderPassInfo.depthStencil;
 
             D3D12Texture* texture = device->GetTexture(depthStencil.texture);
 
             depthStencilDesc.cpuDescriptor = texture->GetDepthStencilView(GetDepthStencilViewIndex(depthStencil.depthStencilAccessType))->descriptor;
-            depthStencilDesc.DepthBeginningAccess.Type = ConvertToD3D12RenderPassBeginningAccessType(depthStencil.depthLoadOp);
+            depthStencilDesc.DepthBeginningAccess.Type = ConvertToD3D12RenderPassBeginningAccessType(depthStencil.depthLoadOperation);
             depthStencilDesc.DepthBeginningAccess.Clear.ClearValue = texture->clearValue;
-            depthStencilDesc.DepthEndingAccess.Type = ConvertToD3D12RenderPassEndingAccessType(depthStencil.depthStoreOp);
-            depthStencilDesc.StencilBeginningAccess.Type = ConvertToD3D12RenderPassBeginningAccessType(depthStencil.stencilLoadOp);
-            depthStencilDesc.StencilEndingAccess.Type = ConvertToD3D12RenderPassEndingAccessType(depthStencil.stencilStoreOp);
+            depthStencilDesc.DepthEndingAccess.Type = ConvertToD3D12RenderPassEndingAccessType(depthStencil.depthStoreOperation);
+            depthStencilDesc.StencilBeginningAccess.Type = ConvertToD3D12RenderPassBeginningAccessType(depthStencil.stencilLoadOperation);
+            depthStencilDesc.StencilEndingAccess.Type = ConvertToD3D12RenderPassEndingAccessType(depthStencil.stencilStoreOperation);
 
             hasDepthStencil = true;
             activeRenderPass.hasDepthStencil = true;
@@ -816,7 +817,7 @@ namespace Horizon
             flags |= D3D12_RENDER_PASS_FLAG_BIND_READ_ONLY_STENCIL;
         }
 
-        if (command.renderPassInfo.allowUAVWrites)
+        if (command.renderPassInfo.renderPassFlags.allowUAVWrites)
         {
             flags |= D3D12_RENDER_PASS_FLAG_ALLOW_UAV_WRITES;
         }
@@ -1609,6 +1610,76 @@ namespace Horizon
     void D3D12RenderBackend::GetTextureReadbackData(RenderBackendTextureHandle texture, void** data)
     {
 
+    }
+
+    RenderBackendTextureViewHandle D3D12RenderBackend::CreateTextureView(
+        RenderBackendTextureHandle textureHandle,
+        const RenderBackendTextureViewDesc* desc,
+        int32* descriptor)
+    {
+        D3D12Device* device = devices[0];
+        D3D12Texture* texture = device->GetTexture(textureHandle);
+
+        if (desc->IsRenderTargetView())
+        {
+            D3D12RenderTargetView* textureView = new D3D12RenderTargetView();
+            textureView->descriptor = device->rtvDescriptorAllocator.Allocate();
+
+            D3D12_RENDER_TARGET_VIEW_DESC rtvDesc = {};
+            rtvDesc.Format = texture->format;
+
+            switch (texture->t)
+            {
+            case RenderBackendTextureType::Texture1D:
+            {
+                if (texture->arraySize == 1)
+                {
+                    rtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE1D;
+                    rtvDesc.Texture1D.MipSlice = desc->subresourceRange.firstLevel;
+                }
+                else
+                {
+                    rtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE1DARRAY;
+                    rtvDesc.Texture1DArray.MipSlice = desc->subresourceRange.firstLevel;
+                    rtvDesc.Texture1DArray.FirstArraySlice = desc->subresourceRange.firstLayer;
+                    rtvDesc.Texture1DArray.ArraySize = desc->subresourceRange.arrayLayers;
+                }
+            } break;
+            case RenderBackendTextureType::Texture2D:
+            {
+                if (texture->arraySize == 1)
+                {
+                    rtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
+                    rtvDesc.Texture2D.MipSlice = desc->subresourceRange.firstLevel;
+                    rtvDesc.Texture2D.PlaneSlice = 0;
+                }
+                else
+                {
+                    rtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2DARRAY;
+                    rtvDesc.Texture2DArray.MipSlice = desc->subresourceRange.firstLevel;
+                    rtvDesc.Texture2DArray.FirstArraySlice = desc->subresourceRange.firstLayer;
+                    rtvDesc.Texture2DArray.ArraySize = desc->subresourceRange.arrayLayers;
+                    rtvDesc.Texture2DArray.PlaneSlice = 0;
+                }
+            } break;
+            case RenderBackendTextureType::Texture3D:
+            {
+                rtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE3D;
+                rtvDesc.Texture3D.MipSlice =desc->subresourceRange.firstLevel;
+                rtvDesc.Texture3D.FirstWSlice = 0;
+                rtvDesc.Texture3D.WSize = -1;
+            } break;
+            default:
+                std::unreachable();
+                break;
+            }
+
+            device->GetID3D12Device()->CreateRenderTargetView(texture->GetID3D12Resource(), &rtvDesc, textureView->descriptor);
+
+            return reinterpret_cast<RenderBackendTextureViewHandle>(textureView);
+        }
+
+        return nullptr;
     }
 
     //RenderBackendTextureSRVHandle D3D12RenderBackend::CreateTextureSRV(const RenderBackendTextureSRVDesc* desc, const char* name)

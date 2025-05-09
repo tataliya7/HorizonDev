@@ -418,34 +418,45 @@ namespace Horizon
             if (EnumClassHasFlags(passFlags, RenderGraphPassFlags::Graphics) && !EnumClassHasFlags(passFlags, RenderGraphPassFlags::SkipRenderPass))
             {
                 RenderBackendRenderPassInfo renderPass = {};
-                for (uint32 i = 0; i < RenderBackendMaxRenderTargetCount; i++)
+
+                renderPass.renderArea = pass->renderArea;
+                renderPass.renderPassFlags.allowUAVWrites = pass->allowUAVWrites;
+
+                for (uint32 slot = 0; slot < RenderBackendMaxRenderTargetCount; slot++)
                 {
-                    if (pass->renderTargets[i].texture)
+                    const RenderGraphRenderTargetBinding& renderTargetBinding = pass->GetRenderTargetBinding(slot);
+
+                    if (renderTargetBinding.texture)
                     {
-                        renderPass.renderTargets[i] =
+                        RenderGraphTexture* renderTargetTexture = textures[renderTargetBinding.texture.GetIndex()];
+                        RenderBackendTextureViewHandle renderTargetView = renderTargetTexture->internalTexture->FindOrCreateRenderTargetView(renderTargetBinding.mipLevel);
+
+                        renderPass.renderTargets[slot] =
                         {
-                            .texture = registry.GetRenderBackendTextureHandle(pass->renderTargets[i].texture),
-                            .mipLevel = pass->renderTargets[i].mipLevel,
-                            .loadOp = pass->renderTargets[i].loadOp,
-                            .storeOp = pass->renderTargets[i].storeOp,
+                            .texture = registry.GetRenderBackendTextureHandle(renderTargetBinding.texture),
+                            .mipLevel = renderTargetBinding.mipLevel,
+                            .loadOperation = renderTargetBinding.loadOperation,
+                            .storeOperation = renderTargetBinding.storeOperation,
                         };
                     }
                 }
-                if (pass->depthStencil.texture)
+
+                const RenderGraphDepthStencilBinding& depthStencilBinding = pass->GetDepthStencilBinding();
+
+                if (depthStencilBinding.texture)
                 {
                     renderPass.depthStencil =
                     {
-                        .texture = registry.GetRenderBackendTextureHandle(pass->depthStencil.texture),
-                        .mipLevel = pass->depthStencil.mipLevel,
-                        .depthLoadOp = pass->depthStencil.depthLoadOp,
-                        .depthStoreOp = pass->depthStencil.depthStoreOp,
-                        .stencilLoadOp = pass->depthStencil.stencilLoadOp,
-                        .stencilStoreOp = pass->depthStencil.stencilStoreOp,
-                        .depthStencilAccessType = pass->depthStencil.depthStencilAccessType,
+                        .texture = registry.GetRenderBackendTextureHandle(depthStencilBinding.texture),
+                        .mipLevel = 0,
+                        .depthLoadOperation = depthStencilBinding.depthLoadOperation,
+                        .depthStoreOperation = depthStencilBinding.depthStoreOperation,
+                        .stencilLoadOperation = depthStencilBinding.stencilLoadOperation,
+                        .stencilStoreOperation = depthStencilBinding.stencilStoreOperation,
+                        .depthStencilAccessType = depthStencilBinding.depthStencilAccessType,
                     };
                 }
-                renderPass.allowUAVWrites = pass->allowUAVWrites;
-                renderPass.renderArea = pass->renderArea;
+
                 commandList.BeginRenderPass(renderPass);
             }
 

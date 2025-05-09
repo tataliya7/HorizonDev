@@ -5,6 +5,7 @@
 #include "VulkanRenderBackendPrivate.h"
 
 #include <optick.h>
+#include <sl.h>
 
 namespace Horizon
 {
@@ -666,7 +667,7 @@ namespace Horizon
 
         for (uint32 index = 0; index < RenderBackendMaxRenderTargetCount; index++)
         {
-            const RenderBackendRenderPassInfo::RenderTargetBinding& colorRenderTarget = renderPassInfo.renderTargets[index];
+            const RenderBackendRenderTargetBinding& colorRenderTarget = renderPassInfo.renderTargets[index];
 
             if (!colorRenderTarget.texture)
             {
@@ -693,8 +694,8 @@ namespace Horizon
             VkAttachmentDescription& attachmentDesc = outRenderPassDesc->attachmentDescriptions[outRenderPassDesc->attachmentDescriptionCount];
             attachmentDesc.samples = VK_SAMPLE_COUNT_1_BIT;
             attachmentDesc.format = texture->format;
-            attachmentDesc.loadOp = ConvertToVkAttachmentLoadOp(colorRenderTarget.loadOp);
-            attachmentDesc.storeOp = ConvertToVkAttachmentStoreOp(colorRenderTarget.storeOp);
+            attachmentDesc.loadOp = ConvertToVkAttachmentLoadOp(colorRenderTarget.loadOperation);
+            attachmentDesc.storeOp = ConvertToVkAttachmentStoreOp(colorRenderTarget.storeOperation);
             attachmentDesc.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
             attachmentDesc.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
             attachmentDesc.initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
@@ -716,7 +717,7 @@ namespace Horizon
 
         if (renderPassInfo.depthStencil.texture)
         {
-            const RenderBackendRenderPassInfo::DepthStencilBinding& depthStencilRenderTarget = renderPassInfo.depthStencil;
+            const RenderBackendDepthStencilBinding& depthStencilRenderTarget = renderPassInfo.depthStencil;
             VulkanTexture* texture = device->GetTexture(depthStencilRenderTarget.texture);
 
             if (bSetExtent)
@@ -736,10 +737,10 @@ namespace Horizon
             VkAttachmentDescription& attachmentDesc = outRenderPassDesc->attachmentDescriptions[outRenderPassDesc->attachmentDescriptionCount];
             attachmentDesc.samples = VK_SAMPLE_COUNT_1_BIT;
             attachmentDesc.format = texture->format;
-            attachmentDesc.loadOp = ConvertToVkAttachmentLoadOp(depthStencilRenderTarget.depthLoadOp);
-            attachmentDesc.storeOp = ConvertToVkAttachmentStoreOp(depthStencilRenderTarget.depthStoreOp);
-            attachmentDesc.stencilLoadOp = ConvertToVkAttachmentLoadOp(depthStencilRenderTarget.stencilLoadOp);
-            attachmentDesc.stencilStoreOp = ConvertToVkAttachmentStoreOp(depthStencilRenderTarget.stencilStoreOp);
+            attachmentDesc.loadOp = ConvertToVkAttachmentLoadOp(depthStencilRenderTarget.depthLoadOperation);
+            attachmentDesc.storeOp = ConvertToVkAttachmentStoreOp(depthStencilRenderTarget.depthStoreOperation);
+            attachmentDesc.stencilLoadOp = ConvertToVkAttachmentLoadOp(depthStencilRenderTarget.stencilLoadOperation);
+            attachmentDesc.stencilStoreOp = ConvertToVkAttachmentStoreOp(depthStencilRenderTarget.stencilStoreOperation);
             attachmentDesc.initialLayout = depthStencilLayout;
             attachmentDesc.finalLayout = depthStencilLayout;
 
@@ -772,7 +773,7 @@ namespace Horizon
 
         for (uint32 index = 0; index < RenderBackendMaxRenderTargetCount; index++)
         {
-            const RenderBackendRenderPassInfo::RenderTargetBinding& colorRenderTarget = renderPassInfo.renderTargets[index];
+            const RenderBackendRenderTargetBinding& colorRenderTarget = renderPassInfo.renderTargets[index];
 
             if (!colorRenderTarget.texture)
             {
@@ -806,8 +807,8 @@ namespace Horizon
             attachmentInfo.resolveImageView = VK_NULL_HANDLE;
             attachmentInfo.resolveImageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
             attachmentInfo.resolveMode = VK_RESOLVE_MODE_NONE;
-            attachmentInfo.loadOp = ConvertToVkAttachmentLoadOp(colorRenderTarget.loadOp);
-            attachmentInfo.storeOp = ConvertToVkAttachmentStoreOp(colorRenderTarget.storeOp);
+            attachmentInfo.loadOp = ConvertToVkAttachmentLoadOp(colorRenderTarget.loadOperation);
+            attachmentInfo.storeOp = ConvertToVkAttachmentStoreOp(colorRenderTarget.storeOperation);
             attachmentInfo.clearValue.color = texture->clearValue.color;
 
             outRenderingInfo->colorAttachmentFormats[outRenderingInfo->colorAttachmentCount] = texture->format;
@@ -816,7 +817,7 @@ namespace Horizon
 
         if (renderPassInfo.depthStencil.texture)
         {
-            const RenderBackendRenderPassInfo::DepthStencilBinding& depthStencilRenderTarget = renderPassInfo.depthStencil;
+            const RenderBackendDepthStencilBinding& depthStencilRenderTarget = renderPassInfo.depthStencil;
             VulkanTexture* texture = device->GetTexture(depthStencilRenderTarget.texture);
 
             bool hasStencil = IsStencilFormat(texture->format);
@@ -844,8 +845,8 @@ namespace Horizon
             attachmentInfo.resolveImageView = VK_NULL_HANDLE;
             attachmentInfo.resolveImageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
             attachmentInfo.resolveMode = VK_RESOLVE_MODE_NONE;
-            attachmentInfo.loadOp = ConvertToVkAttachmentLoadOp(depthStencilRenderTarget.depthLoadOp);
-            attachmentInfo.storeOp = ConvertToVkAttachmentStoreOp(depthStencilRenderTarget.depthStoreOp);
+            attachmentInfo.loadOp = ConvertToVkAttachmentLoadOp(depthStencilRenderTarget.depthLoadOperation);
+            attachmentInfo.storeOp = ConvertToVkAttachmentStoreOp(depthStencilRenderTarget.depthStoreOperation);
             attachmentInfo.clearValue.depthStencil = texture->clearValue.depthStencil;
 
             outRenderingInfo->depthStencilAttachmentFormat = texture->format;
@@ -3406,6 +3407,7 @@ namespace Horizon
         }
 
         // To be able to bind a set once in a frame for all shaders_deprecated, all pipeline layouts have to be compatible
+        bindlessDescriptorManager.device = handle;
         bindlessDescriptorManager.pushConstantsSize = 128;
         bindlessDescriptorManager.compatibleGraphicsPipelineLayout = FindOrCreatePipelineLayout(bindlessDescriptorManager.pushConstantsSize, RenderBackendPipelineType::Graphics);
         bindlessDescriptorManager.compatibleComputePipelineLayout = FindOrCreatePipelineLayout(bindlessDescriptorManager.pushConstantsSize, RenderBackendPipelineType::Compute);
@@ -4643,6 +4645,167 @@ namespace Horizon
                 device.DestroyBuffer(bufferIndex);
             }
         }
+    }
+
+    void VulkanBindlessDescriptorManager::UpdateDescriptor(VulkanTextureView* textureView, uint32 descriptorIndex, bool shaderResourceView)
+    {
+        VkImageLayout imageLayout = shaderResourceView ? VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL : VK_IMAGE_LAYOUT_GENERAL;
+        uint32_t binding = shaderResourceView ? BINDLESS_RESOURCE_BINDING_TEXTURE_SRV : BINDLESS_RESOURCE_BINDING_TEXTURE_UAV;
+        VkDescriptorType descriptorType = shaderResourceView ? VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE : VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+
+        VkDescriptorImageInfo descriptorImageInfo =
+        {
+            .imageView = textureView->imageView,
+            .imageLayout = imageLayout,
+        };
+
+        VkWriteDescriptorSet descriptorWrite =
+        {
+            .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+            .dstSet = set,
+            .dstBinding = binding,
+            .dstArrayElement = descriptorIndex,
+            .descriptorCount = 1,
+            .descriptorType = descriptorType,
+            .pImageInfo = &descriptorImageInfo,
+        };
+
+        vkUpdateDescriptorSets(device, 1, &descriptorWrite, 0, nullptr);
+    }
+
+    RenderBackendTextureViewHandle VulkanRenderBackend::CreateTextureView(
+        RenderBackendTextureHandle textureHandle,
+        const RenderBackendTextureViewDesc* desc,
+        int32* descriptor)
+    {
+        VulkanTextureView* textureView = new VulkanTextureView();
+        VulkanTexture* texture = device.GetTexture(textureHandle);
+        //VulkanTexture* texture = static_cast<VulkanTexture*>(textureHandle);
+
+        VkImageView imageView = VK_NULL_HANDLE;
+
+        if (desc->IsShaderResourceView())
+        {
+            VkImageViewCreateInfo imageViewInfo =
+            {
+                .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+                .image = texture->handle,
+                .viewType = ConvertToVkImageViewType(texture->t, desc->subresourceRange.IsArray()),
+                .format = texture->format,
+                .components =
+                {
+                    VK_COMPONENT_SWIZZLE_R,
+                    VK_COMPONENT_SWIZZLE_G,
+                    VK_COMPONENT_SWIZZLE_B,
+                    VK_COMPONENT_SWIZZLE_A
+                },
+                .subresourceRange =
+                {
+                    VK_IMAGE_ASPECT_COLOR_BIT,
+                    desc->subresourceRange.firstLevel,
+                    desc->subresourceRange.mipLevels,
+                    desc->subresourceRange.firstLayer,
+                    desc->subresourceRange.arrayLayers
+                }
+            };
+            VK_CHECK(vkCreateImageView(device.handle, &imageViewInfo, VULKAN_ALLOCATION_CALLBACKS, &imageView));
+
+            uint32 descriptorIndex = device.bindlessDescriptorManager.AllocateSampledImageIndex();
+            device.bindlessDescriptorManager.UpdateDescriptor(textureView, descriptorIndex, true);
+
+            if (descriptor)
+            {
+                *descriptor = descriptorIndex;
+            }
+        }
+        else if (desc->IsUnorderedAccessView())
+        {
+            VkImageViewCreateInfo imageViewInfo =
+            {
+                .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+                .image = texture->handle,
+                .viewType = ConvertToVkImageViewType(texture->t, desc->subresourceRange.IsArray()),
+                .format = texture->format,
+                .components =
+                {
+                    VK_COMPONENT_SWIZZLE_R,
+                    VK_COMPONENT_SWIZZLE_G,
+                    VK_COMPONENT_SWIZZLE_B,
+                    VK_COMPONENT_SWIZZLE_A
+                },
+                .subresourceRange =
+                {
+                    VK_IMAGE_ASPECT_COLOR_BIT,
+                    desc->subresourceRange.firstLevel,
+                    desc->subresourceRange.mipLevels,
+                    desc->subresourceRange.firstLayer,
+                    desc->subresourceRange.arrayLayers
+                }
+            };
+            VK_CHECK(vkCreateImageView(device.handle, &imageViewInfo, VULKAN_ALLOCATION_CALLBACKS, &imageView));
+
+            uint32 descriptorIndex = device.bindlessDescriptorManager.AllocateStorageImageIndex();
+            device.bindlessDescriptorManager.UpdateDescriptor(textureView, descriptorIndex, false);
+
+            if (descriptor)
+            {
+                *descriptor = descriptorIndex;
+            }
+        }
+        else if (desc->IsRenderTargetView())
+        {
+            VkImageViewCreateInfo imageViewInfo =
+            {
+                .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+                .image = texture->handle,
+                .viewType = ConvertToVkImageViewType(texture->t, desc->subresourceRange.IsArray()),
+                .format = texture->format,
+                .components =
+                {
+                    VK_COMPONENT_SWIZZLE_R,
+                    VK_COMPONENT_SWIZZLE_G,
+                    VK_COMPONENT_SWIZZLE_B,
+                    VK_COMPONENT_SWIZZLE_A
+                },
+                .subresourceRange =
+                {
+                    VK_IMAGE_ASPECT_COLOR_BIT,
+                    desc->subresourceRange.firstLevel,
+                    desc->subresourceRange.mipLevels,
+                    desc->subresourceRange.firstLayer,
+                    desc->subresourceRange.arrayLayers
+                }
+            };
+            VK_CHECK(vkCreateImageView(device.handle, &imageViewInfo, VULKAN_ALLOCATION_CALLBACKS, &imageView));
+        }
+        else if (desc->IsDepthStencilView())
+        {
+            VkImageViewCreateInfo imageViewInfo =
+            {
+                .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+                .image = texture->handle,
+                .viewType = ConvertToVkImageViewType(texture->t, desc->subresourceRange.IsArray()),
+                .format = texture->format,
+                .components =
+                {
+                    VK_COMPONENT_SWIZZLE_R,
+                    VK_COMPONENT_SWIZZLE_G,
+                    VK_COMPONENT_SWIZZLE_B,
+                    VK_COMPONENT_SWIZZLE_A
+                },
+                .subresourceRange =
+                {
+                    texture->aspectMask,
+                    desc->subresourceRange.firstLevel,
+                    desc->subresourceRange.mipLevels,
+                    desc->subresourceRange.firstLayer,
+                    desc->subresourceRange.arrayLayers
+                }
+            };
+            VK_CHECK(vkCreateImageView(device.handle, &imageViewInfo, VULKAN_ALLOCATION_CALLBACKS, &imageView));
+        }
+
+        return reinterpret_cast<RenderBackendTextureViewHandle>(textureView);
     }
 
     RenderBackendSamplerHandle VulkanRenderBackend::CreateSampler(const RenderBackendSamplerDesc* desc, const char* name)

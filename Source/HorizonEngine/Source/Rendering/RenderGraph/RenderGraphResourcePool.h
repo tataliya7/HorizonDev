@@ -22,7 +22,7 @@ namespace Horizon
             , desc(desc)
             , handle(handle)
         {
-
+            renderTargetViews.resize(desc.mipLevelCount);
         }
 
         bool IsValid() const
@@ -41,6 +41,17 @@ namespace Horizon
         {
             return desc;
         }
+
+        RenderBackendTextureViewHandle FindOrCreateRenderTargetView(uint32 mipLevel)
+        {
+            if (!renderTargetViews[mipLevel])
+            {
+                RenderBackendTextureViewDesc textureViewDesc = RenderBackendTextureViewDesc::CreateRenderTargetView(mipLevel);
+                renderTargetViews[mipLevel] = backend->CreateTextureView(handle, &textureViewDesc, nullptr);
+            }
+            return renderTargetViews[mipLevel];
+        }
+
     private:
         friend class RenderGraphResourcePool;
         bool active;
@@ -48,6 +59,8 @@ namespace Horizon
         RenderBackend* backend;
         RenderBackendTextureDesc desc;
         RenderBackendTextureHandle handle;
+
+        std::vector<RenderBackendTextureViewHandle> renderTargetViews;
     };
 
     class RenderGraphPersistentBuffer

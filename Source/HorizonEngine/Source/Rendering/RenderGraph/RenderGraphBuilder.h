@@ -24,22 +24,26 @@ namespace Horizon
         RenderGraphBufferHandle ReadBuffer(RenderGraphBufferHandle handle, RenderBackendResourceState initialState);
         RenderGraphBufferHandle WriteBuffer(RenderGraphBufferHandle handle, RenderBackendResourceState initialState);
         RenderGraphBufferHandle ReadWriteBuffer(RenderGraphBufferHandle handle, RenderBackendResourceState initialState);
+
         void BindRenderTarget(
             uint32 slot,
             RenderGraphTextureHandle handle,
-            RenderBackendRenderPassLoadOperation loadOp,
-            RenderBackendRenderPassStoreOperation storeOp,
-            uint32 mipLevel = 0,
-            uint32 arraylayer = 0);
+            RenderBackendRenderPassLoadOperation loadOperation,
+            RenderBackendRenderPassStoreOperation storeOperation,
+            uint32 mipLevel = 0);
+
         void BindDepthStencil(
             RenderGraphTextureHandle handle,
-            RenderBackendRenderPassLoadOperation depthLoadOp,
-            RenderBackendRenderPassStoreOperation depthStoreOp,
-            RenderBackendRenderPassLoadOperation stencilLoadOp,
-            RenderBackendRenderPassStoreOperation stencilStoreOp,
+            RenderBackendRenderPassLoadOperation depthLoadOperation,
+            RenderBackendRenderPassStoreOperation depthStoreOperation,
+            RenderBackendRenderPassLoadOperation stencilLoadOperation,
+            RenderBackendRenderPassStoreOperation stencilStoreOperation,
             RenderBackendDepthStencilAccessType depthStencilAccessType);
+
         void SetRenderArea(int32 x, int32 y, uint32 width, uint32 height);
+
         void SetAllowUAVWrites(bool value);
+
     private:
         RenderGraph* const renderGraph;
         RenderGraphPass* const pass;

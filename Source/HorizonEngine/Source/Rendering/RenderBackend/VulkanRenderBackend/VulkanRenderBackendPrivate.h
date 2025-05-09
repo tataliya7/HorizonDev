@@ -7,6 +7,8 @@ namespace Horizon
     class VulkanDevice;
     class VulkanRenderBackend;
     class VulkanCommandBufferManager;
+    struct VulkanBufferView;
+    struct VulkanTextureView;
 
     enum class VulkanDeviceExtensionType
     {
@@ -138,6 +140,7 @@ namespace Horizon
     {
         VulkanBindlessConfig config;
 
+        VkDevice device;
         VkDescriptorPool pool;
         VkDescriptorSetLayout layout;
         VkDescriptorSet set;
@@ -196,6 +199,8 @@ namespace Horizon
             freeAccelerationStructures.pop_back();
             return index;
         }
+
+        void UpdateDescriptor(VulkanTextureView* textureView, uint32 descriptorIndex, bool shaderResourceView);
     };
 
     struct VulkanPhysicalDevice
@@ -330,6 +335,13 @@ namespace Horizon
         };
         std::vector<UAV> uavs;
         VulkanCpuReadbackBuffer* cpuReadbackBuffer;
+    };
+
+    struct VulkanTextureView
+    {
+        VkImage image;
+        VkImageView imageView;
+        RenderBackendTextureViewType viewType;
     };
 
     struct VulkanSampler
@@ -986,6 +998,7 @@ namespace Horizon
         RenderBackendTextureHandle CreateTexture(const RenderBackendTextureDesc* desc, const void* data, const char* name) override;
         void DestroyTexture(RenderBackendTextureHandle texture) override;
         void UploadTexture(RenderBackendTextureHandle handle, const RenderBackendTextureUploadDataDesc& data) override;
+        RenderBackendTextureViewHandle CreateTextureView(RenderBackendTextureHandle textureHandle, const RenderBackendTextureViewDesc* desc, int32* descriptor) override;
         void GetTextureReadbackData(RenderBackendTextureHandle texture, void** data) override;
         //RenderBackendTextureSRVHandle CreateTextureSRV(const RenderBackendTextureSRVDesc* desc, const char* name) override;
         //RenderBackendTextureUAVHandle CreateTextureUAV(const RenderBackendTextureUAVDesc* desc, const char* name) override;

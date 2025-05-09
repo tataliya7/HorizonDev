@@ -778,6 +778,70 @@ namespace Horizon
         uint32 mipLevel = 0;
     };
 
+
+    enum class RenderBackendTextureViewType
+    {
+        ShaderResourceView,
+        UnorderedAccessView,
+        RenderTargetView,
+        DepthStencilView
+    };
+
+    struct RenderBackendTextureViewDesc
+    {
+        static RenderBackendTextureViewDesc CreateShaderResourceView(uint32 firstLevel = 0, uint32 mipLevels = RenderBackendTextureSubresourceRange::RemainingMipLevels, uint32 firstLayer = 0, uint32 arrayLayers = RenderBackendTextureSubresourceRange::RemainingArrayLayers)
+        {
+            return RenderBackendTextureViewDesc(RenderBackendTextureViewType::ShaderResourceView, RenderBackendTextureSubresourceRange(firstLevel, mipLevels, firstLayer, arrayLayers));
+        }
+
+        static RenderBackendTextureViewDesc CreateUnorderedAccessView(uint32 mipLevel, uint32 firstLayer = 0, uint32 arrayLayers = RenderBackendTextureSubresourceRange::RemainingArrayLayers)
+        {
+            return RenderBackendTextureViewDesc(RenderBackendTextureViewType::UnorderedAccessView, RenderBackendTextureSubresourceRange(mipLevel, 1, firstLayer, arrayLayers));
+        }
+
+        static RenderBackendTextureViewDesc CreateRenderTargetView(uint32 mipLevel, uint32 firstLayer = 0, uint32 arrayLayers = RenderBackendTextureSubresourceRange::RemainingArrayLayers)
+        {
+            return RenderBackendTextureViewDesc(RenderBackendTextureViewType::RenderTargetView, RenderBackendTextureSubresourceRange(mipLevel, 1, firstLayer, arrayLayers));
+        }
+
+        static RenderBackendTextureViewDesc CreateDepthStencilView()
+        {
+            return RenderBackendTextureViewDesc(RenderBackendTextureViewType::DepthStencilView, RenderBackendTextureSubresourceRange(0, 1, 0, 1));
+        }
+
+        RenderBackendTextureViewDesc(
+            RenderBackendTextureViewType type,
+            const RenderBackendTextureSubresourceRange& subresourceRange)
+            : type(type)
+            , subresourceRange(subresourceRange)
+        {
+
+        }
+
+        bool IsShaderResourceView() const
+        {
+            return type == RenderBackendTextureViewType::ShaderResourceView;
+        }
+
+        bool IsUnorderedAccessView() const
+        {
+            return type == RenderBackendTextureViewType::UnorderedAccessView;
+        }
+
+        bool IsRenderTargetView() const
+        {
+            return type == RenderBackendTextureViewType::RenderTargetView;
+        }
+
+        bool IsDepthStencilView() const
+        {
+            return type == RenderBackendTextureViewType::DepthStencilView;
+        }
+
+        RenderBackendTextureViewType type;
+        RenderBackendTextureSubresourceRange subresourceRange;
+    };
+
     struct RenderBackendTextureUploadDataDesc
     {
         uint64 totalSize;
@@ -1274,48 +1338,38 @@ namespace Horizon
         SlotData data[RenderBackendPushConstantsSlotCount];
     };
 
-#if 0
     struct RenderBackendRenderTargetBinding
     {
-        RenderBackendTextureViewHandle renderTargetView;
+        //RenderBackendTextureViewHandle renderTargetView;
+        RenderBackendTextureHandle texture;
+        uint32 mipLevel;
         RenderBackendRenderPassLoadOperation loadOperation;
         RenderBackendRenderPassStoreOperation storeOperation;
     };
 
     struct RenderBackendDepthStencilBinding
     {
-        RenderBackendTextureViewHandle depthStencilView;
+        //RenderBackendTextureViewHandle depthStencilView;
+        RenderBackendTextureHandle texture;
+        uint32 mipLevel;
         RenderBackendRenderPassLoadOperation depthLoadOperation;
         RenderBackendRenderPassStoreOperation depthStoreOperation;
         RenderBackendRenderPassLoadOperation stencilLoadOperation;
         RenderBackendRenderPassStoreOperation stencilStoreOperation;
         RenderBackendDepthStencilAccessType depthStencilAccessType;
     };
-#endif
 
     struct alignas(64) RenderBackendRenderPassInfo
     {
-        struct RenderTargetBinding
-        {
-            RenderBackendTextureHandle texture;
-            uint32 mipLevel;
-            RenderBackendRenderPassLoadOperation loadOp;
-            RenderBackendRenderPassStoreOperation storeOp;
-        };
-        struct DepthStencilBinding
-        {
-            RenderBackendTextureHandle texture;
-            uint32 mipLevel;
-            RenderBackendRenderPassLoadOperation depthLoadOp;
-            RenderBackendRenderPassStoreOperation depthStoreOp;
-            RenderBackendRenderPassLoadOperation stencilLoadOp;
-            RenderBackendRenderPassStoreOperation stencilStoreOp;
-            RenderBackendDepthStencilAccessType depthStencilAccessType;
-        };
         Rect renderArea;
-        bool allowUAVWrites; //uint32 renderPassFlags;
-        RenderTargetBinding renderTargets[RenderBackendMaxRenderTargetCount];
-        DepthStencilBinding depthStencil;
+        struct
+        {
+            uint32 allowUAVWrites : 1;
+            uint32 unused : 31;
+        } renderPassFlags;
+        static_assert(sizeof(renderPassFlags) == sizeof(uint32));
+        RenderBackendRenderTargetBinding renderTargets[RenderBackendMaxRenderTargetCount];
+        RenderBackendDepthStencilBinding depthStencil;
     };
 
     enum class RenderBackendRayTracingAccelerationStructureBuildFlags

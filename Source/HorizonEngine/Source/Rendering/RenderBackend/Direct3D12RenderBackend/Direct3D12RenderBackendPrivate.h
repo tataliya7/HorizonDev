@@ -258,7 +258,10 @@ namespace Horizon
         uint32 arraySize;
         uint32 mipLevels;
         DXGI_FORMAT format;
+
+        RenderBackendTextureType t;
         RenderBackendResourceState initialState;
+
         bool isSwapChainBuffer;
 
         D3D12_CLEAR_VALUE clearValue;
@@ -1060,6 +1063,9 @@ namespace Horizon
             texture->initialState = desc->initialState;
             texture->isSwapChainBuffer = false;
             texture->clearValue = optimizedClearValue;
+
+            //
+            texture->t = desc->type;
 
             // Temp
             texture->debugName = name;
@@ -2634,6 +2640,7 @@ namespace Horizon
         void DestroyTexture(RenderBackendTextureHandle texture) override;
         void UploadTexture(RenderBackendTextureHandle handle, const RenderBackendTextureUploadDataDesc& data) override;
         void GetTextureReadbackData(RenderBackendTextureHandle texture, void** data) override;
+        RenderBackendTextureViewHandle CreateTextureView(RenderBackendTextureHandle textureHandle, const RenderBackendTextureViewDesc* desc, int32* descriptor) override;
         //RenderBackendTextureSRVHandle CreateTextureSRV(const RenderBackendTextureSRVDesc* desc, const char* name) override;
         //RenderBackendTextureUAVHandle CreateTextureUAV(const RenderBackendTextureUAVDesc* desc, const char* name) override;
         int32 GetTextureSRVBindlessResourceDescriptorIndex(RenderBackendTextureHandle srv) override;

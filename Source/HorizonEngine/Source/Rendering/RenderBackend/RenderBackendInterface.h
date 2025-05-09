@@ -178,6 +178,8 @@ namespace Horizon
          */
         virtual int32 GetAccelerationStructureSRVBindlessResourceDescriptorIndex(RenderBackendRayTracingAccelerationStructureHandle accelerationStructure) = 0;
 
+        virtual RenderBackendTextureViewHandle CreateTextureView(RenderBackendTextureHandle textureHandle, const RenderBackendTextureViewDesc* desc, int32* descriptor) = 0;
+
         /**
          * TBD.
          */

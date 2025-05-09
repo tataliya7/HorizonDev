@@ -22,6 +22,24 @@ namespace Horizon
     };
     HORIZON_OVERLOAD_ENUM_CLASS_OPERATORS(RenderGraphPassFlags);
 
+    struct RenderGraphRenderTargetBinding
+    {
+        RenderGraphTextureHandle texture;
+        uint32 mipLevel;
+        RenderBackendRenderPassLoadOperation loadOperation;
+        RenderBackendRenderPassStoreOperation storeOperation;
+    };
+
+    struct RenderGraphDepthStencilBinding
+    {
+        RenderGraphTextureHandle texture;
+        RenderBackendRenderPassLoadOperation depthLoadOperation;
+        RenderBackendRenderPassStoreOperation depthStoreOperation;
+        RenderBackendRenderPassLoadOperation stencilLoadOperation;
+        RenderBackendRenderPassStoreOperation stencilStoreOperation;
+        RenderBackendDepthStencilAccessType depthStencilAccessType;
+    };
+
     class RenderGraphPass : public RenderGraphNode
     {
     public:
@@ -39,6 +57,26 @@ namespace Horizon
         }
         void Graphviz(std::stringstream& stream) const;
         virtual void Execute(RenderGraphRegistry& registry, RenderBackendCommandList& commandList) = 0;
+
+        const RenderGraphRenderTargetBinding& GetRenderTargetBinding(uint32 slot) const;
+
+        const RenderGraphDepthStencilBinding& GetDepthStencilBinding() const;
+
+        void SetRenderTargetBinding(
+            uint32 slot,
+            RenderGraphTextureHandle handle,
+            uint32 mipLevel,
+            RenderBackendRenderPassLoadOperation loadOperation,
+            RenderBackendRenderPassStoreOperation storeOperation);
+
+        void SetDepthTargetBinding(
+            RenderGraphTextureHandle handle,
+            RenderBackendRenderPassLoadOperation depthLoadOperation,
+            RenderBackendRenderPassStoreOperation depthStoreOperation,
+            RenderBackendRenderPassLoadOperation stencilLoadOperation,
+            RenderBackendRenderPassStoreOperation stencilStoreOperation,
+            RenderBackendDepthStencilAccessType depthStencilAccessType);
+
     protected:
         friend class RenderGraph;
         friend class RenderGraphBuilder;
@@ -63,34 +101,17 @@ namespace Horizon
 
         std::vector<RenderBackendBarrier> barriers;
 
-        struct RenderTarget
-        {
-            RenderGraphTextureHandle texture;
-            uint32 mipLevel;
-            uint32 arrayLayer;
-            RenderBackendRenderPassLoadOperation loadOp;
-            RenderBackendRenderPassStoreOperation storeOp;
-        };
-        struct DepthStencil
-        {
-            RenderGraphTextureHandle texture;
-            uint32 mipLevel;
-            uint32 arrayLayer;
-            RenderBackendRenderPassLoadOperation depthLoadOp;
-            RenderBackendRenderPassStoreOperation depthStoreOp;
-            RenderBackendRenderPassLoadOperation stencilLoadOp;
-            RenderBackendRenderPassStoreOperation stencilStoreOp;
-            RenderBackendDepthStencilAccessType depthStencilAccessType;
-        };
         bool allowUAVWrites = false;
         Rect renderArea;
-        RenderTarget renderTargets[RenderBackendMaxRenderTargetCount];
-        DepthStencil depthStencil;
+
+        RenderGraphRenderTargetBinding renderTargetBindings[RenderBackendMaxRenderTargetCount];
+        RenderGraphDepthStencilBinding depthStencilBinding;
     };
 
     class RenderGraphLambdaPass : public RenderGraphPass
     {
     public:
+        // @todo Maybe it would be faster not to use std::function.
         using Lambda = std::function<void(RenderGraphRegistry&, RenderBackendCommandList&)>;
         RenderGraphLambdaPass(const std::string& name, RenderGraphPassFlags flags) : RenderGraphPass(name, flags) {}
         ~RenderGraphLambdaPass() = default;

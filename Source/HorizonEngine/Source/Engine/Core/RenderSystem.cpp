@@ -280,8 +280,8 @@ namespace Horizon
                 {
                     .texture = output,
                     .mipLevel = 0,
-                    .loadOp = RenderBackendRenderPassLoadOperation::Clear,
-                    .storeOp = RenderBackendRenderPassStoreOperation::Store
+                    .loadOperation = RenderBackendRenderPassLoadOperation::Clear,
+                    .storeOperation = RenderBackendRenderPassStoreOperation::Store
                 }
             },
         };

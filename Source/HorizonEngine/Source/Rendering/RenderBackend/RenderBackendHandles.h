@@ -39,7 +39,9 @@ namespace Horizon
     namespace RenderBackendHandleTypes
     {
         class Texture;
+        class TextureView;
         class Buffer;
+        class BufferView;
         class Sampler;
         class SwapChain;
         class TimingQueryHeap;
@@ -50,7 +52,9 @@ namespace Horizon
     }
 
     using RenderBackendTextureHandle                                = RenderBackendHandle<RenderBackendHandleTypes::Texture>;
+    using RenderBackendTextureViewHandle                            = RenderBackendHandleTypes::TextureView*;
     using RenderBackendBufferHandle                                 = RenderBackendHandle<RenderBackendHandleTypes::Buffer>;
+    using RenderBackendBufferViewHandle                             = RenderBackendHandleTypes::BufferView*;
     using RenderBackendSamplerHandle                                = RenderBackendHandle<RenderBackendHandleTypes::Sampler>;
     using RenderBackendSwapChainHandle                              = RenderBackendHandle<RenderBackendHandleTypes::SwapChain>;
     using RenderBackendTimingQueryHeapHandle                        = RenderBackendHandle<RenderBackendHandleTypes::TimingQueryHeap>;

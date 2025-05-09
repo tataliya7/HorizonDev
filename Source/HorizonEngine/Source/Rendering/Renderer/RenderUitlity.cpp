@@ -164,8 +164,8 @@ namespace Horizon
                     {
                         .texture = textureHandle,
                         .mipLevel = mipLevel,
-                        .loadOp = RenderBackendRenderPassLoadOperation::Discard,
-                        .storeOp = RenderBackendRenderPassStoreOperation::Store
+                        .loadOperation = RenderBackendRenderPassLoadOperation::Discard,
+                        .storeOperation = RenderBackendRenderPassStoreOperation::Store
                     }
                 },
             };

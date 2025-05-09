@@ -90,37 +90,25 @@ namespace Horizon
         return handle;
     }
 
-    void RenderGraphBuilder::BindRenderTarget(uint32 slot, RenderGraphTextureHandle handle, RenderBackendRenderPassLoadOperation loadOp, RenderBackendRenderPassStoreOperation storeOp, uint32 mipLevel, uint32 arraylayer)
+    void RenderGraphBuilder::BindRenderTarget(
+        uint32 slot,
+        RenderGraphTextureHandle handle,
+        RenderBackendRenderPassLoadOperation loadOperation,
+        RenderBackendRenderPassStoreOperation storeOperation,
+        uint32 mipLevel)
     {
-        pass->renderTargets[slot] =
-        {
-            .texture = handle,
-            .mipLevel = mipLevel,
-            .arrayLayer = arraylayer,
-            .loadOp = loadOp,
-            .storeOp = storeOp,
-        };
+        pass->SetRenderTargetBinding(slot, handle, mipLevel, loadOperation, storeOperation);
     }
 
     void RenderGraphBuilder::BindDepthStencil(
         RenderGraphTextureHandle handle,
-        RenderBackendRenderPassLoadOperation depthLoadOp,
-        RenderBackendRenderPassStoreOperation depthStoreOp,
-        RenderBackendRenderPassLoadOperation stencilLoadOp,
-        RenderBackendRenderPassStoreOperation stencilStoreOp,
+        RenderBackendRenderPassLoadOperation depthLoadOperation,
+        RenderBackendRenderPassStoreOperation depthStoreOperation,
+        RenderBackendRenderPassLoadOperation stencilLoadOperation,
+        RenderBackendRenderPassStoreOperation stencilStoreOperation,
         RenderBackendDepthStencilAccessType depthStencilAccessType)
     {
-        pass->depthStencil =
-        {
-            .texture = handle,
-            .mipLevel = 0,
-            .arrayLayer = 0,
-            .depthLoadOp = depthLoadOp,
-            .depthStoreOp = depthStoreOp,
-            .stencilLoadOp = stencilLoadOp,
-            .stencilStoreOp = stencilStoreOp,
-            .depthStencilAccessType = depthStencilAccessType
-        };
+        pass->SetDepthTargetBinding(handle, depthLoadOperation, depthStoreOperation, stencilLoadOperation, stencilStoreOperation, depthStencilAccessType);
     }
 
     void RenderGraphBuilder::SetRenderArea(int32 x, int32 y, uint32 width, uint32 height)
