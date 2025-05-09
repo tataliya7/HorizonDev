@@ -1064,3 +1064,71 @@ namespace Horizon
         VulkanFunctions vulkanFunctions;
     };
 }
+
+#if 0
+namespace Horizon::Refactor
+{
+    class VulkanInstance;
+    class VulkanPhysicalDeviceManager;
+    class VulkanDevice;
+
+    class VulkanPhysicalDeviceManager
+    {
+    public:
+    private:
+
+        VulkanInstance* instance;
+    };
+
+    class VulkanInstance
+    {
+    public:
+    private:
+
+        VulkanInstance();
+
+        VkAllocationCallbacks allocationCallbacks;
+
+        const uint32 apiVersion;
+
+        const uint32 appVersion;
+
+        std::vector<const char*> enabledInstanceLayers;
+
+        std::vector<const char*> enabledInstanceExtensions;
+
+        VkDebugUtilsMessengerEXT debugUtilsMessenger;
+    };
+
+    class VulkanDevice
+    {
+    public:
+
+        void WaitIdle();
+
+        VulkanBuffer* CreateBuffer(
+            const RenderBackendBufferDesc* desc,
+            const void* data,
+            const char* name);
+
+        VulkanBufferView* CreateBufferView(
+            const RenderBackendBufferViewDesc* desc,
+            const char* name);
+
+        VulkanTexture* CreateTexture(
+            const RenderBackendTextureDesc* desc,
+            const void* data,
+            const char* name);
+
+        VulkanTexture* CreateTextureView(
+            const RenderBackendTextureViewDesc* desc,
+            const char* name);
+
+        VulkanSampler* CreateSampler(
+            const RenderBackendSamplerDesc* desc,
+            const char* name);
+
+    protected:
+    };
+}
+#endif

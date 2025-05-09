@@ -5,7 +5,6 @@
 #include "VulkanRenderBackendPrivate.h"
 
 #include <optick.h>
-#include <sl.h>
 
 namespace Horizon
 {
@@ -302,168 +301,6 @@ namespace Horizon
 
     bool VulkanRenderBackend::Init(int flags)
     {
-#if HE_ENBALE_STREAMLINE_SUPPORT
-        // Init Streamline
-        {
-            sl::Feature features[] = { sl::kFeatureDLSS, sl::kFeatureDLSS_G, sl::kFeatureReflex };
-
-            sl::Preferences pref = {};
-            pref.showConsole = true;
-            pref.logLevel = sl::LogLevel::eDefault;
-            pref.pathsToPlugins = nullptr;
-            pref.numPathsToPlugins = 0;
-            pref.pathToLogsAndData = nullptr;
-            pref.allocateCallback = nullptr;
-            pref.releaseCallback = nullptr;
-            pref.logMessageCallback = StreamlineLogMessageCallback;
-            pref.flags = sl::PreferenceFlags::eDisableCLStateTracking;// | sl::PreferenceFlags::eAllowOTA;
-            pref.featuresToLoad = features;
-            pref.numFeaturesToLoad = _countof(features);
-            pref.applicationId = sl::INVALID_UINT;
-            pref.engine = sl::EngineType::eCustom;
-            pref.engineVersion = "Horizon Engine";
-            pref.projectId = "a0f57b54-1daf-4934-90ae-c4035c19df04";
-            pref.renderAPI = sl::RenderAPI::eVulkan;
-
-            sl::Result result;
-            if (SL_FAILED(result, slInit(pref, sl::kSDKVersion)))
-            {
-                LogInfo(GLogger, std::format("slInit, error code: {}.", (int32)result));
-            }
-
-            //{
-            //    sl::FeatureRequirements requirements = {};
-            //    if (SL_FAILED(result, slGetFeatureRequirements(sl::kFeatureNRD, requirements)))
-            //    {
-            //        LogInfo(GLogger, std::format("slGetFeatureRequirements, error code: {}.", (int32)result));
-            //    }
-            //    else
-            //    {
-            //        // Feature is loaded, we can check the requirements
-            //        assert(requirements.flags & sl::FeatureRequirementFlags::eVulkanSupported);
-
-            //        for (uint32 i = 0; i < requirements.vkNumInstanceExtensions; i++)
-            //        {
-            //            printf("%s\n", requirements.vkInstanceExtensions[i]);
-            //        }
-            //        for (uint32 i = 0; i < requirements.vkNumDeviceExtensions; i++)
-            //        {
-            //            printf("%s\n", requirements.vkDeviceExtensions[i]);
-            //        }
-            //    }
-            //}
-
-            {
-                sl::FeatureRequirements requirements = {};
-                if (SL_FAILED(result, slGetFeatureRequirements(sl::kFeatureDLSS, requirements)))
-                {
-                    LogInfo(GLogger, std::format("slGetFeatureRequirements, error code: {}.", (int32)result));
-                }
-                else
-                {
-                    // Feature is loaded, we can check the requirements
-                    assert(requirements.flags & sl::FeatureRequirementFlags::eVulkanSupported);
-
-                    for (uint32 i = 0; i < requirements.vkNumInstanceExtensions; i++)
-                    {
-                        printf("%s\n", requirements.vkInstanceExtensions[i]);
-                    }
-                    for (uint32 i = 0; i < requirements.vkNumDeviceExtensions; i++)
-                    {
-                        printf("%s\n", requirements.vkDeviceExtensions[i]);
-                    }
-                }
-            }
-
-            {
-                sl::FeatureRequirements requirements = {};
-                if (SL_FAILED(result, slGetFeatureRequirements(sl::kFeatureDLSS_G, requirements)))
-                {
-                    LogInfo(GLogger, std::format("slGetFeatureRequirements, error code: {}.", (int32)result));
-                }
-                else
-                {
-                    // Feature is loaded, we can check the requirements
-                    assert(requirements.flags & sl::FeatureRequirementFlags::eVulkanSupported);
-
-                    for (uint32 i = 0; i < requirements.vkNumInstanceExtensions; i++)
-                    {
-                        printf("%s\n", requirements.vkInstanceExtensions[i]);
-                    }
-                    for (uint32 i = 0; i < requirements.vkNumDeviceExtensions; i++)
-                    {
-                        printf("%s\n", requirements.vkDeviceExtensions[i]);
-                    }
-                }
-            }
-
-            {
-                sl::FeatureRequirements requirements = {};
-                if (SL_FAILED(result, slGetFeatureRequirements(sl::kFeatureReflex, requirements)))
-                {
-                    LogInfo(GLogger, std::format("slGetFeatureRequirements, error code: {}.", (int32)result));
-                }
-                else
-                {
-                    // Feature is loaded, we can check the requirements
-                    assert(requirements.flags & sl::FeatureRequirementFlags::eVulkanSupported);
-
-                    for (uint32 i = 0; i < requirements.vkNumInstanceExtensions; i++)
-                    {
-                        printf("%s\n", requirements.vkInstanceExtensions[i]);
-                    }
-                    for (uint32 i = 0; i < requirements.vkNumDeviceExtensions; i++)
-                    {
-                        printf("%s\n", requirements.vkDeviceExtensions[i]);
-                    }
-                }
-            }
-
-            {
-                sl::ReflexState state = {};
-                if (SL_FAILED(result, slReflexGetState(state)))
-                {
-                    LogInfo(GLogger, std::format("slReflexGetState, error code: {}", (int32)result));
-                }
-                if (state.lowLatencyAvailable)
-                {
-                    //
-                    // Reflex Low Latency is available, on NVDA hardware this would be done through Reflex.
-                    //
-                    // The application can show the Reflex Low Latency UI. (Otherwise hide/disable the UI.)
-                    // This is for UI only. Do everything else the same, even when this is false.
-                    //
-                }
-                if (state.flashIndicatorDriverControlled)
-                {
-                    //
-                    // Reflex Flash Indicator (RFI) is controlled by the driver. This means
-                    // the application should always check for left mouse button clicks and
-                    // send the trigger flash markers accordingly. The driver will decide
-                    // whether to show the RFI on screen based on user preference.
-                    //
-                }
-            }
-            //// We are using NULL adapter on purpose
-            //sl::AdapterInfo adapterInfo = {};
-            //if (SL_FAILED(result, slIsFeatureSupported(sl::Feature::eDLSS, adapterInfo)))
-            //{
-            //    // Requested feature is not supported, let's see why
-            //    switch (result)
-            //    {
-            //    case sl::Result::eErrorOSOutOfDate:              // inform user to update OS
-            //    case sl::Result::eErrorDriverOutOfDate:          // inform user to update driver
-            //    case sl::Result::eErrorNoSupportedAdapterFound:  // cannot use any available adapter
-            //        // and so on ...
-            //    };
-            //}
-            //else
-            //{
-            //    // Feature is supported on at least one adapter so now we need to figure out which one before we create our device.
-            //}
-        }
-#endif
-
         enableValidationLayers = flags & VULKAN_RENDER_BACKEND_CREATE_FLAGS_VALIDATION_LAYERS;
 
         std::vector<const char*> requiredInstanceLayers;
@@ -483,20 +320,23 @@ namespace Horizon
             //requiredInstanceLayers.push_back("VK_LAYER_NV_optimus");
         }
 
-        uint32 numInstanceLayerProperties = 0;
-        VK_CHECK(vkEnumerateInstanceLayerProperties(&numInstanceLayerProperties, nullptr));
-        std::vector<VkLayerProperties> instanceLayerProperties(numInstanceLayerProperties);
-        VK_CHECK(vkEnumerateInstanceLayerProperties(&numInstanceLayerProperties, instanceLayerProperties.data()));
+        uint32 instanceLayerPropertyCount = 0;
+        VK_CHECK(vkEnumerateInstanceLayerProperties(&instanceLayerPropertyCount, nullptr));
+
+        std::vector<VkLayerProperties> instanceLayerProperties(instanceLayerPropertyCount);
+        VK_CHECK(vkEnumerateInstanceLayerProperties(&instanceLayerPropertyCount, instanceLayerProperties.data()));
+
         for (const auto& instanceLayerProperty : instanceLayerProperties)
         {
-            LogInfo(GLogger, std::format("Available instance layer: {} - vulkan api version: {}.{}.{} - implementation version: {} - description: {}.",
+            LogInfo(
+                GLogger,
+                std::format("Available instance layer: {} - vulkan api version: {}.{}.{} - implementation version: {} - description: {}.",
                 instanceLayerProperty.layerName,
                 VK_API_VERSION_MAJOR(instanceLayerProperty.specVersion),
                 VK_API_VERSION_MINOR(instanceLayerProperty.specVersion),
                 VK_API_VERSION_PATCH(instanceLayerProperty.specVersion),
                 instanceLayerProperty.implementationVersion,
-                instanceLayerProperty.description
-            ));
+                instanceLayerProperty.description));
         }
 
         for (const auto& requiredInstanceLayer : requiredInstanceLayers)
@@ -519,10 +359,11 @@ namespace Horizon
         VK_CHECK(vkEnumerateInstanceExtensionProperties(nullptr, &numInstanceExtensionProperties, instanceExtensionProperties.data()));
         for (const auto& instanceExtensionProperty : instanceExtensionProperties)
         {
-            LogInfo(GLogger, std::format("Available instance extension: {} - extension version: {}.",
+            LogInfo(
+                GLogger,
+                std::format("Available instance extension: {} - extension version: {}.",
                 instanceExtensionProperty.extensionName,
-                instanceExtensionProperty.specVersion
-            ));
+                instanceExtensionProperty.specVersion));
         }
 
         std::vector<const char*> requiredInstanceExtensions;
@@ -565,7 +406,8 @@ namespace Horizon
             }
         }
 
-        VkDebugUtilsMessengerCreateInfoEXT debugUtilsMessengerInfo = {
+        VkDebugUtilsMessengerCreateInfoEXT debugUtilsMessengerInfo =
+        {
             .sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT,
             .messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT,
             .messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_DEVICE_ADDRESS_BINDING_BIT_EXT,
@@ -582,7 +424,8 @@ namespace Horizon
             .apiVersion = VK_API_VERSION_1_3,
         };
 
-        VkInstanceCreateInfo instanceInfo = {
+        VkInstanceCreateInfo instanceInfo =
+        {
             .sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
             .pNext = enableValidationLayers ? &debugUtilsMessengerInfo : nullptr,
             .pApplicationInfo = &applicationInfo,
