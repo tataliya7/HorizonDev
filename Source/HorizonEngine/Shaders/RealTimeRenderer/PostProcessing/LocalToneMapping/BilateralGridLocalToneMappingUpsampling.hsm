@@ -66,7 +66,7 @@ void BilateralGridLocalToneMappingUpsamplingCS(uint3 dispatchThreadID : SV_Dispa
 
     float midpointLogLuminace = log2(MiddleGray * exposureCompensation);
 
-	float contrastScale = (filteredLogLuminance > midpointLogLuminace) ? highlightContrastScale : shadowContrastScale;
+    float contrastScale = (filteredLogLuminance > midpointLogLuminace) ? highlightContrastScale : shadowContrastScale;
 
     // Io = c * (B - M) + d * (Ii - B) + M
     float outputLogLuminance = contrastScale * (filteredLogLuminance - midpointLogLuminace) + detailStrength * (inputLogLuminance - filteredLogLuminance) + midpointLogLuminace;

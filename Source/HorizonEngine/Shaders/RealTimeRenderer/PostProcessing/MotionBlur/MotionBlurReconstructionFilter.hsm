@@ -100,14 +100,14 @@ void MotionBlurReconstructionFilterCS(uint3 dispatchThreadID : SV_DispatchThread
     const uint sampleCount = MOTION_BLUR_RECONSTRUCTION_FILTER_SAMPLE_COUNT;
     const uint iterations = sampleCount >> 1;
 
-	[branch]
-	if (minVelocityLength > MOTION_BLUR_SIMPLE_COLOR_AVERAGE_MIN_VELOCITY_THRESHOLD * maxVelocityLength) // Simple color average
-	{
+    [branch]
+    if (minVelocityLength > MOTION_BLUR_SIMPLE_COLOR_AVERAGE_MIN_VELOCITY_THRESHOLD * maxVelocityLength) // Simple color average
+    {
         float4 finalColor = 0.0f;
 
-		[unroll]
-		for (uint i = 0; i < iterations; i++)
-		{
+        [unroll]
+        for (uint i = 0; i < iterations; i++)
+        {
             float offsetLength = float(i) + 0.5f + (noise - 0.5f);
             float sampleOffset = offsetLength * rcp(float(iterations));
 
@@ -119,12 +119,12 @@ void MotionBlurReconstructionFilterCS(uint3 dispatchThreadID : SV_DispatchThread
 
             finalColor += sampleColor0;
             finalColor += sampleColor1;
-		}
+        }
 
         finalColor *= 1.0f / float(sampleCount);
 
         outputTexture[pixelCoord] = finalColor.rgb;
-	}
+    }
     else // Loop
     {
         float pixelToSampleUnitsScale = iterations * rsqrt(dot(maxVelocity, maxVelocity));

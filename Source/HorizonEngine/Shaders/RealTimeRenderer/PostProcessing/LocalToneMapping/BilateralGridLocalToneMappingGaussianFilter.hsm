@@ -27,7 +27,7 @@ void BilateralGridLocalToneMappingGaussianFilterCS(uint3 dispatchThreadID : SV_D
     uint2 pixelCoord = uint2(min(dispatchThreadID.x, width), min(dispatchThreadID.y, height));
     float2 uv = (float2(pixelCoord.x, pixelCoord.y) + float2(0.5f, 0.5f)) * inverseTextureSize;
 
-	float result = 0.0f;
+    float result = 0.0f;
 
     uint sampleCount = ShaderConstants.GetGaussianFilterSize();
     float2 direction = ShaderConstants.GetDirection() == 0 ? float2(1.0f, 0.0f) : float2(0.0f, 1.0f);
