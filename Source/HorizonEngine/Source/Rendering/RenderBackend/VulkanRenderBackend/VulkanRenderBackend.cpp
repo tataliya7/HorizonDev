@@ -312,20 +312,15 @@ namespace Horizon
         }
 
         std::vector<const char*> requiredInstanceLayers;
-        if (enableValidationLayers)
+
+        // Currently, all required instance layers are hardcoded.
         {
-            requiredInstanceLayers.push_back("VK_LAYER_KHRONOS_validation");
             requiredInstanceLayers.push_back("VK_LAYER_KHRONOS_synchronization2");
 
-            //requiredInstanceLayers.push_back("VK_LAYER_LUNARG_api_dump");
-            //requiredInstanceLayers.push_back("VK_LAYER_LUNARG_device_simulation");
-            //requiredInstanceLayers.push_back("VK_LAYER_LUNARG_gfxreconstruct");
-            //requiredInstanceLayers.push_back("VK_LAYER_LUNARG_monitor");
-            // requiredInstanceLayers.push_back("VK_LAYER_KHRONOS_profiles");
-
-            //requiredInstanceLayers.push_back("VK_LAYER_NV_nomad_release_public_2022_1_1");
-            //requiredInstanceLayers.push_back("VK_LAYER_NV_GPU_Trace_release_public_2022_1_1");
-            //requiredInstanceLayers.push_back("VK_LAYER_NV_optimus");
+            if (enableValidationLayers)
+            {
+                requiredInstanceLayers.push_back("VK_LAYER_KHRONOS_validation");
+            }
         }
 
         uint32 instanceLayerPropertyCount = 0;
@@ -378,7 +373,7 @@ namespace Horizon
 
         std::vector<const char*> requiredInstanceExtensions;
 
-        // Currently, all instance extensions are hardcoded.
+        // Currently, all required instance extensions are hardcoded.
         {
             if (enableValidationLayers)
             {
@@ -403,8 +398,6 @@ namespace Horizon
             requiredInstanceExtensions.push_back(VK_KHR_EXTERNAL_MEMORY_CAPABILITIES_EXTENSION_NAME);
             requiredInstanceExtensions.push_back(VK_KHR_EXTERNAL_SEMAPHORE_CAPABILITIES_EXTENSION_NAME);
             requiredInstanceExtensions.push_back(VK_KHR_DEVICE_GROUP_CREATION_EXTENSION_NAME);
-            //requiredInstanceExtensions.push_back(VK_KHR_DISPLAY_EXTENSION_NAME);
-            //requiredInstanceExtensions.push_back(VK_KHR_GET_DISPLAY_PROPERTIES_2_EXTENSION_NAME);
         }
 
         for (const char* const requiredInstanceExtension : requiredInstanceExtensions)

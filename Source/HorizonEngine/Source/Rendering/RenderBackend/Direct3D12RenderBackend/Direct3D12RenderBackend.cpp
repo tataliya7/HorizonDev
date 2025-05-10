@@ -1144,6 +1144,14 @@ namespace Horizon
         useDebugLayers = desc->enableDebugLayer;
         useGPUBasedValidation = desc->enableDebugLayer;
 
+        for (uint32 i = 0; i < desc->featureCount; i++)
+        {
+            if (desc->features[i] == RenderBackendFeature::HardwareRayTracing)
+            {
+                enableHardwareRayTracing = true;
+            }
+        }
+
         if (useDebugLayers)
         {
             Microsoft::WRL::ComPtr<ID3D12Debug> debugInterface;
@@ -1246,14 +1254,6 @@ namespace Horizon
                     adapters.push_back(newAdapter);
                     numAdapters++;
                 }
-            }
-        }
-
-        for (uint32 i = 0; i < desc->featureCount; i++)
-        {
-            if (desc->features[i] == RenderBackendFeature::HardwareRayTracing)
-            {
-                enableHardwareRayTracing = true;
             }
         }
 
