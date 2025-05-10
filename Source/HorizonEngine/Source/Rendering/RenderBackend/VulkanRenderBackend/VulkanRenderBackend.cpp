@@ -326,7 +326,7 @@ namespace Horizon
         std::vector<VkLayerProperties> instanceLayerProperties(instanceLayerPropertyCount);
         VK_CHECK(vkEnumerateInstanceLayerProperties(&instanceLayerPropertyCount, instanceLayerProperties.data()));
 
-        for (const auto& instanceLayerProperty : instanceLayerProperties)
+        for (const VkLayerProperties& instanceLayerProperty : instanceLayerProperties)
         {
             LogInfo(
                 GLogger,
@@ -339,7 +339,7 @@ namespace Horizon
                 instanceLayerProperty.description));
         }
 
-        for (const auto& requiredInstanceLayer : requiredInstanceLayers)
+        for (const char* const requiredInstanceLayer : requiredInstanceLayers)
         {
             if (CheckInstanceLayerSupport(requiredInstanceLayer, instanceLayerProperties))
             {
@@ -353,11 +353,13 @@ namespace Horizon
             }
         }
 
-        uint32 numInstanceExtensionProperties = 0;
-        VK_CHECK(vkEnumerateInstanceExtensionProperties(nullptr, &numInstanceExtensionProperties, nullptr));
-        std::vector<VkExtensionProperties> instanceExtensionProperties(numInstanceExtensionProperties);
-        VK_CHECK(vkEnumerateInstanceExtensionProperties(nullptr, &numInstanceExtensionProperties, instanceExtensionProperties.data()));
-        for (const auto& instanceExtensionProperty : instanceExtensionProperties)
+        uint32 instanceExtensionPropertyCount = 0;
+        VK_CHECK(vkEnumerateInstanceExtensionProperties(nullptr, &instanceExtensionPropertyCount, nullptr));
+
+        std::vector<VkExtensionProperties> instanceExtensionProperties(instanceExtensionPropertyCount);
+        VK_CHECK(vkEnumerateInstanceExtensionProperties(nullptr, &instanceExtensionPropertyCount, instanceExtensionProperties.data()));
+
+        for (const VkExtensionProperties& instanceExtensionProperty : instanceExtensionProperties)
         {
             LogInfo(
                 GLogger,
