@@ -2619,7 +2619,7 @@ namespace Horizon
             return RenderBackendType::Direct3D12;
         }
 
-        bool Init(const Direct3D12RenderBackendDesc* desc);
+        bool Init(const RenderBackendDesc* desc);
         void Exit();
         void Tick() override;
         void CreateRenderDevices(PhysicalDeviceID* physicalDeviceIDs, uint32 numDevices, uint32* outDeviceMasks) override;
@@ -2671,7 +2671,7 @@ namespace Horizon
         }
         bool useDebugLayers;
         bool useGPUBasedValidation;
-        bool enableRayTracingSupport;
+        bool enableHardwareRayTracing;
         D3D12RenderBackendHandleManager handleManager;
     private:
         Microsoft::WRL::ComPtr<IDXGIFactory6> dxgiFactory;

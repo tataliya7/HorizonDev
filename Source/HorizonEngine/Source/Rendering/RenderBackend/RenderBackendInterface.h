@@ -17,6 +17,11 @@ namespace Horizon
         Vulkan,
     };
 
+    enum class RenderBackendFeature
+    {
+        HardwareRayTracing,
+    };
+
     struct RenderBackendVulkanInfo
     {
         void* device;
@@ -28,6 +33,18 @@ namespace Horizon
         uint32 graphicsQueueFamily;
         uint32 opticalFlowQueueIndex;
         uint32 opticalFlowQueueFamily;
+    };
+
+    struct RenderBackendDesc
+    {
+        RenderBackendType              type;
+        const char*                    applicationName;
+        uint32                         applicationVersion;
+        const char*                    engineName;
+        uint32                         engineVersion;
+        bool                           enableDebugLayer;
+        const RenderBackendFeature*    features;
+        uint32                         featureCount;
     };
 
     /**
@@ -256,4 +273,8 @@ namespace Horizon
             UnmapBuffer(handle);
         }
     };
+
+    RenderBackend* RenderBackendCreateInstance(const RenderBackendDesc* desc);
+
+    void RenderBackendDestroyInstance(RenderBackend* backend);
 }

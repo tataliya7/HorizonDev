@@ -102,7 +102,7 @@ namespace Horizon
             vkGetPhysicalDeviceMemoryProperties(physicalDevice.handle, &physicalDevice.memoryProperties);
 
             // Ray tracing features
-            if (enableRayTracingSupport)
+            if (enableHardwareRayTracing)
             {
                 physicalDevice.accelerationStructureFeatures = {
                     .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR,
@@ -206,7 +206,7 @@ namespace Horizon
                 };
             }
 
-            if (enableRayTracingSupport)
+            if (enableHardwareRayTracing)
             {
                 physicalDevice.featuresEntry = (void*)&physicalDevice.accelerationStructureFeatures;
             }
@@ -299,9 +299,17 @@ namespace Horizon
         }
     }
 
-    bool VulkanRenderBackend::Init(int flags)
+    bool VulkanRenderBackend::Init(const RenderBackendDesc* desc)
     {
-        enableValidationLayers = flags & VULKAN_RENDER_BACKEND_CREATE_FLAGS_VALIDATION_LAYERS;
+        enableValidationLayers = desc->enableDebugLayer;
+
+        for (uint32 i = 0; i < desc->featureCount; i++)
+        {
+            if (desc->features[i] == RenderBackendFeature::HardwareRayTracing)
+            {
+                enableHardwareRayTracing = true;
+            }
+        }
 
         std::vector<const char*> requiredInstanceLayers;
         if (enableValidationLayers)
@@ -369,32 +377,37 @@ namespace Horizon
         }
 
         std::vector<const char*> requiredInstanceExtensions;
-        if (enableValidationLayers)
+
+        // Currently, all instance extensions are hardcoded.
         {
-            // @see https://www.lunarg.com/wp-content/uploads/2018/05/Vulkan-Debug-Utils_05_18_v1.pdf
-            requiredInstanceExtensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
-        }
-        if (flags & VULKAN_RENDER_BACKEND_CREATE_FLAGS_SURFACE)
-        {
-            requiredInstanceExtensions.push_back(VK_KHR_SURFACE_EXTENSION_NAME);
-#if defined(VK_USE_PLATFORM_WIN32_KHR)
-            requiredInstanceExtensions.push_back(VK_KHR_WIN32_SURFACE_EXTENSION_NAME);
-#elif defined(VK_USE_PLATFORM_XCB_KHR)
-            requiredInstanceExtensions.push_back(VK_KHR_XCB_SURFACE_EXTENSION_NAME);
-#elif defined(VK_USE_PLATFORM_XLIB_KHR)
-            requiredInstanceExtensions.push_back(VK_KHR_XLIB_SURFACE_EXTENSION_NAME);
-#endif
+            if (enableValidationLayers)
+            {
+                // @see https://www.lunarg.com/wp-content/uploads/2018/05/Vulkan-Debug-Utils_05_18_v1.pdf
+                requiredInstanceExtensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+            }
+
+            // VK_KHR_surface
+            {
+                requiredInstanceExtensions.push_back(VK_KHR_SURFACE_EXTENSION_NAME);
+    #if defined(VK_USE_PLATFORM_WIN32_KHR)
+                requiredInstanceExtensions.push_back(VK_KHR_WIN32_SURFACE_EXTENSION_NAME);
+    #elif defined(VK_USE_PLATFORM_XCB_KHR)
+                requiredInstanceExtensions.push_back(VK_KHR_XCB_SURFACE_EXTENSION_NAME);
+    #elif defined(VK_USE_PLATFORM_XLIB_KHR)
+                requiredInstanceExtensions.push_back(VK_KHR_XLIB_SURFACE_EXTENSION_NAME);
+    #endif
+            }
+
+            requiredInstanceExtensions.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+            requiredInstanceExtensions.push_back(VK_KHR_EXTERNAL_FENCE_CAPABILITIES_EXTENSION_NAME);
+            requiredInstanceExtensions.push_back(VK_KHR_EXTERNAL_MEMORY_CAPABILITIES_EXTENSION_NAME);
+            requiredInstanceExtensions.push_back(VK_KHR_EXTERNAL_SEMAPHORE_CAPABILITIES_EXTENSION_NAME);
+            requiredInstanceExtensions.push_back(VK_KHR_DEVICE_GROUP_CREATION_EXTENSION_NAME);
+            //requiredInstanceExtensions.push_back(VK_KHR_DISPLAY_EXTENSION_NAME);
+            //requiredInstanceExtensions.push_back(VK_KHR_GET_DISPLAY_PROPERTIES_2_EXTENSION_NAME);
         }
 
-        requiredInstanceExtensions.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-        requiredInstanceExtensions.push_back(VK_KHR_EXTERNAL_FENCE_CAPABILITIES_EXTENSION_NAME);
-        requiredInstanceExtensions.push_back(VK_KHR_EXTERNAL_MEMORY_CAPABILITIES_EXTENSION_NAME);
-        requiredInstanceExtensions.push_back(VK_KHR_EXTERNAL_SEMAPHORE_CAPABILITIES_EXTENSION_NAME);
-        requiredInstanceExtensions.push_back(VK_KHR_DEVICE_GROUP_CREATION_EXTENSION_NAME);
-        //requiredInstanceExtensions.push_back(VK_KHR_DISPLAY_EXTENSION_NAME);
-        //requiredInstanceExtensions.push_back(VK_KHR_GET_DISPLAY_PROPERTIES_2_EXTENSION_NAME);
-
-        for (const auto& requiredInstanceExtension : requiredInstanceExtensions)
+        for (const char* const requiredInstanceExtension : requiredInstanceExtensions)
         {
             if (CheckInstanceExtensionSupport(requiredInstanceExtension, instanceExtensionProperties))
             {
@@ -419,11 +432,11 @@ namespace Horizon
         VkApplicationInfo applicationInfo =
         {
             .sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
-            .pApplicationName = "Horizon",
-            .applicationVersion = 0,
-            .pEngineName = "Horizon Engine",
-            .engineVersion = 0,
-            .apiVersion = VK_API_VERSION_1_3,
+            .pApplicationName = desc->applicationName,
+            .applicationVersion = desc->applicationVersion,
+            .pEngineName = desc->engineName,
+            .engineVersion = desc->engineVersion,
+            .apiVersion = VULKAN_API_VERSION,
         };
 
         VkInstanceCreateInfo instanceInfo =
@@ -431,13 +444,14 @@ namespace Horizon
             .sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
             .pNext = enableValidationLayers ? &debugUtilsMessengerInfo : nullptr,
             .pApplicationInfo = &applicationInfo,
-            .enabledLayerCount = (uint32)(enabledInstanceLayers.size()),
+            .enabledLayerCount = uint32_t(enabledInstanceLayers.size()),
             .ppEnabledLayerNames = enabledInstanceLayers.data(),
-            .enabledExtensionCount = (uint32)(enabledInstanceExtensions.size()),
+            .enabledExtensionCount = uint32_t(enabledInstanceExtensions.size()),
             .ppEnabledExtensionNames = enabledInstanceExtensions.data()
         };
 
         VkResult result = vkCreateInstance(&instanceInfo, VULKAN_ALLOCATION_CALLBACKS, &instance);
+
         if (result != VK_SUCCESS)
         {
             return false;
@@ -470,8 +484,6 @@ namespace Horizon
         vulkanFunctions.vkSetDebugUtilsObjectNameEXT = reinterpret_cast<PFN_vkSetDebugUtilsObjectNameEXT>(vkGetInstanceProcAddr(instance, "vkSetDebugUtilsObjectNameEXT"));
         vulkanFunctions.vkCmdBeginDebugUtilsLabelEXT = reinterpret_cast<PFN_vkCmdBeginDebugUtilsLabelEXT>(vkGetInstanceProcAddr(instance, "vkCmdBeginDebugUtilsLabelEXT"));
         vulkanFunctions.vkCmdEndDebugUtilsLabelEXT = reinterpret_cast<PFN_vkCmdEndDebugUtilsLabelEXT>(vkGetInstanceProcAddr(instance, "vkCmdEndDebugUtilsLabelEXT"));
-
-        enableRayTracingSupport = flags & VULKAN_RENDER_BACKEND_CREATE_FLAGS_RAY_TRACING;
 
         EnumeratePhysicalDevices();
 
@@ -1979,7 +1991,7 @@ namespace Horizon
     {
         vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, bindlessDescriptorManager.compatibleGraphicsPipelineLayout, 0, 1, &bindlessDescriptorManager.set, 0, nullptr);
         vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, bindlessDescriptorManager.compatibleComputePipelineLayout, 0, 1, &bindlessDescriptorManager.set, 0, nullptr);
-        if (backend->enableRayTracingSupport)
+        if (backend->enableHardwareRayTracing)
         {
             vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, bindlessDescriptorManager.compatibleRayTracingPipelineLayout, 0, 1, &bindlessDescriptorManager.set, 0, nullptr);
         }
@@ -2971,7 +2983,7 @@ namespace Horizon
                 requiredDeviceExtensions.push_back(VK_EXT_MESH_SHADER_EXTENSION_NAME);
             }
 
-            if (backend->enableRayTracingSupport)
+            if (backend->enableHardwareRayTracing)
             {
                 requiredDeviceExtensions.push_back(VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME);
                 requiredDeviceExtensions.push_back(VK_KHR_PIPELINE_LIBRARY_EXTENSION_NAME);
@@ -3134,7 +3146,7 @@ namespace Horizon
         std::vector<VkDescriptorSetLayoutBinding> bindlessDescriptorSetLayoutBindings;
         std::vector<VkDescriptorBindingFlags> bindlessDescriptorBindingFlags;
 
-        if (backend->enableRayTracingSupport)
+        if (backend->enableHardwareRayTracing)
         {
             bindlessPoolSizes =
             {
@@ -3256,7 +3268,7 @@ namespace Horizon
         bindlessDescriptorManager.pushConstantsSize = 128;
         bindlessDescriptorManager.compatibleGraphicsPipelineLayout = FindOrCreatePipelineLayout(bindlessDescriptorManager.pushConstantsSize, RenderBackendPipelineType::Graphics);
         bindlessDescriptorManager.compatibleComputePipelineLayout = FindOrCreatePipelineLayout(bindlessDescriptorManager.pushConstantsSize, RenderBackendPipelineType::Compute);
-        if (backend->enableRayTracingSupport)
+        if (backend->enableHardwareRayTracing)
         {
             bindlessDescriptorManager.compatibleRayTracingPipelineLayout = FindOrCreatePipelineLayout(bindlessDescriptorManager.pushConstantsSize, RenderBackendPipelineType::RayTracing);
         }
@@ -5177,10 +5189,10 @@ namespace Horizon
 
 namespace Horizon
 {
-    RenderBackend* RenderBackendCreateVulkan(int flags)
+    RenderBackend* RenderBackendCreateVulkan(const RenderBackendDesc* desc)
     {
         VulkanRenderBackend* vulkanBackend = new VulkanRenderBackend();
-        if (!vulkanBackend->Init(flags))
+        if (!vulkanBackend->Init(desc))
         {
             delete vulkanBackend;
             return nullptr;

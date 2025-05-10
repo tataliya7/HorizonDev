@@ -1,4 +1,7 @@
 #include "RenderBackendTypes.h"
+#include "RenderBackendInterface.h"
+#include "VulkanRenderBackend/VulkanRenderBackend.h"
+#include "Direct3D12RenderBackend/Direct3D12RenderBackend.h"
 
 namespace Horizon
 {
@@ -35,4 +38,28 @@ namespace Horizon
         .colorBlendOp = RenderBackendBlendOp::Add,
         .writeMask = RenderBackendColorComponentFlags::RGB,
     };
+
+    RenderBackend* RenderBackendCreateInstance(const RenderBackendDesc* desc)
+    {
+        RenderBackend* backend = nullptr;
+        if (desc->type == RenderBackendType::Vulkan)
+        {
+            backend = RenderBackendCreateVulkan(desc);
+        }
+        else if (desc->type == RenderBackendType::Direct3D12)
+        {
+            backend = RenderBackendCreateDirect3D12(desc);
+        }
+        else
+        {
+            LogError(GLogger, std::format("Unknown RenderBackendType!"));
+        }
+
+        return backend;
+    }
+
+    void RenderBackendDestroyInstance(RenderBackend* backend)
+    {
+
+    }
 }

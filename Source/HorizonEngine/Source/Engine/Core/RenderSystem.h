@@ -147,7 +147,7 @@ namespace Horizon
         RenderBackendGPUProfiler* gpuProfiler;
 
         RenderBackendType renderBackendType = RenderBackendType::Direct3D12;
-        bool enableValidationLayers = true;
+        bool enableDebugLayer = true;
         bool enableHardwareRayTracing = true;
 
     private:

@@ -18,7 +18,7 @@ namespace Horizon
     [[deprecated("Use RenderBackendDestroyVulkan() instead.")]]
     typedef void(__stdcall* PFN_VulkanRenderBackendDestroyBackend)(RenderBackend* backend);
 
-    RenderBackend* RenderBackendCreateVulkan(int flags);
+    RenderBackend* RenderBackendCreateVulkan(const RenderBackendDesc* desc);
 
     void RenderBackendDestroyVulkan(RenderBackend* backend);
 }

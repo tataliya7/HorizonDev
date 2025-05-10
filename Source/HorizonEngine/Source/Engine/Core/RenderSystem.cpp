@@ -23,35 +23,29 @@ namespace Horizon
         renderBackendType = RenderBackendType::Direct3D12;
 
 #if HORIZON_CONFIGURATION_RELEASE
-        enableValidationLayers = false;
+        enableDebugLayer = false;
 #endif
 
-        if (renderBackendType == RenderBackendType::Vulkan)
+        std::vector<RenderBackendFeature> renderBackendFeatures = {};
+
+        RenderBackendDesc renderBackendDesc =
         {
-            int flags = VULKAN_RENDER_BACKEND_CREATE_FLAGS_SURFACE;
-            if (enableValidationLayers)
-            {
-                flags |= VULKAN_RENDER_BACKEND_CREATE_FLAGS_VALIDATION_LAYERS;
-            }
-            if (enableHardwareRayTracing)
-            {
-                flags |= VULKAN_RENDER_BACKEND_CREATE_FLAGS_RAY_TRACING;
-            }
-            renderBackend = RenderBackendCreateVulkan(flags);
-        }
-        else if (renderBackendType == RenderBackendType::Direct3D12)
+            .type = renderBackendType,
+            .applicationName = "Horizon Demo",
+            .applicationVersion = 0,
+            .engineName = "Horizon Engine",
+            .engineVersion = 0,
+            .enableDebugLayer = enableDebugLayer,
+            .features = renderBackendFeatures.data(),
+            .featureCount = uint32(renderBackendFeatures.size())
+        };
+
+        renderBackend = RenderBackendCreateInstance(&renderBackendDesc);
+
+        if (!renderBackend)
         {
-            Direct3D12RenderBackendDesc d3d12RenderBackendDesc =
-            {
-                .useDebugLayers = enableValidationLayers,
-                .useGPUBasedValidation = enableValidationLayers,
-                .useHardwareRayTracing = enableHardwareRayTracing
-            };
-            renderBackend = RenderBackendCreateDirect3D12(&d3d12RenderBackendDesc);
-        }
-        else
-        {
-            LogError(GLogger, std::format("Unknown RenderBackendType!"));
+            LogError(GLogger, std::format("Failed to create render backend instance."));
+            return;
         }
 
         // Currently, multiple devices are not supported.

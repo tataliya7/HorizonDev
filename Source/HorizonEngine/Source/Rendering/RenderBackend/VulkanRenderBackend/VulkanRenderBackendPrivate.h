@@ -972,7 +972,7 @@ namespace Horizon
             return RenderBackendType::Vulkan;
         }
 
-        bool Init(int flags);
+        bool Init(const RenderBackendDesc* desc);
         void Exit();
 
         void EnumeratePhysicalDevices();
@@ -1021,6 +1021,11 @@ namespace Horizon
         RenderBackendRayTracingPipelineStateHandle CreateRayTracingPipelineState(const RenderBackendRayTracingPipelineStateDesc* desc, const char* name) override;
         RenderBackendBufferHandle CreateRayTracingShaderBindingTable(const RenderBackendRayTracingShaderBindingTableDesc* desc, const char* name) override;
 
+        const char*    applicationName;
+        uint32         applicationVersion;
+        const char*    engineName;
+        uint32         engineVersion;
+
         VkInstance instance;
 
         bool enableValidationLayers = false;
@@ -1037,7 +1042,7 @@ namespace Horizon
         VulkanRenderBackendHandleManager handleManager;
 
         bool enableMeshShaderSupport = false;
-        bool enableRayTracingSupport = false;
+        bool enableHardwareRayTracing = false;
 
         struct VulkanFunctions
         {

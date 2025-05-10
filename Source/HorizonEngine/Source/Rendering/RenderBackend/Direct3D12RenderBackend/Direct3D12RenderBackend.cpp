@@ -1100,7 +1100,7 @@ namespace Horizon
 
         commandList->GetID3D12GraphicsCommandList6()->SetGraphicsRootSignature(device->GetID3D12RootSignature());
         commandList->GetID3D12GraphicsCommandList6()->SetComputeRootSignature(device->GetID3D12RootSignature());
-        if (device->backend->enableRayTracingSupport)
+        if (device->backend->enableHardwareRayTracing)
         {
             commandList->GetID3D12GraphicsCommandList4()->SetComputeRootSignature(device->GetID3D12RootSignature());
         }
@@ -1120,7 +1120,7 @@ namespace Horizon
     extern "C" { _declspec(dllexport) extern const char* D3D12SDKPath = /*u8*/".\\D3D12\\"; }
 #endif
 
-    bool D3D12RenderBackend::Init(const Direct3D12RenderBackendDesc* desc)
+    bool D3D12RenderBackend::Init(const RenderBackendDesc* desc)
     {
         if (false)
         {
@@ -1141,8 +1141,8 @@ namespace Horizon
 
         DWORD dxgiFactoryFlags = 0;
 
-        useDebugLayers = desc->useDebugLayers;
-        useGPUBasedValidation = desc->useGPUBasedValidation;
+        useDebugLayers = desc->enableDebugLayer;
+        useGPUBasedValidation = desc->enableDebugLayer;
 
         if (useDebugLayers)
         {
@@ -1249,7 +1249,13 @@ namespace Horizon
             }
         }
 
-        enableRayTracingSupport = desc->useHardwareRayTracing;
+        for (uint32 i = 0; i < desc->featureCount; i++)
+        {
+            if (desc->features[i] == RenderBackendFeature::HardwareRayTracing)
+            {
+                enableHardwareRayTracing = true;
+            }
+        }
 
         return true;
     }
@@ -1516,11 +1522,11 @@ namespace Horizon
         UINT lastPresentCount = 0;
         if (SUCCEEDED(swapChain->GetIDXGISwapChain4()->GetLastPresentCount(&lastPresentCount)))
         {
-        	//presentCounter = lastPresentCount;
+            //presentCounter = lastPresentCount;
         }
         else
         {
-        	//presentCounter++;
+            //presentCounter++;
         }
 
         // TODO: refactor this
@@ -1845,7 +1851,7 @@ namespace Horizon
 
         commandList->GetID3D12GraphicsCommandList6()->SetGraphicsRootSignature(device->GetID3D12RootSignature());
         commandList->GetID3D12GraphicsCommandList6()->SetComputeRootSignature(device->GetID3D12RootSignature());
-        if (device->backend->enableRayTracingSupport)
+        if (device->backend->enableHardwareRayTracing)
         {
             commandList->GetID3D12GraphicsCommandList4()->SetComputeRootSignature(device->GetID3D12RootSignature());
         }
@@ -2545,7 +2551,7 @@ namespace Horizon
         }
     }
 
-    RenderBackend* RenderBackendCreateDirect3D12(const Direct3D12RenderBackendDesc* desc)
+    RenderBackend* RenderBackendCreateDirect3D12(const RenderBackendDesc* desc)
     {
         D3D12RenderBackend* d3d12Backend = new D3D12RenderBackend();
         if (!d3d12Backend->Init(desc))
