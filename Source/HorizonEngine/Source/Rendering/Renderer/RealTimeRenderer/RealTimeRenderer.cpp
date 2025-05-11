@@ -312,7 +312,7 @@ namespace Horizon
 
              if (useCascadedShadowMap)
              {
-                 SetupViewSpecificCascadedShadowMapRenderDataForLight(cascadedShadowMapRenderData, view, *light);
+                 SetupViewDependentCascadedShadowMapRenderDataForLight(cascadedShadowMapRenderData, view, *light);
              }
 
              if (useVirtualShadowMap)

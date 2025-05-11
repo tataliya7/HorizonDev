@@ -54,9 +54,4 @@ namespace Horizon
 
         std::vector<GeometryPassDrawCommand> commands;
     };
-
-    struct ViewSpecificDrawCommands
-    {
-        std::array<GeometryPassDrawCommandList, static_cast<size_t>(GeometryPassType::Count)> drawCommandLists;
-    };
 }
