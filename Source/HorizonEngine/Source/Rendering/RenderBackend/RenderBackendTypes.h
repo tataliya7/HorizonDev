@@ -236,6 +236,11 @@ namespace Horizon
         RenderBackendBufferCreateFlags flags;
     };
 
+    struct RenderBackendBufferViewDesc
+    {
+
+    };
+
     enum class RenderBackendTextureType
     {
         Texture1D,
