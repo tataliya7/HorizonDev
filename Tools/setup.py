@@ -257,23 +257,6 @@ except Exception as e:
     print ("Error: {}.".format(str(e)))
     sys.exit(1)
 
-vulkan_sdk_version = "1.4.304.0"
-vulkan_sdk_path = os.path.join("C:/VulkanSDK", vulkan_sdk_version)
-
-# Copy Vulkan SDK
-def CopyVulkanSDK():
-    if not os.path.exists(vulkan_sdk_path):
-        print("Error: failed to find Vulkan SDK. Please install Vulkan SDK.")
-        sys.exit(1)
-    else:
-        print("Found Vulkan SDK: {}.".format(vulkan_sdk_path))
-    dst_dir = os.path.abspath(os.path.join(manager.install_dir, "vulkan", vulkan_sdk_version))
-    if not os.path.exists(dst_dir):
-        print("Installing Vulkan SDK...")
-        shutil.copytree(vulkan_sdk_path, dst_dir)
-
-CopyVulkanSDK()
-
 # def unzip_file(filename, path):
 #     try:
 #         with zipfile.ZipFile(filename, 'r') as zip_ref:

@@ -10,6 +10,183 @@ namespace Horizon
     struct VulkanBufferView;
     struct VulkanTextureView;
 
+// Instance functions
+#define VULKAN_INSTANCE_FUNCTION_LIST(EXPAND_OPERATION) \
+    EXPAND_OPERATION(vkCreateInstance) \
+    EXPAND_OPERATION(vkDestroyInstance) \
+    EXPAND_OPERATION(vkEnumeratePhysicalDevices) \
+    EXPAND_OPERATION(vkGetPhysicalDeviceFeatures) \
+    EXPAND_OPERATION(vkGetPhysicalDeviceFormatProperties) \
+    EXPAND_OPERATION(vkGetPhysicalDeviceImageFormatProperties) \
+    EXPAND_OPERATION(vkGetPhysicalDeviceProperties) \
+    EXPAND_OPERATION(vkGetPhysicalDeviceQueueFamilyProperties) \
+    EXPAND_OPERATION(vkGetPhysicalDeviceMemoryProperties) \
+    EXPAND_OPERATION(vkCreateDevice) \
+    EXPAND_OPERATION(vkDestroyDevice) \
+    EXPAND_OPERATION(vkGetDeviceProcAddr) \
+    EXPAND_OPERATION(vkEnumerateInstanceExtensionProperties) \
+    EXPAND_OPERATION(vkEnumerateDeviceExtensionProperties) \
+    EXPAND_OPERATION(vkEnumerateInstanceLayerProperties) \
+    EXPAND_OPERATION(vkEnumerateDeviceLayerProperties) \
+    EXPAND_OPERATION(vkGetPhysicalDeviceFeatures2) \
+    EXPAND_OPERATION(vkGetPhysicalDeviceProperties2) \
+    EXPAND_OPERATION(vkGetPhysicalDeviceFormatProperties2) \
+    EXPAND_OPERATION(vkGetPhysicalDeviceImageFormatProperties2) \
+    EXPAND_OPERATION(vkGetPhysicalDeviceQueueFamilyProperties2) \
+    EXPAND_OPERATION(vkGetPhysicalDeviceMemoryProperties2) \
+    EXPAND_OPERATION(vkGetPhysicalDeviceSparseImageFormatProperties2) \
+    EXPAND_OPERATION(vkCreateWin32SurfaceKHR) \
+    EXPAND_OPERATION(vkDestroySurfaceKHR) \
+    EXPAND_OPERATION(vkGetPhysicalDeviceSurfaceSupportKHR) \
+    EXPAND_OPERATION(vkGetPhysicalDeviceSurfaceCapabilitiesKHR) \
+    EXPAND_OPERATION(vkGetPhysicalDeviceSurfaceFormatsKHR) \
+    EXPAND_OPERATION(vkGetPhysicalDeviceSurfacePresentModesKHR)
+
+// Device functions
+#define VULKAN_DEVICE_FUNCTION_LIST(EXPAND_OPERATION) \
+    EXPAND_OPERATION(vkGetDeviceQueue) \
+    EXPAND_OPERATION(vkQueueSubmit) \
+    EXPAND_OPERATION(vkQueueWaitIdle) \
+    EXPAND_OPERATION(vkDeviceWaitIdle) \
+    EXPAND_OPERATION(vkAllocateMemory) \
+    EXPAND_OPERATION(vkFreeMemory) \
+    EXPAND_OPERATION(vkMapMemory) \
+    EXPAND_OPERATION(vkUnmapMemory) \
+    EXPAND_OPERATION(vkFlushMappedMemoryRanges) \
+    EXPAND_OPERATION(vkInvalidateMappedMemoryRanges) \
+    EXPAND_OPERATION(vkGetDeviceMemoryCommitment) \
+    EXPAND_OPERATION(vkBindBufferMemory) \
+    EXPAND_OPERATION(vkBindImageMemory) \
+    EXPAND_OPERATION(vkGetBufferMemoryRequirements) \
+    EXPAND_OPERATION(vkGetImageMemoryRequirements) \
+    EXPAND_OPERATION(vkGetImageSparseMemoryRequirements) \
+    EXPAND_OPERATION(vkQueueBindSparse) \
+    EXPAND_OPERATION(vkCreateFence) \
+    EXPAND_OPERATION(vkDestroyFence) \
+    EXPAND_OPERATION(vkResetFences) \
+    EXPAND_OPERATION(vkGetFenceStatus) \
+    EXPAND_OPERATION(vkWaitForFences) \
+    EXPAND_OPERATION(vkCreateSemaphore) \
+    EXPAND_OPERATION(vkDestroySemaphore) \
+    EXPAND_OPERATION(vkCreateEvent) \
+    EXPAND_OPERATION(vkDestroyEvent) \
+    EXPAND_OPERATION(vkGetEventStatus) \
+    EXPAND_OPERATION(vkSetEvent) \
+    EXPAND_OPERATION(vkResetEvent) \
+    EXPAND_OPERATION(vkCreateQueryPool) \
+    EXPAND_OPERATION(vkDestroyQueryPool) \
+    EXPAND_OPERATION(vkGetQueryPoolResults) \
+    EXPAND_OPERATION(vkCreateBuffer) \
+    EXPAND_OPERATION(vkDestroyBuffer) \
+    EXPAND_OPERATION(vkCreateBufferView) \
+    EXPAND_OPERATION(vkDestroyBufferView) \
+    EXPAND_OPERATION(vkCreateImage) \
+    EXPAND_OPERATION(vkDestroyImage) \
+    EXPAND_OPERATION(vkGetImageSubresourceLayout) \
+    EXPAND_OPERATION(vkCreateImageView) \
+    EXPAND_OPERATION(vkDestroyImageView) \
+    EXPAND_OPERATION(vkCreateShaderModule) \
+    EXPAND_OPERATION(vkDestroyShaderModule) \
+    EXPAND_OPERATION(vkCreateGraphicsPipelines) \
+    EXPAND_OPERATION(vkCreateComputePipelines) \
+    EXPAND_OPERATION(vkDestroyPipeline) \
+    EXPAND_OPERATION(vkCreatePipelineLayout) \
+    EXPAND_OPERATION(vkDestroyPipelineLayout) \
+    EXPAND_OPERATION(vkCreateSampler) \
+    EXPAND_OPERATION(vkDestroySampler) \
+    EXPAND_OPERATION(vkCreateDescriptorSetLayout) \
+    EXPAND_OPERATION(vkDestroyDescriptorSetLayout) \
+    EXPAND_OPERATION(vkCreateDescriptorPool) \
+    EXPAND_OPERATION(vkDestroyDescriptorPool) \
+    EXPAND_OPERATION(vkResetDescriptorPool) \
+    EXPAND_OPERATION(vkAllocateDescriptorSets) \
+    EXPAND_OPERATION(vkFreeDescriptorSets) \
+    EXPAND_OPERATION(vkUpdateDescriptorSets) \
+    EXPAND_OPERATION(vkCreateFramebuffer) \
+    EXPAND_OPERATION(vkDestroyFramebuffer) \
+    EXPAND_OPERATION(vkCreateRenderPass) \
+    EXPAND_OPERATION(vkDestroyRenderPass) \
+    EXPAND_OPERATION(vkGetRenderAreaGranularity) \
+    EXPAND_OPERATION(vkCreateCommandPool) \
+    EXPAND_OPERATION(vkDestroyCommandPool) \
+    EXPAND_OPERATION(vkResetCommandPool) \
+    EXPAND_OPERATION(vkAllocateCommandBuffers) \
+    EXPAND_OPERATION(vkFreeCommandBuffers) \
+    EXPAND_OPERATION(vkBeginCommandBuffer) \
+    EXPAND_OPERATION(vkEndCommandBuffer) \
+    EXPAND_OPERATION(vkResetCommandBuffer) \
+    EXPAND_OPERATION(vkCmdBindPipeline) \
+    EXPAND_OPERATION(vkCmdSetViewport) \
+    EXPAND_OPERATION(vkCmdSetScissor) \
+    EXPAND_OPERATION(vkCmdSetStencilReference) \
+    EXPAND_OPERATION(vkCmdBindDescriptorSets) \
+    EXPAND_OPERATION(vkCmdBindIndexBuffer) \
+    EXPAND_OPERATION(vkCmdBindVertexBuffers) \
+    EXPAND_OPERATION(vkCmdDraw) \
+    EXPAND_OPERATION(vkCmdDrawIndexed) \
+    EXPAND_OPERATION(vkCmdDrawIndirect) \
+    EXPAND_OPERATION(vkCmdDrawIndexedIndirect) \
+    EXPAND_OPERATION(vkCmdDispatch) \
+    EXPAND_OPERATION(vkCmdDispatchIndirect) \
+    EXPAND_OPERATION(vkCmdCopyBuffer) \
+    EXPAND_OPERATION(vkCmdCopyImage) \
+    EXPAND_OPERATION(vkCmdBlitImage) \
+    EXPAND_OPERATION(vkCmdCopyBufferToImage) \
+    EXPAND_OPERATION(vkCmdCopyImageToBuffer) \
+    EXPAND_OPERATION(vkCmdUpdateBuffer) \
+    EXPAND_OPERATION(vkCmdFillBuffer) \
+    EXPAND_OPERATION(vkCmdClearColorImage) \
+    EXPAND_OPERATION(vkCmdPipelineBarrier) \
+    EXPAND_OPERATION(vkCmdBeginQuery) \
+    EXPAND_OPERATION(vkCmdEndQuery) \
+    EXPAND_OPERATION(vkCmdResetQueryPool) \
+    EXPAND_OPERATION(vkCmdWriteTimestamp) \
+    EXPAND_OPERATION(vkCmdCopyQueryPoolResults) \
+    EXPAND_OPERATION(vkCmdPushConstants) \
+    EXPAND_OPERATION(vkCmdBeginRenderPass) \
+    EXPAND_OPERATION(vkCmdEndRenderPass) \
+    EXPAND_OPERATION(vkCmdExecuteCommands) \
+    EXPAND_OPERATION(vkCmdBeginRendering) \
+    EXPAND_OPERATION(vkCmdEndRendering) \
+    EXPAND_OPERATION(vkCreateSwapchainKHR) \
+    EXPAND_OPERATION(vkDestroySwapchainKHR) \
+    EXPAND_OPERATION(vkGetSwapchainImagesKHR) \
+    EXPAND_OPERATION(vkAcquireNextImageKHR) \
+    EXPAND_OPERATION(vkQueuePresentKHR) \
+    EXPAND_OPERATION(vkGetDeviceGroupPresentCapabilitiesKHR) \
+    EXPAND_OPERATION(vkGetDeviceGroupSurfacePresentModesKHR) \
+    EXPAND_OPERATION(vkAcquireNextImage2KHR) \
+    EXPAND_OPERATION(vkGetBufferDeviceAddress) \
+    EXPAND_OPERATION(vkQueueSubmit2) \
+    EXPAND_OPERATION(vkCmdPipelineBarrier2) \
+    EXPAND_OPERATION(vkSetDebugUtilsObjectNameEXT) \
+    EXPAND_OPERATION(vkCmdBeginDebugUtilsLabelEXT) \
+    EXPAND_OPERATION(vkCmdEndDebugUtilsLabelEXT) \
+    EXPAND_OPERATION(vkResetQueryPoolEXT) \
+    EXPAND_OPERATION(vkCreateAccelerationStructureKHR) \
+    EXPAND_OPERATION(vkDestroyAccelerationStructureKHR) \
+    EXPAND_OPERATION(vkCmdBuildAccelerationStructuresKHR) \
+    EXPAND_OPERATION(vkCmdBuildAccelerationStructuresIndirectKHR) \
+    EXPAND_OPERATION(vkBuildAccelerationStructuresKHR) \
+    EXPAND_OPERATION(vkGetAccelerationStructureDeviceAddressKHR) \
+    EXPAND_OPERATION(vkGetAccelerationStructureBuildSizesKHR) \
+    EXPAND_OPERATION(vkCmdTraceRaysKHR) \
+    EXPAND_OPERATION(vkCreateRayTracingPipelinesKHR) \
+    EXPAND_OPERATION(vkCmdTraceRaysIndirectKHR) \
+    EXPAND_OPERATION(vkGetRayTracingShaderGroupHandlesKHR)
+
+#define DEFINE_VULKAN_FUNCTION(function) PFN_##function function;
+
+    struct VulkanInstanceSpecificFunctionTable
+    {
+        VULKAN_INSTANCE_FUNCTION_LIST(DEFINE_VULKAN_FUNCTION)
+    };
+
+    struct VulkanDeviceSpecificFunctionTable
+    {
+        VULKAN_DEVICE_FUNCTION_LIST(DEFINE_VULKAN_FUNCTION)
+    };
+
     enum class VulkanDeviceExtensionType
     {
         KHR,      // Khronos (KHR) extensions
@@ -200,7 +377,7 @@ namespace Horizon
             return index;
         }
 
-        void UpdateDescriptor(VulkanTextureView* textureView, uint32 descriptorIndex, bool shaderResourceView);
+        void UpdateDescriptor(VulkanTextureView* textureView, uint32 descriptorIndex, bool shaderResourceView, const VulkanDeviceSpecificFunctionTable& deviceFunctions);
     };
 
     struct VulkanPhysicalDevice
@@ -584,7 +761,7 @@ namespace Horizon
             VkRenderPass renderPass,
             uint32 activeColorAttachmentCount);
         //VulkanPipeline* FindOrCreateRayTracingPipeline(VulkanShader* shader, uint32 pushConstantsSize);
-        void SetDebugUtilsObjectName(VkObjectType type, uint64 handle, const char* name);
+        void SetDebugUtilsObjectName(VkObjectType objectType, uint64 objectHandle, const char* objectName);
 
         VkPhysicalDevice GetPhysicalDeviceHandle() const
         {
@@ -706,6 +883,8 @@ namespace Horizon
         VmaAllocator          vmaAllocator;
         uint32                deviceMask;
 
+        VulkanDeviceSpecificFunctionTable deviceFunctions;
+
         std::vector<const char*> enabledDeviceExtensions;
         std::vector<const char*> enabledValidationLayers;
 
@@ -775,6 +954,7 @@ namespace Horizon
     class VulkanCommandBufferManager
     {
     public:
+
         VulkanCommandBufferManager(VulkanDevice* device, RenderBackendQueueFamily family)
             : device(device)
             , queueFamily(family)
@@ -783,52 +963,65 @@ namespace Horizon
             poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
             poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
             poolInfo.queueFamilyIndex = device->GetQueueFamilyIndex(family);
-            VK_CHECK(vkCreateCommandPool(device->GetHandle(), &poolInfo, VULKAN_ALLOCATION_CALLBACKS, &pool));
+            VK_CHECK(device->deviceFunctions.vkCreateCommandPool(device->GetHandle(), &poolInfo, VULKAN_ALLOCATION_CALLBACKS, &pool));
         }
+
         ~VulkanCommandBufferManager()
         {
-            vkDestroyCommandPool(device->GetHandle(), pool, VULKAN_ALLOCATION_CALLBACKS);
+            device->deviceFunctions.vkDestroyCommandPool(device->GetHandle(), pool, VULKAN_ALLOCATION_CALLBACKS);
             pool = VK_NULL_HANDLE;
         }
+
         inline VkCommandPool GetCommandPoolHandle() const
         {
             return pool;
         }
+
         VulkanCommandBuffer* AllocateCommandBuffer()
         {
             VulkanCommandBuffer commandBuffer;
-            VkCommandBufferAllocateInfo allocateInfo = {
+
+            VkCommandBufferAllocateInfo allocateInfo =
+            {
                 .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
                 .commandPool = pool,
                 .level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
                 .commandBufferCount = 1,
             };
-            VK_CHECK(vkAllocateCommandBuffers(device->GetHandle(), &allocateInfo, &commandBuffer.handle));
-            VkFenceCreateInfo fenceInfo = {
+            VK_CHECK(device->deviceFunctions.vkAllocateCommandBuffers(device->GetHandle(), &allocateInfo, &commandBuffer.handle));
+
+            VkFenceCreateInfo fenceInfo =
+            {
                 .sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,
                 .flags = VK_FENCE_CREATE_SIGNALED_BIT,
             };
-            VK_CHECK(vkCreateFence(device->GetHandle(), &fenceInfo, VULKAN_ALLOCATION_CALLBACKS, &commandBuffer.fence));
-            VkSemaphoreTypeCreateInfo semaphoreTypeCreateInfo = {
+            VK_CHECK(device->deviceFunctions.vkCreateFence(device->GetHandle(), &fenceInfo, VULKAN_ALLOCATION_CALLBACKS, &commandBuffer.fence));
+
+            VkSemaphoreTypeCreateInfo semaphoreTypeCreateInfo =
+            {
                 .sType = VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO,
                 .pNext = nullptr,
                 .semaphoreType = VK_SEMAPHORE_TYPE_BINARY,
                 .initialValue = 0,
             };
-            VkSemaphoreCreateInfo semaphoreCreateInfo = {
+            VkSemaphoreCreateInfo semaphoreCreateInfo =
+            {
                 .sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
                 .pNext = &semaphoreTypeCreateInfo,
                 .flags = 0,
             };
-            VK_CHECK(vkCreateSemaphore(device->GetHandle(), &semaphoreCreateInfo, VULKAN_ALLOCATION_CALLBACKS, &commandBuffer.semaphore));
+            VK_CHECK(device->deviceFunctions.vkCreateSemaphore(device->GetHandle(), &semaphoreCreateInfo, VULKAN_ALLOCATION_CALLBACKS, &commandBuffer.semaphore));
+
             commandBuffers.emplace_back(commandBuffer);
+
             return &commandBuffers.back();
         }
+
         VulkanCommandBuffer* PrepareForNextCommandBuffer()
         {
             for (VulkanCommandBuffer& commandBuffer : commandBuffers)
             {
-                VkResult result = vkGetFenceStatus(device->GetHandle(), commandBuffer.fence);
+                VkResult result = device->deviceFunctions.vkGetFenceStatus(device->GetHandle(), commandBuffer.fence);
                 switch (result)
                 {
                 case VK_SUCCESS:
@@ -843,7 +1036,9 @@ namespace Horizon
             }
             return AllocateCommandBuffer();
         }
+
     private:
+
         VulkanDevice* device;
         RenderBackendQueueFamily queueFamily;
         VkCommandPool pool;
@@ -877,7 +1072,7 @@ namespace Horizon
 
     static bool CheckInstanceExtensionSupport(const char* name, const std::vector<VkExtensionProperties>& supportedExtensions)
     {
-        for (const auto& supportedExtension : supportedExtensions)
+        for (const VkExtensionProperties& supportedExtension : supportedExtensions)
         {
             if (strcmp(name, supportedExtension.extensionName) == 0)
             {
@@ -889,7 +1084,7 @@ namespace Horizon
 
     static bool CheckInstanceLayerSupport(const char* name, const std::vector<VkLayerProperties>& supportedLayers)
     {
-        for (const auto& supportedLayer : supportedLayers)
+        for (const VkLayerProperties& supportedLayer : supportedLayers)
         {
             if (strcmp(name, supportedLayer.layerName) == 0)
             {
@@ -1044,33 +1239,10 @@ namespace Horizon
         bool enableMeshShaderSupport = false;
         bool enableHardwareRayTracing = false;
 
-        struct VulkanFunctions
-        {
-            // KHR
-            PFN_vkGetBufferDeviceAddressKHR                vkGetBufferDeviceAddressKHR = VK_NULL_HANDLE;
-            PFN_vkCreateAccelerationStructureKHR           vkCreateAccelerationStructureKHR = VK_NULL_HANDLE;
-            PFN_vkDestroyAccelerationStructureKHR          vkDestroyAccelerationStructureKHR = VK_NULL_HANDLE;
-            PFN_vkGetAccelerationStructureBuildSizesKHR    vkGetAccelerationStructureBuildSizesKHR = VK_NULL_HANDLE;
-            PFN_vkGetAccelerationStructureDeviceAddressKHR vkGetAccelerationStructureDeviceAddressKHR = VK_NULL_HANDLE;
-            PFN_vkGetRayTracingShaderGroupHandlesKHR       vkGetRayTracingShaderGroupHandlesKHR = VK_NULL_HANDLE;
-            PFN_vkBuildAccelerationStructuresKHR           vkBuildAccelerationStructuresKHR = VK_NULL_HANDLE;
-            PFN_vkCreateRayTracingPipelinesKHR             vkCreateRayTracingPipelinesKHR = VK_NULL_HANDLE;
-            PFN_vkCmdPipelineBarrier2KHR                   vkCmdPipelineBarrier2KHR = VK_NULL_HANDLE;
-            PFN_vkCmdBuildAccelerationStructuresKHR        vkCmdBuildAccelerationStructuresKHR = VK_NULL_HANDLE;
-            PFN_vkCmdTraceRaysKHR                          vkCmdTraceRaysKHR = VK_NULL_HANDLE;
-            // EXT
-            PFN_vkCmdDrawMeshTasksEXT                      vkCmdDrawMeshTasksEXT = VK_NULL_HANDLE;
-            PFN_vkCmdDrawMeshTasksIndirectEXT              vkCmdDrawMeshTasksIndirectEXT = VK_NULL_HANDLE;
-            PFN_vkSetDebugUtilsObjectNameEXT               vkSetDebugUtilsObjectNameEXT = VK_NULL_HANDLE;
-            PFN_vkCmdBeginDebugUtilsLabelEXT               vkCmdBeginDebugUtilsLabelEXT = VK_NULL_HANDLE;
-            PFN_vkCmdEndDebugUtilsLabelEXT                 vkCmdEndDebugUtilsLabelEXT = VK_NULL_HANDLE;
-        };
-
-        VulkanFunctions vulkanFunctions;
+        VulkanInstanceSpecificFunctionTable instanceFunctions;
     };
 }
 
-#if 0
 namespace Horizon::Refactor
 {
     class VulkanInstance;
@@ -1103,6 +1275,8 @@ namespace Horizon::Refactor
         std::vector<const char*> enabledInstanceExtensions;
 
         VkDebugUtilsMessengerEXT debugUtilsMessenger;
+
+        VulkanInstanceSpecificFunctionTable instanceFunctions;
     };
 
     class VulkanDevice
@@ -1134,6 +1308,7 @@ namespace Horizon::Refactor
             const char* name);
 
     protected:
+
+        VulkanDeviceSpecificFunctionTable deviceFunctions;
     };
 }
-#endif

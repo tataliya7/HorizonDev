@@ -8,37 +8,43 @@
 
 namespace Horizon
 {
+    namespace VulkanLoader
+    {
+        HMODULE VulkanLoaderDLL;
+        PFN_vkGetInstanceProcAddr GetInstanceProcAddr;
+    }
+
     namespace VulkanHelper
     {
-        void CreateTemporaryCommandBuffer(VkDevice device, uint32 queueFamilyIndex, VkCommandPool& tempCmdPool, VkCommandBuffer& tempCmdBuffer)
+        void CreateTemporaryCommandBuffer(VkDevice device, uint32 queueFamilyIndex, VkCommandPool& tempCmdPool, VkCommandBuffer& tempCmdBuffer, const VulkanDeviceSpecificFunctionTable& deviceFunctions)
         {
             VkCommandPoolCreateInfo commandPoolInfo = {};
             commandPoolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
             commandPoolInfo.queueFamilyIndex = queueFamilyIndex;
             commandPoolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-            VK_CHECK(vkCreateCommandPool(device, &commandPoolInfo, VULKAN_ALLOCATION_CALLBACKS, &tempCmdPool));
+            VK_CHECK(deviceFunctions.vkCreateCommandPool(device, &commandPoolInfo, VULKAN_ALLOCATION_CALLBACKS, &tempCmdPool));
             VkCommandBufferAllocateInfo allocateInfo = {};
             allocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
             allocateInfo.commandPool = tempCmdPool;
             allocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
             allocateInfo.commandBufferCount = 1;
-            VK_CHECK(vkAllocateCommandBuffers(device, &allocateInfo, &tempCmdBuffer));
+            VK_CHECK(deviceFunctions.vkAllocateCommandBuffers(device, &allocateInfo, &tempCmdBuffer));
             VkCommandBufferBeginInfo beginInfo = {};
             beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
             beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-            VK_CHECK(vkBeginCommandBuffer(tempCmdBuffer, &beginInfo));
+            VK_CHECK(deviceFunctions.vkBeginCommandBuffer(tempCmdBuffer, &beginInfo));
         }
 
-        void FlushTemporaryCommandBuffer(VkDevice device, VkQueue queue, VkCommandPool tempCmdPool, VkCommandBuffer tempCmdBuffer)
+        void FlushTemporaryCommandBuffer(VkDevice device, VkQueue queue, VkCommandPool tempCmdPool, VkCommandBuffer tempCmdBuffer, const VulkanDeviceSpecificFunctionTable& deviceFunctions)
         {
-            VK_CHECK(vkEndCommandBuffer(tempCmdBuffer));
+            VK_CHECK(deviceFunctions.vkEndCommandBuffer(tempCmdBuffer));
             VkSubmitInfo submitInfo = {};
             submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
             submitInfo.commandBufferCount = 1;
             submitInfo.pCommandBuffers = &tempCmdBuffer;
-            VK_CHECK(vkQueueSubmit(queue, 1, &submitInfo, VK_NULL_HANDLE));
-            VK_CHECK(vkDeviceWaitIdle(device));
-            vkDestroyCommandPool(device, tempCmdPool, nullptr);
+            VK_CHECK(deviceFunctions.vkQueueSubmit(queue, 1, &submitInfo, VK_NULL_HANDLE));
+            VK_CHECK(deviceFunctions.vkDeviceWaitIdle(device));
+            deviceFunctions.vkDestroyCommandPool(device, tempCmdPool, nullptr);
         }
     }
 
@@ -57,7 +63,7 @@ namespace Horizon
     void VulkanRenderBackend::EnumeratePhysicalDevices()
     {
         uint32 numPhysicalDevices = 0;
-        VK_CHECK(vkEnumeratePhysicalDevices(instance, &numPhysicalDevices, 0));
+        VK_CHECK(instanceFunctions.vkEnumeratePhysicalDevices(instance, &numPhysicalDevices, 0));
 
         if (numPhysicalDevices == 0)
         {
@@ -66,7 +72,7 @@ namespace Horizon
         }
 
         std::vector<VkPhysicalDevice> physicalDeviceHandles(numPhysicalDevices);
-        vkEnumeratePhysicalDevices(instance, &numPhysicalDevices, physicalDeviceHandles.data());
+        instanceFunctions.vkEnumeratePhysicalDevices(instance, &numPhysicalDevices, physicalDeviceHandles.data());
 
         availablePhysicalDevices.resize(numPhysicalDevices);
 
@@ -96,10 +102,11 @@ namespace Horizon
                 .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADER_BARYCENTRIC_PROPERTIES_KHR,
                 .pNext = nullptr,
             };
-            vkGetPhysicalDeviceProperties2(physicalDevice.handle, &physicalDeviceProperties2);
-            physicalDevice.properties = physicalDeviceProperties2.properties;
 
-            vkGetPhysicalDeviceMemoryProperties(physicalDevice.handle, &physicalDevice.memoryProperties);
+            instanceFunctions.vkGetPhysicalDeviceProperties2(physicalDevice.handle, &physicalDeviceProperties2);
+            instanceFunctions.vkGetPhysicalDeviceMemoryProperties(physicalDevice.handle, &physicalDevice.memoryProperties);
+
+            physicalDevice.properties = physicalDeviceProperties2.properties;
 
             // Ray tracing features
             if (enableHardwareRayTracing)
@@ -219,7 +226,7 @@ namespace Horizon
                 .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2,
                 .pNext = physicalDevice.featuresEntry
             };
-            vkGetPhysicalDeviceFeatures2(physicalDevice.handle, &deviceFeatures2);
+            instanceFunctions.vkGetPhysicalDeviceFeatures2(physicalDevice.handle, &deviceFeatures2);
             physicalDevice.enabledFeatures = deviceFeatures2;
 
             // TODO
@@ -237,9 +244,9 @@ namespace Horizon
                 VK_API_VERSION_PATCH(physicalDevice.properties.apiVersion)));
 
             uint32 numQueueFamilyProperties;
-            vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice.handle, &numQueueFamilyProperties, 0);
+            instanceFunctions.vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice.handle, &numQueueFamilyProperties, 0);
             physicalDevice.queueFamilyProperties.resize(numQueueFamilyProperties);
-            vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice.handle, &numQueueFamilyProperties, physicalDevice.queueFamilyProperties.data());
+            instanceFunctions.vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice.handle, &numQueueFamilyProperties, physicalDevice.queueFamilyProperties.data());
 
             uint32& graphicsQueueFamilyIndex = physicalDevice.queueFamilyIndices[(uint32)RenderBackendQueueFamily::Graphics] = ~uint32(0);
             uint32& computeQueueFamilyIndex = physicalDevice.queueFamilyIndices[(uint32)RenderBackendQueueFamily::Compute] = ~uint32(0);
@@ -268,9 +275,9 @@ namespace Horizon
             }
 
             uint32 numLayerProperties = 0;
-            VK_CHECK(vkEnumerateDeviceLayerProperties(physicalDevice.handle, &numLayerProperties, nullptr));
+            VK_CHECK(instanceFunctions.vkEnumerateDeviceLayerProperties(physicalDevice.handle, &numLayerProperties, nullptr));
             physicalDevice.layerProperties.resize(numLayerProperties);
-            VK_CHECK(vkEnumerateDeviceLayerProperties(physicalDevice.handle, &numLayerProperties, physicalDevice.layerProperties.data()));
+            VK_CHECK(instanceFunctions.vkEnumerateDeviceLayerProperties(physicalDevice.handle, &numLayerProperties, physicalDevice.layerProperties.data()));
             for (const auto& layerProperties : physicalDevice.layerProperties)
             {
                 LogInfo(
@@ -285,9 +292,9 @@ namespace Horizon
             }
 
             uint32 numExtensionProperties = 0;
-            VK_CHECK(vkEnumerateDeviceExtensionProperties(physicalDevice.handle, nullptr, &numExtensionProperties, nullptr));
+            VK_CHECK(instanceFunctions.vkEnumerateDeviceExtensionProperties(physicalDevice.handle, nullptr, &numExtensionProperties, nullptr));
             physicalDevice.extensionProperties.resize(numExtensionProperties);
-            VK_CHECK(vkEnumerateDeviceExtensionProperties(physicalDevice.handle, nullptr, &numExtensionProperties, physicalDevice.extensionProperties.data()));
+            VK_CHECK(instanceFunctions.vkEnumerateDeviceExtensionProperties(physicalDevice.handle, nullptr, &numExtensionProperties, physicalDevice.extensionProperties.data()));
             for (const auto& extensionProperty : physicalDevice.extensionProperties)
             {
                 LogInfo(
@@ -301,6 +308,20 @@ namespace Horizon
 
     bool VulkanRenderBackend::Init(const RenderBackendDesc* desc)
     {
+        VulkanLoader::VulkanLoaderDLL = ::LoadLibraryW(L"vulkan-1.dll");
+
+        // https://github.com/KhronosGroup/Vulkan-Loader/blob/main/docs/LoaderApplicationInterface.md
+        // An application only needs to query (via system calls such as dlsym) the address of vkGetInstanceProcAddr from the loader library.
+        // The application then uses vkGetInstanceProcAddr to load all functions available, such as vkCreateInstance, vkEnumerateInstanceExtensionProperties and vkEnumerateInstanceLayerProperties in a platform-independent way.
+        if (VulkanLoader::VulkanLoaderDLL)
+        {
+            VulkanLoader::GetInstanceProcAddr = reinterpret_cast<PFN_vkGetInstanceProcAddr>(::GetProcAddress(VulkanLoader::VulkanLoaderDLL, "vkGetInstanceProcAddr"));
+        }
+
+#define GET_VULKAN_FUNCTION_ADDRESS(function) instanceFunctions.##function = reinterpret_cast<PFN_##function>(::GetProcAddress(VulkanLoader::VulkanLoaderDLL, #function));
+        VULKAN_INSTANCE_FUNCTION_LIST(GET_VULKAN_FUNCTION_ADDRESS)
+#undef GET_VULKAN_FUNCTION_ADDRESS
+
         enableValidationLayers = desc->enableDebugLayer;
 
         for (uint32 i = 0; i < desc->featureCount; i++)
@@ -324,10 +345,10 @@ namespace Horizon
         }
 
         uint32 instanceLayerPropertyCount = 0;
-        VK_CHECK(vkEnumerateInstanceLayerProperties(&instanceLayerPropertyCount, nullptr));
+        VK_CHECK(instanceFunctions.vkEnumerateInstanceLayerProperties(&instanceLayerPropertyCount, nullptr));
 
         std::vector<VkLayerProperties> instanceLayerProperties(instanceLayerPropertyCount);
-        VK_CHECK(vkEnumerateInstanceLayerProperties(&instanceLayerPropertyCount, instanceLayerProperties.data()));
+        VK_CHECK(instanceFunctions.vkEnumerateInstanceLayerProperties(&instanceLayerPropertyCount, instanceLayerProperties.data()));
 
         for (const VkLayerProperties& instanceLayerProperty : instanceLayerProperties)
         {
@@ -342,7 +363,7 @@ namespace Horizon
                 instanceLayerProperty.description));
         }
 
-        for (const char* const requiredInstanceLayer : requiredInstanceLayers)
+        for (const char* requiredInstanceLayer : requiredInstanceLayers)
         {
             if (CheckInstanceLayerSupport(requiredInstanceLayer, instanceLayerProperties))
             {
@@ -357,10 +378,10 @@ namespace Horizon
         }
 
         uint32 instanceExtensionPropertyCount = 0;
-        VK_CHECK(vkEnumerateInstanceExtensionProperties(nullptr, &instanceExtensionPropertyCount, nullptr));
+        VK_CHECK(instanceFunctions.vkEnumerateInstanceExtensionProperties(nullptr, &instanceExtensionPropertyCount, nullptr));
 
         std::vector<VkExtensionProperties> instanceExtensionProperties(instanceExtensionPropertyCount);
-        VK_CHECK(vkEnumerateInstanceExtensionProperties(nullptr, &instanceExtensionPropertyCount, instanceExtensionProperties.data()));
+        VK_CHECK(instanceFunctions.vkEnumerateInstanceExtensionProperties(nullptr, &instanceExtensionPropertyCount, instanceExtensionProperties.data()));
 
         for (const VkExtensionProperties& instanceExtensionProperty : instanceExtensionProperties)
         {
@@ -400,7 +421,7 @@ namespace Horizon
             requiredInstanceExtensions.push_back(VK_KHR_DEVICE_GROUP_CREATION_EXTENSION_NAME);
         }
 
-        for (const char* const requiredInstanceExtension : requiredInstanceExtensions)
+        for (const char* requiredInstanceExtension : requiredInstanceExtensions)
         {
             if (CheckInstanceExtensionSupport(requiredInstanceExtension, instanceExtensionProperties))
             {
@@ -443,40 +464,26 @@ namespace Horizon
             .ppEnabledExtensionNames = enabledInstanceExtensions.data()
         };
 
-        VkResult result = vkCreateInstance(&instanceInfo, VULKAN_ALLOCATION_CALLBACKS, &instance);
+        VkResult result = instanceFunctions.vkCreateInstance(&instanceInfo, VULKAN_ALLOCATION_CALLBACKS, &instance);
 
         if (result != VK_SUCCESS)
         {
             return false;
         }
 
+        // Create debug utils messenger.
         if (enableValidationLayers)
         {
-            PFN_vkCreateDebugUtilsMessengerEXT vkCreateDebugUtilsMessengerEXT = reinterpret_cast<PFN_vkCreateDebugUtilsMessengerEXT>(vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT"));
-            VK_CHECK(vkCreateDebugUtilsMessengerEXT(instance, &debugUtilsMessengerInfo, VULKAN_ALLOCATION_CALLBACKS, &debugUtilsMessenger));
+            PFN_vkCreateDebugUtilsMessengerEXT vkCreateDebugUtilsMessengerEXT = reinterpret_cast<PFN_vkCreateDebugUtilsMessengerEXT>(VulkanLoader::GetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT"));
+            if (vkCreateDebugUtilsMessengerEXT)
+            {
+                VK_CHECK(vkCreateDebugUtilsMessengerEXT(instance, &debugUtilsMessengerInfo, VULKAN_ALLOCATION_CALLBACKS, &debugUtilsMessenger));
+            }
         }
         else
         {
             debugUtilsMessenger = VK_NULL_HANDLE;
         }
-
-        vulkanFunctions.vkGetBufferDeviceAddressKHR = reinterpret_cast<PFN_vkGetBufferDeviceAddressKHR>(vkGetInstanceProcAddr(instance, "vkGetBufferDeviceAddressKHR"));
-        vulkanFunctions.vkCreateAccelerationStructureKHR = reinterpret_cast<PFN_vkCreateAccelerationStructureKHR>(vkGetInstanceProcAddr(instance, "vkCreateAccelerationStructureKHR"));
-        vulkanFunctions.vkDestroyAccelerationStructureKHR = reinterpret_cast<PFN_vkDestroyAccelerationStructureKHR>(vkGetInstanceProcAddr(instance, "vkDestroyAccelerationStructureKHR"));
-        vulkanFunctions.vkGetAccelerationStructureBuildSizesKHR = reinterpret_cast<PFN_vkGetAccelerationStructureBuildSizesKHR>(vkGetInstanceProcAddr(instance, "vkGetAccelerationStructureBuildSizesKHR"));
-        vulkanFunctions.vkGetAccelerationStructureDeviceAddressKHR = reinterpret_cast<PFN_vkGetAccelerationStructureDeviceAddressKHR>(vkGetInstanceProcAddr(instance, "vkGetAccelerationStructureDeviceAddressKHR"));
-        vulkanFunctions.vkGetRayTracingShaderGroupHandlesKHR = reinterpret_cast<PFN_vkGetRayTracingShaderGroupHandlesKHR>(vkGetInstanceProcAddr(instance, "vkGetRayTracingShaderGroupHandlesKHR"));
-        vulkanFunctions.vkBuildAccelerationStructuresKHR = reinterpret_cast<PFN_vkBuildAccelerationStructuresKHR>(vkGetInstanceProcAddr(instance, "vkBuildAccelerationStructuresKHR"));
-        vulkanFunctions.vkCreateRayTracingPipelinesKHR = reinterpret_cast<PFN_vkCreateRayTracingPipelinesKHR>(vkGetInstanceProcAddr(instance, "vkCreateRayTracingPipelinesKHR"));
-        vulkanFunctions.vkCmdPipelineBarrier2KHR = reinterpret_cast<PFN_vkCmdPipelineBarrier2KHR>(vkGetInstanceProcAddr(instance, "vkCmdPipelineBarrier2KHR"));
-        vulkanFunctions.vkCmdBuildAccelerationStructuresKHR = reinterpret_cast<PFN_vkCmdBuildAccelerationStructuresKHR>(vkGetInstanceProcAddr(instance, "vkCmdBuildAccelerationStructuresKHR"));
-        vulkanFunctions.vkCmdTraceRaysKHR = reinterpret_cast<PFN_vkCmdTraceRaysKHR>(vkGetInstanceProcAddr(instance, "vkCmdTraceRaysKHR"));
-
-        vulkanFunctions.vkCmdDrawMeshTasksEXT = reinterpret_cast<PFN_vkCmdDrawMeshTasksEXT>(vkGetInstanceProcAddr(instance, "vkCmdDrawMeshTasksEXT"));
-        vulkanFunctions.vkCmdDrawMeshTasksIndirectEXT = reinterpret_cast<PFN_vkCmdDrawMeshTasksIndirectEXT>(vkGetInstanceProcAddr(instance, "vkCmdDrawMeshTasksIndirectEXT"));
-        vulkanFunctions.vkSetDebugUtilsObjectNameEXT = reinterpret_cast<PFN_vkSetDebugUtilsObjectNameEXT>(vkGetInstanceProcAddr(instance, "vkSetDebugUtilsObjectNameEXT"));
-        vulkanFunctions.vkCmdBeginDebugUtilsLabelEXT = reinterpret_cast<PFN_vkCmdBeginDebugUtilsLabelEXT>(vkGetInstanceProcAddr(instance, "vkCmdBeginDebugUtilsLabelEXT"));
-        vulkanFunctions.vkCmdEndDebugUtilsLabelEXT = reinterpret_cast<PFN_vkCmdEndDebugUtilsLabelEXT>(vkGetInstanceProcAddr(instance, "vkCmdEndDebugUtilsLabelEXT"));
 
         EnumeratePhysicalDevices();
 
@@ -498,13 +505,13 @@ namespace Horizon
 
         if (debugUtilsMessenger != VK_NULL_HANDLE)
         {
-            PFN_vkDestroyDebugUtilsMessengerEXT vkDestroyDebugUtilsMessengerEXT = reinterpret_cast<PFN_vkDestroyDebugUtilsMessengerEXT>(vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT"));
+            PFN_vkDestroyDebugUtilsMessengerEXT vkDestroyDebugUtilsMessengerEXT = reinterpret_cast<PFN_vkDestroyDebugUtilsMessengerEXT>(VulkanLoader::GetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT"));
             vkDestroyDebugUtilsMessengerEXT(instance, debugUtilsMessenger, VULKAN_ALLOCATION_CALLBACKS);
             debugUtilsMessenger = VK_NULL_HANDLE;
         }
         if (instance != VK_NULL_HANDLE)
         {
-            vkDestroyInstance(instance, VULKAN_ALLOCATION_CALLBACKS);
+            instanceFunctions.vkDestroyInstance(instance, VULKAN_ALLOCATION_CALLBACKS);
             instance = VK_NULL_HANDLE;
         }
     }
@@ -812,7 +819,7 @@ namespace Horizon
             VkBufferDeviceAddressInfo bufferDeviceAddressInfo = {};
             bufferDeviceAddressInfo.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;
             bufferDeviceAddressInfo.buffer = buffer.handle;
-            buffer.deviceAddress = vkGetBufferDeviceAddress(handle, &bufferDeviceAddressInfo);
+            buffer.deviceAddress = deviceFunctions.vkGetBufferDeviceAddress(handle, &bufferDeviceAddressInfo);
         }
 
         if (buffer.createMapped)
@@ -833,16 +840,16 @@ namespace Horizon
             vmaUnmapMemory(vmaAllocator, uploadBuffer.allocation);
 
             VkCommandBuffer commandBuffer; VkCommandPool pool;
-            VulkanHelper::CreateTemporaryCommandBuffer(handle, GetQueueFamilyIndex(RenderBackendQueueFamily::Graphics), pool, commandBuffer);
+            VulkanHelper::CreateTemporaryCommandBuffer(handle, GetQueueFamilyIndex(RenderBackendQueueFamily::Graphics), pool, commandBuffer, deviceFunctions);
 
             VkBufferCopy region = {
                 .srcOffset = 0,
                 .dstOffset = 0,
                 .size = bufferSize,
             };
-            vkCmdCopyBuffer(commandBuffer, uploadBuffer.handle, buffer.handle, 1, &region);
+            deviceFunctions.vkCmdCopyBuffer(commandBuffer, uploadBuffer.handle, buffer.handle, 1, &region);
 
-            VulkanHelper::FlushTemporaryCommandBuffer(handle, GetCommandQueue(RenderBackendQueueFamily::Graphics, 0)->handle, pool, commandBuffer);
+            VulkanHelper::FlushTemporaryCommandBuffer(handle, GetCommandQueue(RenderBackendQueueFamily::Graphics, 0)->handle, pool, commandBuffer, deviceFunctions);
             DestroyBuffer(bufferIndex);
         }
 
@@ -866,7 +873,7 @@ namespace Horizon
                 .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
                 .pBufferInfo = &descriptorBufferInfo,
             };
-            vkUpdateDescriptorSets(handle, 1, &write, 0, nullptr);
+            deviceFunctions.vkUpdateDescriptorSets(handle, 1, &write, 0, nullptr);
             buffer.bindlessResourceDescriptorIndexSRV = buffer.bindlessResourceDescriptorIndexUAV = index;
         }
         else if (EnumClassHasFlags(desc->flags, RenderBackendBufferCreateFlags::UniformBuffer))
@@ -886,7 +893,7 @@ namespace Horizon
                 .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
                 .pBufferInfo = &descriptorBufferInfo,
             };
-            vkUpdateDescriptorSets(handle, 1, &write, 0, nullptr);
+            deviceFunctions.vkUpdateDescriptorSets(handle, 1, &write, 0, nullptr);
             buffer.bindlessResourceDescriptorIndexCBV = index;
         }
 
@@ -960,7 +967,7 @@ namespace Horizon
                 VkBufferDeviceAddressInfo bufferDeviceAddressInfo = {};
                 bufferDeviceAddressInfo.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;
                 bufferDeviceAddressInfo.buffer = buffer.handle;
-                buffer.deviceAddress = vkGetBufferDeviceAddress(handle, &bufferDeviceAddressInfo);
+                buffer.deviceAddress = deviceFunctions.vkGetBufferDeviceAddress(handle, &bufferDeviceAddressInfo);
             }
 
             if (buffer.createMapped)
@@ -988,7 +995,7 @@ namespace Horizon
                         .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
                         .pBufferInfo = &descriptorBufferInfo,
                     };
-                    vkUpdateDescriptorSets(handle, 1, &write, 0, nullptr);
+                    deviceFunctions.vkUpdateDescriptorSets(handle, 1, &write, 0, nullptr);
                 }
             }
         }
@@ -1031,7 +1038,7 @@ namespace Horizon
             .sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO,
             .buffer = buffer.handle,
         };
-        return backend->vulkanFunctions.vkGetBufferDeviceAddressKHR(handle, &bufferDeviceAddressInfo);
+        return deviceFunctions.vkGetBufferDeviceAddress(handle, &bufferDeviceAddressInfo);
     }
 
     uint32 VulkanDevice::CreateTexture(const RenderBackendTextureDesc* desc, const void* data, const char* name)
@@ -1165,7 +1172,7 @@ namespace Horizon
                 imageViewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
             }
 
-            VK_CHECK(vkCreateImageView(handle, &imageViewInfo, VULKAN_ALLOCATION_CALLBACKS, &texture.defaultView));
+            VK_CHECK(deviceFunctions.vkCreateImageView(handle, &imageViewInfo, VULKAN_ALLOCATION_CALLBACKS, &texture.defaultView));
 
             uint32 index = bindlessDescriptorManager.AllocateSampledImageIndex();
             VkDescriptorImageInfo descriptorImageInfo = {
@@ -1181,7 +1188,7 @@ namespace Horizon
                 .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
                 .pImageInfo = &descriptorImageInfo,
             };
-            vkUpdateDescriptorSets(handle, 1, &write, 0, nullptr);
+            deviceFunctions.vkUpdateDescriptorSets(handle, 1, &write, 0, nullptr);
             texture.srvIndex = index;
 
             texture.srvs.resize(texture.mipLevels);
@@ -1201,7 +1208,7 @@ namespace Horizon
                     imageViewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
                 }
 
-                VK_CHECK(vkCreateImageView(handle, &imageViewInfo, VULKAN_ALLOCATION_CALLBACKS, &texture.srvs[mipLevel].srv));
+                VK_CHECK(deviceFunctions.vkCreateImageView(handle, &imageViewInfo, VULKAN_ALLOCATION_CALLBACKS, &texture.srvs[mipLevel].srv));
 
                 uint32 index = bindlessDescriptorManager.AllocateSampledImageIndex();
                 VkDescriptorImageInfo descriptorImageInfo = {
@@ -1217,7 +1224,7 @@ namespace Horizon
                     .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
                     .pImageInfo = &descriptorImageInfo,
                 };
-                vkUpdateDescriptorSets(handle, 1, &write, 0, nullptr);
+                deviceFunctions.vkUpdateDescriptorSets(handle, 1, &write, 0, nullptr);
                 texture.srvs[mipLevel].srvIndex = index;
             }
         }
@@ -1234,7 +1241,7 @@ namespace Horizon
                     .components = { VK_COMPONENT_SWIZZLE_R, VK_COMPONENT_SWIZZLE_G, VK_COMPONENT_SWIZZLE_B, VK_COMPONENT_SWIZZLE_A },
                     .subresourceRange = { texture.aspectMask, mipLevel, 1, 0, VK_REMAINING_ARRAY_LAYERS }
                 };
-                VK_CHECK(vkCreateImageView(handle, &imageViewInfo, VULKAN_ALLOCATION_CALLBACKS, &texture.uavs[mipLevel].uav));
+                VK_CHECK(deviceFunctions.vkCreateImageView(handle, &imageViewInfo, VULKAN_ALLOCATION_CALLBACKS, &texture.uavs[mipLevel].uav));
 
                 uint32 index = bindlessDescriptorManager.AllocateStorageImageIndex();
                 VkDescriptorImageInfo descriptorImageInfo = {
@@ -1250,7 +1257,7 @@ namespace Horizon
                     .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
                     .pImageInfo = &descriptorImageInfo,
                 };
-                vkUpdateDescriptorSets(handle, 1, &write, 0, nullptr);
+                deviceFunctions.vkUpdateDescriptorSets(handle, 1, &write, 0, nullptr);
                 texture.uavs[mipLevel].uavIndex = index;
             }
         }
@@ -1268,7 +1275,7 @@ namespace Horizon
                     .components = { VK_COMPONENT_SWIZZLE_R, VK_COMPONENT_SWIZZLE_G, VK_COMPONENT_SWIZZLE_B, VK_COMPONENT_SWIZZLE_A },
                     .subresourceRange = { texture.aspectMask, i, 1, 0, 1 }
                 };
-                VK_CHECK(vkCreateImageView(handle, &imageViewInfo, VULKAN_ALLOCATION_CALLBACKS, &texture.renderTargetViews[i]));
+                VK_CHECK(deviceFunctions.vkCreateImageView(handle, &imageViewInfo, VULKAN_ALLOCATION_CALLBACKS, &texture.renderTargetViews[i]));
             }
         }
         if (EnumClassHasFlags(desc->flags, RenderBackendTextureCreateFlags::DepthStencil))
@@ -1283,7 +1290,7 @@ namespace Horizon
                 .components = { VK_COMPONENT_SWIZZLE_R, VK_COMPONENT_SWIZZLE_G, VK_COMPONENT_SWIZZLE_B, VK_COMPONENT_SWIZZLE_A },
                 .subresourceRange = { texture.aspectMask, 0, 1, 0, VK_REMAINING_ARRAY_LAYERS }
             };
-            VK_CHECK(vkCreateImageView(handle, &imageViewInfo, VULKAN_ALLOCATION_CALLBACKS, &dsv));
+            VK_CHECK(deviceFunctions.vkCreateImageView(handle, &imageViewInfo, VULKAN_ALLOCATION_CALLBACKS, &dsv));
 
             texture.depthStencilViews[0] = dsv;
         }
@@ -1330,7 +1337,7 @@ namespace Horizon
             UnmapBuffer(bufferIndex);
 
             VkCommandBuffer commandBuffer; VkCommandPool pool;
-            VulkanHelper::CreateTemporaryCommandBuffer(handle, GetQueueFamilyIndex(RenderBackendQueueFamily::Graphics), pool, commandBuffer);
+            VulkanHelper::CreateTemporaryCommandBuffer(handle, GetQueueFamilyIndex(RenderBackendQueueFamily::Graphics), pool, commandBuffer, deviceFunctions);
 
             {
                 VkImageMemoryBarrier barrier = {
@@ -1351,7 +1358,7 @@ namespace Horizon
                     },
                 };
 
-                vkCmdPipelineBarrier(
+                deviceFunctions.vkCmdPipelineBarrier(
                     commandBuffer,
                     VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
                     VK_PIPELINE_STAGE_TRANSFER_BIT,
@@ -1360,7 +1367,7 @@ namespace Horizon
                     0, nullptr,
                     1, &barrier);
 
-                vkCmdCopyBufferToImage(
+                deviceFunctions.vkCmdCopyBufferToImage(
                     commandBuffer,
                     uploadBuffer.handle,
                     texture.handle,
@@ -1372,7 +1379,8 @@ namespace Horizon
                 barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
                 barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
                 barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
-                vkCmdPipelineBarrier(
+
+                deviceFunctions.vkCmdPipelineBarrier(
                     commandBuffer,
                     VK_PIPELINE_STAGE_TRANSFER_BIT,
                     VK_PIPELINE_STAGE_TRANSFER_BIT,
@@ -1425,7 +1433,7 @@ namespace Horizon
                     },
                 };
 
-                vkCmdPipelineBarrier(commandBuffer,
+                deviceFunctions.vkCmdPipelineBarrier(commandBuffer,
                     VK_PIPELINE_STAGE_TRANSFER_BIT,
                     VK_PIPELINE_STAGE_TRANSFER_BIT,
                     0,
@@ -1433,7 +1441,7 @@ namespace Horizon
                     0, nullptr,
                     1, &barrier);
 
-                vkCmdBlitImage(commandBuffer,
+                deviceFunctions.vkCmdBlitImage(commandBuffer,
                     texture.handle,
                     VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
                     texture.handle,
@@ -1447,7 +1455,7 @@ namespace Horizon
                 barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
                 barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
 
-                vkCmdPipelineBarrier(commandBuffer,
+                deviceFunctions.vkCmdPipelineBarrier(commandBuffer,
                     VK_PIPELINE_STAGE_TRANSFER_BIT,
                     VK_PIPELINE_STAGE_TRANSFER_BIT,
                     0,
@@ -1475,7 +1483,7 @@ namespace Horizon
                     },
                 };
 
-                vkCmdPipelineBarrier(
+                deviceFunctions.vkCmdPipelineBarrier(
                     commandBuffer,
                     VK_PIPELINE_STAGE_TRANSFER_BIT,
                     VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
@@ -1485,14 +1493,14 @@ namespace Horizon
                     1, &barrier);
             }
 
-            VulkanHelper::FlushTemporaryCommandBuffer(handle, GetCommandQueue(RenderBackendQueueFamily::Graphics, 0)->handle, pool, commandBuffer);
+            VulkanHelper::FlushTemporaryCommandBuffer(handle, GetCommandQueue(RenderBackendQueueFamily::Graphics, 0)->handle, pool, commandBuffer, deviceFunctions);
             DestroyBuffer(bufferIndex);
         }
 
         if (desc->initialState != RenderBackendResourceState::Undefined)
         {
             VkCommandBuffer commandBuffer; VkCommandPool pool;
-            VulkanHelper::CreateTemporaryCommandBuffer(handle, GetQueueFamilyIndex(RenderBackendQueueFamily::Graphics), pool, commandBuffer);
+            VulkanHelper::CreateTemporaryCommandBuffer(handle, GetQueueFamilyIndex(RenderBackendQueueFamily::Graphics), pool, commandBuffer, deviceFunctions);
 
             VkPipelineStageFlags2 srcStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
             VkPipelineStageFlags2 dstStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
@@ -1533,9 +1541,9 @@ namespace Horizon
                 .imageMemoryBarrierCount = 1,
                 .pImageMemoryBarriers = &imageBarrier,
             };
-            vkCmdPipelineBarrier2(commandBuffer, &dependency);
+            deviceFunctions.vkCmdPipelineBarrier2(commandBuffer, &dependency);
 
-            VulkanHelper::FlushTemporaryCommandBuffer(handle, GetCommandQueue(RenderBackendQueueFamily::Graphics, 0)->handle, pool, commandBuffer);
+            VulkanHelper::FlushTemporaryCommandBuffer(handle, GetCommandQueue(RenderBackendQueueFamily::Graphics, 0)->handle, pool, commandBuffer, deviceFunctions);
         }
 
         return textureIndex;
@@ -1557,7 +1565,7 @@ namespace Horizon
             .components = { VK_COMPONENT_SWIZZLE_R, VK_COMPONENT_SWIZZLE_G, VK_COMPONENT_SWIZZLE_B, VK_COMPONENT_SWIZZLE_A },
             .subresourceRange = { texture.aspectMask, desc->subresourceRange.firstLevel, desc->subresourceRange.mipLevels, desc->subresourceRange.firstLayer, desc->subresourceRange.arrayLayers }
         };
-        VK_CHECK(vkCreateImageView(handle, &imageViewInfo, VULKAN_ALLOCATION_CALLBACKS, &texture.defaultView));
+        VK_CHECK(deviceFunctions.vkCreateImageView(handle, &imageViewInfo, VULKAN_ALLOCATION_CALLBACKS, &texture.defaultView));
 
         uint32 index = bindlessDescriptorManager.AllocateSampledImageIndex();
         VkDescriptorImageInfo descriptorImageInfo = {
@@ -1573,7 +1581,7 @@ namespace Horizon
             .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
             .pImageInfo = &descriptorImageInfo,
         };
-        vkUpdateDescriptorSets(handle, 1, &write, 0, nullptr);
+        deviceFunctions.vkUpdateDescriptorSets(handle, 1, &write, 0, nullptr);
         texture.srvIndex = index;
         return index;
     }
@@ -1589,7 +1597,7 @@ namespace Horizon
             .components = { VK_COMPONENT_SWIZZLE_R, VK_COMPONENT_SWIZZLE_G, VK_COMPONENT_SWIZZLE_B, VK_COMPONENT_SWIZZLE_A },
             .subresourceRange = { texture.aspectMask, desc->mipLevel, 1, 0, 1 }
         };
-        VK_CHECK(vkCreateImageView(handle, &imageViewInfo, VULKAN_ALLOCATION_CALLBACKS, &texture.uavs[desc->mipLevel].uav));
+        VK_CHECK(deviceFunctions.vkCreateImageView(handle, &imageViewInfo, VULKAN_ALLOCATION_CALLBACKS, &texture.uavs[desc->mipLevel].uav));
 
         uint32 index = bindlessDescriptorManager.AllocateSampledImageIndex();
         VkDescriptorImageInfo descriptorImageInfo = {
@@ -1605,7 +1613,7 @@ namespace Horizon
             .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
             .pImageInfo = &descriptorImageInfo,
         };
-        vkUpdateDescriptorSets(handle, 1, &write, 0, nullptr);
+        deviceFunctions.vkUpdateDescriptorSets(handle, 1, &write, 0, nullptr);
         texture.uavs[desc->mipLevel].uavIndex = index;
         return index;
     }
@@ -1715,7 +1723,7 @@ namespace Horizon
             .unnormalizedCoordinates = VK_FALSE,
         };
 
-        VK_CHECK(vkCreateSampler(handle, &samplerInfo, VULKAN_ALLOCATION_CALLBACKS, &sampler.handle));
+        VK_CHECK(deviceFunctions.vkCreateSampler(handle, &samplerInfo, VULKAN_ALLOCATION_CALLBACKS, &sampler.handle));
 
         sampler.bindlessIndex = bindlessDescriptorManager.AllocateSamplerIndex();
 
@@ -1731,7 +1739,7 @@ namespace Horizon
             .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER,
             .pImageInfo = &imageInfo,
         };
-        vkUpdateDescriptorSets(handle, 1, &write, 0, nullptr);
+        deviceFunctions.vkUpdateDescriptorSets(handle, 1, &write, 0, nullptr);
 
         uint32 samplerIndex = 0;
         if (!freeSamplers.empty())
@@ -1781,7 +1789,7 @@ namespace Horizon
             .codeSize = desc->codeSize,
             .pCode = static_cast<const uint32_t*>(desc->code),
         };
-        VK_CHECK(vkCreateShaderModule(handle, &shaderModuleInfo, VULKAN_ALLOCATION_CALLBACKS, &shaderModule));
+        VK_CHECK(deviceFunctions.vkCreateShaderModule(handle, &shaderModuleInfo, VULKAN_ALLOCATION_CALLBACKS, &shaderModule));
         SetDebugUtilsObjectName(VK_OBJECT_TYPE_SHADER_MODULE, reinterpret_cast<uint64_t>(shaderModule), name);
 
         VkPipelineShaderStageCreateInfo pipelineShaderStageCreateInfo =
@@ -1819,7 +1827,7 @@ namespace Horizon
             .sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_SIZES_INFO_KHR
         };
 
-        backend->vulkanFunctions.vkGetAccelerationStructureBuildSizesKHR(
+        deviceFunctions.vkGetAccelerationStructureBuildSizesKHR(
             handle,
             VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR,
             &accelerationStructureBuildGeometryInfo,
@@ -1851,7 +1859,7 @@ namespace Horizon
                 .sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO,
                 .buffer = accelerationStructure->accelerationStructureBuffer.buffer,
             };
-            accelerationStructure->accelerationStructureBuffer.deviceAddress = backend->vulkanFunctions.vkGetBufferDeviceAddressKHR(handle, &bufferDeviceInfo);
+            accelerationStructure->accelerationStructureBuffer.deviceAddress = deviceFunctions.vkGetBufferDeviceAddress(handle, &bufferDeviceInfo);
         }
 
         // Create Scratch Buffer
@@ -1879,7 +1887,7 @@ namespace Horizon
                 .sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO,
                 .buffer = accelerationStructure->scratchBuffer.buffer,
             };
-            accelerationStructure->scratchBuffer.deviceAddress = backend->vulkanFunctions.vkGetBufferDeviceAddressKHR(handle, &bufferDeviceInfo);
+            accelerationStructure->scratchBuffer.deviceAddress = deviceFunctions.vkGetBufferDeviceAddress(handle, &bufferDeviceInfo);
         }
 
         VkAccelerationStructureCreateInfoKHR accelerationStructureInfo = {
@@ -1888,7 +1896,7 @@ namespace Horizon
             .size = accelerationStructureBuildSizesInfo.accelerationStructureSize,
             .type = type
         };
-        VK_CHECK(backend->vulkanFunctions.vkCreateAccelerationStructureKHR(
+        VK_CHECK(deviceFunctions.vkCreateAccelerationStructureKHR(
             handle,
             &accelerationStructureInfo,
             VULKAN_ALLOCATION_CALLBACKS,
@@ -1900,7 +1908,7 @@ namespace Horizon
             .sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_DEVICE_ADDRESS_INFO_KHR,
             .accelerationStructure = accelerationStructure->handle,
         };
-        accelerationStructure->deviceAddress = backend->vulkanFunctions.vkGetAccelerationStructureDeviceAddressKHR(handle, &deviceAddressInfo);
+        accelerationStructure->deviceAddress = deviceFunctions.vkGetAccelerationStructureDeviceAddressKHR(handle, &deviceAddressInfo);
 
         const uint32 geometryCount = uint32(accelerationStructure->geometries.size());
 
@@ -1961,7 +1969,7 @@ namespace Horizon
                 .descriptorCount = 1,
                 .descriptorType = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR,
             };
-            vkUpdateDescriptorSets(handle, 1, &write, 0, nullptr);
+            deviceFunctions.vkUpdateDescriptorSets(handle, 1, &write, 0, nullptr);
             accelerationStructure->descriptorIndex = descriptorIndex;
         }
 
@@ -1982,11 +1990,11 @@ namespace Horizon
 
     void VulkanDevice::BindBindlessDescriptorSets(VkCommandBuffer commandBuffer)
     {
-        vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, bindlessDescriptorManager.compatibleGraphicsPipelineLayout, 0, 1, &bindlessDescriptorManager.set, 0, nullptr);
-        vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, bindlessDescriptorManager.compatibleComputePipelineLayout, 0, 1, &bindlessDescriptorManager.set, 0, nullptr);
+        deviceFunctions.vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, bindlessDescriptorManager.compatibleGraphicsPipelineLayout, 0, 1, &bindlessDescriptorManager.set, 0, nullptr);
+        deviceFunctions.vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, bindlessDescriptorManager.compatibleComputePipelineLayout, 0, 1, &bindlessDescriptorManager.set, 0, nullptr);
         if (backend->enableHardwareRayTracing)
         {
-            vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, bindlessDescriptorManager.compatibleRayTracingPipelineLayout, 0, 1, &bindlessDescriptorManager.set, 0, nullptr);
+            deviceFunctions.vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, bindlessDescriptorManager.compatibleRayTracingPipelineLayout, 0, 1, &bindlessDescriptorManager.set, 0, nullptr);
         }
     }
 
@@ -2090,7 +2098,7 @@ namespace Horizon
                 .sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO,
                 .buffer = instanceBuffer.buffer,
             };
-            instanceBuffer.deviceAddress = backend->vulkanFunctions.vkGetBufferDeviceAddressKHR(handle, &bufferDeviceInfo);
+            instanceBuffer.deviceAddress = deviceFunctions.vkGetBufferDeviceAddress(handle, &bufferDeviceInfo);
             memcpy(instanceBuffer.allocationInfo.pMappedData, instances.data(), instanceBuffer.size);
             VK_CHECK(vmaFlushAllocation(vmaAllocator, instanceBuffer.allocation, 0, instanceBuffer.size));
             accelerationStructure.resourceBuffers.push_back(instanceBuffer);
@@ -2145,14 +2153,14 @@ namespace Horizon
         VkFence& imageAcquiredFence = swapchain->imageAcquiredFences[semaphoreIndex];
 
         // TODO: investigate this
-        if (vkGetFenceStatus(handle, imageAcquiredFence) == VK_NOT_READY)
+        if (deviceFunctions.vkGetFenceStatus(handle, imageAcquiredFence) == VK_NOT_READY)
         {
-            VK_CHECK(vkWaitForFences(handle, 1, &imageAcquiredFence, VK_TRUE, UINT64_MAX));
+            VK_CHECK(deviceFunctions.vkWaitForFences(handle, 1, &imageAcquiredFence, VK_TRUE, UINT64_MAX));
         }
-        VK_CHECK(vkResetFences(handle, 1, &imageAcquiredFence));
+        VK_CHECK(deviceFunctions.vkResetFences(handle, 1, &imageAcquiredFence));
 
         uint32 imageIndex = 0;
-        VkResult result = vkAcquireNextImageKHR(handle, swapchain->handle, UINT64_MAX, imageAcquiredSemaphore, imageAcquiredFence, &imageIndex);
+        VkResult result = deviceFunctions.vkAcquireNextImageKHR(handle, swapchain->handle, UINT64_MAX, imageAcquiredSemaphore, imageAcquiredFence, &imageIndex);
         if (result == VK_ERROR_OUT_OF_DATE_KHR)
         {
             return VulkanSwapchain::Status::OutOfDate;
@@ -2179,7 +2187,7 @@ namespace Horizon
             .pImageIndices = &swapchain->activeBackBufferIndex,
         };
         VkQueue presentQueue = commandQueues[(uint32)RenderBackendQueueFamily::Graphics][0].handle;
-        VkResult result = vkQueuePresentKHR(presentQueue, &presentInfo);
+        VkResult result = deviceFunctions.vkQueuePresentKHR(presentQueue, &presentInfo);
         if (result == VK_ERROR_OUT_OF_DATE_KHR)
         {
             return VulkanSwapchain::Status::OutOfDate;
@@ -2216,13 +2224,16 @@ namespace Horizon
             subpassDependencies[1].dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
             subpassDependencies[1].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
 
-            VkSubpassDescription subpassDesc = {
+            VkSubpassDescription subpassDesc =
+            {
                 .pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS,
                 .colorAttachmentCount = renderPassDesc.colorAttachmentCount,
                 .pColorAttachments = renderPassDesc.colorReferences,
                 .pDepthStencilAttachment = renderPassDesc.hasDepthStencil ? &renderPassDesc.depthStencilReference : nullptr,
             };
-            VkRenderPassCreateInfo renderPassInfo = {
+
+            VkRenderPassCreateInfo renderPassInfo =
+            {
                 .sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO,
                 .attachmentCount = renderPassDesc.attachmentDescriptionCount,
                 .pAttachments = renderPassDesc.attachmentDescriptions,
@@ -2231,7 +2242,8 @@ namespace Horizon
                 .dependencyCount = (uint32)subpassDependencies.size(),
                 .pDependencies = subpassDependencies.data(),
             };
-            VK_CHECK(vkCreateRenderPass(handle, &renderPassInfo, VULKAN_ALLOCATION_CALLBACKS, &renderPass));
+
+            VK_CHECK(deviceFunctions.vkCreateRenderPass(handle, &renderPassInfo, VULKAN_ALLOCATION_CALLBACKS, &renderPass));
             cachedRenderPasses[renderPassHash] = renderPass;
         }
 
@@ -2348,7 +2360,7 @@ namespace Horizon
             .height = height,
             .layers = layers,
         };
-        VK_CHECK(vkCreateFramebuffer(handle, &frameBufferInfo, VULKAN_ALLOCATION_CALLBACKS, &framebuffer.handle));
+        VK_CHECK(deviceFunctions.vkCreateFramebuffer(handle, &frameBufferInfo, VULKAN_ALLOCATION_CALLBACKS, &framebuffer.handle));
 
         framebufferList->framebuffers.emplace_back(framebuffer);
 
@@ -2379,20 +2391,25 @@ namespace Horizon
             std::unreachable();
             break;
         }
-        VkPushConstantRange pushConstantRange = {
+
+        VkPushConstantRange pushConstantRange =
+        {
             .stageFlags = shaderStageFlags,
             .offset = 0,
             .size = pushConstantsSize
         };
-        VkPipelineLayoutCreateInfo layoutInfo = {
+
+        VkPipelineLayoutCreateInfo layoutInfo =
+        {
             .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
             .setLayoutCount = 1,
             .pSetLayouts = &bindlessDescriptorManager.layout,
             .pushConstantRangeCount = pushConstantsSize ? 1u : 0u,
             .pPushConstantRanges = pushConstantsSize ? &pushConstantRange : nullptr,
         };
+
         VkPipelineLayout pipelineLayout;
-        VK_CHECK(vkCreatePipelineLayout(handle, &layoutInfo, VULKAN_ALLOCATION_CALLBACKS, &pipelineLayout));
+        VK_CHECK(deviceFunctions.vkCreatePipelineLayout(handle, &layoutInfo, VULKAN_ALLOCATION_CALLBACKS, &pipelineLayout));
 
         pipelineManager.pipelineLayoutMap.emplace(layoutHash, pipelineLayout);
         pipelineManager.pipelineLayouts.push_back(pipelineLayout);
@@ -2411,14 +2428,15 @@ namespace Horizon
 
         VkPipelineLayout pipelineLayout = FindOrCreatePipelineLayout(pushConstantsSize, RenderBackendPipelineType::Compute);
 
-        VkComputePipelineCreateInfo computePipelineInfo = {
+        VkComputePipelineCreateInfo computePipelineInfo =
+        {
             .sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO,
             .stage = computeShader->stageInfo,
             .layout = pipelineLayout,
         };
 
         VkPipeline pipeline;
-        VK_CHECK(vkCreateComputePipelines(handle, pipelineManager.pipelineCache, 1, &computePipelineInfo, VULKAN_ALLOCATION_CALLBACKS, &pipeline));
+        VK_CHECK(deviceFunctions.vkCreateComputePipelines(handle, pipelineManager.pipelineCache, 1, &computePipelineInfo, VULKAN_ALLOCATION_CALLBACKS, &pipeline));
 
         pipelineManager.pipelineMap.emplace(pipelineHash, VulkanPipeline{ pipelineHash, pipeline, pipelineLayout });
         pipelineManager.pipelines.push_back(VulkanPipeline{ pipelineHash, pipeline, pipelineLayout });
@@ -2614,7 +2632,7 @@ namespace Horizon
         };
 
         VkPipeline pipeline;
-        VK_CHECK(vkCreateGraphicsPipelines(handle, pipelineManager.pipelineCache, 1, &graphicsPipelineInfo, VULKAN_ALLOCATION_CALLBACKS, &pipeline));
+        VK_CHECK(deviceFunctions.vkCreateGraphicsPipelines(handle, pipelineManager.pipelineCache, 1, &graphicsPipelineInfo, VULKAN_ALLOCATION_CALLBACKS, &pipeline));
 
         pipelineManager.pipelineMap.emplace(pipelineHash, VulkanPipeline{ pipelineHash, pipeline, pipelineLayout });
         pipelineManager.pipelines.push_back(VulkanPipeline{ pipelineHash, pipeline, pipelineLayout });
@@ -2624,7 +2642,7 @@ namespace Horizon
 
     void VulkanDevice::RecreateSwapChain(uint32 index)
     {
-        vkDeviceWaitIdle(handle);
+        deviceFunctions.vkDeviceWaitIdle(handle);
 
         VulkanSwapchain& swapchain = swapchains[index];
 
@@ -2636,38 +2654,41 @@ namespace Horizon
         }
         for (uint32 i = 0; i < swapchain.numSemaphores; i++)
         {
-            vkWaitForFences(handle, 1, &swapchain.imageAcquiredFences[i], VK_TRUE, UINT64_MAX);
-            vkDestroyFence(handle, swapchain.imageAcquiredFences[i], VULKAN_ALLOCATION_CALLBACKS);
-            vkDestroySemaphore(handle, swapchain.imageAcquiredSemaphores[i], VULKAN_ALLOCATION_CALLBACKS);
+            deviceFunctions.vkWaitForFences(handle, 1, &swapchain.imageAcquiredFences[i], VK_TRUE, UINT64_MAX);
+            deviceFunctions.vkDestroyFence(handle, swapchain.imageAcquiredFences[i], VULKAN_ALLOCATION_CALLBACKS);
+            deviceFunctions.vkDestroySemaphore(handle, swapchain.imageAcquiredSemaphores[i], VULKAN_ALLOCATION_CALLBACKS);
         }
         VkSurfaceCapabilitiesKHR surfaceCapabilities;
-        VK_CHECK(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice->handle, swapchain.surface, &surfaceCapabilities));
+        VK_CHECK(backend->instanceFunctions.vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice->handle, swapchain.surface, &surfaceCapabilities));
 
         swapchain.info.imageExtent = surfaceCapabilities.currentExtent;
         swapchain.info.oldSwapchain = swapchain.handle;
-        VK_CHECK(vkCreateSwapchainKHR(handle, &swapchain.info, VULKAN_ALLOCATION_CALLBACKS, &swapchain.handle));
-        vkDestroySwapchainKHR(handle, swapchain.info.oldSwapchain, VULKAN_ALLOCATION_CALLBACKS);
+        VK_CHECK(deviceFunctions.vkCreateSwapchainKHR(handle, &swapchain.info, VULKAN_ALLOCATION_CALLBACKS, &swapchain.handle));
+        deviceFunctions.vkDestroySwapchainKHR(handle, swapchain.info.oldSwapchain, VULKAN_ALLOCATION_CALLBACKS);
 
-        VK_CHECK(vkGetSwapchainImagesKHR(handle, swapchain.handle, &swapchain.numBuffers, nullptr));
+        VK_CHECK(deviceFunctions.vkGetSwapchainImagesKHR(handle, swapchain.handle, &swapchain.numBuffers, nullptr));
         VkImage swapchainImages[RenderBackendMaxSwapChainBufferCount] = { 0 };
-        VK_CHECK(vkGetSwapchainImagesKHR(handle, swapchain.handle, &swapchain.numBuffers, swapchainImages));
+        VK_CHECK(deviceFunctions.vkGetSwapchainImagesKHR(handle, swapchain.handle, &swapchain.numBuffers, swapchainImages));
 
-        VkSemaphoreTypeCreateInfo semaphoreTypeCreateInfo = {
+        VkSemaphoreTypeCreateInfo semaphoreTypeCreateInfo = 
+        {
             .sType = VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO,
             .semaphoreType = VK_SEMAPHORE_TYPE_BINARY,
         };
-        VkSemaphoreCreateInfo semaphoreCreateInfo = {
+        VkSemaphoreCreateInfo semaphoreCreateInfo = 
+        {
             .sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
             .pNext = &semaphoreTypeCreateInfo,
         };
-        VkFenceCreateInfo fenceInfo = {
+        VkFenceCreateInfo fenceInfo = 
+        {
             .sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,
             .flags = VK_FENCE_CREATE_SIGNALED_BIT
         };
         for (uint32 i = 0; i < swapchain.numSemaphores; i++)
         {
-            VK_CHECK(vkCreateSemaphore(handle, &semaphoreCreateInfo, VULKAN_ALLOCATION_CALLBACKS, &swapchain.imageAcquiredSemaphores[i]));
-            VK_CHECK(vkCreateFence(handle, &fenceInfo, VULKAN_ALLOCATION_CALLBACKS, &swapchain.imageAcquiredFences[i]));
+            VK_CHECK(deviceFunctions.vkCreateSemaphore(handle, &semaphoreCreateInfo, VULKAN_ALLOCATION_CALLBACKS, &swapchain.imageAcquiredSemaphores[i]));
+            VK_CHECK(deviceFunctions.vkCreateFence(handle, &fenceInfo, VULKAN_ALLOCATION_CALLBACKS, &swapchain.imageAcquiredFences[i]));
         }
 
         for (uint32 i = 0; i < swapchain.numBuffers; i++)
@@ -2717,7 +2738,7 @@ namespace Horizon
             .hinstance = GetModuleHandle(NULL),
             .hwnd = (HWND)window,
         };
-        VK_CHECK(vkCreateWin32SurfaceKHR(instance, &win32SurfaceInfo, VULKAN_ALLOCATION_CALLBACKS, &surface));
+        VK_CHECK(backend->instanceFunctions.vkCreateWin32SurfaceKHR(instance, &win32SurfaceInfo, VULKAN_ALLOCATION_CALLBACKS, &surface));
         return surface;
     }
 
@@ -2729,18 +2750,18 @@ namespace Horizon
         uint32 presentQueueFamilyIndex = physicalDevice->queueFamilyIndices[(uint32)RenderBackendQueueFamily::Graphics];
 
         VkBool32 supported = VK_FALSE;
-        VK_CHECK(vkGetPhysicalDeviceSurfaceSupportKHR(physicalDevice->handle, presentQueueFamilyIndex, surface, &supported));
+        VK_CHECK(backend->instanceFunctions.vkGetPhysicalDeviceSurfaceSupportKHR(physicalDevice->handle, presentQueueFamilyIndex, surface, &supported));
         assert(supported == VK_TRUE);
 
         uint32 presentModeCount = 0;
-        VK_CHECK(vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice->handle, surface, &presentModeCount, nullptr));
+        VK_CHECK(backend->instanceFunctions.vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice->handle, surface, &presentModeCount, nullptr));
         std::vector<VkPresentModeKHR> availablePresentModes(presentModeCount);
-        VK_CHECK(vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice->handle, surface, &presentModeCount, availablePresentModes.data()));
+        VK_CHECK(backend->instanceFunctions.vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice->handle, surface, &presentModeCount, availablePresentModes.data()));
 
         uint32 numSurfaceFormats;
-        VK_CHECK(vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice->handle, surface, &numSurfaceFormats, nullptr));
+        VK_CHECK(backend->instanceFunctions.vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice->handle, surface, &numSurfaceFormats, nullptr));
         std::vector<VkSurfaceFormatKHR> availableSurfaceFormats(numSurfaceFormats);
-        VK_CHECK(vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice->handle, surface, &numSurfaceFormats, availableSurfaceFormats.data()));
+        VK_CHECK(backend->instanceFunctions.vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice->handle, surface, &numSurfaceFormats, availableSurfaceFormats.data()));
 
         VkSurfaceFormatKHR surfaceFormat/*TODO:initialize*/;
         for (const auto& format : availableSurfaceFormats)
@@ -2763,7 +2784,7 @@ namespace Horizon
         VkImageUsageFlags imageUsage = VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
 
         VkSurfaceCapabilitiesKHR surfaceCapabilities;
-        VK_CHECK(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice->handle, surface, &surfaceCapabilities));
+        VK_CHECK(backend->instanceFunctions.vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice->handle, surface, &surfaceCapabilities));
         assert(surfaceCapabilities.supportedUsageFlags & imageUsage);
 
         VkSurfaceTransformFlagBitsKHR preTransform;
@@ -2784,7 +2805,8 @@ namespace Horizon
 
         uint32 imageCount = std::max(std::min(desc->numBuffers, surfaceCapabilities.maxImageCount), surfaceCapabilities.minImageCount);
 
-        swapchain.info = {
+        swapchain.info =
+        {
             .sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR,
             .surface = surface,
             .minImageCount = imageCount,
@@ -2803,11 +2825,11 @@ namespace Horizon
             .oldSwapchain = VK_NULL_HANDLE,
         };
         swapchain.surface = surface;
-        VK_CHECK(vkCreateSwapchainKHR(handle, &swapchain.info, VULKAN_ALLOCATION_CALLBACKS, &swapchain.handle));
+        VK_CHECK(deviceFunctions.vkCreateSwapchainKHR(handle, &swapchain.info, VULKAN_ALLOCATION_CALLBACKS, &swapchain.handle));
 
-        VK_CHECK(vkGetSwapchainImagesKHR(handle, swapchain.handle, &swapchain.numBuffers, nullptr));
+        VK_CHECK(deviceFunctions.vkGetSwapchainImagesKHR(handle, swapchain.handle, &swapchain.numBuffers, nullptr));
         VkImage swapchainImages[RenderBackendMaxSwapChainBufferCount] = { 0 };
-        VK_CHECK(vkGetSwapchainImagesKHR(handle, swapchain.handle, &swapchain.numBuffers, swapchainImages));
+        VK_CHECK(deviceFunctions.vkGetSwapchainImagesKHR(handle, swapchain.handle, &swapchain.numBuffers, swapchainImages));
 
         VkSemaphoreTypeCreateInfo semaphoreTypeCreateInfo = {
             .sType = VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO,
@@ -2825,13 +2847,14 @@ namespace Horizon
         swapchain.numSemaphores = swapchain.numBuffers + 1;
         for (uint32 i = 0; i < swapchain.numSemaphores; i++)
         {
-            VK_CHECK(vkCreateSemaphore(handle, &semaphoreCreateInfo, VULKAN_ALLOCATION_CALLBACKS, &swapchain.imageAcquiredSemaphores[i]));
-            VK_CHECK(vkCreateFence(handle, &fenceInfo, VULKAN_ALLOCATION_CALLBACKS, &swapchain.imageAcquiredFences[i]));
+            VK_CHECK(deviceFunctions.vkCreateSemaphore(handle, &semaphoreCreateInfo, VULKAN_ALLOCATION_CALLBACKS, &swapchain.imageAcquiredSemaphores[i]));
+            VK_CHECK(deviceFunctions.vkCreateFence(handle, &fenceInfo, VULKAN_ALLOCATION_CALLBACKS, &swapchain.imageAcquiredFences[i]));
         }
 
         for (uint32 i = 0; i < swapchain.numBuffers; i++)
         {
-            VulkanTexture texture = {
+            VulkanTexture texture =
+            {
                 .handle = swapchainImages[i],
                 .swapchainBuffer = true,
                 .width = swapchain.info.imageExtent.width,
@@ -2873,24 +2896,27 @@ namespace Horizon
     void VulkanDevice::DestroySwapChain(uint32 index)
     {
         VulkanSwapchain& swapchain = swapchains[index];
-        vkDeviceWaitIdle(handle);
+        deviceFunctions.vkDeviceWaitIdle(handle);
 
         for (uint32 i = 0; i < swapchain.numSemaphores; i++)
         {
-            vkWaitForFences(handle, 1, &swapchain.imageAcquiredFences[i], VK_TRUE, UINT64_MAX);
+            deviceFunctions.vkWaitForFences(handle, 1, &swapchain.imageAcquiredFences[i], VK_TRUE, UINT64_MAX);
         }
 
-        vkDestroySwapchainKHR(handle, swapchain.handle, VULKAN_ALLOCATION_CALLBACKS);
-        vkDestroySurfaceKHR(instance, swapchain.surface, VULKAN_ALLOCATION_CALLBACKS);
+        deviceFunctions.vkDestroySwapchainKHR(handle, swapchain.handle, VULKAN_ALLOCATION_CALLBACKS);
+
         for (uint32 i = 0; i < swapchain.numSemaphores; i++)
         {
-            vkDestroyFence(handle, swapchain.imageAcquiredFences[i], VULKAN_ALLOCATION_CALLBACKS);
-            vkDestroySemaphore(handle, swapchain.imageAcquiredSemaphores[i], VULKAN_ALLOCATION_CALLBACKS);
+            deviceFunctions.vkDestroyFence(handle, swapchain.imageAcquiredFences[i], VULKAN_ALLOCATION_CALLBACKS);
+            deviceFunctions.vkDestroySemaphore(handle, swapchain.imageAcquiredSemaphores[i], VULKAN_ALLOCATION_CALLBACKS);
         }
         for (uint32 i = 0; i < swapchain.numBuffers; i++)
         {
             DestroyTexture(swapchain.buffers[i].GetIndex());
         }
+
+        backend->instanceFunctions.vkDestroySurfaceKHR(instance, swapchain.surface, VULKAN_ALLOCATION_CALLBACKS);
+
         swapchains.erase(swapchains.begin() + index);
     }
 
@@ -2985,7 +3011,7 @@ namespace Horizon
                 requiredDeviceExtensions.push_back(VK_KHR_RAY_QUERY_EXTENSION_NAME);
             }
 
-            for (const auto& requiredExtension : requiredDeviceExtensions)
+            for (const char* requiredExtension : requiredDeviceExtensions)
             {
                 if (CheckInstanceExtensionSupport(requiredExtension, physicalDevice->extensionProperties))
                 {
@@ -3039,19 +3065,23 @@ namespace Horizon
                 .pEnabledFeatures = nullptr // If the pNext chain includes a VkPhysicalDeviceFeatures2 structure, then pEnabledFeatures must be NULL.
             };
 
-            VK_CHECK(vkCreateDevice(physicalDevice->handle, &deviceInfo, VULKAN_ALLOCATION_CALLBACKS, &handle));
-
-            SetDebugUtilsObjectName(VK_OBJECT_TYPE_DEVICE, (uint64)handle, physicalDevice->properties.deviceName);
+            VK_CHECK(backend->instanceFunctions.vkCreateDevice(physicalDevice->handle, &deviceInfo, VULKAN_ALLOCATION_CALLBACKS, &handle));
         }
 
-        // Init command queues
+#define GET_VULKAN_FUNCTION_ADDRESS(function) deviceFunctions.##function = reinterpret_cast<PFN_##function>(backend->instanceFunctions.vkGetDeviceProcAddr(handle, #function));
+        VULKAN_DEVICE_FUNCTION_LIST(GET_VULKAN_FUNCTION_ADDRESS)
+#undef GET_VULKAN_FUNCTION_ADDRESS
+
+        SetDebugUtilsObjectName(VK_OBJECT_TYPE_DEVICE, (uint64)handle, physicalDevice->properties.deviceName);
+
+        // Init command queues.
         {
             for (uint32 family = 0; family < RenderBackendQueueFamilyCount; family++)
             {
                 for (uint32 queueIndex = 0; queueIndex < (uint32)commandQueues[family].size(); queueIndex++)
                 {
                     VkQueue queueHandle;
-                    vkGetDeviceQueue(handle, physicalDevice->queueFamilyIndices[family], queueIndex, &queueHandle);
+                    deviceFunctions.vkGetDeviceQueue(handle, physicalDevice->queueFamilyIndices[family], queueIndex, &queueHandle);
                     commandQueues[family][queueIndex] = {
                         .handle = queueHandle,
                         .familyIndex = physicalDevice->queueFamilyIndices[family],
@@ -3083,7 +3113,7 @@ namespace Horizon
         DestroyVmaAllocator();
         if (handle != VK_NULL_HANDLE)
         {
-            vkDestroyDevice(handle, VULKAN_ALLOCATION_CALLBACKS);
+            backend->instanceFunctions.vkDestroyDevice(handle, VULKAN_ALLOCATION_CALLBACKS);
             handle = VK_NULL_HANDLE;
         }
         deviceMask = 0;
@@ -3101,9 +3131,10 @@ namespace Horizon
         return false;
     }
 
-    void VulkanDevice::SetDebugUtilsObjectName(VkObjectType type, uint64_t handle, const char* name)
+    void VulkanDevice::SetDebugUtilsObjectName(VkObjectType objectType, uint64 objectHandle, const char* objectName)
     {
-        if (!name || !backend->IsInstanceExtensionEnabled(VK_EXT_DEBUG_UTILS_EXTENSION_NAME))
+#if !HORIZON_CONFIGURATION_RELEASE
+        if (!backend->IsInstanceExtensionEnabled(VK_EXT_DEBUG_UTILS_EXTENSION_NAME) || !deviceFunctions.vkSetDebugUtilsObjectNameEXT || !objectName)
         {
             return;
         }
@@ -3111,12 +3142,13 @@ namespace Horizon
         VkDebugUtilsObjectNameInfoEXT objectNameInfo =
         {
             .sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT,
-            .objectType = type,
-            .objectHandle = handle,
-            .pObjectName = name
+            .objectType = objectType,
+            .objectHandle = objectHandle,
+            .pObjectName = objectName
         };
 
-        VK_CHECK(backend->vulkanFunctions.vkSetDebugUtilsObjectNameEXT(this->handle, &objectNameInfo));
+        VK_CHECK(deviceFunctions.vkSetDebugUtilsObjectNameEXT(handle, &objectNameInfo));
+#endif
     }
 
     bool VulkanDevice::CreateBindlessDescriptorManager(const VulkanBindlessConfig& bindlessConfig)
@@ -3211,7 +3243,7 @@ namespace Horizon
             .pPoolSizes = bindlessPoolSizes.data()
         };
 
-        VkResult result = vkCreateDescriptorPool(handle, &descriptorPoolInfo, VULKAN_ALLOCATION_CALLBACKS, &bindlessDescriptorManager.pool);
+        VkResult result = deviceFunctions.vkCreateDescriptorPool(handle, &descriptorPoolInfo, VULKAN_ALLOCATION_CALLBACKS, &bindlessDescriptorManager.pool);
         if (result != VK_SUCCESS)
         {
             LogError(GLogger, std::format("InitBindlessContext(): Failed to create descriptor pool."));
@@ -3235,7 +3267,7 @@ namespace Horizon
             .bindingCount = numBindings,
             .pBindings = bindlessDescriptorSetLayoutBindings.data()
         };
-        result = vkCreateDescriptorSetLayout(handle, &descriptorSetLayoutInfo, VULKAN_ALLOCATION_CALLBACKS, &bindlessDescriptorManager.layout);
+        result = deviceFunctions.vkCreateDescriptorSetLayout(handle, &descriptorSetLayoutInfo, VULKAN_ALLOCATION_CALLBACKS, &bindlessDescriptorManager.layout);
         if (result != VK_SUCCESS)
         {
             LogError(GLogger, std::format("InitBindlessContext(): Failed to create descriptor set layout."));
@@ -3249,7 +3281,7 @@ namespace Horizon
             .descriptorSetCount = 1,
             .pSetLayouts = &bindlessDescriptorManager.layout
         };
-        result = vkAllocateDescriptorSets(handle, &descriptorSetAllocateInfo, &bindlessDescriptorManager.set);
+        result = deviceFunctions.vkAllocateDescriptorSets(handle, &descriptorSetAllocateInfo, &bindlessDescriptorManager.set);
         if (result != VK_SUCCESS)
         {
             LogError(GLogger, std::format("InitBindlessContext(): Failed to allocate descriptor set."));
@@ -3308,59 +3340,60 @@ namespace Horizon
     {
         if (bindlessDescriptorManager.pool != VK_NULL_HANDLE)
         {
-            vkDestroyDescriptorPool(handle, bindlessDescriptorManager.pool, VULKAN_ALLOCATION_CALLBACKS);
+            deviceFunctions.vkDestroyDescriptorPool(handle, bindlessDescriptorManager.pool, VULKAN_ALLOCATION_CALLBACKS);
             bindlessDescriptorManager.pool = VK_NULL_HANDLE;
         }
         if (bindlessDescriptorManager.layout != VK_NULL_HANDLE)
         {
-            vkDestroyDescriptorSetLayout(handle, bindlessDescriptorManager.layout, VULKAN_ALLOCATION_CALLBACKS);
+            deviceFunctions.vkDestroyDescriptorSetLayout(handle, bindlessDescriptorManager.layout, VULKAN_ALLOCATION_CALLBACKS);
             bindlessDescriptorManager.layout = VK_NULL_HANDLE;
         }
         if (bindlessDescriptorManager.compatibleComputePipelineLayout != VK_NULL_HANDLE)
         {
-            vkDestroyPipelineLayout(handle, bindlessDescriptorManager.compatibleComputePipelineLayout, VULKAN_ALLOCATION_CALLBACKS);
+            deviceFunctions.vkDestroyPipelineLayout(handle, bindlessDescriptorManager.compatibleComputePipelineLayout, VULKAN_ALLOCATION_CALLBACKS);
             bindlessDescriptorManager.compatibleComputePipelineLayout = VK_NULL_HANDLE;
         }
         if (bindlessDescriptorManager.compatibleGraphicsPipelineLayout != VK_NULL_HANDLE)
         {
-            vkDestroyPipelineLayout(handle, bindlessDescriptorManager.compatibleGraphicsPipelineLayout, VULKAN_ALLOCATION_CALLBACKS);
+            deviceFunctions.vkDestroyPipelineLayout(handle, bindlessDescriptorManager.compatibleGraphicsPipelineLayout, VULKAN_ALLOCATION_CALLBACKS);
             bindlessDescriptorManager.compatibleGraphicsPipelineLayout = VK_NULL_HANDLE;
         }
         if (bindlessDescriptorManager.compatibleRayTracingPipelineLayout != VK_NULL_HANDLE)
         {
-            vkDestroyPipelineLayout(handle, bindlessDescriptorManager.compatibleRayTracingPipelineLayout, VULKAN_ALLOCATION_CALLBACKS);
+            deviceFunctions.vkDestroyPipelineLayout(handle, bindlessDescriptorManager.compatibleRayTracingPipelineLayout, VULKAN_ALLOCATION_CALLBACKS);
             bindlessDescriptorManager.compatibleRayTracingPipelineLayout = VK_NULL_HANDLE;
         }
     }
 
     void VulkanDevice::CreateVmaAllocator()
     {
-        VmaVulkanFunctions vmaVulkanFunctions = {
-            .vkGetPhysicalDeviceProperties = vkGetPhysicalDeviceProperties,
-            .vkGetPhysicalDeviceMemoryProperties = vkGetPhysicalDeviceMemoryProperties,
-            .vkAllocateMemory = vkAllocateMemory,
-            .vkFreeMemory = vkFreeMemory,
-            .vkMapMemory = vkMapMemory,
-            .vkUnmapMemory = vkUnmapMemory,
-            .vkFlushMappedMemoryRanges = vkFlushMappedMemoryRanges,
-            .vkInvalidateMappedMemoryRanges = vkInvalidateMappedMemoryRanges,
-            .vkBindBufferMemory = vkBindBufferMemory,
-            .vkBindImageMemory = vkBindImageMemory,
-            .vkGetBufferMemoryRequirements = vkGetBufferMemoryRequirements,
-            .vkGetImageMemoryRequirements = vkGetImageMemoryRequirements,
-            .vkCreateBuffer = vkCreateBuffer,
-            .vkDestroyBuffer = vkDestroyBuffer,
-            .vkCreateImage = vkCreateImage,
-            .vkDestroyImage = vkDestroyImage,
-            .vkCmdCopyBuffer = vkCmdCopyBuffer,
+        VmaVulkanFunctions vmaVulkanFunctions =
+        {
+            .vkGetPhysicalDeviceProperties = backend->instanceFunctions.vkGetPhysicalDeviceProperties,
+            .vkGetPhysicalDeviceMemoryProperties = backend->instanceFunctions.vkGetPhysicalDeviceMemoryProperties,
+            .vkAllocateMemory = deviceFunctions.vkAllocateMemory,
+            .vkFreeMemory = deviceFunctions.vkFreeMemory,
+            .vkMapMemory = deviceFunctions.vkMapMemory,
+            .vkUnmapMemory = deviceFunctions.vkUnmapMemory,
+            .vkFlushMappedMemoryRanges = deviceFunctions.vkFlushMappedMemoryRanges,
+            .vkInvalidateMappedMemoryRanges = deviceFunctions.vkInvalidateMappedMemoryRanges,
+            .vkBindBufferMemory = deviceFunctions.vkBindBufferMemory,
+            .vkBindImageMemory = deviceFunctions.vkBindImageMemory,
+            .vkGetBufferMemoryRequirements = deviceFunctions.vkGetBufferMemoryRequirements,
+            .vkGetImageMemoryRequirements = deviceFunctions.vkGetImageMemoryRequirements,
+            .vkCreateBuffer = deviceFunctions.vkCreateBuffer,
+            .vkDestroyBuffer = deviceFunctions.vkDestroyBuffer,
+            .vkCreateImage = deviceFunctions.vkCreateImage,
+            .vkDestroyImage = deviceFunctions.vkDestroyImage,
+            .vkCmdCopyBuffer = deviceFunctions.vkCmdCopyBuffer,
         };
 
         VmaAllocatorCreateFlags flags = 0;
         if (IsDeviceExtensionEnabled(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME) && IsDeviceExtensionEnabled(VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME))
         {
             flags |= VMA_ALLOCATOR_CREATE_KHR_DEDICATED_ALLOCATION_BIT;
-            vmaVulkanFunctions.vkGetBufferMemoryRequirements2KHR = reinterpret_cast<PFN_vkGetBufferMemoryRequirements2KHR>(vkGetInstanceProcAddr(instance, "vkGetBufferMemoryRequirements2KHR"));
-            vmaVulkanFunctions.vkGetImageMemoryRequirements2KHR = reinterpret_cast<PFN_vkGetImageMemoryRequirements2KHR>(vkGetInstanceProcAddr(instance, "vkGetImageMemoryRequirements2KHR"));
+            vmaVulkanFunctions.vkGetBufferMemoryRequirements2KHR = reinterpret_cast<PFN_vkGetBufferMemoryRequirements2KHR>(VulkanLoader::GetInstanceProcAddr(instance, "vkGetBufferMemoryRequirements2KHR"));
+            vmaVulkanFunctions.vkGetImageMemoryRequirements2KHR = reinterpret_cast<PFN_vkGetImageMemoryRequirements2KHR>(VulkanLoader::GetInstanceProcAddr(instance, "vkGetImageMemoryRequirements2KHR"));
         }
         else
         {
@@ -3372,7 +3405,8 @@ namespace Horizon
             flags |= VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
         }
 
-        VmaAllocatorCreateInfo allocatorInfo = {
+        VmaAllocatorCreateInfo allocatorInfo =
+        {
             .flags = flags,
             .physicalDevice = physicalDevice->handle,
             .device = handle,
@@ -3397,7 +3431,7 @@ namespace Horizon
 
     void VulkanDevice::WaitIdle()
     {
-        VK_CHECK(vkDeviceWaitIdle(handle));
+        VK_CHECK(deviceFunctions.vkDeviceWaitIdle(handle));
     }
 
     bool VulkanRenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandCopyBuffer& command)
@@ -3409,7 +3443,7 @@ namespace Horizon
             .dstOffset = command.dstOffset,
             .size = command.bytes,
         };
-        vkCmdCopyBuffer(commandBuffer, srcBuffer->handle, dstBuffer->handle, 1, &copyRegion);
+        device->deviceFunctions.vkCmdCopyBuffer(commandBuffer, srcBuffer->handle, dstBuffer->handle, 1, &copyRegion);
         return true;
     }
 
@@ -3446,7 +3480,7 @@ namespace Horizon
                 depth = std::max(1u, depth / 2);
             }
 
-            vkCmdCopyImageToBuffer(
+            device->deviceFunctions.vkCmdCopyImageToBuffer(
                 commandBuffer,
                 srcTexture->handle,
                 VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
@@ -3473,7 +3507,7 @@ namespace Horizon
                 .dstOffset = { command.dstOffset.x, command.dstOffset.y, command.dstOffset.z },
                 .extent = { command.extent.width, command.extent.height, command.extent.depth },
             };
-            vkCmdCopyImage(commandBuffer, srcTexture->handle, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, dstTexture->handle, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copyRegion);
+            device->deviceFunctions.vkCmdCopyImage(commandBuffer, srcTexture->handle, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, dstTexture->handle, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copyRegion);
         }
         return true;
     }
@@ -3482,7 +3516,7 @@ namespace Horizon
     {
         const VulkanBuffer* buffer = device->GetBuffer(command.buffer);
 
-        vkCmdUpdateBuffer(commandBuffer, buffer->handle, command.offset, command.size, command.data);
+        device->deviceFunctions.vkCmdUpdateBuffer(commandBuffer, buffer->handle, command.offset, command.size, command.data);
 
         return true;
     }
@@ -3496,7 +3530,7 @@ namespace Horizon
     {
         const VulkanBuffer* buffer = device->GetBuffer(command.buffer);
 
-        vkCmdFillBuffer(
+        device->deviceFunctions.vkCmdFillBuffer(
             commandBuffer,
             buffer->handle,
             0,
@@ -3527,7 +3561,7 @@ namespace Horizon
         range.layerCount = VK_REMAINING_ARRAY_LAYERS;
         range.levelCount = 1;
 
-        vkCmdClearColorImage(
+        device->deviceFunctions.vkCmdClearColorImage(
             commandBuffer,
             texture->handle,
             VK_IMAGE_LAYOUT_GENERAL,
@@ -3638,7 +3672,7 @@ namespace Horizon
                 .imageMemoryBarrierCount = (uint32)imageBarriers.size(),
                 .pImageMemoryBarriers = imageBarriers.data(),
             };
-            vkCmdPipelineBarrier2(commandBuffer, &dependency);
+            device->deviceFunctions.vkCmdPipelineBarrier2(commandBuffer, &dependency);
             imageBarriers.clear();
             bufferBarriers.clear();
         }
@@ -3651,7 +3685,7 @@ namespace Horizon
         const auto& timingQueryHeap = device->GetTimingQueryHeap(command.timingQueryHeap);
         uint32 queryIndex = command.region * 2 + 0;
         assert(queryIndex < timingQueryHeap.maxQueryCount);
-        vkCmdWriteTimestamp(commandBuffer, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, timingQueryHeap.handle, queryIndex);
+        device->deviceFunctions.vkCmdWriteTimestamp(commandBuffer, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, timingQueryHeap.handle, queryIndex);
         return true;
     }
 
@@ -3660,7 +3694,7 @@ namespace Horizon
         const auto& timingQueryHeap = device->GetTimingQueryHeap(command.timingQueryHeap);
         uint32 queryIndex = command.region * 2 + 1;
         assert(queryIndex < timingQueryHeap.maxQueryCount);
-        vkCmdWriteTimestamp(commandBuffer, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, timingQueryHeap.handle, queryIndex);
+        device->deviceFunctions.vkCmdWriteTimestamp(commandBuffer, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, timingQueryHeap.handle, queryIndex);
         return true;
     }
 
@@ -3672,7 +3706,7 @@ namespace Horizon
         uint32 queryStart = 2 * command.regionStart;
         uint32 queryCount = 2 * command.regionCount;
 
-        vkCmdCopyQueryPoolResults(
+        device->deviceFunctions.vkCmdCopyQueryPoolResults(
             commandBuffer,
             timingQueryHeap.handle,
             queryStart,
@@ -3682,7 +3716,7 @@ namespace Horizon
             sizeof(uint64),
             VK_QUERY_RESULT_64_BIT | VK_QUERY_RESULT_WAIT_BIT);
 
-        vkCmdResetQueryPool(commandBuffer, timingQueryHeap.handle, queryStart, queryCount);
+        device->deviceFunctions.vkCmdResetQueryPool(commandBuffer, timingQueryHeap.handle, queryStart, queryCount);
         return true;
     }
 
@@ -3697,7 +3731,7 @@ namespace Horizon
                 .imageMemoryBarrierCount = (uint32)imageBarriers.size(),
                 .pImageMemoryBarriers = imageBarriers.data(),
             };
-            device->GetBackend()->vulkanFunctions.vkCmdPipelineBarrier2KHR(commandBuffer, &dependencyInfo);
+            device->deviceFunctions.vkCmdPipelineBarrier2(commandBuffer, &dependencyInfo);
             bufferBarriers.clear();
             imageBarriers.clear();
         }
@@ -3711,14 +3745,14 @@ namespace Horizon
         if (pipeline->handle != activeComputePipeline)
         {
             VkDescriptorSet set = device->GetBindlessGlobalSet();
-            vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline->handle);
+            device->deviceFunctions.vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline->handle);
             activeComputePipeline = pipeline->handle;
         }
 
         if (pushConstantsSize > 0)
         {
             const void* pushConstantsData = &shaderConstants.data;
-            vkCmdPushConstants(commandBuffer, pipeline->layout, VK_SHADER_STAGE_COMPUTE_BIT, 0, pushConstantsSize, pushConstantsData);
+            device->deviceFunctions.vkCmdPushConstants(commandBuffer, pipeline->layout, VK_SHADER_STAGE_COMPUTE_BIT, 0, pushConstantsSize, pushConstantsData);
         }
 
         return true;
@@ -3730,7 +3764,7 @@ namespace Horizon
         {
             return false;
         }
-        vkCmdDispatch(commandBuffer, command.threadGroupCountX, command.threadGroupCountY, command.threadGroupCountZ);
+        device->deviceFunctions.vkCmdDispatch(commandBuffer, command.threadGroupCountX, command.threadGroupCountY, command.threadGroupCountZ);
         return true;
     }
 
@@ -3741,7 +3775,7 @@ namespace Horizon
             return false;
         }
         VulkanBuffer* argumentBuffer = device->GetBuffer(command.argumentBuffer);
-        vkCmdDispatchIndirect(commandBuffer, argumentBuffer->handle, command.argumentBufferOffset);
+        device->deviceFunctions.vkCmdDispatchIndirect(commandBuffer, argumentBuffer->handle, command.argumentBufferOffset);
         return true;
     }
 
@@ -3770,7 +3804,7 @@ namespace Horizon
             pBuildRangeInfos[geometryIndex] = &dstBLAS->buildRangeInfos[geometryIndex];
         }
 
-        device->GetBackend()->vulkanFunctions.vkCmdBuildAccelerationStructuresKHR(
+        device->deviceFunctions.vkCmdBuildAccelerationStructuresKHR(
             commandBuffer,
             1,
             &accelerationStructureBuildGeometryInfo,
@@ -3811,7 +3845,7 @@ namespace Horizon
 
         VkAccelerationStructureBuildRangeInfoKHR* buildRangeInfo = &range;
 
-        device->GetBackend()->vulkanFunctions.vkCmdBuildAccelerationStructuresKHR(
+        device->deviceFunctions.vkCmdBuildAccelerationStructuresKHR(
             commandBuffer,
             1,
             &accelerationStructureBuildGeometryInfo,
@@ -3828,19 +3862,19 @@ namespace Horizon
         if (pipelineState->handle != activeRayTracingPipeline)
         {
             VkDescriptorSet set = device->GetBindlessGlobalSet();
-            vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipelineState->handle);
+            device->deviceFunctions.vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipelineState->handle);
             activeRayTracingPipeline = pipelineState->handle;
         }
 
         if (pushConstantsSize > 0)
         {
             const void* pushConstantsData = &command.shaderConstants.data;
-            vkCmdPushConstants(commandBuffer, pipelineState->pipelineLayout, VK_SHADER_STAGE_ALL, 0, pushConstantsSize, pushConstantsData);
+            device->deviceFunctions.vkCmdPushConstants(commandBuffer, pipelineState->pipelineLayout, VK_SHADER_STAGE_ALL, 0, pushConstantsSize, pushConstantsData);
         }
 
         VulkanBuffer* sbtBuffer = device->GetBuffer(command.shaderBindingTable);
 
-        device->GetBackend()->vulkanFunctions.vkCmdTraceRaysKHR(
+        device->deviceFunctions.vkCmdTraceRaysKHR(
             commandBuffer,
             &sbtBuffer->shaderBindingTable->rayGenShaderBindingTable,
             &sbtBuffer->shaderBindingTable->missShaderBindingTable,
@@ -3856,14 +3890,14 @@ namespace Horizon
     bool VulkanRenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandBeginRenderPass& command)
     {
         GetRenderingInfo(device, command.renderPassInfo, &renderingInfo);
-        vkCmdBeginRendering(commandBuffer, &renderingInfo.renderingInfo);
+        device->deviceFunctions.vkCmdBeginRendering(commandBuffer, &renderingInfo.renderingInfo);
         insideRenderPass = true;
         return true;
     }
 
     bool VulkanRenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandEndRenderPass& command)
     {
-        vkCmdEndRendering(commandBuffer);
+        device->deviceFunctions.vkCmdEndRendering(commandBuffer);
         insideRenderPass = false;
         return true;
     }
@@ -3889,18 +3923,18 @@ namespace Horizon
         if (pipeline->handle != activeGraphicsPipeline)
         {
             VkDescriptorSet set = device->GetBindlessGlobalSet();
-            vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->handle);
+            device->deviceFunctions.vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->handle);
             activeGraphicsPipeline = pipeline->handle;
         }
         if (pushConstantsSize > 0)
         {
             const void* pushConstantsData = &shaderConstants.data;
-            vkCmdPushConstants(commandBuffer, pipeline->layout, VK_SHADER_STAGE_ALL, 0, pushConstantsSize, pushConstantsData);
+            device->deviceFunctions.vkCmdPushConstants(commandBuffer, pipeline->layout, VK_SHADER_STAGE_ALL, 0, pushConstantsSize, pushConstantsData);
         }
         if (indexBuffer)
         {
             VulkanBuffer* buffer = device->GetBuffer(indexBuffer);
-            vkCmdBindIndexBuffer(commandBuffer, buffer->handle, 0, buffer->indexType);
+            device->deviceFunctions.vkCmdBindIndexBuffer(commandBuffer, buffer->handle, 0, buffer->indexType);
         }
         ApplyTransitions();
         return true;
@@ -3916,7 +3950,7 @@ namespace Horizon
         }
         if (!command.indexBuffer)
         {
-            vkCmdDraw(
+            device->deviceFunctions.vkCmdDraw(
                 commandBuffer,
                 command.draw.vertexCount,
                 command.draw.instanceCount,
@@ -3925,7 +3959,7 @@ namespace Horizon
         }
         else
         {
-            vkCmdDrawIndexed(
+            device->deviceFunctions.vkCmdDrawIndexed(
                 commandBuffer,
                 command.drawIndexed.indexCount,
                 command.drawIndexed.instanceCount,
@@ -3944,7 +3978,7 @@ namespace Horizon
         }
         if (!command.indexBuffer)
         {
-            vkCmdDrawIndirect(
+            device->deviceFunctions.vkCmdDrawIndirect(
                 commandBuffer,
                 device->GetBuffer(command.argumentBuffer)->handle,
                 command.argumentBufferOffset,
@@ -3953,7 +3987,7 @@ namespace Horizon
         }
         else
         {
-            vkCmdDrawIndexedIndirect(
+            device->deviceFunctions.vkCmdDrawIndexedIndirect(
                 commandBuffer,
                 device->GetBuffer(command.argumentBuffer)->handle,
                 command.argumentBufferOffset,
@@ -3996,7 +4030,7 @@ namespace Horizon
 
     bool VulkanRenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandSetStencilReference& command)
     {
-        vkCmdSetStencilReference(commandBuffer, VK_STENCIL_FRONT_AND_BACK, command.stencilReference);
+        device->deviceFunctions.vkCmdSetStencilReference(commandBuffer, VK_STENCIL_FRONT_AND_BACK, command.stencilReference);
         return true;
     }
 
@@ -4011,7 +4045,7 @@ namespace Horizon
                 .extent = { .width = command.scissors[i].width, .height = command.scissors[i].height }
             };
         }
-        vkCmdSetScissor(commandBuffer, 0, command.scissorCount, scissors);
+        device->deviceFunctions.vkCmdSetScissor(commandBuffer, 0, command.scissorCount, scissors);
         return true;
     }
 
@@ -4029,7 +4063,7 @@ namespace Horizon
                 .maxDepth = command.viewports[i].maxDepth
             };
         }
-        vkCmdSetViewport(commandBuffer, 0, command.viewportCount, viewports);
+        device->deviceFunctions.vkCmdSetViewport(commandBuffer, 0, command.viewportCount, viewports);
         return true;
     }
 
@@ -4044,7 +4078,7 @@ namespace Horizon
                 .pLabelName = command.labelName,
                 .color = { command.color[0], command.color[1], command.color[2], command.color[3] }
             };
-            device->backend->vulkanFunctions.vkCmdBeginDebugUtilsLabelEXT(commandBuffer, &lableInfo);
+            device->deviceFunctions.vkCmdBeginDebugUtilsLabelEXT(commandBuffer, &lableInfo);
         }
 #endif
         return true;
@@ -4055,7 +4089,7 @@ namespace Horizon
 #if !HE_ENBALE_STREAMLINE_SUPPORT
         if (device->backend->enableValidationLayers)
         {
-            device->backend->vulkanFunctions.vkCmdEndDebugUtilsLabelEXT(commandBuffer);
+            device->deviceFunctions.vkCmdEndDebugUtilsLabelEXT(commandBuffer);
         }
 #endif
         return true;
@@ -4436,7 +4470,7 @@ namespace Horizon
                 device.UnmapBuffer(bufferIndex);
 
                 VkCommandBuffer commandBuffer; VkCommandPool pool;
-                VulkanHelper::CreateTemporaryCommandBuffer(device.handle, device.GetQueueFamilyIndex(RenderBackendQueueFamily::Graphics), pool, commandBuffer);
+                VulkanHelper::CreateTemporaryCommandBuffer(device.handle, device.GetQueueFamilyIndex(RenderBackendQueueFamily::Graphics), pool, commandBuffer, device.deviceFunctions);
 
                 const VulkanTexture& texture = device.textures[index];
                 assert(texture.mipLevels == data.data.size());
@@ -4460,7 +4494,7 @@ namespace Horizon
                         },
                     };
 
-                    vkCmdPipelineBarrier(
+                    device.deviceFunctions.vkCmdPipelineBarrier(
                         commandBuffer,
                         VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
                         VK_PIPELINE_STAGE_TRANSFER_BIT,
@@ -4469,7 +4503,7 @@ namespace Horizon
                         0, nullptr,
                         1, &barrier);
 
-                    vkCmdCopyBufferToImage(
+                    device.deviceFunctions.vkCmdCopyBufferToImage(
                         commandBuffer,
                         uploadBuffer.handle,
                         texture.handle,
@@ -4481,7 +4515,8 @@ namespace Horizon
                     barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
                     barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
                     barrier.dstAccessMask = 0;
-                    vkCmdPipelineBarrier(
+
+                    device.deviceFunctions.vkCmdPipelineBarrier(
                         commandBuffer,
                         VK_PIPELINE_STAGE_TRANSFER_BIT,
                         VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
@@ -4491,13 +4526,13 @@ namespace Horizon
                         1, &barrier);
                 }
 
-                VulkanHelper::FlushTemporaryCommandBuffer(device.handle, device.GetCommandQueue(RenderBackendQueueFamily::Graphics, 0)->handle, pool, commandBuffer);
+                VulkanHelper::FlushTemporaryCommandBuffer(device.handle, device.GetCommandQueue(RenderBackendQueueFamily::Graphics, 0)->handle, pool, commandBuffer, device.deviceFunctions);
                 device.DestroyBuffer(bufferIndex);
             }
         }
     }
 
-    void VulkanBindlessDescriptorManager::UpdateDescriptor(VulkanTextureView* textureView, uint32 descriptorIndex, bool shaderResourceView)
+    void VulkanBindlessDescriptorManager::UpdateDescriptor(VulkanTextureView* textureView, uint32 descriptorIndex, bool shaderResourceView, const VulkanDeviceSpecificFunctionTable& deviceFunctions)
     {
         VkImageLayout imageLayout = shaderResourceView ? VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL : VK_IMAGE_LAYOUT_GENERAL;
         uint32_t binding = shaderResourceView ? BINDLESS_RESOURCE_BINDING_TEXTURE_SRV : BINDLESS_RESOURCE_BINDING_TEXTURE_UAV;
@@ -4520,7 +4555,7 @@ namespace Horizon
             .pImageInfo = &descriptorImageInfo,
         };
 
-        vkUpdateDescriptorSets(device, 1, &descriptorWrite, 0, nullptr);
+        deviceFunctions.vkUpdateDescriptorSets(device, 1, &descriptorWrite, 0, nullptr);
     }
 
     RenderBackendTextureViewHandle VulkanRenderBackend::CreateTextureView(
@@ -4558,10 +4593,10 @@ namespace Horizon
                     desc->subresourceRange.arrayLayers
                 }
             };
-            VK_CHECK(vkCreateImageView(device.handle, &imageViewInfo, VULKAN_ALLOCATION_CALLBACKS, &imageView));
+            VK_CHECK(device.deviceFunctions.vkCreateImageView(device.handle, &imageViewInfo, VULKAN_ALLOCATION_CALLBACKS, &imageView));
 
             uint32 descriptorIndex = device.bindlessDescriptorManager.AllocateSampledImageIndex();
-            device.bindlessDescriptorManager.UpdateDescriptor(textureView, descriptorIndex, true);
+            device.bindlessDescriptorManager.UpdateDescriptor(textureView, descriptorIndex, true, device.deviceFunctions);
 
             if (descriptor)
             {
@@ -4592,10 +4627,10 @@ namespace Horizon
                     desc->subresourceRange.arrayLayers
                 }
             };
-            VK_CHECK(vkCreateImageView(device.handle, &imageViewInfo, VULKAN_ALLOCATION_CALLBACKS, &imageView));
+            VK_CHECK(device.deviceFunctions.vkCreateImageView(device.handle, &imageViewInfo, VULKAN_ALLOCATION_CALLBACKS, &imageView));
 
             uint32 descriptorIndex = device.bindlessDescriptorManager.AllocateStorageImageIndex();
-            device.bindlessDescriptorManager.UpdateDescriptor(textureView, descriptorIndex, false);
+            device.bindlessDescriptorManager.UpdateDescriptor(textureView, descriptorIndex, false, device.deviceFunctions);
 
             if (descriptor)
             {
@@ -4626,7 +4661,7 @@ namespace Horizon
                     desc->subresourceRange.arrayLayers
                 }
             };
-            VK_CHECK(vkCreateImageView(device.handle, &imageViewInfo, VULKAN_ALLOCATION_CALLBACKS, &imageView));
+            VK_CHECK(device.deviceFunctions.vkCreateImageView(device.handle, &imageViewInfo, VULKAN_ALLOCATION_CALLBACKS, &imageView));
         }
         else if (desc->IsDepthStencilView())
         {
@@ -4652,7 +4687,7 @@ namespace Horizon
                     desc->subresourceRange.arrayLayers
                 }
             };
-            VK_CHECK(vkCreateImageView(device.handle, &imageViewInfo, VULKAN_ALLOCATION_CALLBACKS, &imageView));
+            VK_CHECK(device.deviceFunctions.vkCreateImageView(device.handle, &imageViewInfo, VULKAN_ALLOCATION_CALLBACKS, &imageView));
         }
 
         return reinterpret_cast<RenderBackendTextureViewHandle>(textureView);
@@ -4710,14 +4745,17 @@ namespace Horizon
         {
             VulkanTimingQueryHeap timingQueryHeap = {};
             timingQueryHeap.maxQueryCount = desc->maxRegions * 2;
-            VkQueryPoolCreateInfo queryPoolInfo = {
+
+            VkQueryPoolCreateInfo queryPoolInfo =
+            {
                 .sType = VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO,
                 .queryType = VK_QUERY_TYPE_TIMESTAMP,
                 .queryCount = timingQueryHeap.maxQueryCount,
             };
-            VK_CHECK(vkCreateQueryPool(device.handle, &queryPoolInfo, VULKAN_ALLOCATION_CALLBACKS, &timingQueryHeap.handle));
 
-            vkResetQueryPool(device.handle, timingQueryHeap.handle, 0, timingQueryHeap.maxQueryCount);
+            VK_CHECK(device.deviceFunctions.vkCreateQueryPool(device.handle, &queryPoolInfo, VULKAN_ALLOCATION_CALLBACKS, &timingQueryHeap.handle));
+
+            device.deviceFunctions.vkResetQueryPoolEXT(device.handle, timingQueryHeap.handle, 0, timingQueryHeap.maxQueryCount);
 
             uint32 index = device.timingQueryHeaps.Add(timingQueryHeap);
             device.SetRenderBackendHandleRepresentation(handle.GetIndex(), index);
@@ -4781,7 +4819,7 @@ namespace Horizon
             //    continue;
             //}
             VulkanCommandBuffer* primaryCommandBuffer = device.commandBufferManager->PrepareForNextCommandBuffer();
-            vkResetFences(device.GetHandle(), 1, &primaryCommandBuffer->fence);
+            device.deviceFunctions.vkResetFences(device.GetHandle(), 1, &primaryCommandBuffer->fence);
 
             submitContext.completeFence = primaryCommandBuffer->fence;
 
@@ -4789,7 +4827,7 @@ namespace Horizon
                 .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
                 .flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
             };
-            VK_CHECK(vkBeginCommandBuffer(primaryCommandBuffer->handle, &commandBufferBeginInfo));
+            VK_CHECK(device.deviceFunctions.vkBeginCommandBuffer(primaryCommandBuffer->handle, &commandBufferBeginInfo));
 
             // Bindless, the global descriptor set is only bound once per frame
             device.BindBindlessDescriptorSets(primaryCommandBuffer->handle);
@@ -4813,7 +4851,7 @@ namespace Horizon
                 }
             }
 
-            vkEndCommandBuffer(primaryCommandBuffer->handle);
+            device.deviceFunctions.vkEndCommandBuffer(primaryCommandBuffer->handle);
 
             if (swapChain)
             {
@@ -4870,7 +4908,7 @@ namespace Horizon
             //    break;
             //}
 
-            VK_CHECK(vkQueueSubmit2(
+            VK_CHECK(device.deviceFunctions.vkQueueSubmit2(
                 device.GetCommandQueue(queueFamily, 0)->handle,
                 (uint32)submitInfos[queueFamily].size(),
                 submitInfos[queueFamily].data(),
@@ -5086,7 +5124,7 @@ namespace Horizon
             rayTracingPipelineState.numMissShaders = numMissShaders;
             rayTracingPipelineState.numHitGroups = numHitGroups;
 
-            VK_CHECK(vulkanFunctions.vkCreateRayTracingPipelinesKHR(
+            VK_CHECK(device.deviceFunctions.vkCreateRayTracingPipelinesKHR(
                 device.GetHandle(),
                 VK_NULL_HANDLE,
                 VK_NULL_HANDLE,
@@ -5117,7 +5155,7 @@ namespace Horizon
             const uint32 shaderGroupSizeAligned = AlignUp(shaderGroupHandleSizeAligned, rayTracingPipelineProperties.shaderGroupBaseAlignment);
 
             std::vector<uint8> shaderGroupHandles(shaderGroupHandleSizeAligned * numShaderGroups);
-            VK_CHECK(vulkanFunctions.vkGetRayTracingShaderGroupHandlesKHR(device.GetHandle(), rayTracingPipelineState.handle, 0, numShaderGroups, shaderGroupHandleSizeAligned * numShaderGroups, shaderGroupHandles.data()));
+            VK_CHECK(device.deviceFunctions.vkGetRayTracingShaderGroupHandlesKHR(device.GetHandle(), rayTracingPipelineState.handle, 0, numShaderGroups, shaderGroupHandleSizeAligned * numShaderGroups, shaderGroupHandles.data()));
 
             // TODO
             uint32 rayGenGroupStride = shaderGroupSizeAligned;
@@ -5142,7 +5180,7 @@ namespace Horizon
                 .sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO,
                 .buffer = sbtBuffer.handle,
             };
-            VkDeviceAddress sbtBufferAddress = vulkanFunctions.vkGetBufferDeviceAddressKHR(device.GetHandle(), &bufferDeviceAddressInfo);
+            VkDeviceAddress sbtBufferAddress = device.deviceFunctions.vkGetBufferDeviceAddress(device.GetHandle(), &bufferDeviceAddressInfo);
 
             sbtBuffer.shaderBindingTable = new VulkanRayTracingShaderBindingTable();
 
