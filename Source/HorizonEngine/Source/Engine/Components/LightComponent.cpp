@@ -20,7 +20,7 @@ namespace Horizon
             description.shadowMapSize = shadowMapSize;
             description.shadowCascadeCount = shadowCascadeCount;
             description.shadowCascadeSplitLambda = shadowCascadeSplitLambda;
-            description.shadowCascadeTransitionScale = shadowCascadeTransitionScale;
+            description.shadowCascadeTransitionScale = shadowCascadeBlendScale;
             description.maxShadowDistance = maxShadowDistance;
             description.shadowFadeOutFactor = shadowFadeOutFactor;
             description.shadowMapDepthBiasConstantFactor = shadowMapDepthBiasConstantFactor;
@@ -70,7 +70,7 @@ namespace Horizon
             renderObject->shadowMapSize = shadowMapSize;
             renderObject->shadowCascadeCount = shadowCascadeCount;
             renderObject->shadowCascadeSplitLambda = shadowCascadeSplitLambda;
-            renderObject->shadowCascadeTransitionScale = shadowCascadeTransitionScale;
+            renderObject->shadowCascadeBlendScale = shadowCascadeBlendScale;
             renderObject->maxShadowDistance = maxShadowDistance;
             renderObject->shadowFadeOutFactor = shadowFadeOutFactor;
             renderObject->shadowMapDepthBiasConstantFactor = shadowMapDepthBiasConstantFactor;

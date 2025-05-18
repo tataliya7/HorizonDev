@@ -125,6 +125,7 @@ namespace Horizon
 
         RenderBackendBufferHandle cascadedShadowMapShaderParameterBuffer;
         RenderGraphTextureHandle cascadedShadowMapDepthTexture;
+        RenderGraphTextureHandle cascadedShadowMapDebugVisualizationTexture;
 
         RenderGraphTextureHandle shadowMaskTexture;
     };
@@ -491,6 +492,10 @@ namespace Horizon
             RenderGraph& renderGraph,
             const SceneView& view,
             RenderGraphTextureHandle sceneColorTexture);
+
+        RenderGraphTextureHandle AddVisualizeCascadedShadowMapPass(
+            RenderGraph& renderGraph,
+            const SceneView& view);
 
         RenderGraphTextureHandle AddVisualizeVirtualShadowMapPass(
             RenderGraph& renderGraph,

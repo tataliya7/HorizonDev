@@ -592,6 +592,10 @@ namespace Horizon
             shaderLibrary->LoadShader(ShaderID::VisualizeScreenSpaceShadowMask, shaderDesc);
         }
         {
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/DebugVisualization/VisualizeCascadedShadowMap.hsm", "VisualizeCascadedShadowMapCS");
+            shaderLibrary->LoadShader(ShaderID::VisualizeCascadedShadowMap, shaderDesc);
+        }
+        {
             ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Pixel, "Shaders/RealTimeRenderer/GUIComposition.hsm", "GUICompositionPS");
             shaderLibrary->LoadShader(ShaderID::GUICompositionPS, shaderDesc);
         }

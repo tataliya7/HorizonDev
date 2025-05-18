@@ -260,7 +260,7 @@ namespace Horizon
         uint32 shadowMapSize;
         uint32 shadowCascadeCount;
         float shadowCascadeSplitLambda;
-        float shadowCascadeTransitionScale;
+        float shadowCascadeBlendScale;
         float maxShadowDistance;
         float shadowFadeOutFactor;
         float shadowMapDepthBiasConstantFactor;

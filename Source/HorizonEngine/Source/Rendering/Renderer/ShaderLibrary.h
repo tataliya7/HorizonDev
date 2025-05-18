@@ -150,6 +150,7 @@ namespace Horizon
         VisualizeMotionVectors,
         VisualizeAmbientOcclusion,
         VisualizeScreenSpaceShadowMask,
+        VisualizeCascadedShadowMap,
         GUICompositionPS,
         DebugDrawVS,
         DebugDrawPS,

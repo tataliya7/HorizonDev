@@ -29,7 +29,7 @@ float ComputeDistantLightShadowFactorCSM(
 
     float4 viewSpacePosition = mul(frameShaderParameters.worldToViewMatrix, float4(worldSpacePosition, 1.0f));
     const uint cascadeCount = cascadedShadowMapParameters.cascadeCount;
-    const uint cascadeIndex = ComputeCascadeIndex(-viewSpacePosition.z, cascadedShadowMapParameters);
+    const uint cascadeIndex = ComputeCascadeIndexSlicePlaneSelection(cascadedShadowMapParameters, -viewSpacePosition.z);
 
     if (cascadeIndex < cascadeCount)
     {

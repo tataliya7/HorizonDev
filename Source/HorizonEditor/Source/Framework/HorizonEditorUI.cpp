@@ -868,6 +868,7 @@ namespace Horizon
             "Motion Vectors",
             "Ambient Occlusion",
             "Screen Space Shadow Mask",
+            "Cascaded Shadow Map Cascade Index",
             "Virtual Shadow Map Mipmap",
             "Surfel GI Surfel",
             "Surfel GI Heatmap"

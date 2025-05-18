@@ -6,6 +6,7 @@ struct CascadedShadowMapShaderParameters
 {
     float4x4 worldToClipMatrix[MAX_SHADOW_CASCADE_COUNT];
     float cascadeEndDistance[MAX_SHADOW_CASCADE_COUNT];
+    float cascadeBlendScale[MAX_SHADOW_CASCADE_COUNT];
     float transitionStartDistance[MAX_SHADOW_CASCADE_COUNT];
     float inverseTransitionRange[MAX_SHADOW_CASCADE_COUNT];
     float4 depthBiasParameters[MAX_SHADOW_CASCADE_COUNT];
@@ -22,7 +23,7 @@ struct CubeShadowMapShaderParameters
     float4x4 worldToClipMatrix[6];
 };
 
-uint ComputeCascadeIndex(float cameraSpacePositionZ, CascadedShadowMapShaderParameters parameters)
+uint ComputeCascadeIndexSlicePlaneSelection(CascadedShadowMapShaderParameters parameters, float cameraSpacePositionZ)
 {
     const float4 depths = cameraSpacePositionZ.xxxx;
     const float4 distances = float4(parameters.cascadeEndDistance[0], parameters.cascadeEndDistance[1], parameters.cascadeEndDistance[2], parameters.cascadeEndDistance[3]);
@@ -33,36 +34,31 @@ uint ComputeCascadeIndex(float cameraSpacePositionZ, CascadedShadowMapShaderPara
     return cascadeIndex;
 }
 
-uint ComputeCascadeIndexBoundingSphereSelection(float3 worldSpacePosition, CascadedShadowMapShaderParameters parameters)
+uint ComputeCascadeIndexBoundingSphereSelection(CascadedShadowMapShaderParameters parameters, float3 worldSpacePosition)
 {
-    float3 distances[4];
-    distances[0] = worldSpacePosition - parameters.cascadeBoundingSphere[0].xyz;
-    distances[1] = worldSpacePosition - parameters.cascadeBoundingSphere[1].xyz;
-    distances[2] = worldSpacePosition - parameters.cascadeBoundingSphere[2].xyz;
-    distances[3] = worldSpacePosition - parameters.cascadeBoundingSphere[3].xyz;
+    float3 fromCenter0 = worldSpacePosition - parameters.cascadeBoundingSphere[0].xyz;
+    float3 fromCenter1 = worldSpacePosition - parameters.cascadeBoundingSphere[1].xyz;
+    float3 fromCenter2 = worldSpacePosition - parameters.cascadeBoundingSphere[2].xyz;
+    float3 fromCenter3 = worldSpacePosition - parameters.cascadeBoundingSphere[3].xyz;
 
-    float4 d;
-    d.x = dot(distances[0], distances[0]);
-    d.y = dot(distances[1], distances[1]);
-    d.z = dot(distances[2], distances[2]);
-    d.w = dot(distances[3], distances[3]);
+    float4 distanceSquared = float4(
+        dot(fromCenter0, fromCenter0),
+        dot(fromCenter1, fromCenter1),
+        dot(fromCenter2, fromCenter2),
+        dot(fromCenter3, fromCenter3));
 
-    float4 f;
-    f.x = parameters.cascadeBoundingSphere[0].w * parameters.cascadeBoundingSphere[0].w;
-    f.y = parameters.cascadeBoundingSphere[1].w * parameters.cascadeBoundingSphere[1].w;
-    f.z = parameters.cascadeBoundingSphere[2].w * parameters.cascadeBoundingSphere[2].w;
-    f.w = parameters.cascadeBoundingSphere[3].w * parameters.cascadeBoundingSphere[3].w;
+    float4 radiusSquared = float4(
+        parameters.cascadeBoundingSphere[0].w * parameters.cascadeBoundingSphere[0].w,
+        parameters.cascadeBoundingSphere[1].w * parameters.cascadeBoundingSphere[1].w,
+        parameters.cascadeBoundingSphere[2].w * parameters.cascadeBoundingSphere[2].w,
+        parameters.cascadeBoundingSphere[3].w * parameters.cascadeBoundingSphere[3].w);
 
-    int4 count = int4(d <= f);
-    int4 count_ = int4(0, count.x, count.x + count.y, count.x + count.y + count.z);
+    float4 t = float4(distanceSquared < radiusSquared);
+    t.yzw = saturate(t.yzw - t.xyz);
 
-    count = count - count_;
-    count = max(count, int4(0, 0, 0, 0));
+    uint cascadeIndex = uint(dot(t, float4(0, 1, 2, 3)));
 
-    int cascadeIndex = count.y + count.z * 2 + count.w * 3;
-    cascadeIndex = min(cascadeIndex, 3);
-
-    return uint(cascadeIndex);
+    return cascadeIndex;
 }
 
 #if 0

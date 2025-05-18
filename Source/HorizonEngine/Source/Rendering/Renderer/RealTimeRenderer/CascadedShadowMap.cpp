@@ -74,6 +74,7 @@ namespace Horizon
         {
             outParameters.worldToClipMatrix[cascadeIndex] = data.cascadeData[cascadeIndex].worldToClipMatrix;
             outParameters.cascadeEndDistance[cascadeIndex] = data.cascadeData[cascadeIndex].endDistance;
+            outParameters.cascadeBlendScale[cascadeIndex] = data.cascadeData[cascadeIndex].blendScale;
             outParameters.transitionStartDistance[cascadeIndex] = data.cascadeData[cascadeIndex].endDistance - data.cascadeData[cascadeIndex].transitionRange;
             outParameters.inverseTransitionRange[cascadeIndex] = 1.0f / std::max(data.cascadeData[cascadeIndex].transitionRange, 0.0001f);
             outParameters.depthBiasParameters[cascadeIndex] = Vector4f(depthBias * data.cascadeData[cascadeIndex].boundingSphere.w / float(data.resolution), slopeScaledDepthBias * data.cascadeData[cascadeIndex].boundingSphere.w / float(data.resolution), 0.0f, 0.0f);
@@ -100,7 +101,7 @@ namespace Horizon
         const uint32 shadowMapSize = light.shadowMapSize;
         const uint32 shadowCascadeCount = light.shadowCascadeCount;
         const float shadowCascadeSplitLambda = light.shadowCascadeSplitLambda;
-        const float shadowCascadeTransitionScale = light.shadowCascadeTransitionScale;
+        const float shadowCascadeBlendScale = light.shadowCascadeBlendScale;
         const Vector3f lightDirection = light.GetDirection();
         const float maxShadowDistance = std::min(light.maxShadowDistance, cameraFarClippingPlane);
         const Matrix4x4f worldToLight = light.worldToLight;
@@ -115,7 +116,7 @@ namespace Horizon
             float cascadeStartDistance = CascadedShadowMapPracticalSplitScheme(cascadeIndex, shadowCascadeCount, cameraNearClippingPlane, maxShadowDistance, shadowCascadeSplitLambda);
             float cascadeEndDistance = CascadedShadowMapPracticalSplitScheme(cascadeIndex + 1, shadowCascadeCount, cameraNearClippingPlane, maxShadowDistance, shadowCascadeSplitLambda);
 
-            float transitionRange = (cascadeEndDistance - cascadeStartDistance) * shadowCascadeTransitionScale;
+            float transitionRange = (cascadeEndDistance - cascadeStartDistance) * shadowCascadeBlendScale;
 
 #if 1
             float halfCascadeFrustumNearPlaneExtentX = cascadeStartDistance * tanHalfVerticalFOV * aspectRatio;
@@ -188,6 +189,7 @@ namespace Horizon
             cascadeData.cascadeIndex = cascadeIndex;
             cascadeData.startDistance = cascadeStartDistance;
             cascadeData.endDistance = cascadeEndDistance;
+            cascadeData.blendScale = shadowCascadeBlendScale;
             cascadeData.transitionRange = transitionRange;
             cascadeData.boundingSphere = boundingSphere;
             cascadeData.worldToViewMatrix = viewMatrix;

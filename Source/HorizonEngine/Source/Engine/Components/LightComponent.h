@@ -52,7 +52,7 @@ namespace Horizon
 
         float shadowCascadeSplitLambda = 0.5f;
 
-        float shadowCascadeTransitionScale = 0.1f;
+        float shadowCascadeBlendScale = 0.1f;
 
         float shadowFadeOutFactor = 0.1f;
 

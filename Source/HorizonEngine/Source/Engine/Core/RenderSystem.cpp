@@ -20,7 +20,7 @@ namespace Horizon
     void RenderSystem::Init()
     {
         enableHardwareRayTracing = false;
-        renderBackendType = RenderBackendType::Direct3D12;
+        renderBackendType = RenderBackendType::Vulkan;
 
 #if HORIZON_CONFIGURATION_RELEASE
         enableDebugLayer = false;

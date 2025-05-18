@@ -15,6 +15,7 @@ namespace Horizon
         uint32 cascadeIndex;
         float startDistance;
         float endDistance;
+        float blendScale;
         float transitionRange;
         Vector4f boundingSphere;
         Matrix4x4f worldToViewMatrix;
@@ -34,6 +35,7 @@ namespace Horizon
     {
         Matrix4x4f worldToClipMatrix[RendererMaxShadowMapCascadeCount];
         float cascadeEndDistance[RendererMaxShadowMapCascadeCount];
+        float cascadeBlendScale[RendererMaxShadowMapCascadeCount];
         float transitionStartDistance[RendererMaxShadowMapCascadeCount];
         float inverseTransitionRange[RendererMaxShadowMapCascadeCount];
         Vector4f depthBiasParameters[RendererMaxShadowMapCascadeCount];

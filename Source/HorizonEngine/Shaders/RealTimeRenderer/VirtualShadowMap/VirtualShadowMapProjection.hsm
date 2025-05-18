@@ -5,12 +5,15 @@
 #include "../ShadowMapCommon.hsh"
 #include "VirtualShadowMapCommon.hsh"
 
+#define ENABLE_DEBUG_VISUALIZATION 0
+
 SHADER_CONSTANTS_STRUCT_BEGIN();
 SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferSRV);
 SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(1, VirtualShadowMapShaderParameters, VirtualShadowMapShaderParameterBufferSRV);
 SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(2, SceneDepthTextureSRV);
 SHADER_CONSTANTS_TEXTURE_2D_ARRAY_SRV(3, uint, VirtualShadowMapDepthTextureSRV);
 SHADER_CONSTANTS_TEXTURE_2D_UAV(4, float4, ShadowMaskTextureUAV);
+SHADER_CONSTANTS_TEXTURE_2D_UAV(5, float4, VirtualShadowMapDebugVisualizationTextureUAV);
 SHADER_CONSTANTS_STRUCT_END();
 
 struct VirtualShadowMapTexelData
@@ -205,4 +208,9 @@ void VirtualShadowMapProjectionCS(uint3 dispatchThreadID : SV_DispatchThreadID)
 #endif
 
     shadowMaskTexture[pixelCoord] = float4(shadowFactor, 0.0f, 0.0f, 0.0f);
+
+#if ENABLE_DEBUG_VISUALIZATION
+    RWTexture2D<float4> debugVisualizationTextureUAV = ShaderConstants.GetVirtualShadowMapDebugVisualizationTextureUAV();
+    debugVisualizationTextureUAV[pixelCoord] = 0;
+#endif
 }

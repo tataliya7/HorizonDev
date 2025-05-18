@@ -24,13 +24,14 @@ namespace Horizon
         const bool isEditorGizmosEnabled = true;
 #endif
 
-        const bool isVisualizeDepthEnabled               = (view.debugVisualizationMode == SceneViewDebugVisualizationMode::Depth);
-        const bool isVisualizePrimitiveIDEnabled         = (view.debugVisualizationMode == SceneViewDebugVisualizationMode::PrimitiveID);
-        const bool isVisualizeMaterialIDEnabled          = (view.debugVisualizationMode == SceneViewDebugVisualizationMode::MaterialID);
-        const bool isVisualizeWorldSpaceNormalEnabled    = (view.debugVisualizationMode == SceneViewDebugVisualizationMode::WorldSpaceNormal);
-        const bool isVisualizeMotionVectorsEnabled       = (view.debugVisualizationMode == SceneViewDebugVisualizationMode::MotionVectors);
-        const bool isVisualizeAmbientOcclusionEnabled    = (view.debugVisualizationMode == SceneViewDebugVisualizationMode::AmbientOcclusion);
-        const bool isVisualizeShadowMaskEnabled          = (view.debugVisualizationMode == SceneViewDebugVisualizationMode::ShadowMask);
+        const bool isVisualizeDepthEnabled                = (view.debugVisualizationMode == SceneViewDebugVisualizationMode::Depth);
+        const bool isVisualizePrimitiveIDEnabled          = (view.debugVisualizationMode == SceneViewDebugVisualizationMode::PrimitiveID);
+        const bool isVisualizeMaterialIDEnabled           = (view.debugVisualizationMode == SceneViewDebugVisualizationMode::MaterialID);
+        const bool isVisualizeWorldSpaceNormalEnabled     = (view.debugVisualizationMode == SceneViewDebugVisualizationMode::WorldSpaceNormal);
+        const bool isVisualizeMotionVectorsEnabled        = (view.debugVisualizationMode == SceneViewDebugVisualizationMode::MotionVectors);
+        const bool isVisualizeAmbientOcclusionEnabled     = (view.debugVisualizationMode == SceneViewDebugVisualizationMode::AmbientOcclusion);
+        const bool isVisualizeShadowMaskEnabled           = (view.debugVisualizationMode == SceneViewDebugVisualizationMode::ShadowMask);
+        const bool isVisualizeCascadedShadowMapEnabled    = (view.debugVisualizationMode == SceneViewDebugVisualizationMode::CascadedShadowMapCascadeIndex);
 
         if (IsDepthOfFieldEnabled())
         {
@@ -159,6 +160,10 @@ namespace Horizon
         if (isVisualizeShadowMaskEnabled)
         {
             colorTexture = AddVisualizeShadowMaskPass(renderGraph, view, colorTexture);
+        }
+        if (isVisualizeCascadedShadowMapEnabled)
+        {
+            colorTexture = AddVisualizeCascadedShadowMapPass(renderGraph, view);
         }
 
         sceneTextures.hudLessColorTexture = colorTexture;

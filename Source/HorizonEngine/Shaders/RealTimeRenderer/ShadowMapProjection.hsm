@@ -4,25 +4,25 @@
 #include "ShadowMapCommon.hsh"
 #include "ShadowFilteringCommon.hsh"
 
+#define CSM_CASCADE_SELECTION_METHOD 1
+#define CSM_CASCADE_BLENDING_METHOD 0
+
+#define ENABLE_DEBUG_VISUALIZATION 1
+
 SHADER_CONSTANTS_STRUCT_BEGIN();
 SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferSRV);
 SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(1, CascadedShadowMapShaderParameters, CascadeShadowMapDataBufferSRV);
 SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(2, SceneDepthTextureSRV);
 SHADER_CONSTANTS_TEXTURE_2D_ARRAY_DEFAULT_SRV(3, ShadowMapTextureSRV);
 SHADER_CONSTANTS_TEXTURE_2D_UAV(4, float4, ShadowMaskTextureUAV);
+SHADER_CONSTANTS_TEXTURE_2D_UAV(5, float4, CascadedShadowMapDebugVisualizationTextureUAV);
 SHADER_CONSTANTS_STRUCT_END();
 
-#define SHADOW_FILTERING_METHOD 0
-
-#define CSM_CASCADE_SELECTION_METHOD 1
-#define CSM_CASCADE_BLENDING_METHOD 1
-
-float CSMShadow(
+float CSMShadowMapSampling(
     CascadedShadowMapShaderParameters cascadedShadowMapShaderParameters,
     Texture2DArray shadowMapTexture,
-    uint cascadeIndex,
     float3 worldSpacePosition,
-    float2 rotation)
+    uint cascadeIndex)
 {
     float shadowFactor = 1.0f;
 
@@ -38,24 +38,162 @@ float CSMShadow(
 
         if (valid)
         {
-            #if SHADOW_FILTERING_METHOD == 0
             shadowFactor = PercentageCloserFiltering(
                 shadowMapTexture,
                 cascadedShadowMapShaderParameters.shadowMapSize,
                 cascadeIndex,
                 shadowMapTextureCoord.xy,
                 shadowMapTextureCoord.z);
-            #else
-            shadowFactor = PCFPoissonSampling(
-                shadowMapTexture,
-                cascadeIndex,
-                shadowMapTextureCoord.xy,
-                shadowMapTextureCoord.z,
-                2.0f,
-                cascadedShadowMapShaderParameters.shadowMapSize.y,
-                rotation);
-            #endif
         }
+    }
+
+    return shadowFactor;
+}
+
+float CSMEvaluateShadowFactor_SlicePlaneSelection_Dither(
+    in CascadedShadowMapShaderParameters cascadedShadowMapShaderParameters,
+    in Texture2DArray shadowMapTexture,
+    in float2 pixelPosition,
+    in float3 worldSpacePosition,
+    in float cameraSpaceDepth,
+    out uint outCascadeIndex)
+{
+    uint cascadeIndex = ComputeCascadeIndexSlicePlaneSelection(cascadedShadowMapShaderParameters, cameraSpaceDepth);
+    outCascadeIndex = cascadeIndex;
+
+    const float transitionStartDistance = cascadedShadowMapShaderParameters.transitionStartDistance[cascadeIndex];
+    const float inverseTransitionRange = cascadedShadowMapShaderParameters.inverseTransitionRange[cascadeIndex];
+
+    float noise = InterleavedGradientNoise(pixelPosition);
+    float alpha = saturate((cameraSpaceDepth - transitionStartDistance) * inverseTransitionRange);
+
+    bool evaluateNextCascade = (cameraSpaceDepth > transitionStartDistance) && step(noise, alpha);
+
+    if (evaluateNextCascade)
+    {
+        cascadeIndex = min(cascadeIndex + 1, cascadedShadowMapShaderParameters.cascadeCount - 1);
+    }
+
+    float shadowFactor = CSMShadowMapSampling(
+        cascadedShadowMapShaderParameters,
+        shadowMapTexture,
+        worldSpacePosition,
+        cascadeIndex);
+
+    return shadowFactor;
+}
+
+float CSMEvaluateShadowFactor_SlicePlaneSelection_Blend(
+    in CascadedShadowMapShaderParameters cascadedShadowMapShaderParameters,
+    in Texture2DArray shadowMapTexture,
+    in float2 pixelPosition,
+    in float3 worldSpacePosition,
+    in float cameraSpaceDepth,
+    out uint outCascadeIndex)
+{
+    uint cascadeIndex = ComputeCascadeIndexSlicePlaneSelection(cascadedShadowMapShaderParameters, cameraSpaceDepth);
+    outCascadeIndex = cascadeIndex;
+
+    const float transitionStartDistance = cascadedShadowMapShaderParameters.transitionStartDistance[cascadeIndex];
+    const float inverseTransitionRange = cascadedShadowMapShaderParameters.inverseTransitionRange[cascadeIndex];
+
+    float shadowFactor = CSMShadowMapSampling(
+        cascadedShadowMapShaderParameters,
+        shadowMapTexture,
+        worldSpacePosition,
+        cascadeIndex);
+
+    bool evaluateNextCascade = (cameraSpaceDepth > transitionStartDistance) && ((cascadeIndex + 1) < cascadedShadowMapShaderParameters.cascadeCount);
+
+    if (evaluateNextCascade)
+    {
+        float secondaryShadowFactor = CSMShadowMapSampling(
+            cascadedShadowMapShaderParameters,
+            shadowMapTexture,
+            worldSpacePosition,
+            cascadeIndex + 1);
+
+        float alpha = saturate((cameraSpaceDepth - transitionStartDistance) * inverseTransitionRange);
+        shadowFactor = lerp(shadowFactor, secondaryShadowFactor, alpha);
+    }
+
+    return shadowFactor;
+}
+
+float CSMEvaluateShadowFactor_BoundingShpereSelection_Dither(
+    in CascadedShadowMapShaderParameters cascadedShadowMapShaderParameters,
+    in Texture2DArray shadowMapTexture,
+    in float2 pixelPosition,
+    in float3 worldSpacePosition,
+    in float cameraSpaceDepth,
+    out uint outCascadeIndex)
+{
+    uint cascadeIndex = ComputeCascadeIndexBoundingSphereSelection(cascadedShadowMapShaderParameters, worldSpacePosition);
+    outCascadeIndex = cascadeIndex;
+
+    const float transitionStartDistance = cascadedShadowMapShaderParameters.transitionStartDistance[cascadeIndex];
+    const float inverseTransitionRange = cascadedShadowMapShaderParameters.inverseTransitionRange[cascadeIndex];
+
+    float noise = InterleavedGradientNoise(pixelPosition);
+
+    float3 cascadeVector = worldSpacePosition - cascadedShadowMapShaderParameters.cascadeBoundingSphere[cascadeIndex].xyz;
+    float boundingSphereRadius = cascadedShadowMapShaderParameters.cascadeBoundingSphere[cascadeIndex].w;
+    float distanceFactor = sqrt(saturate(dot(cascadeVector, cascadeVector) / (boundingSphereRadius * boundingSphereRadius)));
+
+    float blendScale = 1 - cascadedShadowMapShaderParameters.cascadeBlendScale[cascadeIndex];
+    float alpha = saturate((distanceFactor - blendScale) / (1 - blendScale));
+
+    bool evaluateNextCascade = (alpha > 0) && step(noise, alpha);
+
+    if (evaluateNextCascade)
+    {
+        cascadeIndex = min(cascadeIndex + 1, cascadedShadowMapShaderParameters.cascadeCount - 1);
+    }
+
+    float shadowFactor = CSMShadowMapSampling(
+        cascadedShadowMapShaderParameters,
+        shadowMapTexture,
+        worldSpacePosition,
+        cascadeIndex);
+
+    return shadowFactor;
+}
+
+float CSMEvaluateShadowFactor_BoundingShpereSelection_Blend(
+    in CascadedShadowMapShaderParameters cascadedShadowMapShaderParameters,
+    in Texture2DArray shadowMapTexture,
+    in float2 pixelPosition,
+    in float3 worldSpacePosition,
+    in float cameraSpaceDepth,
+    out uint outCascadeIndex)
+{
+    uint cascadeIndex = ComputeCascadeIndexBoundingSphereSelection(cascadedShadowMapShaderParameters, worldSpacePosition);
+    outCascadeIndex = cascadeIndex;
+
+    float shadowFactor = CSMShadowMapSampling(
+        cascadedShadowMapShaderParameters,
+        shadowMapTexture,
+        worldSpacePosition,
+        cascadeIndex);
+
+    float3 cascadeVector = worldSpacePosition - cascadedShadowMapShaderParameters.cascadeBoundingSphere[cascadeIndex].xyz;
+    float boundingSphereRadius = cascadedShadowMapShaderParameters.cascadeBoundingSphere[cascadeIndex].w;
+    float distanceFactor = sqrt(saturate(dot(cascadeVector, cascadeVector) / (boundingSphereRadius * boundingSphereRadius)));
+
+    float blendScale = 1 - cascadedShadowMapShaderParameters.cascadeBlendScale[cascadeIndex];
+    float alpha = saturate((distanceFactor - blendScale) / (1 - blendScale));
+
+    bool evaluateNextCascade = (distanceFactor > blendScale) && ((cascadeIndex + 1) < cascadedShadowMapShaderParameters.cascadeCount);
+
+    if (evaluateNextCascade)
+    {
+        float secondaryShadowFactor = CSMShadowMapSampling(
+            cascadedShadowMapShaderParameters,
+            shadowMapTexture,
+            worldSpacePosition,
+            cascadeIndex + 1);
+
+        shadowFactor = lerp(shadowFactor, secondaryShadowFactor, alpha);
     }
 
     return shadowFactor;
@@ -98,63 +236,56 @@ void ShadowMapProjectionForDistantLightCS(uint3 dispatchThreadID : SV_DispatchTh
         return;
     }
 
-#if CSM_CASCADE_SELECTION_METHOD == 0 // View distance selection
-    uint cascadeIndex = ComputeCascadeIndex(cameraSpaceDepth, cascadedShadowMapShaderParameters);
-#else // Bounding sphere selection
-    uint cascadeIndex = ComputeCascadeIndexBoundingSphereSelection(worldSpacePosition, cascadedShadowMapShaderParameters);
-#endif
+    uint cascadeIndex;
 
-    const float noise = InterleavedGradientNoise(pixelCoord);
-    uint randSeed = RandInit(pixelCoord.x + pixelCoord.y * width, frameShaderParameters.frameIndex);
-    float random = Rand(randSeed);
+    float shadowFactor = 1.0f;
 
-    float rotationAngle = random * 3.1415926f;
-    float2 rotation = float2(cos(rotationAngle), sin(rotationAngle));
-
-    float transitionStartDistance = cascadedShadowMapShaderParameters.transitionStartDistance[cascadeIndex];
-    float inverseTransitionRange = cascadedShadowMapShaderParameters.inverseTransitionRange[cascadeIndex];
-
-#if CSM_CASCADE_BLENDING_METHOD == 1
-    bool useDitherTransition = /*(cascadedShadowMapShaderParameters.useTransition > 0) &&*/
-        (cameraSpaceDepth > transitionStartDistance) &&
-        ((cascadeIndex + 1) < cascadedShadowMapShaderParameters.cascadeCount);
-
-    useDitherTransition = false;
-    if (useDitherTransition)
-    {
-        float transitionFactor = saturate((cameraSpaceDepth - transitionStartDistance) * inverseTransitionRange);
-        cascadeIndex = (noise < transitionFactor) ? cascadeIndex + 1 : cascadeIndex;
-    }
-#endif
-
-    float shadowFactor = CSMShadow(
-        cascadedShadowMapShaderParameters,
-        shadowMapTexture,
-        cascadeIndex,
-        worldSpacePosition,
-        rotation);
-
-#if CSM_CASCADE_BLENDING_METHOD == 2
-    bool transition = /*(cascadedShadowMapShaderParameters.useTransition > 0) &&*/
-       (cameraSpaceDepth > transitionStartDistance) &&
-       ((cascadeIndex + 1) < cascadedShadowMapShaderParameters.cascadeCount);
-
-    if (transition)
-    {
-        float secondaryShadowFactor = CSMShadow(
+#if CSM_CASCADE_SELECTION_METHOD == 0
+    #if CSM_CASCADE_BLENDING_METHOD == 0
+        shadowFactor = CSMEvaluateShadowFactor_SlicePlaneSelection_Dither(
             cascadedShadowMapShaderParameters,
             shadowMapTexture,
-            cascadeIndex + 1,
+            pixelCoord,
             worldSpacePosition,
-            rotation);
-
-        float transitionFactor = saturate((cameraSpaceDepth - transitionStartDistance) * inverseTransitionRange);
-        shadowFactor = lerp(shadowFactor, secondaryShadowFactor, transitionFactor);
-    }
+            cameraSpaceDepth,
+            cascadeIndex);
+    #else
+        shadowFactor = CSMEvaluateShadowFactor_SlicePlaneSelection_Blend(
+            cascadedShadowMapShaderParameters,
+            shadowMapTexture,
+            pixelCoord,
+            worldSpacePosition,
+            cameraSpaceDepth,
+            cascadeIndex);
+    #endif
+#else
+    #if CSM_CASCADE_BLENDING_METHOD == 0
+        shadowFactor = CSMEvaluateShadowFactor_BoundingShpereSelection_Dither(
+            cascadedShadowMapShaderParameters,
+            shadowMapTexture,
+            pixelCoord,
+            worldSpacePosition,
+            cameraSpaceDepth,
+            cascadeIndex);
+    #else
+        shadowFactor = CSMEvaluateShadowFactor_BoundingShpereSelection_Blend(
+            cascadedShadowMapShaderParameters,
+            shadowMapTexture,
+            pixelCoord,
+            worldSpacePosition,
+            cameraSpaceDepth,
+            cascadeIndex);
+    #endif
 #endif
 
     float fadeOut = saturate((cameraSpaceDepth - cascadedShadowMapShaderParameters.shadowFadeOutParameters.x) * cascadedShadowMapShaderParameters.shadowFadeOutParameters.y);
     shadowFactor = lerp(shadowFactor, 1.0f, fadeOut * fadeOut);
 
     shadowMaskTexture[pixelCoord] = float4(EncodeShadowFactor(shadowFactor), 0.0f, 0.0f, 0.0f);
+
+#if ENABLE_DEBUG_VISUALIZATION
+    RWTexture2D<float4> debugVisualizationTextureUAV = ShaderConstants.GetCascadedShadowMapDebugVisualizationTextureUAV();
+    float3 color = UintToColor(cascadeIndex + 4);
+    debugVisualizationTextureUAV[pixelCoord] = float4(color + 0.2f * shadowFactor, 1.0f);
+#endif
 }

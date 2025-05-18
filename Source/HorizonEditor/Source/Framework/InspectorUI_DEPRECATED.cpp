@@ -345,7 +345,7 @@ namespace Horizon
             ImGui::PushItemWidth(-1);
 
             float v_min = 0.0f; float v_max = 4.0f;
-            if (ImGui::DragScalar("##NumShadowCascades", ImGuiDataType_U32, &component.shadowCascadeCount, 1.0f, &v_min, &v_max))
+            if (ImGui::DragScalar("##shadowCascadeCount", ImGuiDataType_U32, &component.shadowCascadeCount, 1.0f, &v_min, &v_max))
             {
 
             }
@@ -364,10 +364,10 @@ namespace Horizon
             ImGui::NextColumn();
 
             ImGui::AlignTextToFramePadding();
-            ImGui::TextUnformatted("Shadow Cascade Transition Scale");
+            ImGui::TextUnformatted("Shadow Cascade Blend Scale");
             ImGui::NextColumn();
             ImGui::PushItemWidth(-1);
-            if (ImGui::DragFloat("##shadowCascadeTransitionScale", &component.shadowCascadeTransitionScale, 0.01f, 0.0f, 1.0f))
+            if (ImGui::DragFloat("##shadowCascadeBlendScale", &component.shadowCascadeBlendScale, 0.01f, 0.0f, 1.0f))
             {
 
             }

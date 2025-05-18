@@ -19,7 +19,7 @@ namespace Horizon
         , shadowMapSize(description.shadowMapSize)
         , shadowCascadeCount(description.shadowCascadeCount)
         , shadowCascadeSplitLambda(description.shadowCascadeSplitLambda)
-        , shadowCascadeTransitionScale(description.shadowCascadeTransitionScale)
+        , shadowCascadeBlendScale(description.shadowCascadeTransitionScale)
         , maxShadowDistance(description.maxShadowDistance)
         , shadowFadeOutFactor(description.shadowFadeOutFactor)
         , shadowMapDepthBiasConstantFactor(description.shadowMapDepthBiasConstantFactor)

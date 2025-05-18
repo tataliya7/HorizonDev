@@ -19,6 +19,7 @@ namespace Horizon
         MotionVectors,
         AmbientOcclusion,
         ShadowMask,
+        CascadedShadowMapCascadeIndex,
         VirtualShadowMapMipmap,
         SurfelGISurfel,
         SurfelGIHeatmap,
