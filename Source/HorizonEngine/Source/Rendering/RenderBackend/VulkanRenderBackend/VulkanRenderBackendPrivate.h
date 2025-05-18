@@ -1178,7 +1178,7 @@ namespace Horizon
         void CreateRenderDevices(PhysicalDeviceID* physicalDeviceIDs, uint32 numDevices, uint32* outDeviceMasks) override;
         void DestroyRenderDevices() override;
         void FlushRenderDevices() override;
-        RenderBackendDevice GetNativeDevice() override;
+        RenderBackendDeviceContext GetNativeDevice() override;
         void GetRenderBackendVulkanInfo(RenderBackendVulkanInfo* vulkanInfo) override;
         RenderBackendSwapChainHandle CreateSwapChain(const RenderBackendSwapChainDesc* desc) override;
         void DestroySwapChain(RenderBackendSwapChainHandle swapChain) override;

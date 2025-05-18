@@ -34,7 +34,7 @@ namespace Horizon
 
         if (!isContextValid)
         {
-            RenderBackendDevice device = fsr2->renderBackend->GetNativeDevice();
+            RenderBackendDeviceContext device = fsr2->renderBackend->GetNativeDevice();
             ID3D12Device* d3d12Device = static_cast<ID3D12Device*>(device.device);
             FfxDevice ffxDevice = ffxGetDeviceDX12(d3d12Device);
 

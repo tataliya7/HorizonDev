@@ -273,7 +273,7 @@ namespace Horizon
         renderSettings.globalIlluminationSettings.indirectLightingIntensity = 1.0f;
         renderSettings.shadowsTechnique = ShadowsTechnique::ShadowMap;
         renderSettings.reflectionsTechnique = ReflectionsTechnique::ScreenSpaceReflections;
-        renderSettings.superSamplingSettings.superSamplingTechnique = SuperSamplingTechnique::None;
+        renderSettings.superSamplingSettings.superSamplingTechnique = SuperSamplingTechnique::FSR;
         renderSettings.superSamplingSettings.qualityMode = 5;
         renderSettings.superSamplingSettings.desiredRenderResolutionPercentage = 1.0f;
         renderSettings.postProcessingSettings.localToneMappingMethod = LocalToneMappingMethod::BilateralGrid;

@@ -1331,11 +1331,12 @@ namespace Horizon
         device->WaitIdle();
     }
 
-    RenderBackendDevice D3D12RenderBackend::GetNativeDevice()
+    RenderBackendDeviceContext D3D12RenderBackend::GetNativeDevice()
     {
-        RenderBackendDevice d = {};
+        RenderBackendDeviceContext d = {};
         d.device = devices[0]->device.Get();
         d.physicalDevice = nullptr;
+        d.vkGetDeviceProcAddr = nullptr;
         return d;
     }
 

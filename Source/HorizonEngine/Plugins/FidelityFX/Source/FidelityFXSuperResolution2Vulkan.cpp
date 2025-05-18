@@ -33,12 +33,17 @@ namespace Horizon
 
         if (!isContextValid)
         {
-            RenderBackendDevice device = fsr2->renderBackend->GetNativeDevice();
+            RenderBackendDeviceContext device = fsr2->renderBackend->GetNativeDevice();
 
             VkDevice vkDevice = static_cast<VkDevice>(device.device);
             VkPhysicalDevice vkPhysicalDevice = static_cast<VkPhysicalDevice>(device.physicalDevice);
 
-            VkDeviceContext ffxDeviceContext = { vkDevice, vkPhysicalDevice, vkGetDeviceProcAddr };
+            VkDeviceContext ffxDeviceContext =
+            {
+                .vkDevice = vkDevice,
+                .vkPhysicalDevice = vkPhysicalDevice,
+                .vkDeviceProcAddr = static_cast<PFN_vkGetDeviceProcAddr>(device.vkGetDeviceProcAddr)
+            };
             FfxDevice ffxDevice = ffxGetDeviceVK(&ffxDeviceContext);
 
             uint32 targetWidth = fsr2->options.outputWidth;
@@ -69,7 +74,7 @@ namespace Horizon
 #if HORIZON_EXPERIMENTAL_INFINITE_PERSPECTIVE
             fsr2ContextDescription.flags |= FFX_FSR2_ENABLE_DEPTH_INFINITE;
 #endif
-            //We never use FSR2's own auto-exposure.
+            // We never use FSR2's own auto-exposure.
             //fsr2ContextDescription.flags |= enableAutoExposure ? FFX_FSR2_ENABLE_AUTO_EXPOSURE : 0;
 
 #if !HORIZON_CONFIGURATION_RELEASE

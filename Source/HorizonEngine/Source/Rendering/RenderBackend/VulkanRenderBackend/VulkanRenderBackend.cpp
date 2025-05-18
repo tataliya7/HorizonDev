@@ -2670,17 +2670,17 @@ namespace Horizon
         VkImage swapchainImages[RenderBackendMaxSwapChainBufferCount] = { 0 };
         VK_CHECK(deviceFunctions.vkGetSwapchainImagesKHR(handle, swapchain.handle, &swapchain.numBuffers, swapchainImages));
 
-        VkSemaphoreTypeCreateInfo semaphoreTypeCreateInfo = 
+        VkSemaphoreTypeCreateInfo semaphoreTypeCreateInfo =
         {
             .sType = VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO,
             .semaphoreType = VK_SEMAPHORE_TYPE_BINARY,
         };
-        VkSemaphoreCreateInfo semaphoreCreateInfo = 
+        VkSemaphoreCreateInfo semaphoreCreateInfo =
         {
             .sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
             .pNext = &semaphoreTypeCreateInfo,
         };
-        VkFenceCreateInfo fenceInfo = 
+        VkFenceCreateInfo fenceInfo =
         {
             .sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,
             .flags = VK_FENCE_CREATE_SIGNALED_BIT
@@ -4269,11 +4269,12 @@ namespace Horizon
         device.WaitIdle();
     }
 
-    RenderBackendDevice VulkanRenderBackend::GetNativeDevice()
+    RenderBackendDeviceContext VulkanRenderBackend::GetNativeDevice()
     {
-        RenderBackendDevice d = {};
+        RenderBackendDeviceContext d = {};
         d.device = device.handle;
         d.physicalDevice = device.physicalDevice->handle;
+        d.vkGetDeviceProcAddr = device.backend->instanceFunctions.vkGetDeviceProcAddr;
         return d;
     }
 

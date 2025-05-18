@@ -82,7 +82,7 @@ namespace Horizon
         /**
          * TBD.
          */
-        virtual RenderBackendDevice GetNativeDevice() = 0;
+        virtual RenderBackendDeviceContext GetNativeDevice() = 0;
 
         virtual void GetRenderBackendVulkanInfo(RenderBackendVulkanInfo* vulkanInfo) {}
 

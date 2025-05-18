@@ -1645,10 +1645,11 @@ namespace Horizon
         uint32 threadGroupCountZ;
     };
 
-    struct RenderBackendDevice
+    struct RenderBackendDeviceContext
     {
         void* device;
         void* physicalDevice;
+        void* vkGetDeviceProcAddr;
     };
 
     struct RenderBackendTextureResource
