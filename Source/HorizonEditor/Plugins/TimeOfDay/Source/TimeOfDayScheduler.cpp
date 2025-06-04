@@ -90,7 +90,7 @@ namespace Horizon
     void TimeOfDayScheduler::Tick(float deltaTime)
     {
         transform = scene->GetEntityManager()->TryGetComponent<TransformComponent>(entityHandle);
-        transform->rotation.x += deltaTime / loopTime * 360.0f;
-        transform->rotation.x = std::fmod(transform->rotation.x, 360.0f);
+        //transform->rotation.x += deltaTime / loopTime * 360.0f;
+        //transform->rotation.x = std::fmod(transform->rotation.x, 360.0f);
     }
 }

@@ -1,9 +1,9 @@
-#include "SkyAtmosphereRendering.h"
+#include "AtmosphereRendering.h"
 #include "RealTimeRenderer.h"
 
 namespace Horizon
 {
-    // Sky Atmosphere Rendering Configurations
+    // Configurations
     // TODO: Make it changeable in flight.
     uint32 TransmittanceLutWidth = 256;
     uint32 TransmittanceLutHeight = 64;
