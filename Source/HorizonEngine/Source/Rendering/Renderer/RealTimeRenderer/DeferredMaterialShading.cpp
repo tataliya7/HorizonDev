@@ -1,5 +1,5 @@
 #include "RealTimeRenderer.h"
-#include "SkyAtmosphereRendering.h"
+#include "AtmosphereRendering.h"
 
 namespace Horizon
 {

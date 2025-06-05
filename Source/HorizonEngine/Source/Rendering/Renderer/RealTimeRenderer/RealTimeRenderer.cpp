@@ -1,6 +1,5 @@
 #include "RealTimeRenderer.h"
-//#include "RealTimeRendererPrivate.h"
-#include "SkyAtmosphereRendering.h"
+#include "AtmosphereRendering.h"
 #include "TemporalSuperSampling.h"
 #include "StreamlineModule.h"
 
