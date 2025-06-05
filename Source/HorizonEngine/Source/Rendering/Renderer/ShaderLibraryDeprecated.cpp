@@ -156,8 +156,16 @@ namespace Horizon
             shaderLibrary->LoadShader(ShaderID::LightGridDebugVisualization, shaderDesc);
         }
         {
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/VirtualShadowMap/VirtualShadowMapClearPageTable.hsm", "VirtualShadowMapClearPageTableCS");
+            shaderLibrary->LoadShader(ShaderID::VirtualShadowMapClearPageTable, shaderDesc);
+        }
+        {
             ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/VirtualShadowMap/VirtualShadowMapPageRequest.hsm", "VirtualShadowMapPageRequestCS");
             shaderLibrary->LoadShader(ShaderID::VirtualShadowMapPageRequest, shaderDesc);
+        }
+        {
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/VirtualShadowMap/VirtualShadowMapPhysicalPageAllocation.hsm", "VirtualShadowMapPhysicalPageAllocationCS");
+            shaderLibrary->LoadShader(ShaderID::VirtualShadowMapPhysicalPageAllocation, shaderDesc);
         }
         {
             ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/VirtualShadowMap/VirtualShadowMapClearIndirectArgumentBuffer.hsm", "VirtualShadowMapClearIndirectArgumentBufferCS");
@@ -594,6 +602,10 @@ namespace Horizon
         {
             ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/DebugVisualization/VisualizeCascadedShadowMap.hsm", "VisualizeCascadedShadowMapCS");
             shaderLibrary->LoadShader(ShaderID::VisualizeCascadedShadowMap, shaderDesc);
+        }
+        {
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/DebugVisualization/VisualizeVirtualShadowMap.hsm", "VisualizeVirtualShadowMapCS");
+            shaderLibrary->LoadShader(ShaderID::VisualizeVirtualShadowMap, shaderDesc);
         }
         {
             ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Pixel, "Shaders/RealTimeRenderer/GUIComposition.hsm", "GUICompositionPS");

@@ -121,7 +121,9 @@ namespace Horizon
         RenderGraphTextureHandle convolvedEnvironmentMapTexture;
 
         RenderGraphBufferHandle virtualShadowMapShaderParameterBuffer;
+        RenderGraphBufferHandle virtualShadowMapPageTableBuffer;
         RenderGraphTextureHandle virtualShadowMapDepthTexture;
+        RenderGraphTextureHandle virtualShadowMapDebugVisualizationTexture;
 
         RenderBackendBufferHandle cascadedShadowMapShaderParameterBuffer;
         RenderGraphTextureHandle cascadedShadowMapDepthTexture;
@@ -584,6 +586,7 @@ namespace Horizon
             RenderBackendCommandList& commandList,
             const LightRenderObject& light,
             RenderBackendBufferHandle virtualShadowMapShaderParameterBuffer,
+            RenderBackendBufferHandle virtualShadowMapPageTableBuffer,
             RenderBackendTextureHandle virtualShadowMapDepthTexture);
         void DispatchCascadedShadowMapPassDrawCommands(RenderBackendCommandList& commandList, const LightRenderObject& light, uint32 cascadeIndex, RenderBackendBufferHandle cascadeShadowMapDataBuffer);
 

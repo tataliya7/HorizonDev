@@ -5,10 +5,33 @@ namespace Horizon
 {
     uint32 VirtualShadowMapPageSize = 128;
 
+    uint32 VirtualShadowMapClipmapMinLevel = 6;
+    uint32 VirtualShadowMapClipmapMaxLevel = 8;
+
+    // class VirtualShadowMapRenderData
+    // {
+    //     Vector3f lightDirection;
+    //
+    //     uint32 minLevel;
+    //     uint32 maxLevel;
+    //
+    //     struct LevelData
+    //     {
+    //         Vector3f origin;
+    //         Matrix4x4f viewToClipMatrix;
+    //     };
+    //
+    //     std::vector<> ;
+    //
+    //     Sphere boundingSphere;
+    //
+    // };
+
     void RealTimeRenderer::DispatchVirtualShadowMapPassDrawCommands(
         RenderBackendCommandList& commandList,
         const LightRenderObject& light,
         RenderBackendBufferHandle virtualShadowMapShaderParameterBuffer,
+        RenderBackendBufferHandle virtualShadowMapPageTableBuffer,
         RenderBackendTextureHandle virtualShadowMapDepthTexture)
     {
         const GeometryPassDrawCommandList& drawCommandList = geometryPassDrawCommandLists[uint32(GeometryPassType::VirtualShadowMap)];
@@ -32,9 +55,10 @@ namespace Horizon
             RenderBackendShaderConstants shaderConstants = {};
             shaderConstants.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
             shaderConstants.BindBufferSRV(1, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(virtualShadowMapShaderParameterBuffer));
-            shaderConstants.BindBufferSRV(2, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(gpuScene->geometryDataBuffer));
-            shaderConstants.BindBufferSRV(3, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(gpuScene->geometryInstanceDataBuffer));
-            shaderConstants.BindTextureUAV(4, renderBackend->GetTextureUAVBindlessResourceDescriptorIndex(virtualShadowMapDepthTexture, 0));
+            shaderConstants.BindBufferSRV(2, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(virtualShadowMapPageTableBuffer));
+            shaderConstants.BindBufferSRV(3, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(gpuScene->geometryDataBuffer));
+            shaderConstants.BindBufferSRV(4, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(gpuScene->geometryInstanceDataBuffer));
+            shaderConstants.BindTextureUAV(5, renderBackend->GetTextureUAVBindlessResourceDescriptorIndex(virtualShadowMapDepthTexture, 0));
 
             commandList.DrawIndexed(
                 vertexShader,
@@ -219,8 +243,17 @@ namespace Horizon
 
         RealTimeRendererSceneTextures& sceneTextures = renderGraph.blackboard.Get<RealTimeRendererSceneTextures>();
 
+        RenderGraphBufferDesc virtualShadowMapPageRequestBufferDesc = RenderGraphBufferDesc::CreateByteAddress(virtualShadowMapShaderParameters.physicalPageCount * sizeof(uint32));
+        RenderGraphBufferHandle virtualShadowMapPageRequestBuffer = renderGraph.CreateBuffer(virtualShadowMapPageRequestBufferDesc, "VirtualShadowMapPageRequestBuffer");
+
         RenderGraphBufferDesc virtualShadowMapPhysicalPageDataBufferDesc = RenderGraphBufferDesc::CreateByteAddress(virtualShadowMapShaderParameters.physicalPageCount * sizeof(uint32));
         RenderGraphBufferHandle virtualShadowMapPhysicalPageDataBuffer = renderGraph.CreateBuffer(virtualShadowMapPhysicalPageDataBufferDesc, "VirtualShadowMapPhysicalPageDataBuffer");
+
+        RenderGraphBufferDesc virtualShadowMapPageTableBufferDesc = RenderGraphBufferDesc::CreateByteAddress(virtualShadowMapShaderParameters.physicalPageCount * sizeof(uint32));
+        RenderGraphBufferHandle virtualShadowMapPageTableBuffer = renderGraph.CreateBuffer(virtualShadowMapPageTableBufferDesc, "VirtualShadowMapPageTableBuffer");
+
+        RenderGraphBufferDesc virtualShadowMapPhysicalPageListBufferDesc = RenderGraphBufferDesc::CreateByteAddress(sizeof(uint32), 1);
+        RenderGraphBufferHandle virtualShadowMapPhysicalPageListBuffer = renderGraph.CreateBuffer(virtualShadowMapPhysicalPageListBufferDesc, "VirtualShadowMapPhysicalPageListBuffer");
 
         RenderGraphBufferDesc virtualShadowMapIndirectArgumentBufferDesc = RenderGraphBufferDesc::CreateIndirectArguments(sizeof(uint32), 3);
         RenderGraphBufferHandle virtualShadowMapIndirectArgumentBuffer = renderGraph.CreateBuffer(virtualShadowMapIndirectArgumentBufferDesc, "VirtualShadowMapIndirectArgumentBuffer");
@@ -241,18 +274,75 @@ namespace Horizon
 
         RenderGraphTextureHandle virtualShadowMapDepthTexture = sceneTextures.virtualShadowMapDepthTexture = renderGraph.CreateTexture(virtualShadowMapDepthTextureDesc, "VirtualShadowMapDepthTexture");
 
-#if 1
         renderGraph.AddPass(
             std::format("VirtualShadowMapClearPageDataBuffer ({} bytes)", virtualShadowMapPhysicalPageDataBufferDesc.size),
             RenderGraphPassFlags::Compute,
             [&](RenderGraphBuilder& builder)
             {
+                virtualShadowMapPageRequestBuffer = builder.WriteBuffer(virtualShadowMapPageRequestBuffer, RenderBackendResourceState::UnorderedAccess);
                 virtualShadowMapPhysicalPageDataBuffer = builder.WriteBuffer(virtualShadowMapPhysicalPageDataBuffer, RenderBackendResourceState::UnorderedAccess);
-                //virtualShadowMapPhysicalPageDataBuffer = builder.WriteBuffer(virtualShadowMapPhysicalPageDataBuffer, RenderBackendResourceState::UnorderedAccess);
 
                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
                 {
+                    commandList.ClearBufferUAV(registry.GetRenderBackendBufferHandle(virtualShadowMapPageRequestBuffer), 0);
                     commandList.ClearBufferUAV(registry.GetRenderBackendBufferHandle(virtualShadowMapPhysicalPageDataBuffer), 0);
+                };
+            });
+
+        renderGraph.AddPass(
+            std::format("VirtualShadowMapClearIndirectArgumentBuffer (Compute, 1x1x1)"),
+            RenderGraphPassFlags::Compute,
+            [&](RenderGraphBuilder& builder)
+            {
+                virtualShadowMapIndirectArgumentBuffer = builder.WriteBuffer(virtualShadowMapIndirectArgumentBuffer, RenderBackendResourceState::UnorderedAccess);
+                virtualShadowMapPhysicalPageListBuffer = builder.WriteBuffer(virtualShadowMapPhysicalPageListBuffer, RenderBackendResourceState::UnorderedAccess);
+
+                return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
+                {
+                    uint32 threadGroupCountX = 1;
+                    uint32 threadGroupCountY = 1;
+                    uint32 threadGroupCountZ = 1;
+
+                    RenderBackendShaderConstants shaderConstants = {};
+                    shaderConstants.BindBufferUAV(0, registry.GetBufferUAVBindlessResourceDescriptorIndex(virtualShadowMapIndirectArgumentBuffer));
+                    shaderConstants.BindBufferUAV(1, registry.GetBufferUAVBindlessResourceDescriptorIndex(virtualShadowMapPhysicalPageListBuffer));
+
+                    RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::VirtualShadowMapClearIndirectArgumentBuffer);
+
+                    commandList.Dispatch(
+                        computeShader,
+                        shaderConstants,
+                        threadGroupCountX,
+                        threadGroupCountY,
+                        threadGroupCountZ);
+                };
+            });
+
+        renderGraph.AddPass(
+            std::format("VirtualShadowMapClearPageTable (Compute, {}x1x1)", virtualShadowMapShaderParameters.physicalPageCount),
+            RenderGraphPassFlags::Compute,
+            [&](RenderGraphBuilder& builder)
+            {
+                virtualShadowMapPageTableBuffer = builder.WriteBuffer(virtualShadowMapPageTableBuffer, RenderBackendResourceState::UnorderedAccess);
+
+                return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
+                {
+                    uint32 threadGroupCountX = ComputeShaderThreadGroupCount(virtualShadowMapShaderParameters.physicalPageCount, 64);
+                    uint32 threadGroupCountY = 1;
+                    uint32 threadGroupCountZ = 1;
+
+                    RenderBackendShaderConstants shaderConstants = {};
+                    shaderConstants.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(virtualShadowMapShaderParameterBuffer));
+                    shaderConstants.BindBufferUAV(1, registry.GetBufferUAVBindlessResourceDescriptorIndex(virtualShadowMapPageTableBuffer));
+
+                    RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::VirtualShadowMapClearPageTable);
+
+                    commandList.Dispatch(
+                        computeShader,
+                        shaderConstants,
+                        threadGroupCountX,
+                        threadGroupCountY,
+                        threadGroupCountZ);
                 };
             });
 
@@ -262,7 +352,7 @@ namespace Horizon
             [&](RenderGraphBuilder& builder)
             {
                 RenderGraphTextureHandle sceneDepthTexture = builder.ReadTexture(sceneTextures.sceneDepthTexture, RenderBackendResourceState::ShaderResource);
-                virtualShadowMapPhysicalPageDataBuffer = builder.WriteBuffer(virtualShadowMapPhysicalPageDataBuffer, RenderBackendResourceState::UnorderedAccess);
+                virtualShadowMapPageRequestBuffer = builder.WriteBuffer(virtualShadowMapPageRequestBuffer, RenderBackendResourceState::UnorderedAccess);
 
                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
                 {
@@ -274,7 +364,7 @@ namespace Horizon
                     shaderConstants.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
                     shaderConstants.BindBufferSRV(1, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(virtualShadowMapShaderParameterBuffer));
                     shaderConstants.BindTextureSRV(2, registry.GetTextureSRVBindlessResourceDescriptorIndex(sceneDepthTexture));
-                    shaderConstants.BindBufferUAV(3, registry.GetBufferUAVBindlessResourceDescriptorIndex(virtualShadowMapPhysicalPageDataBuffer));
+                    shaderConstants.BindBufferUAV(3, registry.GetBufferUAVBindlessResourceDescriptorIndex(virtualShadowMapPageRequestBuffer));
 
                     RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::VirtualShadowMapPageRequest);
 
@@ -288,22 +378,29 @@ namespace Horizon
             });
 
         renderGraph.AddPass(
-            std::format("VirtualShadowMapClearIndirectArgumentBuffer (Compute, 1x1x1)"),
+            std::format("VirtualShadowMapPhysicalPageAllocation (Compute, {}x1x1)", virtualShadowMapShaderParameters.physicalPageCount),
             RenderGraphPassFlags::Compute,
             [&](RenderGraphBuilder& builder)
             {
-                virtualShadowMapIndirectArgumentBuffer = builder.WriteBuffer(virtualShadowMapIndirectArgumentBuffer, RenderBackendResourceState::UnorderedAccess);
+                virtualShadowMapPageRequestBuffer = builder.ReadBuffer(virtualShadowMapPageRequestBuffer, RenderBackendResourceState::ShaderResource);
+                virtualShadowMapPhysicalPageListBuffer = builder.WriteBuffer(virtualShadowMapPhysicalPageListBuffer, RenderBackendResourceState::UnorderedAccess);
+                virtualShadowMapPageTableBuffer = builder.WriteBuffer(virtualShadowMapPageTableBuffer, RenderBackendResourceState::UnorderedAccess);
+                virtualShadowMapPhysicalPageDataBuffer = builder.WriteBuffer(virtualShadowMapPhysicalPageDataBuffer, RenderBackendResourceState::UnorderedAccess);
 
                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
                 {
-                    uint32 threadGroupCountX = 1;
+                    uint32 threadGroupCountX = ComputeShaderThreadGroupCount(virtualShadowMapShaderParameters.physicalPageCount, 64);
                     uint32 threadGroupCountY = 1;
                     uint32 threadGroupCountZ = 1;
 
                     RenderBackendShaderConstants shaderConstants = {};
-                    shaderConstants.BindBufferUAV(0, registry.GetBufferUAVBindlessResourceDescriptorIndex(virtualShadowMapIndirectArgumentBuffer));
+                    shaderConstants.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(virtualShadowMapShaderParameterBuffer));
+                    shaderConstants.BindBufferSRV(1, registry.GetBufferSRVBindlessResourceDescriptorIndex(virtualShadowMapPageRequestBuffer));
+                    shaderConstants.BindBufferUAV(2, registry.GetBufferSRVBindlessResourceDescriptorIndex(virtualShadowMapPhysicalPageListBuffer));
+                    shaderConstants.BindBufferUAV(3, registry.GetBufferUAVBindlessResourceDescriptorIndex(virtualShadowMapPageTableBuffer));
+                    shaderConstants.BindBufferUAV(4, registry.GetBufferUAVBindlessResourceDescriptorIndex(virtualShadowMapPhysicalPageDataBuffer));
 
-                    RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::VirtualShadowMapClearIndirectArgumentBuffer);
+                    RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::VirtualShadowMapPhysicalPageAllocation);
 
                     commandList.Dispatch(
                         computeShader,
@@ -313,6 +410,8 @@ namespace Horizon
                         threadGroupCountZ);
                 };
             });
+
+        sceneTextures.virtualShadowMapPageTableBuffer = virtualShadowMapPageTableBuffer;
 
         renderGraph.AddPass(
             std::format("VirtualShadowMapPhysicalMemoryAllocation (Compute, {}x1x1)", virtualShadowMapShaderParameters.physicalPageCount),
@@ -334,7 +433,6 @@ namespace Horizon
                     shaderConstants.BindBufferSRV(1, registry.GetBufferSRVBindlessResourceDescriptorIndex(virtualShadowMapPhysicalPageDataBuffer));
                     shaderConstants.BindBufferUAV(2, registry.GetBufferUAVBindlessResourceDescriptorIndex(virtualShadowMapIndirectArgumentBuffer));
                     shaderConstants.BindBufferUAV(3, registry.GetBufferUAVBindlessResourceDescriptorIndex(virtualShadowMapActivePhysicalPageIndexBuffer));
-                    shaderConstants.BindScalar(4, 0);
 
                     RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::VirtualShadowMapPhysicalMemoryAllocation);
 
@@ -347,6 +445,7 @@ namespace Horizon
                 };
             });
 
+#if 1
         renderGraph.AddPass(
             std::format("VirtualShadowMapClearPhysicalMemory (Compute, Indirect)"),
             RenderGraphPassFlags::Compute,
@@ -358,7 +457,6 @@ namespace Horizon
                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
                 {
                     RenderBackendShaderConstants shaderConstants = {};
-                    //shaderConstants.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
                     shaderConstants.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(virtualShadowMapShaderParameterBuffer));
                     shaderConstants.BindBufferSRV(1, registry.GetBufferSRVBindlessResourceDescriptorIndex(virtualShadowMapActivePhysicalPageIndexBuffer));
                     shaderConstants.BindTextureUAV(2, registry.GetTextureUAVBindlessResourceDescriptorIndex(virtualShadowMapDepthTexture, 0));
@@ -394,6 +492,7 @@ namespace Horizon
            RenderGraphPassFlags::Graphics,
            [&](RenderGraphBuilder& builder)
            {
+               virtualShadowMapPageTableBuffer = builder.WriteBuffer(virtualShadowMapPageTableBuffer, RenderBackendResourceState::UnorderedAccess);
                virtualShadowMapDepthTexture = builder.WriteTexture(virtualShadowMapDepthTexture, RenderBackendResourceState::UnorderedAccess);
 
                builder.SetRenderArea(0, 0, virtualShadowMapSize, virtualShadowMapSize);
@@ -407,7 +506,12 @@ namespace Horizon
                    RenderBackendScissor scissor(0, 0, virtualShadowMapSize, virtualShadowMapSize);
                    commandList.SetScissors(&scissor, 1);
 
-                   DispatchVirtualShadowMapPassDrawCommands(commandList, *light, virtualShadowMapShaderParameterBuffer, registry.GetRenderBackendTextureHandle(virtualShadowMapDepthTexture));
+                   DispatchVirtualShadowMapPassDrawCommands(
+                       commandList,
+                       *light,
+                       virtualShadowMapShaderParameterBuffer,
+                       registry.GetRenderBackendBufferHandle(virtualShadowMapPageTableBuffer),
+                       registry.GetRenderBackendTextureHandle(virtualShadowMapDepthTexture));
 
                    {
                        RenderBackendViewport viewport(0.0f, 0.0f, float(renderResolution.width), float(renderResolution.height));
@@ -433,11 +537,14 @@ namespace Horizon
             RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::UnorderedAccess | RenderBackendTextureCreateFlags::RenderTarget);
             RenderGraphTextureHandle screenSpaceShadowMaskTexture = renderGraph.CreateTexture(screenSpaceShadowMaskTextureDesc, "ScreenSpaceShadowMaskTexture");
 
+        RenderGraphTextureHandle debugVisualizationTexture = renderGraph.CreateTexture(screenSpaceShadowMaskTextureDesc, "VirtualShadowMapDebugVisualizationTexture");
+
         renderGraph.AddPass(
             std::format("VirtualShadowMapProjection (Compute, {}x{})", renderResolution.width, renderResolution.height),
             RenderGraphPassFlags::Compute,
             [&](RenderGraphBuilder& builder)
             {
+                RenderGraphBufferHandle virtualShadowMapPageTableBuffer = builder.ReadBuffer(sceneTextures.virtualShadowMapPageTableBuffer, RenderBackendResourceState::ShaderResource);
                 RenderGraphTextureHandle sceneDepthTexture = builder.ReadTexture(sceneTextures.sceneDepthTexture, RenderBackendResourceState::ShaderResource);
                 RenderGraphTextureHandle virtualShadowMapDepthTexture = builder.ReadTexture(sceneTextures.virtualShadowMapDepthTexture, RenderBackendResourceState::ShaderResource);
                 screenSpaceShadowMaskTexture = builder.WriteTexture(screenSpaceShadowMaskTexture, RenderBackendResourceState::UnorderedAccess);
@@ -451,9 +558,11 @@ namespace Horizon
                     RenderBackendShaderConstants shaderConstants = {};
                     shaderConstants.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
                     shaderConstants.BindBufferSRV(1, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(virtualShadowMapShaderParameterBuffer));
-                    shaderConstants.BindTextureSRV(2, registry.GetTextureSRVBindlessResourceDescriptorIndex(sceneDepthTexture));
-                    shaderConstants.BindTextureSRV(3, registry.GetTextureSRVBindlessResourceDescriptorIndex(virtualShadowMapDepthTexture));
-                    shaderConstants.BindTextureUAV(4, registry.GetTextureUAVBindlessResourceDescriptorIndex(screenSpaceShadowMaskTexture, 0));
+                    shaderConstants.BindBufferSRV(2, registry.GetBufferSRVBindlessResourceDescriptorIndex(virtualShadowMapPageTableBuffer));
+                    shaderConstants.BindTextureSRV(3, registry.GetTextureSRVBindlessResourceDescriptorIndex(sceneDepthTexture));
+                    shaderConstants.BindTextureSRV(4, registry.GetTextureSRVBindlessResourceDescriptorIndex(virtualShadowMapDepthTexture));
+                    shaderConstants.BindTextureUAV(5, registry.GetTextureUAVBindlessResourceDescriptorIndex(screenSpaceShadowMaskTexture, 0));
+                    shaderConstants.BindTextureUAV(6, registry.GetTextureUAVBindlessResourceDescriptorIndex(debugVisualizationTexture, 0));
 
                     RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::VirtualShadowMapProjection);
 
@@ -467,48 +576,6 @@ namespace Horizon
             });
 
         sceneTextures.shadowMaskTexture = screenSpaceShadowMaskTexture;
-    }
-
-    RenderGraphTextureHandle RealTimeRenderer::AddVisualizeVirtualShadowMapPass(RenderGraph& renderGraph, const SceneView& view)
-    {
-        return RenderGraphTextureHandle::Null;
-        // const RealTimeRendererSceneTextures& sceneTextures = renderGraph.blackboard.Get<RealTimeRendererSceneTextures>();
-        //
-        // // TODO
-        // RenderGraphTextureHandle outputTexture = renderGraph.ImportExternalTexture(view.targetTexture, "TargetTexture");
-        // //RenderGraphTextureHandle outputTexture = renderGraph.CreateTexture(view.targetTexture->GetDesc(), "VisualizeAmbientOcclusionTexture");
-        //
-        // renderGraph.AddPass(
-        //     std::format("VisualizeAmbientOcclusion (Compute, {}x{}->{}x{})", renderResolution.width, renderResolution.height, targetResolution.width, targetResolution.height),
-        //     RenderGraphPassFlags::Compute,
-        //     [&](RenderGraphBuilder& builder)
-        //     {
-        //         RenderGraphTextureHandle ambientOcclusionTexture = builder.ReadTexture(sceneTextures.ambientOcclusionTexture, RenderBackendResourceState::ShaderResource);
-        //
-        //         outputTexture = builder.WriteTexture(outputTexture, RenderBackendResourceState::UnorderedAccess);
-        //
-        //         return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
-        //         {
-        //             uint32 threadGroupCountX = ComputeShaderThreadGroupCount(targetResolution.width, PostProcessingThreadGroupSizeX);
-        //             uint32 threadGroupCountY = ComputeShaderThreadGroupCount(targetResolution.height, PostProcessingThreadGroupSizeY);
-        //             uint32 threadGroupCountZ = 1;
-        //
-        //             RenderBackendShaderConstants shaderConstants = {};
-        //             shaderConstants.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
-        //             shaderConstants.BindTextureSRV(1, registry.GetTextureSRVBindlessResourceDescriptorIndex(ambientOcclusionTexture));
-        //             shaderConstants.BindTextureUAV(2, registry.GetTextureUAVBindlessResourceDescriptorIndex(outputTexture, 0));
-        //
-        //             RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::VisualizeAmbientOcclusion);
-        //
-        //             commandList.Dispatch(
-        //                 computeShader,
-        //                 shaderConstants,
-        //                 threadGroupCountX,
-        //                 threadGroupCountY,
-        //                 threadGroupCountZ);
-        //         };
-        //     });
-        //
-        // return outputTexture;
+        sceneTextures.virtualShadowMapDebugVisualizationTexture = debugVisualizationTexture;
     }
 }

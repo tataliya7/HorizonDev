@@ -49,9 +49,9 @@ void VirtualShadowMapPageRequestCS(uint3 dispatchThreadID : SV_DispatchThreadID)
 
     if (valid)
     {
-        uint2 physicalPageCoordinate2D = uint2(shadowMapTextureCoord.x * 128, shadowMapTextureCoord.y * 128);
-        uint physicalPageIndex = physicalPageCoordinate2D.x * 128 + physicalPageCoordinate2D.y;
+        uint2 virtualPageCoordinate2D = uint2(shadowMapTextureCoord.x * 128, shadowMapTextureCoord.y * 128);
+        uint virtualPageIndex = virtualPageCoordinate2D.x + virtualPageCoordinate2D.y * 128;
 
-        virtualShadowMapPageRequestBuffer.Store<uint>(physicalPageIndex * sizeof(uint), 1);
+        virtualShadowMapPageRequestBuffer.Store<uint>(virtualPageIndex * sizeof(uint), 1);
     }
 }

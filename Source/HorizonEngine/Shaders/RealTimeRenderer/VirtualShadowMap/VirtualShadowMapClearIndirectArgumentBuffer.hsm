@@ -4,6 +4,7 @@
 
 SHADER_CONSTANTS_STRUCT_BEGIN();
 SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_UAV(0, VirtualShadowMapIndirectArgumentBufferUAV);
+SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_UAV(1, VirtualShadowMapPhysicalPageListBufferUAV);
 SHADER_CONSTANTS_STRUCT_END();
 
 [shader("compute")]
@@ -11,8 +12,11 @@ SHADER_CONSTANTS_STRUCT_END();
 void VirtualShadowMapClearIndirectArgumentBufferCS(uint3 dispatchThreadID : SV_DispatchThreadID)
 {
     RWByteAddressBuffer virtualShadowMapIndirectArgumentBuffer = ShaderConstants.GetVirtualShadowMapIndirectArgumentBufferUAV();
+    RWByteAddressBuffer virtualShadowMapPhysicalPageListBuffer = ShaderConstants.GetVirtualShadowMapPhysicalPageListBufferUAV();
 
     virtualShadowMapIndirectArgumentBuffer.Store<uint>(0 * sizeof(uint), 0);
     virtualShadowMapIndirectArgumentBuffer.Store<uint>(1 * sizeof(uint), 1);
     virtualShadowMapIndirectArgumentBuffer.Store<uint>(2 * sizeof(uint), 1);
+
+    virtualShadowMapPhysicalPageListBuffer.Store<uint>(0 * sizeof(uint), 0);
 }

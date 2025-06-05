@@ -7,9 +7,10 @@
 SHADER_CONSTANTS_STRUCT_BEGIN();
 SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferSRV);
 SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(1, VirtualShadowMapShaderParameters, VirtualShadowMapShaderParameterBufferSRV);
-SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_SRV(2, GeometryDataBufferSRV);
-SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_SRV(3, GeometryInstanceDataBufferSRV);
-SHADER_CONSTANTS_TEXTURE_2D_ARRAY_UAV(4, uint, VirtualShadowMapDepthTextureUAV);
+SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_SRV(2, VirtualShadowMapPageTableBufferSRV);
+SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_SRV(3, GeometryDataBufferSRV);
+SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_SRV(4, GeometryInstanceDataBufferSRV);
+SHADER_CONSTANTS_TEXTURE_2D_ARRAY_UAV(5, uint, VirtualShadowMapDepthTextureUAV);
 SHADER_CONSTANTS_STRUCT_END();
 
 [shader("vertex")]
@@ -43,14 +44,23 @@ void VirtualShadowMapDepthVS(
 [shader("pixel")]
 void VirtualShadowMapDepthPS(in float4 position : SV_Position)
 {
-    uint2 virtualAddress = uint2(position.x, position.y);
-    float depth = position.z;
-
+    ByteAddressBuffer virtualShadowMapPageTableBuffer = ShaderConstants.GetVirtualShadowMapPageTableBufferSRV();
     RWTexture2DArray<uint> virtualShadowMapDepthTexture = ShaderConstants.GetVirtualShadowMapDepthTextureUAV();
 
-    //if ()
+    uint2 virtualAddress = uint2(position.x, position.y);
+    uint virtualPageIndex = virtualAddress.x / 128 + (virtualAddress.y / 128) * 128;
+    uint2 offset = uint2(virtualAddress.x % 128, virtualAddress.y % 128);
+
+    float depth = position.z;
+
+    uint encoededPageTableEntry = virtualShadowMapPageTableBuffer.Load<uint>(virtualPageIndex * sizeof(uint));
+    VirtualShadowMapPageTableEntry pageTableEntry = DecodePageTableEntry(encoededPageTableEntry);
+
+    if (pageTableEntry.valid)
     {
-        uint3 physicalAddress = uint3(virtualAddress, 0);
+        uint3 physicalAddress = uint3(pageTableEntry.physicalPageAddress.x * 128 + offset.x, pageTableEntry.physicalPageAddress.y * 128 + offset.y, 0);
+        //uint3 physicalAddress = uint3(virtualAddress.x, virtualAddress.y, 0);
+
         InterlockedMax(virtualShadowMapDepthTexture[physicalAddress], asuint(depth));
     }
 }

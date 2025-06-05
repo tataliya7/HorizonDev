@@ -8,8 +8,39 @@ struct VirtualShadowMapShaderParameters
 DECLARE_ALIASED_ARRAY_STRUCTURED_BUFFER_SRV(VirtualShadowMapShaderParameters);
 
 #define VIRTUAL_SHADOW_MAP_PHYSICAL_PAGE_DATA_FLAG_BIT_USED 0x00000001u
+#define VIRTUAL_SHADOW_MAP_PHYSICAL_PAGE_SIZE 128
 
 struct VirtualShadowMapPhysicalPageData
 {
     uint flags;
 };
+
+struct VirtualShadowMapPageTableEntry
+{
+    uint2 physicalPageAddress;
+    bool valid;
+};
+
+uint EncodePageTableEntry(VirtualShadowMapPageTableEntry pageTableEntry)
+{
+    uint encodedPageTableEntry =
+        (pageTableEntry.physicalPageAddress.x & 0x3FF) |
+        ((pageTableEntry.physicalPageAddress.y & 0x3FF) << 10) |
+        (pageTableEntry.valid ? 0x1000000 : 0);
+
+    return encodedPageTableEntry;
+}
+
+VirtualShadowMapPageTableEntry DecodePageTableEntry(uint encodedPageTableEntry)
+{
+    VirtualShadowMapPageTableEntry pageTableEntry;
+    pageTableEntry.physicalPageAddress = uint2(encodedPageTableEntry & 0x3FF, (encodedPageTableEntry >> 10) & 0x3FF);
+    pageTableEntry.valid = (encodedPageTableEntry & 0x1000000) != 0;
+
+    return pageTableEntry;
+}
+
+uint2 PhysicalPageIndexToPhysicalPageAddress(uint physicalPageIndex)
+{
+	return uint2(physicalPageIndex & 0x7f, physicalPageIndex >> 7);
+}
