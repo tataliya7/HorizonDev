@@ -2,10 +2,21 @@
 
 struct VirtualShadowMapShaderParameters
 {
+    uint maximumVirtualPageCount;
     uint physicalPageCount;
     float4x4 worldToClipMatrix;
 };
 DECLARE_ALIASED_ARRAY_STRUCTURED_BUFFER_SRV(VirtualShadowMapShaderParameters);
+
+struct VirtualShadowMapEntryShaderParameters
+{
+    float4x4 worldToClipMatrix;
+    float4 worldSpaceOrigin;
+    uint lightType;
+    uint level;
+    uint virtualShadowMapEntryIndex;
+    uint padding0;
+};
 
 #define VIRTUAL_SHADOW_MAP_PHYSICAL_PAGE_DATA_FLAG_BIT_USED 0x00000001u
 #define VIRTUAL_SHADOW_MAP_PHYSICAL_PAGE_SIZE 128
@@ -43,4 +54,12 @@ VirtualShadowMapPageTableEntry DecodePageTableEntry(uint encodedPageTableEntry)
 uint2 PhysicalPageIndexToPhysicalPageAddress(uint physicalPageIndex)
 {
 	return uint2(physicalPageIndex & 0x7f, physicalPageIndex >> 7);
+	//return uint2(physicalPageIndex % 128, physicalPageIndex / 128);
+}
+
+uint ComputeClipmapLevel(VirtualShadowMapShaderParameters parameters, float3 worldSpacePosition, float3 tt)
+{
+	float3 worldSpaceClipmapOrigin = tt;
+	float distance = length(worldSpacePosition - worldSpaceClipmapOrigin);
+	return uint(log2(distance));
 }

@@ -1,5 +1,5 @@
-#include "RealTimeRenderer.h"
 #include "SurfelBasedGlobalIllumination.h"
+#include "RealTimeRenderer.h"
 
 namespace Horizon
 {

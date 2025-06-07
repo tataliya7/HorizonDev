@@ -870,6 +870,7 @@ namespace Horizon
             "Screen Space Shadow Mask",
             "Cascaded Shadow Map Cascade Index",
             "Virtual Shadow Map Mipmap",
+            "Virtual Shadow Map Page",
             "Surfel GI Surfel",
             "Surfel GI Heatmap"
         };

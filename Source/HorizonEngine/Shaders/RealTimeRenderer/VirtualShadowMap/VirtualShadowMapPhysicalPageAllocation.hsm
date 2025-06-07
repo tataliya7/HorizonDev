@@ -21,14 +21,14 @@ void VirtualShadowMapPhysicalPageAllocationCS(uint3 dispatchThreadID : SV_Dispat
     RWByteAddressBuffer virtualShadowMapPhysicalPageDataBuffer = ShaderConstants.GetVirtualShadowMapPhysicalPageDataBufferUAV();
     VirtualShadowMapShaderParameters virtualShadowMapShaderParameters = virtualShadowMapShaderParameterBuffer[0];
 
-    uint globalPageIndex = dispatchThreadID.x;
+    uint globalVirtualPageIndex = dispatchThreadID.x;
 
-    if (globalPageIndex >= virtualShadowMapShaderParameters.physicalPageCount)
+    if (globalVirtualPageIndex >= virtualShadowMapShaderParameters.maximumVirtualPageCount)
     {
         return;
     }
 
-    uint requestPage = virtualShadowMapPageRequestBuffer.Load<uint>(globalPageIndex * sizeof(uint));
+    uint requestPage = virtualShadowMapPageRequestBuffer.Load<uint>(globalVirtualPageIndex * sizeof(uint));
 
     if (requestPage != 0)
     {
@@ -44,7 +44,7 @@ void VirtualShadowMapPhysicalPageAllocationCS(uint3 dispatchThreadID : SV_Dispat
 
             uint encodedPageTableEntry = EncodePageTableEntry(pageTableEntry);
 
-            virtualShadowMapPageTableBuffer.Store<uint>(globalPageIndex * sizeof(uint), encodedPageTableEntry);
+            virtualShadowMapPageTableBuffer.Store<uint>(globalVirtualPageIndex * sizeof(uint), encodedPageTableEntry);
 
             VirtualShadowMapPhysicalPageData physicalPageData;
             physicalPageData.flags |= VIRTUAL_SHADOW_MAP_PHYSICAL_PAGE_DATA_FLAG_BIT_USED;

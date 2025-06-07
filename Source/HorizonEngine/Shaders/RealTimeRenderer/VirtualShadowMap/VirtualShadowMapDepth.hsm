@@ -11,6 +11,8 @@ SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_SRV(2, VirtualShadowMapPageTableBufferSRV);
 SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_SRV(3, GeometryDataBufferSRV);
 SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_SRV(4, GeometryInstanceDataBufferSRV);
 SHADER_CONSTANTS_TEXTURE_2D_ARRAY_UAV(5, uint, VirtualShadowMapDepthTextureUAV);
+SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_SRV(6, VirtualShadowMapEntryBufferSRV);
+SHADER_CONSTANTS_SCALAR(7, uint, ShadowViewIndex);
 SHADER_CONSTANTS_STRUCT_END();
 
 [shader("vertex")]
@@ -27,13 +29,17 @@ void VirtualShadowMapDepthVS(
     PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
     VirtualShadowMapShaderParameters virtualShadowMapShaderParameter = virtualShadowMapShaderParameterBuffer[0];
 
+    ByteAddressBuffer virtualShadowMapEntryBuffer = ShaderConstants.GetVirtualShadowMapEntryBufferSRV();
+    uint shadowViewIndex = ShaderConstants.GetShadowViewIndex();
+    VirtualShadowMapEntryShaderParameters virtualShadowMapEntry = virtualShadowMapEntryBuffer.Load<VirtualShadowMapEntryShaderParameters>(shadowViewIndex * sizeof(VirtualShadowMapEntryShaderParameters));
+
     GPUSceneGeometryInstanceData instanceData = GetGPUSceneGeometryInstanceData(geometryInstanceDataBuffer, instanceID);
     GPUSceneGeometryData geometryData = GetGPUSceneGeometryData(geometryDataBuffer, instanceData.geometryID);
 
     VertexAttributes vertexAttributes = GetVertexAttributes(geometryData, vertexID);
 
     float3 worldSpaceVertexPosition = mul(instanceData.localToWorldMatrix, float4(vertexAttributes.position, 1.0f)).xyz;
-    float4 clipSpaceVertexPosition = mul(virtualShadowMapShaderParameter.worldToClipMatrix, float4(worldSpaceVertexPosition, 1.0f));
+    float4 clipSpaceVertexPosition = mul(virtualShadowMapEntry.worldToClipMatrix, float4(worldSpaceVertexPosition, 1.0f));
 
     position = clipSpaceVertexPosition;
 
@@ -47,8 +53,10 @@ void VirtualShadowMapDepthPS(in float4 position : SV_Position)
     ByteAddressBuffer virtualShadowMapPageTableBuffer = ShaderConstants.GetVirtualShadowMapPageTableBufferSRV();
     RWTexture2DArray<uint> virtualShadowMapDepthTexture = ShaderConstants.GetVirtualShadowMapDepthTextureUAV();
 
+    uint shadowViewIndex = ShaderConstants.GetShadowViewIndex();
+
     uint2 virtualAddress = uint2(position.x, position.y);
-    uint virtualPageIndex = virtualAddress.x / 128 + (virtualAddress.y / 128) * 128;
+    uint virtualPageIndex = shadowViewIndex * 128 * 128 + virtualAddress.x / 128 + (virtualAddress.y / 128) * 128;
     uint2 offset = uint2(virtualAddress.x % 128, virtualAddress.y % 128);
 
     float depth = position.z;
@@ -59,7 +67,6 @@ void VirtualShadowMapDepthPS(in float4 position : SV_Position)
     if (pageTableEntry.valid)
     {
         uint3 physicalAddress = uint3(pageTableEntry.physicalPageAddress.x * 128 + offset.x, pageTableEntry.physicalPageAddress.y * 128 + offset.y, 0);
-        //uint3 physicalAddress = uint3(virtualAddress.x, virtualAddress.y, 0);
 
         InterlockedMax(virtualShadowMapDepthTexture[physicalAddress], asuint(depth));
     }

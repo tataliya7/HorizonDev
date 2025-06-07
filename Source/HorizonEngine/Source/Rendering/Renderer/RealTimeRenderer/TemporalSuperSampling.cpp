@@ -1,5 +1,5 @@
-#include "RealTimeRenderer.h"
 #include "TemporalSuperSampling.h"
+#include "RealTimeRenderer.h"
 
 namespace Horizon
 {

@@ -6,23 +6,19 @@
 #include "VirtualShadowMapCommon.hsh"
 
 #define ENABLE_DEBUG_VISUALIZATION 1
-
-float ComputeClipmapLevelID(VirtualShadowMapShaderParameters parameters, float3 worldSpacePosition, float3 tt)
-{
-	float3 worldSpaceClipmapOrigin = tt;
-
-	float distance = length(worldSpacePosition - worldSpaceClipmapOrigin);
-	return log2(distance);
-}
+#define VIRTUAL_SHADOW_MAP_DEBUG_VISUALIZATION_MODE_MIPMAP 0
+#define VIRTUAL_SHADOW_MAP_DEBUG_VISUALIZATION_MODE_VIRTUAL_PAGE 1
 
 SHADER_CONSTANTS_STRUCT_BEGIN();
 SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferSRV);
 SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(1, VirtualShadowMapShaderParameters, VirtualShadowMapShaderParameterBufferSRV);
 SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_SRV(2, VirtualShadowMapPageTableBufferSRV);
-SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(3, SceneDepthTextureSRV);
-SHADER_CONSTANTS_TEXTURE_2D_ARRAY_SRV(4, uint, VirtualShadowMapDepthTextureSRV);
-SHADER_CONSTANTS_TEXTURE_2D_UAV(5, float4, ShadowMaskTextureUAV);
-SHADER_CONSTANTS_TEXTURE_2D_UAV(6, float4, VirtualShadowMapDebugVisualizationTextureUAV);
+SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_SRV(3, VirtualShadowMapEntryBufferSRV);
+SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(4, SceneDepthTextureSRV);
+SHADER_CONSTANTS_TEXTURE_2D_ARRAY_SRV(5, uint, VirtualShadowMapDepthTextureSRV);
+SHADER_CONSTANTS_TEXTURE_2D_UAV(6, float4, ShadowMaskTextureUAV);
+SHADER_CONSTANTS_TEXTURE_2D_UAV(7, float4, VirtualShadowMapDebugVisualizationTextureUAV);
+SHADER_CONSTANTS_SCALAR(8, uint, DebugVisualizationMode);
 SHADER_CONSTANTS_STRUCT_END();
 
 struct VirtualShadowMapTexelData
@@ -35,6 +31,7 @@ struct VirtualShadowMapTexelData
 VirtualShadowMapTexelData SampleVirtualShadowMap(
     Texture2DArray<uint> virtualShadowMapDepthTexture,
     ByteAddressBuffer virtualShadowMapPageTableBuffer,
+    VirtualShadowMapEntryShaderParameters virtualShadowMapEntry,
     float2 uv)
 {
     uv = saturate(uv);
@@ -44,7 +41,7 @@ VirtualShadowMapTexelData SampleVirtualShadowMap(
     result.physicalAddress = uint3(result.virtualAddress, 0);
 
     uint2 virtualAddress = result.virtualAddress;
-    uint virtualPageIndex = virtualAddress.x / 128 + (virtualAddress.y / 128) * 128;
+    uint virtualPageIndex = virtualShadowMapEntry.virtualShadowMapEntryIndex * 128 * 128 + virtualAddress.x / 128 + (virtualAddress.y / 128) * 128;
     uint2 offset = uint2(virtualAddress.x % 128, virtualAddress.y % 128);
     uint encoededPageTableEntry = virtualShadowMapPageTableBuffer.Load<uint>(virtualPageIndex * sizeof(uint));
     VirtualShadowMapPageTableEntry pageTableEntry = DecodePageTableEntry(encoededPageTableEntry);
@@ -99,6 +96,7 @@ VirtualShadowMapSpaceRay CreateVirtualShadowMapSpaceRay(
 float CastShadowMapSpaceRay(
     Texture2DArray<uint> virtualShadowMapDepthTexture,
     ByteAddressBuffer virtualShadowMapPageTableBuffer,
+    VirtualShadowMapEntryShaderParameters virtualShadowMapEntry,
     VirtualShadowMapSpaceRay ray,
     uint stepCount,
     float dither)
@@ -121,6 +119,7 @@ float CastShadowMapSpaceRay(
             VirtualShadowMapTexelData texelData = SampleVirtualShadowMap(
                 virtualShadowMapDepthTexture,
                 virtualShadowMapPageTableBuffer,
+                virtualShadowMapEntry,
                 sampleUVZ.xy);
 
             float referenceDepth = texelData.depthValue;
@@ -151,14 +150,14 @@ void VirtualShadowMapProjectionCS(uint3 dispatchThreadID : SV_DispatchThreadID)
         return;
     }
 
-    uint2 pixelCoord = dispatchThreadID.xy;
-    float2 uv = (pixelCoord + 0.5f) * frameShaderParameters.renderResolution.zw;
-
     StructuredBuffer<VirtualShadowMapShaderParameters> virtualShadowMapShaderParameterBuffer = ShaderConstants.GetVirtualShadowMapShaderParameterBufferSRV();
     ByteAddressBuffer virtualShadowMapPageTableBuffer = ShaderConstants.GetVirtualShadowMapPageTableBufferSRV();
     Texture2D sceneDepthTexture = ShaderConstants.GetSceneDepthTextureSRV();
     Texture2DArray<uint> virtualShadowMapDepthTexture = ShaderConstants.GetVirtualShadowMapDepthTextureSRV();
     RWTexture2D<float4> shadowMaskTexture = ShaderConstants.GetShadowMaskTextureUAV();
+
+    uint2 pixelCoord = dispatchThreadID.xy;
+    float2 uv = (pixelCoord + 0.5f) * frameShaderParameters.renderResolution.zw;
 
     VirtualShadowMapShaderParameters virtualShadowMapShaderParameters = virtualShadowMapShaderParameterBuffer[0];
     float depth = sceneDepthTexture.SampleLevel(GlobalSamplerPointClamp, uv, 0).r;
@@ -175,11 +174,15 @@ void VirtualShadowMapProjectionCS(uint3 dispatchThreadID : SV_DispatchThreadID)
         return;
     }
 
-    uint clipmapLevel = ComputeClipmapLevelID(virtualShadowMapShaderParameters, worldSpacePosition, frameShaderParameters.cameraPosition);
+    uint clipmapLevel = ComputeClipmapLevel(virtualShadowMapShaderParameters, worldSpacePosition, frameShaderParameters.cameraPosition);
+    uint virtualShadowMapEntryIndex = clipmapLevel;
+    ByteAddressBuffer virtualShadowMapEntryBuffer = ShaderConstants.GetVirtualShadowMapEntryBufferSRV();
+    VirtualShadowMapEntryShaderParameters virtualShadowMapEntry = virtualShadowMapEntryBuffer.Load<VirtualShadowMapEntryShaderParameters>(virtualShadowMapEntryIndex * sizeof(VirtualShadowMapEntryShaderParameters));
 
     float shadowFactor = 1.0f;
 
-    float4 shadowMapTextureCoord = mul(virtualShadowMapShaderParameters.worldToClipMatrix, float4(worldSpacePosition, 1.0f));
+    float4x4 worldToClipMatrix = virtualShadowMapEntry.worldToClipMatrix;
+    float4 shadowMapTextureCoord = mul(worldToClipMatrix, float4(worldSpacePosition, 1.0f));
     shadowMapTextureCoord /= shadowMapTextureCoord.w;
     shadowMapTextureCoord.xy = NDCSpaceXYToScreenSpaceUV(shadowMapTextureCoord.xy);
 
@@ -188,6 +191,21 @@ void VirtualShadowMapProjectionCS(uint3 dispatchThreadID : SV_DispatchThreadID)
         shadowMapTextureCoord.y > 0.0f && shadowMapTextureCoord.y < 1.0f &&
         shadowMapTextureCoord.z > 0.0f && shadowMapTextureCoord.z < 1.0f;
 
+#if 0
+    uint2 virtualAddress = uint2(shadowMapTextureCoord.x * 128 * 128, shadowMapTextureCoord.y * 128 * 128);
+    uint virtualPageIndex = virtualShadowMapEntry.virtualShadowMapEntryIndex * 128 * 128 + virtualAddress.x / 128 + (virtualAddress.y / 128) * 128;
+    uint2 offset = uint2(virtualAddress.x % 128, virtualAddress.y % 128);
+    uint encoededPageTableEntry = virtualShadowMapPageTableBuffer.Load<uint>(virtualPageIndex * sizeof(uint));
+    VirtualShadowMapPageTableEntry pageTableEntry = DecodePageTableEntry(encoededPageTableEntry);
+    uint3 physicalAddress = uint3(pageTableEntry.physicalPageAddress.x * 128 + offset.x, pageTableEntry.physicalPageAddress.y * 128 + offset.y, 0);
+    //uint3 physicalAddress = uint3(virtualAddress, 0);
+
+    if (validShadowMapTextureCoord)
+    {
+        float shadowMapDepth = asfloat(virtualShadowMapDepthTexture[physicalAddress].r);
+        shadowFactor = (shadowMapTextureCoord.z > shadowMapDepth) ? 1.0f : 0.0f;
+    }
+#else
     if (validShadowMapTextureCoord)
     {
         float3 L = -frameShaderParameters.atmosphericLightDirection;
@@ -212,11 +230,12 @@ void VirtualShadowMapProjectionCS(uint3 dispatchThreadID : SV_DispatchThreadID)
                 rayOrigin,
                 rayDirection,
                 rayMaxDistance,
-                virtualShadowMapShaderParameters.worldToClipMatrix);
+                worldToClipMatrix);
 
             float hitPointShadowMapDepth = CastShadowMapSpaceRay(
                 virtualShadowMapDepthTexture,
                 virtualShadowMapPageTableBuffer,
+                virtualShadowMapEntry,
                 ray,
                 stepCount,
                 noise);
@@ -233,29 +252,24 @@ void VirtualShadowMapProjectionCS(uint3 dispatchThreadID : SV_DispatchThreadID)
 
         shadowFactor = float(rayMissCount) / float(rayCount);
     }
-
-#if 0
-    uint2 virtualAddress = uint2(shadowMapTextureCoord.x * 128 * 128, shadowMapTextureCoord.y * 128 * 128);
-
-    uint virtualPageIndex = virtualAddress.x / 128 + (virtualAddress.y / 128) * 128;
-    uint2 offset = uint2(virtualAddress.x % 128, virtualAddress.y % 128);
-    uint encoededPageTableEntry = virtualShadowMapPageTableBuffer.Load<uint>(virtualPageIndex * sizeof(uint));
-    VirtualShadowMapPageTableEntry pageTableEntry = DecodePageTableEntry(encoededPageTableEntry);
-    uint3 physicalAddress = uint3(pageTableEntry.physicalPageAddress.x * 128 + offset.x, pageTableEntry.physicalPageAddress.y * 128 + offset.y, 0);
-    //uint3 physicalAddress = uint3(virtualAddress, 0);
-
-    if (isShadowMapTextureCoordValid)
-    {
-        float shadowMapDepth = asfloat(virtualShadowMapDepthTexture[physicalAddress].r);
-        shadowFactor = (shadowMapTextureCoord.z > shadowMapDepth) ? 1.0f : 0.0f;
-    }
 #endif
 
     shadowMaskTexture[pixelCoord] = float4(shadowFactor, 0.0f, 0.0f, 0.0f);
 
 #if ENABLE_DEBUG_VISUALIZATION
     RWTexture2D<float4> debugVisualizationTextureUAV = ShaderConstants.GetVirtualShadowMapDebugVisualizationTextureUAV();
-    float3 debugVisualizationColor = UintToColor(clipmapLevel + 4);
-    debugVisualizationTextureUAV[pixelCoord] = float4(debugVisualizationColor + 0.2f * shadowFactor, 1.0f);
+    uint debugVisualizationMode = ShaderConstants.GetDebugVisualizationMode();
+    if (debugVisualizationMode == VIRTUAL_SHADOW_MAP_DEBUG_VISUALIZATION_MODE_MIPMAP)
+    {
+        float3 debugVisualizationColor = 0.8f * UintToColor(clipmapLevel + 4) + 0.2f * shadowFactor;
+        debugVisualizationTextureUAV[pixelCoord] = float4(debugVisualizationColor, 1.0f);
+    }
+    else if (debugVisualizationMode == VIRTUAL_SHADOW_MAP_DEBUG_VISUALIZATION_MODE_VIRTUAL_PAGE)
+    {
+        uint2 virtualAddress = uint2(shadowMapTextureCoord.x * 128 * 128, shadowMapTextureCoord.y * 128 * 128);
+        uint virtualPageIndex = virtualShadowMapEntry.virtualShadowMapEntryIndex * 128 * 128 + virtualAddress.x / 128 + (virtualAddress.y / 128) * 128;
+        float3 debugVisualizationColor = 0.4f * UintToColor(clipmapLevel + 4) + 0.4f * UintToColor(virtualPageIndex + 4) + 0.2f * shadowFactor;
+        debugVisualizationTextureUAV[pixelCoord] = float4(debugVisualizationColor, 1.0f);
+    }
 #endif
 }

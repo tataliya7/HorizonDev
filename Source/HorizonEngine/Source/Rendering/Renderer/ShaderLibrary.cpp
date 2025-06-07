@@ -133,6 +133,7 @@ namespace Horizon
             else
             {
                 LogError(GLogger, std::format("Shader compilation failed. Path: {}, Entry Point: {}, Message: {}.", filename, desc.entryFunctionName, compilerOutput.errorMessage));
+                abort();
             }
         }
 

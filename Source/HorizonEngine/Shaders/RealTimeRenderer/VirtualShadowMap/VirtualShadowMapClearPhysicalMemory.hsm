@@ -19,7 +19,7 @@ void VirtualShadowMapClearPhysicalMemoryCS(uint3 dispatchThreadID : SV_DispatchT
 
     uint physicalPageIndex = virtualShadowMapActivePhysicalPageIndexBuffer.Load<uint>(dispatchThreadID.x / 32 * sizeof(uint));
 
-    uint2 physicalPageCoordinate2D = uint2(physicalPageIndex % 128, physicalPageIndex / 128);
+    uint2 physicalPageCoordinate2D = uint2(physicalPageIndex & 0x7f, physicalPageIndex >> 7);
     uint3 basePhysicalAddress = uint3(physicalPageCoordinate2D * 128, 0);
 
     uint x = (dispatchThreadID.x % 32) * 4;

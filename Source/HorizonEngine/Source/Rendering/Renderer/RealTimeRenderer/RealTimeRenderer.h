@@ -6,6 +6,7 @@
 #include "PostProcessing/PostProcessing.h"
 #include "PerFrameShaderParameters.h"
 #include "ShadowMapping.h"
+#include "VirtualShadowMaps.h"
 
 // todo
 #define NEAR_CLIPPING_PLANE_DEPTH_VALUE 1.0f
@@ -571,6 +572,9 @@ namespace Horizon
         RenderBackendBufferHandle virtualShadowMapShaderParameterUploadBuffers[MaxNumFramesInFlight];
         RenderBackendBufferHandle virtualShadowMapShaderParameterBuffers[MaxNumFramesInFlight];
 
+        RenderBackendBufferHandle virtualShadowMapEntryUploadBuffers[MaxNumFramesInFlight];
+        RenderBackendBufferHandle virtualShadowMapEntryBuffers[MaxNumFramesInFlight];
+
         RenderBackendBufferHandle cascadedShadowMapShaderParameterUploadBuffers[MaxNumFramesInFlight];
         RenderBackendBufferHandle cascadedShadowMapShaderParameterBuffers[MaxNumFramesInFlight];
 
@@ -610,6 +614,8 @@ namespace Horizon
 
         // TODO
         CascadedShadowMapRenderData cascadedShadowMapRenderData;
+
+        VirtualShadowMapManager* virtualShadowMapManager;
 
         std::vector<DistantLightRenderData> distanceLights;
         std::vector<LocalLightRenderData> visibleLocalLights;

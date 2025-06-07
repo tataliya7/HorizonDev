@@ -32,7 +32,7 @@ namespace Horizon
         const bool isVisualizeAmbientOcclusionEnabled     = (view.debugVisualizationMode == SceneViewDebugVisualizationMode::AmbientOcclusion);
         const bool isVisualizeShadowMaskEnabled           = (view.debugVisualizationMode == SceneViewDebugVisualizationMode::ShadowMask);
         const bool isVisualizeCascadedShadowMapEnabled    = (view.debugVisualizationMode == SceneViewDebugVisualizationMode::CascadedShadowMapCascadeIndex);
-        const bool isVisualizeVirtualShadowMapEnabled     = (view.debugVisualizationMode == SceneViewDebugVisualizationMode::VirtualShadowMapMipmap);
+        const bool isVisualizeVirtualShadowMapEnabled     = (view.debugVisualizationMode == SceneViewDebugVisualizationMode::VirtualShadowMapMipmap) || (view.debugVisualizationMode == SceneViewDebugVisualizationMode::VirtualShadowMapVirtualPage);
 
         if (IsDepthOfFieldEnabled())
         {

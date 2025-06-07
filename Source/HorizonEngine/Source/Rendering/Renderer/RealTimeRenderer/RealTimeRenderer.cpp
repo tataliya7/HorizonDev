@@ -37,6 +37,8 @@ namespace Horizon
         }
 
         ResetHistoryFrame();
+
+        virtualShadowMapManager = new VirtualShadowMapManager();
     }
 
     RealTimeRenderer::~RealTimeRenderer()
@@ -287,6 +289,7 @@ namespace Horizon
 
     void RealTimeRenderer::DispatchDynamicShadowSetupJobs()
     {
+        virtualShadowMapManager->Clear();
         CreateDynamicShadowData();
         // GatherDynamicShadowCasters();
     }
@@ -313,10 +316,9 @@ namespace Horizon
              {
                  SetupViewDependentCascadedShadowMapRenderDataForLight(cascadedShadowMapRenderData, view, *light);
              }
-
-             if (useVirtualShadowMap)
+             else if (useVirtualShadowMap)
              {
-
+                 virtualShadowMapManager->CreateVirtualShadowMapClipmap(view, *light);
              }
          }
     }
@@ -565,8 +567,8 @@ namespace Horizon
                         0,
                         sizeof(PerFrameShaderParameters));
 
-                    //RenderBackendBarrier transitionAfter = RenderBackendBarrier(perFrameConstantBuffer, RenderBackendBufferSubresourceRange::Whole, RenderBackendResourceState::CopyDst, RenderBackendResourceState::ShaderResource);
-                    //commandList.Barriers(&transitionAfter, 1);
+                    RenderBackendBarrier transitionAfter = RenderBackendBarrier(perFrameConstantBuffer, RenderBackendBufferSubresourceRange::Whole, RenderBackendResourceState::CopyDst, RenderBackendResourceState::ShaderResource);
+                    commandList.Barriers(&transitionAfter, 1);
                 };
             });
 

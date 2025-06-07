@@ -113,6 +113,8 @@ namespace Horizon
 
     void RenderGraphBuilder::SetRenderArea(int32 x, int32 y, uint32 width, uint32 height)
     {
+        assert(EnumClassHasFlags(pass->GetFlags(), RenderGraphPassFlags::Graphics));
+
         pass->renderArea =
         {
             .x = x,
@@ -124,6 +126,8 @@ namespace Horizon
 
     void RenderGraphBuilder::SetAllowUAVWrites(bool value)
     {
+        assert(EnumClassHasFlags(pass->GetFlags(), RenderGraphPassFlags::Graphics));
+
         pass->allowUAVWrites = value;
     }
 }

@@ -7,7 +7,34 @@ SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, PerFrameShaderParameters, PerFrameShad
 SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(1, VirtualShadowMapShaderParameters, VirtualShadowMapShaderParameterBufferSRV);
 SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(2, SceneDepthTextureSRV);
 SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_UAV(3, VirtualShadowMapPageRequestBufferUAV);
+SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_SRV(4, VirtualShadowMapEntryBufferSRV);
+SHADER_CONSTANTS_SCALAR(5, uint, DistantLightVirtualShadowMapEntryCount);
 SHADER_CONSTANTS_STRUCT_END();
+
+void RequestPage(VirtualShadowMapEntryShaderParameters virtualShadowMapEntry, float3 worldSpacePosition)
+{
+    RWByteAddressBuffer virtualShadowMapPageRequestBuffer = ShaderConstants.GetVirtualShadowMapPageRequestBufferUAV();
+
+    float4 shadowMapTextureCoord = mul(virtualShadowMapEntry.worldToClipMatrix, float4(worldSpacePosition, 1.0f));
+    shadowMapTextureCoord /= shadowMapTextureCoord.w;
+    shadowMapTextureCoord.xy = NDCSpaceXYToScreenSpaceUV(shadowMapTextureCoord.xy);
+
+    bool validShadowMapTextureCoord =
+        shadowMapTextureCoord.x > 0.0f && shadowMapTextureCoord.x < 1.0f &&
+        shadowMapTextureCoord.y > 0.0f && shadowMapTextureCoord.y < 1.0f &&
+        shadowMapTextureCoord.z > 0.0f && shadowMapTextureCoord.z < 1.0f;
+
+    if (validShadowMapTextureCoord)
+    {
+        uint2 virtualAddress = uint2(shadowMapTextureCoord.x * 128 * 128, shadowMapTextureCoord.y * 128 * 128);
+        uint virtualPageIndex = virtualShadowMapEntry.virtualShadowMapEntryIndex * 128 * 128 + virtualAddress.x / 128 + (virtualAddress.y / 128) * 128;
+
+        //uint2 virtualPageCoordinate2D = uint2(shadowMapTextureCoord.x * 128, shadowMapTextureCoord.y * 128);
+        //uint virtualPageIndex = virtualShadowMapEntry.virtualShadowMapEntryIndex * 128 * 128 + virtualPageCoordinate2D.x + virtualPageCoordinate2D.y * 128;
+
+        virtualShadowMapPageRequestBuffer.Store<uint>(virtualPageIndex * sizeof(uint), 1);
+    }
+}
 
 [shader("compute")]
 [numthreads(8, 8, 1)]
@@ -16,9 +43,12 @@ void VirtualShadowMapPageRequestCS(uint3 dispatchThreadID : SV_DispatchThreadID)
     StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
     StructuredBuffer<VirtualShadowMapShaderParameters> virtualShadowMapShaderParameterBuffer = ShaderConstants.GetVirtualShadowMapShaderParameterBufferSRV();
     Texture2D sceneDepthTexture = ShaderConstants.GetSceneDepthTextureSRV();
+    ByteAddressBuffer virtualShadowMapEntryBuffer = ShaderConstants.GetVirtualShadowMapEntryBufferSRV();
     RWByteAddressBuffer virtualShadowMapPageRequestBuffer = ShaderConstants.GetVirtualShadowMapPageRequestBufferUAV();
     PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
     VirtualShadowMapShaderParameters virtualShadowMapShaderParameters = virtualShadowMapShaderParameterBuffer[0];
+
+    uint distantLightVirtualShadowMapEntryCount = ShaderConstants.GetDistantLightVirtualShadowMapEntryCount();
 
     uint width = frameShaderParameters.renderWidth;
     uint height = frameShaderParameters.renderHeight;
@@ -39,19 +69,26 @@ void VirtualShadowMapPageRequestCS(uint3 dispatchThreadID : SV_DispatchThreadID)
 
     float3 worldSpacePosition = ReconstructWorldSpacePositionFromUVZ(uv, depth, frameShaderParameters.clipToWorldMatrix);
 
-    float4 shadowMapTextureCoord = mul(virtualShadowMapShaderParameters.worldToClipMatrix, float4(worldSpacePosition, 1.0f));
-    shadowMapTextureCoord /= shadowMapTextureCoord.w;
-    shadowMapTextureCoord.xy = NDCSpaceXYToScreenSpaceUV(shadowMapTextureCoord.xy);
-
-    bool valid = shadowMapTextureCoord.x > 0.0f && shadowMapTextureCoord.x < 1.0f &&
-                 shadowMapTextureCoord.y > 0.0f && shadowMapTextureCoord.y < 1.0f &&
-                 shadowMapTextureCoord.z > 0.0f && shadowMapTextureCoord.z < 1.0f;
-
-    if (valid)
+    // Distant lights
     {
-        uint2 virtualPageCoordinate2D = uint2(shadowMapTextureCoord.x * 128, shadowMapTextureCoord.y * 128);
-        uint virtualPageIndex = virtualPageCoordinate2D.x + virtualPageCoordinate2D.y * 128;
+        //[loop]
+        for (uint index = 0; index < distantLightVirtualShadowMapEntryCount; index++)
+        {
+            VirtualShadowMapEntryShaderParameters virtualShadowMapEntry = virtualShadowMapEntryBuffer.Load<VirtualShadowMapEntryShaderParameters>(index * sizeof(VirtualShadowMapEntryShaderParameters));
 
-        virtualShadowMapPageRequestBuffer.Store<uint>(virtualPageIndex * sizeof(uint), 1);
+            // @todo Backface culling
+            // if ()
+            {
+                RequestPage(virtualShadowMapEntry, worldSpacePosition);
+            }
+
+            // @todo break
+            //break;
+        }
+    }
+
+    // Local lights
+    {
+
     }
 }

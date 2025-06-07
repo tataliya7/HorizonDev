@@ -4,12 +4,6 @@
 
 namespace Horizon
 {
-    enum ShadowMapType
-    {
-        CascadedShadowMap,
-        VirtualShadowMap
-    };
-
     struct ShadowMapCascadeData
     {
         uint32 cascadeIndex;

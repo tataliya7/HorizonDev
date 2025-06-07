@@ -21,6 +21,7 @@ namespace Horizon
         ShadowMask,
         CascadedShadowMapCascadeIndex,
         VirtualShadowMapMipmap,
+        VirtualShadowMapVirtualPage,
         SurfelGISurfel,
         SurfelGIHeatmap,
     };
