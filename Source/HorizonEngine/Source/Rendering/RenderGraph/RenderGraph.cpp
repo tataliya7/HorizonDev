@@ -346,8 +346,8 @@ namespace Horizon
 
             if (!EnumClassHasFlags(passFlags, RenderGraphPassFlags::DebugLabelRegion_DEPRECATED))
             {
-                currentPassTimingQueryRegion = gpuProfiler->BeginRegion(&commandList, pass->GetName());
                 commandList.BeginDebugLabel(pass->GetName(), Vector4f(1.0f, 1.0f, 1.0f, 1.0f));
+                currentPassTimingQueryRegion = gpuProfiler->BeginRegion(&commandList, pass->GetName());
             }
 
             for (RenderGraphPass::TextureState& state : pass->textureStates)
@@ -518,24 +518,24 @@ namespace Horizon
     }
 
     RenderGraphDebugLabelRegion::RenderGraphDebugLabelRegion(RenderGraph& renderGraph, const char* name)
-        : renderGraph(renderGraph)
-        , name(name)
+       : renderGraph(&renderGraph)
+       , name(name)
     {
-        renderGraph.AddPass(
-           std::format("DebugLabelRegionBegin"),
-           RenderGraphPassFlags::DebugLabelRegion_DEPRECATED | RenderGraphPassFlags::NeverGetCulled,
-           [&](RenderGraphBuilder& builder)
-           {
-               return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
-               {
-                   commandList.BeginDebugLabel(name, Vector4f(1.0f, 1.0f, 1.0f, 1.0f));
-               };
-           });
+        this->renderGraph->AddPass(
+            std::format("DebugLabelRegionBegin"),
+            RenderGraphPassFlags::DebugLabelRegion_DEPRECATED | RenderGraphPassFlags::NeverGetCulled,
+            [&](RenderGraphBuilder& builder)
+            {
+                return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
+                {
+                    commandList.BeginDebugLabel(name, Vector4f(1.0f, 1.0f, 1.0f, 1.0f));
+                };
+            });
     }
 
     RenderGraphDebugLabelRegion::~RenderGraphDebugLabelRegion()
     {
-        renderGraph.AddPass(
+        this->renderGraph->AddPass(
             std::format("DebugLabelRegionEnd"),
             RenderGraphPassFlags::DebugLabelRegion_DEPRECATED | RenderGraphPassFlags::NeverGetCulled,
             [&](RenderGraphBuilder& builder)

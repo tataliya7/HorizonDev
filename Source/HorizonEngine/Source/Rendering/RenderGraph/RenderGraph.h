@@ -209,7 +209,7 @@ namespace Horizon
         RenderGraphDebugLabelRegion(RenderGraph& renderGraph, const char* name);
         ~RenderGraphDebugLabelRegion();
     private:
-        RenderGraph& renderGraph;
+        RenderGraph* renderGraph;
         const char* name;
     };
 }
