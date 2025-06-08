@@ -2,10 +2,12 @@
 
 namespace Horizon
 {
-    void RealTimeRenderer::RenderDepthPyramid(
+    void RealTimeRenderer::DispatchDepthPyramidGeneration(
         RenderGraph& renderGraph,
         const SceneView& view)
     {
+        RenderGraphDebugLabelRegion debugLabelRegion(renderGraph, "DepthPyramidGeneration");
+
         RealTimeRendererSceneTextures& sceneTextures = renderGraph.blackboard.Get<RealTimeRendererSceneTextures>();
         const RenderGraphTextureDesc& depthPyramidTextureDesc = sceneTextures.depthPyramidTextureDesc;
 

@@ -324,7 +324,7 @@ namespace Horizon
             RenderGraph& renderGraph,
             const SceneView& view);
 
-        void RenderDepthPyramid(
+        void DispatchDepthPyramidGeneration(
             RenderGraph& renderGraph,
             const SceneView& view);
 
@@ -391,7 +391,7 @@ namespace Horizon
             const SceneView& view,
             RenderGraphBufferHandle autoExposureBuffer);
 
-        RenderGraphTextureHandle DispatchBilateralGridToneMapping(
+        RenderGraphTextureHandle DispatchBilateralGridLocalToneMapping(
             RenderGraph& renderGraph,
             const SceneView& view,
             const PostProcessingColorPyramid& colorPyramid,

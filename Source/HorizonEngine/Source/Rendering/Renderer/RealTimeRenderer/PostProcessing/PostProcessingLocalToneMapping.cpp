@@ -8,13 +8,15 @@ namespace Horizon
         return features.enableLocalToneMapping;
     }
 
-    RenderGraphTextureHandle RealTimeRenderer::DispatchBilateralGridToneMapping(
+    RenderGraphTextureHandle RealTimeRenderer::DispatchBilateralGridLocalToneMapping(
         RenderGraph& renderGraph,
         const SceneView& view,
         const PostProcessingColorPyramid& colorPyramid,
         RenderGraphTextureHandle colorTexture,
         RenderGraphBufferHandle autoExposureBuffer)
     {
+        RenderGraphDebugLabelRegion debugLabelRegion(renderGraph, "LocalToneMapping");
+
         const uint32 bilateralGridTextureWidth = Math::CeilDiv(renderResolution.width, 8 * 8);
         const uint32 bilateralGridTextureHeight = Math::CeilDiv(renderResolution.height, 8 * 8);
         const uint32 bilateralGridTextureDepth = 64;

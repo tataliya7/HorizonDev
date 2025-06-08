@@ -19,6 +19,8 @@ namespace Horizon
         RenderGraphTextureHandle depthTexture,
         RenderGraphTextureHandle velocityTexture)
     {
+        RenderGraphDebugLabelRegion debugLabelRegion(renderGraph, "MotionBlur");
+
         const uint32 tileCountX = Math::CeilDiv(renderResolution.width, GMotionBlurTileSize);
         const uint32 tileCountY = Math::CeilDiv(renderResolution.height, GMotionBlurTileSize);
         const uint32 tileCount = tileCountX * tileCountY;

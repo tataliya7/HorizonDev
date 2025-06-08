@@ -677,7 +677,7 @@ namespace Horizon
 
         RenderMotionVectors(renderGraph, view);
 
-        RenderDepthPyramid(renderGraph, view);
+        DispatchDepthPyramidGeneration(renderGraph, view);
 
         if (view.renderSettings.shadowsTechnique == ShadowsTechnique::ShadowMap)
         {

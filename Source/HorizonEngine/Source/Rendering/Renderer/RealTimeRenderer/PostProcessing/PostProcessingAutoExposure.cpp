@@ -35,6 +35,8 @@ namespace Horizon
         RenderGraphTextureHandle colorTexture,
         RenderGraphBufferHandle previousAutoExposureBuffer)
     {
+        RenderGraphDebugLabelRegion debugLabelRegion(renderGraph, "AutoExposure");
+
         const RenderGraphTextureDesc& colorTextureDesc = renderGraph.GetTextureDesc(colorTexture);
 
         RenderGraphTextureDesc autoExposureHistogramTextureDesc = RenderGraphTextureDesc::Create1D(

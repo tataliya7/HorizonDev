@@ -28,6 +28,8 @@ namespace Horizon
             return RenderGraphTextureHandle::Null;
         }
 
+        RenderGraphDebugLabelRegion debugLabelRegion(renderGraph, "Bloom");
+
         std::vector<RenderGraphTextureHandle> downsampleMipChain;
         downsampleMipChain.push_back(halfResolutionSceneColorTexture);
 

@@ -26,6 +26,26 @@ namespace Horizon
         SurfelGIHeatmap,
     };
 
+    static const char* ViewModeName[] =
+    {
+        "Lighting",
+        "Wireframe",
+        "Illuminance",
+        "Linear Depth",
+        "World Space Normal",
+        "Primitive ID",
+        "Material ID",
+        "Motion Vectors",
+        "Ambient Occlusion",
+        "Screen Space Shadow Mask",
+        "Cascaded Shadow Map Cascade Index",
+        "Virtual Shadow Map Mipmap",
+        "Virtual Shadow Map Page",
+        "Surfel GI Surfel",
+        "Surfel GI Heatmap"
+    };
+    static_assert(ArraySize(ViewModeName) == 15);
+
     // TODO
     const float MinNearClippingPlane = 0.01f;
 

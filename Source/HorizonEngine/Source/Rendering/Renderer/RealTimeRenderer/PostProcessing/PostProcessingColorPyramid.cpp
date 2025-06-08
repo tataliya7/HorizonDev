@@ -51,6 +51,8 @@ namespace Horizon
         RenderGraphTextureHandle sceneColorTexture,
         PostProcessingColorPyramid* outMipChain)
     {
+        RenderGraphDebugLabelRegion debugLabelRegion(renderGraph, "ColorPyramidGeneration");
+
         assert(outMipChain->mipLevelCount == 0);
 
         RenderGraphTextureHandle inputTexture = sceneColorTexture;

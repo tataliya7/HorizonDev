@@ -13,7 +13,7 @@ project "HorizonEngine"
         "**.ini",
         "Shaders/**.h",
         "Shaders/**.hsh",
-        "Shaders/**.hsm",
+        "Shaders/**.hslib",
 
         "Source/Foundation/**.h",
         "Source/Foundation/**.c",

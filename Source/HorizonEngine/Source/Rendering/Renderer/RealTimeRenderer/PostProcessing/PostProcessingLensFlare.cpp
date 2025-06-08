@@ -14,6 +14,8 @@ namespace Horizon
         RenderGraphTextureHandle halfResolutionSceneColorTexture,
         RenderGraphTextureHandle bloomTexture)
     {
+        RenderGraphDebugLabelRegion debugLabelRegion(renderGraph, "LensFlare");
+
         uint32 lensFlareTextureWidth = targetResolution.width / 2;
         uint32 lensFlareTextureHeight = targetResolution.height / 2;
 
