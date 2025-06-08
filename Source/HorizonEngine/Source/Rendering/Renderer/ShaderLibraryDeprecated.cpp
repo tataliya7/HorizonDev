@@ -44,8 +44,8 @@ namespace Horizon
             shaderLibrary->LoadShader(ShaderID::ImGuiPS, shaderDesc);
         }
         {
-            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Vertex, "Shaders/FullScreenQuad.hslib", "FullScreenQuadVS");
-            shaderLibrary->LoadShader(ShaderID::FullScreenQuadVS, shaderDesc);
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Vertex, "Shaders/DrawFullscreenQuad.hslib", "DrawFullscreenQuadVS");
+            shaderLibrary->LoadShader(ShaderID::DrawFullscreenQuadVS, shaderDesc);
         }
         {
             ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/LatLongToCubemap.hslib", "LatLongToCubemapCS");

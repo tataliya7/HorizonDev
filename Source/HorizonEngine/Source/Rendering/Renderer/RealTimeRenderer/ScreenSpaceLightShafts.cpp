@@ -208,7 +208,7 @@ namespace Horizon
                         shaderConstants.BindScalar(4, lightShaftsColor.y);
                         shaderConstants.BindScalar(5, lightShaftsColor.z);
 
-                        RenderBackendShaderHandle vertexShader = shaderLibrary->GetShader(ShaderID::FullScreenQuadVS);
+                        RenderBackendShaderHandle vertexShader = shaderLibrary->GetShader(ShaderID::DrawFullscreenQuadVS);
                         RenderBackendShaderHandle pixelShader = shaderLibrary->GetShader(ShaderID::ScreenSpaceLightShaftsComposition);
 
                         commandList.Draw(

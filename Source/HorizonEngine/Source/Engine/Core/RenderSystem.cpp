@@ -427,7 +427,7 @@ namespace Horizon
                     RenderBackendShaderConstants shaderConstants = {};
                     shaderConstants.BindTextureSRV(0, registry.GetTextureSRVBindlessResourceDescriptorIndex(uiColorAndAlphaTexture));
 
-                    RenderBackendShaderHandle vertexShader = shaderLibrary->GetShader(ShaderID::FullScreenQuadVS);
+                    RenderBackendShaderHandle vertexShader = shaderLibrary->GetShader(ShaderID::DrawFullscreenQuadVS);
                     RenderBackendShaderHandle pixelShader = shaderLibrary->GetShader(ShaderID::GUICompositionPS);
 
                     commandList.Draw(

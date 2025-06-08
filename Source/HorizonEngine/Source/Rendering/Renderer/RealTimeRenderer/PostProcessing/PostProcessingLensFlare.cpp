@@ -60,7 +60,7 @@ namespace Horizon
                     RenderBackendGraphicsPipelineState graphicsPipelineState = {};
                     graphicsPipelineState.colorBlendState.targetBlends[0] = RenderBackendColorBlendAttachmentState::Additive;
 
-                    RenderBackendShaderHandle vertexShader = shaderLibrary->GetShader(ShaderID::FullScreenQuadVS);
+                    RenderBackendShaderHandle vertexShader = shaderLibrary->GetShader(ShaderID::DrawFullscreenQuadVS);
                     RenderBackendShaderHandle pixelShader = shaderLibrary->GetShader(ShaderID::LensFlareGhost);
 
                     commandList.Draw(
@@ -189,7 +189,7 @@ namespace Horizon
                     RenderBackendGraphicsPipelineState graphicsPipelineState = {};
                     graphicsPipelineState.colorBlendState.targetBlends[0] = RenderBackendColorBlendAttachmentState::Additive;
 
-                    RenderBackendShaderHandle vertexShader = shaderLibrary->GetShader(ShaderID::FullScreenQuadVS);
+                    RenderBackendShaderHandle vertexShader = shaderLibrary->GetShader(ShaderID::DrawFullscreenQuadVS);
                     RenderBackendShaderHandle pixelShader = shaderLibrary->GetShader(ShaderID::LensFlareCombine);
 
                     commandList.Draw(

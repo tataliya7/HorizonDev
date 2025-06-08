@@ -121,7 +121,7 @@ namespace Horizon
                     shaderConstants.BindScalar(1, 1.0f / float(renderResolution.width));
                     shaderConstants.BindScalar(2, 1.0f/ float(renderResolution.height));
 
-                    RenderBackendShaderHandle vertexShader = shaderLibrary->GetShader(ShaderID::FullScreenQuadVS);
+                    RenderBackendShaderHandle vertexShader = shaderLibrary->GetShader(ShaderID::DrawFullscreenQuadVS);
                     RenderBackendShaderHandle pixelShader = shaderLibrary->GetShader(ShaderID::ScreenSpaceShadowsComposition);
 
                     commandList.Draw(

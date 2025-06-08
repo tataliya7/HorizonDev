@@ -313,7 +313,7 @@ namespace Horizon
                     graphicsPipelineState.depthStencilState.depthWriteEnable = false;
                     graphicsPipelineState.colorBlendState.targetBlends[0] = RenderBackendColorBlendAttachmentState::Additive;
 
-                    RenderBackendShaderHandle vertexShader = shaderLibrary->GetShader(ShaderID::FullScreenQuadVS);
+                    RenderBackendShaderHandle vertexShader = shaderLibrary->GetShader(ShaderID::DrawFullscreenQuadVS);
                     RenderBackendShaderHandle pixelShader = shaderLibrary->GetShader(ShaderID::DirectLighting);
 
                     commandList.Draw(
@@ -382,7 +382,7 @@ namespace Horizon
                     shaderConstants.BindTextureSRV(6, registry.GetTextureSRVBindlessResourceDescriptorIndex(ambientOcclusionTexture));
                     shaderConstants.BindTextureSRV(7, registry.GetTextureSRVBindlessResourceDescriptorIndex(indirectDiffuseTexture));
 
-                    RenderBackendShaderHandle vertexShader = shaderLibrary->GetShader(ShaderID::FullScreenQuadVS);
+                    RenderBackendShaderHandle vertexShader = shaderLibrary->GetShader(ShaderID::DrawFullscreenQuadVS);
                     RenderBackendShaderHandle pixelShader = shaderLibrary->GetShader(ShaderID::IndirectDiffuseComposition);
 
                     commandList.Draw(
@@ -443,7 +443,7 @@ namespace Horizon
                     shaderConstants.BindTextureSRV(7, renderBackend->GetTextureSRVBindlessResourceDescriptorIndex(environmentBrdfLutTexture));
                     shaderConstants.BindTextureSRV(8, registry.GetTextureSRVBindlessResourceDescriptorIndex(convolvedEnvironmentMapTexture));
 
-                    RenderBackendShaderHandle vertexShader = shaderLibrary->GetShader(ShaderID::FullScreenQuadVS);
+                    RenderBackendShaderHandle vertexShader = shaderLibrary->GetShader(ShaderID::DrawFullscreenQuadVS);
                     RenderBackendShaderHandle pixelShader = shaderLibrary->GetShader(ShaderID::IndirectSpecularComposition);
 
                     commandList.Draw(

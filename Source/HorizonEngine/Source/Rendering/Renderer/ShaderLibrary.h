@@ -12,7 +12,7 @@ namespace Horizon
     {
         ImGuiVS,
         ImGuiPS,
-        FullScreenQuadVS,
+        DrawFullscreenQuadVS,
         LatLongToCubemap,
         DownsampleCubemap,
         DownsampleTexture2DCS,
