@@ -123,6 +123,7 @@ namespace Horizon
 
         RenderGraphBufferHandle virtualShadowMapShaderParameterBuffer;
         RenderGraphBufferHandle virtualShadowMapPageTableBuffer;
+        RenderGraphBufferHandle virtualShadowMapEntryBuffer;
         RenderGraphTextureHandle virtualShadowMapDepthTexture;
         RenderGraphTextureHandle virtualShadowMapDebugVisualizationTexture;
 
@@ -572,9 +573,6 @@ namespace Horizon
         RenderBackendBufferHandle virtualShadowMapShaderParameterUploadBuffers[MaxNumFramesInFlight];
         RenderBackendBufferHandle virtualShadowMapShaderParameterBuffers[MaxNumFramesInFlight];
 
-        RenderBackendBufferHandle virtualShadowMapEntryUploadBuffers[MaxNumFramesInFlight];
-        RenderBackendBufferHandle virtualShadowMapEntryBuffers[MaxNumFramesInFlight];
-
         RenderBackendBufferHandle cascadedShadowMapShaderParameterUploadBuffers[MaxNumFramesInFlight];
         RenderBackendBufferHandle cascadedShadowMapShaderParameterBuffers[MaxNumFramesInFlight];
 
@@ -591,6 +589,7 @@ namespace Horizon
             const LightRenderObject& light,
             RenderBackendBufferHandle virtualShadowMapShaderParameterBuffer,
             RenderBackendBufferHandle virtualShadowMapPageTableBuffer,
+            RenderBackendBufferHandle virtualShadowMapEntryBuffer,
             RenderBackendTextureHandle virtualShadowMapDepthTexture);
         void DispatchCascadedShadowMapPassDrawCommands(RenderBackendCommandList& commandList, const LightRenderObject& light, uint32 cascadeIndex, RenderBackendBufferHandle cascadeShadowMapDataBuffer);
 

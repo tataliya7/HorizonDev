@@ -60,32 +60,68 @@ namespace Horizon
         return handle;
     }
 
-    void RenderGraph::UploadBufferDeferred(RenderGraphBufferHandle buffer, const void* data, uint64 size)
+    void RenderGraph::UploadBufferDeferred(RenderGraphBufferHandle buffer, const void* data, uint64 size, RenderGraphSourceDataLifetimeHint hint)
     {
-        RenderGraphUploadBuffer uploadBuffer;
-        uploadBuffer.buffer = buffers[buffer.GetIndex()];
-        uploadBuffer.data = data;
-        uploadBuffer.size = size;
-        uploadBuffers.emplace_back(uploadBuffer);
+        if ((data != nullptr) && (size > 0))
+        {
+            if ((hint != RenderGraphSourceDataLifetimeHint::ValidUntilExecution))
+            {
+                uint64 alignment = 16; // @todo
+                void* dataCopy = arena->Alloc(size, alignment);
+                if (dataCopy != nullptr)
+                {
+                    std::memcpy(dataCopy, data, size);
+                    RenderGraphBufferUploadJobDescription& bufferUploadJob = bufferUploadJobs.emplace_back();
+                    bufferUploadJob.buffer = buffers[buffer.GetIndex()];
+                    bufferUploadJob.data = dataCopy;
+                    bufferUploadJob.size = size;
+                }
+            }
+            else
+            {
+                RenderGraphBufferUploadJobDescription& bufferUploadJob = bufferUploadJobs.emplace_back();
+                bufferUploadJob.buffer = buffers[buffer.GetIndex()];
+                bufferUploadJob.data = data;
+                bufferUploadJob.size = size;
+            }
+        }
     }
 
-    // void RenderGraph::ExecuteUploadBuffers(RenderBackendCommandList& commandList)
-    // {
-    //     RenderGraphUploadBuffer uploadBuffer;
-    //     uploadBuffer.buffer = buffers[buffer.GetIndex()];
-    //     uploadBuffer.data = data;
-    //     uploadBuffer.size = size;
-    //     uploadBuffers.emplace_back(uploadBuffer);
-    //
-    //     for (RenderGraphUploadBuffer& uploadBuffer : uploadBuffers)
-    //     {
-    //         if ((uploadBuffer.data != nullptr) && (uploadBuffer.size > 0))
-    //         {
-    //             commandList.
-    //         }
-    //     }
-    //     uploadBuffers.clear();
-    // }
+    void RenderGraph::ExecuteBufferUploadJobs(RenderBackendCommandList& commandList)
+    {
+        commandList.BeginDebugLabel("UploadBuffers", Vector4f(1.0f, 1.0f, 1.0f, 1.0f));
+
+        // @todo Adapt to UMA devices to avoid extra copying overhead.
+        if (!bufferUploadJobs.empty())
+        {
+            for (RenderGraphBufferUploadJobDescription& bufferUploadJob : bufferUploadJobs)
+            {
+                RenderGraphBuffer* dstBuffer = bufferUploadJob.buffer;
+
+                RenderGraphStagingBuffer* stagingBuffer = resourcePool->AllocateStagingBuffer(bufferUploadJob.size);
+                renderBackend->UpdateBuffer(stagingBuffer->GetHandle(), 0, bufferUploadJob.data, bufferUploadJob.size);
+
+                assert((bufferUploadJob.data != nullptr) && (bufferUploadJob.size > 0));
+
+                commandList.CopyBuffer(
+                    stagingBuffer->GetHandle(),
+                    0,
+                    dstBuffer->GetRenderBackendBufferHandle(),
+                    0,
+                    bufferUploadJob.size);
+
+                RenderBackendBarrier barrier[] =
+                {
+                    RenderBackendBarrier(dstBuffer->GetRenderBackendBufferHandle(), RenderBackendBufferSubresourceRange::Whole, RenderBackendResourceState::CopyDst, RenderBackendResourceState::ShaderResource)
+                };
+                commandList.Barriers(barrier, 1);
+            }
+
+            bufferUploadJobs.clear();
+        }
+
+        commandList.EndDebugLabel();
+    }
 
     //RenderGraphTextureSRVHandle RenderGraph::CreateSRV(RenderGraphTextureHandle texture, const RenderGraphTextureSRVDesc& desc)
     //{
@@ -331,6 +367,8 @@ namespace Horizon
                 buffer->SetInternalBuffer(newBuffer, RenderBackendResourceState::Undefined);
             }
         }
+
+        ExecuteBufferUploadJobs(commandList);
 
         for (RenderGraphPass* pass : passes)
         {

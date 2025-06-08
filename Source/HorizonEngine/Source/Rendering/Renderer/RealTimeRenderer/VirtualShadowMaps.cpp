@@ -73,6 +73,7 @@ namespace Horizon
         const LightRenderObject& light,
         RenderBackendBufferHandle virtualShadowMapShaderParameterBuffer,
         RenderBackendBufferHandle virtualShadowMapPageTableBuffer,
+        RenderBackendBufferHandle virtualShadowMapEntryBuffer,
         RenderBackendTextureHandle virtualShadowMapDepthTexture)
     {
         const GeometryPassDrawCommandList& drawCommandList = geometryPassDrawCommandLists[uint32(GeometryPassType::VirtualShadowMap)];
@@ -100,7 +101,7 @@ namespace Horizon
             shaderConstants.BindBufferSRV(3, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(gpuScene->geometryDataBuffer));
             shaderConstants.BindBufferSRV(4, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(gpuScene->geometryInstanceDataBuffer));
             shaderConstants.BindTextureUAV(5, renderBackend->GetTextureUAVBindlessResourceDescriptorIndex(virtualShadowMapDepthTexture, 0));
-            shaderConstants.BindTextureSRV(6, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(virtualShadowMapEntryBuffers[currentPerFrameDataBufferIndex]));
+            shaderConstants.BindTextureSRV(6, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(virtualShadowMapEntryBuffer));
 
             for (uint32 shadowViewIndex = 0; shadowViewIndex < virtualShadowMapManager->GetVirtualShadowMapEntryCount(); shadowViewIndex++)
             {
@@ -290,44 +291,8 @@ namespace Horizon
             });
 
         uint32 virtualShadowMapEntryBufferSize = virtualShadowMapEntryCount * sizeof(VirtualShadowMapEntryShaderParameters);
-        RenderBackendBufferHandle& virtualShadowMapEntryUploadBuffer = virtualShadowMapEntryUploadBuffers[currentPerFrameDataBufferIndex];
-        RenderBackendBufferHandle& virtualShadowMapEntryBuffer = virtualShadowMapEntryBuffers[currentPerFrameDataBufferIndex];
-        if (!virtualShadowMapEntryBuffer)
-        {
-            RenderBackendBufferDesc virtualShadowMapEntryUploadBufferDesc = RenderBackendBufferDesc::CreateUpload(virtualShadowMapEntryBufferSize);
-            virtualShadowMapEntryUploadBuffer = renderBackend->CreateBuffer(&virtualShadowMapEntryUploadBufferDesc, nullptr, "VirtualShadowMapEntryUploadBuffer");
-            RenderBackendBufferDesc virtualShadowMapEntryBufferDesc = RenderBackendBufferDesc::CreateByteAddress(virtualShadowMapEntryBufferSize);
-            virtualShadowMapEntryBuffer = renderBackend->CreateBuffer(&virtualShadowMapEntryBufferDesc, nullptr, "VirtualShadowMapEntryBuffer");
-        }
-        renderBackend->UpdateBuffer(virtualShadowMapEntryUploadBuffer, 0, virtualShadowMapManager->virtualShadowMapEntries.data(), virtualShadowMapEntryBufferSize);
-
-        renderGraph.AddPass(
-            std::format("UpdateVirtualShadowMapEntryBuffer (Copy, {} bytes)", virtualShadowMapEntryBufferSize),
-            RenderGraphPassFlags::Copy,
-            [&](RenderGraphBuilder& builder)
-            {
-                return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
-                {
-                    // RenderBackendBarrier barrierBefore[] =
-                    // {
-                    //     RenderBackendBarrier(virtualShadowMapEntryBuffer, RenderBackendBufferSubresourceRange::Whole, RenderBackendResourceState::Undefined, RenderBackendResourceState::CopyDst)
-                    // };
-                    // commandList.Barriers(barrierBefore, 1);
-
-                    commandList.CopyBuffer(
-                        virtualShadowMapEntryUploadBuffer,
-                        0,
-                        virtualShadowMapEntryBuffer,
-                        0,
-                        virtualShadowMapEntryBufferSize);
-
-                    RenderBackendBarrier barrierAfter[] =
-                    {
-                        RenderBackendBarrier(virtualShadowMapEntryBuffer, RenderBackendBufferSubresourceRange::Whole, RenderBackendResourceState::CopyDst, RenderBackendResourceState::ShaderResource)
-                    };
-                    commandList.Barriers(barrierAfter, 1);
-                };
-            });
+        RenderGraphBufferHandle virtualShadowMapEntryBuffer = renderGraph.CreateBuffer(RenderGraphBufferDesc::CreateByteAddress(virtualShadowMapEntryBufferSize), "VirtualShadowMapEntryBuffer");
+        renderGraph.UploadBufferDeferred(virtualShadowMapEntryBuffer, virtualShadowMapManager->virtualShadowMapEntries.data(), virtualShadowMapEntryBufferSize, RenderGraphSourceDataLifetimeHint::ValidUntilExecution);
 
         uint32 distantLightVirtualShadowMapEntryCount = 0;
         std::vector<uint32> distantLightVirtualShadowMapEntries;
@@ -451,6 +416,7 @@ namespace Horizon
             [&](RenderGraphBuilder& builder)
             {
                 RenderGraphTextureHandle sceneDepthTexture = builder.ReadTexture(sceneTextures.sceneDepthTexture, RenderBackendResourceState::ShaderResource);
+                virtualShadowMapEntryBuffer = builder.ReadBuffer(virtualShadowMapEntryBuffer, RenderBackendResourceState::ShaderResource);
                 virtualShadowMapPageRequestBuffer = builder.WriteBuffer(virtualShadowMapPageRequestBuffer, RenderBackendResourceState::UnorderedAccess);
 
                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
@@ -464,7 +430,7 @@ namespace Horizon
                     shaderConstants.BindBufferSRV(1, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(virtualShadowMapShaderParameterBuffer));
                     shaderConstants.BindTextureSRV(2, registry.GetTextureSRVBindlessResourceDescriptorIndex(sceneDepthTexture));
                     shaderConstants.BindBufferUAV(3, registry.GetBufferUAVBindlessResourceDescriptorIndex(virtualShadowMapPageRequestBuffer));
-                    shaderConstants.BindBufferSRV(4, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(virtualShadowMapEntryBuffer));
+                    shaderConstants.BindBufferSRV(4, registry.GetBufferSRVBindlessResourceDescriptorIndex(virtualShadowMapEntryBuffer));
                     shaderConstants.BindScalar(5, distantLightVirtualShadowMapEntryCount);
 
                     RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::VirtualShadowMapPageRequest);
@@ -511,8 +477,6 @@ namespace Horizon
                         threadGroupCountZ);
                 };
             });
-
-        sceneTextures.virtualShadowMapPageTableBuffer = virtualShadowMapPageTableBuffer;
 
         renderGraph.AddPass(
             std::format("VirtualShadowMapPhysicalMemoryAllocation (Compute, {}x1x1)", virtualShadowMapPhysicalPageCount),
@@ -594,6 +558,7 @@ namespace Horizon
            [&](RenderGraphBuilder& builder)
            {
                virtualShadowMapPageTableBuffer = builder.ReadBuffer(virtualShadowMapPageTableBuffer, RenderBackendResourceState::ShaderResource);
+               virtualShadowMapEntryBuffer = builder.ReadBuffer(virtualShadowMapEntryBuffer, RenderBackendResourceState::ShaderResource);
                virtualShadowMapDepthTexture = builder.WriteTexture(virtualShadowMapDepthTexture, RenderBackendResourceState::UnorderedAccess);
 
                builder.SetRenderArea(0, 0, virtualShadowMapSize, virtualShadowMapSize);
@@ -612,6 +577,7 @@ namespace Horizon
                        *light,
                        virtualShadowMapShaderParameterBuffer,
                        registry.GetRenderBackendBufferHandle(virtualShadowMapPageTableBuffer),
+                       registry.GetRenderBackendBufferHandle(virtualShadowMapEntryBuffer),
                        registry.GetRenderBackendTextureHandle(virtualShadowMapDepthTexture));
 
                    {
@@ -623,6 +589,9 @@ namespace Horizon
                    }
                };
            });
+
+        sceneTextures.virtualShadowMapPageTableBuffer = virtualShadowMapPageTableBuffer;
+        sceneTextures.virtualShadowMapEntryBuffer = virtualShadowMapEntryBuffer;
     }
 
     void RealTimeRenderer::DispatchVirtualShadowMapProjection(RenderGraph& renderGraph, const SceneView& view)
@@ -656,6 +625,7 @@ namespace Horizon
             [&](RenderGraphBuilder& builder)
             {
                 RenderGraphBufferHandle virtualShadowMapPageTableBuffer = builder.ReadBuffer(sceneTextures.virtualShadowMapPageTableBuffer, RenderBackendResourceState::ShaderResource);
+                RenderGraphBufferHandle virtualShadowMapEntryBuffer = builder.ReadBuffer(sceneTextures.virtualShadowMapEntryBuffer, RenderBackendResourceState::ShaderResource);
                 RenderGraphTextureHandle sceneDepthTexture = builder.ReadTexture(sceneTextures.sceneDepthTexture, RenderBackendResourceState::ShaderResource);
                 RenderGraphTextureHandle virtualShadowMapDepthTexture = builder.ReadTexture(sceneTextures.virtualShadowMapDepthTexture, RenderBackendResourceState::ShaderResource);
                 screenSpaceShadowMaskTexture = builder.WriteTexture(screenSpaceShadowMaskTexture, RenderBackendResourceState::UnorderedAccess);
@@ -671,7 +641,7 @@ namespace Horizon
                     shaderConstants.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
                     shaderConstants.BindBufferSRV(1, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(virtualShadowMapShaderParameterBuffer));
                     shaderConstants.BindBufferSRV(2, registry.GetBufferSRVBindlessResourceDescriptorIndex(virtualShadowMapPageTableBuffer));
-                    shaderConstants.BindBufferSRV(3, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(virtualShadowMapEntryBuffers[currentPerFrameDataBufferIndex]));
+                    shaderConstants.BindBufferSRV(3, registry.GetBufferSRVBindlessResourceDescriptorIndex(virtualShadowMapEntryBuffer));
                     shaderConstants.BindTextureSRV(4, registry.GetTextureSRVBindlessResourceDescriptorIndex(sceneDepthTexture));
                     shaderConstants.BindTextureSRV(5, registry.GetTextureSRVBindlessResourceDescriptorIndex(virtualShadowMapDepthTexture));
                     shaderConstants.BindTextureUAV(6, registry.GetTextureUAVBindlessResourceDescriptorIndex(screenSpaceShadowMaskTexture, 0));

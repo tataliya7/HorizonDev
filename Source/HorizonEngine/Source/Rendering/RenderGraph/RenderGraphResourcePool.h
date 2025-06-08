@@ -98,6 +98,16 @@ namespace Horizon
         RenderBackendBufferHandle handle;
     };
 
+    class RenderGraphStagingBuffer : public RenderGraphPersistentBuffer
+    {
+    public:
+        RenderGraphStagingBuffer(const char* name, const RenderBackendBufferDesc& desc, RenderBackendBufferHandle handle)
+            : RenderGraphPersistentBuffer(name, desc, handle)
+        {
+
+        }
+    };
+
     class RenderGraphResourcePool
     {
     public:
@@ -110,11 +120,23 @@ namespace Horizon
         RenderGraphPersistentBuffer* AllocateBuffer(const RenderBackendBufferDesc& desc, const char* name);
         void ReleaseTexture(RenderGraphPersistentTexture* texture);
         void ReleaseBuffer(RenderGraphPersistentBuffer* buffer);
+
+        RenderGraphStagingBuffer* AllocateStagingBuffer(uint64 size);
+
     private:
         friend class RenderGraph;
         RenderBackend* backend;
         uint32 tickCount;
         std::vector<RenderGraphPersistentTexture*> allocatedTextures;
         std::vector<RenderGraphPersistentBuffer*> allocatedBuffers;
+
+        static const int32 MaxNumFrames = 3;
+        struct BufferUploader
+        {
+            std::vector<RenderGraphStagingBuffer*> allocatedStagingBuffers;
+            std::vector<RenderGraphStagingBuffer*> freeStagingBuffers;
+        };
+        BufferUploader bufferUploader[MaxNumFrames];
+        uint32 currentFrameIndex = 0;
     };
 }

@@ -45,6 +45,12 @@ namespace Horizon
     //    RenderGraph& renderGraph;
     //};
 
+    enum class RenderGraphSourceDataLifetimeHint
+    {
+        OnlyValidNow,
+        ValidUntilExecution,
+    };
+
     class RenderGraph
     {
     public:
@@ -91,7 +97,7 @@ namespace Horizon
         //RenderGraphTextureSRVHandle CreateTextureSRV(RenderGraphTextureHandle texture, const RenderGraphTextureSRVDesc& desc);
         //RenderGraphTextureUAVHandle CreateTextureUAV(RenderGraphTextureHandle texture, uint32 mipLevel);
 
-        void UploadBufferDeferred(RenderGraphBufferHandle buffer, const void* data, uint64 size);
+        void UploadBufferDeferred(RenderGraphBufferHandle buffer, const void* data, uint64 size, RenderGraphSourceDataLifetimeHint hint);
 
         /**
          * Finds a render graph texture associated with the external texture, or returns null if none is found.
@@ -153,6 +159,8 @@ namespace Horizon
             //return std::construct_at(reinterpret_cast<ObjectType*>(result), std::forward<Args>(args)...);
         }
 
+        void ExecuteBufferUploadJobs(RenderBackendCommandList& commandList);
+
         MemoryArena* arena;
         RenderBackend* renderBackend;
         RenderGraphResourcePool* resourcePool;
@@ -183,13 +191,13 @@ namespace Horizon
         };
         std::vector<RenderGraphExportedBuffer> exportedBuffers;
 
-        struct RenderGraphUploadBuffer
+        struct RenderGraphBufferUploadJobDescription
         {
             RenderGraphBuffer* buffer;
             const void* data;
             uint64 size;
         };
-        std::vector<RenderGraphUploadBuffer> uploadBuffers;
+        std::vector<RenderGraphBufferUploadJobDescription> bufferUploadJobs;
     };
 
     template<typename SetupLambdaType>

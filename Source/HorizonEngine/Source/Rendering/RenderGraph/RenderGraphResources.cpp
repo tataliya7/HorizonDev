@@ -43,8 +43,9 @@ namespace Horizon
 
         // TODO: destroy unused resources here
 
-
         tickCount++;
+
+        currentFrameIndex = (currentFrameIndex + 1) % 3;
     }
 
     RenderGraphPersistentTexture* RenderGraphResourcePool::CacheTexture(RenderBackendTextureHandle handle, const RenderBackendTextureDesc& desc, const char* name)
@@ -139,5 +140,30 @@ namespace Horizon
                 break;
             }
         }
+    }
+
+    RenderGraphStagingBuffer* RenderGraphResourcePool::AllocateStagingBuffer(uint64 size)
+    {
+        RenderBackendBufferDesc desc = RenderBackendBufferDesc::CreateUpload(size);
+
+        for (uint32 index = 0; index < uint32(bufferUploader[currentFrameIndex].freeStagingBuffers.size()); index++)
+        {
+            RenderGraphStagingBuffer* buffer = bufferUploader[currentFrameIndex].freeStagingBuffers[index];
+            if (buffer->GetDesc().size == size)
+            {
+                bufferUploader[currentFrameIndex].freeStagingBuffers[index] = bufferUploader[currentFrameIndex].freeStagingBuffers.back();
+                bufferUploader[currentFrameIndex].freeStagingBuffers.pop_back();
+
+                bufferUploader[currentFrameIndex].allocatedStagingBuffers.push_back(buffer);
+                return buffer;
+            }
+        }
+
+        RenderBackendBufferHandle bufferHandle = backend->CreateBuffer(&desc, nullptr, "RenderGraphStagingBuffer");
+        RenderGraphStagingBuffer* buffer = new RenderGraphStagingBuffer("RenderGraphStagingBuffer", desc, bufferHandle);
+
+        bufferUploader[currentFrameIndex].allocatedStagingBuffers.push_back(buffer);
+
+        return buffer;
     }
 }
