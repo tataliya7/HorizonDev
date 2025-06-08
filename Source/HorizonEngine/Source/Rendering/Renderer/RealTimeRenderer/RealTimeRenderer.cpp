@@ -536,6 +536,8 @@ namespace Horizon
     {
         OPTICK_EVENT();
 
+        RenderGraphDebugLabelRegion debugLabelRegion(renderGraph, "RealTimeRenderer");
+
         if (!perFrameConstantBuffers[currentPerFrameDataBufferIndex])
         {
             RenderBackendBufferDesc perFrameConstantUploadBufferDesc = RenderBackendBufferDesc::CreateUpload(sizeof(PerFrameShaderParameters));

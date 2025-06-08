@@ -41,6 +41,8 @@ namespace Horizon
 
     RenderGraphTextureHandle DispatchCustomTemporalSuperSampling(TemporalSuperSamplingInterface* temporalSuperSamplingInterface, RenderGraph& renderGraph, const SceneView& view, const TemporalSuperSamplingDispatchDescription& dispatchDescription)
     {
+        RenderGraphDebugLabelRegion debugLabelRegion(renderGraph, "TemporalSuperSampling");
+
         RenderGraphTextureHandle outputTexture = temporalSuperSamplingInterface->Dispatch(renderGraph, view, dispatchDescription);
 
         return outputTexture;
