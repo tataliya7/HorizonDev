@@ -41,6 +41,8 @@ namespace Horizon
             return;
         }
 
+        RenderGraphDebugLabelRegion debugLabelRegion(renderGraph, "VolumetricFog");
+
         LocalFogVolumeRenderData renderData = {};
         renderData.instanceCount = localFogVolumeInstanceCount;
         renderData.instanceData.resize(localFogVolumeInstanceCount);

@@ -2041,19 +2041,24 @@ namespace Horizon
             D3D_FEATURE_LEVEL_1_0_GENERIC
         };
 
-        D3D12_FEATURE_DATA_FEATURE_LEVELS featureSupportData =
+        D3D12_FEATURE_DATA_FEATURE_LEVELS featureDataFeatureLevels =
         {
             .NumFeatureLevels = _countof(allFeatureLevels),
             .pFeatureLevelsRequested = allFeatureLevels,
         };
 
-        if (SUCCEEDED(device->CheckFeatureSupport(D3D12_FEATURE_FEATURE_LEVELS, &featureSupportData, sizeof(featureSupportData))))
+        if (SUCCEEDED(device->CheckFeatureSupport(D3D12_FEATURE_FEATURE_LEVELS, &featureDataFeatureLevels, sizeof(featureDataFeatureLevels))))
         {
-            maxSupportedFeatureLevel = featureSupportData.MaxSupportedFeatureLevel;
+            maxSupportedFeatureLevel = featureDataFeatureLevels.MaxSupportedFeatureLevel;
         }
 
         LogInfo(GLogger, std::format(L"Max supported feature level {}.", GetD3DFeatureLevelWCHAR(maxSupportedFeatureLevel)));
 
+        D3D12_FEATURE_DATA_ARCHITECTURE featureDataArchitecture = {};
+        if (SUCCEEDED(device->CheckFeatureSupport(D3D12_FEATURE_ARCHITECTURE, &featureDataArchitecture, sizeof(featureDataArchitecture))))
+        {
+
+        }
 
         D3D12_FEATURE_DATA_SHADER_MODEL featureDataShaderModel =
         {

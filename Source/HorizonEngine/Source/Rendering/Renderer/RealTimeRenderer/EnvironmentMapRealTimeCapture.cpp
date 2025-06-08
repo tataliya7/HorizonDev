@@ -72,6 +72,8 @@ namespace Horizon
             RenderGraph& renderGraph,
             const SceneView& view)
     {
+        RenderGraphDebugLabelRegion debugLabelRegion(renderGraph, "CaptureEnvironmentMap");
+
         SkyLightRenderObject* skyLight = view.scene->skyLights[0];
 
         const uint32 environmentMapTextureSize = skyLight->cubemapSize;

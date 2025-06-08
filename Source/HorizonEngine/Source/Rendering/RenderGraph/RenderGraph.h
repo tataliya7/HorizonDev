@@ -202,4 +202,14 @@ namespace Horizon
         passes.emplace_back(pass);
         dag.RegisterNode(pass);
     }
+
+    class RenderGraphDebugLabelRegion
+    {
+    public:
+        RenderGraphDebugLabelRegion(RenderGraph& renderGraph, const char* name);
+        ~RenderGraphDebugLabelRegion();
+    private:
+        RenderGraph& renderGraph;
+        const char* name;
+    };
 }

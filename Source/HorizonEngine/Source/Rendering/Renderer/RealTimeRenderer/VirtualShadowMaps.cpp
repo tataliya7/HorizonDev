@@ -250,6 +250,8 @@ namespace Horizon
             }
         }
 
+        RenderGraphDebugLabelRegion debugLabelRegion(renderGraph, "VirtualShadowMaps");
+
         const uint32 virtualShadowMapSize = 128 * 128;
         const uint32 virtualShadowMapEntryCount = virtualShadowMapManager->GetVirtualShadowMapEntryCount();
         const uint32 virtualShadowMapMaximumVirtualPageCount = virtualShadowMapEntryCount * 128 * 128;

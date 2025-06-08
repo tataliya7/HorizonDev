@@ -342,9 +342,13 @@ namespace Horizon
             RenderGraphPassFlags passFlags = pass->GetFlags();
             RenderGraphRegistry registry(this, pass);
 
-            uint32 currentPassTimingQueryRegion = gpuProfiler->BeginRegion(&commandList, pass->GetName());
+            uint32 currentPassTimingQueryRegion = 0;
 
-            commandList.BeginDebugLabel(pass->GetName(), Vector4f(1.0f, 1.0f, 1.0f, 1.0f));
+            if (!EnumClassHasFlags(passFlags, RenderGraphPassFlags::DebugLabelRegion_DEPRECATED))
+            {
+                currentPassTimingQueryRegion = gpuProfiler->BeginRegion(&commandList, pass->GetName());
+                commandList.BeginDebugLabel(pass->GetName(), Vector4f(1.0f, 1.0f, 1.0f, 1.0f));
+            }
 
             for (RenderGraphPass::TextureState& state : pass->textureStates)
             {
@@ -467,9 +471,11 @@ namespace Horizon
                 commandList.EndRenderPass();
             }
 
-            gpuProfiler->EndRegion(currentPassTimingQueryRegion);
-
-            commandList.EndDebugLabel();
+            if (!EnumClassHasFlags(passFlags, RenderGraphPassFlags::DebugLabelRegion_DEPRECATED))
+            {
+                gpuProfiler->EndRegion(currentPassTimingQueryRegion);
+                commandList.EndDebugLabel();
+            }
         }
 
         for (RenderGraphTexture* texture : textures)
@@ -509,5 +515,35 @@ namespace Horizon
             *bufferToExport.target = bufferToExport.source->internalBuffer;
             bufferToExport.source->internalBuffer = nullptr;
         }
+    }
+
+    RenderGraphDebugLabelRegion::RenderGraphDebugLabelRegion(RenderGraph& renderGraph, const char* name)
+        : renderGraph(renderGraph)
+        , name(name)
+    {
+        renderGraph.AddPass(
+           std::format("DebugLabelRegionBegin"),
+           RenderGraphPassFlags::DebugLabelRegion_DEPRECATED | RenderGraphPassFlags::NeverGetCulled,
+           [&](RenderGraphBuilder& builder)
+           {
+               return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
+               {
+                   commandList.BeginDebugLabel(name, Vector4f(1.0f, 1.0f, 1.0f, 1.0f));
+               };
+           });
+    }
+
+    RenderGraphDebugLabelRegion::~RenderGraphDebugLabelRegion()
+    {
+        renderGraph.AddPass(
+            std::format("DebugLabelRegionEnd"),
+            RenderGraphPassFlags::DebugLabelRegion_DEPRECATED | RenderGraphPassFlags::NeverGetCulled,
+            [&](RenderGraphBuilder& builder)
+            {
+                return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
+                {
+                    commandList.EndDebugLabel();
+                };
+            });
     }
 }

@@ -7,7 +7,7 @@
 
 namespace Horizon
 {
-    enum class RenderGraphPassFlags : uint8
+    enum class RenderGraphPassFlags : uint32
     {
         None           = 0,
         Copy           = (1 << 0),
@@ -18,6 +18,7 @@ namespace Horizon
         RayTracing     = (1 << 5),
         NeverGetCulled = (1 << 6),
         SkipRenderPass = (1 << 7),
+        DebugLabelRegion_DEPRECATED = (1 << 8),
         Readback       = Copy | NeverGetCulled,
     };
     HORIZON_OVERLOAD_ENUM_CLASS_OPERATORS(RenderGraphPassFlags);

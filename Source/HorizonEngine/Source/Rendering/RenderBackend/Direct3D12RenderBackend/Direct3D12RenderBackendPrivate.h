@@ -695,10 +695,11 @@ namespace Horizon
             {
                 D3D12_CHECK(buffer->resource->Map(0, nullptr, &buffer->mappedData));
             }
-            else if (EnumClassHasFlags(desc->flags, RenderBackendBufferCreateFlags::Upload))
+            else if (EnumClassHasFlags(desc->flags, RenderBackendBufferCreateFlags::Upload)) // Always mapped
             {
-                // It is valid to specify the CPU won't read any data by passing a range where End is less than or equal to Begin
-                D3D12_RANGE readRange = {
+                // It is valid to specify the CPU won't read any data by passing a range where End is less than or equal to Begin.
+                D3D12_RANGE readRange =
+                {
                     .Begin = 0,
                     .End = 0,
                 };
@@ -706,7 +707,7 @@ namespace Horizon
             }
             else
             {
-                // The mapped data pointer is valid only if the resource is created with CPU access (upload or readback)
+                // The mapped data pointer is valid only if the resource is created with CPU access (upload or readback).
                 buffer->mappedData = nullptr;
             }
 

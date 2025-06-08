@@ -148,6 +148,8 @@ namespace Horizon
         }
 #endif
 
+        RenderGraphDebugLabelRegion debugLabelRegion(renderGraph, "ScreenSpaceShadows");
+
         RealTimeRendererSceneTextures& sceneTextures = renderGraph.blackboard.Get<RealTimeRendererSceneTextures>();
         RenderGraphTextureHandle& screenSpaceShadowMaskTexture = sceneTextures.shadowMaskTexture;
 

@@ -8,6 +8,8 @@ namespace Horizon
         RenderGraph& renderGraph,
         const SceneView& view)
     {
+        RenderGraphDebugLabelRegion debugLabelRegion(renderGraph, "PostProcessingPipeline");
+
         RealTimeRendererSceneTextures& sceneTextures = renderGraph.blackboard.Get<RealTimeRendererSceneTextures>();
 
         RenderGraphTextureHandle colorTexture = sceneTextures.sceneColorTexture;
@@ -23,6 +25,7 @@ namespace Horizon
         const bool isEditorSelectionOutlineEnabled = true;
         const bool isEditorGizmosEnabled = true;
 #endif
+
 
         const bool isVisualizeDepthEnabled                = (view.debugVisualizationMode == SceneViewDebugVisualizationMode::Depth);
         const bool isVisualizePrimitiveIDEnabled          = (view.debugVisualizationMode == SceneViewDebugVisualizationMode::PrimitiveID);

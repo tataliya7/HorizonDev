@@ -97,6 +97,8 @@ namespace Horizon
         RenderGraph& renderGraph,
         const SceneView& view)
     {
+        RenderGraphDebugLabelRegion debugLabelRegion(renderGraph, "RenderSkyAtmosphereLUTs");
+
         const uint32 transmittanceLutWidth = TransmittanceLutWidth;
         const uint32 transmittanceLutHeight = TransmittanceLutHeight;
         const uint32 multipleScatteringLutWidth = MultipleScatteringLutWidth;
