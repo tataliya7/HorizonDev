@@ -61,15 +61,14 @@ namespace Horizon
             StructType instance;
         };
 
-        // TODO: Optimize this, use static reflection instead.
+        // @todo Optimize this, use static reflection instead.
         template<typename StructType>
         static uint32 GetStructTypeIndex()
         {
             static uint32 index = UINT32_MAX;
             if (index == UINT32_MAX)
             {
-                index = RegisteredStructTypeCount.load();
-                RegisteredStructTypeCount.fetch_add(1);
+                index = RegisteredStructTypeCount.fetch_add(1);
                 return index;
             }
             return index;
