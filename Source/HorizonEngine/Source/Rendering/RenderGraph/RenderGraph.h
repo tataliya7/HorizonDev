@@ -70,7 +70,7 @@ namespace Horizon
          * @param[in] flags Describe the workload to the pass.
          * @param[in] setup The lambda function used to setup the resource dependencies, which is executed in the AddPass() function, must return a lambda function used to execute the pass.
          */
-        template<typename SetupLambdaType>
+        template <typename SetupLambdaType>
         void AddPass(const std::string& name, RenderGraphPassFlags flags, SetupLambdaType setup);
 
         void Execute(RenderBackendCommandList& commandList);
@@ -200,7 +200,7 @@ namespace Horizon
         std::vector<RenderGraphBufferUploadJobDescription> bufferUploadJobs;
     };
 
-    template<typename SetupLambdaType>
+    template <typename SetupLambdaType>
     void RenderGraph::AddPass(const std::string& name, RenderGraphPassFlags flags, SetupLambdaType setup)
     {
         RenderGraphLambdaPass* pass = AllocObject<RenderGraphLambdaPass>(name, flags);

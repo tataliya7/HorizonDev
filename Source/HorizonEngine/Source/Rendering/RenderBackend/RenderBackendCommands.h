@@ -50,7 +50,7 @@ namespace Horizon
         Count,
     };
 
-    template<RenderBackendCommandType commandType, RenderBackendCommandQueueType queueType>
+    template <RenderBackendCommandType commandType, RenderBackendCommandQueueType queueType>
     struct RenderBackendCommand
     {
         static const RenderBackendCommandType Type = commandType;

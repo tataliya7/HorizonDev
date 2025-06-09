@@ -7,12 +7,12 @@ namespace Horizon
     // public:
     //     Scriptable() {}
     //     virtual ~Scriptable() {}
-    //     template<typename Component>
+    //     template <typename Component>
     //     Component& GetComponent() const
     //     {
     //         return manager->GetComponent<Component>(entity);
     //     }
-    //     template<typename Component>
+    //     template <typename Component>
     //     Component* TryGetComponent()
     //     {
     //         return manager->TryGetComponent<Component>(entity);
@@ -34,7 +34,7 @@ namespace Horizon
     //
     //     ScriptComponent() = default;
     //
-    //     template<typename T>
+    //     template <typename T>
     //     void Bind()
     //     {
     //         ConstructorFunc = [&]() { scriptable = new T(); };

@@ -74,7 +74,7 @@ namespace Horizon
 
         void (*DeclarePins)(ShadeGraphNodeType& nodeType);
 
-        template<typename PinType>
+        template <typename PinType>
         inline PinType& AddInput(const std::string& name)
         {
             PinType* pin = new PinType();
@@ -83,7 +83,7 @@ namespace Horizon
             return *pin;
         }
 
-        template<typename PinType>
+        template <typename PinType>
         inline PinType& AddOutput(const std::string& name)
         {
             PinType* pin = new PinType();

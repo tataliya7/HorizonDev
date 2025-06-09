@@ -31,7 +31,7 @@ namespace Horizon
         {
             ImportedAssets.emplace(path, asset);
         }
-        template<typename T>
+        template <typename T>
         static T* GetAsset(const std::string& assetHandle)
         {
             if (ImportedAssets.find(assetHandle) == ImportedAssets.end())

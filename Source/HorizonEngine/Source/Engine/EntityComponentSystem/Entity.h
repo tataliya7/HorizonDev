@@ -14,13 +14,13 @@
 //             return name_hash == other.name_hash;
 //         }
 //
-//         template<typename T>
+//         template <typename T>
 //         static constexpr const char* name_detail()
 //         {
 //             return __FUNCSIG__;
 //         }
 //
-//         template<typename T>
+//         template <typename T>
 //         static constexpr size_t hash()
 //         {
 //             static_assert(!std::is_reference_v<T>, "dont send references to hash");
@@ -44,7 +44,7 @@
 //
 //         bool is_empty() const { return align == 0; };
 //
-//         template<typename T>
+//         template <typename T>
 //         static constexpr MetatypeHash build_hash()
 //         {
 //             using sanitized = std::remove_const_t<std::remove_reference_t<T>>;
@@ -55,7 +55,7 @@
 //             return hash;
 //         }
 //
-//         template<typename T>
+//         template <typename T>
 //         static constexpr Metatype build() {
 //
 //             Metatype meta{};
@@ -82,7 +82,7 @@
 //         };
 //     };
 //
-//     template<typename T>
+//     template <typename T>
 //     static const Metatype* get_metatype()
 //     {
 //         static const Metatype* mt = []() {
@@ -164,7 +164,7 @@
 //
 //         void MoveEntityToArchetype(EntityHandle entityHandle, ArchetypeHandle archetypeHandle);
 //
-//         template<typename Component>
+//         template <typename Component>
 //         Component& GetComponent(EntityHandle entityHandle) const
 //         {
 //             const EntityData& entity = entities[entityHandle.index];
@@ -173,7 +173,7 @@
 //             return acrray[storage.chunkIndex];
 //         }
 //
-//         template<typename Component>
+//         template <typename Component>
 //         void AddComponent(EntityHandle entityHandle)
 //         {
 //             const Metatype* temporalMetatypeArray[32];

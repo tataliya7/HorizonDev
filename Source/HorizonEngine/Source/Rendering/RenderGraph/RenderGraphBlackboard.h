@@ -15,7 +15,7 @@ namespace Horizon
         RenderGraphBlackboard& operator=(RenderGraphBlackboard&&) = delete;
         RenderGraphBlackboard& operator=(const RenderGraphBlackboard&) = delete;
 
-        template<typename StructType>
+        template <typename StructType>
         StructType& Create()
         {
             const uint32 structTypeIndex = GetStructTypeIndex<StructType>();
@@ -29,7 +29,7 @@ namespace Horizon
             return static_cast<StructInstanceContainer<StructType>*>(result)->instance;
         }
 
-        template<typename StructType>
+        template <typename StructType>
         StructType& Get() const
         {
             const uint32 structTypeIndex = GetStructTypeIndex<StructType>();
@@ -38,7 +38,7 @@ namespace Horizon
             return result->instance;
         }
 
-        template<typename StructType>
+        template <typename StructType>
         std::optional<StructType>& GetOptional() const
         {
             const uint32 structTypeIndex = GetStructTypeIndex<StructType>();
@@ -53,16 +53,16 @@ namespace Horizon
 
         static std::atomic<uint32> RegisteredStructTypeCount;
 
-        template<typename StructType>
+        template <typename StructType>
         struct StructInstanceContainer
         {
-            template<typename... Args>
+            template <typename... Args>
             StructInstanceContainer(Args&&... args) : instance(std::forward<Args&&>(args)...) {}
             StructType instance;
         };
 
         // @todo Optimize this, use static reflection instead.
-        template<typename StructType>
+        template <typename StructType>
         static uint32 GetStructTypeIndex()
         {
             static uint32 index = UINT32_MAX;

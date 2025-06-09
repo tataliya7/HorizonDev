@@ -901,7 +901,7 @@ namespace Horizon
         std::map<uint32, FramebufferList> cachedFramebuffers;
         std::map<uint32, VkRenderPass> cachedRenderPasses;
 
-        template<typename ResourceType>
+        template <typename ResourceType>
         struct ResourceContainer
         {
             uint32 Add(const ResourceType& resource)

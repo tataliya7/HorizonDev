@@ -10,7 +10,7 @@ namespace Horizon
      * A bounded multi-producer multi-consumer concurrent queue written in C++11.
      * Source code: https://github.com/rigtorp/MPMCQueue.
      */
-    template<typename T>
+    template <typename T>
     using MPMCQueue = rigtorp::mpmc::Queue<T>;
 
     struct JobSystemQueuedJob

@@ -19,7 +19,7 @@
 //
 //    }
 //
-//    template<typename ComponentType>
+//    template <typename ComponentType>
 //    void DrawComponent(const char* lable, ComponentType& component)
 //    {
 //        using namespace entt;

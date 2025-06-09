@@ -23,7 +23,7 @@ namespace Horizon
         uint32 deviceMask = ~0u;
     };
 
-    template<typename ObjectType>
+    template <typename ObjectType>
     class RenderBackendHandle : public RenderBackendHandleBase
     {
     public:
@@ -33,7 +33,7 @@ namespace Horizon
         explicit RenderBackendHandle(uint32 index, uint32 deviceMask) : RenderBackendHandleBase(index, deviceMask) {}
     };
 
-    template<typename ObjectType>
+    template <typename ObjectType>
     const RenderBackendHandle<ObjectType> RenderBackendHandle<ObjectType>::Null = RenderBackendHandle<ObjectType>();
 
     namespace RenderBackendHandleTypes

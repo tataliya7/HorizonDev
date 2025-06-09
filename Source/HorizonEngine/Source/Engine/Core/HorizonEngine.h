@@ -23,7 +23,7 @@ namespace Horizon
 
         void Tick(float deltaTimeInSeconds);
 
-        template<typename SubsystemType>
+        template <typename SubsystemType>
         SubsystemType* GetSubsystem() const
         {
             return subsystemRegistry.GetSubsystem<SubsystemType>();

@@ -16,7 +16,7 @@ namespace Horizon
     {
     public:
 
-        template<typename SubsystemType>
+        template <typename SubsystemType>
         SubsystemType* RegisterSubsystem()
         {
             static std::type_index index = typeid(SubsystemType);
@@ -29,7 +29,7 @@ namespace Horizon
         }
 
         // TODO: Optimize this, use static reflection instead.
-        template<typename SubsystemType>
+        template <typename SubsystemType>
         SubsystemType* GetSubsystem() const
         {
             static_assert(std::is_base_of_v<Subsystem, SubsystemType>, "SubsystemType must be derived from Subsystem.");

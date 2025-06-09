@@ -11,7 +11,7 @@
 
 namespace Horizon
 {
-    template<typename EnumClass>
+    template <typename EnumClass>
     constexpr bool EnumClassHasFlags(EnumClass a, EnumClass b)
     {
         using UnderlyingType = __underlying_type(EnumClass);

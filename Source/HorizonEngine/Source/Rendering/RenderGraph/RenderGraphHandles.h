@@ -71,7 +71,7 @@ namespace Horizon
         uint32 version;
     };
 
-    template<typename ObjectType>
+    template <typename ObjectType>
     class RenderGraphHandle : public RenderGraphHandleBase
     {
     public:
@@ -93,7 +93,7 @@ namespace Horizon
         }
     };
 
-    template<typename ObjectType>
+    template <typename ObjectType>
     const RenderGraphHandle<ObjectType> RenderGraphHandle<ObjectType>::Null = RenderGraphHandle<ObjectType>();
 
     class RenderGraphTexture;

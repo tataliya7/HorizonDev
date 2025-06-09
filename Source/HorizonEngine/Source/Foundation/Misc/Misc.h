@@ -34,7 +34,7 @@ namespace Horizon
         return converter.from_bytes(s);
     }
 
-    template<class T>
+    template <class T>
     class Singleton
     {
     private:
