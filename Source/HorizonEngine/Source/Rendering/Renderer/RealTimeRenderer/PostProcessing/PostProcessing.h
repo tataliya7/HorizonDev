@@ -21,4 +21,12 @@ namespace Horizon
         RenderGraphTextureDesc textureDescs[MaxMipLevelCount] = {};
         RenderGraphTextureHandle textures[MaxMipLevelCount] = {};
     };
+
+    struct PostProcessingColorTransformLUTSettings
+    {
+        bool initialized = false;
+        float whiteBalance;
+
+        bool Update(const SceneView& view, const PostProcessingSettings& postProcessingSettings);
+    };
 }

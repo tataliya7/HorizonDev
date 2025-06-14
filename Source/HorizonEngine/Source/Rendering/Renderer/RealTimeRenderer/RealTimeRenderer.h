@@ -637,6 +637,9 @@ namespace Horizon
 
         HistoryFrame historyFrame;
 
+        RenderGraphPersistentTexture* cachedColorTransformLUTTexture = nullptr;
+        PostProcessingColorTransformLUTSettings cachedColorTransformLUTSettings;
+
         void ResetHistoryFrame();
 
         // Debug draw
