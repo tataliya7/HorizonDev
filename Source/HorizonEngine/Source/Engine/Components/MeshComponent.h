@@ -29,9 +29,11 @@
          std::vector<Vector3f> normals;
          std::vector<Vector4f> tangents;
          std::vector<Vector2f> texCoords;
+         std::vector<VirtualGeometryVertex> vertices;
          std::vector<uint32> indices;
          std::vector<uint32> boneIndices;
          std::vector<float> boneWeights;
+         std::vector<GPUSceneMeshletData> meshlets;
 
          struct MeshSubset
          {
@@ -51,9 +53,9 @@
          Matrix4x4f localToWorldMatrix;
 
          std::vector<Material> materials;
+         std::vector<uint32> materialIndices;
 
          std::vector<MaterialShaderParameters> materialData;
-         std::vector<uint32> materialIndices;
 
          //Mesh* GetMesh() const
          //{
@@ -71,12 +73,6 @@
          Vector3f boundsMax;
 
          //EntityHandle armature = EntityHandle::Null;
-
-         RenderBackendBufferHandle vertexBuffers[4];
-         RenderBackendBufferHandle indexBuffer;
-
-         RenderBackendBufferHandle materialBuffer;
-         RenderBackendBufferHandle materialIndexBuffer;
 
          int previousTransformIndex = -1;
 

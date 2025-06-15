@@ -268,7 +268,6 @@ namespace Horizon
         RenderBackendShaderHandle pixelShader,
         const RenderBackendGraphicsPipelineState& graphicsPipelineState,
         const RenderBackendShaderConstants& shaderConstants,
-        RenderBackendBufferHandle indexBuffer,
         RenderBackendBufferHandle argumentBuffer,
         uint64 argumentBufferOffset,
         uint32 drawCount,
@@ -278,7 +277,7 @@ namespace Horizon
         command->vertexShader = vertexShader;
         command->pixelShader = pixelShader;
         command->pipelineState = graphicsPipelineState;
-        command->indexBuffer = indexBuffer;
+        command->indexBuffer = RenderBackendBufferHandle::Null;
         command->argumentBuffer = argumentBuffer;
         command->argumentBufferOffset = argumentBufferOffset;
         command->drawCount = drawCount;

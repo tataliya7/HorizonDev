@@ -6,46 +6,68 @@ SHADER_CONSTANTS_STRUCT_BEGIN();
 SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferSRV);
 SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_SRV(1, GeometryDataBufferSRV);
 SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_SRV(2, GeometryInstanceDataBufferSRV);
+SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_SRV(3, VisibleMeshletEntryBufferSRV);
 SHADER_CONSTANTS_STRUCT_END();
 
 struct VisibilityBufferVSOutput
 {
-    float2 textureCoord0 : TEXCOORD0;
-    nointerpolation uint instanceID : TEXCOORD1;
+    nointerpolation uint geometryInstanceID : TEXCOORD0;
+    nointerpolation uint triangleID : TEXCOORD1;
+    float4 position : SV_Position;
 };
 
 [shader("vertex")]
 void VisibilityBufferVS(
-    in uint vertexID : SV_VertexID,
-    in uint instanceID : SV_InstanceID,
-    out VisibilityBufferVSOutput output,
-    out float4 position : SV_Position)
+    in uint vertexIndexInCurrentMeshlet : SV_VertexID,
+    in uint visibleMeshletIndex : SV_InstanceID,
+    out VisibilityBufferVSOutput output)
 {
     StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
     PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
     ByteAddressBuffer geometryDataBuffer = ShaderConstants.GetGeometryDataBufferSRV();
     ByteAddressBuffer geometryInstanceDataBuffer = ShaderConstants.GetGeometryInstanceDataBufferSRV();
+    ByteAddressBuffer visibleMeshletEntryBuffer = ShaderConstants.GetVisibleMeshletEntryBufferSRV();
 
-    GPUSceneGeometryInstanceData instanceData = GetGPUSceneGeometryInstanceData(geometryInstanceDataBuffer, 0);
+	uint triangleIndexInCurrentMeshlet = vertexIndexInCurrentMeshlet / 3;
+	uint vertexIndexInCurrentTriangle = vertexIndexInCurrentMeshlet - triangleIndexInCurrentMeshlet * 3;
+
+#if 1
+    VisibleMeshletEntry visibleMeshletEntry = GetVisibleMeshletEntry(visibleMeshletEntryBuffer, visibleMeshletIndex);
+#else // Debug
+    VisibleMeshletEntry visibleMeshletEntry;
+    {
+        visibleMeshletEntry.geometryInstanceID = 0;
+        visibleMeshletEntry.meshletID = visibleMeshletIndex;
+    }
+#endif
+
+    uint geometryInstanceID = visibleMeshletEntry.geometryInstanceID;
+    GPUSceneGeometryInstanceData instanceData = GetGPUSceneGeometryInstanceData(geometryInstanceDataBuffer, geometryInstanceID);
     GPUSceneGeometryData geometryData = GetGPUSceneGeometryData(geometryDataBuffer, instanceData.geometryID);
+    GPUSceneMeshletData meshletData = GetGPUSceneMeshletData(geometryData, visibleMeshletEntry.meshletID);
 
-    VertexAttributes vertexAttributes = GetVertexAttributes(geometryData, vertexID);
+    output.position = float4(0.0f, 0.0f, 0.0f, 1.0f);
 
-    float3 worldSpaceVertexPosition = mul(instanceData.localToWorldMatrix, float4(vertexAttributes.position, 1.0f)).xyz;
-    float4 clipSpaceVertexPosition = mul(frameShaderParameters.worldToClipMatrix, float4(worldSpaceVertexPosition, 1.0f));
+    if (triangleIndexInCurrentMeshlet < meshletData.triangleCount)
+    {
+        ByteAddressBuffer indexBuffer = GetByteAddressBufferNonUniform(geometryData.indexBuffer);
+        uint vertexIndex = indexBuffer.Load<uint>((/*geometryData.baseIndex + */meshletData.vertexOffset + vertexIndexInCurrentMeshlet) * sizeof(uint));
 
-    output.textureCoord0 = vertexAttributes.textureCoord0;
-    output.instanceID = instanceID;
+        VertexAttributes vertexAttributes = GetVertexAttributes(geometryData, vertexIndex);
 
-    position = clipSpaceVertexPosition;
+        float3 worldSpaceVertexPosition = mul(instanceData.localToWorldMatrix, float4(vertexAttributes.position, 1.0f)).xyz;
+        float4 clipSpaceVertexPosition = mul(frameShaderParameters.worldToClipMatrix, float4(worldSpaceVertexPosition, 1.0f));
+
+        output.geometryInstanceID = geometryInstanceID;
+        output.position = clipSpaceVertexPosition;
+        output.triangleID = visibleMeshletEntry.meshletID * 100 + triangleIndexInCurrentMeshlet;
+    }
 }
 
-//[earlydepthstencil]
+[earlydepthstencil]
 [shader("pixel")]
 void VisibilityBufferPS(
     in VisibilityBufferVSOutput input,
-    in float4 position : SV_Position,
-    in uint primitiveID : SV_PrimitiveID, // TODO: SV_PrimitiveID requires SPIR-V Capability Geometry
     in bool isFrontFace : SV_IsFrontFace,
 #if !__spirv__
     in float3 perspectiveCorrectBarycentrics : SV_Barycentrics,
@@ -53,15 +75,14 @@ void VisibilityBufferPS(
     out uint2 vbuffer0 : SV_Target0,
     out float4 vbuffer1 : SV_Target1)
 {
-    const float2 textureCoord0 = input.textureCoord0;
-    const uint instanceID = input.instanceID;
+    const uint geometryInstanceID = input.geometryInstanceID;
 
     StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
     PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
     ByteAddressBuffer geometryDataBuffer = ShaderConstants.GetGeometryDataBufferSRV();
     ByteAddressBuffer geometryInstanceDataBuffer = ShaderConstants.GetGeometryInstanceDataBufferSRV();
 
-    GPUSceneGeometryInstanceData instanceData = GetGPUSceneGeometryInstanceData(geometryInstanceDataBuffer, instanceID);
+    GPUSceneGeometryInstanceData instanceData = GetGPUSceneGeometryInstanceData(geometryInstanceDataBuffer, geometryInstanceID);
     GPUSceneGeometryData geometryData = GetGPUSceneGeometryData(geometryDataBuffer, instanceData.geometryID);
 
     float materialTextureMipLodBias = frameShaderParameters.materialTextureMipLodBias;
@@ -71,12 +92,12 @@ void VisibilityBufferPS(
     float3 perspectiveCorrectBarycentrics = 0;
 #else
 
-    ByteAddressBuffer indexBuffer = GetByteAddressBuffer(geometryData.indexBuffer);
-    ByteAddressBuffer vertexBuffer0 = GetByteAddressBuffer(geometryData.vertexBuffer0);
+    ByteAddressBuffer indexBuffer = GetByteAddressBufferNonUniform(geometryData.indexBuffer);
+    ByteAddressBuffer vertexBuffer0 = GetByteAddressBufferNonUniform(geometryData.vertexBuffer0);
 
-    uint vertexIndex0 = indexBuffer.Load<uint>((/*geometryData.baseIndex + */primitiveID * 3 + 0) * sizeof(uint));
-    uint vertexIndex1 = indexBuffer.Load<uint>((/*geometryData.baseIndex + */primitiveID * 3 + 1) * sizeof(uint));
-    uint vertexIndex2 = indexBuffer.Load<uint>((/*geometryData.baseIndex + */primitiveID * 3 + 2) * sizeof(uint));
+    uint vertexIndex0 = indexBuffer.Load<uint>((/*geometryData.baseIndex + */input.triangleID * 3 + 0) * sizeof(uint));
+    uint vertexIndex1 = indexBuffer.Load<uint>((/*geometryData.baseIndex + */input.triangleID * 3 + 1) * sizeof(uint));
+    uint vertexIndex2 = indexBuffer.Load<uint>((/*geometryData.baseIndex + */input.triangleID * 3 + 2) * sizeof(uint));
 
     float3 vertexPosition0 = vertexBuffer0.Load<float3>(vertexIndex0 * sizeof(float3));
     float3 vertexPosition1 = vertexBuffer0.Load<float3>(vertexIndex1 * sizeof(float3));
@@ -90,36 +111,13 @@ void VisibilityBufferPS(
     float4 clipSpaceVertexPosition1 = mul(frameShaderParameters.worldToClipMatrix, float4(worldSpaceVertexPosition1, 1.0f));
     float4 clipSpaceVertexPosition2 = mul(frameShaderParameters.worldToClipMatrix, float4(worldSpaceVertexPosition2, 1.0f));
 
-    float2 uv = position.xy * frameShaderParameters.renderResolution.zw;
+    float2 uv = input.position.xy * frameShaderParameters.renderResolution.zw;
     float3 perspectiveCorrectBarycentrics = CalculatePerspectiveCorrectBarycentric(clipSpaceVertexPosition0, clipSpaceVertexPosition1, clipSpaceVertexPosition2, ScreenSpaceUVToNDCSpaceXY(uv));
 #endif
 #endif
 
-    // float2 vertexTexCoord0 = GetRWByteAddressBuffer(geometry.vertexBuffer3).Load<float2>((primitiveID * 3 + 0) * sizeof(float2));
-    // float2 vertexTexCoord1 = GetRWByteAddressBuffer(geometry.vertexBuffer3).Load<float2>((primitiveID * 3 + 1) * sizeof(float2));
-    // float2 vertexTexCoord2 = GetRWByteAddressBuffer(geometry.vertexBuffer3).Load<float2>((primitiveID * 3 + 2) * sizeof(float2));
-    // float2 interpolatedTexCoord0 = perspectiveCorrectBarycentrics.x * vertexTexCoord0 + perspectiveCorrectBarycentrics.y * vertexTexCoord1 + perspectiveCorrectBarycentrics.z * vertexTexCoord2;
-
-    // texCoord0 = interpolatedTexCoord0;
-
-    // ByteAddressBuffer materialBuffer = GetMaterialBufferSRV();
-    // Material material = materialBuffer.Load<Material>(geometry.materialBufferOffset + (materialIndex * sizeof(Material)));
-
-    // ByteAddressBuffer materialIndexBuffer = GetByteAddressBuffer(geometry.materialIndexBuffer);
-    // uint materialIndex = materialIndexBuffer.Load<uint>(primitiveID * sizeof(uint));
-
-    // float4 baseColor = material.baseColor;
-    // if (material.GetBaseColorMapIndex() > 0)
-    // {
-    //     Texture2D baseColorMap = GetTexture2DNonUniform(material.GetBaseColorMapIndex());
-    //     baseColor *= baseColorMap.SampleBias(GlobalSamplerLinearWarp, texCoord0, materialTextureMipLodBias);
-    // }
-
-    // float alphaCutoff = 0.2f;
-    // clip(baseColor.a - alphaCutoff);
-
     uint geometryID = uint((0));
-    uint2 visibilityID = uint2(geometryID, primitiveID);
+    uint2 visibilityID = uint2(geometryID, input.triangleID);
 
     vbuffer0 = visibilityID;
     vbuffer1 = float4(perspectiveCorrectBarycentrics, isFrontFace ? 1 : -1);

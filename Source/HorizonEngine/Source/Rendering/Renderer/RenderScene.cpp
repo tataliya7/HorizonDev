@@ -240,6 +240,7 @@ namespace Horizon
             geometry.vertexBuffer3 = renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(mesh->vertexBuffers[3]);
             geometry.previousVertexBuffer0 = -1;
             geometry.indexBuffer = renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(mesh->indexBuffer);
+            geometry.meshletBuffer = renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(mesh->meshletBuffer);
             geometry.materialBuffer = renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(mesh->materialBuffer);
             geometry.materialIndexBuffer = renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(mesh->materialIndexBuffer);
             geometry.vertexCount = mesh->vertexCount;
@@ -316,6 +317,8 @@ namespace Horizon
             renderBackend->ResizeBuffer(gpuScene->geometryInstanceDataBuffer, newGeometryInstanceDataBufferSize);
             gpuScene->geometryInstanceDataBufferSize = newGeometryInstanceDataBufferSize;
         }
+
+        gpuScene->geometryInstanceCount = geometryInstanceCount;
 
         if (gpuScene->geometryInstanceDataBuffer && geometryInstanceCount > 0)
         {

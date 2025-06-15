@@ -1,5 +1,8 @@
 #pragma once
 
+// It must match the values on the C++ side
+//#define GPU_SCENE_INDEX_COUNT_PER_MESHLET 128
+
 struct GPUSceneGeometryData
 {
     int vertexBuffer0;
@@ -8,6 +11,7 @@ struct GPUSceneGeometryData
     int vertexBuffer3;
     int previousVertexBuffer0;
     int indexBuffer;
+    int meshletBuffer;
     int materialBuffer;
     int materialIndexBuffer;
     uint vertexCount;
@@ -16,9 +20,9 @@ struct GPUSceneGeometryData
 
 GPUSceneGeometryData GetGPUSceneGeometryData(ByteAddressBuffer geometryDataBuffer, uint geometryID)
 {
-    GPUSceneGeometryData geometryData = (GPUSceneGeometryData)0;
-
     uint offset = geometryID * sizeof(GPUSceneGeometryData);
+
+    GPUSceneGeometryData geometryData = (GPUSceneGeometryData)0;
     geometryData = geometryDataBuffer.Load<GPUSceneGeometryData>(0);
 
     return geometryData;
@@ -35,9 +39,9 @@ struct GPUSceneGeometryInstanceData
 
 GPUSceneGeometryInstanceData GetGPUSceneGeometryInstanceData(ByteAddressBuffer geometryInstanceDataBuffer, uint instanceID)
 {
-    GPUSceneGeometryInstanceData instanceData = (GPUSceneGeometryInstanceData)0;
-
     uint offset = instanceID * sizeof(GPUSceneGeometryInstanceData);
+
+    GPUSceneGeometryInstanceData instanceData = (GPUSceneGeometryInstanceData)0;
     instanceData = geometryInstanceDataBuffer.Load<GPUSceneGeometryInstanceData>(offset);
 
     return instanceData;
@@ -53,11 +57,11 @@ struct VertexAttributes
 
 VertexAttributes GetVertexAttributes(GPUSceneGeometryData geometryData, uint vertexIndex)
 {
-    //ByteAddressBuffer indexBuffer = GetByteAddressBuffer(geometryData.indexBuffer);
-    ByteAddressBuffer vertexBuffer0 = GetByteAddressBuffer(geometryData.vertexBuffer0);
-    ByteAddressBuffer vertexBuffer1 = GetByteAddressBuffer(geometryData.vertexBuffer1);
-    ByteAddressBuffer vertexBuffer2 = GetByteAddressBuffer(geometryData.vertexBuffer2);
-    ByteAddressBuffer vertexBuffer3 = GetByteAddressBuffer(geometryData.vertexBuffer3);
+    //ByteAddressBuffer indexBuffer = GetByteAddressBufferNonUniform(geometryData.indexBuffer);
+    ByteAddressBuffer vertexBuffer0 = GetByteAddressBufferNonUniform(geometryData.vertexBuffer0);
+    ByteAddressBuffer vertexBuffer1 = GetByteAddressBufferNonUniform(geometryData.vertexBuffer1);
+    ByteAddressBuffer vertexBuffer2 = GetByteAddressBufferNonUniform(geometryData.vertexBuffer2);
+    ByteAddressBuffer vertexBuffer3 = GetByteAddressBufferNonUniform(geometryData.vertexBuffer3);
 
     VertexAttributes vertexAttributes = (VertexAttributes)0;
     vertexAttributes.position = vertexBuffer0.Load<float3>(vertexIndex * sizeof(float3));
@@ -65,6 +69,40 @@ VertexAttributes GetVertexAttributes(GPUSceneGeometryData geometryData, uint ver
     vertexAttributes.tangent = vertexBuffer2.Load<float3>(vertexIndex * sizeof(float3));
     vertexAttributes.textureCoord0 = vertexBuffer3.Load<float2>(vertexIndex * sizeof(float2));
     return vertexAttributes;
+}
+
+struct GPUSceneMeshletData
+{
+    uint vertexOffset;
+    uint triangleOffset;
+    uint vertexCount;
+    uint triangleCount;
+};
+
+GPUSceneMeshletData GetGPUSceneMeshletData(GPUSceneGeometryData geometryData, uint meshletID)
+{
+    ByteAddressBuffer meshletDataBuffer = GetByteAddressBufferNonUniform(geometryData.meshletBuffer);
+
+    uint offset = meshletID * sizeof(GPUSceneMeshletData);
+
+    GPUSceneMeshletData meshletData = (GPUSceneMeshletData)0;
+    meshletData = meshletDataBuffer.Load<GPUSceneMeshletData>(offset);
+
+    return meshletData;
+}
+
+// @todo Move to other place
+struct VisibleMeshletEntry
+{
+    uint geometryInstanceID;
+    uint meshletID;
+};
+
+VisibleMeshletEntry GetVisibleMeshletEntry(ByteAddressBuffer buffer, uint visibleMeshletIndex)
+{
+    VisibleMeshletEntry data = (VisibleMeshletEntry)0;
+    data = buffer.Load<VisibleMeshletEntry>(visibleMeshletIndex * sizeof(VisibleMeshletEntry));
+    return data;
 }
 
 struct DistantLightData

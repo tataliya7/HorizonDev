@@ -56,6 +56,8 @@ namespace Horizon
     static const uint32 SurfelGIInfoBufferOffset_DeadSurfelCount = SurfelGIInfoBufferOffset_AliveSurfelCount + 4;
     static const uint32 SurfelGIInfoBufferSize = SurfelGIInfoBufferOffset_DeadSurfelCount + 4;
 
+    static constexpr uint32 IndexCountPerMeshlet = 300;
+
     // Surfel hot data
     struct SurfelHotData
     {
@@ -583,6 +585,7 @@ namespace Horizon
         float preExposure = 1.0f;
 
         std::array<GeometryPassDrawCommandList, uint32(GeometryPassType::Count)> geometryPassDrawCommandLists;
+        void DispatchVisibilityCulling(RenderGraph& renderGraph, const SceneView& view);
         void DispatchOpaqueGeometryPassDrawCommands(RenderBackendCommandList& commandList);
         void DispatchVirtualShadowMapPassDrawCommands(
             RenderBackendCommandList& commandList,

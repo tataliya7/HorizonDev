@@ -856,27 +856,8 @@ namespace Horizon
 
         ImGui::Begin("SceneView", &open, flags);
 
-        static const char* viewModes[] =
-        {
-            "Lighting",
-            "Wireframe",
-            "Illuminance",
-            "Depth",
-            "World Space Normal",
-            "Primitive ID",
-            "Material ID",
-            "Motion Vectors",
-            "Ambient Occlusion",
-            "Screen Space Shadow Mask",
-            "Cascaded Shadow Map Cascade Index",
-            "Virtual Shadow Map Mipmap",
-            "Virtual Shadow Map Page",
-            "Surfel GI Surfel",
-            "Surfel GI Heatmap"
-        };
-
         static int currentViewModeIndex = 0;
-        ImGui::Combo("##ViewMode", &currentViewModeIndex, viewModes, IM_ARRAYSIZE(viewModes));
+        ImGui::Combo("##ViewMode", &currentViewModeIndex, ViewModeName, IM_ARRAYSIZE(ViewModeName));
         currentDebugVisualizationMode = (SceneViewDebugVisualizationMode)currentViewModeIndex;
 
         static RenderBackendTextureHandle renderDocIconTexture = RenderBackendTextureHandle::Null;

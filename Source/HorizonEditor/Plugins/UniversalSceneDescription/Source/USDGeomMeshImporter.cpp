@@ -90,7 +90,7 @@ namespace Horizon::USDImporter
             return;
         }
 
-        geomMesh.GetPointsAttr().Get(&positions, time);                                                                         
+        geomMesh.GetPointsAttr().Get(&positions, time);
         pxr::UsdGeomPrimvar primvar = usdGeomPrimvarsApi.GetPrimvar(UsdTokens::normals);
         if (primvar.HasValue())
         {
@@ -219,32 +219,6 @@ namespace Horizon::USDImporter
             mesh.tangents[i] = Vector4f(0, 0, 0, 0);
         }
 
-        RenderSystem* renderSystem = HorizonEngine::GetInstance()->GetSubsystem<RenderSystem>();
-        RenderBackend* renderBackend = renderSystem->GetRenderBackend();
-
-        RenderBackendBufferDesc vertexBuffer0Desc = RenderBackendBufferDesc::CreateByteAddress(mesh.vertexCount * sizeof(Vector3f));
-        vertexBuffer0Desc.flags |= RenderBackendBufferCreateFlags::RayTracingAccelerationStructure; // TODO
-        mesh.vertexBuffers[0] = renderBackend->CreateBuffer(&vertexBuffer0Desc, mesh.positions.data(), "VertexPosition");
-
-        RenderBackendBufferDesc vertexBuffer1Desc = RenderBackendBufferDesc::CreateByteAddress(mesh.normals.size() * sizeof(Vector3f));
-        mesh.vertexBuffers[1] = renderBackend->CreateBuffer(&vertexBuffer1Desc, mesh.normals.data(), "VertexNormal");
-
-        RenderBackendBufferDesc vertexBuffer2Desc = RenderBackendBufferDesc::CreateByteAddress(mesh.tangents.size() * sizeof(Vector4f));
-        mesh.vertexBuffers[2] = renderBackend->CreateBuffer(&vertexBuffer2Desc, mesh.tangents.data(), "VertexTangent");
-
-        if (!mesh.texCoords.empty())
-        {
-            RenderBackendBufferDesc vertexBuffer3Desc = RenderBackendBufferDesc::CreateByteAddress(mesh.texCoords.size() * sizeof(Vector2f));
-            mesh.vertexBuffers[3] = renderBackend->CreateBuffer(&vertexBuffer3Desc, mesh.texCoords.data(), "VertexTextureCoord0");
-        }
-
-        if (mesh.indexCount > 0)
-        {
-            RenderBackendBufferDesc indexBufferDesc = RenderBackendBufferDesc::CreateIndex(sizeof(uint32), mesh.indexCount);
-            indexBufferDesc.flags |= RenderBackendBufferCreateFlags::RayTracingAccelerationStructure; // TODO
-            mesh.indexBuffer = renderBackend->CreateBuffer(&indexBufferDesc, mesh.indices.data(), "IndexBuffer");
-        }
-
         MeshComponent::MeshSubset& subset = mesh.subsets.emplace_back();
         subset.baseVertex = 0;
         subset.baseIndex = 0;
@@ -300,41 +274,6 @@ namespace Horizon::USDImporter
                 }
             }
         }
-
-        for (Material& material : mesh.materials)
-        {
-            MaterialShaderParameters materialShaderParameters;
-            materialShaderParameters.baseColor = material.baseColor;
-            materialShaderParameters.metallic = material.metallic;
-            materialShaderParameters.roughness = material.roughness;
-            materialShaderParameters.specular = material.specular;
-            materialShaderParameters.specularTint = material.specularTint;
-            materialShaderParameters.emission = material.emission;
-            materialShaderParameters.emissionStrength = material.emissionStrength;
-            materialShaderParameters.sssSurfaceAlbedo = material.sssSurfaceAlbedo;
-            materialShaderParameters.sssMFP = material.sssSurfaceAlbedo;
-            materialShaderParameters.secondRoughness = material.secondRoughness;
-            materialShaderParameters.lobeMix = material.lobeMix;
-            materialShaderParameters.flags = 0;
-            if (material.useMetallicRoughnessWorkflow)
-            {
-                materialShaderParameters.flags |= MATERIAL_FLAGS_BIT_USE_METALLIC_ROUGHNESS_WORKFLOW;
-            }
-            for (uint32 slot = 0; slot < RendererMaxMaterialTextureSlotCount; slot++)
-            {
-                if (material.textures[slot].used)
-                {
-                    materialShaderParameters.textures[slot].bindlessTextureIndex = renderBackend->GetTextureSRVBindlessResourceDescriptorIndex(material.textures[slot].gpuTexture);
-                }
-            }
-            mesh.materialData.emplace_back(materialShaderParameters);
-        }
-
-        RenderBackendBufferDesc materialBufferDesc = RenderBackendBufferDesc::CreateByteAddress(mesh.materialData.size() * sizeof(MaterialShaderParameters));
-        mesh.materialBuffer = renderBackend->CreateBuffer(&materialBufferDesc, mesh.materialData.data(), "MaterialBuffer");
-
-        RenderBackendBufferDesc materialIndexBufferDesc = RenderBackendBufferDesc::CreateByteAddress((mesh.indexCount / 3) * sizeof(uint32));
-        mesh.materialIndexBuffer = renderBackend->CreateBuffer(&materialIndexBufferDesc, mesh.materialIndices.data(), "MaterialIndexBuffer");
 
         // TODO
         mesh.CreateRenderObject(scene->GetRenderScene());

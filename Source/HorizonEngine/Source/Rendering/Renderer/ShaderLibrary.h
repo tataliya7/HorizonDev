@@ -29,6 +29,9 @@ namespace Horizon
         SharedMemoryTwoForOneRealFFT,
         SharedMemoryTwoForOneRealIFFT,
         SharedMemoryComplexFFTConvolution,
+        VisibilityCullingIndirectArgumentInitialization,
+        VirtualGeometryInstanceCulling,
+        VirtualGeometryMeshletCulling,
         // Begin: Real Time Renderer
         VisibilityBufferVS,
         VisibilityBufferPS,

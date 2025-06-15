@@ -671,6 +671,8 @@ namespace Horizon
 
         DispatchLocalLightCulling(renderGraph, view);
 
+        DispatchVisibilityCulling(renderGraph, view);
+
         RenderVisibilityBuffer(renderGraph, view);
 
         RenderGBuffer(renderGraph, view);

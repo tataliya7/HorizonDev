@@ -111,6 +111,7 @@ namespace Horizon
 
         RenderBackendBufferHandle vertexBuffers[4];
         RenderBackendBufferHandle indexBuffer;
+        RenderBackendBufferHandle meshletBuffer;
         RenderBackendBufferHandle materialBuffer;
         RenderBackendBufferHandle materialIndexBuffer;
 
@@ -371,6 +372,7 @@ namespace Horizon
         int vertexBuffer3;
         int previousVertexBuffer0;
         int indexBuffer;
+        int meshletBuffer;
         int materialBuffer;
         int materialIndexBuffer;
         uint32 vertexCount;
@@ -386,11 +388,30 @@ namespace Horizon
         uint32 geometryID;
     };
 
+    struct GPUSceneMeshletData
+    {
+        uint32 vertexOffset;
+        uint32 triangleOffset;
+        uint32 vertexCount;
+        uint32 triangleCount;
+    };
+
+    static constexpr uint32 VirtualGeometryVertexMaximumTextureCoordinateCount = 1;
+
+    struct VirtualGeometryVertex
+    {
+        Vector3f position;
+        Vector3f normal;
+        Vector4f tangent;
+        Vector2f textureCoordinates[VirtualGeometryVertexMaximumTextureCoordinateCount];
+    };
+
     class GPUScene
     {
     public:
         // Geometries
-        uint32 numGeometries = 0;
+        uint32 geometryCount = 0;
+        uint32 geometryInstanceCount = 0;
 
         std::vector<GPUSceneGeometryData> geometryData;
         std::vector<GPUSceneGeometryInstanceData> geometryInstanceData;
@@ -404,7 +425,7 @@ namespace Horizon
         RenderBackendBufferHandle geometryInstanceDataBuffer;
 
         // Materials
-        uint32 numMaterials = 0;
+        uint32 materialCount = 0;
         uint64 materialBufferSize = 0;
         std::vector<MaterialShaderParameters> materials;
         RenderBackendBufferHandle materialUploadBuffer;

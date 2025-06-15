@@ -3,6 +3,13 @@
 
 namespace Horizon
 {
+    void RealTimeRenderer::DispatchVisibilityCulling(
+        RenderGraph& renderGraph,
+        const SceneView& view)
+    {
+
+    }
+
     void RealTimeRenderer::DispatchOpaqueGeometryPassDrawCommands(RenderBackendCommandList& commandList)
     {
         const GeometryPassDrawCommandList& drawCommandList = geometryPassDrawCommandLists[uint32(GeometryPassType::Opaque)];
@@ -28,31 +35,167 @@ namespace Horizon
             shaderConstants.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
             shaderConstants.BindBufferSRV(1, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(gpuScene->geometryDataBuffer));
             shaderConstants.BindBufferSRV(2, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(gpuScene->geometryInstanceDataBuffer));
+            shaderConstants.BindBufferSRV(3, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(gpuScene->geometryInstanceDataBuffer));
 
-            commandList.DrawIndexed(
+            commandList.Draw(
                 vertexShader,
                 pixelShader,
                 graphicsPipelineState,
                 shaderConstants,
-                drawCommand.indexBuffer,
-                drawCommand.indexCount,
-                drawCommand.instanceCount,
-                drawCommand.firstIndex,
-                0, // TODO
-                drawCommand.firstInstance,
+                IndexCountPerMeshlet,
+                Math::CeilDiv(drawCommand.indexCount, IndexCountPerMeshlet),
+                0,
+                0,
                 drawCommand.topology);
         }
     }
+
+    struct VisibleMeshletEntry
+    {
+        uint32 geometryInstanceID;
+        uint32 meshletID;
+    };
+
+    static constexpr uint32 MaximumVisibleMeshletCount = 1048576;
+    static constexpr uint32 MaximumCandidateVisibleMeshletCount = 4 * 1048576;
 
     void RealTimeRenderer::RenderVisibilityBuffer(
         RenderGraph& renderGraph,
         const SceneView& view)
     {
+        const GeometryPassDrawCommandList& drawCommandList = geometryPassDrawCommandLists[uint32(GeometryPassType::Opaque)];
+        const GPUScene* gpuScene = sceneView->scene->GetGPUScene();//drawCommandList.setupJobData.scene->GetGPUScene();
+
+        RenderGraphBufferDesc meshletCullingArgumentBufferDesc = RenderGraphBufferDesc::CreateIndirectArguments(sizeof(RenderBackendDispatchIndirectArguments), 1);
+        RenderGraphBufferHandle meshletCullingArgumentBuffer = renderGraph.CreateBuffer(meshletCullingArgumentBufferDesc, "VirtualGeometryIndirectArgumentBuffer");
+
+        RenderGraphBufferDesc drawIndirectArgumentBufferDesc = RenderGraphBufferDesc::CreateIndirectArguments(sizeof(RenderBackendDrawIndirectArguments), 1);
+        RenderGraphBufferHandle drawIndirectArgumentBuffer = renderGraph.CreateBuffer(drawIndirectArgumentBufferDesc, "VirtualGeometryDrawIndirectArgumentBuffer");
+
+        RenderGraphBufferDesc candidateVisibleMeshletBufferDesc = RenderGraphBufferDesc::CreateByteAddress(sizeof(VisibleMeshletEntry) * MaximumCandidateVisibleMeshletCount);
+        RenderGraphBufferHandle candidateVisibleMeshletBuffer = renderGraph.CreateBuffer(candidateVisibleMeshletBufferDesc, "CandidateVisibleMeshletBuffer");
+
+        RenderGraphBufferDesc visibleMeshletBufferDesc = RenderGraphBufferDesc::CreateByteAddress(sizeof(VisibleMeshletEntry) * MaximumVisibleMeshletCount);
+        RenderGraphBufferHandle visibleMeshletBuffer = renderGraph.CreateBuffer(visibleMeshletBufferDesc, "VisibleMeshletBuffer");
+
+        RenderGraphBufferDesc visibleMeshletCounterBufferDesc = RenderGraphBufferDesc::CreateByteAddress(sizeof(uint32));
+        RenderGraphBufferHandle visibleMeshletCounterBuffer = renderGraph.CreateBuffer(visibleMeshletCounterBufferDesc, "VisibleMeshletCounterBuffer");
+
+        renderGraph.AddPass(
+            std::format("ClearVisibleMeshletCounterBuffer ({} bytes)", visibleMeshletCounterBufferDesc.size),
+            RenderGraphPassFlags::Compute,
+            [&](RenderGraphBuilder& builder)
+            {
+                visibleMeshletCounterBuffer = builder.WriteBuffer(visibleMeshletCounterBuffer, RenderBackendResourceState::UnorderedAccess);
+
+                return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
+                {
+                    commandList.ClearBufferUAV(registry.GetRenderBackendBufferHandle(visibleMeshletCounterBuffer), 0);
+                };
+            });
+
+        renderGraph.AddPass(
+            std::format("VisibilityCullingIndirectArgumentInitialization (Compute, 1x1x1)"),
+            RenderGraphPassFlags::Compute,
+            [&](RenderGraphBuilder& builder)
+            {
+                meshletCullingArgumentBuffer = builder.WriteBuffer(meshletCullingArgumentBuffer, RenderBackendResourceState::UnorderedAccess);
+                drawIndirectArgumentBuffer = builder.WriteBuffer(drawIndirectArgumentBuffer, RenderBackendResourceState::UnorderedAccess);
+
+                return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
+                {
+                    uint32 threadGroupCountX = 1;
+                    uint32 threadGroupCountY = 1;
+                    uint32 threadGroupCountZ = 1;
+
+                    RenderBackendShaderConstants shaderConstants = {};
+                    shaderConstants.BindBufferUAV(0, registry.GetBufferUAVBindlessResourceDescriptorIndex(meshletCullingArgumentBuffer));
+                    shaderConstants.BindBufferUAV(1, registry.GetBufferUAVBindlessResourceDescriptorIndex(drawIndirectArgumentBuffer));
+
+                    RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::VisibilityCullingIndirectArgumentInitialization);
+
+                    commandList.Dispatch(
+                        computeShader,
+                        shaderConstants,
+                        threadGroupCountX,
+                        threadGroupCountY,
+                        threadGroupCountZ);
+                };
+            });
+
+        renderGraph.AddPass(
+            std::format("Instance Culling (Compute)"),
+            RenderGraphPassFlags::Compute,
+            [&](RenderGraphBuilder& builder)
+            {
+                meshletCullingArgumentBuffer = builder.WriteBuffer(meshletCullingArgumentBuffer, RenderBackendResourceState::UnorderedAccess);
+                visibleMeshletBuffer = builder.WriteBuffer(visibleMeshletBuffer, RenderBackendResourceState::UnorderedAccess);
+
+                return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
+                {
+                    uint32 threadGroupCountX = ComputeShaderThreadGroupCount(gpuScene->geometryInstanceCount, 64);
+                    uint32 threadGroupCountY = 1;
+                    uint32 threadGroupCountZ = 1;
+
+                    RenderBackendShaderConstants shaderConstants = {};
+                    shaderConstants.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
+                    shaderConstants.BindBufferSRV(1, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(gpuScene->geometryDataBuffer));
+                    shaderConstants.BindBufferSRV(2, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(gpuScene->geometryInstanceDataBuffer));
+                    shaderConstants.BindBufferUAV(3, registry.GetBufferUAVBindlessResourceDescriptorIndex(meshletCullingArgumentBuffer));
+                    shaderConstants.BindScalar(4, gpuScene->geometryInstanceCount);
+
+                    RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::VirtualGeometryInstanceCulling);
+
+                    commandList.Dispatch(
+                        computeShader,
+                        shaderConstants,
+                        threadGroupCountX,
+                        threadGroupCountY,
+                        threadGroupCountZ);
+                };
+            });
+
+        renderGraph.AddPass(
+            std::format("Meshlet Culling (Compute)"),
+            RenderGraphPassFlags::Compute,
+            [&](RenderGraphBuilder& builder)
+            {
+                visibleMeshletBuffer = builder.WriteBuffer(visibleMeshletBuffer, RenderBackendResourceState::UnorderedAccess);
+                visibleMeshletCounterBuffer = builder.WriteBuffer(visibleMeshletCounterBuffer, RenderBackendResourceState::UnorderedAccess);
+                drawIndirectArgumentBuffer = builder.WriteBuffer(drawIndirectArgumentBuffer, RenderBackendResourceState::UnorderedAccess);
+
+                return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
+                {
+                    uint32 threadGroupCountX = ComputeShaderThreadGroupCount(2623, 64);
+                    uint32 threadGroupCountY = 1;
+                    uint32 threadGroupCountZ = 1;
+
+                    RenderBackendShaderConstants shaderConstants = {};
+                    shaderConstants.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
+                    shaderConstants.BindBufferSRV(1, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(gpuScene->geometryDataBuffer));
+                    shaderConstants.BindBufferSRV(2, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(gpuScene->geometryInstanceDataBuffer));
+                    shaderConstants.BindBufferUAV(3, registry.GetBufferUAVBindlessResourceDescriptorIndex(visibleMeshletBuffer));
+                    shaderConstants.BindBufferUAV(4, registry.GetBufferUAVBindlessResourceDescriptorIndex(visibleMeshletCounterBuffer));
+                    shaderConstants.BindBufferUAV(5, registry.GetBufferUAVBindlessResourceDescriptorIndex(drawIndirectArgumentBuffer));
+
+                    RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::VirtualGeometryMeshletCulling);
+
+                    commandList.Dispatch(
+                        computeShader,
+                        shaderConstants,
+                        threadGroupCountX,
+                        threadGroupCountY,
+                        threadGroupCountZ);
+                };
+            });
+
         renderGraph.AddPass("VisibilityBuffer", RenderGraphPassFlags::Graphics,
             [&](RenderGraphBuilder& builder)
             {
                 RealTimeRendererSceneTextures& sceneTextures = renderGraph.blackboard.Get<RealTimeRendererSceneTextures>();
 
+                drawIndirectArgumentBuffer = builder.ReadBuffer(drawIndirectArgumentBuffer, RenderBackendResourceState::IndirectArgument);
+                visibleMeshletBuffer = builder.ReadBuffer(visibleMeshletBuffer, RenderBackendResourceState::ShaderResource);
                 RenderGraphTextureHandle vbuffer0 = sceneTextures.vbuffer0 = builder.WriteTexture(sceneTextures.vbuffer0, RenderBackendResourceState::RenderTarget);
                 RenderGraphTextureHandle vbuffer1 = sceneTextures.vbuffer1 = builder.WriteTexture(sceneTextures.vbuffer1, RenderBackendResourceState::RenderTarget);
                 RenderGraphTextureHandle sceneDepthTexture = sceneTextures.sceneDepthTexture = builder.WriteTexture(sceneTextures.sceneDepthTexture, RenderBackendResourceState::DepthStencil);
@@ -74,7 +217,33 @@ namespace Horizon
                     RenderBackendScissor scissor(0, 0, renderResolution.width, renderResolution.height);
                     commandList.SetScissors(&scissor, 1);
 
-                    DispatchOpaqueGeometryPassDrawCommands(commandList);
+                    RenderBackendShaderHandle vertexShader = shaderLibrary->GetShader(ShaderID::VisibilityBufferVS);
+                    RenderBackendShaderHandle pixelShader = shaderLibrary->GetShader(ShaderID::VisibilityBufferPS);
+
+                    {
+                        RenderBackendGraphicsPipelineState graphicsPipelineState = {};
+                        graphicsPipelineState.rasterizationState.cullMode = RenderBackendRasterizationCullMode::Back;
+                        graphicsPipelineState.rasterizationState.fillMode = RenderBackendRasterizationFillMode::Solid;
+                        graphicsPipelineState.depthStencilState.depthTestEnable = true;
+                        graphicsPipelineState.depthStencilState.depthWriteEnable = true;
+                        graphicsPipelineState.depthStencilState.depthCompareFunction = RenderBackendCompareOp::GreaterOrEqual;
+
+                        RenderBackendShaderConstants shaderConstants = {};
+                        shaderConstants.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
+                        shaderConstants.BindBufferSRV(1, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(gpuScene->geometryDataBuffer));
+                        shaderConstants.BindBufferSRV(2, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(gpuScene->geometryInstanceDataBuffer));
+                        shaderConstants.BindBufferSRV(3, registry.GetBufferSRVBindlessResourceDescriptorIndex(visibleMeshletBuffer));
+
+                        commandList.DrawIndirect(
+                            vertexShader,
+                            pixelShader,
+                            graphicsPipelineState,
+                            shaderConstants,
+                            registry.GetRenderBackendBufferHandle(drawIndirectArgumentBuffer),
+                            0,
+                            1,
+                            RenderBackendPrimitiveTopology::TriangleList);
+                    }
                 };
             });
     }

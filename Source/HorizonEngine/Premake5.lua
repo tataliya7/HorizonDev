@@ -77,6 +77,7 @@ project "HorizonEngine"
         thirdpartypath("python/310/include"),
         thirdpartypath("miniaudio/include"),
         thirdpartypath("streamline/Streamline-2.4.15/include"),
+        thirdpartypath("meshoptimizer/meshoptimizer-0.24/src"),
         thirdpartypath("ffx/sdk/include"),
         thirdpartypath("concurrentqueue/include")
     }

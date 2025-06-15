@@ -193,7 +193,7 @@ def install_meshoptimizer(manager, dep, args = None):
 dependency_meshoptimizer = dependency(
     name = "meshoptimizer",
     install = install_meshoptimizer,
-    url = "https://github.com/zeux/meshoptimizer/archive/refs/tags/v0.20.zip",
+    url = "https://github.com/zeux/meshoptimizer/archive/refs/tags/v0.24.zip",
     dst_dir = "meshoptimizer",
     folder = "")
 

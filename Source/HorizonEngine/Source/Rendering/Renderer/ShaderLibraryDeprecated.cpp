@@ -1,4 +1,5 @@
 #include "ShaderLibrary.h"
+#include "RealTimeRenderer/RealTimeRenderer.h"
 
 namespace Horizon
 {
@@ -112,7 +113,26 @@ namespace Horizon
             shaderLibrary->LoadShader(ShaderID::SharedMemoryComplexFFTConvolution, shaderDesc);
         }
         {
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/VisibilityCulling.hslib", "IndirectArgumentInitializationCS");
+            shaderDesc.AddDefine("GPU_SCENE_INDEX_COUNT_PER_MESHLET", IndexCountPerMeshlet);
+            shaderDesc.AddDefine("INDIRECT_ARGUMENT_INITIALIZATION", 1);
+            shaderLibrary->LoadShader(ShaderID::VisibilityCullingIndirectArgumentInitialization, shaderDesc);
+        }
+        {
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/VisibilityCulling.hslib", "InstanceCullingCS");
+            shaderDesc.AddDefine("GPU_SCENE_INDEX_COUNT_PER_MESHLET", IndexCountPerMeshlet);
+            shaderDesc.AddDefine("INSTANCE_CULLING", 1);
+            shaderLibrary->LoadShader(ShaderID::VirtualGeometryInstanceCulling, shaderDesc);
+        }
+        {
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/VisibilityCulling.hslib", "MeshletCullingCS");
+            shaderDesc.AddDefine("GPU_SCENE_INDEX_COUNT_PER_MESHLET", IndexCountPerMeshlet);
+            shaderDesc.AddDefine("MESHLET_CULLING", 1);
+            shaderLibrary->LoadShader(ShaderID::VirtualGeometryMeshletCulling, shaderDesc);
+        }
+        {
             ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Vertex, "Shaders/RealTimeRenderer/VisibilityBuffer.hslib", "VisibilityBufferVS");
+            shaderDesc.AddDefine("GPU_SCENE_INDEX_COUNT_PER_MESHLET", IndexCountPerMeshlet);
             shaderLibrary->LoadShader(ShaderID::VisibilityBufferVS, shaderDesc);
         }
         {
