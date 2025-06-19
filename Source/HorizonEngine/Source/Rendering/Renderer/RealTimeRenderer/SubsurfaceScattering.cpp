@@ -13,6 +13,8 @@ namespace Horizon
         RenderGraph& renderGraph,
         const SceneView& view)
     {
+        RenderGraphDebugLabelRegion debugLabelRegion(renderGraph, "SubsurfaceScattering");
+
         return;
 
         const RealTimeRendererSceneTextures& sceneTextures = renderGraph.blackboard.Get<RealTimeRendererSceneTextures>();

@@ -15,6 +15,8 @@ namespace Horizon
         RenderGraph& renderGraph,
         const SceneView& view)
     {
+        RenderGraphDebugLabelRegion debugLabelRegion(renderGraph, "ScreenSpaceLightShafts");
+
         RenderScene* scene = view.scene;
 
         // Currently, only atmospheric light is supported.
