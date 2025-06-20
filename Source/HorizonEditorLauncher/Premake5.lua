@@ -30,7 +30,6 @@ project "HorizonEditorLauncher"
         "imgui",
         --"USD",
         "RenderDoc",
-        "meshoptimizer",
         thirdpartypath("glfw/glfw-3.3.9.bin.WIN64/lib-vc2022/glfw3.lib"),
         thirdpartypath("dxc/dxc_2024_07_31/lib/x64/dxcompiler.lib"),
         thirdpartypath("optick/Optick_1.4.0/lib/x64/release/OptickCore.lib"),
@@ -110,6 +109,8 @@ project "HorizonEditorLauncher"
             thirdpartypath("ffx/sdk/bin/ffx_sdk/ffx_backend_dx12_x64d.lib"),
             thirdpartypath("ffx/sdk/bin/ffx_sdk/ffx_backend_vk_x64d.lib"),
             thirdpartypath("ffx/sdk/bin/ffx_sdk/ffx_fsr2_x64d.lib"),
+
+            thirdpartypath("metis/metis-5.1.0/libmetis/Debug/metis.lib"),
         }
         postbuildcommands {
             "{COPY} %{wks.location}/ThirdParty/physx/lib/debug/PhysX_64.dll %{cfg.targetdir}",
@@ -193,6 +194,8 @@ project "HorizonEditorLauncher"
             thirdpartypath("ffx/sdk/bin/ffx_sdk/ffx_backend_dx12_x64.lib"),
             thirdpartypath("ffx/sdk/bin/ffx_sdk/ffx_backend_vk_x64.lib"),
             thirdpartypath("ffx/sdk/bin/ffx_sdk/ffx_fsr2_x64.lib"),
+
+            thirdpartypath("metis/metis-5.1.0/libmetis/Release/metis.lib"),
         }
         postbuildcommands {
             "{COPY} %{wks.location}/ThirdParty/physx/lib/release/PhysX_64.dll %{cfg.targetdir}",

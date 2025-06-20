@@ -238,15 +238,19 @@ namespace Horizon
             geometry.vertexBuffer1 = renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(mesh->vertexBuffers[1]);
             geometry.vertexBuffer2 = renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(mesh->vertexBuffers[2]);
             geometry.vertexBuffer3 = renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(mesh->vertexBuffers[3]);
+            geometry.vertexBuffer = renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(mesh->vertexBuffer);
             geometry.previousVertexBuffer0 = -1;
             geometry.indexBuffer = renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(mesh->indexBuffer);
             geometry.meshletBuffer = renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(mesh->meshletBuffer);
+            geometry.meshletVertexBuffer = renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(mesh->meshletVertexBuffer);
+            geometry.meshletTriangleBuffer = renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(mesh->meshletTriangleBuffer);
             geometry.materialBuffer = renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(mesh->materialBuffer);
             geometry.materialIndexBuffer = renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(mesh->materialIndexBuffer);
             geometry.vertexCount = mesh->vertexCount;
             geometry.indexCount = mesh->indexCount;
             //geometry.boundsMin = mesh.boundsMin;
             //geometry.boundsMax = mesh.boundsMax;
+            geometry.meshletCount = mesh->meshletCount;
             gpuScene->geometryData.emplace_back(geometry);
 
             // TODO

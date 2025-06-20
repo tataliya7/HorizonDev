@@ -56,7 +56,7 @@ namespace Horizon
     static const uint32 SurfelGIInfoBufferOffset_DeadSurfelCount = SurfelGIInfoBufferOffset_AliveSurfelCount + 4;
     static const uint32 SurfelGIInfoBufferSize = SurfelGIInfoBufferOffset_DeadSurfelCount + 4;
 
-    static constexpr uint32 IndexCountPerMeshlet = 300;
+    static constexpr uint32 IndexCountPerMeshlet = 128;
 
     // Surfel hot data
     struct SurfelHotData
@@ -100,6 +100,7 @@ namespace Horizon
 
     struct RealTimeRendererSceneTextures
     {
+        RenderGraphBufferHandle visibleMeshletBuffer;
         RenderGraphTextureHandle vbuffer0;
         RenderGraphTextureHandle vbuffer1;
         RenderGraphTextureHandle gbuffer0;
@@ -474,11 +475,7 @@ namespace Horizon
             RenderGraph& renderGraph,
             const SceneView& view);
 
-        RenderGraphTextureHandle AddVisualizePrimitiveIDPass(
-            RenderGraph& renderGraph,
-            const SceneView& view);
-
-        RenderGraphTextureHandle AddVisualizeMaterialIDPass(
+        RenderGraphTextureHandle AddVirtualGeometryDebugVisualizationPass(
             RenderGraph& renderGraph,
             const SceneView& view);
 

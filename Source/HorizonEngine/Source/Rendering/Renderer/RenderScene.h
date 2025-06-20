@@ -108,10 +108,14 @@ namespace Horizon
 
         uint32 vertexCount;
         uint32 indexCount;
+        uint32 meshletCount;
 
         RenderBackendBufferHandle vertexBuffers[4];
         RenderBackendBufferHandle indexBuffer;
+        RenderBackendBufferHandle vertexBuffer;
         RenderBackendBufferHandle meshletBuffer;
+        RenderBackendBufferHandle meshletVertexBuffer;
+        RenderBackendBufferHandle meshletTriangleBuffer;
         RenderBackendBufferHandle materialBuffer;
         RenderBackendBufferHandle materialIndexBuffer;
 
@@ -370,13 +374,17 @@ namespace Horizon
         int vertexBuffer1;
         int vertexBuffer2;
         int vertexBuffer3;
+        int vertexBuffer;
         int previousVertexBuffer0;
         int indexBuffer;
         int meshletBuffer;
+        int meshletVertexBuffer;
+        int meshletTriangleBuffer;
         int materialBuffer;
         int materialIndexBuffer;
         uint32 vertexCount;
         uint32 indexCount;
+        uint32 meshletCount;
     };
 
     struct GPUSceneGeometryInstanceData
@@ -396,12 +404,14 @@ namespace Horizon
         uint32 triangleCount;
     };
 
-    static constexpr uint32 VirtualGeometryVertexMaximumTextureCoordinateCount = 1;
+    static constexpr uint32 VirtualGeometryVertexMaximumTextureCoordinateCount = 2;
 
     struct VirtualGeometryVertex
     {
         Vector3f position;
+        float padding0;
         Vector3f normal;
+        float padding1;
         Vector4f tangent;
         Vector2f textureCoordinates[VirtualGeometryVertexMaximumTextureCoordinateCount];
     };

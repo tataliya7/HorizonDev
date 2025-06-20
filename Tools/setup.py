@@ -185,18 +185,6 @@ dependency_dxc = dependency(
     dst_dir = "dxc",
     folder = "dxc_2024_07_31")
 
-def install_meshoptimizer(manager, dep, args = None):
-    dst_dir = os.path.join(manager.install_dir, dep.dst_dir)
-    downloaded_file = download_url(dep.url, manager.download_dir, False)
-    extract_dir = extract_zip_file(downloaded_file, dst_dir, dep.folder)
-
-dependency_meshoptimizer = dependency(
-    name = "meshoptimizer",
-    install = install_meshoptimizer,
-    url = "https://github.com/zeux/meshoptimizer/archive/refs/tags/v0.24.zip",
-    dst_dir = "meshoptimizer",
-    folder = "")
-
 def install_streamline(manager, dep, args = None):
     dst_dir = os.path.join(manager.install_dir, dep.dst_dir)
     downloaded_file = download_url(dep.url, manager.download_dir, False)
@@ -234,7 +222,6 @@ manager.add_dependency(dependency_imgui)
 manager.add_dependency(dependency_googletest)
 manager.add_dependency(dependency_optick)
 manager.add_dependency(dependency_dxc)
-manager.add_dependency(dependency_meshoptimizer)
 manager.add_dependency(dependency_streamline)
 
 required_dependencies = list()
@@ -243,7 +230,6 @@ required_dependencies.append("imgui")
 required_dependencies.append("googletest")
 required_dependencies.append("optick")
 required_dependencies.append("dxc")
-required_dependencies.append("meshoptimizer")
 required_dependencies.append("streamline")
 
 try:

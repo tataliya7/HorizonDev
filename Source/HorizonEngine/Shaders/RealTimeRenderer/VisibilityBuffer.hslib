@@ -2,6 +2,8 @@
 #include "RealTimeRendererCommon.hsh"
 #include "GPUScene.hsh"
 
+#if 1
+
 SHADER_CONSTANTS_STRUCT_BEGIN();
 SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferSRV);
 SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_SRV(1, GeometryDataBufferSRV);
@@ -11,8 +13,10 @@ SHADER_CONSTANTS_STRUCT_END();
 
 struct VisibilityBufferVSOutput
 {
-    nointerpolation uint geometryInstanceID : TEXCOORD0;
-    nointerpolation uint triangleID : TEXCOORD1;
+    nointerpolation uint packedPrimitiveID : TEXCOORD0;
+#if !ENABLE_BARYCENTRICS_SEMANTIC_SYSTEM_VALUE_SUPPORT
+    float2 barycentrics : TEXCOORD1;
+#endif
     float4 position : SV_Position;
 };
 
@@ -31,17 +35,10 @@ void VisibilityBufferVS(
 	uint triangleIndexInCurrentMeshlet = vertexIndexInCurrentMeshlet / 3;
 	uint vertexIndexInCurrentTriangle = vertexIndexInCurrentMeshlet - triangleIndexInCurrentMeshlet * 3;
 
-#if 1
     VisibleMeshletEntry visibleMeshletEntry = GetVisibleMeshletEntry(visibleMeshletEntryBuffer, visibleMeshletIndex);
-#else // Debug
-    VisibleMeshletEntry visibleMeshletEntry;
-    {
-        visibleMeshletEntry.geometryInstanceID = 0;
-        visibleMeshletEntry.meshletID = visibleMeshletIndex;
-    }
-#endif
 
     uint geometryInstanceID = visibleMeshletEntry.geometryInstanceID;
+
     GPUSceneGeometryInstanceData instanceData = GetGPUSceneGeometryInstanceData(geometryInstanceDataBuffer, geometryInstanceID);
     GPUSceneGeometryData geometryData = GetGPUSceneGeometryData(geometryDataBuffer, instanceData.geometryID);
     GPUSceneMeshletData meshletData = GetGPUSceneMeshletData(geometryData, visibleMeshletEntry.meshletID);
@@ -50,75 +47,224 @@ void VisibilityBufferVS(
 
     if (triangleIndexInCurrentMeshlet < meshletData.triangleCount)
     {
+        uint triangleID = meshletData.triangleOffset + triangleIndexInCurrentMeshlet;
         ByteAddressBuffer indexBuffer = GetByteAddressBufferNonUniform(geometryData.indexBuffer);
-        uint vertexIndex = indexBuffer.Load<uint>((/*geometryData.baseIndex + */meshletData.vertexOffset + vertexIndexInCurrentMeshlet) * sizeof(uint));
+        uint vertexIndex = indexBuffer.Load<uint>((triangleID * 3 + vertexIndexInCurrentTriangle) * sizeof(uint));
 
-        VertexAttributes vertexAttributes = GetVertexAttributes(geometryData, vertexIndex);
+        GPUSceneGeometryVertexAttributes vertexAttributes = GetGPUSceneGeometryVertexAttributes(geometryData, vertexIndex);
 
         float3 worldSpaceVertexPosition = mul(instanceData.localToWorldMatrix, float4(vertexAttributes.position, 1.0f)).xyz;
         float4 clipSpaceVertexPosition = mul(frameShaderParameters.worldToClipMatrix, float4(worldSpaceVertexPosition, 1.0f));
 
-        output.geometryInstanceID = geometryInstanceID;
+        output.packedPrimitiveID = PackVisiblePrimitiveID(visibleMeshletIndex, triangleIndexInCurrentMeshlet);
+#if !ENABLE_BARYCENTRICS_SEMANTIC_SYSTEM_VALUE_SUPPORT
+		output.barycentrics = float2(vertexIndexInCurrentTriangle == 0, vertexIndexInCurrentTriangle == 1);
+#endif
         output.position = clipSpaceVertexPosition;
-        output.triangleID = visibleMeshletEntry.meshletID * 100 + triangleIndexInCurrentMeshlet;
     }
 }
 
-[earlydepthstencil]
+//[earlydepthstencil]
 [shader("pixel")]
 void VisibilityBufferPS(
     in VisibilityBufferVSOutput input,
     in bool isFrontFace : SV_IsFrontFace,
-#if !__spirv__
-    in float3 perspectiveCorrectBarycentrics : SV_Barycentrics,
+#if ENABLE_BARYCENTRICS_SEMANTIC_SYSTEM_VALUE_SUPPORT
+    in float3 barycentrics : SV_Barycentrics,
 #endif
-    out uint2 vbuffer0 : SV_Target0,
+    out uint vbuffer0 : SV_Target0,
     out float4 vbuffer1 : SV_Target1)
 {
-    const uint geometryInstanceID = input.geometryInstanceID;
+#if ENABLE_BARYCENTRICS_SEMANTIC_SYSTEM_VALUE_SUPPORT
+    float3 perspectiveCorrectBarycentrics = barycentrics;
+#else
+    float3 perspectiveCorrectBarycentrics = float3(input.barycentrics.x, input.barycentrics.y, 1.0f - input.barycentrics.x - input.barycentrics.y);
+#endif
+
+    vbuffer0 = input.packedPrimitiveID;
+    vbuffer1 = float4(perspectiveCorrectBarycentrics, isFrontFace ? 1 : -1);
+}
+
+#else
+
+const static uint TASK_SHADER_WORKGROUP_SIZE = 32; // Assumes availability of wave size of 32 threads
+
+struct MeshPayload
+{
+    uint meshletIndices[TASK_SHADER_WORKGROUP_SIZE];
+};
+
+struct MeshletDesc
+{
+    uint vertexCount;
+    uint vertexOffset;
+    uint triangleCount;
+    uint indexOffset;
+    uint geometryIndex;
+};
+
+struct VertexAttributes
+{
+    float4 position : SV_Position;
+};
+
+struct PrimitiveAttributes
+{
+    // x: meshlet index, y: triangle index, z: unused, w: unused
+    nointerpolation uint4 packedData : TEXCOORD0;
+};
+
+#if __SHADER_TARGET_STAGE == __SHADER_STAGE_AMPLIFICATION
+groupshared MeshPayload SharedPayload;
+#endif
+
+MeshletDesc GetMeshletDesc(ByteAddressBuffer meshletDescBuffer, uint meshletIndex)
+{
+    //MeshletDesc meshletDesc = meshletDescBuffer.Load<MeshletDesc>(meshletIndex * sizeof(MeshletDesc));
+    MeshletDesc meshletDesc;
+    return meshletDesc;
+}
+
+VertexAttributes GetVertexAttributes(PerFrameShaderParameters frameShaderParameters, MeshletDesc meshletDesc, uint vertexIndex)
+{
+#if 0
+    ByteAddressBuffer geometryBuffer = GetGeometryBufferSRV();
+    Geometry geometry = geometryBuffer.Load<Geometry>(meshletDesc.geometryIndex * sizeof(Geometry));
+    ByteAddressBuffer transformBuffer = GetByteAddressBuffer(geometry.transformBuffer);
+    float4x4 worldMatrix = transformBuffer.Load<float4x4>(geometry.transformIndex * sizeof(float4x4));
+    float3 vertexPosition = GetRWByteAddressBuffer(geometry.vertexBuffer0).Load<float3>(index0 * sizeof(float3));
+    float3 positionWS = mul(worldMatrix, float4(vertexPosition, 1.0f)).xyz;
+    float4 positionHS = mul(frameShaderParameters.worldToClipMatrix, float4(positionWS, 1.0f));
+#else
+    float4 positionHS = 0;
+#endif
+    VertexAttributes vertex;
+    vertex.position = positionHS;
+    return vertex;
+}
+
+uint3 DecodeTriangleIndices(MeshletDesc meshletDesc, uint triangleIndex)
+{
+    return 0;
+}
+
+#if __SHADER_TARGET_STAGE == __SHADER_STAGE_AMPLIFICATION
+
+[shader("amplification")]
+[numthreads(TASK_SHADER_WORKGROUP_SIZE, 1, 1)]
+void VisibilityBufferAS(uint dispatchThreadID : SV_DispatchThreadID)
+{
+    bool visible = false;
+
+    ByteAddressBuffer vertexBuffer0 = GetVertexBuffer0SRV();
+
+    if (dispatchThreadID.x < MeshInfo.meshletCount)
+    {
+        // visible = IsVisible(MeshletCullData[dtid], Instance.World, Instance.Scale, Constants.CullViewPosition);
+        visible = true;
+    }
+
+    if (visible)
+    {
+        uint visibleMeshletIndex = WavePrefixCountBits(visible);
+        SharedPayload.meshletIndices[visibleMeshletIndex] = dispatchThreadID;
+    }
+
+    uint visibleMeshletCount = WaveActiveCountBits(visible);
+
+    DispatchMesh(visibleMeshletCount, 1, 1, SharedPayload);
+}
+
+#endif
+
+#if __SHADER_TARGET_STAGE == __SHADER_STAGE_MESH
+
+[shader("mesh")]
+[outputtopology("triangle")]
+[numthreads(128, 1, 1)]
+void VisibilityBufferMS(
+    uint groupThreadID : SV_GroupThreadID,
+    uint groupID : SV_GroupID,
+    in payload MeshPayload payload,
+    out vertices VertexAttributes outVertices[256],
+    out indices uint3 outIndices[128],
+    out primitives PrimitiveAttributes outPrimitives[128])
+{
+    uint meshletIndex = payload.meshletIndices[groupID];
+    uint triangleIndex = groupThreadID;
+
+    // TODO
+    uint meshletCount = 1;
+
+    if (meshletIndex >= meshletCount)
+    {
+        return;
+    }
 
     StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
     PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
-    ByteAddressBuffer geometryDataBuffer = ShaderConstants.GetGeometryDataBufferSRV();
-    ByteAddressBuffer geometryInstanceDataBuffer = ShaderConstants.GetGeometryInstanceDataBufferSRV();
+    //ByteAddressBuffer meshletDescBuffer = GetMeshletDescBufferSRV();
 
-    GPUSceneGeometryInstanceData instanceData = GetGPUSceneGeometryInstanceData(geometryInstanceDataBuffer, geometryInstanceID);
-    GPUSceneGeometryData geometryData = GetGPUSceneGeometryData(geometryDataBuffer, instanceData.geometryID);
+    MeshletDesc meshletDesc;// = GetMeshletDesc(meshletDescBuffer, meshletIndex);
 
-    float materialTextureMipLodBias = frameShaderParameters.materialTextureMipLodBias;
+    uint vertexCount = meshletDesc.vertexCount;
+    uint triangleCount = meshletDesc.triangleCount;
+    SetMeshOutputCounts(vertexCount, triangleCount);
 
-#if __spirv__
-#if 0
-    float3 perspectiveCorrectBarycentrics = 0;
-#else
+    //
+    {
+        uint vertexOutputIndex = groupThreadID;
+        if (vertexOutputIndex < vertexCount)
+        {
+            VertexAttributes vertex = GetVertexAttributes(frameShaderParameters, meshletDesc, vertexOutputIndex);
+            outVertices[vertexOutputIndex] = vertex;
+        }
+        vertexOutputIndex += 128;
+        if (vertexOutputIndex < vertexCount)
+        {
+            VertexAttributes vertex = GetVertexAttributes(frameShaderParameters, meshletDesc, vertexOutputIndex);
+            outVertices[vertexOutputIndex] = vertex;
+        }
+    }
 
-    ByteAddressBuffer indexBuffer = GetByteAddressBufferNonUniform(geometryData.indexBuffer);
-    ByteAddressBuffer vertexBuffer0 = GetByteAddressBufferNonUniform(geometryData.vertexBuffer0);
+    if (triangleIndex < triangleCount)
+    {
+        uint3 indices = DecodeTriangleIndices(meshletDesc, triangleIndex);
+        outIndices[triangleIndex] = indices;
 
-    uint vertexIndex0 = indexBuffer.Load<uint>((/*geometryData.baseIndex + */input.triangleID * 3 + 0) * sizeof(uint));
-    uint vertexIndex1 = indexBuffer.Load<uint>((/*geometryData.baseIndex + */input.triangleID * 3 + 1) * sizeof(uint));
-    uint vertexIndex2 = indexBuffer.Load<uint>((/*geometryData.baseIndex + */input.triangleID * 3 + 2) * sizeof(uint));
-
-    float3 vertexPosition0 = vertexBuffer0.Load<float3>(vertexIndex0 * sizeof(float3));
-    float3 vertexPosition1 = vertexBuffer0.Load<float3>(vertexIndex1 * sizeof(float3));
-    float3 vertexPosition2 = vertexBuffer0.Load<float3>(vertexIndex2 * sizeof(float3));
-
-    float3 worldSpaceVertexPosition0 = mul(instanceData.localToWorldMatrix, float4(vertexPosition0, 1.0f)).xyz;
-    float3 worldSpaceVertexPosition1 = mul(instanceData.localToWorldMatrix, float4(vertexPosition1, 1.0f)).xyz;
-    float3 worldSpaceVertexPosition2 = mul(instanceData.localToWorldMatrix, float4(vertexPosition2, 1.0f)).xyz;
-
-    float4 clipSpaceVertexPosition0 = mul(frameShaderParameters.worldToClipMatrix, float4(worldSpaceVertexPosition0, 1.0f));
-    float4 clipSpaceVertexPosition1 = mul(frameShaderParameters.worldToClipMatrix, float4(worldSpaceVertexPosition1, 1.0f));
-    float4 clipSpaceVertexPosition2 = mul(frameShaderParameters.worldToClipMatrix, float4(worldSpaceVertexPosition2, 1.0f));
-
-    float2 uv = input.position.xy * frameShaderParameters.renderResolution.zw;
-    float3 perspectiveCorrectBarycentrics = CalculatePerspectiveCorrectBarycentric(clipSpaceVertexPosition0, clipSpaceVertexPosition1, clipSpaceVertexPosition2, ScreenSpaceUVToNDCSpaceXY(uv));
-#endif
-#endif
-
-    uint geometryID = uint((0));
-    uint2 visibilityID = uint2(geometryID, input.triangleID);
-
-    vbuffer0 = visibilityID;
-    vbuffer1 = float4(perspectiveCorrectBarycentrics, isFrontFace ? 1 : -1);
+        PrimitiveAttributes primitive;
+        primitive.packedData.x = meshletIndex;
+        primitive.packedData.y = triangleIndex;
+        primitive.packedData.z = 0;
+        primitive.packedData.w = 0;
+        outPrimitives[triangleIndex] = primitive;
+    }
 }
+
+#endif
+
+#if __SHADER_TARGET_STAGE == __SHADER_STAGE_PIXEL
+
+[shader("pixel")]
+void VisibilityBufferPS(
+    VertexAttributes vertexAttributes,
+    PrimitiveAttributes primitiveAttributes,
+    out uint vbuffer0 : SV_Target0,
+    out float3 vbuffer1 : SV_Target1)
+{
+    uint meshletIndex = primitiveAttributes.packedData.x;
+
+    vbuffer0 = 0;
+    vbuffer1 = 0;
+    // Per-meshlet color shading
+    {
+        vbuffer1 = float3(
+            float(meshletIndex & 1),
+            float(meshletIndex & 3) / 4,
+            float(meshletIndex & 7) / 8);
+    }
+}
+
+#endif
+
+#endif

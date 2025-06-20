@@ -1,106 +1,106 @@
- #pragma once
+#pragma once
 
 #include "Foundation/FoundationModule.h"
 #include "Rendering/RenderingModule.h"
 #include "Engine/Serialization/Archive.h"
 
- namespace Horizon
- {
-     /**
-      * MeshComponent is used to create an instance of a renderable collection of triangles.
-      */
-     class MeshComponent
-     {
-     public:
+namespace Horizon
+{
+    /**
+     * MeshComponent is used to create an instance of a renderable collection of triangles.
+     */
+    class MeshComponent
+    {
+    public:
 
-         MeshComponent();
-         ~MeshComponent();
-         bool IsRenderObjectValid() const;
-         void CreateRenderObject(RenderScene* scene);
-         void DestroyRenderObject(RenderScene* scene);
-         void UpdateRenderObject();
+        MeshComponent();
+        ~MeshComponent();
+        bool IsRenderObjectValid() const;
+        void CreateRenderObject(RenderScene* scene);
+        void DestroyRenderObject(RenderScene* scene);
+        void UpdateRenderObject();
 
-         std::string meshSource;
+        std::string meshSource;
 
-         uint32 vertexCount;
-         uint32 indexCount;
+        uint32 vertexCount;
+        uint32 indexCount;
 
-         std::vector<Vector3f> positions;
-         std::vector<Vector3f> normals;
-         std::vector<Vector4f> tangents;
-         std::vector<Vector2f> texCoords;
-         std::vector<VirtualGeometryVertex> vertices;
-         std::vector<uint32> indices;
-         std::vector<uint32> boneIndices;
-         std::vector<float> boneWeights;
-         std::vector<GPUSceneMeshletData> meshlets;
+        std::vector<Vector3f> positions;
+        std::vector<Vector3f> normals;
+        std::vector<Vector4f> tangents;
+        std::vector<Vector2f> texCoords;
+        std::vector<VirtualGeometryVertex> vertices;
+        std::vector<uint32> indices;
+        std::vector<uint32> boneIndices;
+        std::vector<float> boneWeights;
+        std::vector<GPUSceneMeshletData> meshlets;
 
-         struct MeshSubset
-         {
-             std::string name;
-             uint32 baseVertex;
-             uint32 baseIndex;
-             uint32 numIndices;
-             uint32 numVertices;
-             //uint32 materialIndex;
-             //uint32 transformIndex;
-             Vector3f boundsMin;
-             Vector3f boundsMax;
-         };
-         std::vector<MeshSubset> subsets;
-         //std::vector<Matrix4x4f> transformData;
-         //std::vector<Matrix4x4f> transformDataTranspose;
-         Matrix4x4f localToWorldMatrix;
+        struct MeshSubset
+        {
+            std::string name;
+            uint32 baseVertex;
+            uint32 baseIndex;
+            uint32 numIndices;
+            uint32 numVertices;
+            //uint32 materialIndex;
+            //uint32 transformIndex;
+            Vector3f boundsMin;
+            Vector3f boundsMax;
+        };
+        std::vector<MeshSubset> subsets;
+        //std::vector<Matrix4x4f> transformData;
+        //std::vector<Matrix4x4f> transformDataTranspose;
+        Matrix4x4f localToWorldMatrix;
 
-         std::vector<Material> materials;
-         std::vector<uint32> materialIndices;
+        std::vector<Material> materials;
+        std::vector<uint32> materialIndices;
 
-         std::vector<MaterialShaderParameters> materialData;
+        std::vector<MaterialShaderParameters> materialData;
 
-         //Mesh* GetMesh() const
-         //{
-         //    return mesh;
-         //}
+        //Mesh* GetMesh() const
+        //{
+        //    return mesh;
+        //}
 
-         uint32 GetSubsetCount() const
-         {
-             return (uint32)subsets.size();
-         }
+        uint32 GetSubsetCount() const
+        {
+            return (uint32)subsets.size();
+        }
 
-         uint32 GetMaterialCount() const;
+        uint32 GetMaterialCount() const;
 
-         Vector3f boundsMin;
-         Vector3f boundsMax;
+        Vector3f boundsMin;
+        Vector3f boundsMax;
 
-         //EntityHandle armature = EntityHandle::Null;
+        //EntityHandle armature = EntityHandle::Null;
 
-         int previousTransformIndex = -1;
+        int previousTransformIndex = -1;
 
-         int materialBufferOffset = 0;
+        int materialBufferOffset = 0;
 
-         //RenderBackendBufferHandle transformBuffer;
-         //RenderBackendBufferHandle transformTransposeBuffer;
-         //RenderBackendBufferHandle previousTransformBuffer;
+        //RenderBackendBufferHandle transformBuffer;
+        //RenderBackendBufferHandle transformTransposeBuffer;
+        //RenderBackendBufferHandle previousTransformBuffer;
 
-         //RenderBackendBufferHandle boneIndexBuffer;
-         //RenderBackendBufferHandle boneWeightBuffer;
-         //RenderBackendBufferHandle boneTransformBuffer;
+        //RenderBackendBufferHandle boneIndexBuffer;
+        //RenderBackendBufferHandle boneWeightBuffer;
+        //RenderBackendBufferHandle boneTransformBuffer;
 
-         //RayTracingGeometry rayTracingGeometry;
+        //RayTracingGeometry rayTracingGeometry;
 
-         int64 updateCounter = -100;
+        int64 updateCounter = -100;
 
-         bool doubleSided = true;
+        bool doubleSided = true;
 
-         //bool IsSkinnedMesh() const
-         //{
-         //    return armature != EntityHandle::Null;
-         //}
+        //bool IsSkinnedMesh() const
+        //{
+        //    return armature != EntityHandle::Null;
+        //}
 
-     private:
+    private:
 
-         //TriangleMesh* mesh;
+        //TriangleMesh* mesh;
 
-         MeshRenderObject* renderObject = nullptr;
-     };
- }
+        MeshRenderObject* renderObject = nullptr;
+    };
+}

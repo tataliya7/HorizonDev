@@ -13,7 +13,7 @@ SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, PerFrameShaderParameters, PerFrameShad
 SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_SRV(1, GeometryDataBufferSRV);
 SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_SRV(2, GeometryInstanceDataBufferSRV);
 SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(3, SceneDepthTextureSRV);
-SHADER_CONSTANTS_TEXTURE_2D_SRV(4, uint2, VBuffer0SRV);
+SHADER_CONSTANTS_TEXTURE_2D_SRV(4, uint, VBuffer0SRV);
 SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(5, VBuffer1SRV);
 SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(6, GBuffer0SRV);
 SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(7, GBuffer1SRV);
@@ -361,7 +361,7 @@ void DirectLightingPS(in float4 position : SV_Position, out float4 outColor : SV
 {
     StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
     PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
-    Texture2D<uint2> vbuffer0 = ShaderConstants.GetVBuffer0SRV();
+    Texture2D<uint> vbuffer0 = ShaderConstants.GetVBuffer0SRV();
     Texture2D vbuffer1 = ShaderConstants.GetVBuffer1SRV();
     Texture2D gbuffer0 = ShaderConstants.GetGBuffer0SRV();
     Texture2D gbuffer1 = ShaderConstants.GetGBuffer1SRV();
@@ -371,10 +371,8 @@ void DirectLightingPS(in float4 position : SV_Position, out float4 outColor : SV
     const uint2 pixelCoord = uint2(position.xy);
     const float2 uv = (float2(pixelCoord) + 0.5f) * frameShaderParameters.renderResolution.zw;
 
-    uint2 visibilityID = vbuffer0[pixelCoord].rg;
+    uint packedPrimitiveID = vbuffer0[pixelCoord].r;
     float3 barycentrics = vbuffer1[pixelCoord].rgb;
-    uint geometryID = visibilityID.r;
-    uint primitiveID = visibilityID.g;
 
     float4 gbuffer0Data = gbuffer0[pixelCoord];
     float4 gbuffer1Data =  gbuffer1[pixelCoord];
@@ -382,22 +380,10 @@ void DirectLightingPS(in float4 position : SV_Position, out float4 outColor : SV
 
     float sceneDepth = sceneDepthTexture[pixelCoord].r;
 
-    if (visibilityID.x == INVALID_VISIBILIY_ID)
+    if (packedPrimitiveID == INVALID_VISIBILIY_ID)
     {
         return;
     }
-
-    ByteAddressBuffer geometryDataBuffer = ShaderConstants.GetGeometryDataBufferSRV();
-    ByteAddressBuffer geometryInstanceDataBuffer = ShaderConstants.GetGeometryInstanceDataBufferSRV();
-
-    GPUSceneGeometryInstanceData instanceData = GetGPUSceneGeometryInstanceData(geometryInstanceDataBuffer, 0);
-    GPUSceneGeometryData geometryData = GetGPUSceneGeometryData(geometryDataBuffer, instanceData.geometryID);
-
-    ByteAddressBuffer materialIndexBuffer = GetByteAddressBuffer(geometryData.materialIndexBuffer);
-    uint materialIndex = materialIndexBuffer.Load<uint>(primitiveID * sizeof(uint));
-
-    ByteAddressBuffer materialBuffer = GetByteAddressBuffer(geometryData.materialBuffer);
-    Material material = materialBuffer.Load<Material>(materialIndex * sizeof(Material));
 
     float3 worldSpacePosition = ReconstructWorldSpacePositionFromUVZ(uv, sceneDepth, frameShaderParameters.clipToWorldMatrix);
     float3 normal = DecodeNormalFromGBuffer(gbuffer0Data.xyz);

@@ -1,7 +1,7 @@
 #pragma once
 
 // It must match the values on the C++ side
-//#define GPU_SCENE_INDEX_COUNT_PER_MESHLET 128
+//#define GPU_SCENE_MAXIMUM_TRIANGLE_COUNT_PER_MESHLET 128
 
 struct GPUSceneGeometryData
 {
@@ -9,13 +9,17 @@ struct GPUSceneGeometryData
     int vertexBuffer1;
     int vertexBuffer2;
     int vertexBuffer3;
+    int vertexBuffer;
     int previousVertexBuffer0;
     int indexBuffer;
     int meshletBuffer;
+    int meshletVertexBuffer;
+    int meshletTriangleBuffer;
     int materialBuffer;
     int materialIndexBuffer;
     uint vertexCount;
     uint indexCount;
+    uint meshletCount;
 };
 
 GPUSceneGeometryData GetGPUSceneGeometryData(ByteAddressBuffer geometryDataBuffer, uint geometryID)
@@ -51,7 +55,7 @@ struct VertexAttributes
 {
     float3 position;
     float3 normal;
-    float3 tangent;
+    float4 tangent;
     float2 textureCoord0;
 };
 
@@ -66,8 +70,27 @@ VertexAttributes GetVertexAttributes(GPUSceneGeometryData geometryData, uint ver
     VertexAttributes vertexAttributes = (VertexAttributes)0;
     vertexAttributes.position = vertexBuffer0.Load<float3>(vertexIndex * sizeof(float3));
     vertexAttributes.normal = vertexBuffer1.Load<float3>(vertexIndex * sizeof(float3));
-    vertexAttributes.tangent = vertexBuffer2.Load<float3>(vertexIndex * sizeof(float3));
+    vertexAttributes.tangent = vertexBuffer2.Load<float4>(vertexIndex * sizeof(float4));
     vertexAttributes.textureCoord0 = vertexBuffer3.Load<float2>(vertexIndex * sizeof(float2));
+    return vertexAttributes;
+}
+
+struct GPUSceneGeometryVertexAttributes
+{
+    float3 position;
+    float padding0;
+    float3 normal;
+    float padding1;
+    float4 tangent;
+    float2 textureCoordinates[2];
+};
+
+GPUSceneGeometryVertexAttributes GetGPUSceneGeometryVertexAttributes(GPUSceneGeometryData geometryData, uint vertexIndex)
+{
+    ByteAddressBuffer vertexBuffer = GetByteAddressBufferNonUniform(geometryData.vertexBuffer);
+
+    GPUSceneGeometryVertexAttributes vertexAttributes = (GPUSceneGeometryVertexAttributes)0;
+    vertexAttributes = vertexBuffer.Load<GPUSceneGeometryVertexAttributes>(vertexIndex * sizeof(GPUSceneGeometryVertexAttributes));
     return vertexAttributes;
 }
 
@@ -103,6 +126,17 @@ VisibleMeshletEntry GetVisibleMeshletEntry(ByteAddressBuffer buffer, uint visibl
     VisibleMeshletEntry data = (VisibleMeshletEntry)0;
     data = buffer.Load<VisibleMeshletEntry>(visibleMeshletIndex * sizeof(VisibleMeshletEntry));
     return data;
+}
+
+uint PackVisiblePrimitiveID(uint visibleMeshletID, uint triangleID)
+{
+    return (visibleMeshletID << 7) | triangleID;
+}
+
+void UnpackVisiblePrimitiveID(out uint visibleMeshletID, out uint triangleID, in uint packedPrimitiveID)
+{
+    visibleMeshletID = packedPrimitiveID >> 7;
+    triangleID = packedPrimitiveID & 0x7f;
 }
 
 struct DistantLightData

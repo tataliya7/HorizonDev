@@ -14,6 +14,7 @@ namespace Horizon
         Illuminance,
         Depth,
         WorldSpaceNormal,
+        MeshletID,
         PrimitiveID,
         MaterialID,
         MotionVectors,
@@ -33,6 +34,7 @@ namespace Horizon
         "Illuminance",
         "Linear Depth",
         "World Space Normal",
+        "Meshlet ID",
         "Primitive ID",
         "Material ID",
         "Motion Vectors",
@@ -44,7 +46,7 @@ namespace Horizon
         "Surfel GI Surfel",
         "Surfel GI Heatmap"
     };
-    static_assert(ArraySize(ViewModeName) == 15);
+    static_assert(ArraySize(ViewModeName) == 16);
 
     // TODO
     const float MinNearClippingPlane = 0.01f;

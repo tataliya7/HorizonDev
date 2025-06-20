@@ -20,7 +20,7 @@ void IndirectArgumentInitializationCS()
     argumentBuffer0.Store<uint>(1 * sizeof(uint), 1);
     argumentBuffer0.Store<uint>(2 * sizeof(uint), 1);
 
-    argumentBuffer1.Store<uint>(0 * sizeof(uint), GPU_SCENE_INDEX_COUNT_PER_MESHLET);
+    argumentBuffer1.Store<uint>(0 * sizeof(uint), GPU_SCENE_MAXIMUM_TRIANGLE_COUNT_PER_MESHLET * 3);
     argumentBuffer1.Store<uint>(1 * sizeof(uint), 0);
     argumentBuffer1.Store<uint>(2 * sizeof(uint), 0);
     argumentBuffer1.Store<uint>(3 * sizeof(uint), 0);
@@ -62,10 +62,8 @@ void InstanceCullingCS(uint3 dispatchThreadID : SV_DispatchThreadID)
     {
         RWByteAddressBuffer argumentBuffer = ShaderConstants.GetMeshletCullingArgumentBufferUAV();
 
-        uint meshletCount = (geometryData.indexCount + GPU_SCENE_INDEX_COUNT_PER_MESHLET - 1) / GPU_SCENE_INDEX_COUNT_PER_MESHLET;
-
         uint unused;
-        argumentBuffer.InterlockedAdd(0, (meshletCount + 64 - 1) / 64, unused);
+        argumentBuffer.InterlockedAdd(0, (geometryData.meshletCount + 64 - 1) / 64, unused);
     }
 }
 
@@ -97,14 +95,14 @@ void MeshletCullingCS(uint3 dispatchThreadID : SV_DispatchThreadID)
     const uint candidateVisibleMeshlet = dispatchThreadID.x;
     const uint geometryInstanceID = 0;
 
-    if  (candidateVisibleMeshlet >= 2623)
-    {
-        return;
-    }
-
     GPUSceneGeometryInstanceData geometryInstanceData = GetGPUSceneGeometryInstanceData(geometryInstanceDataBuffer, geometryInstanceID);
     GPUSceneGeometryData geometryData = GetGPUSceneGeometryData(geometryDataBuffer, geometryInstanceData.geometryID);
     GPUSceneMeshletData meshletData = GetGPUSceneMeshletData(geometryData, candidateVisibleMeshlet);
+
+    if (candidateVisibleMeshlet >= geometryData.meshletCount)
+    {
+        return;
+    }
 
     VisibleMeshletEntry visibleMeshlet;
     visibleMeshlet.geometryInstanceID = geometryInstanceID;

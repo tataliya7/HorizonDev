@@ -6,9 +6,10 @@ SHADER_CONSTANTS_STRUCT_BEGIN();
 SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferSRV);
 SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_SRV(1, GeometryDataBufferSRV);
 SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_SRV(2, GeometryInstanceDataBufferSRV);
-SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(3, SceneDepthTextureSRV);
-SHADER_CONSTANTS_TEXTURE_2D_SRV(4, uint2, VisibilityBufferSRV);
-SHADER_CONSTANTS_TEXTURE_2D_UAV(5, float2, MotionVectorTextureUAV);
+SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_SRV(3, VisibleMeshletEntryBufferSRV);
+SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(4, SceneDepthTextureSRV);
+SHADER_CONSTANTS_TEXTURE_2D_SRV(5, uint, VBuffer0SRV);
+SHADER_CONSTANTS_TEXTURE_2D_UAV(6, float2, MotionVectorTextureUAV);
 SHADER_CONSTANTS_STRUCT_END();
 
 float3 BarycentricInterpolation(in float3 a0, in float3 a1, in float3 a2, in float3 bary)
@@ -38,6 +39,13 @@ void MotionVectorsCS(uint3 dispatchThreadID : SV_DispatchThreadID)
 {
     StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
     PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
+    ByteAddressBuffer geometryDataBuffer = ShaderConstants.GetGeometryDataBufferSRV();
+    ByteAddressBuffer geometryInstanceDataBuffer = ShaderConstants.GetGeometryInstanceDataBufferSRV();
+    ByteAddressBuffer visibleMeshletEntryBuffer = ShaderConstants.GetVisibleMeshletEntryBufferSRV();
+    Texture2D sceneDepthTexture = ShaderConstants.GetSceneDepthTextureSRV();
+    Texture2D<uint> vbuffer0 = ShaderConstants.GetVBuffer0SRV();
+    RWTexture2D<float2> motionVectorTexture = ShaderConstants.GetMotionVectorTextureUAV();
+
     uint width = frameShaderParameters.renderWidth;
     uint height = frameShaderParameters.renderHeight;
     if (dispatchThreadID.x >= width || dispatchThreadID.y >= height)
@@ -51,14 +59,8 @@ void MotionVectorsCS(uint3 dispatchThreadID : SV_DispatchThreadID)
     float2 jitteredUV = (pixelCoord + 0.5f + frameShaderParameters.cameraJitterOffset) * invSize;
     float2 motionVectorJitterCancellation = frameShaderParameters.motionVectorJitterCancellation;
 
-    Texture2D sceneDepthTexture = ShaderConstants.GetSceneDepthTextureSRV();
-    Texture2D<uint2> visibilityBuffer = ShaderConstants.GetVisibilityBufferSRV();
-    RWTexture2D<float2> motionVectorTexture = ShaderConstants.GetMotionVectorTextureUAV();
-
+    uint packedPrimitiveID = vbuffer0[pixelCoord];
     float sceneDepth = sceneDepthTexture[pixelCoord].r;
-    uint2 visibilityID = visibilityBuffer[pixelCoord];
-    uint geometryID = visibilityID.r;
-    uint primitiveID = visibilityID.g;
 
     float4 unprojected = mul(frameShaderParameters.clipToWorldMatrix, float4(ScreenSpaceUVToNDCSpaceXY(uv), sceneDepth, 1.0f));
     unprojected.xyz /= unprojected.w;
@@ -68,13 +70,17 @@ void MotionVectorsCS(uint3 dispatchThreadID : SV_DispatchThreadID)
     float3 previousHitPointWorldPosition;
 
     [branch]
-    if (visibilityID.x != INVALID_VISIBILIY_ID)
+    if (packedPrimitiveID != INVALID_VISIBILIY_ID)
     {
-        ByteAddressBuffer geometryDataBuffer = ShaderConstants.GetGeometryDataBufferSRV();
-        ByteAddressBuffer geometryInstanceDataBuffer = ShaderConstants.GetGeometryInstanceDataBufferSRV();
+        uint visibileMeshletID, triangleID;
+        UnpackVisiblePrimitiveID(visibileMeshletID, triangleID, packedPrimitiveID);
 
-        GPUSceneGeometryInstanceData instanceData = GetGPUSceneGeometryInstanceData(geometryInstanceDataBuffer, 0);
+        VisibleMeshletEntry visibleMeshletEntry = GetVisibleMeshletEntry(visibleMeshletEntryBuffer, visibileMeshletID);
+        GPUSceneGeometryInstanceData instanceData = GetGPUSceneGeometryInstanceData(geometryInstanceDataBuffer, visibleMeshletEntry.geometryInstanceID);
         GPUSceneGeometryData geometryData = GetGPUSceneGeometryData(geometryDataBuffer, instanceData.geometryID);
+        GPUSceneMeshletData meshletData = GetGPUSceneMeshletData(geometryData, visibleMeshletEntry.meshletID);
+
+        uint primitiveID = meshletData.triangleOffset + triangleID;
 
         ByteAddressBuffer indexBuffer = GetByteAddressBuffer(geometryData.indexBuffer);
         ByteAddressBuffer vertexBuffer0 = GetByteAddressBuffer(geometryData.vertexBuffer0);

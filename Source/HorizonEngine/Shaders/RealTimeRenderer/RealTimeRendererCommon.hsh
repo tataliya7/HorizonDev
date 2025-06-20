@@ -16,6 +16,8 @@ struct TextureSlot
     int bindlessTexture2DIndex;
 };
 
+#define ENABLE_BARYCENTRICS_SEMANTIC_SYSTEM_VALUE_SUPPORT 1
+
 #define NEAR_CLIPPING_PLANE_DEPTH_VALUE 1.0f
 #define FAR_CLIPPING_PLANE_DEPTH_VALUE 0.0f
 
@@ -255,7 +257,7 @@ float3 DecodeNormalFromGBuffer(float3 n)
 //     gbufferData.baseColor = gbuffer2Data.xyz;
 // }
 
-float3 CalculatePerspectiveCorrectBarycentric(float4 clip0, float4 clip1, float4 clip2, float2 pixelNDC)
+float3 CalculatePerspectiveCorrectBarycentrics(float4 clip0, float4 clip1, float4 clip2, float2 pixelNDC)
 {
     float3 invW = 1.0f / (float3(clip0.w, clip1.w, clip2.w));
 

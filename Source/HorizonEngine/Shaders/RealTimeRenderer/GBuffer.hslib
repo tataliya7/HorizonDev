@@ -6,11 +6,12 @@ SHADER_CONSTANTS_STRUCT_BEGIN();
 SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferSRV);
 SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_SRV(1, GeometryDataBufferSRV);
 SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_SRV(2, GeometryInstanceDataBufferSRV);
-SHADER_CONSTANTS_TEXTURE_2D_SRV(3, uint2, VBuffer0SRV);
-SHADER_CONSTANTS_TEXTURE_2D_SRV(4, float3, VBuffer1SRV);
-SHADER_CONSTANTS_TEXTURE_2D_UAV(5, float4, GBuffer0UAV);
-SHADER_CONSTANTS_TEXTURE_2D_UAV(6, float4, GBuffer1UAV);
-SHADER_CONSTANTS_TEXTURE_2D_UAV(7, float4, GBuffer2UAV);
+SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_SRV(3, VisibleMeshletEntryBufferSRV);
+SHADER_CONSTANTS_TEXTURE_2D_SRV(4, uint, VBuffer0SRV);
+SHADER_CONSTANTS_TEXTURE_2D_SRV(5, float3, VBuffer1SRV);
+SHADER_CONSTANTS_TEXTURE_2D_UAV(6, float4, GBuffer0UAV);
+SHADER_CONSTANTS_TEXTURE_2D_UAV(7, float4, GBuffer1UAV);
+SHADER_CONSTANTS_TEXTURE_2D_UAV(8, float4, GBuffer2UAV);
 SHADER_CONSTANTS_STRUCT_END();
 
 void SurfaceInit(inout Surface surface, PerFrameShaderParameters frameShaderParameters, float2 uv, GPUSceneGeometryData geometryData, GPUSceneGeometryInstanceData geometryInstanceData, uint primitiveID, float3 barycentrics, Material material)
@@ -30,10 +31,17 @@ void SurfaceInit(inout Surface surface, PerFrameShaderParameters frameShaderPara
     float3 normal0 = vertexBuffer1.Load<float3>((primitiveID * 3 + 0) * sizeof(float3));
     float3 normal1 = vertexBuffer1.Load<float3>((primitiveID * 3 + 1) * sizeof(float3));
     float3 normal2 = vertexBuffer1.Load<float3>((primitiveID * 3 + 2) * sizeof(float3));
-#else
+#elif 1
     float3 normal0 = vertexBuffer1.Load<float3>(index0 * sizeof(float3));
     float3 normal1 = vertexBuffer1.Load<float3>(index1 * sizeof(float3));
     float3 normal2 = vertexBuffer1.Load<float3>(index2 * sizeof(float3));
+#else
+    GPUSceneGeometryVertexAttributes vertexAttributes0 = GetGPUSceneGeometryVertexAttributes(geometryData, index0);
+    GPUSceneGeometryVertexAttributes vertexAttributes1 = GetGPUSceneGeometryVertexAttributes(geometryData, index1);
+    GPUSceneGeometryVertexAttributes vertexAttributes2 = GetGPUSceneGeometryVertexAttributes(geometryData, index2);
+    float3 normal0 = vertexAttributes0.normal;
+    float3 normal1 = vertexAttributes1.normal;
+    float3 normal2 = vertexAttributes2.normal;
 #endif
 
     ByteAddressBuffer vertexBuffer2 = GetByteAddressBufferNonUniform(geometryData.vertexBuffer2);
@@ -62,6 +70,8 @@ void SurfaceInit(inout Surface surface, PerFrameShaderParameters frameShaderPara
     float3x3 tangentSpace0 = float3x3(worldTangent0, worldBitangent0, worldNormal0);
     float3x3 tangentSpace1 = float3x3(worldTangent1, worldBitangent1, worldNormal1);
     float3x3 tangentSpace2 = float3x3(worldTangent2, worldBitangent2, worldNormal2);
+
+    const float3 sSSS = normalize(cross(worldPosition2 - worldPosition1, worldPosition1 - worldPosition0));
 
     surface.P = barycentrics.x * worldPosition0 + barycentrics.y * worldPosition1 + barycentrics.z * worldPosition2;
     surface.N = normalize(barycentrics.x * worldNormal0 + barycentrics.y * worldNormal1 + barycentrics.z * worldNormal2);
@@ -150,8 +160,10 @@ void GBufferCS(uint3 dispatchThreadID : SV_DispatchThreadID)
 {
     StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
     PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
-
-    Texture2D<uint2> vbuffer0 = ShaderConstants.GetVBuffer0SRV();
+    ByteAddressBuffer geometryDataBuffer = ShaderConstants.GetGeometryDataBufferSRV();
+    ByteAddressBuffer geometryInstanceDataBuffer = ShaderConstants.GetGeometryInstanceDataBufferSRV();
+    ByteAddressBuffer visibleMeshletEntryBuffer = ShaderConstants.GetVisibleMeshletEntryBufferSRV();
+    Texture2D<uint> vbuffer0 = ShaderConstants.GetVBuffer0SRV();
     Texture2D<float3> vbuffer1 = ShaderConstants.GetVBuffer1SRV();
     RWTexture2D<float4> gbuffer0 = ShaderConstants.GetGBuffer0UAV();
     RWTexture2D<float4> gbuffer1 = ShaderConstants.GetGBuffer1UAV();
@@ -160,29 +172,29 @@ void GBufferCS(uint3 dispatchThreadID : SV_DispatchThreadID)
     uint2 pixelCoord = dispatchThreadID.xy;
     float2 uv = (pixelCoord.xy + 0.5f) * frameShaderParameters.renderResolution.zw;
 
-    uint2 visibilityID = vbuffer0[pixelCoord];
-    float3 barycentrics = vbuffer1[pixelCoord];
+    uint packedPrimitiveID = vbuffer0[pixelCoord];
 
-#if 1
-    if (visibilityID.x != INVALID_VISIBILIY_ID)
+    [branch]
+    if (packedPrimitiveID != INVALID_VISIBILIY_ID)
     {
-        uint geometryID = visibilityID.r;
-        uint primitiveID = visibilityID.g;
+        uint visibileMeshletID, triangleID;
+        UnpackVisiblePrimitiveID(visibileMeshletID, triangleID, packedPrimitiveID);
 
-        ByteAddressBuffer geometryDataBuffer = ShaderConstants.GetGeometryDataBufferSRV();
-        ByteAddressBuffer geometryInstanceDataBuffer = ShaderConstants.GetGeometryInstanceDataBufferSRV();
+        float3 barycentrics = vbuffer1[pixelCoord];
 
-        GPUSceneGeometryInstanceData instanceData = GetGPUSceneGeometryInstanceData(geometryInstanceDataBuffer, 0);
+        VisibleMeshletEntry visibleMeshletEntry = GetVisibleMeshletEntry(visibleMeshletEntryBuffer, visibileMeshletID);
+        GPUSceneGeometryInstanceData instanceData = GetGPUSceneGeometryInstanceData(geometryInstanceDataBuffer, visibleMeshletEntry.geometryInstanceID);
         GPUSceneGeometryData geometryData = GetGPUSceneGeometryData(geometryDataBuffer, instanceData.geometryID);
+        GPUSceneMeshletData meshletData = GetGPUSceneMeshletData(geometryData, visibleMeshletEntry.meshletID);
 
-        ByteAddressBuffer materialIndexBuffer = GetByteAddressBuffer(geometryData.materialIndexBuffer);
-        uint materialIndex = materialIndexBuffer.Load<uint>(primitiveID * sizeof(uint));
+        ByteAddressBuffer materialIndexBuffer = GetByteAddressBufferNonUniform(geometryData.materialIndexBuffer);
+        uint materialIndex = materialIndexBuffer.Load<uint>((meshletData.triangleOffset + triangleID) * sizeof(uint));
 
-        ByteAddressBuffer materialBuffer = GetByteAddressBuffer(geometryData.materialBuffer);
+        ByteAddressBuffer materialBuffer = GetByteAddressBufferNonUniform(geometryData.materialBuffer);
         Material material = materialBuffer.Load<Material>(materialIndex * sizeof(Material));
 
         Surface surface;
-        SurfaceInit(surface, frameShaderParameters, uv, geometryData, instanceData, primitiveID, barycentrics, material);
+        SurfaceInit(surface, frameShaderParameters, uv, geometryData, instanceData, meshletData.triangleOffset + triangleID, barycentrics, material);
 
         surface.specular = 0.5f;
 
@@ -191,7 +203,6 @@ void GBufferCS(uint3 dispatchThreadID : SV_DispatchThreadID)
         gbuffer2[pixelCoord] = float4(surface.baseColor.rgb, 1/* unsued */);
     }
     else
-#endif
     {
         gbuffer0[pixelCoord] = 0;
         gbuffer1[pixelCoord] = 0;

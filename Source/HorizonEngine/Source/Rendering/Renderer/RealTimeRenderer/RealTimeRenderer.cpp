@@ -582,7 +582,7 @@ namespace Horizon
         RenderGraphTextureDesc vbuffer0Desc = RenderGraphTextureDesc::Create2D(
             renderResolution.width,
             renderResolution.height,
-            RenderBackendTextureFormat::R32G32Uint,
+            RenderBackendTextureFormat::R32Uint,
             RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::RenderTarget,
             clearVisibilityBufferColor);
         sceneTextures.vbuffer0 = renderGraph.CreateTexture(vbuffer0Desc, "VBuffer0");

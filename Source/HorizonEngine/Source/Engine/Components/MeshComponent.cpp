@@ -1,9 +1,8 @@
 #include "MeshComponent.h"
 
-// @todo Remove this
+// @todo Remove these
 #include "Engine/HorizonEngineModule.h"
-
-#include <meshoptimizer.h>
+#include "Engine/VirtualGeometry/VirtualGeometry.h"
 
 namespace Horizon
 {
@@ -27,6 +26,9 @@ namespace Horizon
         assert(renderObject == nullptr);
         if (renderObject == nullptr)
         {
+            RenderSystem* renderSystem = HorizonEngine::GetInstance()->GetSubsystem<RenderSystem>();
+            RenderBackend* renderBackend = renderSystem->GetRenderBackend();
+
             renderObject = new MeshRenderObject();
 
             renderObject->vertexCount = vertexCount;
@@ -40,52 +42,52 @@ namespace Horizon
             for (size_t i = 0; i < vertices.size(); i++)
             {
                 vertices[i].position = positions[i];
+                vertices[i].padding0 = 0;
+                vertices[i].padding1 = 0;
                 vertices[i].normal = normals[i];
                 vertices[i].tangent = tangents[i];
                 vertices[i].textureCoordinates[0] = texCoords[i];
+                vertices[i].textureCoordinates[1] = Vector2f(0, 0);
             }
 
-            const size_t max_vertices = 64;
-            const size_t max_triangles = 124;
-            const float cone_weight = 0.0f;
+            VirtualGeometryBuildSettings settings;
+            VirtualGeometryBuildInput input;
+            input.vertices.position = positions;
+            input.vertices.normals = normals;
+            input.vertices.tangents = tangents;
+            input.vertices.textureCoordinates[0] = texCoords;
+            input.indices = indices;
+            input.materialIndices = materialIndices;
+            VirtualGeometryBuildOutput output;
+            bool result = BuildVirtualGeometry(settings, input, output);
 
-            size_t max_meshlets = meshopt_buildMeshletsBound(indices.size(), max_vertices, max_triangles);
-            std::vector<meshopt_Meshlet> m(max_meshlets);
-            std::vector<unsigned int> meshlet_vertices(max_meshlets * max_vertices);
-            std::vector<unsigned char> meshlet_triangles(max_meshlets * max_triangles * 3);
+            RenderBackendBufferDesc vertexBufferDesc = RenderBackendBufferDesc::CreateByteAddress(sizeof(VirtualGeometryVertex) * vertices.size());
+            renderObject->vertexBuffer = renderBackend->CreateBuffer(&vertexBufferDesc, vertices.data(), "VertexBuffer");
 
-            size_t meshlet_count = meshopt_buildMeshlets(
-                m.data(),
-                meshlet_vertices.data(),
-                meshlet_triangles.data(),
-                indices.data(),
-                indices.size(),
-                &vertices[0].position.x,
-                vertices.size(),
-                sizeof(VirtualGeometryVertex),
-                max_vertices,
-                max_triangles,
-                cone_weight);
+#if 0
+            RenderBackendBufferDesc meshletBufferDesc = RenderBackendBufferDesc::CreateByteAddress(sizeof(GPUSceneMeshletData) * meshlet_count);
+            renderObject->meshletBuffer = renderBackend->CreateBuffer(&meshletBufferDesc, m.data(), "MeshletBuffer");
 
-            const meshopt_Meshlet& last = m[meshlet_count - 1];
+            RenderBackendBufferDesc meshletVertexBufferDesc = RenderBackendBufferDesc::CreateByteAddress(sizeof(uint32) * meshlet_vertices.size());
+            renderObject->meshletVertexBuffer = renderBackend->CreateBuffer(&meshletVertexBufferDesc, meshlet_vertices.data(), "MeshletVertexBuffer");
 
-            meshlet_vertices.resize(last.vertex_offset + last.vertex_count);
-            meshlet_triangles.resize(last.triangle_offset + ((last.triangle_count * 3 + 3) & ~3));
-            m.resize(meshlet_count);
+            RenderBackendBufferDesc meshletTriangleBufferDesc = RenderBackendBufferDesc::CreateByteAddress(sizeof(uint32) * meshlet_triangles_ttt.size());
+            renderObject->meshletTriangleBuffer = renderBackend->CreateBuffer(&meshletTriangleBufferDesc, meshlet_triangles_ttt.data(), "MeshletTriangleBuffer");
+#else
+            RenderBackendBufferDesc meshletBufferDesc = RenderBackendBufferDesc::CreateByteAddress(sizeof(GPUSceneMeshletData) * output.meshlets.size());
+            renderObject->meshletBuffer = renderBackend->CreateBuffer(&meshletBufferDesc, output.meshlets.data(), "MeshletBuffer");
 
-            // meshopt_Bounds bounds = meshopt_computeMeshletBounds(
-            //     &meshlet_vertices[m.vertex_offset],
-            //     &meshlet_triangles[m.triangle_offset],
-            //     m.triangle_count,
-            //     &vertices[0].position.x,
-            //     vertices.size(),
-            //     sizeof(VirtualGeometryVertex));
+            assert(indexCount == output.indices.size());
+            RenderBackendBufferDesc meshletVertexBufferDesc = RenderBackendBufferDesc::CreateByteAddress(sizeof(uint32) * output.indices.size());
+            renderObject->meshletVertexBuffer = renderBackend->CreateBuffer(&meshletVertexBufferDesc, output.indices.data(), "MeshletVertexBuffer");
+            renderObject->meshletCount = uint32(output.meshlets.size());
 
+            normals = output.vertices.normals;
+            texCoords = output.vertices.textureCoordinates[0];
+            materialIndices = output.materialIndices;
+#endif
             // @todo Refactor this.
             {
-                RenderSystem* renderSystem = HorizonEngine::GetInstance()->GetSubsystem<RenderSystem>();
-                RenderBackend* renderBackend = renderSystem->GetRenderBackend();
-
                 RenderBackendBufferDesc vertexBuffer0Desc = RenderBackendBufferDesc::CreateByteAddress(vertexCount * sizeof(Vector3f));
                 vertexBuffer0Desc.flags |= RenderBackendBufferCreateFlags::RayTracingAccelerationStructure; // TODO
                 renderObject->vertexBuffers[0] = renderBackend->CreateBuffer(&vertexBuffer0Desc, positions.data(), "VertexPosition");
@@ -107,25 +109,7 @@ namespace Horizon
                     RenderBackendBufferDesc indexBufferDesc = RenderBackendBufferDesc::CreateIndex(sizeof(uint32), indexCount);
                     indexBufferDesc.flags |= RenderBackendBufferCreateFlags::RayTracingAccelerationStructure; // TODO
                     renderObject->indexBuffer = renderBackend->CreateBuffer(&indexBufferDesc, indices.data(), "IndexBuffer");
-
-                    uint32 indexOffset = 0;
-                    uint32 meshletCount = Math::CeilDiv(indexCount, IndexCountPerMeshlet);
-                    for (uint32 meshletIndex = 0; meshletIndex < meshletCount; meshletIndex++)
-                    {
-                        GPUSceneMeshletData meshletData =
-                        {
-                            .vertexOffset = indexOffset,
-                            .triangleOffset =  0,
-                            .vertexCount = 0,
-                            .triangleCount = (meshletIndex == (meshletCount - 1)) ? (indexCount % IndexCountPerMeshlet) : IndexCountPerMeshlet
-                        };
-                        meshlets.push_back(meshletData);
-
-                        indexOffset += IndexCountPerMeshlet;
-                    }
-
-                    RenderBackendBufferDesc meshletBufferDesc = RenderBackendBufferDesc::CreateByteAddress(sizeof(GPUSceneMeshletData) * meshletCount);
-                    renderObject->meshletBuffer = renderBackend->CreateBuffer(&meshletBufferDesc, meshlets.data(), "MeshletBuffer");
+                    renderObject->indexBuffer = renderObject->meshletVertexBuffer;
                 }
 
                 for (Material& material : materials)

@@ -66,6 +66,8 @@ namespace Horizon
         const GeometryPassDrawCommandList& drawCommandList = geometryPassDrawCommandLists[uint32(GeometryPassType::Opaque)];
         const GPUScene* gpuScene = sceneView->scene->GetGPUScene();//drawCommandList.setupJobData.scene->GetGPUScene();
 
+        RealTimeRendererSceneTextures& sceneTextures = renderGraph.blackboard.Get<RealTimeRendererSceneTextures>();
+
         RenderGraphBufferDesc meshletCullingArgumentBufferDesc = RenderGraphBufferDesc::CreateIndirectArguments(sizeof(RenderBackendDispatchIndirectArguments), 1);
         RenderGraphBufferHandle meshletCullingArgumentBuffer = renderGraph.CreateBuffer(meshletCullingArgumentBufferDesc, "VirtualGeometryIndirectArgumentBuffer");
 
@@ -160,6 +162,7 @@ namespace Horizon
             RenderGraphPassFlags::Compute,
             [&](RenderGraphBuilder& builder)
             {
+                meshletCullingArgumentBuffer = builder.ReadBuffer(meshletCullingArgumentBuffer, RenderBackendResourceState::IndirectArgument);
                 visibleMeshletBuffer = builder.WriteBuffer(visibleMeshletBuffer, RenderBackendResourceState::UnorderedAccess);
                 visibleMeshletCounterBuffer = builder.WriteBuffer(visibleMeshletCounterBuffer, RenderBackendResourceState::UnorderedAccess);
                 drawIndirectArgumentBuffer = builder.WriteBuffer(drawIndirectArgumentBuffer, RenderBackendResourceState::UnorderedAccess);
@@ -180,20 +183,19 @@ namespace Horizon
 
                     RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::VirtualGeometryMeshletCulling);
 
-                    commandList.Dispatch(
+                    commandList.DispatchIndirect(
                         computeShader,
                         shaderConstants,
-                        threadGroupCountX,
-                        threadGroupCountY,
-                        threadGroupCountZ);
+                        registry.GetRenderBackendBufferHandle(meshletCullingArgumentBuffer),
+                        0);
                 };
             });
 
-        renderGraph.AddPass("VisibilityBuffer", RenderGraphPassFlags::Graphics,
+        renderGraph.AddPass(
+            "VisibilityBuffer",
+            RenderGraphPassFlags::Graphics,
             [&](RenderGraphBuilder& builder)
             {
-                RealTimeRendererSceneTextures& sceneTextures = renderGraph.blackboard.Get<RealTimeRendererSceneTextures>();
-
                 drawIndirectArgumentBuffer = builder.ReadBuffer(drawIndirectArgumentBuffer, RenderBackendResourceState::IndirectArgument);
                 visibleMeshletBuffer = builder.ReadBuffer(visibleMeshletBuffer, RenderBackendResourceState::ShaderResource);
                 RenderGraphTextureHandle vbuffer0 = sceneTextures.vbuffer0 = builder.WriteTexture(sceneTextures.vbuffer0, RenderBackendResourceState::RenderTarget);
@@ -246,6 +248,8 @@ namespace Horizon
                     }
                 };
             });
+
+        sceneTextures.visibleMeshletBuffer = visibleMeshletBuffer;
     }
 
     void RealTimeRenderer::RenderVisibilityBufferMeshShading(
@@ -253,7 +257,9 @@ namespace Horizon
         const SceneView& view)
     {
 #if 0
-        renderGraph.AddPass(std::format("VisibilityBuffer"), RenderGraphPassFlags::MeshShading,
+        renderGraph.AddPass(
+            std::format("VisibilityBuffer"),
+            RenderGraphPassFlags::MeshShading,
             [&](RenderGraphBuilder& builder)
             {
                 auto& sceneTextures = renderGraph.blackboard.Get<RealTimeRendererSceneTextures>();
@@ -317,10 +323,14 @@ namespace Horizon
     {
         const GPUScene* gpuScene = sceneView->scene->GetGPUScene();
 
-        renderGraph.AddPass(std::format("GBuffer (Compute, {}x{})", renderResolution.width, renderResolution.height), RenderGraphPassFlags::Compute,
+        renderGraph.AddPass(
+            std::format("GBuffer (Compute, {}x{})", renderResolution.width, renderResolution.height),
+            RenderGraphPassFlags::Compute,
             [&](RenderGraphBuilder& builder)
             {
                 RealTimeRendererSceneTextures& sceneTextures = renderGraph.blackboard.Get<RealTimeRendererSceneTextures>();
+
+                RenderGraphBufferHandle visibleMeshletBuffer = builder.ReadBuffer(sceneTextures.visibleMeshletBuffer, RenderBackendResourceState::ShaderResource);
 
                 RenderGraphTextureHandle vbuffer0 = builder.ReadTexture(sceneTextures.vbuffer0, RenderBackendResourceState::ShaderResource);
                 RenderGraphTextureHandle vbuffer1 = builder.ReadTexture(sceneTextures.vbuffer1, RenderBackendResourceState::ShaderResource);
@@ -335,11 +345,12 @@ namespace Horizon
                     shaderConstants.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
                     shaderConstants.BindBufferSRV(1, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(gpuScene->geometryDataBuffer));
                     shaderConstants.BindBufferSRV(2, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(gpuScene->geometryInstanceDataBuffer));
-                    shaderConstants.BindTextureSRV(3, registry.GetTextureSRVBindlessResourceDescriptorIndex(vbuffer0));
-                    shaderConstants.BindTextureSRV(4, registry.GetTextureSRVBindlessResourceDescriptorIndex(vbuffer1));
-                    shaderConstants.BindTextureUAV(5, registry.GetTextureUAVBindlessResourceDescriptorIndex(gbuffer0, 0));
-                    shaderConstants.BindTextureUAV(6, registry.GetTextureUAVBindlessResourceDescriptorIndex(gbuffer1, 0));
-                    shaderConstants.BindTextureUAV(7, registry.GetTextureUAVBindlessResourceDescriptorIndex(gbuffer2, 0));
+                    shaderConstants.BindBufferSRV(3, registry.GetBufferSRVBindlessResourceDescriptorIndex(visibleMeshletBuffer));
+                    shaderConstants.BindTextureSRV(4, registry.GetTextureSRVBindlessResourceDescriptorIndex(vbuffer0));
+                    shaderConstants.BindTextureSRV(5, registry.GetTextureSRVBindlessResourceDescriptorIndex(vbuffer1));
+                    shaderConstants.BindTextureUAV(6, registry.GetTextureUAVBindlessResourceDescriptorIndex(gbuffer0, 0));
+                    shaderConstants.BindTextureUAV(7, registry.GetTextureUAVBindlessResourceDescriptorIndex(gbuffer1, 0));
+                    shaderConstants.BindTextureUAV(8, registry.GetTextureUAVBindlessResourceDescriptorIndex(gbuffer2, 0));
 
                     uint32 threadGroupCountX = ComputeShaderThreadGroupCount(renderResolution.width, 8);
                     uint32 threadGroupCountY = ComputeShaderThreadGroupCount(renderResolution.height, 8);
@@ -363,13 +374,14 @@ namespace Horizon
     {
         const GPUScene* gpuScene = sceneView->scene->GetGPUScene();
 
+        RealTimeRendererSceneTextures& sceneTextures = renderGraph.blackboard.Get<RealTimeRendererSceneTextures>();
+
         renderGraph.AddPass(
             std::format("MotionVectors (Compute, {}x{})", renderResolution.width, renderResolution.height),
             RenderGraphPassFlags::Compute,
             [&](RenderGraphBuilder& builder)
             {
-                RealTimeRendererSceneTextures& sceneTextures = renderGraph.blackboard.Get<RealTimeRendererSceneTextures>();
-
+                RenderGraphBufferHandle visibleMeshletBuffer = builder.ReadBuffer(sceneTextures.visibleMeshletBuffer, RenderBackendResourceState::ShaderResource);
                 RenderGraphTextureHandle sceneDepthTexture = builder.ReadTexture(sceneTextures.sceneDepthTexture, RenderBackendResourceState::ShaderResource);
                 RenderGraphTextureHandle vbuffer0 = builder.ReadTexture(sceneTextures.vbuffer0, RenderBackendResourceState::ShaderResource);
                 RenderGraphTextureHandle motionVectorTexture = sceneTextures.motionVectorTexture = builder.WriteTexture(sceneTextures.motionVectorTexture, RenderBackendResourceState::UnorderedAccess);
@@ -384,9 +396,10 @@ namespace Horizon
                     shaderConstants.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
                     shaderConstants.BindBufferSRV(1, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(gpuScene->geometryDataBuffer));
                     shaderConstants.BindBufferSRV(2, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(gpuScene->geometryInstanceDataBuffer));
-                    shaderConstants.BindTextureSRV(3, registry.GetTextureSRVBindlessResourceDescriptorIndex(sceneDepthTexture));
-                    shaderConstants.BindTextureSRV(4, registry.GetTextureSRVBindlessResourceDescriptorIndex(vbuffer0));
-                    shaderConstants.BindTextureUAV(5, registry.GetTextureUAVBindlessResourceDescriptorIndex(motionVectorTexture, 0));
+                    shaderConstants.BindBufferSRV(3, registry.GetBufferSRVBindlessResourceDescriptorIndex(visibleMeshletBuffer));
+                    shaderConstants.BindTextureSRV(4, registry.GetTextureSRVBindlessResourceDescriptorIndex(sceneDepthTexture));
+                    shaderConstants.BindTextureSRV(5, registry.GetTextureSRVBindlessResourceDescriptorIndex(vbuffer0));
+                    shaderConstants.BindTextureUAV(6, registry.GetTextureUAVBindlessResourceDescriptorIndex(motionVectorTexture, 0));
 
                     RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::MotionVectors);
 
@@ -571,7 +584,9 @@ namespace Horizon
     {
         RenderBackendTextureHandle environmentBrdfLutTexture = defaultResources->GetEnvironmentBrdfLutTexture();
 
-        renderGraph.AddPass(std::format("IndirectSpecularComposition (Graphics, {}x{})", renderResolution.width, renderResolution.height), RenderGraphPassFlags::Graphics,
+        renderGraph.AddPass(
+            std::format("IndirectSpecularComposition (Graphics, {}x{})", renderResolution.width, renderResolution.height),
+            RenderGraphPassFlags::Graphics,
             [&](RenderGraphBuilder& builder)
             {
                 RealTimeRendererSceneTextures& sceneTextures = renderGraph.blackboard.Get<RealTimeRendererSceneTextures>();
@@ -624,5 +639,68 @@ namespace Horizon
                         RenderBackendPrimitiveTopology::TriangleList);
                 };
             });
+    }
+
+    RenderGraphTextureHandle RealTimeRenderer::AddVirtualGeometryDebugVisualizationPass(
+        RenderGraph& renderGraph,
+        const SceneView& view)
+    {
+        const GPUScene* gpuScene = sceneView->scene->GetGPUScene();
+
+        const RealTimeRendererSceneTextures& sceneTextures = renderGraph.blackboard.Get<RealTimeRendererSceneTextures>();
+
+        RenderGraphTextureHandle outputTexture = renderGraph.ImportExternalTexture(view.targetTexture, "TargetTexture");
+
+        uint32 virtualGeometryDebugVisualizationMode = 0;
+        if (view.debugVisualizationMode == SceneViewDebugVisualizationMode::MeshletID)
+        {
+            virtualGeometryDebugVisualizationMode = 1;
+        }
+        else if (view.debugVisualizationMode == SceneViewDebugVisualizationMode::PrimitiveID)
+        {
+            virtualGeometryDebugVisualizationMode = 2;
+        }
+        else if (view.debugVisualizationMode == SceneViewDebugVisualizationMode::MaterialID)
+        {
+            virtualGeometryDebugVisualizationMode = 3;
+        }
+
+        renderGraph.AddPass(
+            std::format("VirtualGeometryDebugVisualization (Compute, {}x{}->{}x{})", renderResolution.width, renderResolution.height, targetResolution.width, targetResolution.height),
+            RenderGraphPassFlags::Compute,
+            [&](RenderGraphBuilder& builder)
+            {
+                RenderGraphBufferHandle visibleMeshletBuffer = builder.ReadBuffer(sceneTextures.visibleMeshletBuffer, RenderBackendResourceState::ShaderResource);
+                RenderGraphTextureHandle vbuffer0 = builder.ReadTexture(sceneTextures.vbuffer0, RenderBackendResourceState::ShaderResource);
+
+                outputTexture = builder.WriteTexture(outputTexture, RenderBackendResourceState::UnorderedAccess);
+
+                return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
+                {
+                    uint32 threadGroupCountX = ComputeShaderThreadGroupCount(targetResolution.width, PostProcessingThreadGroupSizeX);
+                    uint32 threadGroupCountY = ComputeShaderThreadGroupCount(targetResolution.height, PostProcessingThreadGroupSizeY);
+                    uint32 threadGroupCountZ = 1;
+
+                    RenderBackendShaderConstants shaderConstants = {};
+                    shaderConstants.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
+                    shaderConstants.BindBufferSRV(1, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(gpuScene->geometryDataBuffer));
+                    shaderConstants.BindBufferSRV(2, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(gpuScene->geometryInstanceDataBuffer));
+                    shaderConstants.BindBufferSRV(3, registry.GetBufferSRVBindlessResourceDescriptorIndex(visibleMeshletBuffer));
+                    shaderConstants.BindTextureSRV(4, registry.GetTextureSRVBindlessResourceDescriptorIndex(vbuffer0));
+                    shaderConstants.BindTextureUAV(5, registry.GetTextureUAVBindlessResourceDescriptorIndex(outputTexture, 0));
+                    shaderConstants.BindScalar(6, virtualGeometryDebugVisualizationMode);
+
+                    RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::VirtualGeometryDebugVisualization);
+
+                    commandList.Dispatch(
+                        computeShader,
+                        shaderConstants,
+                        threadGroupCountX,
+                        threadGroupCountY,
+                        threadGroupCountZ);
+                };
+            });
+
+        return outputTexture;
     }
 }

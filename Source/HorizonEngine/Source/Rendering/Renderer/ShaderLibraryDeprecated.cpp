@@ -114,25 +114,25 @@ namespace Horizon
         }
         {
             ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/VisibilityCulling.hslib", "IndirectArgumentInitializationCS");
-            shaderDesc.AddDefine("GPU_SCENE_INDEX_COUNT_PER_MESHLET", IndexCountPerMeshlet);
+            shaderDesc.AddDefine("GPU_SCENE_MAXIMUM_TRIANGLE_COUNT_PER_MESHLET", IndexCountPerMeshlet);
             shaderDesc.AddDefine("INDIRECT_ARGUMENT_INITIALIZATION", 1);
             shaderLibrary->LoadShader(ShaderID::VisibilityCullingIndirectArgumentInitialization, shaderDesc);
         }
         {
             ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/VisibilityCulling.hslib", "InstanceCullingCS");
-            shaderDesc.AddDefine("GPU_SCENE_INDEX_COUNT_PER_MESHLET", IndexCountPerMeshlet);
+            shaderDesc.AddDefine("GPU_SCENE_MAXIMUM_TRIANGLE_COUNT_PER_MESHLET", IndexCountPerMeshlet);
             shaderDesc.AddDefine("INSTANCE_CULLING", 1);
             shaderLibrary->LoadShader(ShaderID::VirtualGeometryInstanceCulling, shaderDesc);
         }
         {
             ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/VisibilityCulling.hslib", "MeshletCullingCS");
-            shaderDesc.AddDefine("GPU_SCENE_INDEX_COUNT_PER_MESHLET", IndexCountPerMeshlet);
+            shaderDesc.AddDefine("GPU_SCENE_MAXIMUM_TRIANGLE_COUNT_PER_MESHLET", IndexCountPerMeshlet);
             shaderDesc.AddDefine("MESHLET_CULLING", 1);
             shaderLibrary->LoadShader(ShaderID::VirtualGeometryMeshletCulling, shaderDesc);
         }
         {
             ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Vertex, "Shaders/RealTimeRenderer/VisibilityBuffer.hslib", "VisibilityBufferVS");
-            shaderDesc.AddDefine("GPU_SCENE_INDEX_COUNT_PER_MESHLET", IndexCountPerMeshlet);
+            shaderDesc.AddDefine("GPU_SCENE_MAXIMUM_TRIANGLE_COUNT_PER_MESHLET", IndexCountPerMeshlet);
             shaderLibrary->LoadShader(ShaderID::VisibilityBufferVS, shaderDesc);
         }
         {
@@ -591,17 +591,13 @@ namespace Horizon
             shaderLibrary->LoadShader(ShaderID::VisualizeDepth, shaderDesc);
         }
         {
-            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/DebugVisualization/VisualizePrimitiveID.hslib", "VisualizePrimitiveIDCS");
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/DebugVisualization/VirtualGeometryDebugVisualization.hslib", "VirtualGeometryDebugVisualizationCS");
             if (shaderLibrary->renderBackend->GetType() == RenderBackendType::Vulkan) // Avoid vulkan validation errors.
             {
                 shaderDesc.shaderCompilerOptions.skipOptimization = false;
                 shaderDesc.shaderCompilerOptions.generateDebugInfo = false;
             }
-            shaderLibrary->LoadShader(ShaderID::VisualizePrimitiveID, shaderDesc);
-        }
-        {
-            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/DebugVisualization/VisualizeMaterialID.hslib", "VisualizeMaterialIDCS");
-            shaderLibrary->LoadShader(ShaderID::VisualizeMaterialID, shaderDesc);
+            shaderLibrary->LoadShader(ShaderID::VirtualGeometryDebugVisualization, shaderDesc);
         }
         {
             ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/DebugVisualization/VisualizeWorldSpaceNormal.hslib", "VisualizeWorldSpaceNormalCS");
