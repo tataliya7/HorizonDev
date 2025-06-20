@@ -19,6 +19,8 @@ namespace Horizon
         const SceneView& view,
         RenderGraphTextureHandle sceneColorTexture)
     {
+        RenderGraphDebugLabelRegion debugLabelRegion(renderGraph, "EditorSelectionOutline");
+
         RenderGraphTextureDesc maskTextureDesc = RenderGraphTextureDesc::Create2D(
             targetResolution.width,
             targetResolution.height,
