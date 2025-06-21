@@ -92,7 +92,7 @@ namespace Horizon
      */
     struct RenderSettings
     {
-        RenderMode renderMode = RenderMode::Rasterization;
+        RenderMode renderMode = RenderMode::RasterRendering;
         bool enableFixedPreExposure = false;
         float fixedPreExposure = 1.0f;
         GlobalIlluminationSettings globalIlluminationSettings;

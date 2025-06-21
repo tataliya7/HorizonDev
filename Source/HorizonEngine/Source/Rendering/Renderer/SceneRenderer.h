@@ -9,32 +9,9 @@ namespace Horizon
 
     enum class RenderMode
     {
-        Rasterization,
+        RasterRendering,
         HybridRendering,
         RealTimePathTracing,
         ReferencePathTracing,
-        Count,
     };
-
-    //class SceneView;
-
-    ///**
-    // * The renderer implements the process of generating visual images.
-    // */
-    //class SceneRenderer
-    //{
-    //public:
-    //    SceneRenderer();
-    //    virtual ~SceneRenderer();
-
-    //    virtual void Render(RenderGraph& renderGraph) = 0;
-
-    //    //RenderBackend* GetRenderBackend() const;
-
-    //private:
-    //    //SceneView* sceneView;
-    //};
-
-    //SceneRenderer* CreateSceneRenderer();
-    //void DestroySceneRenderer(SceneRenderer* sceneRenderer);
 }

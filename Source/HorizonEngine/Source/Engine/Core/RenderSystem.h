@@ -27,7 +27,7 @@ namespace Horizon
             return renderBackend;
         }
 
-        ShaderLibrary* GetShaderLibrary() const
+        ShaderCollection* GetShaderLibrary() const
         {
             return shaderLibrary;
         }
@@ -153,7 +153,7 @@ namespace Horizon
     private:
 
         RenderBackend* renderBackend;
-        ShaderLibrary* shaderLibrary;
+        ShaderCollection* shaderLibrary;
         RenderGraphResourcePool* renderGraphResourcePool;
 
         // TODO: rename
