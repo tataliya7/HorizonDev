@@ -1,0 +1,47 @@
+#include "../../../ShaderCommon.hsh"
+#include "../../RasterizationRendererCommon.hsh"
+#include "../PostProcessingCommon.hsh"
+#include "BilateralGridLocalToneMappingCommon.hsh"
+
+SHADER_CONSTANTS_STRUCT_BEGIN();
+SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_SRV(0, GaussianDistributionBufferSRV);
+SHADER_CONSTANTS_TEXTURE_2D_SRV(1, float, InputTextureSRV);
+SHADER_CONSTANTS_TEXTURE_2D_UAV(2, float, OutputTextureUAV);
+SHADER_CONSTANTS_SCALAR(3, uint, Direction);
+SHADER_CONSTANTS_SCALAR(4, uint, GaussianFilterSize);
+SHADER_CONSTANTS_STRUCT_END();
+
+[shader("compute")]
+[numthreads(8, 8, 1)]
+void BilateralGridLocalToneMappingGaussianFilterCS(uint3 dispatchThreadID : SV_DispatchThreadID)
+{
+    ByteAddressBuffer gaussianDistributionBuffer = ShaderConstants.GetGaussianDistributionBufferSRV();
+    Texture2D<float> inputTexture = ShaderConstants.GetInputTextureSRV();
+    RWTexture2D<float> outputTexture = ShaderConstants.GetOutputTextureUAV();
+
+    uint width, height;
+    outputTexture.GetDimensions(width, height);
+
+    float2 inverseTextureSize = 1.0f / float2(width, height);
+
+    uint2 pixelCoord = uint2(min(dispatchThreadID.x, width), min(dispatchThreadID.y, height));
+    float2 uv = (float2(pixelCoord.x, pixelCoord.y) + float2(0.5f, 0.5f)) * inverseTextureSize;
+
+    float result = 0.0f;
+
+    uint sampleCount = ShaderConstants.GetGaussianFilterSize();
+    float2 direction = ShaderConstants.GetDirection() == 0 ? float2(1.0f, 0.0f) : float2(0.0f, 1.0f);
+    float inverseExtent = ShaderConstants.GetDirection() == 0 ? inverseTextureSize.x : inverseTextureSize.y;
+
+    for (uint sampleIndex = 0; sampleIndex < sampleCount; sampleIndex++)
+    {
+        float2 offsetAndWeight = gaussianDistributionBuffer.Load<float2>(sampleIndex * sizeof(float2));
+        float sampleOffset = offsetAndWeight.x * inverseExtent;
+        float sampleWeight = offsetAndWeight.y;
+
+        float2 sampleUV = uv + sampleOffset * direction;
+        result += inputTexture.SampleLevel(GlobalSamplerLinearMirror, sampleUV, 0.0f) * sampleWeight;
+    }
+
+    outputTexture[pixelCoord] = result;
+}

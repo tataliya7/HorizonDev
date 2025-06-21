@@ -1,3 +1,0 @@
-#include "../../ShaderCommon.hsh"
-#include "../RealTimeRendererCommon.hsh"
-#include "SurfelGICommon.hsh"

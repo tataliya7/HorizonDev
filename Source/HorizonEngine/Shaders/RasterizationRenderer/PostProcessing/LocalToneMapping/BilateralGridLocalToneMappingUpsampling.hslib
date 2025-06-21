@@ -1,0 +1,77 @@
+#include "../../../ShaderCommon.hsh"
+#include "../../RasterizationRendererCommon.hsh"
+#include "../PostProcessingCommon.hsh"
+#include "BilateralGridLocalToneMappingCommon.hsh"
+
+SHADER_CONSTANTS_STRUCT_BEGIN();
+SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferSRV);
+SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(1, ColorTextureSRV);
+SHADER_CONSTANTS_TEXTURE_3D_SRV(2, float2, BilaterallyFilteredGridTextureSRV);
+SHADER_CONSTANTS_TEXTURE_2D_SRV(3, float, GaussianFilteredLogLuminanceTextureSRV);
+SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_SRV(4, AutoExposureBufferSRV);
+SHADER_CONSTANTS_TEXTURE_2D_UAV(5, float, LocalToneMappingTextureUAV);
+SHADER_CONSTANTS_SCALAR(6, float, ShadowContrastScale);
+SHADER_CONSTANTS_SCALAR(7, float, HighlightContrastScale);
+SHADER_CONSTANTS_SCALAR(8, float, DetailStrength);
+SHADER_CONSTANTS_SCALAR(9, float, GaussianFilterWeight);
+SHADER_CONSTANTS_SCALAR(10, float, InverseGridTextureWidth);
+SHADER_CONSTANTS_SCALAR(11, float, InverseGridTextureHeight);
+SHADER_CONSTANTS_STRUCT_END();
+
+[shader("compute")]
+[numthreads(8, 8, 1)]
+void BilateralGridLocalToneMappingUpsamplingCS(uint3 dispatchThreadID : SV_DispatchThreadID)
+{
+    StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
+    PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
+    Texture2D colorTexture = ShaderConstants.GetColorTextureSRV();
+    Texture3D<float2> bilaterallyFilteredGridTexture = ShaderConstants.GetBilaterallyFilteredGridTextureSRV();
+    Texture2D<float> gaussianFilteredLogLuminanceTexture = ShaderConstants.GetGaussianFilteredLogLuminanceTextureSRV();
+    ByteAddressBuffer autoExposureBuffer = ShaderConstants.GetAutoExposureBufferSRV();
+    RWTexture2D<float> localToneMappingTextureUAV = ShaderConstants.GetLocalToneMappingTextureUAV();
+
+    uint2 pixelCoord = uint2(min(dispatchThreadID.x, frameShaderParameters.targetWidth), min(dispatchThreadID.y, frameShaderParameters.targetHeight));
+    float2 uv = (float2(pixelCoord.x, pixelCoord.y) + float2(0.5f, 0.5f)) * frameShaderParameters.targetResolution.zw;
+
+    float inversePreExposure = frameShaderParameters.inversePreExposure;
+
+    float histogramMinEV100 = frameShaderParameters.autoExposureHistogramMinEV100;
+    float histogramMaxEV100 = frameShaderParameters.autoExposureHistogramMaxEV100;
+    float inverseLogLuminanceRange = 1.0f / (histogramMaxEV100 - histogramMinEV100);
+
+    float4 autoExposureData = autoExposureBuffer.Load<float4>(0);
+    float logGlobalExposure = log2(autoExposureData.x);
+    float exposureCompensation = autoExposureData.z;
+
+    float4 inputColor = colorTexture.SampleLevel(GlobalSamplerPointClamp, uv, 0.0f);
+    float inputLuminance = RelativeLuminance(inputColor.rgb * inversePreExposure);
+    float inputLogLuminance = log2(inputLuminance) + logGlobalExposure;
+
+    float2 inverseGridTextureSize = float2(ShaderConstants.GetInverseGridTextureWidth(), ShaderConstants.GetInverseGridTextureHeight());
+
+    float bilateralGridTextureW = (saturate((log2(inputLuminance) - histogramMinEV100) * inverseLogLuminanceRange) * (BILATERAL_GRID_LOCAL_TONE_MAPPING_GRID_TEXTURE_DEPTH - 1) + 0.5f) / BILATERAL_GRID_LOCAL_TONE_MAPPING_GRID_TEXTURE_DEPTH;
+    float3 bilateralGridTextureUVW = float3(uv, bilateralGridTextureW);
+    float2 bilaterallyFilteredValue = bilaterallyFilteredGridTexture.SampleLevel(GlobalSamplerLinearClamp, bilateralGridTextureUVW, 0.0f).xy;
+    float gaussianFilteredLogLuminance = gaussianFilteredLogLuminanceTexture.SampleLevel(GlobalSamplerLinearClamp, uv, 0.0f).x;
+
+    float bilaterallyFilteredLogLuminance = bilaterallyFilteredValue.y > 0.0f ? bilaterallyFilteredValue.x / bilaterallyFilteredValue.y : gaussianFilteredLogLuminance; // Normalize
+
+    float shadowContrastScale = ShaderConstants.GetShadowContrastScale();
+    float highlightContrastScale = ShaderConstants.GetHighlightContrastScale();
+    float detailStrength = ShaderConstants.GetDetailStrength();
+    float gaussianFilterWeight = ShaderConstants.GetGaussianFilterWeight();
+
+    // Blend between bilateral filter and very wide 2D Gaussian to eliminate ringing artifacts.
+    float filteredLogLuminance = lerp(bilaterallyFilteredLogLuminance, gaussianFilteredLogLuminance, gaussianFilterWeight) + logGlobalExposure;
+
+    float midpointLogLuminace = log2(MiddleGray * exposureCompensation);
+
+    float contrastScale = (filteredLogLuminance > midpointLogLuminace) ? highlightContrastScale : shadowContrastScale;
+
+    // Io = c * (B - M) + d * (Ii - B) + M
+    float outputLogLuminance = contrastScale * (filteredLogLuminance - midpointLogLuminace) + detailStrength * (inputLogLuminance - filteredLogLuminance) + midpointLogLuminace;
+
+    float localExposureMultiplier = exp2(outputLogLuminance - inputLogLuminance);
+
+    localToneMappingTextureUAV[pixelCoord] = localExposureMultiplier;
+}

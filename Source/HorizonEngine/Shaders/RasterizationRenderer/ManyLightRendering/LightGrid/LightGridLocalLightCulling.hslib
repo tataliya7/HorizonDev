@@ -1,0 +1,75 @@
+#include "../../../ShaderCommon.hsh"
+#include "../../RasterizationRendererCommon.hsh"
+#include "LightGridCommon.hsh"
+
+SHADER_CONSTANTS_STRUCT_BEGIN();
+SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferSRV);
+SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(1, LocalLightData, LocalLightDataBufferSRV);
+SHADER_CONSTANTS_STRUCTURED_BUFFER_UAV(2, uint2, LightGridCellDataBufferUAV);
+SHADER_CONSTANTS_STRUCTURED_BUFFER_UAV(3, uint, LightGridLightListBufferUAV);
+SHADER_CONSTANTS_STRUCTURED_BUFFER_UAV(4, uint, LightGridLightListStartOffsetBufferUAV);
+SHADER_CONSTANTS_SCALAR(5, uint, LocalLightCount);
+SHADER_CONSTANTS_SCALAR(6, uint, LightGridSizeX);
+SHADER_CONSTANTS_SCALAR(7, uint, LightGridSizeY);
+SHADER_CONSTANTS_SCALAR(8, uint, LightGridSizeZ);
+SHADER_CONSTANTS_STRUCT_END();
+
+#define LIGHT_GRID_MAX_LIGHT_COUNT_PER_CELL 32
+static uint relevantLocalLights[LIGHT_GRID_MAX_LIGHT_COUNT_PER_CELL];
+
+#define LOCAL_LIGHT_CULLING_THREAD_GROUP_SIZE 4
+
+[shader("compute")]
+[numthreads(LOCAL_LIGHT_CULLING_THREAD_GROUP_SIZE, LOCAL_LIGHT_CULLING_THREAD_GROUP_SIZE, LOCAL_LIGHT_CULLING_THREAD_GROUP_SIZE)]
+void LightGridLocalLightCullingCS(
+    uint3 dispatchThreadID : SV_DispatchThreadID,
+    uint groupThreadID : SV_GroupThreadID,
+    uint groupID : SV_GroupID)
+{
+    const uint3 lightGridCoordinate = dispatchThreadID;
+    const uint3 lightGridSize = uint3(ShaderConstants.GetLightGridSizeX(), ShaderConstants.GetLightGridSizeY(), ShaderConstants.GetLightGridSizeZ());
+
+    if (any(lightGridCoordinate >= lightGridSize))
+    {
+        return;
+    }
+
+    const uint localLightCount = ShaderConstants.GetLocalLightCount();
+
+    StructuredBuffer<LocalLightData> localLightDataBuffer = ShaderConstants.GetLocalLightDataBufferSRV();
+
+    uint relevantLocalLightCount = 0;
+
+    [loop]
+    for (uint localLightIndex = 0; localLightIndex < localLightCount; localLightIndex++)
+    {
+        LocalLightData localLightData = localLightDataBuffer[localLightIndex];
+
+        float4 lightPositionAndInverseRadius = localLightData.GetPositionAndRadius();
+
+        // TODO
+        if (relevantLocalLightCount < LIGHT_GRID_MAX_LIGHT_COUNT_PER_CELL)
+        {
+            relevantLocalLights[relevantLocalLightCount] = localLightIndex;
+            relevantLocalLightCount += 1;
+        }
+    }
+
+    RWStructuredBuffer<uint2> cellDataBuffer = ShaderConstants.GetLightGridCellDataBufferUAV();
+    RWStructuredBuffer<uint> lightListBuffer = ShaderConstants.GetLightGridLightListBufferUAV();
+    RWStructuredBuffer<uint> lightListStartOffsetBuffer = ShaderConstants.GetLightGridLightListStartOffsetBufferUAV();
+
+    // Since we have guaranteed enough space when allocating the buffer, there is no need to handle out-of-bounds situations.
+    uint lightListBufferStartOffset = 0;
+    InterlockedAdd(lightListStartOffsetBuffer[0], relevantLocalLightCount, lightListBufferStartOffset);
+
+    const uint cellIndex = GetLightGridCellIndex(lightGridCoordinate, lightGridSize);
+    const uint2 cellData = uint2(relevantLocalLightCount, lightListBufferStartOffset);
+    cellDataBuffer[cellIndex] = cellData;
+
+    [loop]
+    for (uint relevantLocalLightIndex = 0; relevantLocalLightIndex < relevantLocalLightCount; relevantLocalLightIndex++)
+    {
+        lightListBuffer[lightListBufferStartOffset + relevantLocalLightIndex] = relevantLocalLights[relevantLocalLightIndex];
+    }
+}

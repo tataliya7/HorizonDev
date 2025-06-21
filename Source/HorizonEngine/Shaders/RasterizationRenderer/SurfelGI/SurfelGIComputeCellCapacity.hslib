@@ -1,0 +1,45 @@
+#include "../../ShaderCommon.hsh"
+#include "../RasterizationRendererCommon.hsh"
+#include "SurfelGICommon.hsh"
+
+BIND_BUFFER_CBV(0, PerFrameShaderParameters);
+BIND_BYTE_ADDRESS_BUFFER_UAV(1, SurfelGIInfoBuffer);
+BIND_BYTE_ADDRESS_BUFFER_UAV(2, SurfelGIAliveSurfelIndirectionBuffer);
+BIND_BYTE_ADDRESS_BUFFER_UAV(3, SurfelGISurfelHotDataBuffer);
+BIND_BYTE_ADDRESS_BUFFER_UAV(4, SurfelGICellHeaderBuffer);
+
+[shader("compute")]
+[numthreads(SurfelGIIndirectDispatchGroupThreadCount, 1, 1)]
+void SurfelGIComputeCellCapacityCS(uint3 dispatchThreadID : SV_DispatchThreadID)
+{
+    RWByteAddressBuffer infoBuffer = GetSurfelGIInfoBufferUAV();
+    uint surfelCount = infoBuffer.Load(SurfelGIInfoBufferOffset_AliveSurfelCount);
+    if (dispatchThreadID.x >= surfelCount)
+    {
+        return;
+    }
+
+    StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
+    PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
+    RWByteAddressBuffer aliveSurfelIndirectionBuffer = GetSurfelGIAliveSurfelIndirectionBufferUAV();
+    RWByteAddressBuffer surfelBuffer = GetSurfelGISurfelHotDataBufferUAV();
+    RWByteAddressBuffer cellHeaderBuffer = GetSurfelGICellHeaderBufferUAV();
+
+    uint surfelIndex = aliveSurfelIndirectionBuffer.Load<uint>(dispatchThreadID.x * sizeof(uint));
+    SurfelHotData surfel = surfelBuffer.Load<SurfelHotData>(surfelIndex * sizeof(SurfelHotData));
+
+    // Iterate over all 27 neighbors.
+    {
+        int3 centerCellID = GetUniformGridCellID(surfel.position, frameShaderParameters.cameraPosition);
+        for (uint i = 0; i < 27; i++)
+        {
+            int3 cellID = centerCellID + SurfelGICellIDOffsets[i];
+            if (SurfelUniformGridCellIntersection(surfel.position, surfel.radius, frameShaderParameters.cameraPosition, cellID))
+            {
+                uint cellIndex = GetUniformGridCellIndex(cellID);
+                uint unused;
+                cellHeaderBuffer.InterlockedAdd(cellIndex * sizeof(CellHeader), 1, unused);
+            }
+        }
+    }
+}

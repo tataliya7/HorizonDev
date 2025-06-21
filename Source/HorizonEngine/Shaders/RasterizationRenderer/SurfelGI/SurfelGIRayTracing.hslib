@@ -1,0 +1,3 @@
+#include "../../ShaderCommon.hsh"
+#include "../RasterizationRendererCommon.hsh"
+#include "SurfelGICommon.hsh"

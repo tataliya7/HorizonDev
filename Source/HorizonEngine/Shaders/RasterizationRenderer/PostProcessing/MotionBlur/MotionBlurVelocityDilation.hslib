@@ -1,0 +1,128 @@
+/**
+ * Motion Blur
+ *
+ * References
+ * - Morgan McGuire et al. 2012. A reconstruction filter for plausible motion blur.
+ * - Jean-Philippe Guertin et al. 2013. A fast and stable feature-aware motion blur filter.
+ * - Jorge Jimenez. 2014. Next Generation Post Processing in Call of Duty: Advanced Warfare.
+ */
+
+#include "../../../ShaderCommon.hsh"
+#include "../../RasterizationRendererCommon.hsh"
+#include "../PostProcessingCommon.hsh"
+#include "MotionBlurCommon.hsh"
+
+SHADER_CONSTANTS_STRUCT_BEGIN();
+SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferSRV);
+SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(1, VelocityRangeTextureSRV);
+SHADER_CONSTANTS_SCALAR(2, uint, ScatterPassIndex);
+SHADER_CONSTANTS_STRUCT_END();
+
+static const uint VertexCountPerQuad = 6;
+
+/**
+ *  0/3X X X X X 1
+ *   X X         X
+ *   X   X       X
+ *   X     O     X
+ *   X       X   X
+ *   X         X X
+ *   5 X X X X X2/4
+ */
+static float2 QuadCornerOffsets[6] =
+{
+    float2(-1.0f, -1.0f),
+    float2( 1.0f, -1.0f),
+    float2( 1.0f,  1.0f),
+    float2(-1.0f, -1.0f),
+    float2( 1.0f,  1.0f),
+    float2(-1.0f,  1.0f),
+};
+
+[shader("vertex")]
+void MotionBlurVelocityDilationScatterVS(
+    uint vertexID : SV_VertexID,
+    uint instanceID : SV_InstanceID,
+    out nointerpolation float4 velocity : TEXCOORD0,
+    out float4 position : SV_Position)
+{
+    StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
+    PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
+    Texture2D velocityRangeTexture = ShaderConstants.GetVelocityRangeTextureSRV();
+    uint scatterPassIndex = ShaderConstants.GetScatterPassIndex();
+
+    uint width, height;
+    velocityRangeTexture.GetDimensions(width, height);
+    float2 inverseTextureSize = 1.0f / float2(width, height);
+
+    uint quadIndex = instanceID * MOTION_BLUR_VELOCITY_DILATION_QUAD_COUNT_PER_INSTANCE + vertexID / VertexCountPerQuad;
+    uint vertexIndex = vertexID % VertexCountPerQuad;
+
+    uint2 tileID = uint2(quadIndex % width, quadIndex / width);
+
+    [branch]
+    if (tileID.y >= height)
+    {
+        velocity = float4(0.0f, 0.0f, 0.0f, 0.0f);
+        position = float4(0.0f, 0.0f, 0.0f, 1.0f);
+        return;
+    }
+
+    float2 tileCenterPosition = float2(tileID.x, tileID.y) + 0.5f;
+
+    float4 velocityRange = velocityRangeTexture[tileID];
+
+    // Output the min/max velocity in this tile.
+    velocity = velocityRange;
+
+    velocityRange /= float(MOTION_BLUR_TILE_SIZE);
+
+    float2 minVelocity = velocityRange.xy;
+    float2 maxVelocity = velocityRange.zw;
+
+    float maxVelocityLengthSqaured = dot(maxVelocity, maxVelocity);
+
+    // Perform early-exit when the length of velocity is less than or equal to 0.5 tiles.
+    bool earlyExit = maxVelocityLengthSqaured <= 0.25f;
+    if (earlyExit)
+    {
+        float2 vertexPosition = tileCenterPosition + QuadCornerOffsets[vertexIndex] * 0.5f;
+        position = float4(ScreenSpaceUVToNDCSpaceXY(vertexPosition * inverseTextureSize), 0.0001f, 1.0f);
+    }
+    else
+    {
+        float minVelocityLength = length(minVelocity);
+        float maxVelocityLength = sqrt(maxVelocityLengthSqaured);
+        float2 velocityDirection = maxVelocity * rcp(maxVelocityLength);
+
+        // Scale
+        const float quadBaseExtentScale = 0.99f;
+        float quadBaseExtent = abs(velocityDirection.x) + abs(velocityDirection.y); // dot(abs(velocityDirection), float2(1.0f, 1.0f))
+        float2 quadScale = float2(maxVelocityLength, 0.0f) + float2(quadBaseExtent, quadBaseExtent) * quadBaseExtentScale;
+        float2 quadCornerOffset = QuadCornerOffsets[vertexIndex] * quadScale;
+
+        // Rotation
+        float2 axisX = velocityDirection;
+        float2 axisY = float2(-velocityDirection.y, velocityDirection.x);
+        quadCornerOffset = axisX * quadCornerOffset.x + axisY * quadCornerOffset.y;
+
+        // Translation
+        float2 vertexPosition = tileCenterPosition + quadCornerOffset;
+
+        float z = (scatterPassIndex == 0) ? minVelocityLength : maxVelocityLength;
+
+        // @todo
+        z *= 0.5f / max(width, height);
+        z = min(z, 0.999f);
+
+        position = float4(ScreenSpaceUVToNDCSpaceXY(vertexPosition * inverseTextureSize), z, 1.0f);
+    }
+}
+
+[shader("pixel")]
+void MotionBlurVelocityDilationScatterPS(
+    nointerpolation float4 input : TEXCOORD0,
+    out float4 output : SV_Target0)
+{
+    output = input;
+}

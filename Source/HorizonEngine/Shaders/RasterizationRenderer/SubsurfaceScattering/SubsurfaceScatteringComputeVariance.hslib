@@ -1,0 +1,80 @@
+#include "../../ShaderCommon.hsh"
+#include "../../Random.hsh"
+#include "../RasterizationRendererCommon.hsh"
+#include "SubsurfaceScatteringCommon.hsh"
+
+BIND_BUFFER_CBV(0, PerFrameShaderParameters);
+BIND_TEXTURE_2D_SRV(1, SceneColorTexture);
+BIND_TEXTURE_2D_SRV(2, SceneDepthTexture);
+BIND_BYTE_ADDRESS_BUFFER_UAV(3, SubsurfaceScatteringTileCountBuffer);
+BIND_BYTE_ADDRESS_BUFFER_UAV(4, SubsurfaceScatteringTileDataBuffer);
+BIND_TEXTURE_2D_UAV(5, float4, OutputTexture);
+
+[shader("compute")]
+[numthreads(SUBSURFACE_SCATTERING_TILE_SIZE * SUBSURFACE_SCATTERING_TILE_SIZE, 1, 1)]
+void SubsurfaceScatteringComputeVarianceCS(uint3 groupID : SV_GroupID, uint groupIndex : SV_GroupIndex)
+{
+    // ByteAddressBuffer perFrameDataBuffer = GetPerFrameDataBufferSRV();
+    // PerFrameShaderParameters frameShaderParameters = perFrameDataBuffer.Load<PerFrameShaderParameters>(0);
+    // Texture2D sceneColorTexture = GetSceneColorTextureSRV();
+    // Texture2D sceneDepthTexture = GetSceneDepthTextureSRV();
+    // RWByteAddressBuffer tileCountBuffer = GetSubsurfaceScatteringTileCountBufferUAV();
+    // RWByteAddressBuffer tileDataBuffer = GetSubsurfaceScatteringTileDataBufferUAV();
+    // RWTexture2D<float4> outputTexture = GetOutputTextureUAV();
+
+    // uint width, height;
+    // outputTexture.GetDimensions(width, height);
+    // if (dispatchThreadID.x >= width || dispatchThreadID.y >= height)
+    // {
+    //     return;
+    // }
+
+    // uint2 pixelCoord = dispatchThreadID.xy;
+    // float2 uv = (pixelCoord + 0.5) * float2(1.0 / width, 1.0 / height);
+
+    // float4 outColor = 0;
+    // bool hasSubsurfaceProfile = true;
+    // [branch] if (hasSubsurfaceProfile)
+    // {
+    //     float4 sceneColor = sceneColorTexture.SampleLevel(GlobalSamplerPointClamp, uv, 0);
+    //     float diffuseLuminance = sceneColor.a;
+    //     float luminance = RelativeLuminance(sceneColor.rgb);
+    //     float ratioOfDiffuse = saturate(diffuseLuminance / luminance);
+    //     float3 diffuse = sceneColor.rgb * ratioOfDiffuse;
+
+    //     float sceneDepth = sceneDepthTexture.SampleLevel(GlobalSamplerPointClamp, uv, 0).r;
+    //     float noise = InterleavedGradientNoise(uv, frameShaderParameters.frameIndex % 8);
+    //     float linearSceneDepth = LinearDepth01(sceneDepth, frameShaderParameters.nearClippingPlane, frameShaderParameters.farClippingPlane);
+    //     float depth = linearSceneDepth + noise * (linearSceneDepth / 1024.0f);
+
+    //     outColor = float4(diffuse, depth);
+    // }
+
+    // outputTexture[pixelCoord] = outColor;
+
+    // if (groupIndex == 0)
+    // {
+    //     uint tileCount = 0;
+    //     tileCountBuffer.InterlockedAdd(0, 1, tileCount);
+
+    //     tileDataBuffer.Store<uint2>(tileCount * sizeof(uint2), groupID.xy);
+    // }
+#if 0
+
+#else
+    uint2 Pos = DT_ID.xy*SUBSURFACE_GROUP_SIZE / THREAD_SIZE_1D + Output_ViewportMin;
+
+    UNROLL for (uint i = 0; i < LOCALGROUP_RATIO; ++i)
+    {
+        UNROLL for (uint j = 0; j < LOCALGROUP_RATIO; ++j)
+        {
+            uint2 TargetGridPos = Pos + uint2(i, j);
+            float2 uv = ConvertGridPos2UV(TargetGridPos);
+            // We perform quality   thread-wise in the second pass
+            float4 SurfaceColor = Texture2DSample(SubsurfaceInput0_Texture, GlobalSamplerLinearBorder, uv);
+            HistoryUAV[TargetGridPos] = UpdateQualityVariance(SurfaceColor, uv);
+            SSSColorUAV[TargetGridPos] = float4(SurfaceColor.rgb, 1.0f);
+        }
+    }
+#endif
+}

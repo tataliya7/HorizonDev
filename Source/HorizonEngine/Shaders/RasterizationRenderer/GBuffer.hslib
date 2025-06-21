@@ -1,0 +1,211 @@
+#include "../ShaderCommon.hsh"
+#include "RasterizationRendererCommon.hsh"
+#include "GPUScene.hsh"
+
+SHADER_CONSTANTS_STRUCT_BEGIN();
+SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferSRV);
+SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_SRV(1, GeometryDataBufferSRV);
+SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_SRV(2, GeometryInstanceDataBufferSRV);
+SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_SRV(3, VisibleMeshletEntryBufferSRV);
+SHADER_CONSTANTS_TEXTURE_2D_SRV(4, uint, VBuffer0SRV);
+SHADER_CONSTANTS_TEXTURE_2D_SRV(5, float3, VBuffer1SRV);
+SHADER_CONSTANTS_TEXTURE_2D_UAV(6, float4, GBuffer0UAV);
+SHADER_CONSTANTS_TEXTURE_2D_UAV(7, float4, GBuffer1UAV);
+SHADER_CONSTANTS_TEXTURE_2D_UAV(8, float4, GBuffer2UAV);
+SHADER_CONSTANTS_STRUCT_END();
+
+void SurfaceInit(inout Surface surface, PerFrameShaderParameters frameShaderParameters, float2 uv, GPUSceneGeometryData geometryData, GPUSceneGeometryInstanceData geometryInstanceData, uint primitiveID, float3 barycentrics, Material material)
+{
+    ByteAddressBuffer indexBuffer = GetByteAddressBufferNonUniform(geometryData.indexBuffer);
+    uint index0 = indexBuffer.Load<uint>((/*geometry.baseIndex + */primitiveID * 3 + 0) * sizeof(uint));
+    uint index1 = indexBuffer.Load<uint>((/*geometry.baseIndex + */primitiveID * 3 + 1) * sizeof(uint));
+    uint index2 = indexBuffer.Load<uint>((/*geometry.baseIndex + */primitiveID * 3 + 2) * sizeof(uint));
+
+    ByteAddressBuffer vertexBuffer0 = GetByteAddressBufferNonUniform(geometryData.vertexBuffer0);
+    float3 vertex0 = vertexBuffer0.Load<float3>(index0 * sizeof(float3));
+    float3 vertex1 = vertexBuffer0.Load<float3>(index1 * sizeof(float3));
+    float3 vertex2 = vertexBuffer0.Load<float3>(index2 * sizeof(float3));
+
+    ByteAddressBuffer vertexBuffer1 = GetByteAddressBufferNonUniform(geometryData.vertexBuffer1);
+#if 1 //FACE_VARYING
+    float3 normal0 = vertexBuffer1.Load<float3>((primitiveID * 3 + 0) * sizeof(float3));
+    float3 normal1 = vertexBuffer1.Load<float3>((primitiveID * 3 + 1) * sizeof(float3));
+    float3 normal2 = vertexBuffer1.Load<float3>((primitiveID * 3 + 2) * sizeof(float3));
+#elif 1
+    float3 normal0 = vertexBuffer1.Load<float3>(index0 * sizeof(float3));
+    float3 normal1 = vertexBuffer1.Load<float3>(index1 * sizeof(float3));
+    float3 normal2 = vertexBuffer1.Load<float3>(index2 * sizeof(float3));
+#else
+    GPUSceneGeometryVertexAttributes vertexAttributes0 = GetGPUSceneGeometryVertexAttributes(geometryData, index0);
+    GPUSceneGeometryVertexAttributes vertexAttributes1 = GetGPUSceneGeometryVertexAttributes(geometryData, index1);
+    GPUSceneGeometryVertexAttributes vertexAttributes2 = GetGPUSceneGeometryVertexAttributes(geometryData, index2);
+    float3 normal0 = vertexAttributes0.normal;
+    float3 normal1 = vertexAttributes1.normal;
+    float3 normal2 = vertexAttributes2.normal;
+#endif
+
+    ByteAddressBuffer vertexBuffer2 = GetByteAddressBufferNonUniform(geometryData.vertexBuffer2);
+    float4 tangent0 = vertexBuffer2.Load<float4>(index0 * sizeof(float4));
+    float4 tangent1 = vertexBuffer2.Load<float4>(index1 * sizeof(float4));
+    float4 tangent2 = vertexBuffer2.Load<float4>(index2 * sizeof(float4));
+
+    float4x4 worldTransform = geometryInstanceData.localToWorldMatrix;
+
+    float3 worldPosition0 = mul(worldTransform, float4(vertex0, 1.0)).xyz;
+    float3 worldPosition1 = mul(worldTransform, float4(vertex1, 1.0)).xyz;
+    float3 worldPosition2 = mul(worldTransform, float4(vertex2, 1.0)).xyz;
+
+    float3 worldNormal0 = normalize(mul((float3x3)worldTransform, normal0));
+    float3 worldNormal1 = normalize(mul((float3x3)worldTransform, normal1));
+    float3 worldNormal2 = normalize(mul((float3x3)worldTransform, normal2));
+
+    float3 worldTangent0 = normalize(mul((float3x3)worldTransform, tangent0.xyz));
+    float3 worldTangent1 = normalize(mul((float3x3)worldTransform, tangent1.xyz));
+    float3 worldTangent2 = normalize(mul((float3x3)worldTransform, tangent2.xyz));
+
+    float3 worldBitangent0 = normalize(cross(worldNormal0, worldTangent0) * tangent0.w);
+    float3 worldBitangent1 = normalize(cross(worldNormal1, worldTangent1) * tangent1.w);
+    float3 worldBitangent2 = normalize(cross(worldNormal2, worldTangent2) * tangent2.w);
+
+    float3x3 tangentSpace0 = float3x3(worldTangent0, worldBitangent0, worldNormal0);
+    float3x3 tangentSpace1 = float3x3(worldTangent1, worldBitangent1, worldNormal1);
+    float3x3 tangentSpace2 = float3x3(worldTangent2, worldBitangent2, worldNormal2);
+
+    const float3 sSSS = normalize(cross(worldPosition2 - worldPosition1, worldPosition1 - worldPosition0));
+
+    surface.P = barycentrics.x * worldPosition0 + barycentrics.y * worldPosition1 + barycentrics.z * worldPosition2;
+    surface.N = normalize(barycentrics.x * worldNormal0 + barycentrics.y * worldNormal1 + barycentrics.z * worldNormal2);
+    surface.V = normalize(frameShaderParameters.cameraPosition - surface.P);
+    surface.distance = length(frameShaderParameters.cameraPosition - surface.P);
+
+    float3 B = normalize(barycentrics.x * worldBitangent0 + barycentrics.y * worldBitangent1 + barycentrics.z * worldBitangent2);
+    float3 T = normalize(barycentrics.x * worldTangent0 + barycentrics.y * worldTangent1 + barycentrics.z * worldTangent2);
+    float3x3 TBN = float3x3(T, B, surface.N);
+
+    surface.baseColor = material.baseColor;
+
+    [branch]
+    if (geometryData.vertexBuffer3 >= 0)
+    {
+        ByteAddressBuffer vertexBuffer3 = GetByteAddressBufferNonUniform(geometryData.vertexBuffer3);
+        float2 texCoord00 = vertexBuffer3.Load<float2>((primitiveID * 3 + 0) * sizeof(float2));
+        float2 texCoord01 = vertexBuffer3.Load<float2>((primitiveID * 3 + 1) * sizeof(float2));
+        float2 texCoord02 = vertexBuffer3.Load<float2>((primitiveID * 3 + 2) * sizeof(float2));
+
+        const float materialTextureMipLodBias = frameShaderParameters.materialTextureMipLodBias;
+
+        const float2 texCoord0 = barycentrics.x * texCoord00 + barycentrics.y * texCoord01 + barycentrics.z * texCoord02;
+
+        const float P_a = length(cross(worldPosition1 - worldPosition0, worldPosition2 - worldPosition0));
+        const float T_a = abs((texCoord01.x - texCoord00.x) * (texCoord02.y - texCoord00.y) - (texCoord02.x - texCoord00.x) * (texCoord01.y - texCoord00.y));
+        const float baseTriangleLOD = 0.5 * log2(T_a / P_a);
+
+        // because it generates good results and we have not seen any discrepancies in the periphery.
+        const float spreadAngle = atan(2.0 * frameShaderParameters.clipToViewMatrix[1][1] / frameShaderParameters.renderHeight); // Eq. 30
+        const float rayConeWidth = surface.distance * spreadAngle;
+        const float3 surfaceNormal = normalize(cross(worldPosition2 - worldPosition1, worldPosition1 - worldPosition0));
+
+        if (material.GetNormalMapIndex() >= 0) // In some cases, using normal mapping will result in some pixels having a normal value of NaN. Needs to be fixed!
+        {
+            Texture2D normalMap = GetTexture2D(material.GetNormalMapIndex());
+            uint textureWidth, textureHeight;
+            normalMap.GetDimensions(textureWidth, textureHeight);
+            float mipLod = ComputeTextureLODRayCones(baseTriangleLOD, textureWidth, textureHeight, rayConeWidth, surface.V, surfaceNormal);
+            float3 tangentNormal = normalize(normalize(normalMap.SampleLevel(GlobalSamplerLinearWarp, texCoord0, mipLod + materialTextureMipLodBias).xyz) * 2.0 - 1.0);
+            surface.N = normalize(mul(tangentNormal, TBN));
+        }
+
+        if (material.GetBaseColorMapIndex() >= 0)
+        {
+            Texture2D baseColorMap = GetTexture2DNonUniform(material.GetBaseColorMapIndex());
+            uint textureWidth, textureHeight;
+            baseColorMap.GetDimensions(textureWidth, textureHeight);
+            float mipLod = ComputeTextureLODRayCones(baseTriangleLOD, textureWidth, textureHeight, rayConeWidth, surface.V, surfaceNormal);
+            surface.baseColor *= baseColorMap.SampleLevel(GlobalSamplerLinearWarp, texCoord0, mipLod + materialTextureMipLodBias);
+        }
+
+        surface.metallic = material.metallic;
+        surface.roughness = material.roughness;
+        //if (material.UseMetallicRoughnessWorkflow()) // Metallic-roughness workflow
+        {
+            if (material.GetMetallicRoughnessMapIndex() >= 0)
+            {
+                Texture2D metallicRoughnessMap = GetTexture2DNonUniform(material.GetMetallicRoughnessMapIndex());
+                uint textureWidth, textureHeight;
+                metallicRoughnessMap.GetDimensions(textureWidth, textureHeight);
+                float mipLod = ComputeTextureLODRayCones(baseTriangleLOD, textureWidth, textureHeight, rayConeWidth, surface.V, surfaceNormal);
+                float4 metallicRoughness = metallicRoughnessMap.SampleLevel(GlobalSamplerLinearWarp, texCoord0, mipLod + materialTextureMipLodBias);
+                surface.metallic *= metallicRoughness.b;
+                surface.roughness *= metallicRoughness.g;
+            }
+        }
+        // else // Specular-glossiness workflow
+        // {
+        //    if (material.GetSpecularGlossinessMapIndex() >= 0)
+        //    {
+        //        Texture2D specularMap = GetTexture2DNonUniform(material.GetSpecularGlossinessMapIndex());
+        //        uint textureWidth, textureHeight;
+        //        specularMap.GetDimensions(textureWidth, textureHeight);
+        //        float mipLod = ComputeTextureLODRayCones(baseTriangleLOD, textureWidth, textureHeight, rayConeWidth, V, surfaceNormal);
+        //        float4 specularGlossiness = specularMap.SampleLevel(GlobalSamplerLinearWarp, texCoord0, mipLod + materialTextureMipLodBias);
+        //        roughness = saturate(1.0 - specularGlossiness.a);
+        //    }
+        // }
+    }
+}
+
+[shader("compute")]
+[numthreads(8, 8, 1)]
+void GBufferCS(uint3 dispatchThreadID : SV_DispatchThreadID)
+{
+    StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
+    PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
+    ByteAddressBuffer geometryDataBuffer = ShaderConstants.GetGeometryDataBufferSRV();
+    ByteAddressBuffer geometryInstanceDataBuffer = ShaderConstants.GetGeometryInstanceDataBufferSRV();
+    ByteAddressBuffer visibleMeshletEntryBuffer = ShaderConstants.GetVisibleMeshletEntryBufferSRV();
+    Texture2D<uint> vbuffer0 = ShaderConstants.GetVBuffer0SRV();
+    Texture2D<float3> vbuffer1 = ShaderConstants.GetVBuffer1SRV();
+    RWTexture2D<float4> gbuffer0 = ShaderConstants.GetGBuffer0UAV();
+    RWTexture2D<float4> gbuffer1 = ShaderConstants.GetGBuffer1UAV();
+    RWTexture2D<float4> gbuffer2 = ShaderConstants.GetGBuffer2UAV();
+
+    uint2 pixelCoord = dispatchThreadID.xy;
+    float2 uv = (pixelCoord.xy + 0.5f) * frameShaderParameters.renderResolution.zw;
+
+    uint packedPrimitiveID = vbuffer0[pixelCoord];
+
+    [branch]
+    if (packedPrimitiveID != INVALID_VISIBILIY_ID)
+    {
+        uint visibileMeshletID, triangleID;
+        UnpackVisiblePrimitiveID(visibileMeshletID, triangleID, packedPrimitiveID);
+
+        float3 barycentrics = vbuffer1[pixelCoord];
+
+        VisibleMeshletEntry visibleMeshletEntry = GetVisibleMeshletEntry(visibleMeshletEntryBuffer, visibileMeshletID);
+        GPUSceneGeometryInstanceData instanceData = GetGPUSceneGeometryInstanceData(geometryInstanceDataBuffer, visibleMeshletEntry.geometryInstanceID);
+        GPUSceneGeometryData geometryData = GetGPUSceneGeometryData(geometryDataBuffer, instanceData.geometryID);
+        GPUSceneMeshletData meshletData = GetGPUSceneMeshletData(geometryData, visibleMeshletEntry.meshletID);
+
+        ByteAddressBuffer materialIndexBuffer = GetByteAddressBufferNonUniform(geometryData.materialIndexBuffer);
+        uint materialIndex = materialIndexBuffer.Load<uint>((meshletData.triangleOffset + triangleID) * sizeof(uint));
+
+        ByteAddressBuffer materialBuffer = GetByteAddressBufferNonUniform(geometryData.materialBuffer);
+        Material material = materialBuffer.Load<Material>(materialIndex * sizeof(Material));
+
+        Surface surface;
+        SurfaceInit(surface, frameShaderParameters, uv, geometryData, instanceData, meshletData.triangleOffset + triangleID, barycentrics, material);
+
+        surface.specular = 0.5f;
+
+        gbuffer0[pixelCoord] = float4(EncodeNormalToGBuffer(surface.N), 0/* unsued */);
+        gbuffer1[pixelCoord] = float4(surface.metallic, surface.specular, surface.roughness, 0/* unsued */);
+        gbuffer2[pixelCoord] = float4(surface.baseColor.rgb, 1/* unsued */);
+    }
+    else
+    {
+        gbuffer0[pixelCoord] = 0;
+        gbuffer1[pixelCoord] = 0;
+        gbuffer2[pixelCoord] = 0;
+    }
+}

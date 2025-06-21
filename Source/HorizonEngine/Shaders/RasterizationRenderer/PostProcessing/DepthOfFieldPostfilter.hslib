@@ -1,0 +1,124 @@
+#include "../../ShaderCommon.hsh"
+#include "../RasterizationRendererCommon.hsh"
+#include "PostProcessingCommon.hsh"
+
+BIND_BUFFER_CBV(0, PerFrameShaderParameters);
+BIND_TEXTURE_2D_SRV(1, DOFGatherTexture);
+BIND_TEXTURE_2D_SRV(2, DOFCoCTexture);
+BIND_TEXTURE_2D_UAV(3, float4, DOFPostfilterTexture);
+
+static const float2 SampleOffsets[8] = {
+    float2(-1, -1),
+    float2(-1,  0),
+    float2(-1,  1),
+    float2( 0, -1),
+    float2( 0,  1),
+    float2( 1, -1),
+    float2( 1,  0),
+    float2( 1,  1)
+};
+
+float4 Median3(float4 x0, float4 x1, float4 x2)
+{
+    float4 a = min(x1, x2);
+    float4 b = max(x1, x2);
+    float4 c = max(x0, a);
+    return min(b, c);
+}
+
+void Median3Ex(float4 x0, float4 x1, float4 x2, out float4 y0, out float4 y1, out float4 y2)
+{
+    float4 a = min(x1, x2);
+    float4 b = max(x1, x2);
+    float4 c = max(x0, a);
+
+    y0 = min(x0, a);
+    y1 = min(b, c);
+    y2 = max(b, c);
+}
+
+float4 MedianFilter3x3(
+    float4 x0, float4 x1, float4 x2,
+    float4 x3, float4 x4, float4 x5,
+    float4 x6, float4 x7, float4 x8)
+{
+    float4 y0; float4 y1; float4 y2;
+    float4 y3; float4 y4; float4 y5;
+    float4 y6; float4 y7; float4 y8;
+    Median3Ex(x0, x1, x2, y0, y1, y2);
+    Median3Ex(x3, x4, x5, y3, y4, y5);
+    Median3Ex(x6, x7, x8, y6, y7, y8);
+
+    float4 t0 = max(max(y0, y1), y2);
+    float4 t1 = Median3(y3, y4, y5);
+    float4 t2 = min(min(y6, y7), y8);
+    return Median3(t0, t1, t2);
+}
+
+[shader("compute")]
+[numthreads(POST_PROCESSING_THREAD_GROUP_SIZE_X, POST_PROCESSING_THREAD_GROUP_SIZE_Y, 1)]
+void DepthOfFieldPostfilterCS(uint3 dispatchThreadID : SV_DispatchThreadID)
+{
+    StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
+    PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
+    uint width = frameShaderParameters.targetWidth / 2;
+    uint height = frameShaderParameters.targetHeight / 2;
+    if (dispatchThreadID.x >= width || dispatchThreadID.y >= height)
+    {
+        return;
+    }
+
+    uint2 pixelCoord = dispatchThreadID.xy;
+    float2 uv = (pixelCoord + 0.5) / float2(width, height);
+
+    Texture2D gatherTexture = GetDOFGatherTextureSRV();
+    Texture2D cocTexture = GetDOFCoCTextureSRV();
+    RWTexture2D<float4> postfilterTexture = GetDOFPostfilterTextureUAV();
+
+    float farRegionBlurRadius = (0);
+
+    bool earlyExit = false;
+    if (earlyExit)
+    {
+        postfilterTexture[pixelCoord] = 0;
+    }
+    else
+    {
+        float4 centerColor = gatherTexture[pixelCoord];
+        float coc = cocTexture.SampleLevel(GlobalSamplerLinearClamp, uv, 0).r;
+        coc = abs(coc * 2 - 1);
+
+        float4 outColor = centerColor;
+#if 0 // Max filter
+        for (uint i = 0; i < 8; i++)
+        {
+            float2 uvOffset = 0.05 * coc * farRegionBlurRadius * SampleOffsets[i] * float2(1.0 / float(width), 1.0 / float(height));
+            float2 sampleUV = uv + uvOffset;
+            float3 sampleColor = gatherTexture.SampleLevel(GlobalSamplerLinearClamp, sampleUV + uvOffset, 0).rgb;
+            outColor.rgb = max(outColor.rgb, sampleColor.rgb);
+        }
+#elif 0 // Median filter
+        float4 samples[9];
+        for (uint sampleIndex = 0; sampleIndex < 9; sampleIndex++)
+        {
+            float2 uvOffset = 0.5 * SampleOffsets[sampleIndex] * float2(1.0 / float(width), 1.0 / float(height));
+            float2 sampleUV = uv + uvOffset;
+            samples[sampleIndex] = gatherTexture.SampleLevel(GlobalSamplerLinearClamp, sampleUV + uvOffset, 0);
+        }
+        outColor = MedianFilter3x3(
+            samples[0], samples[1], samples[2],
+            samples[3], samples[4], samples[5],
+            samples[6], samples[7], samples[8]);
+#else
+        for (uint i = 0; i < 8; i++)
+        {
+            float2 uvOffset = 0.05 * coc * farRegionBlurRadius * SampleOffsets[i] * float2(1.0 / float(width), 1.0 / float(height));
+            float2 sampleUV = uv + uvOffset;
+            float3 sampleColor = gatherTexture.SampleLevel(GlobalSamplerLinearClamp, sampleUV + uvOffset, 0).rgb;
+            outColor.rgb += sampleColor;
+        }
+        outColor /= 9;
+#endif
+        postfilterTexture[pixelCoord] = float4(outColor.rgb, centerColor.a);
+    }
+}

@@ -71,7 +71,7 @@ project "HorizonEditorLauncher"
     }
 
     postbuildcommands {
-        "{COPYFILE} %{wks.location}/Source/HorizonEngine/Source/Rendering/Renderer/RealTimeRenderer/PerFrameShaderParameters.h %{wks.location}/Source/HorizonEngine/Shaders/RealTimeRenderer",
+        "{COPYFILE} %{wks.location}/Source/HorizonEngine/Source/Rendering/Renderer/RasterizationRenderer/PerFrameShaderParameters.h %{wks.location}/Source/HorizonEngine/Shaders/RasterizationRenderer",
     }
 
     filter "configurations:Debug"

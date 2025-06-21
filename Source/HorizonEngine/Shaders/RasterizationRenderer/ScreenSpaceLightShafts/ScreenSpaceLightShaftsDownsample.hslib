@@ -1,0 +1,61 @@
+#include "../../ShaderCommon.hsh"
+#include "../RasterizationRendererCommon.hsh"
+
+SHADER_CONSTANTS_STRUCT_BEGIN();
+SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferSRV);
+SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(1, ColorTextureSRV);
+SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(2, DepthTextureSRV);
+SHADER_CONSTANTS_TEXTURE_2D_UAV(3, float3, OutputTextureUAV);
+SHADER_CONSTANTS_SCALAR(4, float, LightShaftsOriginX);
+SHADER_CONSTANTS_SCALAR(5, float, LightShaftsOriginY);
+SHADER_CONSTANTS_SCALAR(6, float, AspectRatio);
+SHADER_CONSTANTS_SCALAR(7, float, InverseAspectRatio);
+SHADER_CONSTANTS_STRUCT_END();
+
+[shader("compute")]
+[numthreads(8, 8, 1)]
+void ScreenSpaceLightShaftsDownsampleCS(uint3 dispatchThreadID : SV_DispatchThreadID)
+{
+    StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
+    PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
+    Texture2D colorTexture = ShaderConstants.GetColorTextureSRV();
+    Texture2D depthTexture = ShaderConstants.GetDepthTextureSRV();
+    RWTexture2D<float3> outputTexture = ShaderConstants.GetOutputTextureUAV();
+
+#if 1
+    uint outputTextureWidth, outputTextureHeight;
+    outputTexture.GetDimensions(outputTextureWidth, outputTextureHeight);
+    if (dispatchThreadID.x >= outputTextureWidth || dispatchThreadID.y >= outputTextureHeight)
+    {
+        return;
+    }
+#endif
+
+    uint2 pixelCoord = dispatchThreadID.xy;
+    float2 uv = (float2(pixelCoord.x, pixelCoord.y) + 0.5f) * float2(1.0f / outputTextureWidth, 1.0f / outputTextureHeight);
+
+    float3 color = colorTexture.SampleLevel(GlobalSamplerPointClamp, uv, 0).rgb;
+    float depth = depthTexture.SampleLevel(GlobalSamplerPointClamp, uv, 0).r;
+
+    //depth = ComputeCameraSpaceDepth(depth, frameShaderParameters.nearClippingPlane, frameShaderParameters.farClippingPlane);
+
+    float2 lightShaftsOrigin = float2(ShaderConstants.GetLightShaftsOriginX(), ShaderConstants.GetLightShaftsOriginY());
+    float2 aspectRatioAndInverseAspectRatio = float2(ShaderConstants.GetAspectRatio(), ShaderConstants.GetInverseAspectRatio());
+
+    // @todo Aspect Ratio Correction
+    float2 aspectRatioCorrectedUV = uv * aspectRatioAndInverseAspectRatio.y;
+
+    // Extract the light source. @todo Needs a threshold?
+    // Screen out all solid geometry, only accepts backgroud pixels.
+    float occlusion = depth > 0.0f ? 0.0f : 1.0f;
+
+    // Screen space distance attenuation.
+    // 1 if uv equals the light shafts origin, 0 if uv is half a screen away from the origin.
+    // @todo Aspect Ratio Correction
+    float distanceAttenuation = 1.0f - saturate(length(uv - lightShaftsOrigin.xy) * 2.0f);
+    distanceAttenuation *= distanceAttenuation;
+
+    float3 result = color * occlusion * distanceAttenuation;
+
+    outputTexture[pixelCoord] = result;
+}

@@ -1,0 +1,94 @@
+#include "../ShaderCommon.hsh"
+#include "RasterizationRendererCommon.hsh"
+
+BIND_BUFFER_CBV(0, PerFrameShaderParameters);
+BIND_BYTE_ADDRESS_BUFFER_SRV(1, GeometryBuffer);
+BIND_BYTE_ADDRESS_BUFFER_SRV(2, TransformBuffer);
+BIND_BYTE_ADDRESS_BUFFER_UAV(3, DrawCallArgsBuffer);
+
+bool PointOutsidePlane(float3 position, float4 plane)
+{
+    return (dot(plane, float4(position.x, position.y, position.z, 1.0)) > 0);
+}
+
+bool PointOnPlane(float3 position, float4 plane)
+{
+    return (dot(plane, float4(position.x, position.y, position.z, 1.0)) == 0);
+}
+
+bool PointInsidePlane(float3 position, float4 plane)
+{
+    return (dot(plane, float4(position.x, position.y, position.z, 1.0)) < 0);
+}
+
+[shader("compute")]
+[numthreads(64, 1, 1)]
+void InstanceCullingCS(uint3 dispatchThreadID : SV_DispatchThreadID)
+{
+    int instanceCount = (int)(0);
+    if (dispatchThreadID.x >= instanceCount)
+    {
+        return;
+    }
+
+    uint instanceID = dispatchThreadID.x;
+
+    ByteAddressBuffer geometryBuffer = GetGeometryBufferSRV();
+    Geometry geometry = geometryBuffer.Load<Geometry>(instanceID * sizeof(Geometry));
+
+    ByteAddressBuffer transformBuffer = GetTransformBufferSRV();
+    float4x4 worldTransform = transformBuffer.Load<float4x4>(geometry.transformIndex * sizeof(float4x4));
+
+    float3 boundsMin = geometry.boundsMin;
+    float3 boundsMax = geometry.boundsMax;
+
+    float3 boundsCorner[8];
+    boundsCorner[0] = mul(worldTransform, float4(boundsMin.x, boundsMin.y, boundsMin.z, 1.0)).xyz;
+    boundsCorner[1] = mul(worldTransform, float4(boundsMin.x, boundsMin.y, boundsMax.z, 1.0)).xyz;
+    boundsCorner[2] = mul(worldTransform, float4(boundsMin.x, boundsMax.y, boundsMin.z, 1.0)).xyz;
+    boundsCorner[3] = mul(worldTransform, float4(boundsMin.x, boundsMax.y, boundsMax.z, 1.0)).xyz;
+    boundsCorner[4] = mul(worldTransform, float4(boundsMax.x, boundsMin.y, boundsMin.z, 1.0)).xyz;
+    boundsCorner[5] = mul(worldTransform, float4(boundsMax.x, boundsMin.y, boundsMax.z, 1.0)).xyz;
+    boundsCorner[6] = mul(worldTransform, float4(boundsMax.x, boundsMax.y, boundsMin.z, 1.0)).xyz;
+    boundsCorner[7] = mul(worldTransform, float4(boundsMax.x, boundsMax.y, boundsMax.z, 1.0)).xyz;
+
+    StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
+    PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
+    bool visible = true;
+    for (int planeIndex = 0; planeIndex < 6; planeIndex++)
+    {
+        bool allBoundsCornerOutsideThisPlane = true;
+        [unroll]
+        for (int cornerIndex = 0; cornerIndex < 8; cornerIndex++)
+        {
+            allBoundsCornerOutsideThisPlane &= PointOutsidePlane(boundsCorner[cornerIndex].xyz, frameShaderParameters.frustumPlanes[planeIndex]);
+        }
+        if (allBoundsCornerOutsideThisPlane)
+        {
+            visible = false;
+            break;
+        }
+    }
+
+    DrawIndexedIndirectCommand drawCallArgs;
+    if (visible)
+    {
+        drawCallArgs.indexCount = geometry.indexCount;
+        drawCallArgs.instanceCount = 1;
+        drawCallArgs.firstIndex = geometry.indexOffset;
+        drawCallArgs.vertexOffset = 0;
+        drawCallArgs.firstInstance = 0;
+    }
+    else
+    {
+        drawCallArgs.indexCount = geometry.indexCount;
+        drawCallArgs.instanceCount = 1;
+        drawCallArgs.firstIndex = geometry.indexOffset;
+        drawCallArgs.vertexOffset = 0;
+        drawCallArgs.firstInstance = 0;
+    }
+
+    RWByteAddressBuffer drawCallArgsBuffer = GetDrawCallArgsBufferUAV();
+    uint drawCallArgsBufferOffset = instanceID * sizeof(DrawIndexedIndirectCommand);
+    drawCallArgsBuffer.Store<DrawIndexedIndirectCommand>(drawCallArgsBufferOffset, drawCallArgs);
+}

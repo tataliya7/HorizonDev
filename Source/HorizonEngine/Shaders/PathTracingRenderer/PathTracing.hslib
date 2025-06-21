@@ -1,7 +1,7 @@
 #include "../ShaderCommon.hsh"
 #include "../Random.hsh"
-#include "../RealTimeRenderer/RealTimeRendererCommon.hsh"
-#include "../RealTimeRenderer/GPUScene.hsh"
+#include "../RasterizationRenderer/RasterizationRendererCommon.hsh"
+#include "../RasterizationRenderer/GPUScene.hsh"
 
 SHADER_CONSTANTS_STRUCT_BEGIN();
 SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferSRV);

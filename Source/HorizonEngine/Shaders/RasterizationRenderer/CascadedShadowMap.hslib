@@ -1,0 +1,89 @@
+#include "../ShaderCommon.hsh"
+#include "RasterizationRendererCommon.hsh"
+#include "ShadowMapCommon.hsh"
+#include "GPUScene.hsh"
+
+SHADER_CONSTANTS_STRUCT_BEGIN();
+SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferSRV);
+SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(1, CascadedShadowMapShaderParameters, CascadeShadowMapDataBufferSRV);
+SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_SRV(2, GeometryDataBufferSRV);
+SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_SRV(3, GeometryInstanceDataBufferSRV);
+SHADER_CONSTANTS_SCALAR(4, uint, CascadeIndex);
+SHADER_CONSTANTS_STRUCT_END();
+
+float3 ApplyShadowMapDepthBias(float3 position, float3 normal, float3 lightDirection, float4 depthBiasParameters)
+{
+    float NdotL = saturate(dot(normal, -lightDirection));
+    float3 normalOffset = (1.0f - NdotL) * depthBiasParameters.y * normal;
+    return position + lightDirection * depthBiasParameters.xxx + normalOffset;
+}
+
+[shader("vertex")]
+void CascadedShadowMapVS(
+    in uint vertexID : SV_VertexID,
+    in uint instanceID : SV_InstanceID,
+    out uint arrayIndex : SV_RenderTargetArrayIndex,
+    out float4 position : SV_Position)
+{
+    StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
+    PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
+    StructuredBuffer<CascadedShadowMapShaderParameters> cascadedShadowMapDataBuffer = ShaderConstants.GetCascadeShadowMapDataBufferSRV();
+    ByteAddressBuffer geometryDataBuffer = ShaderConstants.GetGeometryDataBufferSRV();
+    ByteAddressBuffer geometryInstanceDataBuffer = ShaderConstants.GetGeometryInstanceDataBufferSRV();
+    const uint cascadeIndex = ShaderConstants.GetCascadeIndex();
+
+    GPUSceneGeometryInstanceData instanceData = GetGPUSceneGeometryInstanceData(geometryInstanceDataBuffer, instanceID);
+    GPUSceneGeometryData geometryData = GetGPUSceneGeometryData(geometryDataBuffer, instanceData.geometryID);
+
+    VertexAttributes vertexAttributes = GetVertexAttributes(geometryData, vertexID);
+
+    CascadedShadowMapShaderParameters cascadedShadowMapShaderParameters = cascadedShadowMapDataBuffer[0];
+    float4x4 worldToClipMatrix = cascadedShadowMapShaderParameters.worldToClipMatrix[cascadeIndex];
+
+    float3 worldSpaceVertexPosition = mul(instanceData.localToWorldMatrix, float4(vertexAttributes.position, 1.0f)).xyz;
+    float3 worldSpaceVertexNormal = normalize(mul((float3x3)instanceData.localToWorldMatrix, vertexAttributes.normal));
+
+    const float3 lightDirection = frameShaderParameters.atmosphericLightDirection;
+    const float4 depthBiasParameters = cascadedShadowMapShaderParameters.depthBiasParameters[cascadeIndex];
+    // worldSpaceVertexPosition = ApplyShadowMapDepthBias(
+    //    worldSpaceVertexPosition,
+    //    worldSpaceVertexNormal,
+    //    lightDirection,
+    //    depthBiasParameters);
+
+    float4 clipSpaceVertexPosition = mul(worldToClipMatrix, float4(worldSpaceVertexPosition, 1.0f));
+
+    arrayIndex = cascadeIndex;
+    position = clipSpaceVertexPosition;
+
+    // Clamp to near plane
+    position.z = min(position.z, 1);
+}
+
+[shader("pixel")]
+void CascadedShadowMapPS(in uint primitiveID : SV_PrimitiveID)
+{
+#if 0
+    StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
+    PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
+    Geometry geometry = GetGeometry();
+
+    float2 texCoord0 = input.texCoord0;
+
+    ByteAddressBuffer materialBuffer = GetMaterialBufferSRV();
+    ByteAddressBuffer materialIndexBuffer = GetByteAddressBuffer(geometry.materialIndexBuffer);
+
+    uint materialIndex = materialIndexBuffer.Load<uint>(primitiveID * sizeof(uint));
+    Material material = materialBuffer.Load<Material>(geometry.materialBufferOffset + (materialIndex * sizeof(Material)));
+
+    float4 baseColor = material.baseColor;
+    if (material.GetBaseColorMapIndex() > 0)
+    {
+        Texture2D baseColorMap = GetTexture2D(material.GetBaseColorMapIndex());
+        baseColor = baseColorMap.Sample(GlobalSamplerLinearWarp, texCoord0);
+    }
+
+    float alphaCutoff = 0.2f;
+    clip(baseColor.a - alphaCutoff);
+#endif
+}

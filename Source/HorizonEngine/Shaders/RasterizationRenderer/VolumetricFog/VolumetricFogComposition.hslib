@@ -1,0 +1,45 @@
+#include "../../ShaderCommon.hsh"
+#include "../RasterizationRendererCommon.hsh"
+#include "VolumetricFogCommon.hsh"
+
+SHADER_CONSTANTS_STRUCT_BEGIN();
+SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferSRV);
+SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(1, VolumetricFogShaderParameters, VolumetricFogShaderParameterBufferSRV);
+SHADER_CONSTANTS_TEXTURE_3D_SRV(2, float4, VolumetricFogFinalIntegrationTextureSRV);
+SHADER_CONSTANTS_TEXTURE_2D_SRV(3, float, SceneDepthTextureSRV);
+SHADER_CONSTANTS_STRUCT_END();
+
+[shader("pixel")]
+void VolumetricFogCompositionPS(float4 position : SV_Position, out float4 result : SV_Target0)
+{
+    StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
+    StructuredBuffer<VolumetricFogShaderParameters> volumetricFogShaderParameterBuffer = ShaderConstants.GetVolumetricFogShaderParameterBufferSRV();
+    Texture3D<float4> volumetricFogFinalIntegrationTexture = ShaderConstants.GetVolumetricFogFinalIntegrationTextureSRV();
+    Texture2D<float> sceneDepthTexture = ShaderConstants.GetSceneDepthTextureSRV();
+
+    PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
+    VolumetricFogShaderParameters volumetricFogShaderParameters = volumetricFogShaderParameterBuffer[0];
+
+    float2 uv = position.xy * frameShaderParameters.renderResolution.zw;
+
+    float sceneDepth = sceneDepthTexture.SampleLevel(GlobalSamplerPointClamp, uv, 0).r;
+    //float ZSlice = ComputeCameraSpaceDepth(sceneDepth, frameShaderParameters.nearClippingPlane, frameShaderParameters.farClippingPlane);
+
+    // TODO
+    float3 worldSpacePosition = ReconstructWorldSpacePositionFromUVZ(uv, sceneDepth, frameShaderParameters.clipToWorldMatrix);
+    float4 cameraSpacePosition = mul(frameShaderParameters.worldToViewMatrix, float4(worldSpacePosition, 1.0f));
+    float zSlice = -cameraSpacePosition.z;
+
+    float sliceUV = ComputeDepthSliceUV(zSlice, volumetricFogShaderParameters.sliceCountAndInverseSliceCount.x, frameShaderParameters.nearClippingPlane, 60.0f);
+
+    float3 volumetricFogVolumeTextureUVW = float3(uv, sliceUV);
+    float4 volumetricFogFinalIntegration = volumetricFogFinalIntegrationTexture.SampleLevel(GlobalSamplerLinearClamp, volumetricFogVolumeTextureUVW, 0);
+    volumetricFogFinalIntegration.xyz *= frameShaderParameters.inversePreExposure;
+
+    float3 fogColor = volumetricFogFinalIntegration.xyz;
+    fogColor *= frameShaderParameters.preExposure;
+
+    float transmitance = volumetricFogFinalIntegration.w;
+
+    result = float4(fogColor, transmitance);
+}

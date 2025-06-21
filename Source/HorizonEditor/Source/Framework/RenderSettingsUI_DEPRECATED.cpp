@@ -3,7 +3,7 @@ namespace Horizon
 {
     void HorizonEditor::DrawRenderSettingsWindow(bool* open)
     {
-        auto& renderSettings = ((RenderSystem*)renderEngine)->GetRealTimeRendererSettings_Deprecated();
+        auto& renderSettings = ((RenderSystem*)renderEngine)->GetRasterizationRendererSettings_Deprecated();
 
         if (ImGui::Begin("Render Settings", open))
         {

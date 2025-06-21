@@ -1,0 +1,159 @@
+#include "../../ShaderCommon.hsh"
+#include "../../Random.hsh"
+#include "../RasterizationRendererCommon.hsh"
+
+SHADER_CONSTANTS_STRUCT_BEGIN();
+SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferSRV);
+SHADER_CONSTANTS_ACCELERATION_STRUCTURE_SRV(1, TopLevelAccelerationStructureSRV);
+SHADER_CONSTANTS_TEXTURE_2D_SRV(2, float, DepthTextureSRV);
+SHADER_CONSTANTS_TEXTURE_2D_UAV(3, float, ShadowMaskTextureUAV);
+SHADER_CONSTANTS_TEXTURE_2D_UAV(4, float, RayDistanceTextureUAV);
+SHADER_CONSTANTS_SCALAR(5, float, LightDirectionX);
+SHADER_CONSTANTS_SCALAR(6, float, LightDirectionY);
+SHADER_CONSTANTS_SCALAR(7, float, LightDirectionZ);
+SHADER_CONSTANTS_STRUCT_END();
+
+#if __SHADER_TARGET_STAGE != __SHADER_STAGE_COMPUTE
+
+struct ShadowRayPayload
+{
+    float visibility;
+};
+
+[shader("raygeneration")]
+void RayTracingShadowsRayGen()
+{
+    StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
+    RaytracingAccelerationStructure topLevelAccelerationStructure = ShaderConstants.GetTopLevelAccelerationStructureSRV();
+    Texture2D<float> depthTexture = ShaderConstants.GetDepthTextureSRV();
+    RWTexture2D<float> shadowMaskTexture = ShaderConstants.GetShadowMaskTextureUAV();
+    RWTexture2D<float> rayDistanceTexture = ShaderConstants.GetRayDistanceTextureUAV();
+    PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
+
+    uint3 launchIndex = DispatchRaysIndex();
+    uint3 launchDimensions = DispatchRaysDimensions();
+
+    const uint2 pixelCoord = launchIndex.xy;
+
+    // Skip background pixels.
+    const float depth = depthTexture[pixelCoord].r;
+    if (depth == FAR_CLIPPING_PLANE_DEPTH_VALUE)
+    {
+        shadowMaskTexture[pixelCoord] = 1.0f;
+        rayDistanceTexture[pixelCoord] = -1.0f;
+        return;
+    }
+
+    float2 uv = (pixelCoord + 0.5f) / float2(launchDimensions.xy);
+    float3 worldSpacePosition = ReconstructWorldSpacePositionFromUVZ(uv, depth, frameShaderParameters.clipToWorldMatrix);
+
+    uint randSeed = RandInit(launchIndex.x + launchIndex.y * launchDimensions.x, frameShaderParameters.frameIndex);
+
+    float cosThetaMax = 0.99999f;
+    // Generate a random direction based on the cone angle.
+    float3 randDirection = UniformSampleCone(float2(Rand(randSeed), Rand(randSeed)), cosThetaMax);
+
+    const float3 lightDirection = float3(ShaderConstants.GetLightDirectionX(), ShaderConstants.GetLightDirectionY(), ShaderConstants.GetLightDirectionZ());
+
+    float3 N = -normalize(lightDirection);
+    float3x3 TBN = CreateTangentSpaceBasis(N);
+    randDirection = TangentToWorld(randDirection, TBN);
+
+    // Prepare a shadow ray.
+    RayDesc ray;
+    ray.Origin = worldSpacePosition;
+    ray.Direction = randDirection;
+    ray.TMin = 0.01f;
+    ray.TMax = 10000.0f;
+
+    uint rayFlags = RAY_FLAG_ACCEPT_FIRST_HIT_AND_END_SEARCH | RAY_FLAG_SKIP_CLOSEST_HIT_SHADER;
+    uint instanceInclusionMask = 0xff;
+
+    ShadowRayPayload payload;
+    payload.visibility = 0.0f;
+
+    TraceRay(
+        topLevelAccelerationStructure,
+        rayFlags,
+        instanceInclusionMask,
+        0,
+        0,
+        0,
+        ray,
+        payload);
+
+    shadowMaskTexture[pixelCoord] = payload.visibility;
+    rayDistanceTexture[pixelCoord] = 0.0f; // TODO
+}
+
+[shader("miss")]
+void RayTracingShadowsMiss(inout ShadowRayPayload payload : SV_RayPayload)
+{
+    payload.visibility = 1.0f;
+}
+
+#else
+
+[shader("compute")]
+[numthreads(8, 4, 1)]
+void RayTracingShadowsInlineRayTracingCS(uint3 dispatchThreadID : SV_DispatchThreadID)
+{
+    StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
+    RaytracingAccelerationStructure topLevelAccelerationStructure = ShaderConstants.GetTopLevelAccelerationStructureSRV();
+    Texture2D<float> depthTexture = ShaderConstants.GetDepthTextureSRV();
+    RWTexture2D<float> shadowMaskTexture = ShaderConstants.GetShadowMaskTextureUAV();
+    RWTexture2D<float> rayDistanceTexture = ShaderConstants.GetRayDistanceTextureUAV();
+    PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
+
+    const uint2 pixelCoord = dispatchThreadID.xy;
+    const float depth = depthTexture[pixelCoord].r;
+    if (depth == FAR_CLIPPING_PLANE_DEPTH_VALUE)
+    {
+        shadowMaskTexture[pixelCoord] = 1.0f;
+        rayDistanceTexture[pixelCoord] = -1.0f;
+        return;
+    }
+
+    float2 uv = (float2(pixelCoord) + 0.5f) * frameShaderParameters.renderResolution.zw;
+    float3 worldSpacePosition = ReconstructWorldSpacePositionFromUVZ(uv, depth, frameShaderParameters.clipToWorldMatrix);
+    uint randSeed = RandInit(dispatchThreadID.x + dispatchThreadID.y * frameShaderParameters.renderWidth, frameShaderParameters.frameIndex);
+    float cosThetaMax = 0.99999f;
+    // Generate a random direction based on the cone angle.
+    float3 randDirection = UniformSampleCone(float2(Rand(randSeed), Rand(randSeed)), cosThetaMax);
+    const float3 lightDirection = float3(ShaderConstants.GetLightDirectionX(), ShaderConstants.GetLightDirectionY(), ShaderConstants.GetLightDirectionZ());
+    float3 N = -normalize(lightDirection);
+    float3x3 TBN = CreateTangentSpaceBasis(N);
+    randDirection = TangentToWorld(randDirection, TBN);
+
+    RayDesc ray;
+    ray.Origin = worldSpacePosition;
+    ray.Direction = randDirection;
+    ray.TMin = 0.01f;
+    ray.TMax = 10000.0f;
+
+    uint rayFlags = RAY_FLAG_ACCEPT_FIRST_HIT_AND_END_SEARCH | RAY_FLAG_SKIP_CLOSEST_HIT_SHADER;
+    uint instanceInclusionMask = 0xff;
+
+    RayQuery<RAY_FLAG_NONE> rayQueryObject;
+
+    rayQueryObject.TraceRayInline(
+        topLevelAccelerationStructure,
+        rayFlags,
+        instanceInclusionMask,
+        ray);
+
+    rayQueryObject.Proceed();
+
+    if (rayQueryObject.CommittedStatus() == COMMITTED_TRIANGLE_HIT)
+    {
+        shadowMaskTexture[pixelCoord] = 0.0f;
+        rayDistanceTexture[pixelCoord] = 0.0f; // TODO
+    }
+    else // COMMITTED_NOTHING
+    {
+        shadowMaskTexture[pixelCoord] = 1.0f;
+        rayDistanceTexture[pixelCoord] = 0.0f; // TODO
+    }
+}
+
+#endif

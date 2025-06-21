@@ -1,0 +1,24 @@
+#include "../../ShaderCommon.hsh"
+#include "../RasterizationRendererCommon.hsh"
+#include "SurfelGICommon.hsh"
+
+BIND_BYTE_ADDRESS_BUFFER_UAV(0, SurfelGIInfoBuffer);
+BIND_BYTE_ADDRESS_BUFFER_UAV(1, SurfelGIFreeSurfelBuffer);
+
+[shader("compute")]
+[numthreads(SurfelGIIndirectDispatchGroupThreadCount, 1, 1)]
+void SurfelGIFreeSurfelsCS(uint3 dispatchThreadID : SV_DispatchThreadID)
+{
+    if (dispatchThreadID.x == 0)
+    {
+        RWByteAddressBuffer infoBuffer = GetSurfelGIInfoBufferUAV();
+        infoBuffer.Store<uint>(SurfelGIInfoBufferOffset_AliveSurfelCount, 0);
+        infoBuffer.Store<uint>(SurfelGIInfoBufferOffset_DeadSurfelCount, SurfelGIMaxSurfelCount);
+    }
+
+    if (dispatchThreadID.x < SurfelGIMaxSurfelCount)
+    {
+        RWByteAddressBuffer freeSurfelBuffer = GetSurfelGIFreeSurfelBufferUAV();
+        freeSurfelBuffer.Store<uint>(dispatchThreadID.x * sizeof(uint), dispatchThreadID.x);
+    }
+}

@@ -1,0 +1,27 @@
+#include "../../ShaderCommon.hsh"
+#include "../../Random.hsh"
+#include "../RasterizationRendererCommon.hsh"
+#include "../ScreenSpaceRayTracing/ScreenSpaceRayTracingCommon.hsh"
+
+[shader("compute")]
+[numthreads(8, 8, 1)]
+void ScreenSpaceShadowsStochasticCS(uint3 groupID : SV_GroupID, uint3 groupThreadID : SV_GroupThreadID)
+{
+    // float3 shadowRayOrigin = worldSpacePosition;
+    // float3 shadowRayDirection = -normalize(frameShaderParameters.atmosphericLightDirection);
+    // float shadowRayLength = 0.1f;
+
+    // if (shadowRayLength > 0.0f)
+    // {
+    //     float screenSpaceShadow = CastScreenSpaceShadowRay(
+    //         sceneDepthTexture,
+    //         shadowRayOrigin,
+    //         shadowRayDirection,
+    //         shadowRayLength,
+    //         frameShaderParameters.worldToClipMatrix,
+    //         frameShaderParameters.viewToClipMatrix,
+    //         noise);
+
+    //     shadowFactor = screenSpaceShadow * shadowFactor;
+    // }
+}

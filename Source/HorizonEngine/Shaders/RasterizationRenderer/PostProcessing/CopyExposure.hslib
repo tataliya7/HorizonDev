@@ -1,0 +1,18 @@
+#include "../../ShaderCommon.hsh"
+#include "../RasterizationRendererCommon.hsh"
+#include "PostProcessingCommon.hsh"
+
+SHADER_CONSTANTS_STRUCT_BEGIN();
+SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_SRV(0, AutoExposureBufferSRV);
+SHADER_CONSTANTS_TEXTURE_2D_UAV(1, float, ExposureTextureUAV);
+SHADER_CONSTANTS_STRUCT_END();
+
+[shader("compute")]
+[numthreads(1, 1, 1)]
+void CopyExposureCS(uint3 dispatchThreadID : SV_DispatchThreadID)
+{
+    ByteAddressBuffer autoExposureBuffer = ShaderConstants.GetAutoExposureBufferSRV();
+    RWTexture2D<float> exposureTexture = ShaderConstants.GetExposureTextureUAV();
+
+    exposureTexture[uint2(0, 0)] = autoExposureBuffer.Load<float>(0);
+}

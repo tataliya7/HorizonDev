@@ -1,0 +1,161 @@
+#include "../ShaderCommon.hsh"
+#include "RasterizationRendererCommon.hsh"
+#include "GPUScene.hsh"
+
+SHADER_CONSTANTS_STRUCT_BEGIN();
+SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferSRV);
+SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_SRV(1, GeometryDataBufferSRV);
+SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_SRV(2, GeometryInstanceDataBufferSRV);
+SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_SRV(3, VisibleMeshletEntryBufferSRV);
+SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(4, SceneDepthTextureSRV);
+SHADER_CONSTANTS_TEXTURE_2D_SRV(5, uint, VBuffer0SRV);
+SHADER_CONSTANTS_TEXTURE_2D_UAV(6, float2, MotionVectorTextureUAV);
+SHADER_CONSTANTS_STRUCT_END();
+
+float3 BarycentricInterpolation(in float3 a0, in float3 a1, in float3 a2, in float3 bary)
+{
+    return mad(a0, bary.z, mad(a1, bary.x, a2 * bary.y));
+}
+
+float3 RayTriangleIntersectionBarycentrics3D(float3 rayOrigin, float3 rayDirection, float3 v0, float3 v1, float3 v2, out float t)
+{
+    float3 v0v1 = v1 - v0;
+    float3 v0v2 = v2 - v0;
+    float3 pvec = cross(rayDirection, v0v2);
+    float det = dot(v0v1, pvec);
+    det = det > 0.0 ? max(0.0000001, det) : min(-0.0000001, det);
+    float det_rcp = 1.0 / det;//rcp(det);
+    float3 tvec = rayOrigin - v0;
+    float3 qvec = cross(tvec, v0v1);
+    float u = dot(tvec, pvec) * det_rcp;
+    float v = dot(rayDirection, qvec) * det_rcp;
+    t = dot(v0v2, qvec) * det_rcp;
+    return float3(u, v, 1.0 - u - v);
+}
+
+[shader("compute")]
+[numthreads(8, 8, 1)]
+void MotionVectorsCS(uint3 dispatchThreadID : SV_DispatchThreadID)
+{
+    StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
+    PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
+    ByteAddressBuffer geometryDataBuffer = ShaderConstants.GetGeometryDataBufferSRV();
+    ByteAddressBuffer geometryInstanceDataBuffer = ShaderConstants.GetGeometryInstanceDataBufferSRV();
+    ByteAddressBuffer visibleMeshletEntryBuffer = ShaderConstants.GetVisibleMeshletEntryBufferSRV();
+    Texture2D sceneDepthTexture = ShaderConstants.GetSceneDepthTextureSRV();
+    Texture2D<uint> vbuffer0 = ShaderConstants.GetVBuffer0SRV();
+    RWTexture2D<float2> motionVectorTexture = ShaderConstants.GetMotionVectorTextureUAV();
+
+    uint width = frameShaderParameters.renderWidth;
+    uint height = frameShaderParameters.renderHeight;
+    if (dispatchThreadID.x >= width || dispatchThreadID.y >= height)
+    {
+        return;
+    }
+
+    uint2 pixelCoord = dispatchThreadID.xy;
+    float2 invSize = frameShaderParameters.renderResolution.zw;
+    float2 uv = (pixelCoord + 0.5f) * invSize;
+    float2 jitteredUV = (pixelCoord + 0.5f + frameShaderParameters.cameraJitterOffset) * invSize;
+    float2 motionVectorJitterCancellation = frameShaderParameters.motionVectorJitterCancellation;
+
+    uint packedPrimitiveID = vbuffer0[pixelCoord];
+    float sceneDepth = sceneDepthTexture[pixelCoord].r;
+
+    float4 unprojected = mul(frameShaderParameters.clipToWorldMatrix, float4(ScreenSpaceUVToNDCSpaceXY(uv), sceneDepth, 1.0f));
+    unprojected.xyz /= unprojected.w;
+    float3 cameraRayOrigin = frameShaderParameters.cameraPosition;
+    float3 cameraRayDirection = normalize(unprojected.xyz - cameraRayOrigin);
+
+    float3 previousHitPointWorldPosition;
+
+    [branch]
+    if (packedPrimitiveID != INVALID_VISIBILIY_ID)
+    {
+        uint visibileMeshletID, triangleID;
+        UnpackVisiblePrimitiveID(visibileMeshletID, triangleID, packedPrimitiveID);
+
+        VisibleMeshletEntry visibleMeshletEntry = GetVisibleMeshletEntry(visibleMeshletEntryBuffer, visibileMeshletID);
+        GPUSceneGeometryInstanceData instanceData = GetGPUSceneGeometryInstanceData(geometryInstanceDataBuffer, visibleMeshletEntry.geometryInstanceID);
+        GPUSceneGeometryData geometryData = GetGPUSceneGeometryData(geometryDataBuffer, instanceData.geometryID);
+        GPUSceneMeshletData meshletData = GetGPUSceneMeshletData(geometryData, visibleMeshletEntry.meshletID);
+
+        uint primitiveID = meshletData.triangleOffset + triangleID;
+
+        ByteAddressBuffer indexBuffer = GetByteAddressBuffer(geometryData.indexBuffer);
+        ByteAddressBuffer vertexBuffer0 = GetByteAddressBuffer(geometryData.vertexBuffer0);
+
+        uint index0 = indexBuffer.Load<uint>((primitiveID * 3 + 0) * sizeof(uint));
+        uint index1 = indexBuffer.Load<uint>((primitiveID * 3 + 1) * sizeof(uint));
+        uint index2 = indexBuffer.Load<uint>((primitiveID * 3 + 2) * sizeof(uint));
+
+        float3 vertex0 = vertexBuffer0.Load<float3>(index0 * sizeof(float3));
+        float3 vertex1 = vertexBuffer0.Load<float3>(index1 * sizeof(float3));
+        float3 vertex2 = vertexBuffer0.Load<float3>(index2 * sizeof(float3));
+
+        float4x4 worldTransform = instanceData.localToWorldMatrix;
+        float4x4 previousWorldTransform = instanceData.previousLocalToWorldMatrix;
+
+        float3 worldPosition0 = mul(worldTransform, float4(vertex0, 1.0f)).xyz;
+        float3 worldPosition1 = mul(worldTransform, float4(vertex1, 1.0f)).xyz;
+        float3 worldPosition2 = mul(worldTransform, float4(vertex2, 1.0f)).xyz;
+
+        float t = 0.0f;
+        float3 bary = RayTriangleIntersectionBarycentrics3D(cameraRayOrigin, cameraRayDirection, worldPosition0, worldPosition1, worldPosition2, t);
+
+        float3 previousVertex0 = vertex0;
+        float3 previousVertex1 = vertex1;
+        float3 previousVertex2 = vertex2;
+
+#if 0
+        if (geometry.previousVertexBuffer0 >= 0) // Skinned mesh
+        {
+            ByteAddressBuffer previousVertexBuffer0 = GetByteAddressBuffer(geometry.previousVertexBuffer0);
+
+            previousVertex0 = previousVertexBuffer0.Load<float3>((/*geometry.baseVertex + */index0) * sizeof(float3));
+            previousVertex1 = previousVertexBuffer0.Load<float3>((/*geometry.baseVertex + */index1) * sizeof(float3));
+            previousVertex2 = previousVertexBuffer0.Load<float3>((/*geometry.baseVertex + */index2) * sizeof(float3));
+        }
+#endif
+
+        float3 previousWorldPosition0 = mul(previousWorldTransform, float4(previousVertex0, 1.0f)).xyz;
+        float3 previousWorldPosition1 = mul(previousWorldTransform, float4(previousVertex1, 1.0f)).xyz;
+        float3 previousWorldPosition2 = mul(previousWorldTransform, float4(previousVertex2, 1.0f)).xyz;
+
+        previousHitPointWorldPosition = BarycentricInterpolation(previousWorldPosition0, previousWorldPosition1, previousWorldPosition2, bary);
+
+        // float3 curw = cameraRayOrigin + t * cameraRayDirection;
+        // motionVectorTexture[pixelCoord] = float4(curw, t);
+        // return;
+
+        float2 screenSpacePosition = uv;
+        float4 previousClipSpacePosition = mul(frameShaderParameters.previousWorldToClipMatrix, float4(previousHitPointWorldPosition, 1.0f));
+        float2 previousScreenSpacePosition = NDCSpaceXYToScreenSpaceUV(previousClipSpacePosition.xy / previousClipSpacePosition.w);
+        float2 motionVector = previousScreenSpacePosition - screenSpacePosition;
+        motionVector -= motionVectorJitterCancellation;
+        // if (isnan(motionVector.x) || isnan(motionVector.y))
+        // {
+        //     // motionVector = float2(1.0, 1.0);
+        //     motionVector = 0;
+        // }
+        motionVectorTexture[pixelCoord] = motionVector;
+    }
+    else
+    {
+        float2 screenSpacePosition = uv;
+        float4 clipSpacePosition = float4(ScreenSpaceUVToNDCSpaceXY(uv), 0.0f, 1.0f);
+        float4 previousClipSpacePosition = mul(frameShaderParameters.currentClipToPreviousClipMatrix, clipSpacePosition);
+        float2 previousScreenSpacePosition = NDCSpaceXYToScreenSpaceUV(previousClipSpacePosition.xy / previousClipSpacePosition.w);
+        float2 motionVector = previousScreenSpacePosition - screenSpacePosition;
+        //motionVector -= motionVectorJitterCancellation;
+
+        motionVectorTexture[pixelCoord] = motionVector;
+    }
+
+    float linearDepth = ComputeCameraSpaceDepth(sceneDepth, frameShaderParameters.nearClippingPlane, frameShaderParameters.farClippingPlane);
+    if (linearDepth < 10)
+    {
+        //motionVectorTexture[pixelCoord] = float2(5 * frameShaderParameters.renderResolution.z, 0);
+        //motionVectorTexture[pixelCoord] = float2(0, 5*frameShaderParameters.renderResolution.w);
+    }
+}

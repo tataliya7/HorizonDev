@@ -1,0 +1,24 @@
+#include "../../ShaderCommon.hsh"
+#include "../RasterizationRendererCommon.hsh"
+#include "SurfelGICommon.hsh"
+
+BIND_BYTE_ADDRESS_BUFFER_UAV(0, SurfelGICellHeaderBuffer);
+
+[shader("compute")]
+[numthreads(SurfelGIIndirectDispatchGroupThreadCount, 1, 1)]
+void SurfelGIGridResetCS(uint3 dispatchThreadID : SV_DispatchThreadID)
+{
+    uint cellIndex = dispatchThreadID.x;
+    if (cellIndex >= SurfelGIUniformGridCellCount)
+    {
+        return;
+    }
+
+    RWByteAddressBuffer cellHeaderBuffer = GetSurfelGICellHeaderBufferUAV();
+
+    CellHeader header;
+    header.offset = 0;
+    header.capacity = 0;
+
+    cellHeaderBuffer.Store<CellHeader>(cellIndex * sizeof(CellHeader), header);
+}

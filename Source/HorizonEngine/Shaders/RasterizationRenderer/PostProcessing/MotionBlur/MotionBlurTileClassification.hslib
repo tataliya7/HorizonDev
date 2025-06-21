@@ -1,0 +1,149 @@
+/**
+ * Motion Blur
+ *
+ * References
+ * - Morgan McGuire et al. 2012. A reconstruction filter for plausible motion blur.
+ * - Jean-Philippe Guertin et al. 2013. A fast and stable feature-aware motion blur filter.
+ * - Jorge Jimenez. 2014. Next Generation Post Processing in Call of Duty: Advanced Warfare.
+ */
+
+#include "../../../ShaderCommon.hsh"
+#include "../../RasterizationRendererCommon.hsh"
+#include "../PostProcessingCommon.hsh"
+#include "MotionBlurCommon.hsh"
+
+#define MOTION_BLUR_TILE_CLASSIFICATION_PASS_THREAD_COUNT_PER_GROUP (MOTION_BLUR_TILE_SIZE * MOTION_BLUR_TILE_SIZE)
+
+#if MOTION_BLUR_TILE_CLASSIFICATION_PASS_THREAD_COUNT_PER_GROUP > 256 || MOTION_BLUR_TILE_CLASSIFICATION_PASS_THREAD_COUNT_PER_GROUP < 64
+#error MOTION_BLUR_TILE_CLASSIFICATION_PASS_THREAD_COUNT_PER_GROUP is invalid.
+#endif
+
+SHADER_CONSTANTS_STRUCT_BEGIN();
+SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferSRV);
+SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(1, DepthTextureSRV);
+SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(2, VelocityTextureSRV);
+SHADER_CONSTANTS_TEXTURE_2D_UAV(3, float4, VelocityRangeTextureUAV);
+SHADER_CONSTANTS_TEXTURE_2D_UAV(4, float2, VelocityAndDepthTextureUAV);
+SHADER_CONSTANTS_SCALAR(5, uint, MaxPixelCoordX);
+SHADER_CONSTANTS_SCALAR(6, uint, MaxPixelCoordY);
+SHADER_CONSTANTS_STRUCT_END();
+
+float4 CombineVelocityRange(float4 r0, float4 r1)
+{
+    float2 minLengthVelocityVector = r0.x < r1.x ? r0.xy : r1.xy;
+    float2 maxLengthVelocityVector = r0.z > r1.z ? r0.zw : r1.zw;
+    return float4(minLengthVelocityVector, maxLengthVelocityVector);
+}
+
+groupshared float4 SharedTileData[MOTION_BLUR_TILE_CLASSIFICATION_PASS_THREAD_COUNT_PER_GROUP];
+
+[shader("compute")]
+[numthreads(MOTION_BLUR_TILE_SIZE, MOTION_BLUR_TILE_SIZE, 1)]
+void MotionBlurTileClassificationCS(uint3 dispatchThreadID : SV_DispatchThreadID, uint3 groupID : SV_GroupID, uint groupIndex : SV_GroupIndex)
+{
+    StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
+    PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
+    Texture2D depthTexture = ShaderConstants.GetDepthTextureSRV();
+    Texture2D velocityTexture = ShaderConstants.GetVelocityTextureSRV();
+    RWTexture2D<float4> velocityRangeTexture = ShaderConstants.GetVelocityRangeTextureUAV();
+    RWTexture2D<float2> velocityAndDepthTexture = ShaderConstants.GetVelocityAndDepthTextureUAV();
+
+    const uint2 pixelCoord = min(dispatchThreadID.xy, uint2(ShaderConstants.GetMaxPixelCoordX(), ShaderConstants.GetMaxPixelCoordY()));
+
+    float depth = depthTexture[pixelCoord].x;
+    float2 velocity = velocityTexture[pixelCoord].xy;
+
+    float2 velocityScale = frameShaderParameters.motionVectorScale * frameShaderParameters.motionBlurIntensity;
+
+    velocity *= velocityScale;
+
+    velocity = MotionBlurCartesianToPolar(velocity);
+
+    if (any(isnan(velocity)))
+    {
+        velocity = float2(0.0f, 0.0f);
+    }
+
+    velocity.x = min(velocity.x, frameShaderParameters.motionBlurMaxVelocityLengthInPixels);
+
+    float4 velocityRange = float4(velocity, velocity);
+
+    // Store the velocity range to LDS.
+    SharedTileData[groupIndex] = velocityRange;
+
+    GroupMemoryBarrierWithGroupSync();
+
+#if MOTION_BLUR_TILE_CLASSIFICATION_PASS_THREAD_COUNT_PER_GROUP > 128
+    if (groupIndex < 128)
+    {
+        SharedTileData[groupIndex] = CombineVelocityRange(SharedTileData[groupIndex], SharedTileData[groupIndex + 128]);
+    }
+#if MIN_WAVE_SIZE_SUPPORTED < 128
+    GroupMemoryBarrierWithGroupSync();
+#endif
+#endif
+
+#if MOTION_BLUR_TILE_CLASSIFICATION_PASS_THREAD_COUNT_PER_GROUP > 64
+    if (groupIndex < 64)
+    {
+        SharedTileData[groupIndex] = CombineVelocityRange(SharedTileData[groupIndex], SharedTileData[groupIndex + 64]);
+    }
+#if MIN_WAVE_SIZE_SUPPORTED < 64
+    GroupMemoryBarrierWithGroupSync();
+#endif
+#endif
+
+    if (groupIndex < 32)
+    {
+        SharedTileData[groupIndex] = CombineVelocityRange(SharedTileData[groupIndex], SharedTileData[groupIndex + 32]);
+    }
+#if MIN_WAVE_SIZE_SUPPORTED < 32
+    GroupMemoryBarrierWithGroupSync();
+#endif
+
+    if (groupIndex < 16)
+    {
+        SharedTileData[groupIndex] = CombineVelocityRange(SharedTileData[groupIndex], SharedTileData[groupIndex + 16]);
+    }
+#if MIN_WAVE_SIZE_SUPPORTED < 16
+    GroupMemoryBarrierWithGroupSync();
+#endif
+
+    if (groupIndex < 8)
+    {
+        SharedTileData[groupIndex] = CombineVelocityRange(SharedTileData[groupIndex], SharedTileData[groupIndex + 8]);
+    }
+#if MIN_WAVE_SIZE_SUPPORTED < 8
+    GroupMemoryBarrierWithGroupSync();
+#endif
+
+    if (groupIndex < 4)
+    {
+        SharedTileData[groupIndex] = CombineVelocityRange(SharedTileData[groupIndex], SharedTileData[groupIndex + 4]);
+    }
+
+    if (groupIndex < 2)
+    {
+        SharedTileData[groupIndex] = CombineVelocityRange(SharedTileData[groupIndex], SharedTileData[groupIndex + 2]);
+    }
+
+    if (groupIndex < 1)
+    {
+        SharedTileData[groupIndex] = CombineVelocityRange(SharedTileData[groupIndex], SharedTileData[groupIndex + 1]);
+    }
+
+    velocityRange = SharedTileData[groupIndex];
+
+    if (groupIndex == 0)
+    {
+        uint2 tileID = groupID.xy;
+        velocityRangeTexture[tileID] = float4(MotionBlurPolarToCartesian(velocityRange.xy), MotionBlurPolarToCartesian(velocityRange.zw));
+    }
+
+    float linearDepth = ComputeCameraSpaceDepth(depth, frameShaderParameters.nearClippingPlane, frameShaderParameters.farClippingPlane);
+
+    float2 encodedVelocityAndDepth;
+    MotionBlurEncodeVelocityAndDepth(encodedVelocityAndDepth, velocity, linearDepth);
+
+    velocityAndDepthTexture[pixelCoord] = encodedVelocityAndDepth;
+}

@@ -1,0 +1,51 @@
+#include "../../ShaderCommon.hsh"
+#include "../RasterizationRendererCommon.hsh"
+#include "VirtualShadowMapCommon.hsh"
+
+SHADER_CONSTANTS_STRUCT_BEGIN();
+SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, VirtualShadowMapShaderParameters, VirtualShadowMapShaderParameterBufferSRV);
+SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_SRV(1, VirtualShadowMapPhysicalPageDataBufferSRV);
+SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_UAV(2, VirtualShadowMapIndirectArgumentBufferUAV);
+SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_UAV(3, VirtualShadowMapActivePhysicalPageIndexBufferUAV);
+SHADER_CONSTANTS_STRUCT_END();
+
+[shader("compute")]
+[numthreads(64, 1, 1)]
+void VirtualShadowMapPhysicalMemoryAllocationCS(uint3 dispatchThreadID : SV_DispatchThreadID)
+{
+    StructuredBuffer<VirtualShadowMapShaderParameters> virtualShadowMapShaderParameterBuffer = ShaderConstants.GetVirtualShadowMapShaderParameterBufferSRV();
+    ByteAddressBuffer virtualShadowMapPhysicalPageDataBuffer = ShaderConstants.GetVirtualShadowMapPhysicalPageDataBufferSRV();
+    RWByteAddressBuffer virtualShadowMapIndirectArgumentBuffer = ShaderConstants.GetVirtualShadowMapIndirectArgumentBufferUAV();
+    RWByteAddressBuffer virtualShadowMapActivePhysicalPageIndexBuffer = ShaderConstants.GetVirtualShadowMapActivePhysicalPageIndexBufferUAV();
+    VirtualShadowMapShaderParameters virtualShadowMapShaderParameters = virtualShadowMapShaderParameterBuffer[0];
+
+    uint physicalPageIndex = dispatchThreadID.x;
+
+    if (physicalPageIndex >= virtualShadowMapShaderParameters.physicalPageCount)
+    {
+        return;
+    }
+
+    VirtualShadowMapPhysicalPageData pageData = virtualShadowMapPhysicalPageDataBuffer.Load<VirtualShadowMapPhysicalPageData>(physicalPageIndex * sizeof(VirtualShadowMapPhysicalPageData));
+
+    bool used = (pageData.flags & VIRTUAL_SHADOW_MAP_PHYSICAL_PAGE_DATA_FLAG_BIT_USED) != 0;
+    if (used)
+    {
+    #if 1
+        uint appendCountAllLanes = WaveActiveCountBits(true);
+
+        uint appendOffsetCurrentWave = 0;
+        if (WaveIsFirstLane())
+        {
+            virtualShadowMapIndirectArgumentBuffer.InterlockedAdd(0, appendCountAllLanes * 32, appendOffsetCurrentWave);
+        }
+
+        uint appendOffset = WaveReadLaneFirst(appendOffsetCurrentWave) / 32 + WavePrefixCountBits(true);
+    #else
+        uint appendOffsetTemp = 0;
+        virtualShadowMapIndirectArgumentBuffer.InterlockedAdd(0, 32, appendOffsetTemp);
+        uint appendOffset = appendOffsetTemp / 32;
+    #endif
+        virtualShadowMapActivePhysicalPageIndexBuffer.Store<uint>(appendOffset * sizeof(uint), physicalPageIndex);
+    }
+}

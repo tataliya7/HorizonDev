@@ -265,8 +265,8 @@ namespace Horizon
         SceneViewDebugVisualizationMode currentDebugVisualizationMode;
         EditorCamera editorCamera;
         Point2D currentMousePosition;
-        RealTimeRenderer* renderer;
-        RealTimeRenderer* previewRenderer;
+        RasterizationRenderer* renderer;
+        RasterizationRenderer* previewRenderer;
         RenderGraphPersistentTexture* targetTexture;
 
         uint32 previewTextureWidth = 512;

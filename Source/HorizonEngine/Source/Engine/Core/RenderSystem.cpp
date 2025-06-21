@@ -106,12 +106,12 @@ namespace Horizon
         renderBackend->Tick();
     }
 
-    RealTimeRenderer* RenderSystem::CreateRenderer()
+    RasterizationRenderer* RenderSystem::CreateRenderer()
     {
-        return new RealTimeRenderer(renderBackend, renderGraphResourcePool, shaderLibrary, rendererDefaultResources);
+        return new RasterizationRenderer(renderBackend, renderGraphResourcePool, shaderLibrary, rendererDefaultResources);
     }
 
-    void RenderSystem::RenderSceneView(RealTimeRenderer* renderer, SceneView* sceneView)
+    void RenderSystem::RenderSceneView(RasterizationRenderer* renderer, SceneView* sceneView)
     {
         RenderBackendCommandList* commandList = new RenderBackendCommandList(GArena);
 

@@ -1,0 +1,33 @@
+#include "../../ShaderCommon.hsh"
+#include "../RasterizationRendererCommon.hsh"
+
+SHADER_CONSTANTS_STRUCT_BEGIN();
+SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferSRV);
+SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(1, CascadedShadowMapDebugVisualizationTextureSRV);
+SHADER_CONSTANTS_TEXTURE_2D_UAV(2, float4, OutputTextureUAV);
+SHADER_CONSTANTS_STRUCT_END();
+
+[shader("compute")]
+[numthreads(8, 8, 1)]
+void VisualizeCascadedShadowMapCS(uint3 dispatchThreadID : SV_DispatchThreadID)
+{
+    StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
+    PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
+    Texture2D cascadedShadowMapDebugVisualizationTextureSRV = ShaderConstants.GetCascadedShadowMapDebugVisualizationTextureSRV();
+    RWTexture2D<float4> outputTexture = ShaderConstants.GetOutputTextureUAV();
+
+    uint2 pixelCoord = dispatchThreadID.xy;
+
+    uint width, height;
+    outputTexture.GetDimensions(width, height);
+    if (pixelCoord.x >= width || pixelCoord.y >= height)
+    {
+        return;
+    }
+
+    float2 uv = (pixelCoord + 0.5f) * float2(1.0f / width, 1.0f / height);
+
+    float4 outputColor = cascadedShadowMapDebugVisualizationTextureSRV.SampleLevel(GlobalSamplerPointClamp, uv, 0);
+
+    outputTexture[pixelCoord] = outputColor;
+}

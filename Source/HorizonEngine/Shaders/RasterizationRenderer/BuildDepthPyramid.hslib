@@ -1,0 +1,43 @@
+#include "../ShaderCommon.hsh"
+#include "RasterizationRendererCommon.hsh"
+
+SHADER_CONSTANTS_STRUCT_BEGIN();
+SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(0, InputTextureSRV);
+SHADER_CONSTANTS_TEXTURE_2D_UAV(1, float, MinDepthPyramidTextureUAV);
+SHADER_CONSTANTS_TEXTURE_2D_UAV(2, float, MaxDepthPyramidTextureUAV);
+SHADER_CONSTANTS_SCALAR(3, float, InverseInputTextureSizeX);
+SHADER_CONSTANTS_SCALAR(4, float, InverseInputTextureSizeY);
+SHADER_CONSTANTS_STRUCT_END();
+
+#define BUILD_DEPTH_PYRAMID_MIN 1
+
+[shader("compute")]
+[numthreads(8, 8, 1)]
+void BuildDepthPyramidCS(uint2 dispatchThreadID : SV_DispatchThreadID, uint groupIndex : SV_GroupIndex)
+{
+    Texture2D inputTexture = ShaderConstants.GetInputTextureSRV();
+
+#if BUILD_DEPTH_PYRAMID_MIN
+    RWTexture2D<float> minDepthPyramidTexture = ShaderConstants.GetMinDepthPyramidTextureUAV();
+#endif
+#if BUILD_DEPTH_PYRAMID_MAX
+    RWTexture2D<float> maxDepthPyramidTexture = ShaderConstants.GetMaxDepthPyramidTextureUAV();
+#endif
+
+    float2 inverseInputTextureSize = float2(ShaderConstants.GetInverseInputTextureSizeX(), ShaderConstants.GetInverseInputTextureSizeY());
+
+    uint2 pixelCoord = dispatchThreadID.xy;
+    float2 inputTextureUV = (pixelCoord + 0.5f) * 2.0f * inverseInputTextureSize - 0.25f * inverseInputTextureSize;
+
+    float4 deviceDepth4 = inputTexture.GatherRed(GlobalSamplerPointClamp, inputTextureUV);
+
+    float minDeviceDepth = min(min(deviceDepth4.x, deviceDepth4.y), min(deviceDepth4.z, deviceDepth4.w));
+    float maxDeviceDepth = max(max(deviceDepth4.x, deviceDepth4.y), max(deviceDepth4.z, deviceDepth4.w));
+
+#if BUILD_DEPTH_PYRAMID_MIN
+    minDepthPyramidTexture[pixelCoord] = minDeviceDepth;
+#endif
+#if BUILD_DEPTH_PYRAMID_MAX
+    maxDepthPyramidTexture[pixelCoord] = maxDeviceDepth;
+#endif
+}

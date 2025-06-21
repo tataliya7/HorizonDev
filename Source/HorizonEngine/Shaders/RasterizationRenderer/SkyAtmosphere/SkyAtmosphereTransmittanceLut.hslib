@@ -1,0 +1,92 @@
+/*-------------------------------------------------------------------------------------
+ * A Scalable and Production Ready Sky and Atmosphere Rendering Technique
+ * Paper: https://sebh.github.io/publications/egsr2020.pdf
+ * Source Code: https://github.com/sebh/UnrealEngineSkyAtmosphere
+ *-------------------------------------------------------------------------------------*/
+
+/*-------------------------------------------------------------------------------------
+ * MIT License
+ *
+ * Copyright (c) 2020 Epic Games, Inc.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ *-------------------------------------------------------------------------------------*/
+
+#include "../../ShaderCommon.hsh"
+#include "../RasterizationRendererCommon.hsh"
+#include "SkyAtmosphereCommon.hsh"
+
+SHADER_CONSTANTS_STRUCT_BEGIN();
+SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferSRV);
+SHADER_CONSTANTS_TEXTURE_2D_UAV(1, float3, TransmittanceLutTextureUAV);
+SHADER_CONSTANTS_STRUCT_END();
+
+[shader("compute")]
+[numthreads(8, 8, 1)]
+void SkyAtmosphereTransmittanceLutCS(uint3 dispatchThreadID : SV_DispatchThreadID)
+{
+    StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
+    PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
+    RWTexture2D<float3> transmittanceLutTexture = ShaderConstants.GetTransmittanceLutTextureUAV();
+
+    SkyAtmosphereShaderParameters skyAtmosphereParameters = GetSkyAtmosphereShaderParameters(frameShaderParameters);
+    float4 transmittanceLutSize = skyAtmosphereParameters.transmittanceLutSize;
+
+    uint2 pixelCoord = dispatchThreadID.xy;
+    float2 uv = (float2(pixelCoord) + 0.5f) * transmittanceLutSize.zw;
+
+    float viewHeight;
+    float viewZenithCosAngle;
+    UvToLutTransmittanceParams(viewHeight, viewZenithCosAngle, skyAtmosphereParameters.bottomRadius, skyAtmosphereParameters.topRadius, uv);
+
+    float3 worldPos = float3(0.0f, 0.0f, viewHeight);
+    float3 worldDir = float3(0.0f, sqrt(1.0f - viewZenithCosAngle * viewZenithCosAngle), viewZenithCosAngle);
+
+    const bool ground = false;
+    const bool variableSampleCount = false;
+    const float transmittanceLutSampleCount = skyAtmosphereParameters.transmittanceLutSampleCount;
+    const float minSampleCount = 0.0f;
+    const float maxSampleCount = 0.0f;
+    const float depthBufferValue = FAR_CLIPPING_PLANE_DEPTH_VALUE;
+    const float4 planetTranslatedWorldCenterAndViewHeight = float4(0.0f, 0.0f, 0.0f, 0.0f);
+    const bool mieRayPhase = false;
+    const float3 lightDirection = float3(0.0f, 0.0f, -1.0f);
+    const float3 lightIlluminance = float3(0.0f, 0.0f, 0.0f);
+
+    SingleScatteringResult result = IntegrateSingleScatteredLuminance(
+        frameShaderParameters,
+        skyAtmosphereParameters,
+        uv,
+        worldPos,
+        worldDir,
+        ground,
+        variableSampleCount,
+        transmittanceLutSampleCount,
+        minSampleCount,
+        maxSampleCount,
+        depthBufferValue,
+        mieRayPhase,
+        lightDirection,
+        lightIlluminance);
+
+    // Opetical depth to transmittance
+    float3 transmittance = exp(-result.opticalDepth);
+
+    transmittanceLutTexture[pixelCoord] = transmittance;
+}

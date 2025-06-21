@@ -1,0 +1,65 @@
+#include "../../ShaderCommon.hsh"
+#include "../../Random.hsh"
+#include "../RasterizationRendererCommon.hsh"
+#include "SubsurfaceScatteringCommon.hsh"
+
+BIND_BUFFER_CBV(0, PerFrameShaderParameters);
+BIND_TEXTURE_2D_SRV(1, SceneColorTexture);
+BIND_TEXTURE_2D_SRV(2, SceneDepthTexture);
+BIND_BYTE_ADDRESS_BUFFER_UAV(3, SubsurfaceScatteringTileCountBuffer);
+BIND_BYTE_ADDRESS_BUFFER_UAV(4, SubsurfaceScatteringTileDataBuffer);
+BIND_TEXTURE_2D_UAV(5, float4, OutputTexture);
+
+[shader("compute")]
+[numthreads(SUBSURFACE_SCATTERING_TILE_SIZE, SUBSURFACE_SCATTERING_TILE_SIZE, 1)]
+void SubsurfaceScatteringGatherTilesCS(uint3 dispatchThreadID : SV_DispatchThreadID, uint3 groupID : SV_GroupID, uint groupIndex : SV_GroupIndex)
+{
+    StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
+    PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
+    Texture2D sceneColorTexture = GetSceneColorTextureSRV();
+    Texture2D sceneDepthTexture = GetSceneDepthTextureSRV();
+    RWByteAddressBuffer tileCountBuffer = GetSubsurfaceScatteringTileCountBufferUAV();
+    RWByteAddressBuffer tileDataBuffer = GetSubsurfaceScatteringTileDataBufferUAV();
+    RWTexture2D<float4> outputTexture = GetOutputTextureUAV();
+
+    uint width = frameShaderParameters.renderWidth;
+    uint height = frameShaderParameters.renderHeight;
+    if (dispatchThreadID.x >= width || dispatchThreadID.y >= height)
+    {
+        return;
+    }
+
+    uint2 pixelCoord = dispatchThreadID.xy;
+    float2 pixelPosition = float2(pixelCoord) + 0.5f;
+    float2 uv = pixelPosition * frameShaderParameters.renderResolution.zw;
+
+    float4 outColor = 0;
+
+    bool hasSubsurfaceProfile = true;
+    if (hasSubsurfaceProfile)
+    {
+        float4 sceneColor = sceneColorTexture.SampleLevel(GlobalSamplerPointClamp, uv, 0);
+        float sceneDepth = sceneDepthTexture.SampleLevel(GlobalSamplerPointClamp, uv, 0).r;
+
+        float diffuseLuminance = sceneColor.a;
+        float luminance = RelativeLuminance(sceneColor.rgb);
+        float ratioOfDiffuse = saturate(diffuseLuminance / luminance);
+        float3 diffuse = sceneColor.rgb * ratioOfDiffuse;
+
+        float linearSceneDepth = LinearDepth01(sceneDepth, frameShaderParameters.nearClippingPlane, frameShaderParameters.farClippingPlane);
+        //float noise = InterleavedGradientNoiseEX(pixelPosition, frameShaderParameters.frameIndexMod8);
+        //float depth = linearSceneDepth + noise * (linearSceneDepth / 1024.0f);
+
+        outColor = float4(diffuse, linearSceneDepth);
+    }
+
+    outputTexture[pixelCoord] = outColor;
+
+    if (groupIndex == 0)
+    {
+        uint tileCount = 0;
+        tileCountBuffer.InterlockedAdd(0, 1, tileCount);
+
+        tileDataBuffer.Store<uint2>(tileCount * sizeof(uint2), groupID.xy);
+    }
+}

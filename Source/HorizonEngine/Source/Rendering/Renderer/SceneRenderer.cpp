@@ -1,6 +1,6 @@
 #include "SceneRenderer.h"
 #include "SceneView.h"
-#include "RealTimeRenderer/RealTimeRendererModule.h"
+#include "RasterizationRenderer/RasterizationRendererModule.h"
 
 namespace Horizon
 {
@@ -30,7 +30,7 @@ namespace Horizon
         }
         else if (renderMode == RenderMode::Rasterization)
         {
-            sceneRenderer = new RealTimeRenderer(sceneView);
+            sceneRenderer = new RasterizationRenderer(sceneView);
         }
 
         return sceneRenderer;

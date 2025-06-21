@@ -1,0 +1,34 @@
+#include "../../ShaderCommon.hsh"
+#include "../RasterizationRendererCommon.hsh"
+#include "PostProcessingCommon.hsh"
+#include "SelectionOutlineCommon.hsh"
+
+BIND_BUFFER_CBV(0, PerFrameShaderParameters);
+// BIND_BYTE_ADDRESS_BUFFER_SRV(1, Geometry, Geometry);
+BIND_BYTE_ADDRESS_BUFFER_SRV(2, VertexBuffer0);
+
+float3 GetVertexPosition(uint vertexIndex)
+{
+    ByteAddressBuffer vertexBuffer0 = GetVertexBuffer0SRV();
+    return vertexBuffer0.Load<float3>(vertexIndex * sizeof(float3));
+}
+
+[shader("vertex")]
+void SelectionOutlineMaskVS(uint vertexIndex : SV_VertexID, out float4 svPosition : SV_Position)
+{
+    // ByteAddressBuffer perFrameDataBuffer = GetPerFrameDataBufferSRV();
+    // PerFrameShaderParameters frameShaderParameters = perFrameDataBuffer.Load<PerFrameShaderParameters>(0);
+    // Geometry geometry = GetGeometry();
+    // float3 vertexPosition = GetVertexPosition(vertexIndex);
+    // float4x4 worldMatrix = GetRWByteAddressBuffer(geometry.transformBuffer).Load<float4x4>(geometry.transformIndex * sizeof(float4x4));
+    // float3 worldPosition = mul(worldMatrix, float4(vertexPosition, 1.0)).xyz;
+    // float4 clipPosition = mul(frameShaderParameters.nonJitteredWorldToClipMatrix, float4(worldPosition, 1.0));
+    // svPosition = clipPosition;
+    svPosition = 0;
+}
+
+[shader("pixel")]
+void SelectionOutlineMaskPS(out float4 output : SV_Target0)
+{
+    output = 1.0f;
+}

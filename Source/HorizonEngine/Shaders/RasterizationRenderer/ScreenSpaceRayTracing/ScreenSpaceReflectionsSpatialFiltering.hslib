@@ -1,0 +1,103 @@
+#include "../ShaderCommon.hsh"
+#include "RasterizationRendererCommon.hsh"
+#include "ScreenSpaceReflectionsCommon.hsh"
+
+BIND_BUFFER_CBV(0, PerFrameShaderParameters);
+BIND_TEXTURE_2D_SRV(1, SceneDepth);
+BIND_TEXTURE_2D_SRV(2, GBuffer1);
+BIND_TEXTURE_2D_SRV(3, ResolveVarianceTexture);
+BIND_TEXTURE_2D_SRV(4, InputTexture);
+BIND_TEXTURE_2D_UAV(5, float4, OutputTexture);
+
+static const float depthThreshold = 10000.0;
+static const float normalThreshold = 1.0;
+static const float varianceEstimateThreshold = 0.015; // Larger variance values use stronger blur
+static const float varianceExitThreshold = 0.005; // Variance needs to be higher than this value to accept blur
+static const uint2 bilateralMinMaxRadius = uint2(0, 2); // Chosen by variance
+#define BILATERAL_SIGMA 0.9
+
+[shader("compute")]
+[numthreads(SSR_THREAD_GROUP_SIZE, SSR_THREAD_GROUP_SIZE, 1)]
+void SSRSpatialFilteringCS(uint3 dispatchThreadID : SV_DispatchThreadID)
+{
+    StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
+    PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
+    Texture2D sceneDepth = GetSceneDepthSRV();
+    Texture2D gbuffer1 = GetGBuffer1SRV();
+    Texture2D inputTexture = GetInputTextureSRV();
+    Texture2D resolveVariance = GetResolveVarianceTextureSRV();
+    RWTexture2D<float4> outputTexture = GetOutputTextureUAV();
+
+    const float2 resolution = float2(frameShaderParameters.renderWidth, frameShaderParameters.renderHeight);
+    const uint2 coord = dispatchThreadID.xy;
+    const float2 uv = (coord + 0.5f) * (1.0 / resolution.x, 1.0 / resolution.y);
+    const float depth = sceneDepth[coord].r;
+    const float roughness = gbuffer1[coord].w;
+    const float linearDepth = ComputeCameraSpaceDepth(depth, frameShaderParameters.nearClippingPlane, frameShaderParameters.farClippingPlane);
+    const float variance = resolveVariance[coord].r;
+
+    if (!NeedReflection(roughness, depth, SSR_ROUGHNESS_THRESHOLD_CHEAP_RAY_TRACING))
+    {
+        outputTexture[coord] = inputTexture[coord];
+        return;
+    }
+
+    float2 direction = float2((0), (1));
+
+    bool strongBlur = variance > varianceEstimateThreshold;
+    float radius = strongBlur ? bilateralMinMaxRadius.y : bilateralMinMaxRadius.x;
+    radius = lerp(0.0, radius, saturate(roughness * 8.0)); // roughness 0.125 is destination
+
+    float sigma = radius * BILATERAL_SIGMA;
+    int effectiveRadius = min(sigma * 2.0, radius);
+
+    float4 result = inputTexture[coord];
+    if (variance > varianceExitThreshold && effectiveRadius > 0)
+    {
+        float3 P = ReconstructWorldSpacePositionFromUVZ(uv, depth, frameShaderParameters.clipToWorldMatrix);
+        float3 N = gbuffer1[coord].xyz;
+
+        float4 sum = 0;
+        float weightSum = 0.0f;
+        for (int r = -effectiveRadius; r <= effectiveRadius; r++)
+        {
+            const int2 sampleCoord = coord + (direction * r); // Left to right diameter directionally
+
+            if (sampleCoord.x >= 0 && sampleCoord.y >= 0 && (sampleCoord.x < int(resolution.x) && (sampleCoord.x < int(resolution.y))))
+            {
+                const float sampleDepth = sceneDepth[sampleCoord].r;
+                const float4 sampleColor = inputTexture[sampleCoord];
+
+                const float3 sampleN =  gbuffer1[sampleCoord].xyz;
+                const float sampleRoughness = gbuffer1[sampleCoord].w;
+
+                float2 sampleUV = (sampleCoord + 0.5) * (1.0 / resolution.x, 1.0 / resolution.y);
+                float3 sampleP = ReconstructWorldSpacePositionFromUVZ(sampleUV, sampleDepth, frameShaderParameters.clipToWorldMatrix);
+
+                // Don't let invalid roughness samples interfere
+                if (NeedReflection(sampleRoughness, sampleDepth, SSR_ROUGHNESS_THRESHOLD_CHEAP_RAY_TRACING))
+                {
+                    float3 dq = P - sampleP;
+                    float planeError = max(abs(dot(dq, sampleN)), abs(dot(dq, N)));
+                    float relativeDepthDifference = planeError / linearDepth;
+                    float bilateralDepthWeight = exp(-(relativeDepthDifference * relativeDepthDifference) * depthThreshold);
+
+                    float normalError = pow(saturate(dot(sampleN, N)), 4.0);
+                    float bilateralNormalWeight = saturate(1.0 - (1.0 - normalError) * normalThreshold);
+
+                    float bilateralWeight = bilateralDepthWeight * bilateralNormalWeight;
+
+                    float gaussian = exp(-((r / sigma) * (r / sigma)));
+                    float weight = (r == 0) ? 1.0 : gaussian * bilateralWeight; // Skip center gaussian peak
+
+                    sum += sampleColor * weight;
+                    weightSum += weight;
+                }
+            }
+        }
+        sum /= weightSum;
+        result = sum;
+    }
+
+    outputTexture[coord] = result;
+}

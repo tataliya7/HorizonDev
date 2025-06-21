@@ -1,0 +1,77 @@
+#include "../../ShaderCommon.hsh"
+#include "../RasterizationRendererCommon.hsh"
+#include "../GPUScene.hsh"
+
+SHADER_CONSTANTS_STRUCT_BEGIN();
+SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferSRV);
+SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_SRV(1, GeometryDataBufferSRV);
+SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_SRV(2, GeometryInstanceDataBufferSRV);
+SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_SRV(3, VisibleMeshletEntryBufferSRV);
+SHADER_CONSTANTS_TEXTURE_2D_SRV(4, uint, VBuffer0SRV);
+SHADER_CONSTANTS_TEXTURE_2D_UAV(5, float4, OutputTextureUAV);
+SHADER_CONSTANTS_SCALAR(6, uint, DebugVisualizationMode);
+SHADER_CONSTANTS_STRUCT_END();
+
+[shader("compute")]
+[numthreads(8, 8, 1)]
+void VirtualGeometryDebugVisualizationCS(uint3 dispatchThreadID : SV_DispatchThreadID)
+{
+    StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
+    PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
+    ByteAddressBuffer geometryDataBuffer = ShaderConstants.GetGeometryDataBufferSRV();
+    ByteAddressBuffer geometryInstanceDataBuffer = ShaderConstants.GetGeometryInstanceDataBufferSRV();
+    ByteAddressBuffer visibleMeshletEntryBuffer = ShaderConstants.GetVisibleMeshletEntryBufferSRV();
+    Texture2D<uint> vbuffer0 = ShaderConstants.GetVBuffer0SRV();
+    RWTexture2D<float4> outputTexture = ShaderConstants.GetOutputTextureUAV();
+
+    uint2 pixelCoord = dispatchThreadID.xy;
+
+    uint width, height;
+    outputTexture.GetDimensions(width, height);
+    if (pixelCoord.x >= width || pixelCoord.y >= height)
+    {
+        return;
+    }
+
+    float2 uv = (pixelCoord + 0.5f) * float2(1.0f / width, 1.0f / height);
+
+    uint2 vBufferTextureCoord = uint2(uv * frameShaderParameters.renderResolution.xy);
+    uint packedPrimitiveID = vbuffer0[vBufferTextureCoord];
+
+    if (packedPrimitiveID == INVALID_VISIBILIY_ID)
+    {
+        outputTexture[pixelCoord] = float4(0, 0, 0, 1);
+        return;
+    }
+
+    uint visibileMeshletID, triangleID;
+    UnpackVisiblePrimitiveID(visibileMeshletID, triangleID, packedPrimitiveID);
+
+    VisibleMeshletEntry visibleMeshletEntry = GetVisibleMeshletEntry(visibleMeshletEntryBuffer, visibileMeshletID);
+    GPUSceneGeometryInstanceData instanceData = GetGPUSceneGeometryInstanceData(geometryInstanceDataBuffer, visibleMeshletEntry.geometryInstanceID);
+    GPUSceneGeometryData geometryData = GetGPUSceneGeometryData(geometryDataBuffer, instanceData.geometryID);
+    GPUSceneMeshletData meshletData = GetGPUSceneMeshletData(geometryData, visibleMeshletEntry.meshletID);
+
+    uint primitiveID = meshletData.triangleOffset + triangleID;
+
+    float3 color = float3(0.0f, 0.0f, 0.0f);
+
+    uint debugVisualizationMode = ShaderConstants.GetDebugVisualizationMode();
+    if (debugVisualizationMode == 1)
+    {
+        color = UintToColor(visibleMeshletEntry.meshletID + 1); // +1 to avoid zero
+    }
+    else if (debugVisualizationMode == 2)
+    {
+        color = UintToColor(primitiveID + 1); // +1 to avoid zero
+    }
+    else if (debugVisualizationMode == 3)
+    {
+        ByteAddressBuffer materialIndexBuffer = GetByteAddressBufferNonUniform(geometryData.materialIndexBuffer);
+        uint materialIndex = materialIndexBuffer.Load<uint>(primitiveID * sizeof(uint));
+
+        color = UintToColor(materialIndex + 1); // +1 to avoid zero
+    }
+
+    outputTexture[pixelCoord] = float4(color, 1.0f);
+}

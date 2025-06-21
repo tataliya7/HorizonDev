@@ -1,8 +1,8 @@
-#include "Rendering/Renderer/RealTimeRenderer/RealTimeRenderer.h"
+#include "Rendering/Renderer/RasterizationRenderer/RasterizationRenderer.h"
 
 namespace Horizon
 {
-    void RealTimeRenderer::DispatchPathTracing(RenderGraph& renderGraph, const SceneView& view)
+    void RasterizationRenderer::DispatchPathTracing(RenderGraph& renderGraph, const SceneView& view)
     {
         static RenderBackendRayTracingPipelineStateHandle pathTracingPipelineState;
         static RenderBackendBufferHandle pathTracingSBT;
@@ -50,7 +50,7 @@ namespace Horizon
         //RenderGraphTextureHandle depthTexture = renderGraph.ImportExternalTexture(depthTexture, "PathTracingDepthTexture");
         //RenderGraphTextureHandle normalTexture = renderGraph.ImportExternalTexture(normalTexture, "PathTracingNormalTexture");
 
-        RealTimeRendererSceneTextures& sceneTextures = renderGraph.blackboard.Get<RealTimeRendererSceneTextures>();
+        RasterizationRendererSceneTextures& sceneTextures = renderGraph.blackboard.Get<RasterizationRendererSceneTextures>();
 
         RenderGraphTextureDesc colorTextureDesc = renderGraph.GetTextureDesc(sceneTextures.sceneColorTexture);
         RenderGraphTextureHandle colorTexture = renderGraph.CreateTexture(colorTextureDesc, "PathTracingColorTexture");
