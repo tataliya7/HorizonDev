@@ -18,7 +18,7 @@ namespace Horizon::USDImporter
 
         RenderSystem* renderSystem = HorizonEngine::GetInstance()->GetSubsystem<RenderSystem>();
         RenderBackend* renderBackend = renderSystem->GetRenderBackend();
-        ShaderLibrary* shaderLibrary = renderSystem->GetShaderLibrary();
+        ShaderCollection* shaderLibrary = renderSystem->GetShaderLibrary();
 
         std::string materialName = usdShadeMaterial.GetPrim().GetName().GetString();
 

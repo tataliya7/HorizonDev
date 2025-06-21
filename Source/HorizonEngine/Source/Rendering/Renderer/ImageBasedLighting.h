@@ -4,7 +4,7 @@
 
 namespace Horizon
 {
-    class ShaderLibrary;
+    class ShaderCollection;
 
     extern uint32 GEnvironmentBrdfLutTextureSize;
 
@@ -12,14 +12,14 @@ namespace Horizon
 
     extern void RenderEnvironmentBrdfLut(
         RenderBackend* renderBackend,
-        ShaderLibrary* shaderLibrary,
+        ShaderCollection* shaderLibrary,
         RenderBackendCommandList& commandList,
         RenderBackendTextureHandle environmentBrdfLutTexture);
 
     // TODO: move to other place
     extern void ConvertLatLongToCubemap(
         RenderBackend* renderBackend,
-        ShaderLibrary* shaderLibrary,
+        ShaderCollection* shaderLibrary,
         RenderBackendCommandList& commandList,
         RenderBackendTextureHandle latLongTexture,
         RenderBackendTextureHandle cubemapTexture,
@@ -27,14 +27,14 @@ namespace Horizon
 
     extern void GenerateCubemapMips(
         RenderBackend* renderBackend,
-        ShaderLibrary* shaderLibrary,
+        ShaderCollection* shaderLibrary,
         RenderBackendCommandList& commandList,
         RenderBackendTextureHandle cubemapTexture,
         uint32 mipLevelCount);
 
     extern void PrecomputeEnvironmentMaps(
         RenderBackend* renderBackend,
-        ShaderLibrary* shaderLibrary,
+        ShaderCollection* shaderLibrary,
         RenderBackendCommandList& commandList,
         uint32 cubemapSize,
         RenderBackendTextureHandle environmentMapTexture,

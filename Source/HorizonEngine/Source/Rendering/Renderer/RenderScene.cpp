@@ -4,7 +4,7 @@
 
 
 #include "ImageBasedLighting.h"
-#include "ShaderLibrary.h"
+#include "ShaderCollection.h"
 #include "Engine/Core/RenderSystem.h"
 
 namespace Horizon
@@ -72,7 +72,7 @@ namespace Horizon
 
     }
 
-    RenderScene::RenderScene(RenderBackend* renderBackend, ShaderLibrary* shaderLibrary)
+    RenderScene::RenderScene(RenderBackend* renderBackend, ShaderCollection* shaderLibrary)
         : renderBackend(renderBackend)
         , shaderLibrary(shaderLibrary)
         , atmosphericLight(nullptr)

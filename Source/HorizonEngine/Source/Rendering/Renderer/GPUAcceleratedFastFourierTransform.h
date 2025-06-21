@@ -1,12 +1,12 @@
 #pragma once
 
 #include "RendererCommon.h"
-#include "ShaderLibrary.h"
+#include "ShaderCollection.h"
 
 namespace Horizon::GPUFFT
 {
     void DispatchSharedMemoryTwoForOneRealFFTCS(
-        ShaderLibrary* shaderLibrary,
+        ShaderCollection* shaderLibrary,
         RenderGraph& renderGraph,
         bool isHorizontal,
         uint32 signalLength,
@@ -14,7 +14,7 @@ namespace Horizon::GPUFFT
         RenderGraphTextureHandle dstTexture, const Rect& dstRect);
 
     void DispatchSharedMemoryTwoForOneRealIFFTCS(
-        ShaderLibrary* shaderLibrary,
+        ShaderCollection* shaderLibrary,
         RenderGraph& renderGraph,
         bool isHorizontal,
         uint32 signalLength,
@@ -22,7 +22,7 @@ namespace Horizon::GPUFFT
         RenderGraphTextureHandle dstTexture, const Rect& dstRect);
 
     void DispatchSharedMemoryComplexFFTCS(
-        ShaderLibrary* shaderLibrary,
+        ShaderCollection* shaderLibrary,
         RenderGraph& renderGraph,
         bool isHorizontal,
         uint32 signalLength,
@@ -30,7 +30,7 @@ namespace Horizon::GPUFFT
         RenderGraphTextureHandle dstTexture, const Rect& dstRect);
 
     void DispatchSharedMemoryComplexIFFTCS(
-        ShaderLibrary* shaderLibrary,
+        ShaderCollection* shaderLibrary,
         RenderGraph& renderGraph,
         bool isHorizontal,
         uint32 signalLength,
@@ -38,7 +38,7 @@ namespace Horizon::GPUFFT
         RenderGraphTextureHandle dstTexture, const Rect& dstRect);
 
     void DispatchSharedMemoryFFTConvolutionCS(
-        ShaderLibrary* shaderLibrary,
+        ShaderCollection* shaderLibrary,
         RenderGraph& renderGraph,
         bool isHorizontal,
         uint32 signalLength,

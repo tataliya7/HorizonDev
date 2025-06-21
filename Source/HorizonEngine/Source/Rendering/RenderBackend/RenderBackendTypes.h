@@ -1065,7 +1065,7 @@ namespace Horizon
         UINT8,
     };
 
-    struct RenderBackendRasterizationState
+    struct RenderBackendRasterizationStateDescription
     {
         RenderBackendRasterizationCullMode cullMode = RenderBackendRasterizationCullMode::None;
         RenderBackendRasterizationFillMode fillMode = RenderBackendRasterizationFillMode::Solid;
@@ -1077,7 +1077,7 @@ namespace Horizon
         float lineWidth                             = 1.0f;
     };
 
-    struct RenderBackendDepthStencilState
+    struct RenderBackendDepthStencilStateDescription
     {
         bool depthTestEnable                                   = false;
         bool depthWriteEnable                                  = false;
@@ -1110,7 +1110,7 @@ namespace Horizon
         RenderBackendColorComponentFlags writeMask   = RenderBackendColorComponentFlags::RGBA;
     };
 
-    struct RenderBackendColorBlendState
+    struct RenderBackendColorBlendStateDescription
     {
         RenderBackendColorBlendAttachmentState targetBlends[RenderBackendMaxRenderTargetCount];
     };
@@ -1245,14 +1245,14 @@ namespace Horizon
         RenderBackendTimingQueryHeapDesc(uint32 maxRegions) : maxRegions(maxRegions) {}
     };
 
-    struct RenderBackendGraphicsPipelineState
+    struct RenderBackendGraphicsPipelineStateDescription
     {
-        RenderBackendRasterizationState rasterizationState;
-        RenderBackendDepthStencilState depthStencilState;
-        RenderBackendColorBlendState colorBlendState;
+        RenderBackendRasterizationStateDescription rasterizationState;
+        RenderBackendDepthStencilStateDescription depthStencilState;
+        RenderBackendColorBlendStateDescription colorBlendState;
     };
 
-    struct RenderBackendShaderConstants
+    struct RenderBackendPushConstantValues
     {
         enum class Type : int8
         {

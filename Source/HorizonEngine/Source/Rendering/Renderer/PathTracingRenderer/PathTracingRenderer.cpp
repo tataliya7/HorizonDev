@@ -17,10 +17,10 @@ namespace Horizon
                 .maxRayRecursionDepth = 8,
             };
 
-            pathTracingPipelineStateDesc.shaders.push_back(shaderLibrary->GetShader(ShaderID::PathTracingRayGen));
-            pathTracingPipelineStateDesc.shaders.push_back(shaderLibrary->GetShader(ShaderID::PathTracingDefaultMiss));
-            pathTracingPipelineStateDesc.shaders.push_back(shaderLibrary->GetShader(ShaderID::PathTracingShadowRayMiss));
-            pathTracingPipelineStateDesc.shaders.push_back(shaderLibrary->GetShader(ShaderID::PathTracingDefaultOpaqueClosestHit));
+            pathTracingPipelineStateDesc.shaders.push_back(shaderCollection->GetShader(ShaderID::PathTracingRayGen));
+            pathTracingPipelineStateDesc.shaders.push_back(shaderCollection->GetShader(ShaderID::PathTracingDefaultMiss));
+            pathTracingPipelineStateDesc.shaders.push_back(shaderCollection->GetShader(ShaderID::PathTracingShadowRayMiss));
+            pathTracingPipelineStateDesc.shaders.push_back(shaderCollection->GetShader(ShaderID::PathTracingDefaultOpaqueClosestHit));
 
             pathTracingPipelineStateDesc.shaderGroupDescs.resize(4);
             pathTracingPipelineStateDesc.shaderGroupDescs[0] = RenderBackendRayTracingShaderGroupDesc::CreateRayGen(0);
@@ -73,11 +73,11 @@ namespace Horizon
                 {
                     colorTexture = builder.WriteTexture(colorTexture, RenderBackendResourceState::UnorderedAccess);
 
-                    return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
+                    return [=](RenderBackendCommandList& commandList, const RenderGraphResourceRegistry& resourceRegistry)
                     {
                         RenderBackendTextureClearValue clearValue = RenderBackendTextureClearValue::Black;
 
-                        RenderBackendTextureUAVDesc sceneColorTextureUAV = RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(colorTexture), 0);
+                        RenderBackendTextureUAVDesc sceneColorTextureUAV = RenderBackendTextureUAVDesc::Create(resourceRegistry.GetRenderBackendTextureHandle(colorTexture), 0);
                         commandList.ClearTextureUAV(sceneColorTextureUAV, clearValue);
                     };
                 });
@@ -94,7 +94,7 @@ namespace Horizon
                 //RenderGraphTextureHandle normalTexture = builder.WriteTexture(normalTexture, RenderBackendResourceState::UnorderedAccess);
                 sceneTextures.sceneColorTexture = colorTexture;
 
-                return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
+                return [=](RenderBackendCommandList& commandList, const RenderGraphResourceRegistry& resourceRegistry)
                 {
                     uint32 dispatchWidth = renderResolution.width;
                     uint32 dispatchHeight = renderResolution.height;
@@ -102,16 +102,16 @@ namespace Horizon
 
                     RayTracingScene* rayTracingScene = view.scene->GetRayTracingScene();
 
-                    RenderBackendShaderConstants shaderConstants = {};
+                    RenderBackendPushConstantValues shaderConstants = {};
                     shaderConstants.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
                     shaderConstants.BindBufferSRV(1, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(gpuScene->geometryDataBuffer));
                     shaderConstants.BindBufferSRV(2, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(gpuScene->geometryInstanceDataBuffer));
                     shaderConstants.BindAccelerationStructure(3, renderBackend->GetAccelerationStructureSRVBindlessResourceDescriptorIndex(rayTracingScene->GetTLAS()));
                     shaderConstants.BindBufferSRV(4, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(view.scene->distantLightDataBuffer));
-                    shaderConstants.BindTextureUAV(5, registry.GetTextureSRVBindlessResourceDescriptorIndex(environmentMapTexture));
-                    shaderConstants.BindTextureUAV(6, registry.GetTextureUAVBindlessResourceDescriptorIndex(colorTexture, 0));
-                    shaderConstants.BindTextureUAV(7, registry.GetTextureUAVBindlessResourceDescriptorIndex(depthTexture, 0));
-                    //shaderConstants.BindTextureUAV(8, registry.GetTextureUAVBindlessResourceDescriptorIndex(normalTexture, 0));
+                    shaderConstants.BindTextureUAV(5, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(environmentMapTexture));
+                    shaderConstants.BindTextureUAV(6, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndex(colorTexture, 0));
+                    shaderConstants.BindTextureUAV(7, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndex(depthTexture, 0));
+                    //shaderConstants.BindTextureUAV(8, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndex(normalTexture, 0));
                     shaderConstants.BindScalar(8, iteration);
                     shaderConstants.BindScalar(9, accumulationFactor);
 

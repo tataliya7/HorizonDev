@@ -1,4 +1,4 @@
-#include "ShaderLibrary.h"
+#include "ShaderCollection.h"
 
 namespace Horizon
 {
@@ -17,7 +17,7 @@ namespace Horizon
         return true;
     }
 
-    ShaderLibrary::ShaderLibrary(RenderBackend* renderBackend, const std::string& rootDirectory)
+    ShaderCollection::ShaderCollection(RenderBackend* renderBackend, const std::string& rootDirectory)
     {
         this->renderBackend = renderBackend;
         this->rootDirectory = rootDirectory;
@@ -27,12 +27,12 @@ namespace Horizon
         loadedShaders.resize((size_t)ShaderID::Count);
     }
 
-    ShaderLibrary::~ShaderLibrary()
+    ShaderCollection::~ShaderCollection()
     {
 
     }
 
-    bool ShaderLibrary::HotReload()
+    bool ShaderCollection::HotReload()
     {
         if (!hotReloadEnabled)
         {
@@ -68,13 +68,13 @@ namespace Horizon
         return true;
     }
 
-    RenderBackendShaderHandle ShaderLibrary::GetShader(ShaderID id) const
+    RenderBackendShaderHandle ShaderCollection::GetShader(ShaderID id) const
     {
         const uint32 shaderIndex = uint32(id);
         return loadedShaders[shaderIndex].handle;
     }
 
-    bool ShaderLibrary::LoadShader(ShaderID id, ShaderDesc& desc)
+    bool ShaderCollection::LoadShader(ShaderID id, ShaderDesc& desc)
     {
         std::filesystem::path path = std::filesystem::absolute(std::filesystem::path("../../../Source/HorizonEngine").append(desc.filename));
         std::string filename = path.generic_string();

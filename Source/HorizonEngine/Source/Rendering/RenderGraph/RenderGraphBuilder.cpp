@@ -44,7 +44,6 @@ namespace Horizon
            .initialState = initialState,
            .finalState = finalState,
         });
-
         pass->outputs.push_back(renderGraph->textures[handle.GetIndex()]);
         pass->referenceCount++;
         return handle;
@@ -90,7 +89,78 @@ namespace Horizon
         return handle;
     }
 
-    void RenderGraphBuilder::BindRenderTarget(
+    void RenderGraphBuilder::SetBindlessResourceSRV(uint32 slot, RenderBackendBufferHandle buffer)
+    {
+        pass->BindUntrackedResource(slot, renderGraph->renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(buffer));
+    }
+
+    void RenderGraphBuilder::SetBindlessResourceUAV(uint32 slot, RenderBackendBufferHandle buffer)
+    {
+        pass->BindUntrackedResource(slot, renderGraph->renderBackend->GetBufferUAVBindlessResourceDescriptorIndex(buffer));
+    }
+
+    void RenderGraphBuilder::SetBindlessResourceSRV(uint32 slot, RenderGraphBufferHandle buffer)
+    {
+        pass->bufferStates.push_back(RenderGraphPass::BufferState{
+            .buffer = renderGraph->buffers[buffer.GetIndex()],
+            .state = RenderBackendResourceState::ShaderResource });
+        pass->inputs.push_back(renderGraph->buffers[buffer.GetIndex()]);
+        pass->referenceCount++;
+
+        pass->BindBufferSRV(slot, buffer);
+    }
+
+    void RenderGraphBuilder::SetBindlessResourceUAV(uint32 slot, RenderGraphBufferHandle buffer)
+    {
+        pass->bufferStates.push_back(RenderGraphPass::BufferState{
+            .buffer = renderGraph->buffers[buffer.GetIndex()],
+            .state = RenderBackendResourceState::UnorderedAccess });
+        pass->outputs.push_back(renderGraph->buffers[buffer.GetIndex()]);
+        pass->referenceCount++;
+
+        pass->BindBufferUAV(slot, buffer);
+    }
+
+    void RenderGraphBuilder::SetBindlessResourceSRV(uint32 slot, RenderGraphTextureHandle texture)
+    {
+        pass->textureStates.push_back(RenderGraphPass::TextureState{
+            .texture = renderGraph->textures[texture.GetIndex()],
+            .initialState = RenderBackendResourceState::ShaderResource,
+            .finalState = RenderBackendResourceState::ShaderResource });
+        pass->inputs.push_back(renderGraph->textures[texture.GetIndex()]);
+        renderGraph->textures[texture.GetIndex()]->referenceCount++;
+
+        pass->BindTextureSRV(slot, texture);
+    }
+
+    void RenderGraphBuilder::SetBindlessResourceUAV(uint32 slot, RenderGraphTextureHandle texture, uint32 mipLevel)
+    {
+        pass->textureStates.push_back(RenderGraphPass::TextureState{
+            .texture = renderGraph->textures[texture.GetIndex()],
+            .initialState = RenderBackendResourceState::UnorderedAccess,
+            .finalState = RenderBackendResourceState::UnorderedAccess });
+        pass->outputs.push_back(renderGraph->textures[texture.GetIndex()]);
+        pass->referenceCount++;
+
+        pass->BindTextureUAV(slot, texture);
+    }
+
+    void RenderGraphBuilder::SetShaderConstantValue(uint32 slot, int32 value)
+    {
+        pass->BindScalar(slot, value);
+    }
+
+    void RenderGraphBuilder::SetShaderConstantValue(uint32 slot, uint32 value)
+    {
+        pass->BindScalar(slot, value);
+    }
+
+    void RenderGraphBuilder::SetShaderConstantValue(uint32 slot, float value)
+    {
+        pass->BindScalar(slot, value);
+    }
+
+    void RenderGraphBuilder::SetRenderTargetBinding(
         uint32 slot,
         RenderGraphTextureHandle handle,
         RenderBackendRenderPassLoadOperation loadOperation,
@@ -100,7 +170,7 @@ namespace Horizon
         pass->SetRenderTargetBinding(slot, handle, mipLevel, loadOperation, storeOperation);
     }
 
-    void RenderGraphBuilder::BindDepthStencil(
+    void RenderGraphBuilder::SetDepthStencilBinding(
         RenderGraphTextureHandle handle,
         RenderBackendRenderPassLoadOperation depthLoadOperation,
         RenderBackendRenderPassStoreOperation depthStoreOperation,
@@ -108,7 +178,7 @@ namespace Horizon
         RenderBackendRenderPassStoreOperation stencilStoreOperation,
         RenderBackendDepthStencilAccessType depthStencilAccessType)
     {
-        pass->SetDepthTargetBinding(handle, depthLoadOperation, depthStoreOperation, stencilLoadOperation, stencilStoreOperation, depthStencilAccessType);
+        pass->SetDepthStencilBinding(handle, depthLoadOperation, depthStoreOperation, stencilLoadOperation, stencilStoreOperation, depthStencilAccessType);
     }
 
     void RenderGraphBuilder::SetRenderArea(int32 x, int32 y, uint32 width, uint32 height)

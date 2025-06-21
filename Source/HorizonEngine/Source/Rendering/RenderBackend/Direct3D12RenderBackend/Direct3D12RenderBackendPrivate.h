@@ -1815,7 +1815,7 @@ namespace Horizon
             return index;
         }
 
-        void InitD3D12BlendDesc(const RenderBackendColorBlendState& blendState, uint32 numRenderTargets, D3D12_BLEND_DESC& dstBlendState)
+        void InitD3D12BlendDesc(const RenderBackendColorBlendStateDescription& blendState, uint32 numRenderTargets, D3D12_BLEND_DESC& dstBlendState)
         {
             dstBlendState = {};
             dstBlendState.AlphaToCoverageEnable = FALSE;
@@ -1835,7 +1835,7 @@ namespace Horizon
             }
         }
 
-        void InitD3D12RasterizerDesc(const RenderBackendRasterizationState& rasterizationState, D3D12_RASTERIZER_DESC& dstRasterizationState)
+        void InitD3D12RasterizerDesc(const RenderBackendRasterizationStateDescription& rasterizationState, D3D12_RASTERIZER_DESC& dstRasterizationState)
         {
             dstRasterizationState = {};
             dstRasterizationState.FillMode = ConvertToD3D12FillMode(rasterizationState.fillMode);
@@ -1851,7 +1851,7 @@ namespace Horizon
             dstRasterizationState.ConservativeRaster = D3D12_CONSERVATIVE_RASTERIZATION_MODE_OFF;
         }
 
-        void InitD3D12DepthStencilDesc(const RenderBackendDepthStencilState& depthStencilState, D3D12_DEPTH_STENCIL_DESC& dstDepthStencilState)
+        void InitD3D12DepthStencilDesc(const RenderBackendDepthStencilStateDescription& depthStencilState, D3D12_DEPTH_STENCIL_DESC& dstDepthStencilState)
         {
             dstDepthStencilState = {};
             dstDepthStencilState.DepthEnable = depthStencilState.depthTestEnable;
@@ -2018,7 +2018,7 @@ namespace Horizon
             D3D12Shader* pixelShader,
             D3D12Shader* amplificationShader,
             D3D12Shader* meshShader,
-            const RenderBackendGraphicsPipelineState& pipelineState,
+            const RenderBackendGraphicsPipelineStateDescription& pipelineState,
             D3D12RenderPass* renderPass,
             RenderBackendPrimitiveTopology topology)
         {
@@ -2734,8 +2734,8 @@ namespace Horizon
         bool CompileRenderBackendCommand(const RenderBackendCommandDispatchRays& command);
         bool CompileRenderBackendCommand(const RenderBackendCommandDispatchSuperSampling& command);
     private:
-        bool PrepareForDispatch(RenderBackendShaderHandle computeShader, const RenderBackendShaderConstants& shaderConstants);
-        bool PrepareForDraw(RenderBackendShaderHandle vertexShader, RenderBackendShaderHandle pixelShader, const RenderBackendGraphicsPipelineState& pipelineState, RenderBackendPrimitiveTopology topology, RenderBackendBufferHandle indexBuffer, const RenderBackendShaderConstants& shaderConstants);
+        bool PrepareForDispatch(RenderBackendShaderHandle computeShader, const RenderBackendPushConstantValues& shaderConstants);
+        bool PrepareForDraw(RenderBackendShaderHandle vertexShader, RenderBackendShaderHandle pixelShader, const RenderBackendGraphicsPipelineStateDescription& pipelineState, RenderBackendPrimitiveTopology topology, RenderBackendBufferHandle indexBuffer, const RenderBackendPushConstantValues& shaderConstants);
         D3D12Device* device;
         D3D12CommandQueueType queueType;
         D3D12CommandList* commandList;

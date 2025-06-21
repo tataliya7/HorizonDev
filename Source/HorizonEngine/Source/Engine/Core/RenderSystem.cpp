@@ -53,7 +53,7 @@ namespace Horizon
         uint32 physicalDeviceID = 0;
         renderBackend->CreateRenderDevices(&physicalDeviceID, 1, &primaryDeviceMask);
 
-        shaderLibrary = new ShaderLibrary(renderBackend, "../../../Source/HorizonEngine/Shaders");
+        shaderLibrary = new ShaderCollection(renderBackend, "../../../Source/HorizonEngine/Shaders");
         LoadAllShaders_Deprecated(shaderLibrary);
 
         renderGraphResourcePool = new RenderGraphResourcePool(renderBackend);
@@ -288,7 +288,7 @@ namespace Horizon
         RenderBackendShaderHandle vertexShader = shaderLibrary->GetShader(ShaderID::ImGuiVS);
         RenderBackendShaderHandle pixelShader = shaderLibrary->GetShader(ShaderID::ImGuiPS);
 
-        RenderBackendGraphicsPipelineState graphicsPipelineState = {};
+        RenderBackendGraphicsPipelineStateDescription graphicsPipelineState = {};
         graphicsPipelineState.rasterizationState.cullMode = RenderBackendRasterizationCullMode::None;
         graphicsPipelineState.depthStencilState.depthTestEnable = false;
         graphicsPipelineState.depthStencilState.depthWriteEnable = false;
@@ -337,7 +337,7 @@ namespace Horizon
                 Vector2f translate = Vector2f(-1.0f - drawData->DisplayPos.x * scale.x, 1.0f + drawData->DisplayPos.y * scale.y);
                 int vertexOffset = pcmd->VtxOffset + globalVertexOffset;
 
-                RenderBackendShaderConstants shaderConstants = {};
+                RenderBackendPushConstantValues shaderConstants = {};
                 shaderConstants.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(vertexBuffer[frameInFlightCounter]));
                 shaderConstants.BindTextureSRV(1, renderBackend->GetTextureSRVBindlessResourceDescriptorIndex(RenderBackendTextureHandle(pcmd->TextureId)));
                 shaderConstants.BindScalar(2, scale.x);
@@ -383,11 +383,11 @@ namespace Horizon
             {
                 uiColorAndAlphaTexture = builder.WriteTexture(uiColorAndAlphaTexture, RenderBackendResourceState::RenderTarget);
 
-                builder.BindRenderTarget(0, uiColorAndAlphaTexture, RenderBackendRenderPassLoadOperation::Clear, RenderBackendRenderPassStoreOperation::Store);
+                builder.SetRenderTargetBinding(0, uiColorAndAlphaTexture, RenderBackendRenderPassLoadOperation::Clear, RenderBackendRenderPassStoreOperation::Store);
 
-                return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
+                return [=](RenderBackendCommandList& commandList, const RenderGraphResourceRegistry& resourceRegistry)
                 {
-                    DrawUI(commandList, registry.GetRenderBackendTextureHandle(uiColorAndAlphaTexture));
+                    DrawUI(commandList, resourceRegistry.GetRenderBackendTextureHandle(uiColorAndAlphaTexture));
                 };
             });
 
@@ -401,9 +401,9 @@ namespace Horizon
                 uiColorAndAlphaTexture = builder.ReadTexture(uiColorAndAlphaTexture, RenderBackendResourceState::ShaderResource);
                 displayTexture = builder.WriteTexture(displayTexture, RenderBackendResourceState::RenderTarget);
 
-                builder.BindRenderTarget(0, displayTexture, RenderBackendRenderPassLoadOperation::Load, RenderBackendRenderPassStoreOperation::Store);
+                builder.SetRenderTargetBinding(0, displayTexture, RenderBackendRenderPassLoadOperation::Load, RenderBackendRenderPassStoreOperation::Store);
 
-                return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
+                return [=](RenderBackendCommandList& commandList, const RenderGraphResourceRegistry& resourceRegistry)
                 {
                     RenderBackendViewport viewport(0.0f, 0.0f, float(view.displayWidth), float(view.displayHeight));
                     commandList.SetViewports(&viewport, 1);
@@ -411,7 +411,7 @@ namespace Horizon
                     RenderBackendScissor scissor(0, 0, view.displayWidth, view.displayHeight);
                     commandList.SetScissors(&scissor, 1);
 
-                    RenderBackendGraphicsPipelineState graphicsPipelineState = {};
+                    RenderBackendGraphicsPipelineStateDescription graphicsPipelineState = {};
                     graphicsPipelineState.rasterizationState.cullMode = RenderBackendRasterizationCullMode::None;
                     graphicsPipelineState.depthStencilState.depthTestEnable = false;
                     graphicsPipelineState.depthStencilState.depthWriteEnable = false;
@@ -424,8 +424,8 @@ namespace Horizon
                     graphicsPipelineState.colorBlendState.targetBlends[0].alphaBlendOp = RenderBackendBlendOp::Add;
                     graphicsPipelineState.colorBlendState.targetBlends[0].writeMask = RenderBackendColorComponentFlags::RGBA;
 
-                    RenderBackendShaderConstants shaderConstants = {};
-                    shaderConstants.BindTextureSRV(0, registry.GetTextureSRVBindlessResourceDescriptorIndex(uiColorAndAlphaTexture));
+                    RenderBackendPushConstantValues shaderConstants = {};
+                    shaderConstants.BindTextureSRV(0, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(uiColorAndAlphaTexture));
 
                     RenderBackendShaderHandle vertexShader = shaderLibrary->GetShader(ShaderID::DrawFullscreenQuadVS);
                     RenderBackendShaderHandle pixelShader = shaderLibrary->GetShader(ShaderID::GUICompositionPS);

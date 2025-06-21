@@ -6,7 +6,7 @@ namespace Horizon
 {
     void DispatchScreenSpaceShadowsBend(
         RenderGraph& renderGraph,
-        const ShaderLibrary* shaderLibrary,
+        const ShaderCollection* shaderLibrary,
         const SceneView& view,
         const LightRenderObject& light,
         const Extent2D& renderResolution,
@@ -37,10 +37,10 @@ namespace Horizon
             {
                 outputTexture = builder.WriteTexture(outputTexture, RenderBackendResourceState::UnorderedAccess);
 
-                return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
+                return [=](RenderBackendCommandList& commandList, const RenderGraphResourceRegistry& resourceRegistry)
                 {
                     RenderBackendTextureClearValue clearValue = RenderBackendTextureClearValue::Black;
-                    RenderBackendTextureUAVDesc outputTextureUAVDesc = RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(outputTexture), 0);
+                    RenderBackendTextureUAVDesc outputTextureUAVDesc = RenderBackendTextureUAVDesc::Create(resourceRegistry.GetRenderBackendTextureHandle(outputTexture), 0);
                     commandList.ClearTextureUAV(outputTextureUAVDesc, clearValue);
                 };
             });
@@ -59,15 +59,15 @@ namespace Horizon
                     RenderGraphTextureHandle sceneDepthTexture = builder.ReadTexture(sceneTextures.sceneDepthTexture, RenderBackendResourceState::ShaderResource);
                     outputTexture = builder.WriteTexture(outputTexture, RenderBackendResourceState::UnorderedAccess);
 
-                    return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
+                    return [=](RenderBackendCommandList& commandList, const RenderGraphResourceRegistry& resourceRegistry)
                     {
                         uint32 threadGroupCountX = dispatchData.WaveCount[0];
                         uint32 threadGroupCountY = dispatchData.WaveCount[1];
                         uint32 threadGroupCountZ = dispatchData.WaveCount[2];
 
-                        RenderBackendShaderConstants shaderConstants = {};
-                        shaderConstants.BindTextureSRV(0, registry.GetTextureSRVBindlessResourceDescriptorIndex(sceneDepthTexture));
-                        shaderConstants.BindTextureUAV(1, registry.GetTextureUAVBindlessResourceDescriptorIndex(outputTexture, 0));
+                        RenderBackendPushConstantValues shaderConstants = {};
+                        shaderConstants.BindTextureSRV(0, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(sceneDepthTexture));
+                        shaderConstants.BindTextureUAV(1, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndex(outputTexture, 0));
                         shaderConstants.BindScalar(2, surfaceThickness);
                         shaderConstants.BindScalar(3, shadowContrast);
                         shaderConstants.BindScalar(4, dispatchList.LightCoordinate_Shader[0]);
@@ -100,11 +100,11 @@ namespace Horizon
                 outputTexture = builder.ReadTexture(outputTexture, RenderBackendResourceState::ShaderResource);
                 screenSpaceShadowMaskTexture = builder.WriteTexture(screenSpaceShadowMaskTexture, RenderBackendResourceState::RenderTarget);
 
-                builder.BindRenderTarget(0, screenSpaceShadowMaskTexture, RenderBackendRenderPassLoadOperation::Load, RenderBackendRenderPassStoreOperation::Store);
+                builder.SetRenderTargetBinding(0, screenSpaceShadowMaskTexture, RenderBackendRenderPassLoadOperation::Load, RenderBackendRenderPassStoreOperation::Store);
 
-                return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
+                return [=](RenderBackendCommandList& commandList, const RenderGraphResourceRegistry& resourceRegistry)
                 {
-                    RenderBackendGraphicsPipelineState graphicsPipelineState = {};
+                    RenderBackendGraphicsPipelineStateDescription graphicsPipelineState = {};
                     graphicsPipelineState.rasterizationState.cullMode = RenderBackendRasterizationCullMode::None;
                     graphicsPipelineState.depthStencilState.depthTestEnable = false;
                     graphicsPipelineState.colorBlendState.targetBlends[0].blendEnable = true;
@@ -116,8 +116,8 @@ namespace Horizon
                     graphicsPipelineState.colorBlendState.targetBlends[0].alphaBlendOp = RenderBackendBlendOp::Min;
                     graphicsPipelineState.colorBlendState.targetBlends[0].writeMask = RenderBackendColorComponentFlags::R;
 
-                    RenderBackendShaderConstants shaderConstants = {};
-                    shaderConstants.BindTextureSRV(0, registry.GetTextureSRVBindlessResourceDescriptorIndex(outputTexture));
+                    RenderBackendPushConstantValues shaderConstants = {};
+                    shaderConstants.BindTextureSRV(0, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(outputTexture));
                     shaderConstants.BindScalar(1, 1.0f / float(renderResolution.width));
                     shaderConstants.BindScalar(2, 1.0f/ float(renderResolution.height));
 
@@ -159,7 +159,7 @@ namespace Horizon
         //}
         //else
         {
-            DispatchScreenSpaceShadowsBend(renderGraph, shaderLibrary, view, light, renderResolution, screenSpaceShadowMaskTexture);
+            DispatchScreenSpaceShadowsBend(renderGraph, shaderCollection, view, light, renderResolution, screenSpaceShadowMaskTexture);
 
             sceneTextures.shadowMaskTexture = screenSpaceShadowMaskTexture;
         }

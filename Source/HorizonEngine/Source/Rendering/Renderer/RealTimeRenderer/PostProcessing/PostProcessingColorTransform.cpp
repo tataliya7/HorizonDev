@@ -59,14 +59,14 @@ namespace Horizon
             {
                 colorTransformLUTTexture = builder.WriteTexture(colorTransformLUTTexture, RenderBackendResourceState::UnorderedAccess);
 
-                return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
+                return [=](RenderBackendCommandList& commandList, const RenderGraphResourceRegistry& resourceRegistry)
                 {
-                    RenderBackendShaderConstants shaderConstants = {};
+                    RenderBackendPushConstantValues shaderConstants = {};
                     shaderConstants.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
-                    shaderConstants.BindTextureUAV(1, registry.GetTextureUAVBindlessResourceDescriptorIndex(colorTransformLUTTexture, 0));
+                    shaderConstants.BindTextureUAV(1, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndex(colorTransformLUTTexture, 0));
                     //shaderConstants.PushConstants(0, (float)toneMappingOperator);
 
-                    RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::ColorTransformLUT);
+                    RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::ColorTransformLUT);
 
                     commandList.Dispatch(
                         computeShader,

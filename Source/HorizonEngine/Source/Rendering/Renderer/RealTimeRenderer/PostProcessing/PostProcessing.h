@@ -4,11 +4,8 @@
 
 namespace Horizon
 {
-    enum
-    {
-        PostProcessingThreadGroupSizeX = 8,
-        PostProcessingThreadGroupSizeY = 8,
-    };
+    constexpr uint32 PostProcessingThreadGroupSizeX = 8;
+    constexpr uint32 PostProcessingThreadGroupSizeY = 8;
 
     struct PostProcessingColorPyramid
     {

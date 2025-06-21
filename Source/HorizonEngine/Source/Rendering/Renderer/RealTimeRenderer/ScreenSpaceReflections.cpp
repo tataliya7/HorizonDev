@@ -88,17 +88,17 @@ namespace Horizon
             RenderGraphTextureHandle gbuffer1 = builder.ReadTexture(sceneTextures.gbuffer1, RenderBackendResourceState::ShaderResource);
             tileClassificationHorizontalTexture = builder.WriteTexture(tileClassificationHorizontalTexture, RenderBackendResourceState::UnorderedAccess);
 
-            return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
+
             {
                 uint32 threadGroupCountX = ComputeShaderThreadGroupCount(tileCountX, GScreenSpaceReflectionsThreadGroupSizeX);
                 uint32 threadGroupCountY = ComputeShaderThreadGroupCount(view.targetHeight, SSR_THREAD_GROUP_SIZE);
                 uint32 threadGroupCountZ = 1;
 
-                RenderBackendShaderConstants shaderConstants = {};
+                RenderBackendPushConstantValues shaderConstants = {};
                 shaderConstants.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
-                shaderConstants.BindTextureSRV(1, registry.GetTextureSRVBindlessResourceDescriptorIndex(sceneDepthTexture));
-                shaderConstants.BindTextureSRV(2, registry.GetTextureSRVBindlessResourceDescriptorIndex(gbuffer1));
-                shaderConstants.BindTextureUAV(3, registry.GetTextureUAVBindlessResourceDescriptorIndex(tileClassificationHorizontalTexture, 0));
+                shaderConstants.BindTextureSRV(1, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(sceneDepthTexture));
+                shaderConstants.BindTextureSRV(2, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(gbuffer1));
+                shaderConstants.BindTextureUAV(3, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndex(tileClassificationHorizontalTexture, 0));
 
                 RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::SSRTileClassificationHorizontal);
 
@@ -125,22 +125,22 @@ namespace Horizon
             // cheapTilesBuffer = builder.WriteTexture(cheapTilesBuffer, RenderBackendResourceState::UnorderedAccess);
             // expensiveTilesBuffer = builder.WriteTexture(expensiveTilesBuffer, RenderBackendResourceState::UnorderedAccess);
 
-            return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
+
             {
                 uint32 threadGroupCountX = ComputeShaderThreadGroupCount(tileCountX, GScreenSpaceReflectionsThreadGroupSizeX);
                 uint32 threadGroupCountY = ComputeShaderThreadGroupCount(tileCountY, SSR_THREAD_GROUP_SIZE);
                 uint32 threadGroupCountZ = 1;
 
-                RenderBackendShaderConstants shaderConstants = {};
+                RenderBackendPushConstantValues shaderConstants = {};
                 shaderConstants.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
-                shaderConstants.BindTextureSRV(1, registry.GetTextureSRVBindlessResourceDescriptorIndex(sceneDepthTexture));
-                shaderConstants.BindTextureSRV(2, registry.GetTextureSRVBindlessResourceDescriptorIndex(gbuffer1));
-                shaderConstants.BindTextureSRV(3, registry.GetTextureSRVBindlessResourceDescriptorIndex(tileClassificationHorizontalTexture));
-                shaderConstants.BindTextureUAV(4, registry.GetTextureUAVBindlessResourceDescriptorIndex(tileClassificationTexture, 0));
-                shaderConstants.BindBufferUAV(5, registry.GetBufferUAVBindlessResourceDescriptorIndex(rayAllocationBuffer));
-                // shaderConstants.BindTextureUAV(5, registry.GetTextureUAVBindlessResourceDescriptorIndexearlyExitTilesBuffer), 0));
-                // shaderConstants.BindTextureUAV(6, registry.GetTextureUAVBindlessResourceDescriptorIndexcheapTilesBuffer), 0));
-                // shaderConstants.BindTextureUAV(7, registry.GetTextureUAVBindlessResourceDescriptorIndexexpensiveTilesBuffer), 0));
+                shaderConstants.BindTextureSRV(1, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(sceneDepthTexture));
+                shaderConstants.BindTextureSRV(2, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(gbuffer1));
+                shaderConstants.BindTextureSRV(3, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(tileClassificationHorizontalTexture));
+                shaderConstants.BindTextureUAV(4, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndex(tileClassificationTexture, 0));
+                shaderConstants.BindBufferUAV(5, resourceRegistry.GetBufferUAVBindlessResourceDescriptorIndex(rayAllocationBuffer));
+                // shaderConstants.BindTextureUAV(5, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndexearlyExitTilesBuffer), 0));
+                // shaderConstants.BindTextureUAV(6, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndexcheapTilesBuffer), 0));
+                // shaderConstants.BindTextureUAV(7, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndexexpensiveTilesBuffer), 0));
 
                 RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::SSRTileClassificationVertical);
 
@@ -160,10 +160,10 @@ namespace Horizon
         {
             rayAllocationBuffer = builder.WriteBuffer(rayAllocationBuffer, RenderBackendResourceState::UnorderedAccess);
 
-            return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
+
             {
-                RenderBackendShaderConstants shaderConstants = {};
-                shaderConstants.BindBufferUAV(0, registry.GetBufferUAVBindlessResourceDescriptorIndex(rayAllocationBuffer));
+                RenderBackendPushConstantValues shaderConstants = {};
+                shaderConstants.BindBufferUAV(0, resourceRegistry.GetBufferUAVBindlessResourceDescriptorIndex(rayAllocationBuffer));
 
                RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::SSRRayAllocation);
 
@@ -228,18 +228,18 @@ namespace Horizon
                 // rayLength = builder.WriteTexture(rayLength, RenderBackendResourceState::UnorderedAccess);
                 // debugOutputTexture = builder.WriteTexture(debugOutputTexture, RenderBackendResourceState::UnorderedAccess);
 
-                return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
+
                 {
-                    RenderBackendShaderConstants shaderConstants = {};
+                    RenderBackendPushConstantValues shaderConstants = {};
                     shaderConstants.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
-                    shaderConstants.BindTextureSRV(1, registry.GetTextureSRVBindlessResourceDescriptorIndex(gbuffer1));
-                    shaderConstants.BindTextureSRV(2, registry.GetTextureSRVBindlessResourceDescriptorIndex(sceneDepthTexture));
-                    shaderConstants.BindTextureSRV(3, registry.GetTextureSRVBindlessResourceDescriptorIndex(minDepthPyramidTexture));
-                    shaderConstants.BindTextureSRV(4, registry.GetTextureSRVBindlessResourceDescriptorIndex(motionVectorTexture));
-                    shaderConstants.BindTextureSRV(6, registry.GetTextureSRVBindlessResourceDescriptorIndex(previousSceneColorTexture));
-                    shaderConstants.BindTextureUAV(7, registry.GetTextureUAVBindlessResourceDescriptorIndex(rayIndirectSpecular, 0));
-                    shaderConstants.BindTextureUAV(8, registry.GetTextureUAVBindlessResourceDescriptorIndex(rayDirectionAndLengthTexture), 0);
-                    shaderConstants.BindTextureUAV(9, registry.GetTextureUAVBindlessResourceDescriptorIndex(rayLength), 0));
+                    shaderConstants.BindTextureSRV(1, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(gbuffer1));
+                    shaderConstants.BindTextureSRV(2, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(sceneDepthTexture));
+                    shaderConstants.BindTextureSRV(3, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(minDepthPyramidTexture));
+                    shaderConstants.BindTextureSRV(4, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(motionVectorTexture));
+                    shaderConstants.BindTextureSRV(6, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(previousSceneColorTexture));
+                    shaderConstants.BindTextureUAV(7, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndex(rayIndirectSpecular, 0));
+                    shaderConstants.BindTextureUAV(8, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndex(rayDirectionAndLengthTexture), 0);
+                    shaderConstants.BindTextureUAV(9, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndex(rayLength), 0));
                     shaderConstants.PushConstants(0, float(rayCastingResolutionX));
                     shaderConstants.PushConstants(1, float(rayCastingResolutionY));
                     shaderConstants.PushConstants(2, hzbUVFactorAndInvFactor.x);
@@ -252,7 +252,7 @@ namespace Horizon
                     commandList.DispatchIndirect(
                         computeShader,
                         shaderConstants,
-                        registry.GetRenderBackendBufferHandle(rayAllocationBuffer),
+                        resourceRegistry.GetRenderBackendBufferHandle(rayAllocationBuffer),
                         24);
                 };
             });
@@ -273,20 +273,20 @@ namespace Horizon
                 // rayLength = builder.WriteTexture(rayLength, RenderBackendResourceState::UnorderedAccess);
                 // debugOutputTexture = builder.WriteTexture(debugOutputTexture, RenderBackendResourceState::UnorderedAccess);
 
-                return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
+
                 {
-                    RenderBackendShaderConstants shaderConstants = {};
+                    RenderBackendPushConstantValues shaderConstants = {};
                     shaderConstants.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
-                    shaderConstants.BindTextureSRV(1, registry.GetTextureSRVBindlessResourceDescriptorIndex(gbuffer1));
-                    shaderConstants.BindTextureSRV(2, registry.GetTextureSRVBindlessResourceDescriptorIndex(motionVectors));
-                    shaderConstants.BindTextureSRV(3, registry.GetTextureSRVBindlessResourceDescriptorIndex(sceneDepth));
-                    shaderConstants.BindTextureSRV(4, registry.GetTextureSRVBindlessResourceDescriptorIndex(hzb));
-                    shaderConstants.BindTextureSRV(6, registry.GetTextureSRVBindlessResourceDescriptorIndex(historySceneColor));
-                    shaderConstants.BindTextureUAV(7, registry.GetTextureUAVBindlessResourceDescriptorIndex(rayIndirectSpecular), 0);
-                    shaderConstants.BindTextureUAV(8, registry.GetTextureUAVBindlessResourceDescriptorIndex(rayDirectionPDF), 0);
-                    shaderConstants.BindTextureUAV(9, registry.GetTextureUAVBindlessResourceDescriptorIndex(rayLength), 0);
+                    shaderConstants.BindTextureSRV(1, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(gbuffer1));
+                    shaderConstants.BindTextureSRV(2, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(motionVectors));
+                    shaderConstants.BindTextureSRV(3, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(sceneDepth));
+                    shaderConstants.BindTextureSRV(4, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(hzb));
+                    shaderConstants.BindTextureSRV(6, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(historySceneColor));
+                    shaderConstants.BindTextureUAV(7, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndex(rayIndirectSpecular), 0);
+                    shaderConstants.BindTextureUAV(8, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndex(rayDirectionPDF), 0);
+                    shaderConstants.BindTextureUAV(9, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndex(rayLength), 0);
                     shaderConstants.BindTextureSRV(10, RenderBackendTextureSRVDesc::Create(blueNoiseTexture));
-                    shaderConstants.BindTextureUAV(15, registry.GetTextureUAVBindlessResourceDescriptorIndex(debugOutputTexture, 0));
+                    shaderConstants.BindTextureUAV(15, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndex(debugOutputTexture, 0));
                     shaderConstants.PushConstants(0, float(rayCastingResolutionX));
                     shaderConstants.PushConstants(1, float(rayCastingResolutionY));
                     shaderConstants.PushConstants(2, hzbUVFactorAndInvFactor.x);
@@ -299,7 +299,7 @@ namespace Horizon
                     commandList.DispatchIndirect(
                         computeShader,
                         shaderConstants,
-                        registry.GetRenderBackendBufferHandle(rayAllocationBuffer),
+                        resourceRegistry.GetRenderBackendBufferHandle(rayAllocationBuffer),
                         24);
                 };
             });
@@ -345,21 +345,21 @@ namespace Horizon
 //                 resolveVariance = builder.WriteTexture(resolveVariance, RenderBackendResourceState::UnorderedAccess);
 //                 reprojectionDepth = builder.WriteTexture(reprojectionDepth, RenderBackendResourceState::UnorderedAccess);
 //
-//                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
+//
 //                 {
 //                     uint32 threadGroupCountX = ComputeWorkGroupCount(view.targetWidth, SSR_THREAD_GROUP_SIZE);
 //                     uint32 threadGroupCountY = ComputeWorkGroupCount(view.targetHeight, SSR_THREAD_GROUP_SIZE);
 //
-//                     RenderBackendShaderConstants shaderConstants = {};
+//                     RenderBackendPushConstantValues shaderConstants = {};
 //                     shaderConstants.BindBuffer(0, perFrameData.buffer, 0);
-//                     shaderConstants.BindTextureSRV(1, registry.GetTextureSRVBindlessResourceDescriptorIndex(sceneDepth)));
-//                     shaderConstants.BindTextureSRV(2, registry.GetTextureSRVBindlessResourceDescriptorIndex(gbuffer1)));
-//                     shaderConstants.BindTextureSRV(3, registry.GetTextureSRVBindlessResourceDescriptorIndex(rayIndirectSpecular)));
-//                     shaderConstants.BindTextureSRV(4, registry.GetTextureSRVBindlessResourceDescriptorIndex(rayDirectionPDF)));
-//                     shaderConstants.BindTextureSRV(5, registry.GetTextureSRVBindlessResourceDescriptorIndex(rayLength)));
-//                     shaderConstants.BindTextureUAV(6, registry.GetTextureUAVBindlessResourceDescriptorIndexresolveTexture), 0));
-//                     shaderConstants.BindTextureUAV(7, registry.GetTextureUAVBindlessResourceDescriptorIndexresolveVariance), 0));
-//                     shaderConstants.BindTextureUAV(8, registry.GetTextureUAVBindlessResourceDescriptorIndexreprojectionDepth), 0));
+//                     shaderConstants.BindTextureSRV(1, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(sceneDepth)));
+//                     shaderConstants.BindTextureSRV(2, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(gbuffer1)));
+//                     shaderConstants.BindTextureSRV(3, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(rayIndirectSpecular)));
+//                     shaderConstants.BindTextureSRV(4, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(rayDirectionPDF)));
+//                     shaderConstants.BindTextureSRV(5, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(rayLength)));
+//                     shaderConstants.BindTextureUAV(6, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndexresolveTexture), 0));
+//                     shaderConstants.BindTextureUAV(7, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndexresolveVariance), 0));
+//                     shaderConstants.BindTextureUAV(8, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndexreprojectionDepth), 0));
 //
 //                     auto resolveCS = shaderLibrary->GetShader(ShaderID::SSRColorResolve);
 //                     commandList.Dispatch2D(
@@ -428,24 +428,24 @@ namespace Horizon
 //                     temporalFilteringOutputTexture = builder.WriteTexture(temporalFilteringOutputTexture, RenderBackendResourceState::UnorderedAccess);
 //                     temporalVarianceTexture = builder.WriteTexture(temporalVarianceTexture, RenderBackendResourceState::UnorderedAccess);
 //
-//                     return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
+//
 //                     {
 //                         uint32 threadGroupCountX = ComputeWorkGroupCount(view.targetWidth, SSR_THREAD_GROUP_SIZE);
 //                         uint32 threadGroupCountY = ComputeWorkGroupCount(view.targetHeight, SSR_THREAD_GROUP_SIZE);
 //
-//                         RenderBackendShaderConstants shaderConstants = {};
+//                         RenderBackendPushConstantValues shaderConstants = {};
 //                         shaderConstants.BindBuffer(0, perFrameData.buffer, 0);
-//                         shaderConstants.BindTextureSRV(1, registry.GetTextureSRVBindlessResourceDescriptorIndex(sceneDepth)));
-//                         shaderConstants.BindTextureSRV(2, registry.GetTextureSRVBindlessResourceDescriptorIndex(gbuffer1)));
-//                         shaderConstants.BindTextureSRV(3, registry.GetTextureSRVBindlessResourceDescriptorIndex(motionVectors)));
-//                         shaderConstants.BindTextureSRV(4, registry.GetTextureSRVBindlessResourceDescriptorIndex(resolveTexture)));
-//                         shaderConstants.BindTextureSRV(5, registry.GetTextureSRVBindlessResourceDescriptorIndex(resolveVariance)));
-//                         shaderConstants.BindTextureSRV(6, registry.GetTextureSRVBindlessResourceDescriptorIndex(reprojectionDepth)));
-//                         shaderConstants.BindTextureSRV(7, registry.GetTextureSRVBindlessResourceDescriptorIndex(historyTemporalFilteringOutputTexture)));
-//                         shaderConstants.BindTextureSRV(8, registry.GetTextureSRVBindlessResourceDescriptorIndex(historyTemporalVarianceTexture)));
-//                         shaderConstants.BindTextureSRV(9, registry.GetTextureSRVBindlessResourceDescriptorIndex(historySceneDepth)));
-//                         shaderConstants.BindTextureUAV(10, registry.GetTextureUAVBindlessResourceDescriptorIndextemporalFilteringOutputTexture), 0));
-//                         shaderConstants.BindTextureUAV(11, registry.GetTextureUAVBindlessResourceDescriptorIndextemporalVarianceTexture), 0));
+//                         shaderConstants.BindTextureSRV(1, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(sceneDepth)));
+//                         shaderConstants.BindTextureSRV(2, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(gbuffer1)));
+//                         shaderConstants.BindTextureSRV(3, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(motionVectors)));
+//                         shaderConstants.BindTextureSRV(4, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(resolveTexture)));
+//                         shaderConstants.BindTextureSRV(5, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(resolveVariance)));
+//                         shaderConstants.BindTextureSRV(6, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(reprojectionDepth)));
+//                         shaderConstants.BindTextureSRV(7, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(historyTemporalFilteringOutputTexture)));
+//                         shaderConstants.BindTextureSRV(8, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(historyTemporalVarianceTexture)));
+//                         shaderConstants.BindTextureSRV(9, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(historySceneDepth)));
+//                         shaderConstants.BindTextureUAV(10, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndextemporalFilteringOutputTexture), 0));
+//                         shaderConstants.BindTextureUAV(11, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndextemporalVarianceTexture), 0));
 //
 //                         auto temporalFilteringCS = shaderLibrary->GetShader(ShaderID::SSRTemporalFiltering);
 //                         commandList.Dispatch2D(
@@ -480,18 +480,18 @@ namespace Horizon
 //
 //                     spatialFilteringIntermediateTexture = builder.WriteTexture(spatialFilteringIntermediateTexture, RenderBackendResourceState::UnorderedAccess);
 //
-//                     return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
+//
 //                     {
 //                         uint32 threadGroupCountX = ComputeWorkGroupCount(view.targetWidth, SSR_THREAD_GROUP_SIZE);
 //                         uint32 threadGroupCountY = ComputeWorkGroupCount(view.targetHeight, SSR_THREAD_GROUP_SIZE);
 //
-//                         RenderBackendShaderConstants shaderConstants = {};
+//                         RenderBackendPushConstantValues shaderConstants = {};
 //                         shaderConstants.BindBuffer(0, perFrameData.buffer, 0);
-//                         shaderConstants.BindTextureSRV(1, registry.GetTextureSRVBindlessResourceDescriptorIndex(sceneDepth)));
-//                         shaderConstants.BindTextureSRV(2, registry.GetTextureSRVBindlessResourceDescriptorIndex(gbuffer1)));
-//                         shaderConstants.BindTextureSRV(3, registry.GetTextureSRVBindlessResourceDescriptorIndex(resolveVariance)));
-//                         shaderConstants.BindTextureSRV(4, registry.GetTextureSRVBindlessResourceDescriptorIndex(temporalFilteringOutputTexture)));
-//                         shaderConstants.BindTextureUAV(5, registry.GetTextureUAVBindlessResourceDescriptorIndexspatialFilteringIntermediateTexture), 0));
+//                         shaderConstants.BindTextureSRV(1, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(sceneDepth)));
+//                         shaderConstants.BindTextureSRV(2, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(gbuffer1)));
+//                         shaderConstants.BindTextureSRV(3, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(resolveVariance)));
+//                         shaderConstants.BindTextureSRV(4, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(temporalFilteringOutputTexture)));
+//                         shaderConstants.BindTextureUAV(5, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndexspatialFilteringIntermediateTexture), 0));
 //                         shaderConstants.PushConstants(0, 1.0f);
 //                         shaderConstants.PushConstants(1, 0.0f);
 //
@@ -517,18 +517,18 @@ namespace Horizon
 //
 //                     ssrTexture = builder.WriteTexture(ssrTexture, RenderBackendResourceState::UnorderedAccess);
 //
-//                     return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
+//
 //                     {
 //                         uint32 threadGroupCountX = ComputeWorkGroupCount(view.targetWidth, SSR_THREAD_GROUP_SIZE);
 //                         uint32 threadGroupCountY = ComputeWorkGroupCount(view.targetHeight, SSR_THREAD_GROUP_SIZE);
 //
-//                         RenderBackendShaderConstants shaderConstants = {};
+//                         RenderBackendPushConstantValues shaderConstants = {};
 //                         shaderConstants.BindBuffer(0, perFrameData.buffer, 0);
-//                         shaderConstants.BindTextureSRV(1, registry.GetTextureSRVBindlessResourceDescriptorIndex(sceneDepth)));
-//                         shaderConstants.BindTextureSRV(2, registry.GetTextureSRVBindlessResourceDescriptorIndex(gbuffer1)));
-//                         shaderConstants.BindTextureSRV(3, registry.GetTextureSRVBindlessResourceDescriptorIndex(resolveVariance)));
-//                         shaderConstants.BindTextureSRV(4, registry.GetTextureSRVBindlessResourceDescriptorIndex(spatialFilteringIntermediateTexture)));
-//                         shaderConstants.BindTextureUAV(5, registry.GetTextureUAVBindlessResourceDescriptorIndexssrTexture), 0));
+//                         shaderConstants.BindTextureSRV(1, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(sceneDepth)));
+//                         shaderConstants.BindTextureSRV(2, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(gbuffer1)));
+//                         shaderConstants.BindTextureSRV(3, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(resolveVariance)));
+//                         shaderConstants.BindTextureSRV(4, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(spatialFilteringIntermediateTexture)));
+//                         shaderConstants.BindTextureUAV(5, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndexssrTexture), 0));
 //                         shaderConstants.PushConstants(0, 0.0f);
 //                         shaderConstants.PushConstants(1, 1.0f);
 //

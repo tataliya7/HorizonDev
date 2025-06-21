@@ -172,7 +172,7 @@ namespace Horizon
         RealTimeRenderer(
             RenderBackend* renderBackend,
             RenderGraphResourcePool* resourcePool,
-            ShaderLibrary* shaderLibrary,
+            ShaderCollection* shaderLibrary,
             RendererDefaultResources* defaultResources);
 
         virtual ~RealTimeRenderer();
@@ -514,7 +514,7 @@ namespace Horizon
 
         RenderBackend* renderBackend;
         RenderGraphResourcePool* resourcePool;
-        ShaderLibrary* shaderLibrary;
+        ShaderCollection* shaderCollection;
         RendererDefaultResources* defaultResources;
         SceneView* sceneView;
         TemporalSuperSamplingInterface* temporalSuperSamplingInterface;

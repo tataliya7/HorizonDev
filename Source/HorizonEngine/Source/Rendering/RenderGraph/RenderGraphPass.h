@@ -3,10 +3,20 @@
 #include "RenderGraphCommon.h"
 #include "RenderGraphHandles.h"
 #include "RenderGraphNode.h"
-#include "RenderGraphRegistry.h"
+#include "RenderGraphResourceRegistry.h"
 
 namespace Horizon
 {
+    enum class RenderGraphPassType
+    {
+        Copy,
+        Compute,
+        AsyncCompute,
+        Graphics,
+        MeshShading,
+        RayTracing
+    };
+
     enum class RenderGraphPassFlags : uint32
     {
         None           = 0,
@@ -41,6 +51,38 @@ namespace Horizon
         RenderBackendDepthStencilAccessType depthStencilAccessType;
     };
 
+    struct RenderGraphShaderConstantBinding
+    {
+        enum class Type : int8
+        {
+            Unknown               = 0,
+            UntrackedResource     = 1,
+            BufferSRV             = 2,
+            BufferUAV             = 3,
+            TextureSRV            = 4,
+            TextureUAV            = 5,
+            AccelerationStructure = 6,
+            ScalarInt             = 7,
+            ScalarUnit            = 8,
+            ScalarFloat           = 9,
+            Count                 = 8
+        };
+
+        Type type;
+
+        union
+        {
+            int                         descriptorIndex;
+            RenderGraphBufferHandle     bufferHandle;
+            RenderGraphTextureHandle    textureHandle;
+            int                         scalarTypeInt;
+            unsigned int                scalarTypeUint;
+            float                       scalarTypeFloat;
+        };
+
+        RenderGraphShaderConstantBinding() : type(Type::Unknown), descriptorIndex(0) {}
+    };
+
     class RenderGraphPass : public RenderGraphNode
     {
     public:
@@ -57,7 +99,7 @@ namespace Horizon
             return flags;
         }
         void Graphviz(std::stringstream& stream) const;
-        virtual void Execute(RenderGraphRegistry& registry, RenderBackendCommandList& commandList) = 0;
+        virtual void Execute(RenderBackendCommandList& commandList, const RenderGraphResourceRegistry& resourceRegistry) = 0;
 
         const RenderGraphRenderTargetBinding& GetRenderTargetBinding(uint32 slot) const;
 
@@ -70,7 +112,7 @@ namespace Horizon
             RenderBackendRenderPassLoadOperation loadOperation,
             RenderBackendRenderPassStoreOperation storeOperation);
 
-        void SetDepthTargetBinding(
+        void SetDepthStencilBinding(
             RenderGraphTextureHandle handle,
             RenderBackendRenderPassLoadOperation depthLoadOperation,
             RenderBackendRenderPassStoreOperation depthStoreOperation,
@@ -81,6 +123,7 @@ namespace Horizon
     protected:
         friend class RenderGraph;
         friend class RenderGraphBuilder;
+        friend class RenderGraphResourceRegistry;
 
         RenderGraphPassFlags flags;
 
@@ -107,22 +150,71 @@ namespace Horizon
 
         RenderGraphRenderTargetBinding renderTargetBindings[RenderBackendMaxRenderTargetCount];
         RenderGraphDepthStencilBinding depthStencilBinding;
+        RenderGraphShaderConstantBinding shaderConstantsBindings[RenderBackendPushConstantsSlotCount];
+
+        void BindUntrackedResource(uint32 slot, int descriptorIndex)
+        {
+            shaderConstantsBindings[slot].type = RenderGraphShaderConstantBinding::Type::UntrackedResource;
+            shaderConstantsBindings[slot].descriptorIndex = descriptorIndex;
+        }
+
+        void BindBufferSRV(uint32 slot, RenderGraphBufferHandle bufferHandle)
+        {
+            shaderConstantsBindings[slot].type = RenderGraphShaderConstantBinding::Type::BufferSRV;
+            shaderConstantsBindings[slot].bufferHandle = bufferHandle;
+        }
+
+        void BindBufferUAV(uint32 slot, RenderGraphBufferHandle bufferHandle)
+        {
+            shaderConstantsBindings[slot].type = RenderGraphShaderConstantBinding::Type::BufferUAV;
+            shaderConstantsBindings[slot].bufferHandle = bufferHandle;
+        }
+
+        void BindTextureSRV(uint32 slot, RenderGraphTextureHandle textureHandle)
+        {
+            shaderConstantsBindings[slot].type = RenderGraphShaderConstantBinding::Type::TextureSRV;
+            shaderConstantsBindings[slot].textureHandle = textureHandle;
+        }
+
+        void BindTextureUAV(uint32 slot, RenderGraphTextureHandle textureHandle)
+        {
+            shaderConstantsBindings[slot].type = RenderGraphShaderConstantBinding::Type::TextureUAV;
+            shaderConstantsBindings[slot].textureHandle = textureHandle;
+        }
+
+        void BindScalar(uint32 slot, int32 value)
+        {
+            shaderConstantsBindings[slot].type = RenderGraphShaderConstantBinding::Type::ScalarInt;
+            shaderConstantsBindings[slot].scalarTypeInt = value;
+        }
+
+        void BindScalar(uint32 slot, uint32 value)
+        {
+            shaderConstantsBindings[slot].type = RenderGraphShaderConstantBinding::Type::ScalarUnit;
+            shaderConstantsBindings[slot].scalarTypeUint = value;
+        }
+
+        void BindScalar(uint32 slot, float value)
+        {
+            shaderConstantsBindings[slot].type = RenderGraphShaderConstantBinding::Type::ScalarFloat;
+            shaderConstantsBindings[slot].scalarTypeFloat = value;
+        }
     };
 
     class RenderGraphLambdaPass : public RenderGraphPass
     {
     public:
         // @todo Maybe it would be faster not to use std::function.
-        using Lambda = std::function<void(RenderGraphRegistry&, RenderBackendCommandList&)>;
+        using Lambda = std::function<void(RenderBackendCommandList&, const RenderGraphResourceRegistry&)>;
         RenderGraphLambdaPass(const std::string& name, RenderGraphPassFlags flags) : RenderGraphPass(name, flags) {}
         ~RenderGraphLambdaPass() = default;
     private:
         friend class RenderGraph;
         void SetExecuteCallback(Lambda&& execute) { executeCallback = std::move(execute); }
-        void Execute(RenderGraphRegistry& registry, RenderBackendCommandList& commandList) override
+        void Execute(RenderBackendCommandList& commandList, const RenderGraphResourceRegistry& resourceRegistry) override
         {
             assert(executeCallback);
-            executeCallback(registry, commandList);
+            executeCallback(commandList, resourceRegistry);
         }
         Lambda executeCallback;
     };

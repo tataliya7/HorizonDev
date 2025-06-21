@@ -186,16 +186,16 @@ namespace Horizon
                 RenderGraphTextureHandle exposureTexture = builder.ReadTexture(dispatchDescription.exposureTexture, RenderBackendResourceState::ShaderResource);
                 outputTexture = builder.WriteTexture(outputTexture, RenderBackendResourceState::UnorderedAccess);
 
-                return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
+                return [=](RenderBackendCommandList& commandList, const RenderGraphResourceRegistry& resourceRegistry)
                 {
                     commandList.DispatchSuperSampling(
                         dlssContext,
                         dispatchCallback,
-                        registry.GetRenderBackendTextureHandle(outputTexture),
-                        registry.GetRenderBackendTextureHandle(colorTexture),
-                        registry.GetRenderBackendTextureHandle(depthTexture),
-                        registry.GetRenderBackendTextureHandle(motionVectorTexture),
-                        registry.GetRenderBackendTextureHandle(exposureTexture));
+                        resourceRegistry.GetRenderBackendTextureHandle(outputTexture),
+                        resourceRegistry.GetRenderBackendTextureHandle(colorTexture),
+                        resourceRegistry.GetRenderBackendTextureHandle(depthTexture),
+                        resourceRegistry.GetRenderBackendTextureHandle(motionVectorTexture),
+                        resourceRegistry.GetRenderBackendTextureHandle(exposureTexture));
                 };
             });
 

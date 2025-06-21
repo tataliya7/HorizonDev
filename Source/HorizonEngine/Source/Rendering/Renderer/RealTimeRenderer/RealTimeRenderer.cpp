@@ -12,11 +12,11 @@ namespace Horizon
     RealTimeRenderer::RealTimeRenderer(
         RenderBackend* renderBackend,
         RenderGraphResourcePool* resourcePool,
-        ShaderLibrary* shaderLibrary,
+        ShaderCollection* shaderLibrary,
         RendererDefaultResources* defaultResources)
         : renderBackend(renderBackend)
         , resourcePool(resourcePool)
-        , shaderLibrary(shaderLibrary)
+        , shaderCollection(shaderLibrary)
         , defaultResources(defaultResources)
         , temporalSuperSamplingInterface(nullptr)
     {
@@ -564,7 +564,7 @@ namespace Horizon
             RenderGraphPassFlags::Copy,
             [&](RenderGraphBuilder& builder)
             {
-                return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
+                return [=](RenderBackendCommandList& commandList, const RenderGraphResourceRegistry& resourceRegistry)
                 {
                     //RenderBackendBarrier transitionBefore = RenderBackendBarrier(perFrameConstantBuffer, RenderBackendBufferSubresourceRange::Whole, RenderBackendResourceState::Undefined, RenderBackendResourceState::CopyDst);
                     //commandList.Barriers(&transitionBefore, 1);
@@ -708,11 +708,11 @@ namespace Horizon
             {
                 RenderGraphTextureHandle sceneColorTexture = sceneTextures.sceneColorTexture = builder.WriteTexture(sceneTextures.sceneColorTexture, RenderBackendResourceState::UnorderedAccess);
 
-                return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
+                return [=](RenderBackendCommandList& commandList, const RenderGraphResourceRegistry& resourceRegistry)
                 {
                     RenderBackendTextureClearValue clearValue = RenderBackendTextureClearValue::Black;
 
-                    RenderBackendTextureUAVDesc sceneColorTextureUAV = RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(sceneColorTexture), 0);
+                    RenderBackendTextureUAVDesc sceneColorTextureUAV = RenderBackendTextureUAVDesc::Create(resourceRegistry.GetRenderBackendTextureHandle(sceneColorTexture), 0);
                     commandList.ClearTextureUAV(sceneColorTextureUAV, clearValue);
                 };
             });
@@ -726,12 +726,12 @@ namespace Horizon
             {
                 RenderGraphTextureHandle sceneColorTexture = sceneTextures.sceneColorTexture = builder.WriteTexture(sceneTextures.sceneColorTexture, RenderBackendResourceState::RenderTarget);
 
-                return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
+                return [=](RenderBackendCommandList& commandList, const RenderGraphResourceRegistry& resourceRegistry)
                 {
                     RenderBackendTextureClearValue clearValue = RenderBackendTextureClearValue::Black;
                     clearValue.test = true;
 
-                    RenderBackendTextureUAVDesc sceneColorTextureUAV = RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(sceneColorTexture), 0);
+                    RenderBackendTextureUAVDesc sceneColorTextureUAV = RenderBackendTextureUAVDesc::Create(resourceRegistry.GetRenderBackendTextureHandle(sceneColorTexture), 0);
                     commandList.ClearTextureUAV(sceneColorTextureUAV, clearValue);
                 };
             });
@@ -785,10 +785,10 @@ namespace Horizon
         //         {
         //             reflectionsTexture = builder.WriteTexture(reflectionsTexture, RenderBackendResourceState::UnorderedAccess);
         //
-        //             return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
+        //
         //             {
         //                 commandList.ClearTextureUAV(
-        //                     registry.GetTextureUAVBindlessResourceDescriptorIndexreflectionsTexture), 0),
+        //                     resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndexreflectionsTexture), 0),
         //                     RenderBackendTextureClearValue::Black);
         //             };
         //         });

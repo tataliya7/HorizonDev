@@ -50,24 +50,24 @@ namespace Horizon
 //                 gtaoHorizonSearchAndIntegralTexture = builder.WriteTexture(gtaoHorizonSearchAndIntegralTexture, RenderBackendResourceState::UnorderedAccess);
 //                 gtaoDebugOutputTexture = builder.WriteTexture(gtaoDebugOutputTexture, RenderBackendResourceState::UnorderedAccess);
 //
-//                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
+//
 //                 {
 //                     uint32 threadGroupCountX = ComputeWorkGroupCount(gtaoTextureWidth, 8);
 //                     uint32 threadGroupCountY = ComputeWorkGroupCount(gtaoTextureHeight, 8);
 //
-//                     RenderBackendShaderConstants shaderConstants = {};
+//                     RenderBackendPushConstantValues shaderConstants = {};
 //                     shaderConstants.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
-//                     shaderConstants.BindTextureSRV(1, registry.GetTextureSRVBindlessResourceDescriptorIndex(sceneDepthTexture)));
-//                     shaderConstants.BindTextureSRV(2, registry.GetTextureSRVBindlessResourceDescriptorIndex(gbuffer0)));
-//                     shaderConstants.BindTextureUAV(3, registry.GetTextureUAVBindlessResourceDescriptorIndexgtaoHorizonSearchAndIntegralTexture), 0));
-//                     shaderConstants.BindTextureUAV(4, registry.GetTextureUAVBindlessResourceDescriptorIndexgtaoDebugOutputTexture), 0));
+//                     shaderConstants.BindTextureSRV(1, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(sceneDepthTexture)));
+//                     shaderConstants.BindTextureSRV(2, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(gbuffer0)));
+//                     shaderConstants.BindTextureUAV(3, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndexgtaoHorizonSearchAndIntegralTexture), 0));
+//                     shaderConstants.BindTextureUAV(4, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndexgtaoDebugOutputTexture), 0));
 //                     shaderConstants.PushConstants(0, 1.0f / gtaoTextureWidth);
 //                     shaderConstants.PushConstants(1, 1.0f / gtaoTextureHeight);
 //                     shaderConstants.PushConstants(2, settings.radius);
 //                     shaderConstants.PushConstants(3, settings.thickness);
 //                     shaderConstants.PushConstants(4, 100.0f);
 //
-//                     commandList.ClearTextureUAV(registry.GetTextureUAVBindlessResourceDescriptorIndexgtaoDebugOutputTexture), 0), RenderBackendTextureClearValue::CreateColorValueFloat4(0.0f, 0.0f, 0.0f, 0.0f));
+//                     commandList.ClearTextureUAV(resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndexgtaoDebugOutputTexture), 0), RenderBackendTextureClearValue::CreateColorValueFloat4(0.0f, 0.0f, 0.0f, 0.0f));
 //
 //                     RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::GTAOHorizonSearchAndIntegral);
 //                     commandList.Dispatch2D(
@@ -86,16 +86,16 @@ namespace Horizon
 //
 //                 gtaoSpatialFilteringTexture = builder.WriteTexture(gtaoSpatialFilteringTexture, RenderBackendResourceState::UnorderedAccess);
 //
-//                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
+//
 //                 {
 //                     uint32 threadGroupCountX = ComputeWorkGroupCount(gtaoTextureWidth, 8);
 //                     uint32 threadGroupCountY = ComputeWorkGroupCount(gtaoTextureHeight, 8);
 //
-//                     RenderBackendShaderConstants shaderConstants = {};
+//                     RenderBackendPushConstantValues shaderConstants = {};
 //                     shaderConstants.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
-//                     shaderConstants.BindTextureSRV(1, registry.GetTextureSRVBindlessResourceDescriptorIndex(sceneDepthTexture)));
-//                     shaderConstants.BindTextureSRV(2, registry.GetTextureSRVBindlessResourceDescriptorIndex(gtaoHorizonSearchAndIntegralTexture)));
-//                     shaderConstants.BindTextureUAV(3, registry.GetTextureUAVBindlessResourceDescriptorIndexgtaoSpatialFilteringTexture), 0));
+//                     shaderConstants.BindTextureSRV(1, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(sceneDepthTexture)));
+//                     shaderConstants.BindTextureSRV(2, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(gtaoHorizonSearchAndIntegralTexture)));
+//                     shaderConstants.BindTextureUAV(3, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndexgtaoSpatialFilteringTexture), 0));
 //                     shaderConstants.PushConstants(0, 1.0f / float(gtaoTextureWidth));
 //                     shaderConstants.PushConstants(1, 0.0f);
 //
@@ -132,19 +132,19 @@ namespace Horizon
 //
 //                 ambientOcclusionTexture = builder.WriteTexture(ambientOcclusionTexture, RenderBackendResourceState::UnorderedAccess);
 //
-//                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
+//
 //                 {
 //                     uint32 threadGroupCountX = ComputeWorkGroupCount(ambientOcclusionTextureWidth, 8);
 //                     uint32 threadGroupCountY = ComputeWorkGroupCount(ambientOcclusionTextureHeight, 8);
 //
-//                     RenderBackendShaderConstants shaderConstants = {};
+//                     RenderBackendPushConstantValues shaderConstants = {};
 //                     shaderConstants.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
-//                     shaderConstants.BindTextureSRV(1, registry.GetTextureSRVBindlessResourceDescriptorIndex(sceneDepthTexture)));
-//                     shaderConstants.BindTextureSRV(7, registry.GetTextureSRVBindlessResourceDescriptorIndex(motionVectorTexture)));
-//                     shaderConstants.BindTextureSRV(8, registry.GetTextureSRVBindlessResourceDescriptorIndex(historySceneDepthTexture)));
-//                     shaderConstants.BindTextureSRV(9, registry.GetTextureSRVBindlessResourceDescriptorIndex(horizonSearchAndIntegralTexture)));
-//                     shaderConstants.BindTextureSRV(10, registry.GetTextureSRVBindlessResourceDescriptorIndex(historyAmbientOcclusionTexture)));
-//                     shaderConstants.BindTextureUAV(11, registry.GetTextureUAVBindlessResourceDescriptorIndexambientOcclusionTexture), 0));
+//                     shaderConstants.BindTextureSRV(1, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(sceneDepthTexture)));
+//                     shaderConstants.BindTextureSRV(7, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(motionVectorTexture)));
+//                     shaderConstants.BindTextureSRV(8, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(historySceneDepthTexture)));
+//                     shaderConstants.BindTextureSRV(9, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(horizonSearchAndIntegralTexture)));
+//                     shaderConstants.BindTextureSRV(10, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(historyAmbientOcclusionTexture)));
+//                     shaderConstants.BindTextureUAV(11, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndexambientOcclusionTexture), 0));
 //
 //                     RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::GTAOTemporalFiltering);
 //                     commandList.Dispatch2D(

@@ -37,7 +37,7 @@ namespace Horizon
             RenderGraphPassFlags::Copy,
             [&](RenderGraphBuilder& builder)
             {
-                return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
+                return [=](RenderBackendCommandList& commandList, const RenderGraphResourceRegistry& resourceRegistry)
                 {
                     commandList.CopyBuffer(
                         cascadedShadowMapDataUploadBuffer,
@@ -68,14 +68,14 @@ namespace Horizon
             {
                 cascadedShadowMapDepthTexture = builder.WriteTexture(cascadedShadowMapDepthTexture, RenderBackendResourceState::DepthStencil);
 
-                builder.BindDepthStencil(cascadedShadowMapDepthTexture,
+                builder.SetDepthStencilBinding(cascadedShadowMapDepthTexture,
                     RenderBackendRenderPassLoadOperation::Clear,
                     RenderBackendRenderPassStoreOperation::Store,
                     RenderBackendRenderPassLoadOperation::None,
                     RenderBackendRenderPassStoreOperation::None,
                     RenderBackendDepthStencilAccessType::DepthWrite_StencilNoAccess);
 
-                return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
+                return [=](RenderBackendCommandList& commandList, const RenderGraphResourceRegistry& resourceRegistry)
                 {
                     {
                         RenderBackendViewport viewport(0.0f, 0.0f, float(shadowMapSize), float(shadowMapSize));
@@ -132,21 +132,21 @@ namespace Horizon
                 screenSpaceShadowMaskTexture = builder.WriteTexture(screenSpaceShadowMaskTexture, RenderBackendResourceState::UnorderedAccess);
                 cascadedShadowMapDebugVisualizationTexture = builder.WriteTexture(cascadedShadowMapDebugVisualizationTexture, RenderBackendResourceState::UnorderedAccess);
 
-                return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
+                return [=](RenderBackendCommandList& commandList, const RenderGraphResourceRegistry& resourceRegistry)
                 {
                     uint32 threadGroupCountX = ComputeShaderThreadGroupCount(renderResolution.width, 8);
                     uint32 threadGroupCountY = ComputeShaderThreadGroupCount(renderResolution.height, 8);
                     uint32 threadGroupCountZ = 1;
 
-                    RenderBackendShaderConstants shaderConstants = {};
+                    RenderBackendPushConstantValues shaderConstants = {};
                     shaderConstants.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
                     shaderConstants.BindBufferSRV(1, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(cascadedShadowMapShaderParameterBuffer));
-                    shaderConstants.BindTextureSRV(2, registry.GetTextureSRVBindlessResourceDescriptorIndex(sceneDepthTexture));
-                    shaderConstants.BindTextureSRV(3, registry.GetTextureSRVBindlessResourceDescriptorIndex(cascadedShadowMapDepthTexture));
-                    shaderConstants.BindTextureUAV(4, registry.GetTextureUAVBindlessResourceDescriptorIndex(screenSpaceShadowMaskTexture, 0));
-                    shaderConstants.BindTextureUAV(5, registry.GetTextureUAVBindlessResourceDescriptorIndex(cascadedShadowMapDebugVisualizationTexture, 0));
+                    shaderConstants.BindTextureSRV(2, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(sceneDepthTexture));
+                    shaderConstants.BindTextureSRV(3, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(cascadedShadowMapDepthTexture));
+                    shaderConstants.BindTextureUAV(4, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndex(screenSpaceShadowMaskTexture, 0));
+                    shaderConstants.BindTextureUAV(5, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndex(cascadedShadowMapDebugVisualizationTexture, 0));
 
-                    RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::ShadowMapProjectionForDistantLight);
+                    RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::ShadowMapProjectionForDistantLight);
 
                     commandList.Dispatch(
                         computeShader,
@@ -187,7 +187,7 @@ namespace Horizon
         //
         //         builder.BindDepthTarget(localLightShadowMapAtlas, RenderBackendRenderPassLoadOperation::Clear, RenderBackendRenderPassStoreOperation::Load);
         //
-        //         return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
+        //
         //         {
         //             RenderBackendViewport viewports[RenderBackendMaxViewportCount];
         //             RenderBackendScissor scissors[RenderBackendMaxViewportCount];
@@ -206,7 +206,7 @@ namespace Horizon
         //             commandList.SetViewports(viewports, numViewports);
         //             commandList.SetScissors(scissors, numViewports);
         //
-        //             RenderBackendGraphicsPipelineState graphicsPipelineState = {};
+        //             RenderBackendGraphicsPipelineStateDescription graphicsPipelineState = {};
         //             graphicsPipelineState.rasterizationState.cullMode = RenderBackendRasterizationCullMode::Back;
         //             graphicsPipelineState.rasterizationState.depthBiasSlopeFactor = -1.5f;
         //             graphicsPipelineState.rasterizationState.depthBiasConstantFactor = -1.25f;
@@ -216,7 +216,7 @@ namespace Horizon
         //
         //             for (const auto& drawCallInfo : renderEngine->drawList)
         //             {
-        //                 RenderBackendShaderConstants shaderConstants = {};
+        //                 RenderBackendPushConstantValues shaderConstants = {};
         //                 shaderConstants.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
         //                 shaderConstants.BindBuffer(1, renderEngine->geometryBuffer, drawCallInfo.geometryIndex * sizeof(GeometryShaderParameters));
         //                 shaderConstants.BindBuffer(2, renderEngine->materialBuffer, 0);

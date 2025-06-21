@@ -63,7 +63,7 @@ namespace Horizon
             RenderGraphPassFlags::Copy,
             [&](RenderGraphBuilder& builder)
             {
-                return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
+                return [=](RenderBackendCommandList& commandList, const RenderGraphResourceRegistry& resourceRegistry)
                 {
                     commandList.CopyBuffer(
                         localLightDataUploadBuffer,
@@ -101,12 +101,12 @@ namespace Horizon
             {
                 lightListStartOffsetBuffer = builder.WriteBuffer(lightListStartOffsetBuffer, RenderBackendResourceState::UnorderedAccess);
 
-                return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
+                return [=](RenderBackendCommandList& commandList, const RenderGraphResourceRegistry& resourceRegistry)
                 {
-                    RenderBackendShaderConstants shaderConstants = {};
-                    shaderConstants.BindTextureUAV(0, registry.GetBufferUAVBindlessResourceDescriptorIndex(lightListStartOffsetBuffer));
+                    RenderBackendPushConstantValues shaderConstants = {};
+                    shaderConstants.BindTextureUAV(0, resourceRegistry.GetBufferUAVBindlessResourceDescriptorIndex(lightListStartOffsetBuffer));
 
-                    RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::LightGridBufferInitialization);
+                    RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::LightGridBufferInitialization);
 
                     commandList.Dispatch(
                         computeShader,
@@ -127,25 +127,25 @@ namespace Horizon
                 lightListBuffer = builder.WriteBuffer(lightListBuffer, RenderBackendResourceState::UnorderedAccess);
                 lightListStartOffsetBuffer = builder.WriteBuffer(lightListStartOffsetBuffer, RenderBackendResourceState::UnorderedAccess);
 
-                return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
+                return [=](RenderBackendCommandList& commandList, const RenderGraphResourceRegistry& resourceRegistry)
                 {
                     uint32 threadGroupCountX = ComputeShaderThreadGroupCount(lightGridSizeX, GLocalLightCullingThreadGroupSize);
                     uint32 threadGroupCountY = ComputeShaderThreadGroupCount(lightGridSizeY, GLocalLightCullingThreadGroupSize);
                     uint32 threadGroupCountZ = ComputeShaderThreadGroupCount(lightGridSizeZ, GLocalLightCullingThreadGroupSize);
 
-                    RenderBackendShaderConstants shaderConstants = {};
+                    RenderBackendPushConstantValues shaderConstants = {};
                     shaderConstants.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
                     shaderConstants.BindBufferCBV(1, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(localLightDataBuffer));
-                    //shaderConstants.BindTextureSRV(1, registry.GetBufferSRVBindlessResourceDescriptorIndex(localLightDataBuffer));
-                    shaderConstants.BindTextureUAV(2, registry.GetBufferUAVBindlessResourceDescriptorIndex(cellDataBuffer));
-                    shaderConstants.BindTextureUAV(3, registry.GetBufferUAVBindlessResourceDescriptorIndex(lightListBuffer));
-                    shaderConstants.BindTextureUAV(4, registry.GetBufferUAVBindlessResourceDescriptorIndex(lightListStartOffsetBuffer));
+                    //shaderConstants.BindTextureSRV(1, resourceRegistry.GetBufferSRVBindlessResourceDescriptorIndex(localLightDataBuffer));
+                    shaderConstants.BindTextureUAV(2, resourceRegistry.GetBufferUAVBindlessResourceDescriptorIndex(cellDataBuffer));
+                    shaderConstants.BindTextureUAV(3, resourceRegistry.GetBufferUAVBindlessResourceDescriptorIndex(lightListBuffer));
+                    shaderConstants.BindTextureUAV(4, resourceRegistry.GetBufferUAVBindlessResourceDescriptorIndex(lightListStartOffsetBuffer));
                     shaderConstants.BindScalar(5, localLightCount);
                     shaderConstants.BindScalar(6, lightGridSizeX);
                     shaderConstants.BindScalar(7, lightGridSizeY);
                     shaderConstants.BindScalar(8, lightGridSizeZ);
 
-                    RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::LightGridLocalLightCulling);
+                    RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::LightGridLocalLightCulling);
 
                     commandList.Dispatch(
                         computeShader,

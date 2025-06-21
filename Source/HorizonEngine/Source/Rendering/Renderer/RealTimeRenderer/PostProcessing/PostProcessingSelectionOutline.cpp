@@ -36,9 +36,9 @@ namespace Horizon
             {
                 maskTexture = builder.WriteTexture(maskTexture, RenderBackendResourceState::RenderTarget);
 
-                builder.BindRenderTarget(0, maskTexture, RenderBackendRenderPassLoadOperation::Clear, RenderBackendRenderPassStoreOperation::Store);
+                builder.SetRenderTargetBinding(0, maskTexture, RenderBackendRenderPassLoadOperation::Clear, RenderBackendRenderPassStoreOperation::Store);
 
-                return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
+                return [=](RenderBackendCommandList& commandList, const RenderGraphResourceRegistry& resourceRegistry)
                     {
                         RenderBackendViewport viewport(0.0f, 0.0f, (float)targetResolution.width, (float)targetResolution.height);
                         commandList.SetViewports(&viewport, 1);
@@ -46,12 +46,12 @@ namespace Horizon
                         RenderBackendScissor scissor(0, 0, targetResolution.width, targetResolution.height);
                         commandList.SetScissors(&scissor, 1);
 
-                        RenderBackendGraphicsPipelineState graphicsPipelineState = {};
+                        RenderBackendGraphicsPipelineStateDescription graphicsPipelineState = {};
                         graphicsPipelineState.rasterizationState.cullMode = RenderBackendRasterizationCullMode::Back;
 
                         /*for (const auto& drawCallInfo : renderEngine->drawList)
                         {
-                            RenderBackendShaderConstants shaderConstants = {};
+                            RenderBackendPushConstantValues shaderConstants = {};
                             shaderConstants.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
                             shaderConstants.BindBuffer(1, renderEngine->geometryBuffer, drawCallInfo.geometryIndex * sizeof(GeometryShaderParameters));
                             shaderConstants.BindBuffer(2, drawCallInfo.vertexBuffers[0], 0);
@@ -88,18 +88,18 @@ namespace Horizon
                 maskTexture = builder.ReadTexture(maskTexture, RenderBackendResourceState::ShaderResource);
                 jumpFloodTexture0 = builder.WriteTexture(jumpFloodTexture0, RenderBackendResourceState::UnorderedAccess);
 
-                return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
+                return [=](RenderBackendCommandList& commandList, const RenderGraphResourceRegistry& resourceRegistry)
                 {
                     uint32 threadGroupCountX = ComputeShaderThreadGroupCount(targetResolution.width, PostProcessingThreadGroupSizeX);
                     uint32 threadGroupCountY = ComputeShaderThreadGroupCount(targetResolution.height, PostProcessingThreadGroupSizeY);
                     uint32 threadGroupCountZ = 1;
 
-                    RenderBackendShaderConstants shaderConstants = {};
+                    RenderBackendPushConstantValues shaderConstants = {};
                     shaderConstants.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
-                    shaderConstants.BindTextureSRV(1, registry.GetTextureSRVBindlessResourceDescriptorIndex(maskTexture));
-                    shaderConstants.BindTextureUAV(2, registry.GetTextureUAVBindlessResourceDescriptorIndex(jumpFloodTexture0, 0));
+                    shaderConstants.BindTextureSRV(1, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(maskTexture));
+                    shaderConstants.BindTextureUAV(2, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndex(jumpFloodTexture0, 0));
 
-                    RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::SelectionOutlineSetup);
+                    RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::SelectionOutlineSetup);
 
                     commandList.Dispatch(
                         computeShader,
@@ -131,19 +131,19 @@ namespace Horizon
                     jumpFloodPassInputTexture = builder.ReadTexture(jumpFloodPassInputTexture, RenderBackendResourceState::ShaderResource);
                     jumpFloodPassOutputTexture = builder.WriteTexture(jumpFloodPassOutputTexture, RenderBackendResourceState::UnorderedAccess);
 
-                    return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
+                    return [=](RenderBackendCommandList& commandList, const RenderGraphResourceRegistry& resourceRegistry)
                     {
                         uint32 threadGroupCountX = ComputeShaderThreadGroupCount(targetResolution.width, PostProcessingThreadGroupSizeX);
                         uint32 threadGroupCountY = ComputeShaderThreadGroupCount(targetResolution.height, PostProcessingThreadGroupSizeY);
                         uint32 threadGroupCountZ = 1;
 
-                        RenderBackendShaderConstants shaderConstants = {};
+                        RenderBackendPushConstantValues shaderConstants = {};
                         shaderConstants.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
-                        shaderConstants.BindTextureSRV(1, registry.GetTextureSRVBindlessResourceDescriptorIndex(jumpFloodPassInputTexture));
-                        shaderConstants.BindTextureUAV(2, registry.GetTextureUAVBindlessResourceDescriptorIndex(jumpFloodPassOutputTexture, 0));
+                        shaderConstants.BindTextureSRV(1, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(jumpFloodPassInputTexture));
+                        shaderConstants.BindTextureUAV(2, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndex(jumpFloodPassOutputTexture, 0));
                         shaderConstants.BindScalar(3, stepWidth);
 
-                        RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::SelectionOutlineJumpFlood);
+                        RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::SelectionOutlineJumpFlood);
 
                         commandList.Dispatch(
                             computeShader,
@@ -168,18 +168,18 @@ namespace Horizon
                 jumpFloodTexture = builder.ReadTexture(jumpFloodTexture, RenderBackendResourceState::ShaderResource);
                 outputTexture = builder.WriteTexture(outputTexture, RenderBackendResourceState::UnorderedAccess);
 
-                return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
+                return [=](RenderBackendCommandList& commandList, const RenderGraphResourceRegistry& resourceRegistry)
                 {
                     uint32 threadGroupCountX = ComputeShaderThreadGroupCount(targetResolution.width, PostProcessingThreadGroupSizeX);
                     uint32 threadGroupCountY = ComputeShaderThreadGroupCount(targetResolution.height, PostProcessingThreadGroupSizeY);
                     uint32 threadGroupCountZ = 1;
 
-                    RenderBackendShaderConstants shaderConstants = {};
+                    RenderBackendPushConstantValues shaderConstants = {};
                     shaderConstants.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
-                    shaderConstants.BindTextureSRV(1, registry.GetTextureSRVBindlessResourceDescriptorIndex(jumpFloodTexture));
-                    shaderConstants.BindTextureUAV(2, registry.GetTextureUAVBindlessResourceDescriptorIndex(outputTexture, 0));
+                    shaderConstants.BindTextureSRV(1, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(jumpFloodTexture));
+                    shaderConstants.BindTextureUAV(2, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndex(outputTexture, 0));
 
-                    RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::SelectionOutlineComposite);
+                    RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::SelectionOutlineComposite);
 
                     commandList.Dispatch(
                         computeShader,

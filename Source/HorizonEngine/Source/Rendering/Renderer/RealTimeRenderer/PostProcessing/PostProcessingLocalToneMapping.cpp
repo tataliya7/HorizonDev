@@ -39,18 +39,18 @@ namespace Horizon
                 colorTexture = builder.ReadTexture(colorTexture, RenderBackendResourceState::ShaderResource);
                 gridTexture = builder.WriteTexture(gridTexture, RenderBackendResourceState::UnorderedAccess);
 
-                return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
+                return [=](RenderBackendCommandList& commandList, const RenderGraphResourceRegistry& resourceRegistry)
                 {
                     uint32 threadGroupCountX = bilateralGridTextureWidth;
                     uint32 threadGroupCountY = bilateralGridTextureHeight;
                     uint32 threadGroupCountZ = 1;
 
-                    RenderBackendShaderConstants shaderConstants = {};
+                    RenderBackendPushConstantValues shaderConstants = {};
                     shaderConstants.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
-                    shaderConstants.BindTextureSRV(1, registry.GetTextureSRVBindlessResourceDescriptorIndex(colorTexture));
-                    shaderConstants.BindTextureUAV(2, registry.GetTextureUAVBindlessResourceDescriptorIndex(gridTexture, 0));
+                    shaderConstants.BindTextureSRV(1, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(colorTexture));
+                    shaderConstants.BindTextureUAV(2, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndex(gridTexture, 0));
 
-                    RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::BilateralGridLocalToneMappingBuildGrid);
+                    RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::BilateralGridLocalToneMappingBuildGrid);
 
                     commandList.Dispatch(
                         computeShader,
@@ -85,18 +85,18 @@ namespace Horizon
                 gaussianFilterInputColorTexture = builder.ReadTexture(gaussianFilterInputColorTexture, RenderBackendResourceState::ShaderResource);
                 lowResolutionLogLuminanceTexture = builder.WriteTexture(lowResolutionLogLuminanceTexture, RenderBackendResourceState::UnorderedAccess);
 
-                return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
+                return [=](RenderBackendCommandList& commandList, const RenderGraphResourceRegistry& resourceRegistry)
                 {
                     uint32 threadGroupCountX = ComputeShaderThreadGroupCount(gaussianFilteredLogLuminanceTextureDesc.width, 8);
                     uint32 threadGroupCountY = ComputeShaderThreadGroupCount(gaussianFilteredLogLuminanceTextureDesc.height, 8);
                     uint32 threadGroupCountZ = 1;
 
-                    RenderBackendShaderConstants shaderConstants = {};
+                    RenderBackendPushConstantValues shaderConstants = {};
                     shaderConstants.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
-                    shaderConstants.BindTextureSRV(1, registry.GetTextureSRVBindlessResourceDescriptorIndex(gaussianFilterInputColorTexture));
-                    shaderConstants.BindTextureUAV(2, registry.GetTextureUAVBindlessResourceDescriptorIndex(lowResolutionLogLuminanceTexture, 0));
+                    shaderConstants.BindTextureSRV(1, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(gaussianFilterInputColorTexture));
+                    shaderConstants.BindTextureUAV(2, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndex(lowResolutionLogLuminanceTexture, 0));
 
-                    RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::BilateralGridLocalToneMappingComputeLogLuminance);
+                    RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::BilateralGridLocalToneMappingComputeLogLuminance);
 
                     commandList.Dispatch(
                         computeShader,
@@ -127,18 +127,18 @@ namespace Horizon
             {
                 gaussianDistributionBuffer = builder.WriteBuffer(gaussianDistributionBuffer, RenderBackendResourceState::UnorderedAccess);
 
-                return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
+                return [=](RenderBackendCommandList& commandList, const RenderGraphResourceRegistry& resourceRegistry)
                 {
                     uint32 threadGroupCountX = 1;
                     uint32 threadGroupCountY = 1;
                     uint32 threadGroupCountZ = 1;
 
-                    RenderBackendShaderConstants shaderConstants = {};
-                    shaderConstants.BindBufferUAV(0, registry.GetBufferUAVBindlessResourceDescriptorIndex(gaussianDistributionBuffer));
+                    RenderBackendPushConstantValues shaderConstants = {};
+                    shaderConstants.BindBufferUAV(0, resourceRegistry.GetBufferUAVBindlessResourceDescriptorIndex(gaussianDistributionBuffer));
                     shaderConstants.BindScalar(1, gaussianFilterKernelSize);
                     shaderConstants.BindScalar(2, gaussianFilterSigma);
 
-                    RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::BilateralGridLocalToneMappingGaussianDistribution);
+                    RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::BilateralGridLocalToneMappingGaussianDistribution);
 
                     commandList.Dispatch(
                         computeShader,
@@ -158,20 +158,20 @@ namespace Horizon
                 lowResolutionLogLuminanceTexture = builder.ReadTexture(lowResolutionLogLuminanceTexture, RenderBackendResourceState::ShaderResource);
                 intermediateGaussianFilteredLogLuminanceTexture = builder.WriteTexture(intermediateGaussianFilteredLogLuminanceTexture, RenderBackendResourceState::UnorderedAccess);
 
-                return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
+                return [=](RenderBackendCommandList& commandList, const RenderGraphResourceRegistry& resourceRegistry)
                 {
                     uint32 threadGroupCountX = ComputeShaderThreadGroupCount(gaussianFilteredLogLuminanceTextureDesc.width, 8);
                     uint32 threadGroupCountY = ComputeShaderThreadGroupCount(gaussianFilteredLogLuminanceTextureDesc.height, 8);
                     uint32 threadGroupCountZ = 1;
 
-                    RenderBackendShaderConstants shaderConstants = {};
-                    shaderConstants.BindBufferSRV(0, registry.GetBufferSRVBindlessResourceDescriptorIndex(gaussianDistributionBuffer));
-                    shaderConstants.BindTextureSRV(1, registry.GetTextureSRVBindlessResourceDescriptorIndex(lowResolutionLogLuminanceTexture));
-                    shaderConstants.BindTextureUAV(2, registry.GetTextureUAVBindlessResourceDescriptorIndex(intermediateGaussianFilteredLogLuminanceTexture, 0));
+                    RenderBackendPushConstantValues shaderConstants = {};
+                    shaderConstants.BindBufferSRV(0, resourceRegistry.GetBufferSRVBindlessResourceDescriptorIndex(gaussianDistributionBuffer));
+                    shaderConstants.BindTextureSRV(1, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(lowResolutionLogLuminanceTexture));
+                    shaderConstants.BindTextureUAV(2, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndex(intermediateGaussianFilteredLogLuminanceTexture, 0));
                     shaderConstants.BindScalar(3, 0u);
                     shaderConstants.BindScalar(4, gaussianFilterKernelSize);
 
-                    RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::BilateralGridLocalToneMappingGaussianFilter);
+                    RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::BilateralGridLocalToneMappingGaussianFilter);
 
                     commandList.Dispatch(
                         computeShader,
@@ -190,20 +190,20 @@ namespace Horizon
                 intermediateGaussianFilteredLogLuminanceTexture = builder.ReadTexture(intermediateGaussianFilteredLogLuminanceTexture, RenderBackendResourceState::ShaderResource);
                 gaussianFilteredLogLuminanceTexture = builder.WriteTexture(gaussianFilteredLogLuminanceTexture, RenderBackendResourceState::UnorderedAccess);
 
-                return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
+                return [=](RenderBackendCommandList& commandList, const RenderGraphResourceRegistry& resourceRegistry)
                 {
                     uint32 threadGroupCountX = ComputeShaderThreadGroupCount(gaussianFilteredLogLuminanceTextureDesc.width, 8);
                     uint32 threadGroupCountY = ComputeShaderThreadGroupCount(gaussianFilteredLogLuminanceTextureDesc.height, 8);
                     uint32 threadGroupCountZ = 1;
 
-                    RenderBackendShaderConstants shaderConstants = {};
-                    shaderConstants.BindBufferSRV(0, registry.GetBufferSRVBindlessResourceDescriptorIndex(gaussianDistributionBuffer));
-                    shaderConstants.BindTextureSRV(1, registry.GetTextureSRVBindlessResourceDescriptorIndex(intermediateGaussianFilteredLogLuminanceTexture));
-                    shaderConstants.BindTextureUAV(2, registry.GetTextureUAVBindlessResourceDescriptorIndex(gaussianFilteredLogLuminanceTexture, 0));
+                    RenderBackendPushConstantValues shaderConstants = {};
+                    shaderConstants.BindBufferSRV(0, resourceRegistry.GetBufferSRVBindlessResourceDescriptorIndex(gaussianDistributionBuffer));
+                    shaderConstants.BindTextureSRV(1, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(intermediateGaussianFilteredLogLuminanceTexture));
+                    shaderConstants.BindTextureUAV(2, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndex(gaussianFilteredLogLuminanceTexture, 0));
                     shaderConstants.BindScalar(3, 1u);
                     shaderConstants.BindScalar(4, gaussianFilterKernelSize);
 
-                    RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::BilateralGridLocalToneMappingGaussianFilter);
+                    RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::BilateralGridLocalToneMappingGaussianFilter);
 
                     commandList.Dispatch(
                         computeShader,
@@ -233,19 +233,19 @@ namespace Horizon
                 autoExposureBuffer = builder.ReadBuffer(autoExposureBuffer, RenderBackendResourceState::ShaderResource);
                 localToneMappingTexture = builder.WriteTexture(localToneMappingTexture, RenderBackendResourceState::UnorderedAccess);
 
-                return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
+                return [=](RenderBackendCommandList& commandList, const RenderGraphResourceRegistry& resourceRegistry)
                 {
                     uint32 threadGroupCountX = ComputeShaderThreadGroupCount(localToneMappingTextureDesc.width, 8);
                     uint32 threadGroupCountY = ComputeShaderThreadGroupCount(localToneMappingTextureDesc.height, 8);
                     uint32 threadGroupCountZ = 1;
 
-                    RenderBackendShaderConstants shaderConstants = {};
+                    RenderBackendPushConstantValues shaderConstants = {};
                     shaderConstants.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
-                    shaderConstants.BindTextureSRV(1, registry.GetTextureSRVBindlessResourceDescriptorIndex(colorTexture));
-                    shaderConstants.BindTextureSRV(2, registry.GetTextureSRVBindlessResourceDescriptorIndex(bilaterallyFilteredGridTexture));
-                    shaderConstants.BindTextureSRV(3, registry.GetTextureSRVBindlessResourceDescriptorIndex(gaussianFilteredLogLuminanceTexture));
-                    shaderConstants.BindBufferSRV(4, registry.GetBufferSRVBindlessResourceDescriptorIndex(autoExposureBuffer));
-                    shaderConstants.BindTextureUAV(5, registry.GetTextureUAVBindlessResourceDescriptorIndex(localToneMappingTexture, 0));
+                    shaderConstants.BindTextureSRV(1, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(colorTexture));
+                    shaderConstants.BindTextureSRV(2, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(bilaterallyFilteredGridTexture));
+                    shaderConstants.BindTextureSRV(3, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(gaussianFilteredLogLuminanceTexture));
+                    shaderConstants.BindBufferSRV(4, resourceRegistry.GetBufferSRVBindlessResourceDescriptorIndex(autoExposureBuffer));
+                    shaderConstants.BindTextureUAV(5, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndex(localToneMappingTexture, 0));
                     shaderConstants.BindScalar(6, view.renderSettings.postProcessingSettings.bilateralGridLocalToneMappingShadows);
                     shaderConstants.BindScalar(7, view.renderSettings.postProcessingSettings.bilateralGridLocalToneMappingHighlights);
                     shaderConstants.BindScalar(8, view.renderSettings.postProcessingSettings.bilateralGridLocalToneMappingDetailStrength);
@@ -253,7 +253,7 @@ namespace Horizon
                     shaderConstants.BindScalar(10, 1.0f / float(bilateralGridTextureWidth));
                     shaderConstants.BindScalar(11, 1.0f / float(bilateralGridTextureHeight));
 
-                    RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::BilateralGridLocalToneMappingUpsampling);
+                    RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::BilateralGridLocalToneMappingUpsampling);
 
                     commandList.Dispatch(
                         computeShader,
@@ -322,20 +322,20 @@ namespace Horizon
                 exposureFusionLuminanceTexture = builder.WriteTexture(exposureFusionLuminanceTexture, RenderBackendResourceState::UnorderedAccess);
                 exposureFusionWeightTexture = builder.WriteTexture(exposureFusionWeightTexture, RenderBackendResourceState::UnorderedAccess);
 
-                return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
+                return [=](RenderBackendCommandList& commandList, const RenderGraphResourceRegistry& resourceRegistry)
                 {
                     uint32 threadGroupCountX = ComputeShaderThreadGroupCount(width, PostProcessingThreadGroupSizeX);
                     uint32 threadGroupCountY = ComputeShaderThreadGroupCount(height, PostProcessingThreadGroupSizeY);
                     uint32 threadGroupCountZ = 1;
 
-                    RenderBackendShaderConstants shaderConstants = {};
+                    RenderBackendPushConstantValues shaderConstants = {};
                     shaderConstants.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
-                    shaderConstants.BindTextureSRV(1, registry.GetTextureSRVBindlessResourceDescriptorIndex(colorTexture));
-                    shaderConstants.BindTextureSRV(2, registry.GetTextureSRVBindlessResourceDescriptorIndex(exposureTexture));
-                    shaderConstants.BindTextureUAV(3, registry.GetTextureUAVBindlessResourceDescriptorIndex(exposureFusionLuminanceTexture, 0));
-                    shaderConstants.BindTextureUAV(4, registry.GetTextureUAVBindlessResourceDescriptorIndex(exposureFusionWeightTexture, 0));
+                    shaderConstants.BindTextureSRV(1, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(colorTexture));
+                    shaderConstants.BindTextureSRV(2, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(exposureTexture));
+                    shaderConstants.BindTextureUAV(3, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndex(exposureFusionLuminanceTexture, 0));
+                    shaderConstants.BindTextureUAV(4, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndex(exposureFusionWeightTexture, 0));
 
-                    RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::ExposureFusionComputeLuminanceAndWeight);
+                    RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::ExposureFusionComputeLuminanceAndWeight);
 
                     commandList.Dispatch(
                         computeShader,
@@ -354,11 +354,11 @@ namespace Horizon
             {
                 localToneMappingLuminance = builder.ReadWriteTexture(localToneMappingLuminance, RenderBackendResourceState::ShaderResource);
 
-                return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
+
                 {
                     uint32 w = width;
                     uint32 h = height;
-                    RenderBackendTextureHandle textureHandle = registry.GetRenderBackendTextureHandle(localToneMappingLuminance);
+                    RenderBackendTextureHandle textureHandle = resourceRegistry.GetRenderBackendTextureHandle(localToneMappingLuminance);
 
                     RenderBackendShaderHandle downsampleTexture2DCS = shaderLibrary->GetShader(ShaderID::DownsampleTexture);
 
@@ -388,7 +388,7 @@ namespace Horizon
                         uint32 threadGroupCountX = ComputeShaderThreadGroupCount(w, 8);
                         uint32 threadGroupCountY = ComputeShaderThreadGroupCount(h, 8);
 
-                        RenderBackendShaderConstants shaderConstants = {};
+                        RenderBackendPushConstantValues shaderConstants = {};
                         shaderConstants.BindTextureSRV(0, RenderBackendTextureSRVDesc::Create(textureHandle));
                         shaderConstants.BindTextureUAV(1, RenderBackendTextureUAVDesc::Create(textureHandle, mipLevel));
                         shaderConstants.PushConstants(0, (float)(mipLevel - 1));
@@ -416,11 +416,11 @@ namespace Horizon
             {
                 localToneMappingWeights = builder.ReadWriteTexture(localToneMappingWeights, RenderBackendResourceState::ShaderResource);
 
-                return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
+
                 {
                     uint32 w = width;
                     uint32 h = height;
-                    RenderBackendTextureHandle textureHandle = registry.GetRenderBackendTextureHandle(localToneMappingWeights);
+                    RenderBackendTextureHandle textureHandle = resourceRegistry.GetRenderBackendTextureHandle(localToneMappingWeights);
 
                     RenderBackendShaderHandle downsampleTexture2DCS = renderEngine->GetShaderLibrary()->GetShader((uint32)ShaderPipelineID::DownsampleTexture2D);
 
@@ -451,7 +451,7 @@ namespace Horizon
                         uint32 threadGroupCountY = ComputeShaderThreadGroupCount(h, 8);
                         uint32 threadGroupCountZ = 1;
 
-                        RenderBackendShaderConstants shaderConstants = {};
+                        RenderBackendPushConstantValues shaderConstants = {};
                         shaderConstants.BindTextureSRV(0, RenderBackendTextureSRVDesc::Create(textureHandle));
                         shaderConstants.BindTextureUAV(1, RenderBackendTextureUAVDesc::Create(textureHandle, mipLevel));
                         //shaderConstants.PushConstants(0, (float)(mipLevel - 1));
@@ -482,20 +482,20 @@ namespace Horizon
 
                 localToneMappingAssemble = builder.WriteTexture(localToneMappingAssemble, RenderBackendResourceState::UnorderedAccess);
 
-                return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
+                return [=](RenderBackendCommandList& commandList, const RenderGraphResourceRegistry& resourceRegistry)
                 {
                     uint32 threadGroupCountX = ComputeShaderThreadGroupCount(coarsestMipLevelWidth, PostProcessingThreadGroupSizeX);
                     uint32 threadGroupCountY = ComputeShaderThreadGroupCount(coarsestMipLevelHeight, PostProcessingThreadGroupSizeY);
                     uint32 threadGroupCountZ = 1;
 
-                    RenderBackendShaderConstants shaderConstants = {};
+                    RenderBackendPushConstantValues shaderConstants = {};
                     shaderConstants.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
-                    shaderConstants.BindTextureSRV(1, registry.GetTextureSRVBindlessResourceDescriptorIndex(exposureFusionLuminanceTexture));
-                    shaderConstants.BindTextureSRV(2, registry.GetTextureSRVBindlessResourceDescriptorIndex(exposureFusionWeightTexture));
-                    shaderConstants.BindTextureUAV(3, registry.GetTextureUAVBindlessResourceDescriptorIndex(localToneMappingAssemble, coarsestMipLevel));
+                    shaderConstants.BindTextureSRV(1, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(exposureFusionLuminanceTexture));
+                    shaderConstants.BindTextureSRV(2, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(exposureFusionWeightTexture));
+                    shaderConstants.BindTextureUAV(3, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndex(localToneMappingAssemble, coarsestMipLevel));
                     //shaderConstants.PushConstants(0, (float)coarsestMipLevel);
 
-                    RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::LocalToneMappingBlendExposures);
+                    RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::LocalToneMappingBlendExposures);
 
                     commandList.Dispatch(
                         computeShader,
@@ -516,7 +516,7 @@ namespace Horizon
 
                 localToneMappingAssemble = builder.ReadWriteTexture(localToneMappingAssemble, RenderBackendResourceState::UnorderedAccess);
 
-                return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
+                return [=](RenderBackendCommandList& commandList, const RenderGraphResourceRegistry& resourceRegistry)
                 {
                     uint32 w = coarsestMipLevelWidth;
                     uint32 h = coarsestMipLevelHeight;
@@ -525,7 +525,7 @@ namespace Horizon
                     {
                         RenderBackendBarrier barriers[] =
                         {
-                            RenderBackendBarrier(registry.GetRenderBackendTextureHandle(localToneMappingAssemble), RenderBackendTextureSubresourceRange(mipLevel, 1, 0, RenderBackendTextureSubresourceRange::RemainingArrayLayers), RenderBackendResourceState::UnorderedAccess, RenderBackendResourceState::ShaderResource),
+                            RenderBackendBarrier(resourceRegistry.GetRenderBackendTextureHandle(localToneMappingAssemble), RenderBackendTextureSubresourceRange(mipLevel, 1, 0, RenderBackendTextureSubresourceRange::RemainingArrayLayers), RenderBackendResourceState::UnorderedAccess, RenderBackendResourceState::ShaderResource),
                         };
                         commandList.Barriers(barriers, 1);
 
@@ -536,15 +536,15 @@ namespace Horizon
                         uint32 threadGroupCountY = ComputeShaderThreadGroupCount(h, PostProcessingThreadGroupSizeY);
                         uint32 threadGroupCountZ = 1;
 
-                        RenderBackendShaderConstants shaderConstants = {};
+                        RenderBackendPushConstantValues shaderConstants = {};
                         shaderConstants.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
-                        shaderConstants.BindTextureSRV(1, registry.GetTextureSRVBindlessResourceDescriptorIndex(exposureFusionLuminanceTexture));
-                        shaderConstants.BindTextureSRV(2, registry.GetTextureSRVBindlessResourceDescriptorIndex(exposureFusionWeightTexture));
-                        shaderConstants.BindTextureSRV(3, registry.GetTextureSRVBindlessResourceDescriptorIndex(localToneMappingAssemble));
-                        shaderConstants.BindTextureUAV(4, registry.GetTextureUAVBindlessResourceDescriptorIndex(localToneMappingAssemble, mipLevel - 1));
+                        shaderConstants.BindTextureSRV(1, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(exposureFusionLuminanceTexture));
+                        shaderConstants.BindTextureSRV(2, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(exposureFusionWeightTexture));
+                        shaderConstants.BindTextureSRV(3, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(localToneMappingAssemble));
+                        shaderConstants.BindTextureUAV(4, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndex(localToneMappingAssemble, mipLevel - 1));
                         //shaderConstants.PushConstants(0, (float)mipLevel);
 
-                        RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::LocalToneMappingBlendLaplacian);
+                        RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::LocalToneMappingBlendLaplacian);
 
                         commandList.Dispatch(
                             computeShader,
@@ -558,7 +558,7 @@ namespace Horizon
                     {
                         RenderBackendBarrier barriers[] =
                         {
-                            RenderBackendBarrier(registry.GetRenderBackendTextureHandle(localToneMappingAssemble), RenderBackendTextureSubresourceRange(displayMipLevel + 1, coarsestMipLevel - displayMipLevel, 0, RenderBackendTextureSubresourceRange::RemainingArrayLayers), RenderBackendResourceState::ShaderResource, RenderBackendResourceState::UnorderedAccess),
+                            RenderBackendBarrier(resourceRegistry.GetRenderBackendTextureHandle(localToneMappingAssemble), RenderBackendTextureSubresourceRange(displayMipLevel + 1, coarsestMipLevel - displayMipLevel, 0, RenderBackendTextureSubresourceRange::RemainingArrayLayers), RenderBackendResourceState::ShaderResource, RenderBackendResourceState::UnorderedAccess),
                         };
                         commandList.Barriers(barriers, 1);
                     }
@@ -579,26 +579,26 @@ namespace Horizon
 
                 localToneMappingAssemble = builder.WriteTexture(localToneMappingAssemble, RenderBackendResourceState::UnorderedAccess);
 
-                return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
+                return [=](RenderBackendCommandList& commandList, const RenderGraphResourceRegistry& resourceRegistry)
                 {
                     uint32 threadGroupCountX = ComputeShaderThreadGroupCount(targetResolution.width, PostProcessingThreadGroupSizeX);
                     uint32 threadGroupCountY = ComputeShaderThreadGroupCount(targetResolution.height, PostProcessingThreadGroupSizeY);
                     uint32 threadGroupCountZ = 1;
 
-                    RenderBackendShaderConstants shaderConstants = {};
+                    RenderBackendPushConstantValues shaderConstants = {};
                     shaderConstants.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
-                    shaderConstants.BindTextureSRV(1, registry.GetTextureSRVBindlessResourceDescriptorIndex(colorTexture));
-                    shaderConstants.BindTextureSRV(5, registry.GetTextureSRVBindlessResourceDescriptorIndex(exposureTexture));
-                    shaderConstants.BindTextureSRV(2, registry.GetTextureSRVBindlessResourceDescriptorIndex(exposureFusionLuminanceTexture));
-                    shaderConstants.BindTextureSRV(3, registry.GetTextureSRVBindlessResourceDescriptorIndex(localToneMappingAssemble));
-                    shaderConstants.BindTextureUAV(4, registry.GetTextureUAVBindlessResourceDescriptorIndex(localToneMappingTexture, 0));
+                    shaderConstants.BindTextureSRV(1, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(colorTexture));
+                    shaderConstants.BindTextureSRV(5, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(exposureTexture));
+                    shaderConstants.BindTextureSRV(2, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(exposureFusionLuminanceTexture));
+                    shaderConstants.BindTextureSRV(3, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(localToneMappingAssemble));
+                    shaderConstants.BindTextureUAV(4, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndex(localToneMappingTexture, 0));
                     ///shaderConstants.PushConstants(0, (float)displayMipLevel);
                     ///shaderConstants.PushConstants(1, (float)displayMipLevelWidth);
                     ///shaderConstants.PushConstants(2, (float)displayMipLevelHeight);
                     ///shaderConstants.PushConstants(3, 1.0f / (float)displayMipLevelWidth);
                     ///shaderConstants.PushConstants(4, 1.0f / (float)displayMipLevelHeight);
 
-                    RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::ExposureFusionGuidedUpsampling);
+                    RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::ExposureFusionGuidedUpsampling);
 
                     commandList.Dispatch(
                         computeShader,

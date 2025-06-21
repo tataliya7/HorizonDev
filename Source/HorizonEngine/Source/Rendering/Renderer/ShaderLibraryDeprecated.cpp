@@ -1,9 +1,9 @@
-#include "ShaderLibrary.h"
+#include "ShaderCollection.h"
 #include "RealTimeRenderer/RealTimeRenderer.h"
 
 namespace Horizon
 {
-    static void LoadSkyAtmosphereShaders_Deprecated(ShaderLibrary* shaderLibrary)
+    static void LoadSkyAtmosphereShaders_Deprecated(ShaderCollection* shaderLibrary)
     {
         {
             ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RealTimeRenderer/SkyAtmosphere/SkyAtmosphereTransmittanceLut.hslib", "SkyAtmosphereTransmittanceLutCS");
@@ -32,7 +32,7 @@ namespace Horizon
         }
     }
 
-    void LoadAllShaders_Deprecated(ShaderLibrary* shaderLibrary)
+    void LoadAllShaders_Deprecated(ShaderCollection* shaderLibrary)
     {
         LoadSkyAtmosphereShaders_Deprecated(shaderLibrary);
 

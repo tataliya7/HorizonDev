@@ -159,8 +159,8 @@ namespace Horizon
         virtual bool CompileShader(const ShaderCompilerOptions& options, const ShaderSourceDescription& source, ShadingLanguage language, ShaderCompilerOutput* output) = 0;
 
         /**
-         * Experimental: Compile a library.
+         * Experimental: Compile a library to a library target.
          */
-        //virtual bool CompileShaderModule(const ShaderCompilerOptions& options, const ShaderModuleDescription& module, ShadingLanguage language, ShaderCompilerOutput* output) = 0;
+        //virtual bool CompileShaderLibrary();
     };
 }

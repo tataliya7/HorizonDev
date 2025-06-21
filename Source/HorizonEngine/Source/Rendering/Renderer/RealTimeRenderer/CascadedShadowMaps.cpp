@@ -203,14 +203,14 @@ namespace Horizon
         const GeometryPassDrawCommandList& drawCommandList = geometryPassDrawCommandLists[uint32(GeometryPassType::CascadedShadowMap)];
         const GPUScene* gpuScene = sceneView->scene->GetGPUScene();//drawCommandList.setupJobData.scene->GetGPUScene();
 
-        RenderBackendShaderHandle vertexShader = shaderLibrary->GetShader(ShaderID::CascadedShadowMapVS);
-        RenderBackendShaderHandle pixelShader = shaderLibrary->GetShader(ShaderID::CascadedShadowMapPS);
+        RenderBackendShaderHandle vertexShader = shaderCollection->GetShader(ShaderID::CascadedShadowMapVS);
+        RenderBackendShaderHandle pixelShader = shaderCollection->GetShader(ShaderID::CascadedShadowMapPS);
 
         for (uint32 drawCommandIndex = 0; drawCommandIndex < drawCommandList.drawCommandCount; drawCommandIndex++)
         {
             const GeometryPassDrawCommand& drawCommand = drawCommandList.commands[drawCommandIndex];
 
-            RenderBackendGraphicsPipelineState graphicsPipelineState = {};
+            RenderBackendGraphicsPipelineStateDescription graphicsPipelineState = {};
             graphicsPipelineState.rasterizationState.cullMode = RenderBackendRasterizationCullMode::Back;
             graphicsPipelineState.rasterizationState.fillMode = RenderBackendRasterizationFillMode::Solid;
             graphicsPipelineState.depthStencilState.depthTestEnable = true;
@@ -221,7 +221,7 @@ namespace Horizon
             graphicsPipelineState.rasterizationState.depthBiasConstantFactor = light.shadowMapDepthBiasConstantFactor;
             graphicsPipelineState.rasterizationState.depthBiasSlopeFactor = light.shadowMapDepthBiasSlopeFactor;
 
-            RenderBackendShaderConstants shaderConstants = {};
+            RenderBackendPushConstantValues shaderConstants = {};
             shaderConstants.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
             shaderConstants.BindBufferSRV(1, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(cascadeShadowMapDataBuffer));
             shaderConstants.BindBufferSRV(2, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(gpuScene->geometryDataBuffer));

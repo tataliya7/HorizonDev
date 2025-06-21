@@ -25,14 +25,32 @@ namespace Horizon
         RenderGraphBufferHandle WriteBuffer(RenderGraphBufferHandle handle, RenderBackendResourceState initialState);
         RenderGraphBufferHandle ReadWriteBuffer(RenderGraphBufferHandle handle, RenderBackendResourceState initialState);
 
-        void BindRenderTarget(
+        void SetBindlessResourceSRV(uint32 slot, RenderBackendBufferHandle buffer);
+
+        void SetBindlessResourceUAV(uint32 slot, RenderBackendBufferHandle buffer);
+
+        void SetBindlessResourceSRV(uint32 slot, RenderGraphBufferHandle buffer);
+
+        void SetBindlessResourceUAV(uint32 slot, RenderGraphBufferHandle buffer);
+
+        void SetBindlessResourceSRV(uint32 slot, RenderGraphTextureHandle texture);
+
+        void SetBindlessResourceUAV(uint32 slot, RenderGraphTextureHandle texture, uint32 mipLevel);
+
+        void SetShaderConstantValue(uint32 slot, int32 value);
+
+        void SetShaderConstantValue(uint32 slot, uint32 value);
+
+        void SetShaderConstantValue(uint32 slot, float value);
+
+        void SetRenderTargetBinding(
             uint32 slot,
             RenderGraphTextureHandle handle,
             RenderBackendRenderPassLoadOperation loadOperation,
             RenderBackendRenderPassStoreOperation storeOperation,
             uint32 mipLevel = 0);
 
-        void BindDepthStencil(
+        void SetDepthStencilBinding(
             RenderGraphTextureHandle handle,
             RenderBackendRenderPassLoadOperation depthLoadOperation,
             RenderBackendRenderPassStoreOperation depthStoreOperation,

@@ -1,10 +1,10 @@
 #include "RenderUtility.h"
-#include "ShaderLibrary.h"
+#include "ShaderCollection.h"
 #include "ImageBasedLighting.h"
 
 namespace Horizon
 {
-    RendererDefaultResources::RendererDefaultResources(RenderBackend* renderBackend, RenderGraphResourcePool* resourcePool, ShaderLibrary* shaderLibrary)
+    RendererDefaultResources::RendererDefaultResources(RenderBackend* renderBackend, RenderGraphResourcePool* resourcePool, ShaderCollection* shaderLibrary)
         : renderBackend(renderBackend)
         , renderGraphResourcePool(resourcePool)
         , shaderLibrary(shaderLibrary)
@@ -118,7 +118,7 @@ namespace Horizon
         return renderGraph.ImportExternalTexture(blackDummyTexture2D, "BlackDummyTexture2D");
     }
 
-    void Texture2DGenerateMips(RenderBackend* renderBackend, ShaderLibrary* shaderLibrary, RenderBackendCommandList& commandList, RenderBackendTextureHandle textureHandle, uint32 width, uint32 height, uint32 numMipLevels)
+    void Texture2DGenerateMips(RenderBackend* renderBackend, ShaderCollection* shaderLibrary, RenderBackendCommandList& commandList, RenderBackendTextureHandle textureHandle, uint32 width, uint32 height, uint32 numMipLevels)
     {
         if (numMipLevels < 2)
         {
@@ -172,13 +172,13 @@ namespace Horizon
 
             commandList.BeginRenderPass(renderPass);
 
-            RenderBackendShaderConstants shaderConstants = {};
+            RenderBackendPushConstantValues shaderConstants = {};
             shaderConstants.BindTextureSRV(0, renderBackend->GetTextureSRVBindlessResourceDescriptorIndex(textureHandle));
             shaderConstants.BindScalar(2, mipLevel - 1u);
             shaderConstants.BindScalar(3, float(width));
             shaderConstants.BindScalar(4, float(height));
 
-            RenderBackendGraphicsPipelineState graphicsPipelineState = {};
+            RenderBackendGraphicsPipelineStateDescription graphicsPipelineState = {};
 
             commandList.Draw(
                 vertexShader,

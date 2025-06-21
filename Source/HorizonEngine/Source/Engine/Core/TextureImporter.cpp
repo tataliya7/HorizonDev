@@ -51,7 +51,7 @@ namespace Horizon
         file.close();
     }
 
-    RenderBackendTextureHandle LoadTextureFromFile(RenderBackend* renderBackend, ShaderLibrary* shaderLibrary, const char* filename, bool autoMipmaps, bool filpY, RenderBackendTextureFormat format)
+    RenderBackendTextureHandle LoadTextureFromFile(RenderBackend* renderBackend, ShaderCollection* shaderLibrary, const char* filename, bool autoMipmaps, bool filpY, RenderBackendTextureFormat format)
     {
         RenderBackendTextureHandle texture = RenderBackendTextureHandle::Null;
 

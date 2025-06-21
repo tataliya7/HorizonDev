@@ -2,7 +2,7 @@
 
 #include "RendererCommon.h"
 #include "RenderStatistics.h"
-#include "ShaderLibrary.h"
+#include "ShaderCollection.h"
 #include "RendererPrivate.h" // TODO
 #include "RayTracing/RayTracingScene.h"
 
@@ -458,7 +458,7 @@ namespace Horizon
         Matrix4x4f localToWorldMatrix;
         std::vector<GPUSceneMeshletData> meshlets;
 
-        RenderScene(RenderBackend* renderBackend, ShaderLibrary* shaderLibrary);
+        RenderScene(RenderBackend* renderBackend, ShaderCollection* shaderLibrary);
 
         virtual ~RenderScene();
 
@@ -545,7 +545,7 @@ namespace Horizon
 
         RenderBackend* renderBackend;
 
-        ShaderLibrary* shaderLibrary;
+        ShaderCollection* shaderLibrary;
 
         std::vector<MeshRenderObject*> meshes;
 

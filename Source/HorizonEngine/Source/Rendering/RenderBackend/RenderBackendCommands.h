@@ -132,7 +132,7 @@ namespace Horizon
     struct RenderBackendCommandDispatch : RenderBackendCommand<RenderBackendCommandType::Dispatch, RenderBackendCommandQueueType::Compute>
     {
         RenderBackendShaderHandle computeShader;
-        RenderBackendShaderConstants shaderConstants;
+        RenderBackendPushConstantValues shaderConstants;
         uint32 threadGroupCountX;
         uint32 threadGroupCountY;
         uint32 threadGroupCountZ;
@@ -141,7 +141,7 @@ namespace Horizon
     struct RenderBackendCommandDispatchIndirect : RenderBackendCommand<RenderBackendCommandType::DispatchIndirect, RenderBackendCommandQueueType::Compute>
     {
         RenderBackendShaderHandle computeShader;
-        RenderBackendShaderConstants shaderConstants;
+        RenderBackendPushConstantValues shaderConstants;
         RenderBackendBufferHandle argumentBuffer;
         uint64 argumentBufferOffset;
     };
@@ -177,8 +177,8 @@ namespace Horizon
     {
         RenderBackendShaderHandle vertexShader;
         RenderBackendShaderHandle pixelShader;
-        RenderBackendGraphicsPipelineState pipelineState;
-        RenderBackendShaderConstants shaderConstants;
+        RenderBackendGraphicsPipelineStateDescription pipelineState;
+        RenderBackendPushConstantValues shaderConstants;
         RenderBackendBufferHandle indexBuffer;
         union
         {
@@ -205,8 +205,8 @@ namespace Horizon
     {
         RenderBackendShaderHandle vertexShader;
         RenderBackendShaderHandle pixelShader;
-        RenderBackendGraphicsPipelineState pipelineState;
-        RenderBackendShaderConstants shaderConstants;
+        RenderBackendGraphicsPipelineStateDescription pipelineState;
+        RenderBackendPushConstantValues shaderConstants;
         RenderBackendBufferHandle indexBuffer;
         RenderBackendBufferHandle argumentBuffer;
         uint64 argumentBufferOffset;
@@ -219,8 +219,8 @@ namespace Horizon
         RenderBackendShaderHandle amplificationShader;
         RenderBackendShaderHandle meshShader;
         RenderBackendShaderHandle pixelShader;
-        RenderBackendGraphicsPipelineState pipelineState;
-        RenderBackendShaderConstants shaderConstants;
+        RenderBackendGraphicsPipelineStateDescription pipelineState;
+        RenderBackendPushConstantValues shaderConstants;
         RenderBackendPrimitiveTopology topology;
         uint32 threadGroupCountX;
         uint32 threadGroupCountY;
@@ -232,8 +232,8 @@ namespace Horizon
         RenderBackendShaderHandle amplificationShader;
         RenderBackendShaderHandle meshShader;
         RenderBackendShaderHandle pixelShader;
-        RenderBackendGraphicsPipelineState pipelineState;
-        RenderBackendShaderConstants shaderConstants;
+        RenderBackendGraphicsPipelineStateDescription pipelineState;
+        RenderBackendPushConstantValues shaderConstants;
         RenderBackendPrimitiveTopology topology;
         RenderBackendBufferHandle argumentBuffer;
         uint64 argumentBufferOffset;
@@ -267,7 +267,7 @@ namespace Horizon
     {
         RenderBackendRayTracingPipelineStateHandle pipelineStateObject;
         RenderBackendBufferHandle shaderBindingTable;
-        RenderBackendShaderConstants shaderConstants;
+        RenderBackendPushConstantValues shaderConstants;
         uint32 width;
         uint32 height;
         uint32 depth;
@@ -277,7 +277,7 @@ namespace Horizon
     {
         RenderBackendRayTracingPipelineStateHandle pipelineStateObject;
         RenderBackendBufferHandle shaderBindingTable;
-        RenderBackendShaderConstants shaderConstants;
+        RenderBackendPushConstantValues shaderConstants;
         RenderBackendBufferHandle argumentBuffer;
     };
 

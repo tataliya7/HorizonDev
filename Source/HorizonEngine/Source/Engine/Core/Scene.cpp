@@ -26,7 +26,7 @@ namespace Horizon
 
         RenderSystem* renderSystem = HorizonEngine::GetInstance()->GetSubsystem<RenderSystem>();
         RenderBackend* renderBackend = renderSystem->GetRenderBackend();
-        ShaderLibrary* shaderLibrary = renderSystem->GetShaderLibrary();
+        ShaderCollection* shaderLibrary = renderSystem->GetShaderLibrary();
 
         renderScene = new RenderScene(renderBackend, shaderLibrary);
 

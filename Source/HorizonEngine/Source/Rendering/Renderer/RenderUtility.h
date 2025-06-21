@@ -5,13 +5,13 @@
 namespace Horizon
 {
     // TODO: may we don't need to get a shader library
-    class ShaderLibrary;
+    class ShaderCollection;
 
     class RendererDefaultResources
     {
     public:
 
-        RendererDefaultResources(RenderBackend* renderBackend, RenderGraphResourcePool* resourcePool, ShaderLibrary* shaderLibrary);
+        RendererDefaultResources(RenderBackend* renderBackend, RenderGraphResourcePool* resourcePool, ShaderCollection* shaderLibrary);
 
         ~RendererDefaultResources();
 
@@ -33,7 +33,7 @@ namespace Horizon
 
         RenderBackend* renderBackend;
         RenderGraphResourcePool* renderGraphResourcePool;
-        ShaderLibrary* shaderLibrary;
+        ShaderCollection* shaderLibrary;
         bool initialized;
 
         RenderBackendTextureHandle environmentBrdfLutTexture;
@@ -95,7 +95,7 @@ namespace Horizon
         return Vector4f(fWidth, fHeight, 1.0f / fWidth, 1.0f / fHeight);
     };
 
-    class ShaderLibrary;
+    class ShaderCollection;
 
-    extern void Texture2DGenerateMips(RenderBackend* renderBackend, ShaderLibrary* shaderLibrary, RenderBackendCommandList& commandList, RenderBackendTextureHandle textureHandle, uint32 width, uint32 height, uint32 numMipLevels);
+    extern void Texture2DGenerateMips(RenderBackend* renderBackend, ShaderCollection* shaderLibrary, RenderBackendCommandList& commandList, RenderBackendTextureHandle textureHandle, uint32 width, uint32 height, uint32 numMipLevels);
 }

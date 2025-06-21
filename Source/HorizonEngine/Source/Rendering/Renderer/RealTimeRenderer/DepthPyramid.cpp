@@ -20,9 +20,9 @@ namespace Horizon
                 RenderGraphTextureHandle minDepthPyramidTexture = sceneTextures.minDepthPyramidTexture = builder.WriteTexture(sceneTextures.minDepthPyramidTexture, RenderBackendResourceState::UnorderedAccess);
                 //RenderGraphTextureHandle maxDepthPyramidTexture = sceneTextures.maxDepthPyramidTexture = builder.WriteTexture(sceneTextures.maxDepthPyramidTexture, RenderBackendResourceState::UnorderedAccess);
 
-                return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
+                return [=](RenderBackendCommandList& commandList, const RenderGraphResourceRegistry& resourceRegistry)
                 {
-                    RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::BuildDepthPyramid);
+                    RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::BuildDepthPyramid);
 
                     // Build first mip
                     {
@@ -33,9 +33,9 @@ namespace Horizon
                         Vector2f inverseInputTextureSize = Vector2f(1.0f / float(inputTextureSize.x), 1.0f / float(inputTextureSize.y));
                         Vector2f inverseOutputTextureSize = Vector2f(1.0f / float(outputTextureSize.x), 1.0f / float(outputTextureSize.y));
 
-                        RenderBackendShaderConstants shaderConstants = {};
-                        shaderConstants.BindTextureSRV(0, registry.GetTextureSRVBindlessResourceDescriptorIndex(sceneDepthTexture));
-                        shaderConstants.BindTextureUAV(1, registry.GetTextureUAVBindlessResourceDescriptorIndex(minDepthPyramidTexture, targetMipLevel));
+                        RenderBackendPushConstantValues shaderConstants = {};
+                        shaderConstants.BindTextureSRV(0, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(sceneDepthTexture));
+                        shaderConstants.BindTextureUAV(1, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndex(minDepthPyramidTexture, targetMipLevel));
                         shaderConstants.BindScalar(3, inverseInputTextureSize.x);
                         shaderConstants.BindScalar(4, inverseInputTextureSize.y);
 
@@ -62,13 +62,13 @@ namespace Horizon
                         Vector2f inverseOutputTextureSize = Vector2f(1.0f / float(outputTextureSize.x), 1.0f / float(outputTextureSize.y));
 
                         std::vector<RenderBackendBarrier> transitions;
-                        //barriers.emplace_back(RenderBackendBarrier(registry.GetRenderBackendTextureHandle(closestHZBTexture), RenderBackendTextureSubresourceRange(mipLevel - 1, 1, 0, 1), RenderBackendResourceState::UnorderedAccess, RenderBackendResourceState::ShaderResource));
-                        transitions.emplace_back(RenderBackendBarrier(registry.GetRenderBackendTextureHandle(minDepthPyramidTexture), RenderBackendTextureSubresourceRange(mipLevel - 1, 1, 0, 1), RenderBackendResourceState::UnorderedAccess, RenderBackendResourceState::ShaderResource));
+                        //barriers.emplace_back(RenderBackendBarrier(resourceRegistry.GetRenderBackendTextureHandle(closestHZBTexture), RenderBackendTextureSubresourceRange(mipLevel - 1, 1, 0, 1), RenderBackendResourceState::UnorderedAccess, RenderBackendResourceState::ShaderResource));
+                        transitions.emplace_back(RenderBackendBarrier(resourceRegistry.GetRenderBackendTextureHandle(minDepthPyramidTexture), RenderBackendTextureSubresourceRange(mipLevel - 1, 1, 0, 1), RenderBackendResourceState::UnorderedAccess, RenderBackendResourceState::ShaderResource));
                         commandList.Barriers(transitions.data(), (uint32)transitions.size());
 
-                        RenderBackendShaderConstants shaderConstants = {};
-                        shaderConstants.BindTextureSRV(0, registry.GetTextureSRVBindlessResourceDescriptorIndex(minDepthPyramidTexture, sourceMipLevel));
-                        shaderConstants.BindTextureUAV(1, registry.GetTextureUAVBindlessResourceDescriptorIndex(minDepthPyramidTexture, targetMipLevel));
+                        RenderBackendPushConstantValues shaderConstants = {};
+                        shaderConstants.BindTextureSRV(0, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(minDepthPyramidTexture, sourceMipLevel));
+                        shaderConstants.BindTextureUAV(1, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndex(minDepthPyramidTexture, targetMipLevel));
                         shaderConstants.BindScalar(3, inverseInputTextureSize.x);
                         shaderConstants.BindScalar(4, inverseInputTextureSize.y);
 
@@ -86,8 +86,8 @@ namespace Horizon
 
                     // TODO: Find better way to do this
                     std::vector<RenderBackendBarrier> transitions;
-                    //barriers.emplace_back(RenderBackendBarrier(registry.GetRenderBackendTextureHandle(closestHZBTexture), RenderBackendTextureSubresourceRange(0, std::max(hzbMipLevels - 1, 0u), 0, 1), RenderBackendResourceState::ShaderResource, RenderBackendResourceState::UnorderedAccess));
-                    transitions.emplace_back(RenderBackendBarrier(registry.GetRenderBackendTextureHandle(minDepthPyramidTexture), RenderBackendTextureSubresourceRange(0, std::max(depthPyramidTextureDesc.mipLevelCount - 1, 0u), 0, 1), RenderBackendResourceState::ShaderResource, RenderBackendResourceState::UnorderedAccess));
+                    //barriers.emplace_back(RenderBackendBarrier(resourceRegistry.GetRenderBackendTextureHandle(closestHZBTexture), RenderBackendTextureSubresourceRange(0, std::max(hzbMipLevels - 1, 0u), 0, 1), RenderBackendResourceState::ShaderResource, RenderBackendResourceState::UnorderedAccess));
+                    transitions.emplace_back(RenderBackendBarrier(resourceRegistry.GetRenderBackendTextureHandle(minDepthPyramidTexture), RenderBackendTextureSubresourceRange(0, std::max(depthPyramidTextureDesc.mipLevelCount - 1, 0u), 0, 1), RenderBackendResourceState::ShaderResource, RenderBackendResourceState::UnorderedAccess));
                     commandList.Barriers(transitions.data(), (uint32)transitions.size());
                 };
             });

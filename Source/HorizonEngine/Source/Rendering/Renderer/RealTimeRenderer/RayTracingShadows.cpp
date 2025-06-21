@@ -31,8 +31,8 @@ namespace Horizon
                 .maxRayRecursionDepth = 1,
             };
 
-            rayTracingShadowsPipelineStateDesc.shaders.push_back(shaderLibrary->GetShader(ShaderID::RayTracingShadowsRayGen));
-            rayTracingShadowsPipelineStateDesc.shaders.push_back(shaderLibrary->GetShader(ShaderID::RayTracingShadowsMiss));
+            rayTracingShadowsPipelineStateDesc.shaders.push_back(shaderCollection->GetShader(ShaderID::RayTracingShadowsRayGen));
+            rayTracingShadowsPipelineStateDesc.shaders.push_back(shaderCollection->GetShader(ShaderID::RayTracingShadowsMiss));
 
             rayTracingShadowsPipelineStateDesc.shaderGroupDescs.resize(2);
             rayTracingShadowsPipelineStateDesc.shaderGroupDescs[0] = RenderBackendRayTracingShaderGroupDesc::CreateRayGen(0);
@@ -60,7 +60,7 @@ namespace Horizon
                     RenderGraphTextureHandle sceneDepthTexture = builder.ReadTexture(sceneTextures.sceneDepthTexture, RenderBackendResourceState::ShaderResource);
                     screenSpaceShadowMaskTexture = builder.WriteTexture(screenSpaceShadowMaskTexture, RenderBackendResourceState::UnorderedAccess);
 
-                    return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
+                    return [=](RenderBackendCommandList& commandList, const RenderGraphResourceRegistry& resourceRegistry)
                     {
                         uint32 threadGroupCountX = ComputeShaderThreadGroupCount(renderResolution.width, 8);
                         uint32 threadGroupCountY = ComputeShaderThreadGroupCount(renderResolution.height, 4);
@@ -68,17 +68,17 @@ namespace Horizon
 
                         RayTracingScene* rayTracingScene = view.scene->GetRayTracingScene();
 
-                        RenderBackendShaderConstants shaderConstants = {};
+                        RenderBackendPushConstantValues shaderConstants = {};
                         shaderConstants.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
                         shaderConstants.BindAccelerationStructure(1, renderBackend->GetAccelerationStructureSRVBindlessResourceDescriptorIndex(rayTracingScene->GetTLAS()));
-                        shaderConstants.BindTextureSRV(2, registry.GetTextureSRVBindlessResourceDescriptorIndex(sceneDepthTexture));
-                        shaderConstants.BindTextureUAV(3, registry.GetTextureUAVBindlessResourceDescriptorIndex(screenSpaceShadowMaskTexture, 0));
-                        shaderConstants.BindTextureUAV(4, registry.GetTextureUAVBindlessResourceDescriptorIndex(rayDistanceTexture, 0));
+                        shaderConstants.BindTextureSRV(2, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(sceneDepthTexture));
+                        shaderConstants.BindTextureUAV(3, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndex(screenSpaceShadowMaskTexture, 0));
+                        shaderConstants.BindTextureUAV(4, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndex(rayDistanceTexture, 0));
                         shaderConstants.BindScalar(5, light.GetDirection().x);
                         shaderConstants.BindScalar(6, light.GetDirection().y);
                         shaderConstants.BindScalar(7, light.GetDirection().z);
 
-                        RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::RayTracingShadowsInlineRayTracing);
+                        RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::RayTracingShadowsInlineRayTracing);
 
                         commandList.Dispatch(
                             computeShader,
@@ -100,7 +100,7 @@ namespace Horizon
                     RenderGraphTextureHandle sceneDepthTexture = builder.ReadTexture(sceneTextures.sceneDepthTexture, RenderBackendResourceState::ShaderResource);
                     screenSpaceShadowMaskTexture = builder.WriteTexture(screenSpaceShadowMaskTexture, RenderBackendResourceState::UnorderedAccess);
 
-                    return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
+                    return [=](RenderBackendCommandList& commandList, const RenderGraphResourceRegistry& resourceRegistry)
                     {
                         uint32 dispatchWidth = renderResolution.width;
                         uint32 dispatchHeight = renderResolution.height;
@@ -108,12 +108,12 @@ namespace Horizon
 
                         RayTracingScene* rayTracingScene = view.scene->GetRayTracingScene();
 
-                        RenderBackendShaderConstants shaderConstants = {};
+                        RenderBackendPushConstantValues shaderConstants = {};
                         shaderConstants.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
                         shaderConstants.BindAccelerationStructure(1, renderBackend->GetAccelerationStructureSRVBindlessResourceDescriptorIndex(rayTracingScene->GetTLAS()));
-                        shaderConstants.BindTextureSRV(2, registry.GetTextureSRVBindlessResourceDescriptorIndex(sceneDepthTexture));
-                        shaderConstants.BindTextureUAV(3, registry.GetTextureUAVBindlessResourceDescriptorIndex(screenSpaceShadowMaskTexture, 0));
-                        shaderConstants.BindTextureUAV(4, registry.GetTextureUAVBindlessResourceDescriptorIndex(rayDistanceTexture, 0));
+                        shaderConstants.BindTextureSRV(2, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(sceneDepthTexture));
+                        shaderConstants.BindTextureUAV(3, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndex(screenSpaceShadowMaskTexture, 0));
+                        shaderConstants.BindTextureUAV(4, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndex(rayDistanceTexture, 0));
                         shaderConstants.BindScalar(5, light.GetDirection().x);
                         shaderConstants.BindScalar(6, light.GetDirection().y);
                         shaderConstants.BindScalar(7, light.GetDirection().z);

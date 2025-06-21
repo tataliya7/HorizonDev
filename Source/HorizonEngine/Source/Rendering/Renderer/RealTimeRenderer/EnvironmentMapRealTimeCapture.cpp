@@ -101,9 +101,9 @@ namespace Horizon
                     {
                         capturedEnvironmentMapTexture = builder.WriteTexture(capturedEnvironmentMapTexture, RenderBackendResourceState::UnorderedAccess);
 
-                        return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
+                        return [=](RenderBackendCommandList& commandList, const RenderGraphResourceRegistry& resourceRegistry)
                         {
-                            //RenderBackendTextureUAVDesc capturedEnvironmentMapTextureUAV = RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(capturedEnvironmentMapTexture), 0);
+                            //RenderBackendTextureUAVDesc capturedEnvironmentMapTextureUAV = RenderBackendTextureUAVDesc::Create(resourceRegistry.GetRenderBackendTextureHandle(capturedEnvironmentMapTexture), 0);
                             //commandList.ClearTextureUAV(capturedEnvironmentMapTextureUAV, RenderBackendTextureClearValue::Black);
                         };
                     });
@@ -118,9 +118,9 @@ namespace Horizon
                 {
                     capturedEnvironmentMapTexture = builder.WriteTexture(capturedEnvironmentMapTexture, RenderBackendResourceState::UnorderedAccess);
 
-                    return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
+                    return [=](RenderBackendCommandList& commandList, const RenderGraphResourceRegistry& resourceRegistry)
                     {
-                        RenderBackendTextureUAVDesc capturedEnvironmentMapTextureUAV = RenderBackendTextureUAVDesc::Create(registry.GetRenderBackendTextureHandle(capturedEnvironmentMapTexture), 0);
+                        RenderBackendTextureUAVDesc capturedEnvironmentMapTextureUAV = RenderBackendTextureUAVDesc::Create(resourceRegistry.GetRenderBackendTextureHandle(capturedEnvironmentMapTexture), 0);
                         commandList.ClearTextureUAV(capturedEnvironmentMapTextureUAV, RenderBackendTextureClearValue::Black);
                     };
                 });
@@ -133,14 +133,14 @@ namespace Horizon
             {
                 capturedEnvironmentMapTexture = builder.WriteTexture(capturedEnvironmentMapTexture, RenderBackendResourceState::UnorderedAccess, RenderBackendResourceState::ShaderResource);
 
-                return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
+                return [=](RenderBackendCommandList& commandList, const RenderGraphResourceRegistry& resourceRegistry)
                 {
-                    RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::DownsampleCubemap);
+                    RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::DownsampleCubemap);
 
                     for (uint32 mipLevel = 1; mipLevel < environmentMapTextureMipLevelCount; mipLevel++)
                     {
                         RenderBackendBarrier transitions = RenderBackendBarrier(
-                            registry.GetRenderBackendTextureHandle(capturedEnvironmentMapTexture),
+                            resourceRegistry.GetRenderBackendTextureHandle(capturedEnvironmentMapTexture),
                             RenderBackendTextureSubresourceRange(mipLevel - 1, 1, 0, RenderBackendTextureSubresourceRange::RemainingArrayLayers),
                             RenderBackendResourceState::UnorderedAccess,
                             RenderBackendResourceState::ShaderResource);
@@ -150,9 +150,9 @@ namespace Horizon
                         uint32 threadGroupCountY = ComputeShaderThreadGroupCount(1 << (environmentMapTextureMipLevelCount - mipLevel - 1), 8);
                         uint32 threadGroupCountZ = 1;
 
-                        RenderBackendShaderConstants shaderConstants = {};
-                        shaderConstants.BindTextureSRV(0, registry.GetTextureSRVBindlessResourceDescriptorIndex(capturedEnvironmentMapTexture));
-                        shaderConstants.BindTextureUAV(1, registry.GetTextureUAVBindlessResourceDescriptorIndex(capturedEnvironmentMapTexture, mipLevel));
+                        RenderBackendPushConstantValues shaderConstants = {};
+                        shaderConstants.BindTextureSRV(0, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(capturedEnvironmentMapTexture));
+                        shaderConstants.BindTextureUAV(1, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndex(capturedEnvironmentMapTexture, mipLevel));
                         shaderConstants.BindScalar(2, mipLevel - 1);
 
                         commandList.Dispatch(
@@ -164,7 +164,7 @@ namespace Horizon
                     }
 
                     RenderBackendBarrier transition = RenderBackendBarrier(
-                        registry.GetRenderBackendTextureHandle(capturedEnvironmentMapTexture),
+                        resourceRegistry.GetRenderBackendTextureHandle(capturedEnvironmentMapTexture),
                         RenderBackendTextureSubresourceRange(environmentMapTextureMipLevelCount - 1, 1, 0, RenderBackendTextureSubresourceRange::RemainingArrayLayers),
                         RenderBackendResourceState::UnorderedAccess,
                         RenderBackendResourceState::ShaderResource);
@@ -190,17 +190,17 @@ namespace Horizon
                 capturedEnvironmentMapTexture = builder.ReadTexture(capturedEnvironmentMapTexture, RenderBackendResourceState::ShaderResource);
                 irradianceEnvironmentMapBuffer = builder.WriteBuffer(irradianceEnvironmentMapBuffer, RenderBackendResourceState::UnorderedAccess);
 
-                return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
+                return [=](RenderBackendCommandList& commandList, const RenderGraphResourceRegistry& resourceRegistry)
                 {
                     constexpr uint32 log2_16 = 4;
                     uint32 sourceMipLevel = uint32(std::log2(float(environmentMapTextureSize))) - log2_16;
 
-                    RenderBackendShaderConstants shaderConstants = {};
-                    shaderConstants.BindTextureSRV(0, registry.GetTextureSRVBindlessResourceDescriptorIndex(capturedEnvironmentMapTexture));
-                    shaderConstants.BindBufferUAV(1, registry.GetBufferUAVBindlessResourceDescriptorIndex(irradianceEnvironmentMapBuffer));
+                    RenderBackendPushConstantValues shaderConstants = {};
+                    shaderConstants.BindTextureSRV(0, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(capturedEnvironmentMapTexture));
+                    shaderConstants.BindBufferUAV(1, resourceRegistry.GetBufferUAVBindlessResourceDescriptorIndex(irradianceEnvironmentMapBuffer));
                     shaderConstants.BindScalar(2, sourceMipLevel);
 
-                    RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::IrradianceEnvironmentMapSHOnePass);
+                    RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::IrradianceEnvironmentMapSHOnePass);
 
                     commandList.Dispatch(
                         computeShader,
@@ -221,9 +221,9 @@ namespace Horizon
                 capturedEnvironmentMapTexture = builder.ReadTexture(capturedEnvironmentMapTexture, RenderBackendResourceState::ShaderResource);
                 convolvedEnvironmentMapTexture = builder.WriteTexture(convolvedEnvironmentMapTexture, RenderBackendResourceState::UnorderedAccess);
 
-                return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
+                return [=](RenderBackendCommandList& commandList, const RenderGraphResourceRegistry& resourceRegistry)
                 {
-                    RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::EnvironmentMapConvolution);
+                    RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::EnvironmentMapConvolution);
 
                     for (uint32 targetMipLevel = 0; targetMipLevel < environmentMapTextureMipLevelCount; targetMipLevel++)
                     {
@@ -233,9 +233,9 @@ namespace Horizon
 
                         float roughness = float(targetMipLevel) / float(environmentMapTextureMipLevelCount - 1);
 
-                        RenderBackendShaderConstants shaderConstants = {};
-                        shaderConstants.BindTextureSRV(0, registry.GetTextureSRVBindlessResourceDescriptorIndex(capturedEnvironmentMapTexture));
-                        shaderConstants.BindTextureUAV(1, registry.GetTextureUAVBindlessResourceDescriptorIndex(convolvedEnvironmentMapTexture, targetMipLevel));
+                        RenderBackendPushConstantValues shaderConstants = {};
+                        shaderConstants.BindTextureSRV(0, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(capturedEnvironmentMapTexture));
+                        shaderConstants.BindTextureUAV(1, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndex(convolvedEnvironmentMapTexture, targetMipLevel));
                         shaderConstants.BindScalar(2, roughness);
 
                         commandList.Dispatch(

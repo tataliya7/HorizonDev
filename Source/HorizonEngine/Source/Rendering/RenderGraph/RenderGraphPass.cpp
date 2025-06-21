@@ -48,7 +48,7 @@ namespace Horizon
         };
     }
 
-    void RenderGraphPass::SetDepthTargetBinding(
+    void RenderGraphPass::SetDepthStencilBinding(
         RenderGraphTextureHandle handle,
         RenderBackendRenderPassLoadOperation depthLoadOperation,
         RenderBackendRenderPassStoreOperation depthStoreOperation,

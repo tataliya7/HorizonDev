@@ -552,7 +552,7 @@ namespace Horizon
         return true;
     }
 
-    bool D3D12RenderBackendCommandListContext::PrepareForDispatch(RenderBackendShaderHandle computeShader, const RenderBackendShaderConstants& shaderConstants)
+    bool D3D12RenderBackendCommandListContext::PrepareForDispatch(RenderBackendShaderHandle computeShader, const RenderBackendPushConstantValues& shaderConstants)
     {
         D3D12Shader* d3d12Shader = device->GetShader(computeShader);
         D3D12ComputePipelineState* pipelineState = device->FindOrCreateComputePipelineState(d3d12Shader);
@@ -915,7 +915,7 @@ namespace Horizon
         return true;
     }
 
-    bool D3D12RenderBackendCommandListContext::PrepareForDraw(RenderBackendShaderHandle vertexShader, RenderBackendShaderHandle pixelShader, const RenderBackendGraphicsPipelineState& pipelineStateDesc, RenderBackendPrimitiveTopology topology, RenderBackendBufferHandle indexBuffer, const RenderBackendShaderConstants& shaderConstants)
+    bool D3D12RenderBackendCommandListContext::PrepareForDraw(RenderBackendShaderHandle vertexShader, RenderBackendShaderHandle pixelShader, const RenderBackendGraphicsPipelineStateDescription& pipelineStateDesc, RenderBackendPrimitiveTopology topology, RenderBackendBufferHandle indexBuffer, const RenderBackendPushConstantValues& shaderConstants)
     {
         assert(insideRenderPass);
 

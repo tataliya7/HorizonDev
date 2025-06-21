@@ -136,7 +136,7 @@ namespace Horizon
     private:
 
         friend class RenderGraphBuilder;
-        friend class RenderGraphRegistry;
+        friend class RenderGraphResourceRegistry;
 
         bool Compile();
 

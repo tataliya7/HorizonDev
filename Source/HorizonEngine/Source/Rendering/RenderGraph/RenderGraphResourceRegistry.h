@@ -8,10 +8,10 @@ namespace Horizon
     class RenderGraph;
     class RenderGraphPass;
 
-    class RenderGraphRegistry
+    class RenderGraphResourceRegistry
     {
     public:
-        RenderGraphRegistry(RenderGraph* renderGraph, RenderGraphPass* pass)
+        RenderGraphResourceRegistry(RenderGraph* renderGraph, RenderGraphPass* pass)
             : renderGraph(renderGraph), pass(pass) {}
         RenderGraphTexture* GetTexture(RenderGraphTextureHandle handle) const;
         RenderGraphBuffer* GetBuffer(RenderGraphBufferHandle handle) const;
@@ -27,6 +27,7 @@ namespace Horizon
         int32 GetBufferCBVBindlessResourceDescriptorIndex(RenderGraphBufferHandle handle) const;
         int32 GetBufferSRVBindlessResourceDescriptorIndex(RenderGraphBufferHandle handle) const;
         int32 GetBufferUAVBindlessResourceDescriptorIndex(RenderGraphBufferHandle handle) const;
+        RenderBackendPushConstantValues GetPushConstantValues() const;
     private:
         RenderGraph* const renderGraph;
         RenderGraphPass* const pass;

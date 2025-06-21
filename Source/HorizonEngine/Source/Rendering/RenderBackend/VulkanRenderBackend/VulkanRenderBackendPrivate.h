@@ -753,7 +753,7 @@ namespace Horizon
             VulkanShader* pixelShader,
             VulkanShader* taskShader,
             VulkanShader* meshShader,
-            const RenderBackendGraphicsPipelineState& pipelineState,
+            const RenderBackendGraphicsPipelineStateDescription& pipelineState,
             uint32 pushConstantsSize,
             RenderBackendPrimitiveTopology topology,
             bool useDynamicRendering,
@@ -1141,9 +1141,9 @@ namespace Horizon
         bool CompileRenderBackendCommand(const RenderBackendCommandDispatchSuperSampling& command);
     private:
         void ApplyTransitions();
-        bool PrepareForDispatch(RenderBackendShaderHandle computeShader, const RenderBackendShaderConstants& shaderConstants);
-        bool PrepareForDraw(RenderBackendShaderHandle vertexShader, RenderBackendShaderHandle pixelShader, const RenderBackendGraphicsPipelineState& pipelineState, RenderBackendPrimitiveTopology topology, RenderBackendBufferHandle indexBuffer, const RenderBackendShaderConstants& shaderConstants);
-        bool PrepareForMeshShading(RenderBackendShaderHandle amplificationShader, RenderBackendShaderHandle meshShader, RenderBackendShaderHandle pixelShader, const RenderBackendGraphicsPipelineState& pipelineState, RenderBackendPrimitiveTopology topology, RenderBackendBufferHandle indexBuffer, const RenderBackendShaderConstants& shaderConstants);
+        bool PrepareForDispatch(RenderBackendShaderHandle computeShader, const RenderBackendPushConstantValues& shaderConstants);
+        bool PrepareForDraw(RenderBackendShaderHandle vertexShader, RenderBackendShaderHandle pixelShader, const RenderBackendGraphicsPipelineStateDescription& pipelineState, RenderBackendPrimitiveTopology topology, RenderBackendBufferHandle indexBuffer, const RenderBackendPushConstantValues& shaderConstants);
+        bool PrepareForMeshShading(RenderBackendShaderHandle amplificationShader, RenderBackendShaderHandle meshShader, RenderBackendShaderHandle pixelShader, const RenderBackendGraphicsPipelineStateDescription& pipelineState, RenderBackendPrimitiveTopology topology, RenderBackendBufferHandle indexBuffer, const RenderBackendPushConstantValues& shaderConstants);
         VulkanDevice* device;
         RenderBackendQueueFamily queueFamily;
         VkCommandBuffer commandBuffer;

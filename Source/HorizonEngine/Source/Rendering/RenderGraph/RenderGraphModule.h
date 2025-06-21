@@ -6,6 +6,6 @@
 #include "Rendering/RenderGraph/RenderGraphPass.h"
 #include "Rendering/RenderGraph/RenderGraphResources.h"
 #include "Rendering/RenderGraph/RenderGraphBuilder.h"
-#include "Rendering/RenderGraph/RenderGraphRegistry.h"
+#include "Rendering/RenderGraph/RenderGraphResourceRegistry.h"
 #include "Rendering/RenderGraph/RenderGraphBlackboard.h"
 #include "Rendering/RenderGraph/RenderGraph.h"

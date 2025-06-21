@@ -84,12 +84,12 @@ namespace Horizon
             RenderGraphPassFlags::Copy,
             [&](RenderGraphBuilder& builder)
             {
-                return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
+                return [=](RenderBackendCommandList& commandList, const RenderGraphResourceRegistry& resourceRegistry)
                 {
                     commandList.CopyBuffer(
                         localFogVolumeInstanceDataBufferUpload,
                         0,
-                        registry.GetRenderBackendBufferHandle(localFogVolumeInstanceDataBuffer),
+                        resourceRegistry.GetRenderBackendBufferHandle(localFogVolumeInstanceDataBuffer),
                         0,
                         localFogVolumeInstanceDataBufferSize);
                 };
@@ -126,12 +126,12 @@ namespace Horizon
             RenderGraphPassFlags::Copy,
             [&](RenderGraphBuilder& builder)
             {
-                return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
+                return [=](RenderBackendCommandList& commandList, const RenderGraphResourceRegistry& resourceRegistry)
                 {
                     commandList.CopyBuffer(
                         volumetricFogShaderParameterBufferUpload,
                         0,
-                        registry.GetRenderBackendBufferHandle(volumetricFogShaderParameterBuffer),
+                        resourceRegistry.GetRenderBackendBufferHandle(volumetricFogShaderParameterBuffer),
                         0,
                         volumetricFogShaderParameterBufferSize);
                 };
@@ -155,20 +155,20 @@ namespace Horizon
                  volumetricFogParticipatingMediaPropertiesDataATexture = builder.WriteTexture(volumetricFogParticipatingMediaPropertiesDataATexture, RenderBackendResourceState::UnorderedAccess);
                  volumetricFogParticipatingMediaPropertiesDataBTexture = builder.WriteTexture(volumetricFogParticipatingMediaPropertiesDataBTexture, RenderBackendResourceState::UnorderedAccess);
 
-                 return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
+                 return [=](RenderBackendCommandList& commandList, const RenderGraphResourceRegistry& resourceRegistry)
                  {
                      uint32 threadGroupCountX = ComputeShaderThreadGroupCount(volumetricFogTileCountX, 4);
                      uint32 threadGroupCountY = ComputeShaderThreadGroupCount(volumetricFogTileCountY, 4);
                      uint32 threadGroupCountZ = ComputeShaderThreadGroupCount(volumetricFogDepthSliceCount, 4);
 
-                     RenderBackendShaderConstants shaderConstants = {};
+                     RenderBackendPushConstantValues shaderConstants = {};
                      shaderConstants.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
-                     shaderConstants.BindBufferSRV(1, registry.GetBufferSRVBindlessResourceDescriptorIndex(volumetricFogShaderParameterBuffer));
-                     shaderConstants.BindBufferSRV(2, registry.GetBufferSRVBindlessResourceDescriptorIndex(localFogVolumeInstanceDataBuffer));
-                     shaderConstants.BindTextureUAV(3, registry.GetTextureUAVBindlessResourceDescriptorIndex(volumetricFogParticipatingMediaPropertiesDataATexture, 0));
-                     shaderConstants.BindTextureUAV(4, registry.GetTextureUAVBindlessResourceDescriptorIndex(volumetricFogParticipatingMediaPropertiesDataBTexture, 0));
+                     shaderConstants.BindBufferSRV(1, resourceRegistry.GetBufferSRVBindlessResourceDescriptorIndex(volumetricFogShaderParameterBuffer));
+                     shaderConstants.BindBufferSRV(2, resourceRegistry.GetBufferSRVBindlessResourceDescriptorIndex(localFogVolumeInstanceDataBuffer));
+                     shaderConstants.BindTextureUAV(3, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndex(volumetricFogParticipatingMediaPropertiesDataATexture, 0));
+                     shaderConstants.BindTextureUAV(4, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndex(volumetricFogParticipatingMediaPropertiesDataBTexture, 0));
 
-                     RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::VolumetricFogVoxelization);
+                     RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::VolumetricFogVoxelization);
 
                      commandList.Dispatch(
                          computeShader,
@@ -198,24 +198,24 @@ namespace Horizon
                 previousVolumetricFogLightScatteringTexture = builder.ReadTexture(previousVolumetricFogLightScatteringTexture, RenderBackendResourceState::ShaderResource);
                 volumetricFogLightScatteringTexture = builder.WriteTexture(volumetricFogLightScatteringTexture, RenderBackendResourceState::UnorderedAccess);
 
-                return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
+                return [=](RenderBackendCommandList& commandList, const RenderGraphResourceRegistry& resourceRegistry)
                 {
                     uint32 threadGroupCountX = ComputeShaderThreadGroupCount(volumetricFogTileCountX, 4);
                     uint32 threadGroupCountY = ComputeShaderThreadGroupCount(volumetricFogTileCountY, 4);
                     uint32 threadGroupCountZ = ComputeShaderThreadGroupCount(volumetricFogDepthSliceCount, 4);
 
-                    RenderBackendShaderConstants shaderConstants = {};
+                    RenderBackendPushConstantValues shaderConstants = {};
                     shaderConstants.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
-                    shaderConstants.BindBufferSRV(1, registry.GetBufferSRVBindlessResourceDescriptorIndex(volumetricFogShaderParameterBuffer));
+                    shaderConstants.BindBufferSRV(1, resourceRegistry.GetBufferSRVBindlessResourceDescriptorIndex(volumetricFogShaderParameterBuffer));
                     shaderConstants.BindBufferSRV(2, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(view.scene->distantLightDataBuffer));
                     shaderConstants.BindBufferSRV(3, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(sceneTextures.cascadedShadowMapShaderParameterBuffer));
-                    shaderConstants.BindTextureSRV(4, registry.GetTextureSRVBindlessResourceDescriptorIndex(shadowMapTexture));
-                    shaderConstants.BindTextureSRV(5, registry.GetTextureSRVBindlessResourceDescriptorIndex(previousVolumetricFogLightScatteringTexture));
-                    shaderConstants.BindTextureSRV(6, registry.GetTextureSRVBindlessResourceDescriptorIndex(volumetricFogParticipatingMediaPropertiesDataATexture));
-                    shaderConstants.BindTextureSRV(7, registry.GetTextureSRVBindlessResourceDescriptorIndex(volumetricFogParticipatingMediaPropertiesDataBTexture));
-                    shaderConstants.BindTextureUAV(8, registry.GetTextureUAVBindlessResourceDescriptorIndex(volumetricFogLightScatteringTexture, 0));
+                    shaderConstants.BindTextureSRV(4, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(shadowMapTexture));
+                    shaderConstants.BindTextureSRV(5, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(previousVolumetricFogLightScatteringTexture));
+                    shaderConstants.BindTextureSRV(6, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(volumetricFogParticipatingMediaPropertiesDataATexture));
+                    shaderConstants.BindTextureSRV(7, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(volumetricFogParticipatingMediaPropertiesDataBTexture));
+                    shaderConstants.BindTextureUAV(8, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndex(volumetricFogLightScatteringTexture, 0));
 
-                    RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::VolumetricFogLightScattering);
+                    RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::VolumetricFogLightScattering);
 
                     commandList.Dispatch(
                         computeShader,
@@ -236,19 +236,19 @@ namespace Horizon
                 volumetricFogLightScatteringTexture = builder.ReadTexture(volumetricFogLightScatteringTexture, RenderBackendResourceState::ShaderResource);
                 volumetricFogFinalIntegrationTexture = builder.WriteTexture(volumetricFogFinalIntegrationTexture, RenderBackendResourceState::UnorderedAccess);
 
-                return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
+                return [=](RenderBackendCommandList& commandList, const RenderGraphResourceRegistry& resourceRegistry)
                 {
                     uint32 threadGroupCountX = ComputeShaderThreadGroupCount(volumetricFogTileCountX, 8);
                     uint32 threadGroupCountY = ComputeShaderThreadGroupCount(volumetricFogTileCountY, 8);
                     uint32 threadGroupCountZ = 1;
 
-                    RenderBackendShaderConstants shaderConstants = {};
+                    RenderBackendPushConstantValues shaderConstants = {};
                     shaderConstants.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
-                    shaderConstants.BindBufferSRV(1, registry.GetBufferSRVBindlessResourceDescriptorIndex(volumetricFogShaderParameterBuffer));
-                    shaderConstants.BindTextureSRV(2, registry.GetTextureSRVBindlessResourceDescriptorIndex(volumetricFogLightScatteringTexture));
-                    shaderConstants.BindTextureUAV(3, registry.GetTextureUAVBindlessResourceDescriptorIndex(volumetricFogFinalIntegrationTexture, 0));
+                    shaderConstants.BindBufferSRV(1, resourceRegistry.GetBufferSRVBindlessResourceDescriptorIndex(volumetricFogShaderParameterBuffer));
+                    shaderConstants.BindTextureSRV(2, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(volumetricFogLightScatteringTexture));
+                    shaderConstants.BindTextureUAV(3, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndex(volumetricFogFinalIntegrationTexture, 0));
 
-                    RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::VolumetricFogFinalIntegration);
+                    RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::VolumetricFogFinalIntegration);
 
                     commandList.Dispatch(
                         computeShader,
@@ -268,11 +268,11 @@ namespace Horizon
                 RenderGraphTextureHandle sceneDepthTexture = builder.ReadTexture(sceneTextures.sceneDepthTexture, RenderBackendResourceState::ShaderResource);
                 RenderGraphTextureHandle sceneColorTexture = sceneTextures.sceneColorTexture = builder.WriteTexture(sceneTextures.sceneColorTexture, RenderBackendResourceState::RenderTarget);
 
-                builder.BindRenderTarget(0, sceneColorTexture, RenderBackendRenderPassLoadOperation::Load, RenderBackendRenderPassStoreOperation::Store);
+                builder.SetRenderTargetBinding(0, sceneColorTexture, RenderBackendRenderPassLoadOperation::Load, RenderBackendRenderPassStoreOperation::Store);
 
-                return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
+                return [=](RenderBackendCommandList& commandList, const RenderGraphResourceRegistry& resourceRegistry)
                 {
-                    RenderBackendGraphicsPipelineState graphicsPipelineState = {};
+                    RenderBackendGraphicsPipelineStateDescription graphicsPipelineState = {};
                     graphicsPipelineState.rasterizationState.cullMode = RenderBackendRasterizationCullMode::None;
                     graphicsPipelineState.depthStencilState.depthTestEnable = false;
                     graphicsPipelineState.depthStencilState.depthCompareFunction = RenderBackendCompareOp::NotEqual;
@@ -283,14 +283,14 @@ namespace Horizon
                     graphicsPipelineState.colorBlendState.targetBlends[0].colorBlendOp = RenderBackendBlendOp::Add;
                     graphicsPipelineState.colorBlendState.targetBlends[0].writeMask = RenderBackendColorComponentFlags::RGB;
 
-                    RenderBackendShaderConstants shaderConstants = {};
+                    RenderBackendPushConstantValues shaderConstants = {};
                     shaderConstants.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
-                    shaderConstants.BindBufferSRV(1, registry.GetBufferSRVBindlessResourceDescriptorIndex(volumetricFogShaderParameterBuffer));
-                    shaderConstants.BindTextureSRV(2, registry.GetTextureSRVBindlessResourceDescriptorIndex(volumetricFogFinalIntegrationTexture));
-                    shaderConstants.BindTextureSRV(3, registry.GetTextureSRVBindlessResourceDescriptorIndex(sceneDepthTexture));
+                    shaderConstants.BindBufferSRV(1, resourceRegistry.GetBufferSRVBindlessResourceDescriptorIndex(volumetricFogShaderParameterBuffer));
+                    shaderConstants.BindTextureSRV(2, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(volumetricFogFinalIntegrationTexture));
+                    shaderConstants.BindTextureSRV(3, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(sceneDepthTexture));
 
-                    RenderBackendShaderHandle vertexShader = shaderLibrary->GetShader(ShaderID::DrawFullscreenQuadVS);
-                    RenderBackendShaderHandle pixelShader = shaderLibrary->GetShader(ShaderID::VolumetricFogComposition);
+                    RenderBackendShaderHandle vertexShader = shaderCollection->GetShader(ShaderID::DrawFullscreenQuadVS);
+                    RenderBackendShaderHandle pixelShader = shaderCollection->GetShader(ShaderID::VolumetricFogComposition);
 
                     commandList.Draw(
                         vertexShader,
@@ -353,12 +353,12 @@ namespace Horizon
             RenderGraphPassFlags::Copy,
             [&](RenderGraphBuilder& builder)
             {
-                return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
+                return [=](RenderBackendCommandList& commandList, const RenderGraphResourceRegistry& resourceRegistry)
                 {
                     commandList.CopyBuffer(
                         localFogVolumeInstanceDataBufferUpload,
                         0,
-                        registry.GetRenderBackendBufferHandle(localFogVolumeInstanceDataBuffer),
+                        resourceRegistry.GetRenderBackendBufferHandle(localFogVolumeInstanceDataBuffer),
                         0,
                         localFogVolumeInstanceDataBufferSize);
                 };
@@ -374,17 +374,17 @@ namespace Horizon
                 RenderGraphTextureHandle sceneColorTexture = sceneTextures.sceneColorTexture = builder.WriteTexture(sceneTextures.sceneColorTexture, RenderBackendResourceState::RenderTarget);
                 RenderGraphTextureHandle sceneDepthTexture = builder.ReadTexture(sceneTextures.sceneDepthTexture, RenderBackendResourceState::DepthStencilReadOnly);
 
-                builder.BindRenderTarget(0, sceneColorTexture, RenderBackendRenderPassLoadOperation::Load, RenderBackendRenderPassStoreOperation::Store);
-                builder.BindDepthStencil(sceneDepthTexture,
+                builder.SetRenderTargetBinding(0, sceneColorTexture, RenderBackendRenderPassLoadOperation::Load, RenderBackendRenderPassStoreOperation::Store);
+                builder.SetDepthStencilBinding(sceneDepthTexture,
                     RenderBackendRenderPassLoadOperation::Load,
                     RenderBackendRenderPassStoreOperation::Store,
                     RenderBackendRenderPassLoadOperation::None,
                     RenderBackendRenderPassStoreOperation::None,
                     RenderBackendDepthStencilAccessType::DepthReadOnly_StencilNoAccess);
 
-                return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
+                return [=](RenderBackendCommandList& commandList, const RenderGraphResourceRegistry& resourceRegistry)
                 {
-                    RenderBackendGraphicsPipelineState graphicsPipelineState = {};
+                    RenderBackendGraphicsPipelineStateDescription graphicsPipelineState = {};
                     graphicsPipelineState.rasterizationState.cullMode = RenderBackendRasterizationCullMode::None;
                     graphicsPipelineState.depthStencilState.depthTestEnable = true;
                     graphicsPipelineState.depthStencilState.depthCompareFunction = RenderBackendCompareOp::GreaterOrEqual;
@@ -398,13 +398,13 @@ namespace Horizon
                     graphicsPipelineState.colorBlendState.targetBlends[0].alphaBlendOp = RenderBackendBlendOp::Add;
                     graphicsPipelineState.colorBlendState.targetBlends[0].writeMask = RenderBackendColorComponentFlags::RGBA;
 
-                    RenderBackendShaderConstants shaderConstants = {};
+                    RenderBackendPushConstantValues shaderConstants = {};
                     shaderConstants.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
-                    shaderConstants.BindBufferSRV(1, registry.GetBufferSRVBindlessResourceDescriptorIndex(localFogVolumeInstanceDataBuffer));
-                    shaderConstants.BindTextureSRV(2, registry.GetTextureSRVBindlessResourceDescriptorIndex(sceneDepthTexture));
+                    shaderConstants.BindBufferSRV(1, resourceRegistry.GetBufferSRVBindlessResourceDescriptorIndex(localFogVolumeInstanceDataBuffer));
+                    shaderConstants.BindTextureSRV(2, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(sceneDepthTexture));
 
-                    RenderBackendShaderHandle vertexShader = shaderLibrary->GetShader(ShaderID::LocalFogVolumeVS);
-                    RenderBackendShaderHandle pixelShader = shaderLibrary->GetShader(ShaderID::LocalFogVolumePS);
+                    RenderBackendShaderHandle vertexShader = shaderCollection->GetShader(ShaderID::LocalFogVolumeVS);
+                    RenderBackendShaderHandle pixelShader = shaderCollection->GetShader(ShaderID::LocalFogVolumePS);
 
                     commandList.Draw(
                         vertexShader,

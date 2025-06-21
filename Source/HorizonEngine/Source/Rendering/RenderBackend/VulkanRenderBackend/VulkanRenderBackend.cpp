@@ -2444,7 +2444,7 @@ namespace Horizon
         return &pipelineManager.pipelineMap[pipelineHash];
     }
 
-    static void InitializeVkPipelineRasterizationStateCreateInfo(const RenderBackendRasterizationState& state, VkPipelineRasterizationStateCreateInfo& outInfo)
+    static void InitializeVkPipelineRasterizationStateCreateInfo(const RenderBackendRasterizationStateDescription& state, VkPipelineRasterizationStateCreateInfo& outInfo)
     {
         outInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
         outInfo.depthClampEnable = ConvertToVkBool(state.depthClampEnable);
@@ -2459,7 +2459,7 @@ namespace Horizon
         outInfo.lineWidth = state.lineWidth;
     }
 
-    static void InitializeVkPipelineDepthStencilStateCreateInfo(const RenderBackendDepthStencilState& state, VkPipelineDepthStencilStateCreateInfo& outInfo)
+    static void InitializeVkPipelineDepthStencilStateCreateInfo(const RenderBackendDepthStencilStateDescription& state, VkPipelineDepthStencilStateCreateInfo& outInfo)
     {
         outInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
         outInfo.depthTestEnable = ConvertToVkBool(state.depthTestEnable);
@@ -2483,7 +2483,7 @@ namespace Horizon
         outInfo.back.reference = 0;
     }
 
-    static void InitializeVkPipelineColorBlendStateCreateInfo(const RenderBackendColorBlendState& state, VkPipelineColorBlendAttachmentState* attachmentStates, uint32 attachmentCount, VkPipelineColorBlendStateCreateInfo& outInfo)
+    static void InitializeVkPipelineColorBlendStateCreateInfo(const RenderBackendColorBlendStateDescription& state, VkPipelineColorBlendAttachmentState* attachmentStates, uint32 attachmentCount, VkPipelineColorBlendStateCreateInfo& outInfo)
     {
         for (uint32 i = 0; i < attachmentCount; i++)
         {
@@ -2511,7 +2511,7 @@ namespace Horizon
         outInfo.blendConstants[3] = 1.0f;
     }
 
-    VulkanPipeline* VulkanDevice::FindOrCreateGraphicsPipeline(VulkanShader* vertexShader, VulkanShader* pixelShader, VulkanShader* taskShader, VulkanShader* meshShader, const RenderBackendGraphicsPipelineState& pipelineState, uint32 pushConstantsSize, RenderBackendPrimitiveTopology topology, bool useDynamicRendering, VulkanRenderingInfo* renderingInfo, VkRenderPass renderPass, uint32 activeColorAttachmentCount)
+    VulkanPipeline* VulkanDevice::FindOrCreateGraphicsPipeline(VulkanShader* vertexShader, VulkanShader* pixelShader, VulkanShader* taskShader, VulkanShader* meshShader, const RenderBackendGraphicsPipelineStateDescription& pipelineState, uint32 pushConstantsSize, RenderBackendPrimitiveTopology topology, bool useDynamicRendering, VulkanRenderingInfo* renderingInfo, VkRenderPass renderPass, uint32 activeColorAttachmentCount)
     {
         assert(useDynamicRendering ^ (renderPass != VK_NULL_HANDLE));
 
@@ -3737,7 +3737,7 @@ namespace Horizon
         }
     }
 
-    bool VulkanRenderBackendCommandListContext::PrepareForDispatch(RenderBackendShaderHandle computeShader, const RenderBackendShaderConstants& shaderConstants)
+    bool VulkanRenderBackendCommandListContext::PrepareForDispatch(RenderBackendShaderHandle computeShader, const RenderBackendPushConstantValues& shaderConstants)
     {
         uint32 pushConstantsSize = device->bindlessDescriptorManager.pushConstantsSize;
         VulkanPipeline* pipeline = device->FindOrCreateComputePipeline(device->GetShader(computeShader), pushConstantsSize);
@@ -3902,7 +3902,7 @@ namespace Horizon
         return true;
     }
 
-    bool VulkanRenderBackendCommandListContext::PrepareForDraw(RenderBackendShaderHandle vertexShader, RenderBackendShaderHandle pixelShader, const RenderBackendGraphicsPipelineState& pipelineState, RenderBackendPrimitiveTopology topology, RenderBackendBufferHandle indexBuffer, const RenderBackendShaderConstants& shaderConstants)
+    bool VulkanRenderBackendCommandListContext::PrepareForDraw(RenderBackendShaderHandle vertexShader, RenderBackendShaderHandle pixelShader, const RenderBackendGraphicsPipelineStateDescription& pipelineState, RenderBackendPrimitiveTopology topology, RenderBackendBufferHandle indexBuffer, const RenderBackendPushConstantValues& shaderConstants)
     {
         uint32 pushConstantsSize = device->bindlessDescriptorManager.pushConstantsSize;
 

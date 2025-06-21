@@ -378,7 +378,7 @@ namespace Horizon
             //}
 
             RenderGraphPassFlags passFlags = pass->GetFlags();
-            RenderGraphRegistry registry(this, pass);
+            RenderGraphResourceRegistry resourceRegistry(this, pass);
 
             uint32 currentPassTimingQueryRegion = 0;
 
@@ -475,7 +475,7 @@ namespace Horizon
 
                         renderPass.renderTargets[slot] =
                         {
-                            .texture = registry.GetRenderBackendTextureHandle(renderTargetBinding.texture),
+                            .texture = resourceRegistry.GetRenderBackendTextureHandle(renderTargetBinding.texture),
                             .mipLevel = renderTargetBinding.mipLevel,
                             .loadOperation = renderTargetBinding.loadOperation,
                             .storeOperation = renderTargetBinding.storeOperation,
@@ -489,7 +489,7 @@ namespace Horizon
                 {
                     renderPass.depthStencil =
                     {
-                        .texture = registry.GetRenderBackendTextureHandle(depthStencilBinding.texture),
+                        .texture = resourceRegistry.GetRenderBackendTextureHandle(depthStencilBinding.texture),
                         .mipLevel = 0,
                         .depthLoadOperation = depthStencilBinding.depthLoadOperation,
                         .depthStoreOperation = depthStencilBinding.depthStoreOperation,
@@ -502,7 +502,7 @@ namespace Horizon
                 commandList.BeginRenderPass(renderPass);
             }
 
-            pass->Execute(registry, commandList);
+            pass->Execute(commandList, resourceRegistry);
 
             if (EnumClassHasFlags(passFlags, RenderGraphPassFlags::Graphics) && !EnumClassHasFlags(passFlags, RenderGraphPassFlags::SkipRenderPass))
             {
@@ -564,7 +564,7 @@ namespace Horizon
             RenderGraphPassFlags::DebugLabelRegion_DEPRECATED | RenderGraphPassFlags::NeverGetCulled,
             [&](RenderGraphBuilder& builder)
             {
-                return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
+                return [=](RenderBackendCommandList& commandList, const RenderGraphResourceRegistry& resourceRegistry)
                 {
                     commandList.BeginDebugLabel(name, Vector4f(1.0f, 1.0f, 1.0f, 1.0f));
                 };
@@ -578,7 +578,7 @@ namespace Horizon
             RenderGraphPassFlags::DebugLabelRegion_DEPRECATED | RenderGraphPassFlags::NeverGetCulled,
             [&](RenderGraphBuilder& builder)
             {
-                return [=](RenderGraphRegistry& registry, RenderBackendCommandList& commandList)
+                return [=](RenderBackendCommandList& commandList, const RenderGraphResourceRegistry& resourceRegistry)
                 {
                     commandList.EndDebugLabel();
                 };
