@@ -53,7 +53,8 @@ struct PerFrameShaderParameters
     float aspectRatio;
     float nearClippingPlane;
     float farClippingPlane;
-    //float4 frustumPlanes[6];
+
+    float4 viewFrustum[6];
 
     float materialTextureMipLodBias;
     float preExposure;

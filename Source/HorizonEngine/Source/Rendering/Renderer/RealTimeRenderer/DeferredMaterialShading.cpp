@@ -158,7 +158,7 @@ namespace Horizon
             });
 
         renderGraph.AddPass(
-            std::format("Meshlet Culling (Compute)"),
+            std::format("Meshlet Culling (Compute, Indirect)"),
             RenderGraphPassFlags::Compute,
             [&](RenderGraphBuilder& builder)
             {
@@ -192,7 +192,7 @@ namespace Horizon
             });
 
         renderGraph.AddPass(
-            "VisibilityBuffer",
+            "VisibilityBuffer (Graphics, Indirect)",
             RenderGraphPassFlags::Graphics,
             [&](RenderGraphBuilder& builder)
             {

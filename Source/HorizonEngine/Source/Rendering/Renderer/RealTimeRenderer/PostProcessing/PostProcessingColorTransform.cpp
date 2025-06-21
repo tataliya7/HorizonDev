@@ -36,7 +36,7 @@ namespace Horizon
         const SceneView& view)
     {
         const bool shouldUpdateColorTransformLUT = cachedColorTransformLUTSettings.Update(view, finalPostProcessingSettings);
-        const bool forceUpdateColorTransformLUT = false;
+        const bool forceUpdateColorTransformLUT = true;
 
         if (!shouldUpdateColorTransformLUT && !forceUpdateColorTransformLUT)
         {

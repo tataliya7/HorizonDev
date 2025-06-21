@@ -210,6 +210,35 @@ float Remap(float value, float srcMin, float srcMax, float dstMin, float dstMax)
     return dstMin + (((value - srcMin) / (srcMax - srcMin)) * (dstMax - dstMin));
 }
 
+bool FrustumIntersectsSphere(float4 frustumPlanes[6], float3 sphereCenter, float sphereRadius)
+{
+    [unroll]
+    for (uint i = 0; i < 6; i++)
+    {
+        float distance = dot(sphereCenter, frustumPlanes[i].xyz) + frustumPlanes[i].w;
+        if (distance < -sphereRadius)
+        {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+bool FrustumIntersectsAABB(float4 frustumPlanes[6], float3 aabbCenter, float aabbExtent)
+{
+    bool result = true;
+
+	[unroll(6)]
+    for (uint i = 0; i < 6; i++)
+	{
+		float4 plane = frustumPlanes[i];
+		result = result && (dot(aabbCenter + aabbExtent * sign(plane.xyz), plane.xyz) > -plane.w);
+	}
+
+    return result;
+}
+
 float2 RaySphereIntersection(float3 r0, float3 rd, float3 s0, float sR)
 {
     float a = dot(rd, rd);

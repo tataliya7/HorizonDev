@@ -367,6 +367,8 @@ namespace Horizon
         timeOfDayScheduler->Tick(deltaTimeInSeconds); // TODO
         editorSceneManager->GetActiveScene()->Tick(deltaTimeInSeconds);
 
+        renderer->debugDrawLinesVertices.clear();
+
         Quaternion cameraOrientation = Math::QuaternionFromEulerAngles(Math::DegreesToRadians(editorCamera.GetRotation()));
 
         Vector3f cameraRightVector   = Math::Normalize(cameraOrientation * Vector3f(1.0f, 0.0f, 0.0f));
@@ -491,7 +493,6 @@ namespace Horizon
             corners[6] = farCenterPoint + uFar - rFar; // left-up
             corners[7] = farCenterPoint + uFar + rFar; // right-up
 
-            renderer->debugDrawLinesVertices.clear();
             renderer->DrawLine(corners[0], corners[1], Vector4f(1.0f, 0.0f, 0.0f, 1.0f), 1.0f, 0);
             renderer->DrawLine(corners[1], corners[3], Vector4f(1.0f, 0.0f, 0.0f, 1.0f), 1.0f, 0);
             renderer->DrawLine(corners[2], corners[3], Vector4f(1.0f, 0.0f, 0.0f, 1.0f), 1.0f, 0);
@@ -506,6 +507,69 @@ namespace Horizon
             renderer->DrawLine(corners[3], corners[7], Vector4f(1.0f, 0.0f, 0.0f, 1.0f), 1.0f, 0);
 
             previewSceneView.transformations.Finalize();
+
+            uint32 mi = 0;
+            for (auto meshlet : sceneView.scene->meshlets)
+            {
+                if (mi == 501)
+                {
+                    Vector3f vmin = meshlet.boundingBoxCenter - meshlet.boundingBoxExtent;
+                    Vector3f vmax = meshlet.boundingBoxCenter + meshlet.boundingBoxExtent;
+
+                    Vector3f cornerst[8] =
+                    {
+                        Vector3f(vmin.x, vmin.y, vmin.z),
+                        Vector3f(vmin.x, vmax.y, vmin.z),
+                        Vector3f(vmin.x, vmin.y, vmax.z),
+                        Vector3f(vmin.x, vmax.y, vmax.z),
+                        Vector3f(vmax.x, vmin.y, vmin.z),
+                        Vector3f(vmax.x, vmax.y, vmin.z),
+                        Vector3f(vmax.x, vmin.y, vmax.z),
+                        Vector3f(vmax.x, vmax.y, vmax.z)
+                    };
+
+                    for (uint32 i = 0; i < 8; i++)
+                    {
+                        cornerst[i] = glm::scale(Matrix4x4f(1.0f), Vector3f(0.01f, 0.01f, 0.01f)) * Vector4f(cornerst[i], 1.0f);
+                    }
+
+                    bool visible = true;
+                    for (uint32 i = 0; i < 6; i++)
+                    {
+                        Vector4f p = Vector4f(previewSceneView.viewFrustum.planes[i].normal, previewSceneView.viewFrustum.planes[i].distance);
+                        if ((glm::dot(p, Vector4f(cornerst[0], 1.0f)) < 0.0f) &&
+                            (glm::dot(p, Vector4f(cornerst[1], 1.0f)) < 0.0f) &&
+                            (glm::dot(p, Vector4f(cornerst[2], 1.0f)) < 0.0f) &&
+                            (glm::dot(p, Vector4f(cornerst[3], 1.0f)) < 0.0f) &&
+                            (glm::dot(p, Vector4f(cornerst[4], 1.0f)) < 0.0f) &&
+                            (glm::dot(p, Vector4f(cornerst[5], 1.0f)) < 0.0f) &&
+                            (glm::dot(p, Vector4f(cornerst[6], 1.0f)) < 0.0f) &&
+                            (glm::dot(p, Vector4f(cornerst[7], 1.0f)) < 0.0f))
+                        {
+                            visible = false;
+                            break;
+                        }
+                    }
+
+                    if (visible)
+                    {
+                        renderer->DrawLine(cornerst[0], cornerst[1], Vector4f(1.0f, 0.0f, 0.0f, 1.0f), 1.0f, 0);
+                        renderer->DrawLine(cornerst[1], cornerst[3], Vector4f(1.0f, 0.0f, 0.0f, 1.0f), 1.0f, 0);
+                        renderer->DrawLine(cornerst[2], cornerst[3], Vector4f(1.0f, 0.0f, 0.0f, 1.0f), 1.0f, 0);
+                        renderer->DrawLine(cornerst[2], cornerst[0], Vector4f(1.0f, 0.0f, 0.0f, 1.0f), 1.0f, 0);
+                        renderer->DrawLine(cornerst[0 + 4], cornerst[1 + 4], Vector4f(1.0f, 0.0f, 0.0f, 1.0f), 1.0f, 0);
+                        renderer->DrawLine(cornerst[1 + 4], cornerst[3 + 4], Vector4f(1.0f, 0.0f, 0.0f, 1.0f), 1.0f, 0);
+                        renderer->DrawLine(cornerst[2 + 4], cornerst[3 + 4], Vector4f(1.0f, 0.0f, 0.0f, 1.0f), 1.0f, 0);
+                        renderer->DrawLine(cornerst[2 + 4], cornerst[0 + 4], Vector4f(1.0f, 0.0f, 0.0f, 1.0f), 1.0f, 0);
+                        renderer->DrawLine(cornerst[0], cornerst[4], Vector4f(1.0f, 0.0f, 0.0f, 1.0f), 1.0f, 0);
+                        renderer->DrawLine(cornerst[1], cornerst[5], Vector4f(1.0f, 0.0f, 0.0f, 1.0f), 1.0f, 0);
+                        renderer->DrawLine(cornerst[2], cornerst[6], Vector4f(1.0f, 0.0f, 0.0f, 1.0f), 1.0f, 0);
+                        renderer->DrawLine(cornerst[3], cornerst[7], Vector4f(1.0f, 0.0f, 0.0f, 1.0f), 1.0f, 0);
+                    }
+                }
+
+                mi++;
+            }
 
             LightRenderObject* sunLight = editorSceneManager->GetActiveScene()->GetRenderScene()->GetAtmosphericLight();
             uint32 shadowCascadeCount = sunLight->shadowCascadeCount;

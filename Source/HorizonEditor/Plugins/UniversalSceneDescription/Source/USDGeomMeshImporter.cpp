@@ -156,6 +156,9 @@ namespace Horizon::USDImporter
 
         printf("import mesh sdf path: %s, vertex count %d index count %d.\n", geomMesh.GetPath().GetString().c_str(), vertexCount, indexCount);
 
+        TransformComponent& transformComponent = scene->GetEntityManager()->GetComponent<TransformComponent>(entity);
+        transformComponent.scale = Vector3f(0.01f, 0.01f, 0.01f);
+
         MeshComponent& mesh = entityManager->AddComponent<MeshComponent>(entity);
         mesh.vertexCount = vertexCount;
         mesh.indexCount = indexCount;
@@ -224,8 +227,6 @@ namespace Horizon::USDImporter
         subset.baseIndex = 0;
         subset.numIndices = mesh.indexCount;
         subset.numVertices = mesh.vertexCount;
-
-        TransformComponent& transformComponent = scene->GetEntityManager()->GetComponent<TransformComponent>(entity);
 
         uint32 numFaces = (uint32)mesh.indices.size() / 3;
         mesh.materialIndices.resize(numFaces);

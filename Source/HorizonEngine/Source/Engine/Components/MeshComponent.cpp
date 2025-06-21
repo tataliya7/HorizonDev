@@ -85,6 +85,9 @@ namespace Horizon
             normals = output.vertices.normals;
             texCoords = output.vertices.textureCoordinates[0];
             materialIndices = output.materialIndices;
+
+            scene->meshlets = output.meshlets;
+            scene->localToWorldMatrix = localToWorldMatrix;
 #endif
             // @todo Refactor this.
             {

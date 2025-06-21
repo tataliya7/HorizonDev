@@ -112,6 +112,16 @@ namespace Horizon
             return *this;
         }
 
+        Vector3f GetCenter() const
+        {
+            return (maximum + minimum) * 0.5f;
+        }
+
+        Vector3f GetExtent() const
+        {
+            return (maximum - minimum) * 0.5f;
+        }
+
         Vector3f minimum;
         Vector3f maximum;
     };

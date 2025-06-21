@@ -300,27 +300,27 @@ namespace Horizon
         const RenderScene* scene = view.scene;
         const RenderSettings& renderSettings = view.renderSettings;
 
-         for (LightRenderObject* light : scene->lights)
-         {
-             const bool castDynamicShadows = light->castDynamicShadows;
-             if (!castDynamicShadows)
-             {
-                 continue;
-             }
+        for (LightRenderObject* light : scene->lights)
+        {
+            const bool castDynamicShadows = light->castDynamicShadows;
+            if (!castDynamicShadows)
+            {
+                continue;
+            }
 
-             // todo: visible
-             const bool useCascadedShadowMap = (renderSettings.shadowsTechnique == ShadowsTechnique::ShadowMap) && (light->lightType == LightType::DistantLight);
-             const bool useVirtualShadowMap = (renderSettings.shadowsTechnique == ShadowsTechnique::VirtualShadowMap) && (light->lightType == LightType::DistantLight);
+            // todo: visible
+            const bool useCascadedShadowMap = (renderSettings.shadowsTechnique == ShadowsTechnique::ShadowMap) && (light->lightType == LightType::DistantLight);
+            const bool useVirtualShadowMap = (renderSettings.shadowsTechnique == ShadowsTechnique::VirtualShadowMap) && (light->lightType == LightType::DistantLight);
 
-             if (useCascadedShadowMap)
-             {
-                 SetupViewDependentCascadedShadowMapRenderDataForLight(cascadedShadowMapRenderData, view, *light);
-             }
-             else if (useVirtualShadowMap)
-             {
-                 virtualShadowMapManager->CreateVirtualShadowMapClipmap(view, *light);
-             }
-         }
+            if (useCascadedShadowMap)
+            {
+                SetupViewDependentCascadedShadowMapRenderDataForLight(cascadedShadowMapRenderData, view, *light);
+            }
+            else if (useVirtualShadowMap)
+            {
+                virtualShadowMapManager->CreateVirtualShadowMapClipmap(view, *light);
+            }
+        }
     }
 
     void RealTimeRenderer::UpdatePerFrameDataBuffer()
@@ -355,6 +355,13 @@ namespace Horizon
             perFrameShaderParameters.aspectRatio = view.aspectRatio;
             perFrameShaderParameters.nearClippingPlane = view.nearClippingPlane;
             perFrameShaderParameters.farClippingPlane = view.farClippingPlane;
+
+            perFrameShaderParameters.viewFrustum[0] = Vector4f(view.viewFrustum.planes[0].normal, view.viewFrustum.planes[0].distance);
+            perFrameShaderParameters.viewFrustum[1] = Vector4f(view.viewFrustum.planes[1].normal, view.viewFrustum.planes[1].distance);
+            perFrameShaderParameters.viewFrustum[2] = Vector4f(view.viewFrustum.planes[2].normal, view.viewFrustum.planes[2].distance);
+            perFrameShaderParameters.viewFrustum[3] = Vector4f(view.viewFrustum.planes[3].normal, view.viewFrustum.planes[3].distance);
+            perFrameShaderParameters.viewFrustum[4] = Vector4f(view.viewFrustum.planes[4].normal, view.viewFrustum.planes[4].distance);
+            perFrameShaderParameters.viewFrustum[5] = Vector4f(view.viewFrustum.planes[5].normal, view.viewFrustum.planes[5].distance);
 
             perFrameShaderParameters.cameraJitterOffset = cameraJitterOffset;
             perFrameShaderParameters.previousCameraJitterOffset = historyFrame.cameraJitterOffset;

@@ -39,8 +39,8 @@ void VisibilityBufferVS(
 
     uint geometryInstanceID = visibleMeshletEntry.geometryInstanceID;
 
-    GPUSceneGeometryInstanceData instanceData = GetGPUSceneGeometryInstanceData(geometryInstanceDataBuffer, geometryInstanceID);
-    GPUSceneGeometryData geometryData = GetGPUSceneGeometryData(geometryDataBuffer, instanceData.geometryID);
+    GPUSceneGeometryInstanceData geometryInstanceData = GetGPUSceneGeometryInstanceData(geometryInstanceDataBuffer, geometryInstanceID);
+    GPUSceneGeometryData geometryData = GetGPUSceneGeometryData(geometryDataBuffer, geometryInstanceData.geometryID);
     GPUSceneMeshletData meshletData = GetGPUSceneMeshletData(geometryData, visibleMeshletEntry.meshletID);
 
     output.position = float4(0.0f, 0.0f, 0.0f, 1.0f);
@@ -53,7 +53,7 @@ void VisibilityBufferVS(
 
         GPUSceneGeometryVertexAttributes vertexAttributes = GetGPUSceneGeometryVertexAttributes(geometryData, vertexIndex);
 
-        float3 worldSpaceVertexPosition = mul(instanceData.localToWorldMatrix, float4(vertexAttributes.position, 1.0f)).xyz;
+        float3 worldSpaceVertexPosition = mul(geometryInstanceData.localToWorldMatrix, float4(vertexAttributes.position, 1.0f)).xyz;
         float4 clipSpaceVertexPosition = mul(frameShaderParameters.worldToClipMatrix, float4(worldSpaceVertexPosition, 1.0f));
 
         output.packedPrimitiveID = PackVisiblePrimitiveID(visibleMeshletIndex, triangleIndexInCurrentMeshlet);

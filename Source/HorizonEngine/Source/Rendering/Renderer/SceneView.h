@@ -470,8 +470,8 @@ namespace Horizon
             viewFrustum.planes[1] = Plane(cameraPosition, corners[3], corners[1]); // right
             viewFrustum.planes[2] = Plane(cameraPosition, corners[1], corners[0]); // bottom
             viewFrustum.planes[3] = Plane(cameraPosition, corners[2], corners[3]); // up
-            viewFrustum.planes[4] = Plane(-cameraForwardVector, cameraPosition + cameraForwardVector * nearClippingPlane); // near
-            viewFrustum.planes[5] = Plane(cameraForwardVector, cameraPosition + cameraForwardVector * farClippingPlane);  // far
+            viewFrustum.planes[4] = Plane(cameraForwardVector, cameraPosition + cameraForwardVector * nearClippingPlane); // near
+            viewFrustum.planes[5] = Plane(-cameraForwardVector, cameraPosition + cameraForwardVector * farClippingPlane); // far
         }
     };
 

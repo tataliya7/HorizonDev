@@ -173,12 +173,6 @@ namespace Horizon
         uint32 triangleCount = 0;
         for (uint32 i = 0; i < uint32(clusters.size()); i++)
         {
-            VirtualGeometryMeshlet meshlet =
-            {
-                .triangleOffset = triangleCount,
-                .triangleCount = uint32(clusters[i].indices.size()) / 3
-            };
-
             for (uint32 j = 0; j < uint32(clusters[i].indices.size()); j++)
             {
                 output.indices.push_back(clusters[i].indices[j]);
@@ -198,6 +192,37 @@ namespace Horizon
             {
                 output.vertices.textureCoordinates[0].push_back(clusters[i].uvs[j]);
             }
+
+            Bounds3D bounds;
+            for (uint32 j = 0; j < uint32(clusters[i].indices.size()); j++)
+            {
+                if (j == 0)
+                {
+                    bounds.minimum = input.vertices.position[clusters[i].indices[j]];
+                    bounds.maximum = input.vertices.position[clusters[i].indices[j]];
+                }
+                else
+                {
+                    bounds.minimum.x = std::min(bounds.minimum.x, input.vertices.position[clusters[i].indices[j]].x);
+                    bounds.minimum.y = std::min(bounds.minimum.y, input.vertices.position[clusters[i].indices[j]].y);
+                    bounds.minimum.z = std::min(bounds.minimum.z, input.vertices.position[clusters[i].indices[j]].z);
+                    bounds.maximum.x = std::max(bounds.maximum.x, input.vertices.position[clusters[i].indices[j]].x);
+                    bounds.maximum.y = std::max(bounds.maximum.y, input.vertices.position[clusters[i].indices[j]].y);
+                    bounds.maximum.z = std::max(bounds.maximum.z, input.vertices.position[clusters[i].indices[j]].z);
+                }
+            }
+
+            GPUSceneMeshletData meshlet =
+            {
+                .vertexOffset = 0,
+                .triangleOffset = triangleCount,
+                .vertexCount =  0,
+                .triangleCount = uint32(clusters[i].indices.size()) / 3,
+                .boundingBoxCenter = bounds.GetCenter(),
+                .padding0 = 0,
+                .boundingBoxExtent = bounds.GetExtent(),
+                .padding1 = 0
+            };
 
             output.meshlets.push_back(meshlet);
 

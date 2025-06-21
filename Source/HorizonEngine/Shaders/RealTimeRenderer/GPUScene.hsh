@@ -100,6 +100,10 @@ struct GPUSceneMeshletData
     uint triangleOffset;
     uint vertexCount;
     uint triangleCount;
+    float3 boundingBoxCenter;
+    float padding0;
+    float3 boundingBoxExtent;
+    float padding1;
 };
 
 GPUSceneMeshletData GetGPUSceneMeshletData(GPUSceneGeometryData geometryData, uint meshletID)

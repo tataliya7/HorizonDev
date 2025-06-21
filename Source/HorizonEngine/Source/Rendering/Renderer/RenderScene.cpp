@@ -255,7 +255,7 @@ namespace Horizon
 
             // TODO
             GPUSceneGeometryInstanceData geometryInstance;
-            geometryInstance.localToWorldMatrix = glm::scale(mesh->localToWorldMatrix, Vector3f(0.01f, 0.01f, 0.01f));
+            geometryInstance.localToWorldMatrix = mesh->localToWorldMatrix;
             geometryInstance.worldToLocalMatrix = mesh->worldToLocalMatrix;
             geometryInstance.previousLocalToWorldMatrix = geometryInstance.localToWorldMatrix;
             geometryInstance.previousWorldToLocalMatrix = geometryInstance.worldToLocalMatrix;
@@ -430,7 +430,7 @@ namespace Horizon
                     geometryDesc.triangleDesc.transformOffset = uint32(geometryDescs.size()) * uint32(sizeof(float)) * 16;
                     geometryDescs.push_back(geometryDesc);
 
-                    rayTracingScene->rowMajorTransforms.push_back(Math::Transpose(glm::scale(mesh->localToWorldMatrix, Vector3f(0.01f, 0.01f, 0.01f))));
+                    rayTracingScene->rowMajorTransforms.push_back(Math::Transpose(mesh->localToWorldMatrix));
                 }
 
                 if (rayTracingScene->transformMatrixCount > 0)

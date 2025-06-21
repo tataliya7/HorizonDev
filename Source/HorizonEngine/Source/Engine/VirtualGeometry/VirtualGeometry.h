@@ -13,14 +13,6 @@ namespace Horizon
         std::vector<Vector2f> textureCoordinates[1];
     };
 
-    struct VirtualGeometryMeshlet
-    {
-        uint32 vertexOffset;
-        uint32 triangleOffset;
-        uint32 vertexCount;
-        uint32 triangleCount;
-    };
-
     struct VirtualGeometryBuildSettings
     {
 
@@ -38,7 +30,7 @@ namespace Horizon
         VirtualGeometryVertexArray vertices;
         std::vector<uint32> indices;
         std::vector<uint32> materialIndices;
-        std::vector<VirtualGeometryMeshlet> meshlets;
+        std::vector<GPUSceneMeshletData> meshlets;
     };
 
     bool BuildVirtualGeometry(const VirtualGeometryBuildSettings& settings, const VirtualGeometryBuildInput& input, VirtualGeometryBuildOutput& output);

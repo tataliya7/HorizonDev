@@ -8,7 +8,7 @@ namespace Horizon
         return features.enableSurfelGI;
     }
 
-    //     void RealTimeRenderer::AddSurfleGIPasses(
+//     void RealTimeRenderer::AddSurfleGIPasses(
 //         RenderGraph& renderGraph,
 //         const SceneView& view)
 //     {

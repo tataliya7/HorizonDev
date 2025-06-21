@@ -402,6 +402,10 @@ namespace Horizon
         uint32 triangleOffset;
         uint32 vertexCount;
         uint32 triangleCount;
+        Vector3f boundingBoxCenter;
+        float padding0;
+        Vector3f boundingBoxExtent;
+        float padding1;
     };
 
     static constexpr uint32 VirtualGeometryVertexMaximumTextureCoordinateCount = 2;
@@ -450,6 +454,9 @@ namespace Horizon
     class RenderScene
     {
     public:
+
+        Matrix4x4f localToWorldMatrix;
+        std::vector<GPUSceneMeshletData> meshlets;
 
         RenderScene(RenderBackend* renderBackend, ShaderLibrary* shaderLibrary);
 
