@@ -253,4 +253,58 @@ namespace Horizon
         //
         // return localLightShadowMapAtlas;
     }
+
+    RenderGraphTextureHandle RasterizationRenderer::AddVisualizeShadowMaskPass(
+        RenderGraph& renderGraph,
+        const SceneView& view,
+        RenderGraphTextureHandle sceneColorTexture)
+    {
+        return RenderGraphTextureHandle::Null;
+        // RasterizationRendererDebugViewModeTextures& debugViewModeTextures = renderGraph.blackboard.Get<RasterizationRendererDebugViewModeTextures>();
+        //
+        // if (!debugViewModeTextures.screenSpaceShadowMaskTexture)
+        // {
+        //     return sceneColorTexture;
+        // }
+        //
+        // // TODO
+        // RenderGraphTextureHandle outputTexture = renderGraph.ImportExternalTexture(view.targetTexture, "TargetTexture");
+        // //RenderGraphTextureHandle outputTexture = renderGraph.CreateTexture(view.targetTexture->GetDesc(), "VisualizeScreenSpaceShadowMaskTexture");
+        //
+        // uint32 width = debugViewModeTextures.screenSpaceShadowMaskTextureDesc.width;
+        // uint32 height = debugViewModeTextures.screenSpaceShadowMaskTextureDesc.height;
+        //
+        // renderGraph.AddPass(
+        //     std::format("VisualizeScreenSpaceShadowMask (Compute, {}x{})", width, height, targetResolution.width, targetResolution.height),
+        //     RenderGraphPassFlags::Compute,
+        //     [&](RenderGraphBuilder& builder)
+        //     {
+        //         auto screenSpaceShadowMaskTexture = builder.ReadTexture(debugViewModeTextures.screenSpaceShadowMaskTexture, RenderBackendResourceState::ShaderResource);
+        //
+        //         outputTexture = builder.WriteTexture(outputTexture, RenderBackendResourceState::UnorderedAccess);
+        //
+        //
+        //         {
+        //             uint32 threadGroupCountX = ComputeShaderThreadGroupCount(targetResolution.width, PostProcessingThreadGroupSizeX);
+        //             uint32 threadGroupCountY = ComputeShaderThreadGroupCount(targetResolution.height, PostProcessingThreadGroupSizeY);
+        //             uint32 threadGroupCountZ = 1;
+        //
+        //             RenderBackendPushConstantValues shaderConstants = {};
+        //             shaderConstants.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
+        //             shaderConstants.BindTextureSRV(1, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(screenSpaceShadowMaskTexture));
+        //             shaderConstants.BindTextureUAV(2, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndex(outputTexture, 0));
+        //
+        //             RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::VisualizeScreenSpaceShadowMask);
+        //
+        //             commandList.Dispatch(
+        //                 computeShader,
+        //                 shaderConstants,
+        //                 threadGroupCountX,
+        //                 threadGroupCountY,
+        //                 threadGroupCountZ);
+        //         };
+        //     });
+        //
+        // return outputTexture;
+    }
 }

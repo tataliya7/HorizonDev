@@ -200,7 +200,7 @@ namespace Horizon
         renderFeatures.enableConvolutionBloom = false;
         renderFeatures.enableEditorSelectionOutline = false;
 
-        if (!IsAutoExposureEnabled())
+        if (!renderFeatures.enableAutoExposure)
         {
             finalPostProcessingSettings.autoExposureMinExposureValue = finalPostProcessingSettings.fixedExposureValue;
             finalPostProcessingSettings.autoExposureMaxExposureValue = finalPostProcessingSettings.fixedExposureValue;
@@ -481,7 +481,7 @@ namespace Horizon
                 perFrameShaderParameters.autoExposureHistogramHigherPercentage = finalPostProcessingSettings.autoExposureHistogramHigherPercentage / 100.0f;
                 perFrameShaderParameters.autoExposureHistogramMinEV100 = finalPostProcessingSettings.autoExposureHistogramMinEV100;
                 perFrameShaderParameters.autoExposureHistogramMaxEV100 = finalPostProcessingSettings.autoExposureHistogramMaxEV100;
-                perFrameShaderParameters.autoExposureUseTargetExposure = (view.NeedToBeReset() || !IsAutoExposureEnabled()) ? 1.0f : 0.0f; // TODO: forceUseTargetExposure;
+                perFrameShaderParameters.autoExposureUseTargetExposure = (view.NeedToBeReset() || !renderFeatures.enableAutoExposure) ? 1.0f : 0.0f; // TODO: forceUseTargetExposure;
 
                 perFrameShaderParameters.bloomIntensity = finalPostProcessingSettings.bloomIntensity;
                 perFrameShaderParameters.bloomRadius = finalPostProcessingSettings.bloomRadius;
