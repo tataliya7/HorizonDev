@@ -265,6 +265,10 @@ namespace Horizon
          */
         virtual RenderBackendBufferHandle CreateRayTracingShaderBindingTable(const RenderBackendRayTracingShaderBindingTableDesc* desc, const char* name) = 0;
 
+        virtual void SetObjectName(RenderBackendTextureHandle handle, const char* name) = 0;
+
+        virtual void SetObjectName(RenderBackendBufferHandle handle, const char* name) = 0;
+
         void UpdateBuffer(RenderBackendBufferHandle handle, uint64 offset, const void* data, uint64 size)
         {
             void* bufferAllocation = nullptr;

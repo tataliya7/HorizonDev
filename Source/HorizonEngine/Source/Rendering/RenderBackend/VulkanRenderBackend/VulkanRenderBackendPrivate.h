@@ -1215,7 +1215,16 @@ namespace Horizon
         RenderBackendRayTracingAccelerationStructureHandle CreateRayTracingTopLevelAccelerationStructure(const RenderBackendRayTracingTopLevelAccelerationStructureDesc* desc, const char* name) override;
         RenderBackendRayTracingPipelineStateHandle CreateRayTracingPipelineState(const RenderBackendRayTracingPipelineStateDesc* desc, const char* name) override;
         RenderBackendBufferHandle CreateRayTracingShaderBindingTable(const RenderBackendRayTracingShaderBindingTableDesc* desc, const char* name) override;
-
+        void SetObjectName(RenderBackendTextureHandle handle, const char* name) override
+        {
+            VulkanTexture* texture = device.GetTexture(handle);
+            device.SetDebugUtilsObjectName(VK_OBJECT_TYPE_IMAGE, reinterpret_cast<uint64>(texture->handle), name);
+        }
+        void SetObjectName(RenderBackendBufferHandle handle, const char* name) override
+        {
+            VulkanBuffer* buffer = device.GetBuffer(handle);
+            device.SetDebugUtilsObjectName(VK_OBJECT_TYPE_BUFFER, reinterpret_cast<uint64>(buffer->handle), name);
+        }
         const char*    applicationName;
         uint32         applicationVersion;
         const char*    engineName;

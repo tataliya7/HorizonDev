@@ -98,7 +98,7 @@ namespace Horizon
 
     };
 
-    struct RasterizationRendererSceneTextures
+    struct RasterizationRendererIntermediateResources
     {
         RenderGraphBufferHandle visibleMeshletBuffer;
         RenderGraphTextureHandle vbuffer0;
@@ -106,9 +106,8 @@ namespace Horizon
         RenderGraphTextureHandle gbuffer0;
         RenderGraphTextureHandle gbuffer1;
         RenderGraphTextureHandle gbuffer2;
-        RenderGraphTextureHandle sceneColorTexture;
-        RenderGraphTextureHandle sceneDepthTexture;
-        RenderGraphTextureDesc depthPyramidTextureDesc;
+        RenderGraphTextureHandle colorTexture;
+        RenderGraphTextureHandle depthTexture;
         RenderGraphTextureHandle minDepthPyramidTexture;
         RenderGraphTextureHandle maxDepthPyramidTexture;
         RenderGraphTextureHandle motionVectorTexture;
@@ -116,24 +115,17 @@ namespace Horizon
         RenderGraphTextureHandle indirectDiffuseTexture;
         RenderGraphTextureHandle screenSpaceReflectionTexture;
         RenderGraphTextureHandle hudLessColorTexture;
-        //RenderGraphTextureHandle uiColorAndAlphaTexture;
-        //RenderGraphTextureHandle targetTexture;
-        //RenderGraphTextureHandle displayTexture;
-
         RenderGraphTextureHandle environmentMapTexture;
         RenderGraphBufferHandle irradianceEnvironmentMapBuffer;
         RenderGraphTextureHandle convolvedEnvironmentMapTexture;
-
         RenderGraphBufferHandle virtualShadowMapShaderParameterBuffer;
         RenderGraphBufferHandle virtualShadowMapPageTableBuffer;
         RenderGraphBufferHandle virtualShadowMapEntryBuffer;
         RenderGraphTextureHandle virtualShadowMapDepthTexture;
         RenderGraphTextureHandle virtualShadowMapDebugVisualizationTexture;
-
         RenderBackendBufferHandle cascadedShadowMapShaderParameterBuffer;
         RenderGraphTextureHandle cascadedShadowMapDepthTexture;
         RenderGraphTextureHandle cascadedShadowMapDebugVisualizationTexture;
-
         RenderGraphTextureHandle shadowMaskTexture;
     };
 
@@ -181,8 +173,6 @@ namespace Horizon
 
         bool IsSuperResolutionEnabled() const;
 
-        bool IsAutoExposureEnabled() const;
-
         bool IsLocalToneMappingEnabled() const;
 
         bool IsSkyAtmosphereRenderingEnabled() const;
@@ -207,15 +197,11 @@ namespace Horizon
 
         //bool IsRayTracingAmbientOcclusionEnabled() const;
 
-        bool IsMotionBlurEnabled() const;
-
         bool IsDepthOfFieldEnabled() const;
 
         bool IsGaussianBloomEnabled() const;
 
         bool IsConvolutionBloomEnabled() const;
-
-        bool IsBloomEnabled() const;
 
         bool IsLensFlareEnabled() const;
 
@@ -387,6 +373,7 @@ namespace Horizon
             RenderGraph& renderGraph,
             const SceneView& view,
             RenderGraphTextureHandle colorTexture,
+            const PostProcessingColorPyramid& colorPyramid,
             RenderGraphBufferHandle previousAutoExposureBuffer);
 
         RenderGraphTextureHandle AddCopyExposurePass(
@@ -397,14 +384,15 @@ namespace Horizon
         RenderGraphTextureHandle DispatchBilateralGridLocalToneMapping(
             RenderGraph& renderGraph,
             const SceneView& view,
-            const PostProcessingColorPyramid& colorPyramid,
             RenderGraphTextureHandle colorTexture,
+            const PostProcessingColorPyramid& colorPyramid,
             RenderGraphBufferHandle autoExposureBuffer);
 
         RenderGraphTextureHandle DispatchExposureFusionLocalToneMapping(
             RenderGraph& renderGraph,
             const SceneView& view,
             RenderGraphTextureHandle colorTexture,
+            const PostProcessingColorPyramid& colorPyramid,
             RenderGraphTextureHandle exposureTexture);
 
         RenderGraphTextureHandle RenderColorTransformLUT(
@@ -418,8 +406,7 @@ namespace Horizon
             RenderGraphTextureHandle bloomTexture,
             RenderGraphTextureHandle localToneMappingTexture,
             RenderGraphTextureHandle colorTransformLUTTexture,
-            RenderGraphBufferHandle autoExposureBuffer,
-            bool outputInHDR);
+            RenderGraphBufferHandle autoExposureBuffer);
 
         //void DenoiseShadowMaskSSD(
         //    RenderGraph& renderGraph,
@@ -434,21 +421,24 @@ namespace Horizon
             RenderGraphTextureHandle depthTexture,
             RenderGraphTextureHandle velocityTexture);
 
-        RenderGraphTextureHandle AddLensFlarePass(
+        RenderGraphTextureHandle DispatchLensFlarePass(
             RenderGraph& renderGraph,
             const SceneView& view,
-            RenderGraphTextureHandle halfResolutionSceneColorTexture,
+            RenderGraphTextureHandle colorTexture,
+            const PostProcessingColorPyramid& colorPyramid,
             RenderGraphTextureHandle bloomTexture);
 
         RenderGraphTextureHandle DispatchGaussianBloom(
             RenderGraph& renderGraph,
             const SceneView& view,
-            RenderGraphTextureHandle halfResolutionSceneColorTexture);
+            RenderGraphTextureHandle colorTexture,
+            const PostProcessingColorPyramid& colorPyramid);
 
         RenderGraphTextureHandle DispatchConvolutionBloom(
             RenderGraph& renderGraph,
             const SceneView& view,
-            RenderGraphTextureHandle sceneColorTexture);
+            RenderGraphTextureHandle colorTexture,
+            const PostProcessingColorPyramid& colorPyramid);
 
         RenderGraphTextureHandle AddDownsamplePass(
             RenderGraph& renderGraph,
@@ -466,24 +456,24 @@ namespace Horizon
             RenderGraphTextureHandle sceneColorTexture,
             PostProcessingColorPyramid* outMipChain);
 
-        RenderGraphTextureHandle AddEditorSelectionOutlinePass(
+        RenderGraphTextureHandle DispatchEditorSelectionOutline(
             RenderGraph& renderGraph,
             const SceneView& view,
             RenderGraphTextureHandle sceneColorTexture);
 
-        RenderGraphTextureHandle AddVisualizeDepthPass(
+        RenderGraphTextureHandle DispatchDepthDebugVisualization(
             RenderGraph& renderGraph,
             const SceneView& view);
 
-        RenderGraphTextureHandle AddVirtualGeometryDebugVisualizationPass(
+        RenderGraphTextureHandle DispatchVirtualGeometryDebugVisualization(
             RenderGraph& renderGraph,
             const SceneView& view);
 
-        RenderGraphTextureHandle AddVisualizeWorldSpaceNormalPass(
+        RenderGraphTextureHandle DispatchWorldSpaceNormalDebugVisualization(
             RenderGraph& renderGraph,
             const SceneView& view);
 
-        RenderGraphTextureHandle AddVisualizeMotionVectorsPass(
+        RenderGraphTextureHandle DispatchMotionVectorDebugVisualization(
             RenderGraph& renderGraph,
             const SceneView& view);
 
@@ -496,11 +486,11 @@ namespace Horizon
             const SceneView& view,
             RenderGraphTextureHandle sceneColorTexture);
 
-        RenderGraphTextureHandle AddVisualizeCascadedShadowMapPass(
+        RenderGraphTextureHandle DispatchCascadedShadowMapDebugVisualization(
             RenderGraph& renderGraph,
             const SceneView& view);
 
-        RenderGraphTextureHandle AddVisualizeVirtualShadowMapPass(
+        RenderGraphTextureHandle DispatchVirtualShadowMapDebugVisualization(
             RenderGraph& renderGraph,
             const SceneView& view);
 
@@ -518,11 +508,12 @@ namespace Horizon
         RendererDefaultResources* defaultResources;
         SceneView* sceneView;
         TemporalSuperSamplingInterface* temporalSuperSamplingInterface;
+        RasterizationRendererSettings rendererSettings;
 
         struct RenderFeatures
         {
             bool enableFrameRateUpConversion;
-            bool enableSuperResolution;
+            bool enableTemporalSuperSampling;
             bool enableSuperSamplingAntiAliasing;
             bool enableSkyAtmosphereRendering;
             bool enableSubsurfaceScattering;
@@ -536,12 +527,16 @@ namespace Horizon
             bool enableSurfelGI;
             bool enableMotionBlur;
             bool enableAutoExposure;
-            bool enableLocalToneMapping;
+            bool enableBilateralGridLocalToneMapping;
+            bool enableExposureFusionLocalToneMapping;
             bool enableDepthOfField;
             bool enableLensFlare;
             bool enableGaussianBloom;
             bool enableConvolutionBloom;
-        } features;
+#if HORIZON_EDITOR
+            bool enableEditorSelectionOutline;
+#endif
+        } renderFeatures;
 
         float renderResolutionPercentage = 1.0f;
 
@@ -554,7 +549,7 @@ namespace Horizon
         Matrix4x4f reprojectionMatrix;
         Matrix4x4f inverseReprojectionMatrix;
 
-        PostProcessingSettings finalPostProcessingSettings;
+        RasterizationRendererPostProcessingSettings finalPostProcessingSettings;
 
         PerFrameShaderParameters perFrameShaderParameters = {};
 
@@ -628,6 +623,7 @@ namespace Horizon
             CameraTransformations transformations;
             float preExposure;
             RenderGraphPersistentBuffer* autoExposureBuffer = nullptr;
+            RenderGraphPersistentTexture* exposureTexture = nullptr;
             RenderGraphPersistentTexture* sceneDepthTexture = nullptr;
             RenderGraphPersistentTexture* ambientOcclusionTexture = nullptr;
             RenderGraphPersistentTexture* screenSpaceLightShaftsTemporalFilteringTexture = nullptr;
@@ -647,6 +643,9 @@ namespace Horizon
         RenderBackendBufferHandle debugDrawLinesVertexUploadBuffers[3];
         RenderBackendBufferHandle debugDrawLinesVertexBuffers[3];
         uint32 debugDrawLinesVertexBufferSizes[3] = { 0, 0, 0 };
+
+        using PostProcessingDebugVisualizationCallback = std::function<RenderGraphTextureHandle(RenderGraph& renderGraph, const SceneView& view)>;
+        PostProcessingDebugVisualizationCallback debugVisualizationCallback;
 
     public:
         std::vector<Vector3f> debugDrawLinesVertices;

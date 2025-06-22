@@ -4,7 +4,7 @@ namespace Horizon
 {
     bool RasterizationRenderer::IsScreenSpaceAmbientOcclusionEnabled() const
     {
-        return features.enableScreenSpaceAmbientOcclusion;
+        return renderFeatures.enableScreenSpaceAmbientOcclusion;
     }
 
     RenderGraphTextureHandle RasterizationRenderer::RenderScreenSpaceAmbientOcclusion(
@@ -39,13 +39,13 @@ namespace Horizon
 //
 //         RenderGraphTextureHandle gtaoDebugOutputTexture = renderGraph.CreateTexture(gtaoTextureDesc, "GTAODebugOutputTexture");
 //
-//         auto& sceneTextures = renderGraph.blackboard.Get<RasterizationRendererSceneTextures>();
+//         auto& intermediateResources = renderGraph.blackboard.Get<RasterizationRendererSceneTextures>();
 //
 //         renderGraph.AddPass(std::format("GTAOHorizonSearchAndIntegral (Compute, {}, {})", gtaoTextureWidth, gtaoTextureHeight), RenderGraphPassFlags::AsyncCompute,
 //             [&](RenderGraphBuilder& builder)
 //             {
-//                 auto gbuffer0 = builder.ReadTexture(sceneTextures.gbuffer0, RenderBackendResourceState::ShaderResource);
-//                 auto sceneDepthTexture = builder.ReadTexture(sceneTextures.sceneDepthTexture, RenderBackendResourceState::ShaderResource);
+//                 auto gbuffer0 = builder.ReadTexture(intermediateResources.gbuffer0, RenderBackendResourceState::ShaderResource);
+//                 auto sceneDepthTexture = builder.ReadTexture(intermediateResources.sceneDepthTexture, RenderBackendResourceState::ShaderResource);
 //
 //                 gtaoHorizonSearchAndIntegralTexture = builder.WriteTexture(gtaoHorizonSearchAndIntegralTexture, RenderBackendResourceState::UnorderedAccess);
 //                 gtaoDebugOutputTexture = builder.WriteTexture(gtaoDebugOutputTexture, RenderBackendResourceState::UnorderedAccess);
@@ -81,7 +81,7 @@ namespace Horizon
 //         renderGraph.AddPass(std::format("GTAOSpatialFiltering (Compute, {}x{})", gtaoTextureWidth, gtaoTextureHeight), RenderGraphPassFlags::AsyncCompute,
 //             [&](RenderGraphBuilder& builder)
 //             {
-//                 auto sceneDepthTexture = builder.ReadTexture(sceneTextures.sceneDepthTexture, RenderBackendResourceState::ShaderResource);
+//                 auto sceneDepthTexture = builder.ReadTexture(intermediateResources.sceneDepthTexture, RenderBackendResourceState::ShaderResource);
 //                 builder.ReadTexture(gtaoHorizonSearchAndIntegralTexture, RenderBackendResourceState::ShaderResource);
 //
 //                 gtaoSpatialFilteringTexture = builder.WriteTexture(gtaoSpatialFilteringTexture, RenderBackendResourceState::UnorderedAccess);
@@ -121,12 +121,12 @@ namespace Horizon
 //         renderGraph.AddPass(std::format("GTAOTemporalFiltering (Compute, {}x{})", ambientOcclusionTextureWidth, ambientOcclusionTextureHeight), RenderGraphPassFlags::AsyncCompute,
 //             [&](RenderGraphBuilder& builder)
 //             {
-//                 auto& sceneTextures = renderGraph.blackboard.Get<RasterizationRendererSceneTextures>();
+//                 auto& intermediateResources = renderGraph.blackboard.Get<RasterizationRendererSceneTextures>();
 //                 auto& historyInfo = renderGraph.blackboard.Get<RasterizationRendererHistoryInfo>();
 //
-//                 auto sceneDepthTexture = builder.ReadTexture(sceneTextures.sceneDepthTexture, RenderBackendResourceState::ShaderResource);
+//                 auto sceneDepthTexture = builder.ReadTexture(intermediateResources.sceneDepthTexture, RenderBackendResourceState::ShaderResource);
 //                 auto historySceneDepthTexture = builder.ReadTexture(historyInfo.historySceneDepthTexture, RenderBackendResourceState::ShaderResource);
-//                 auto motionVectorTexture = builder.ReadTexture(sceneTextures.motionVectorTexture, RenderBackendResourceState::ShaderResource);
+//                 auto motionVectorTexture = builder.ReadTexture(intermediateResources.motionVectorTexture, RenderBackendResourceState::ShaderResource);
 //                 builder.ReadTexture(historyAmbientOcclusionTexture, RenderBackendResourceState::ShaderResource);
 //                 builder.ReadTexture(horizonSearchAndIntegralTexture, RenderBackendResourceState::ShaderResource);
 //

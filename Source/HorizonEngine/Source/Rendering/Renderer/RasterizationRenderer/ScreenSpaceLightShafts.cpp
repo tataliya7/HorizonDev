@@ -8,7 +8,7 @@ namespace Horizon
 
     bool RasterizationRenderer::IsScreenSpaceLightShaftsEnabled() const
     {
-        return features.enableScreenSpaceLightShafts;
+        return renderFeatures.enableScreenSpaceLightShafts;
     }
 
     void RasterizationRenderer::RenderScreenSpaceLightShafts(
@@ -37,7 +37,7 @@ namespace Horizon
 
         if (shouldRenderLightShafts)
         {
-            RasterizationRendererSceneTextures& sceneTextures = renderGraph.blackboard.Get<RasterizationRendererSceneTextures>();
+            RasterizationRendererIntermediateResources& intermediateResources = renderGraph.blackboard.Get<RasterizationRendererIntermediateResources>();
 
             Vector2f lightShaftsOrigin = Vector2f(clipSpaceLightPosition.x / clipSpaceLightPosition.w, clipSpaceLightPosition.y / clipSpaceLightPosition.w);
             lightShaftsOrigin = lightShaftsOrigin * Vector2f(0.5f, -0.5f) + 0.5f;
@@ -46,7 +46,7 @@ namespace Horizon
 
             Vector2f aspectRatio = Vector2f(float(lightShaftsTextureSize.width) / float(lightShaftsTextureSize.height), float(lightShaftsTextureSize.height) / float(lightShaftsTextureSize.width));
 
-            RenderGraphTextureDesc lightShaftsTextureDesc = RenderGraphTextureDesc::Create2D(
+            RenderGraphTextureDescription lightShaftsTextureDesc = RenderGraphTextureDescription::Create2D(
                 lightShaftsTextureSize.width,
                 lightShaftsTextureSize.height,
                 RenderBackendTextureFormat::R11G11B10Float,
@@ -58,8 +58,8 @@ namespace Horizon
                 RenderGraphPassFlags::Compute,
                 [&](RenderGraphBuilder& builder)
                 {
-                    RenderGraphTextureHandle sceneColorTexture = builder.ReadTexture(sceneTextures.sceneColorTexture, RenderBackendResourceState::ShaderResource);
-                    RenderGraphTextureHandle sceneDepthTexture = builder.ReadTexture(sceneTextures.sceneDepthTexture, RenderBackendResourceState::ShaderResource);
+                    RenderGraphTextureHandle sceneColorTexture = builder.ReadTexture(intermediateResources.colorTexture, RenderBackendResourceState::ShaderResource);
+                    RenderGraphTextureHandle sceneDepthTexture = builder.ReadTexture(intermediateResources.depthTexture, RenderBackendResourceState::ShaderResource);
                     lightShaftsDownsampleOutputTexture = builder.WriteTexture(lightShaftsDownsampleOutputTexture, RenderBackendResourceState::UnorderedAccess);
 
                     return [=](RenderBackendCommandList& commandList, const RenderGraphResourceRegistry& resourceRegistry)
@@ -108,7 +108,7 @@ namespace Horizon
                     [&](RenderGraphBuilder& builder)
                     {
                         RenderGraphTextureHandle inputColorTexture = builder.ReadTexture(lightShaftsDownsampleOutputTexture, RenderBackendResourceState::ShaderResource);
-                        RenderGraphTextureHandle inputDepthTexture = builder.ReadTexture(sceneTextures.sceneDepthTexture, RenderBackendResourceState::ShaderResource);
+                        RenderGraphTextureHandle inputDepthTexture = builder.ReadTexture(intermediateResources.depthTexture, RenderBackendResourceState::ShaderResource);
                         RenderGraphTextureHandle historyColorTexture = builder.ReadTexture(lightShaftsTemporalFilteringOutputHistoryTexture, RenderBackendResourceState::ShaderResource);
                         RenderGraphTextureHandle outputColorTexture = lightShaftsTemporalFilteringOutputTexture = builder.WriteTexture(lightShaftsTemporalFilteringOutputTexture, RenderBackendResourceState::UnorderedAccess);
 
@@ -191,7 +191,7 @@ namespace Horizon
                 [&](RenderGraphBuilder& builder)
                 {
                     RenderGraphTextureHandle lightShaftsTexture = builder.ReadTexture(radialBlurOutputTexture, RenderBackendResourceState::ShaderResource);
-                    RenderGraphTextureHandle sceneColorTexture = sceneTextures.sceneColorTexture = builder.WriteTexture(sceneTextures.sceneColorTexture, RenderBackendResourceState::RenderTarget);
+                    RenderGraphTextureHandle sceneColorTexture = intermediateResources.colorTexture = builder.WriteTexture(intermediateResources.colorTexture, RenderBackendResourceState::RenderTarget);
 
                     builder.SetRenderTargetBinding(0, sceneColorTexture, RenderBackendRenderPassLoadOperation::Load, RenderBackendRenderPassStoreOperation::Store);
 

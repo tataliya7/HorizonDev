@@ -36,10 +36,10 @@ namespace Horizon
 
     bool RasterizationRenderer::IsSuperResolutionEnabled() const
     {
-        return features.enableSuperResolution;
+        return renderFeatures.enableTemporalSuperSampling;
     }
 
-    RenderGraphTextureHandle DispatchCustomTemporalSuperSampling(TemporalSuperSamplingInterface* temporalSuperSamplingInterface, RenderGraph& renderGraph, const SceneView& view, const TemporalSuperSamplingDispatchDescription& dispatchDescription)
+    RenderGraphTextureHandle DispatchTemporalSuperSampling(TemporalSuperSamplingInterface* temporalSuperSamplingInterface, RenderGraph& renderGraph, const SceneView& view, const TemporalSuperSamplingDispatchDescription& dispatchDescription)
     {
         RenderGraphDebugLabelRegion debugLabelRegion(renderGraph, "TemporalSuperSampling");
 

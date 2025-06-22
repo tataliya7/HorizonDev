@@ -66,7 +66,7 @@ namespace Horizon
         const GeometryPassDrawCommandList& drawCommandList = geometryPassDrawCommandLists[uint32(GeometryPassType::Opaque)];
         const GPUScene* gpuScene = sceneView->scene->GetGPUScene();//drawCommandList.setupJobData.scene->GetGPUScene();
 
-        RasterizationRendererSceneTextures& sceneTextures = renderGraph.blackboard.Get<RasterizationRendererSceneTextures>();
+        RasterizationRendererIntermediateResources& intermediateResources = renderGraph.blackboard.Get<RasterizationRendererIntermediateResources>();
 
         RenderGraphBufferDesc meshletCullingArgumentBufferDesc = RenderGraphBufferDesc::CreateIndirectArguments(sizeof(RenderBackendDispatchIndirectArguments), 1);
         RenderGraphBufferHandle meshletCullingArgumentBuffer = renderGraph.CreateBuffer(meshletCullingArgumentBufferDesc, "VirtualGeometryIndirectArgumentBuffer");
@@ -198,9 +198,9 @@ namespace Horizon
             {
                 drawIndirectArgumentBuffer = builder.ReadBuffer(drawIndirectArgumentBuffer, RenderBackendResourceState::IndirectArgument);
                 visibleMeshletBuffer = builder.ReadBuffer(visibleMeshletBuffer, RenderBackendResourceState::ShaderResource);
-                RenderGraphTextureHandle vbuffer0 = sceneTextures.vbuffer0 = builder.WriteTexture(sceneTextures.vbuffer0, RenderBackendResourceState::RenderTarget);
-                RenderGraphTextureHandle vbuffer1 = sceneTextures.vbuffer1 = builder.WriteTexture(sceneTextures.vbuffer1, RenderBackendResourceState::RenderTarget);
-                RenderGraphTextureHandle sceneDepthTexture = sceneTextures.sceneDepthTexture = builder.WriteTexture(sceneTextures.sceneDepthTexture, RenderBackendResourceState::DepthStencil);
+                RenderGraphTextureHandle vbuffer0 = intermediateResources.vbuffer0 = builder.WriteTexture(intermediateResources.vbuffer0, RenderBackendResourceState::RenderTarget);
+                RenderGraphTextureHandle vbuffer1 = intermediateResources.vbuffer1 = builder.WriteTexture(intermediateResources.vbuffer1, RenderBackendResourceState::RenderTarget);
+                RenderGraphTextureHandle sceneDepthTexture = intermediateResources.depthTexture = builder.WriteTexture(intermediateResources.depthTexture, RenderBackendResourceState::DepthStencil);
 
                 builder.SetRenderTargetBinding(0, vbuffer0, RenderBackendRenderPassLoadOperation::Clear, RenderBackendRenderPassStoreOperation::Store);
                 builder.SetRenderTargetBinding(1, vbuffer1, RenderBackendRenderPassLoadOperation::Clear, RenderBackendRenderPassStoreOperation::Store);
@@ -249,7 +249,31 @@ namespace Horizon
                 };
             });
 
-        sceneTextures.visibleMeshletBuffer = visibleMeshletBuffer;
+        intermediateResources.visibleMeshletBuffer = visibleMeshletBuffer;
+
+        if (rendererSettings.debugVisualizationMode == RasterizationRendererDebugVisualizationMode::Depth)
+        {
+            debugVisualizationCallback = std::bind(&RasterizationRenderer::DispatchDepthDebugVisualization, this, std::placeholders::_1, std::placeholders::_2);
+        }
+
+        if (rendererSettings.debugVisualizationMode == RasterizationRendererDebugVisualizationMode::WorldSpaceNormal)
+        {
+            debugVisualizationCallback = std::bind(&RasterizationRenderer::DispatchWorldSpaceNormalDebugVisualization, this, std::placeholders::_1, std::placeholders::_2);
+        }
+
+        if (rendererSettings.debugVisualizationMode == RasterizationRendererDebugVisualizationMode::MotionVectors)
+        {
+            debugVisualizationCallback = std::bind(&RasterizationRenderer::DispatchMotionVectorDebugVisualization, this, std::placeholders::_1, std::placeholders::_2);
+        }
+
+        const bool isVirtualGeometryDebugVisualizationEnabled =
+            (rendererSettings.debugVisualizationMode == RasterizationRendererDebugVisualizationMode::MeshletID) ||
+            (rendererSettings.debugVisualizationMode == RasterizationRendererDebugVisualizationMode::PrimitiveID) ||
+            (rendererSettings.debugVisualizationMode == RasterizationRendererDebugVisualizationMode::MaterialID);
+        if (isVirtualGeometryDebugVisualizationEnabled)
+        {
+            debugVisualizationCallback = std::bind(&RasterizationRenderer::DispatchVirtualGeometryDebugVisualization, this, std::placeholders::_1, std::placeholders::_2);
+        }
     }
 
     void RasterizationRenderer::RenderVisibilityBufferMeshShading(
@@ -262,11 +286,11 @@ namespace Horizon
             RenderGraphPassFlags::MeshShading,
             [&](RenderGraphBuilder& builder)
             {
-                auto& sceneTextures = renderGraph.blackboard.Get<RasterizationRendererSceneTextures>();
+                auto& intermediateResources = renderGraph.blackboard.Get<RasterizationRendererSceneTextures>();
 
-                auto vbuffer0 = sceneTextures.vbuffer0 = builder.WriteTexture(sceneTextures.vbuffer0, RenderBackendResourceState::RenderTarget);
-                auto vbuffer1 = sceneTextures.vbuffer1 = builder.WriteTexture(sceneTextures.vbuffer1, RenderBackendResourceState::RenderTarget);
-                auto sceneDepthTexture = sceneTextures.sceneDepthTexture = builder.WriteTexture(sceneTextures.sceneDepthTexture, RenderBackendResourceState::DepthStencil);
+                auto vbuffer0 = intermediateResources.vbuffer0 = builder.WriteTexture(intermediateResources.vbuffer0, RenderBackendResourceState::RenderTarget);
+                auto vbuffer1 = intermediateResources.vbuffer1 = builder.WriteTexture(intermediateResources.vbuffer1, RenderBackendResourceState::RenderTarget);
+                auto sceneDepthTexture = intermediateResources.sceneDepthTexture = builder.WriteTexture(intermediateResources.sceneDepthTexture, RenderBackendResourceState::DepthStencil);
 
                 builder.SetRenderTargetBinding(0, vbuffer0, RenderBackendRenderPassLoadOperation::Clear, RenderBackendRenderPassStoreOperation::Load);
                 builder.SetRenderTargetBinding(1, vbuffer1, RenderBackendRenderPassLoadOperation::Clear, RenderBackendRenderPassStoreOperation::Load);
@@ -328,16 +352,16 @@ namespace Horizon
             RenderGraphPassFlags::Compute,
             [&](RenderGraphBuilder& builder)
             {
-                RasterizationRendererSceneTextures& sceneTextures = renderGraph.blackboard.Get<RasterizationRendererSceneTextures>();
+                RasterizationRendererIntermediateResources& intermediateResources = renderGraph.blackboard.Get<RasterizationRendererIntermediateResources>();
 
-                RenderGraphBufferHandle visibleMeshletBuffer = builder.ReadBuffer(sceneTextures.visibleMeshletBuffer, RenderBackendResourceState::ShaderResource);
+                RenderGraphBufferHandle visibleMeshletBuffer = builder.ReadBuffer(intermediateResources.visibleMeshletBuffer, RenderBackendResourceState::ShaderResource);
 
-                RenderGraphTextureHandle vbuffer0 = builder.ReadTexture(sceneTextures.vbuffer0, RenderBackendResourceState::ShaderResource);
-                RenderGraphTextureHandle vbuffer1 = builder.ReadTexture(sceneTextures.vbuffer1, RenderBackendResourceState::ShaderResource);
+                RenderGraphTextureHandle vbuffer0 = builder.ReadTexture(intermediateResources.vbuffer0, RenderBackendResourceState::ShaderResource);
+                RenderGraphTextureHandle vbuffer1 = builder.ReadTexture(intermediateResources.vbuffer1, RenderBackendResourceState::ShaderResource);
 
-                RenderGraphTextureHandle gbuffer0 = sceneTextures.gbuffer0 = builder.WriteTexture(sceneTextures.gbuffer0, RenderBackendResourceState::UnorderedAccess);
-                RenderGraphTextureHandle gbuffer1 = sceneTextures.gbuffer1 = builder.WriteTexture(sceneTextures.gbuffer1, RenderBackendResourceState::UnorderedAccess);
-                RenderGraphTextureHandle gbuffer2 = sceneTextures.gbuffer2 = builder.WriteTexture(sceneTextures.gbuffer2, RenderBackendResourceState::UnorderedAccess);
+                RenderGraphTextureHandle gbuffer0 = intermediateResources.gbuffer0 = builder.WriteTexture(intermediateResources.gbuffer0, RenderBackendResourceState::UnorderedAccess);
+                RenderGraphTextureHandle gbuffer1 = intermediateResources.gbuffer1 = builder.WriteTexture(intermediateResources.gbuffer1, RenderBackendResourceState::UnorderedAccess);
+                RenderGraphTextureHandle gbuffer2 = intermediateResources.gbuffer2 = builder.WriteTexture(intermediateResources.gbuffer2, RenderBackendResourceState::UnorderedAccess);
 
                 return [=](RenderBackendCommandList& commandList, const RenderGraphResourceRegistry& resourceRegistry)
                 {
@@ -374,17 +398,17 @@ namespace Horizon
     {
         const GPUScene* gpuScene = sceneView->scene->GetGPUScene();
 
-        RasterizationRendererSceneTextures& sceneTextures = renderGraph.blackboard.Get<RasterizationRendererSceneTextures>();
+        RasterizationRendererIntermediateResources& intermediateResources = renderGraph.blackboard.Get<RasterizationRendererIntermediateResources>();
 
         renderGraph.AddPass(
             std::format("MotionVectors (Compute, {}x{})", renderResolution.width, renderResolution.height),
             RenderGraphPassFlags::Compute,
             [&](RenderGraphBuilder& builder)
             {
-                RenderGraphBufferHandle visibleMeshletBuffer = builder.ReadBuffer(sceneTextures.visibleMeshletBuffer, RenderBackendResourceState::ShaderResource);
-                RenderGraphTextureHandle sceneDepthTexture = builder.ReadTexture(sceneTextures.sceneDepthTexture, RenderBackendResourceState::ShaderResource);
-                RenderGraphTextureHandle vbuffer0 = builder.ReadTexture(sceneTextures.vbuffer0, RenderBackendResourceState::ShaderResource);
-                RenderGraphTextureHandle motionVectorTexture = sceneTextures.motionVectorTexture = builder.WriteTexture(sceneTextures.motionVectorTexture, RenderBackendResourceState::UnorderedAccess);
+                RenderGraphBufferHandle visibleMeshletBuffer = builder.ReadBuffer(intermediateResources.visibleMeshletBuffer, RenderBackendResourceState::ShaderResource);
+                RenderGraphTextureHandle sceneDepthTexture = builder.ReadTexture(intermediateResources.depthTexture, RenderBackendResourceState::ShaderResource);
+                RenderGraphTextureHandle vbuffer0 = builder.ReadTexture(intermediateResources.vbuffer0, RenderBackendResourceState::ShaderResource);
+                RenderGraphTextureHandle motionVectorTexture = intermediateResources.motionVectorTexture = builder.WriteTexture(intermediateResources.motionVectorTexture, RenderBackendResourceState::UnorderedAccess);
 
                 return [=](RenderBackendCommandList& commandList, const RenderGraphResourceRegistry& resourceRegistry)
                 {
@@ -434,25 +458,25 @@ namespace Horizon
             RenderGraphPassFlags::Graphics,
             [&](RenderGraphBuilder& builder)
             {
-                RasterizationRendererSceneTextures& sceneTextures = renderGraph.blackboard.Get<RasterizationRendererSceneTextures>();
+                RasterizationRendererIntermediateResources& intermediateResources = renderGraph.blackboard.Get<RasterizationRendererIntermediateResources>();
                 RasterizationRendererLightGridData& lightGridData = renderGraph.blackboard.Get<RasterizationRendererLightGridData>();
 
-                RenderGraphTextureHandle vbuffer0 = builder.ReadTexture(sceneTextures.vbuffer0, RenderBackendResourceState::ShaderResource);
-                RenderGraphTextureHandle vbuffer1 = builder.ReadTexture(sceneTextures.vbuffer1, RenderBackendResourceState::ShaderResource);
-                RenderGraphTextureHandle gbuffer0 = builder.ReadTexture(sceneTextures.gbuffer0, RenderBackendResourceState::ShaderResource);
-                RenderGraphTextureHandle gbuffer1 = builder.ReadTexture(sceneTextures.gbuffer1, RenderBackendResourceState::ShaderResource);
-                RenderGraphTextureHandle gbuffer2 = builder.ReadTexture(sceneTextures.gbuffer2, RenderBackendResourceState::ShaderResource);
+                RenderGraphTextureHandle vbuffer0 = builder.ReadTexture(intermediateResources.vbuffer0, RenderBackendResourceState::ShaderResource);
+                RenderGraphTextureHandle vbuffer1 = builder.ReadTexture(intermediateResources.vbuffer1, RenderBackendResourceState::ShaderResource);
+                RenderGraphTextureHandle gbuffer0 = builder.ReadTexture(intermediateResources.gbuffer0, RenderBackendResourceState::ShaderResource);
+                RenderGraphTextureHandle gbuffer1 = builder.ReadTexture(intermediateResources.gbuffer1, RenderBackendResourceState::ShaderResource);
+                RenderGraphTextureHandle gbuffer2 = builder.ReadTexture(intermediateResources.gbuffer2, RenderBackendResourceState::ShaderResource);
                 // TODO: which state should be?
-                //RenderGraphTextureHandle sceneDepthTexture = builder.ReadTexture(sceneTextures.sceneDepthTexture, RenderBackendResourceState::ShaderResource);
-                RenderGraphTextureHandle sceneDepthTexture = builder.ReadTexture(sceneTextures.sceneDepthTexture, RenderBackendResourceState::DepthStencilReadOnly);
-                RenderGraphTextureHandle screenSpaceShadowMaskTexture = builder.ReadTexture(sceneTextures.shadowMaskTexture, RenderBackendResourceState::ShaderResource);
+                //RenderGraphTextureHandle sceneDepthTexture = builder.ReadTexture(intermediateResources.sceneDepthTexture, RenderBackendResourceState::ShaderResource);
+                RenderGraphTextureHandle sceneDepthTexture = builder.ReadTexture(intermediateResources.depthTexture, RenderBackendResourceState::DepthStencilReadOnly);
+                RenderGraphTextureHandle screenSpaceShadowMaskTexture = builder.ReadTexture(intermediateResources.shadowMaskTexture, RenderBackendResourceState::ShaderResource);
                 localLightShadowMapAtlas = builder.ReadTexture(localLightShadowMapAtlas, RenderBackendResourceState::ShaderResource);
                 skyAtmosphereTransmittanceLUT = builder.ReadTexture(skyAtmosphereTransmittanceLUT, RenderBackendResourceState::ShaderResource);
 
                 RenderGraphBufferHandle lightGridCellDataBuffer = builder.ReadBuffer(lightGridData.lightGridCellDataBuffer, RenderBackendResourceState::ShaderResource);
                 RenderGraphBufferHandle lightGridLightListBuffer = builder.ReadBuffer(lightGridData.lightGridLightListBuffer, RenderBackendResourceState::ShaderResource);
 
-                RenderGraphTextureHandle sceneColorTexture = sceneTextures.sceneColorTexture = builder.WriteTexture(sceneTextures.sceneColorTexture, RenderBackendResourceState::RenderTarget);
+                RenderGraphTextureHandle sceneColorTexture = intermediateResources.colorTexture = builder.WriteTexture(intermediateResources.colorTexture, RenderBackendResourceState::RenderTarget);
 
                 builder.SetRenderTargetBinding(0, sceneColorTexture, RenderBackendRenderPassLoadOperation::Load, RenderBackendRenderPassStoreOperation::Store);
                 builder.SetDepthStencilBinding(sceneDepthTexture,
@@ -518,16 +542,16 @@ namespace Horizon
             RenderGraphPassFlags::Graphics,
             [&](RenderGraphBuilder& builder)
             {
-                RasterizationRendererSceneTextures& sceneTextures = renderGraph.blackboard.Get<RasterizationRendererSceneTextures>();
-                RenderGraphTextureHandle gbuffer0 = builder.ReadTexture(sceneTextures.gbuffer0, RenderBackendResourceState::ShaderResource);
-                RenderGraphTextureHandle gbuffer1 = builder.ReadTexture(sceneTextures.gbuffer1, RenderBackendResourceState::ShaderResource);
-                RenderGraphTextureHandle gbuffer2 = builder.ReadTexture(sceneTextures.gbuffer2, RenderBackendResourceState::ShaderResource);
-                RenderGraphTextureHandle sceneDepthTexture = builder.ReadTexture(sceneTextures.sceneDepthTexture, RenderBackendResourceState::DepthStencilReadOnly);
-                RenderGraphBufferHandle irradianceEnvironmentMapBuffer = builder.ReadBuffer(sceneTextures.irradianceEnvironmentMapBuffer, RenderBackendResourceState::ShaderResource);
-                RenderGraphTextureHandle ambientOcclusionTexture = builder.ReadTexture(sceneTextures.ambientOcclusionTexture, RenderBackendResourceState::ShaderResource);
-                RenderGraphTextureHandle indirectDiffuseTexture = builder.ReadTexture(sceneTextures.indirectDiffuseTexture, RenderBackendResourceState::ShaderResource);
+                RasterizationRendererIntermediateResources& intermediateResources = renderGraph.blackboard.Get<RasterizationRendererIntermediateResources>();
+                RenderGraphTextureHandle gbuffer0 = builder.ReadTexture(intermediateResources.gbuffer0, RenderBackendResourceState::ShaderResource);
+                RenderGraphTextureHandle gbuffer1 = builder.ReadTexture(intermediateResources.gbuffer1, RenderBackendResourceState::ShaderResource);
+                RenderGraphTextureHandle gbuffer2 = builder.ReadTexture(intermediateResources.gbuffer2, RenderBackendResourceState::ShaderResource);
+                RenderGraphTextureHandle sceneDepthTexture = builder.ReadTexture(intermediateResources.depthTexture, RenderBackendResourceState::DepthStencilReadOnly);
+                RenderGraphBufferHandle irradianceEnvironmentMapBuffer = builder.ReadBuffer(intermediateResources.irradianceEnvironmentMapBuffer, RenderBackendResourceState::ShaderResource);
+                RenderGraphTextureHandle ambientOcclusionTexture = builder.ReadTexture(intermediateResources.ambientOcclusionTexture, RenderBackendResourceState::ShaderResource);
+                RenderGraphTextureHandle indirectDiffuseTexture = builder.ReadTexture(intermediateResources.indirectDiffuseTexture, RenderBackendResourceState::ShaderResource);
 
-                RenderGraphTextureHandle sceneColorTexture = sceneTextures.sceneColorTexture = builder.WriteTexture(sceneTextures.sceneColorTexture, RenderBackendResourceState::RenderTarget);
+                RenderGraphTextureHandle sceneColorTexture = intermediateResources.colorTexture = builder.WriteTexture(intermediateResources.colorTexture, RenderBackendResourceState::RenderTarget);
 
                 builder.SetRenderTargetBinding(0, sceneColorTexture, RenderBackendRenderPassLoadOperation::Load, RenderBackendRenderPassStoreOperation::Store);
                 builder.SetDepthStencilBinding(sceneDepthTexture,
@@ -589,15 +613,15 @@ namespace Horizon
             RenderGraphPassFlags::Graphics,
             [&](RenderGraphBuilder& builder)
             {
-                RasterizationRendererSceneTextures& sceneTextures = renderGraph.blackboard.Get<RasterizationRendererSceneTextures>();
-                RenderGraphTextureHandle gbuffer0 = builder.ReadTexture(sceneTextures.gbuffer0, RenderBackendResourceState::ShaderResource);
-                RenderGraphTextureHandle gbuffer1 = builder.ReadTexture(sceneTextures.gbuffer1, RenderBackendResourceState::ShaderResource);
-                RenderGraphTextureHandle gbuffer2 = builder.ReadTexture(sceneTextures.gbuffer2, RenderBackendResourceState::ShaderResource);
-                RenderGraphTextureHandle sceneDepthTexture = builder.ReadTexture(sceneTextures.sceneDepthTexture, RenderBackendResourceState::DepthStencilReadOnly);
-                //RenderGraphTextureHandle screenSpaceReflectionTexture = builder.ReadTexture(sceneTextures.screenSpaceReflectionTexture, RenderBackendResourceState::ShaderResource);
-                RenderGraphTextureHandle ambientOcclusionTexture = builder.ReadTexture(sceneTextures.ambientOcclusionTexture, RenderBackendResourceState::ShaderResource);
-                RenderGraphTextureHandle convolvedEnvironmentMapTexture = builder.ReadTexture(sceneTextures.convolvedEnvironmentMapTexture, RenderBackendResourceState::ShaderResource);
-                RenderGraphTextureHandle sceneColorTexture = sceneTextures.sceneColorTexture = builder.WriteTexture(sceneTextures.sceneColorTexture, RenderBackendResourceState::RenderTarget);
+                RasterizationRendererIntermediateResources& intermediateResources = renderGraph.blackboard.Get<RasterizationRendererIntermediateResources>();
+                RenderGraphTextureHandle gbuffer0 = builder.ReadTexture(intermediateResources.gbuffer0, RenderBackendResourceState::ShaderResource);
+                RenderGraphTextureHandle gbuffer1 = builder.ReadTexture(intermediateResources.gbuffer1, RenderBackendResourceState::ShaderResource);
+                RenderGraphTextureHandle gbuffer2 = builder.ReadTexture(intermediateResources.gbuffer2, RenderBackendResourceState::ShaderResource);
+                RenderGraphTextureHandle sceneDepthTexture = builder.ReadTexture(intermediateResources.depthTexture, RenderBackendResourceState::DepthStencilReadOnly);
+                //RenderGraphTextureHandle screenSpaceReflectionTexture = builder.ReadTexture(intermediateResources.screenSpaceReflectionTexture, RenderBackendResourceState::ShaderResource);
+                RenderGraphTextureHandle ambientOcclusionTexture = builder.ReadTexture(intermediateResources.ambientOcclusionTexture, RenderBackendResourceState::ShaderResource);
+                RenderGraphTextureHandle convolvedEnvironmentMapTexture = builder.ReadTexture(intermediateResources.convolvedEnvironmentMapTexture, RenderBackendResourceState::ShaderResource);
+                RenderGraphTextureHandle sceneColorTexture = intermediateResources.colorTexture = builder.WriteTexture(intermediateResources.colorTexture, RenderBackendResourceState::RenderTarget);
 
                 builder.SetRenderTargetBinding(0, sceneColorTexture, RenderBackendRenderPassLoadOperation::Load, RenderBackendRenderPassStoreOperation::Store);
                 builder.SetDepthStencilBinding(sceneDepthTexture,
@@ -641,26 +665,26 @@ namespace Horizon
             });
     }
 
-    RenderGraphTextureHandle RasterizationRenderer::AddVirtualGeometryDebugVisualizationPass(
+    RenderGraphTextureHandle RasterizationRenderer::DispatchVirtualGeometryDebugVisualization(
         RenderGraph& renderGraph,
         const SceneView& view)
     {
         const GPUScene* gpuScene = sceneView->scene->GetGPUScene();
 
-        const RasterizationRendererSceneTextures& sceneTextures = renderGraph.blackboard.Get<RasterizationRendererSceneTextures>();
+        const RasterizationRendererIntermediateResources& intermediateResources = renderGraph.blackboard.Get<RasterizationRendererIntermediateResources>();
 
         RenderGraphTextureHandle outputTexture = renderGraph.ImportExternalTexture(view.targetTexture, "TargetTexture");
 
         uint32 virtualGeometryDebugVisualizationMode = 0;
-        if (view.debugVisualizationMode == SceneViewDebugVisualizationMode::MeshletID)
+        if (rendererSettings.debugVisualizationMode == RasterizationRendererDebugVisualizationMode::MeshletID)
         {
             virtualGeometryDebugVisualizationMode = 1;
         }
-        else if (view.debugVisualizationMode == SceneViewDebugVisualizationMode::PrimitiveID)
+        else if (rendererSettings.debugVisualizationMode == RasterizationRendererDebugVisualizationMode::PrimitiveID)
         {
             virtualGeometryDebugVisualizationMode = 2;
         }
-        else if (view.debugVisualizationMode == SceneViewDebugVisualizationMode::MaterialID)
+        else if (rendererSettings.debugVisualizationMode == RasterizationRendererDebugVisualizationMode::MaterialID)
         {
             virtualGeometryDebugVisualizationMode = 3;
         }
@@ -670,8 +694,8 @@ namespace Horizon
             RenderGraphPassFlags::Compute,
             [&](RenderGraphBuilder& builder)
             {
-                RenderGraphBufferHandle visibleMeshletBuffer = builder.ReadBuffer(sceneTextures.visibleMeshletBuffer, RenderBackendResourceState::ShaderResource);
-                RenderGraphTextureHandle vbuffer0 = builder.ReadTexture(sceneTextures.vbuffer0, RenderBackendResourceState::ShaderResource);
+                RenderGraphBufferHandle visibleMeshletBuffer = builder.ReadBuffer(intermediateResources.visibleMeshletBuffer, RenderBackendResourceState::ShaderResource);
+                RenderGraphTextureHandle vbuffer0 = builder.ReadTexture(intermediateResources.vbuffer0, RenderBackendResourceState::ShaderResource);
 
                 outputTexture = builder.WriteTexture(outputTexture, RenderBackendResourceState::UnorderedAccess);
 

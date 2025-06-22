@@ -242,4 +242,48 @@ namespace Horizon
                 drawCommand.topology);
         }
     }
+
+    RenderGraphTextureHandle RasterizationRenderer::DispatchCascadedShadowMapDebugVisualization(
+        RenderGraph& renderGraph,
+        const SceneView& view)
+    {
+        const RasterizationRendererIntermediateResources& intermediateResources = renderGraph.blackboard.Get<RasterizationRendererIntermediateResources>();
+
+        // TODO
+        RenderGraphTextureHandle outputTexture = renderGraph.ImportExternalTexture(view.targetTexture, "TargetTexture");
+
+        renderGraph.AddPass(
+            std::format("VisualizeCascadedShadowMap (Compute, {}x{}->{}x{})", renderResolution.width, renderResolution.height, targetResolution.width, targetResolution.height),
+            RenderGraphPassFlags::Compute,
+            [&](RenderGraphBuilder& builder)
+            {
+                RenderGraphTextureHandle debugVisualizationTexture = builder.ReadTexture(intermediateResources.cascadedShadowMapDebugVisualizationTexture, RenderBackendResourceState::ShaderResource);
+
+                debugVisualizationTexture = builder.ReadTexture(debugVisualizationTexture, RenderBackendResourceState::ShaderResource);
+                outputTexture = builder.WriteTexture(outputTexture, RenderBackendResourceState::UnorderedAccess);
+
+                return [=](RenderBackendCommandList& commandList, const RenderGraphResourceRegistry& resourceRegistry)
+                {
+                    uint32 threadGroupCountX = ComputeShaderThreadGroupCount(targetResolution.width, PostProcessingThreadGroupSizeX);
+                    uint32 threadGroupCountY = ComputeShaderThreadGroupCount(targetResolution.height, PostProcessingThreadGroupSizeY);
+                    uint32 threadGroupCountZ = 1;
+
+                    RenderBackendPushConstantValues shaderConstants = {};
+                    shaderConstants.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
+                    shaderConstants.BindTextureSRV(1, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(debugVisualizationTexture));
+                    shaderConstants.BindTextureUAV(2, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndex(outputTexture, 0));
+
+                    RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::VisualizeCascadedShadowMap);
+
+                    commandList.Dispatch(
+                        computeShader,
+                        shaderConstants,
+                        threadGroupCountX,
+                        threadGroupCountY,
+                        threadGroupCountZ);
+                };
+            });
+
+        return outputTexture;
+    }
 }

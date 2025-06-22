@@ -262,7 +262,7 @@ namespace Horizon
 
         // Begin Scene View Window
         uint32 frameIndex = 0;
-        SceneViewDebugVisualizationMode currentDebugVisualizationMode;
+        RasterizationRendererDebugVisualizationMode currentDebugVisualizationMode;
         EditorCamera editorCamera;
         Point2D currentMousePosition;
         RasterizationRenderer* renderer;

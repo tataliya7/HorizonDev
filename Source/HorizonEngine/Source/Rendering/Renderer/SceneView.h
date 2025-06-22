@@ -7,49 +7,10 @@ namespace Horizon
 {
     class RenderScene;
 
-    enum class SceneViewDebugVisualizationMode
-    {
-        Lighting,
-        Wireframe,
-        Illuminance,
-        Depth,
-        WorldSpaceNormal,
-        MeshletID,
-        PrimitiveID,
-        MaterialID,
-        MotionVectors,
-        AmbientOcclusion,
-        ShadowMask,
-        CascadedShadowMapCascadeIndex,
-        VirtualShadowMapMipmap,
-        VirtualShadowMapVirtualPage,
-        SurfelGISurfel,
-        SurfelGIHeatmap,
-    };
+    constexpr float NearClippingPlaneDepthValue = 1.0f;
+    constexpr float FarClippingPlaneDepthValue = 0.0f;
 
-    static const char* ViewModeName[] =
-    {
-        "Lighting",
-        "Wireframe",
-        "Illuminance",
-        "Linear Depth",
-        "World Space Normal",
-        "Meshlet ID",
-        "Primitive ID",
-        "Material ID",
-        "Motion Vectors",
-        "Ambient Occlusion",
-        "Screen Space Shadow Mask",
-        "Cascaded Shadow Map Cascade Index",
-        "Virtual Shadow Map Mipmap",
-        "Virtual Shadow Map Page",
-        "Surfel GI Surfel",
-        "Surfel GI Heatmap"
-    };
-    static_assert(ArraySize(ViewModeName) == 16);
-
-    // TODO
-    const float MinNearClippingPlane = 0.01f;
+    constexpr float MinimumNearClippingPlane = 0.01f;
 
     struct CameraTransformations
     {
@@ -124,7 +85,7 @@ namespace Horizon
             Vector2f offset = { jitterOffset.x * 2.0f / float(renderWidth), -jitterOffset.y * 2.0f / float(renderHeight) };
 
             /*
-             * Horizon Engine uses righted-handed coordinate system,
+             * Horizon Engine uses a right-handed coordinate system,
              * the w component of clip space position is -Zc instead of Zc,
              * so it should be multiplied by -1.
              */
@@ -133,87 +94,6 @@ namespace Horizon
         }
 
         void Finalize();
-
-        //
-        // CameraTransformations(
-        //     const Matrix4x4f& worldToViewMatrix,
-        //     const Matrix4x4f& viewToClipMatrix)
-        // {
-        //     worldToViewMatrix = worldToViewMatrix;
-        //     viewToWorldMatrix = Math::InverseMatrix(worldToViewMatrix);
-        //     viewToClipMatrix = viewToClipMatrix;
-        //     clipToViewMatrix = Math::InverseMatrix(viewToClipMatrix);
-        //     nonJitteredViewToClipMatrix = viewToClipMatrix;
-        //     worldToClipMatrix = viewToClipMatrix * worldToViewMatrix;
-        //     clipToWorldMatrix = viewToWorldMatrix * clipToViewMatrix;
-        //     cameraJitterOffset = ZeroVector2f;
-        //     isCameraJitteringApplied = false;
-        // }
-        //
-        // CameraTransformations(
-        //     const Matrix4x4f& worldToViewMatrix,
-        //     const Matrix4x4f& viewToClipMatrix,
-        //     const Vector2f& jitterOffset)
-        // {
-        //     Matrix4x4f jitteredProjectionMatrix = viewToClipMatrix;
-        //     jitteredProjectionMatrix[2][0] += -jitterOffset.x;
-        //     jitteredProjectionMatrix[2][1] += -jitterOffset.y;
-        //
-        //     worldToViewMatrix = worldToViewMatrix;
-        //     viewToWorldMatrix = Math::InverseMatrix(worldToViewMatrix);
-        //     viewToClipMatrix = jitteredProjectionMatrix;
-        //     clipToViewMatrix = Math::InverseMatrix(jitteredProjectionMatrix);
-        //     nonJitteredViewToClipMatrix = viewToClipMatrix;
-        //     worldToClipMatrix = viewToClipMatrix * worldToViewMatrix;
-        //     clipToWorldMatrix = viewToWorldMatrix * clipToViewMatrix;
-        //     cameraJitterOffset = jitterOffset;
-        //     isCameraJitteringApplied = true;
-        // }
-        //
-        // inline bool IsPerspectiveProjection() const
-        // {
-        //     return viewToClipMatrix[3][3] < 1.0f;
-        // }
-        //
-        // inline bool IsCameraJitteringApplied() const
-        // {
-        //     return isCameraJitteringApplied;
-        // }
-        //
-        // inline const Matrix4x4f& GetWorldToViewMatrix() const
-        // {
-        //     return worldToViewMatrix;
-        // }
-        //
-        // inline const Matrix4x4f& GetViewToWorldMatrix() const
-        // {
-        //     return viewToWorldMatrix;
-        // }
-        //
-        // inline const Matrix4x4f& GetViewToClipMatrix() const
-        // {
-        //     return viewToClipMatrix;
-        // }
-        //
-        // inline const Matrix4x4f& GetClipToViewMatrix() const
-        // {
-        //     return clipToViewMatrix;
-        // }
-        //
-        // inline const Matrix4x4f& GetNonJitteredViewToClipMatrix() const
-        // {
-        //     return nonJitteredViewToClipMatrix;
-        // }
-        //
-        // inline const Matrix4x4f& GetWorldToClipMatrix() const
-        // {
-        //     return worldToClipMatrix;
-        // }
-        //
-        // inline const Matrix4x4f& GetClipToWorldMatrix() const
-        // {
-        //     return clipToWorldMatrix;
-        // }
 
         Matrix4x4f worldToViewMatrix;
         Matrix4x4f viewToWorldMatrix;
@@ -228,12 +108,57 @@ namespace Horizon
         Vector2f viewSpaceDepthToNDCSpaceDepthTransform;
     };
 
+    struct SceneViewDescription
+    {
+        RenderScene* scene;
+
+        RenderSettings renderSettings;
+
+        uint32 frameIndex;
+
+        float deltaTimeInSeconds;
+
+        bool reset;
+
+        Vector3f cameraPosition;
+        Vector3f cameraRotation;
+        Vector3f cameraUpVector;
+        Vector3f cameraRightVector;
+        Vector3f cameraForwardVector;
+
+        float verticalFOV;
+
+        float aspectRatio;
+
+        float nearClippingPlane;
+
+        float farClippingPlane;
+
+        Vector3f backgroundColor;
+
+        uint32 targetWidth;
+
+        uint32 targetHeight;
+
+        RenderGraphPersistentTexture* targetTexture;
+
+        uint32 displayWidth;
+
+        uint32 displayHeight;
+
+        RenderBackendSwapChainHandle swapChain;
+
+        Vector2u cursorPosition;
+    };
+
     /**
      *
      */
     class SceneView
     {
     public:
+
+        SceneView(const SceneViewDescription& description);
 
         bool HasValidScene() const
         {
@@ -248,11 +173,6 @@ namespace Horizon
         const RenderSettings& GetRenderSettings() const
         {
             return renderSettings;
-        }
-
-        void SetRenderSettings(const RenderSettings& settings)
-        {
-            renderSettings = settings;
         }
 
         bool NeedToBeReset() const
@@ -320,25 +240,55 @@ namespace Horizon
             return transformations;
         }
 
-        // void UpdateCameraTransformations(const CameraComponent& camera)
+        bool IsPerspectiveProjection() const
+        {
+            return transformations.viewToClipMatrix[3][3] < 1.0f;
+        }
+
+        //
+        // inline bool IsCameraJitteringApplied() const
         // {
-        //     perFrameShaderParameters.worldToViewMatrix = view.camera.worldToViewMatrix;
-        //     perFrameShaderParameters.invViewMatrix = view.camera.invViewMatrix;
-        //     perFrameShaderParameters.viewToClipMatrix = jitteredProjectionMatrix;
-        //     perFrameShaderParameters.inverseProjectionMatrix = jitteredInvProjectionMatrix;
-        //     perFrameShaderParameters.worldToClipMatrix = jitteredProjectionMatrix * view.camera.worldToViewMatrix;
-        //     perFrameShaderParameters.invViewProjectionMatrix = view.camera.invViewMatrix * jitteredInvProjectionMatrix;
-        //     perFrameShaderParameters.prevProjectionMatrix = jitteredPrevProjectionMatrix;
-        //     perFrameShaderParameters.prevViewProjectionMatrix = jitteredPrevViewProjectionMatrix;
-        //     perFrameShaderParameters.prevInvViewProjectionMatrix = jitteredPrevInvViewProjectionMatrix;
-        //     perFrameShaderParameters.nonJitteredProjectionMatrix = view.camera.viewToClipMatrix;
-        //     perFrameShaderParameters.nonJitteredInvProjectionMatrix = view.camera.invProjectionMatrix;
-        //     perFrameShaderParameters.nonJitteredViewProjectionMatrix = view.camera.viewToClipMatrix * view.camera.worldToViewMatrix;
-        //     perFrameShaderParameters.nonJitteredInvViewProjectionMatrix = view.camera.invViewMatrix * view.camera.invProjectionMatrix;
-        //     perFrameShaderParameters.nonJitteredPrevProjectionMatrix = nonJitteredPrevProjectionMatrix;
-        //     perFrameShaderParameters.nonJitteredPrevViewProjectionMatrix = nonJitteredPrevViewProjectionMatrix;
-        //     perFrameShaderParameters.nonJitteredPrevInvViewProjectionMatrix = nonJitteredPrevInvViewProjectionMatrix;
+        //     return isCameraJitteringApplied;
         // }
+        //
+
+        const Matrix4x4f& GetWorldToViewMatrix() const
+        {
+            return transformations.worldToViewMatrix;
+        }
+
+        const Matrix4x4f& GetViewToWorldMatrix() const
+        {
+            return transformations.viewToWorldMatrix;
+        }
+
+        const Matrix4x4f& GetViewToClipMatrix() const
+        {
+            return transformations.viewToClipMatrix;
+        }
+
+        const Matrix4x4f& GetClipToViewMatrix() const
+        {
+            return transformations.clipToViewMatrix;
+        }
+
+        //
+        // inline const Matrix4x4f& GetNonJitteredViewToClipMatrix() const
+        // {
+        //     return nonJitteredViewToClipMatrix;
+        // }
+        //
+        // inline const Matrix4x4f& GetWorldToClipMatrix() const
+        // {
+        //     return worldToClipMatrix;
+        // }
+        //
+        // inline const Matrix4x4f& GetClipToWorldMatrix() const
+        // {
+        //     return clipToWorldMatrix;
+        // }
+
+    //private:
 
         /**
          * The scene to be rendered.
@@ -354,11 +304,6 @@ namespace Horizon
          * Global render settings for rendering the scene.
          */
         RenderSettings renderSettings;
-
-        /**
-         * Visualization mode for debugging.
-         */
-        SceneViewDebugVisualizationMode debugVisualizationMode;
 
         /**
          * The time elapsed since the last frame (expressed in seconds).
@@ -473,18 +418,5 @@ namespace Horizon
             viewFrustum.planes[4] = Plane(cameraForwardVector, cameraPosition + cameraForwardVector * nearClippingPlane); // near
             viewFrustum.planes[5] = Plane(-cameraForwardVector, cameraPosition + cameraForwardVector * farClippingPlane); // far
         }
-    };
-
-    /*
-     *
-     */
-    class SceneViewGroup
-    {
-    public:
-        /**
-         * The scene to be rendered.
-         */
-        RenderScene* scene;
-
     };
 }

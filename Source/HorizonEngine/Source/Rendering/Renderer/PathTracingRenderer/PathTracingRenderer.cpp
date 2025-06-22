@@ -50,12 +50,12 @@ namespace Horizon
         //RenderGraphTextureHandle depthTexture = renderGraph.ImportExternalTexture(depthTexture, "PathTracingDepthTexture");
         //RenderGraphTextureHandle normalTexture = renderGraph.ImportExternalTexture(normalTexture, "PathTracingNormalTexture");
 
-        RasterizationRendererSceneTextures& sceneTextures = renderGraph.blackboard.Get<RasterizationRendererSceneTextures>();
+        RasterizationRendererIntermediateResources& intermediateResources = renderGraph.blackboard.Get<RasterizationRendererIntermediateResources>();
 
-        RenderGraphTextureDesc colorTextureDesc = renderGraph.GetTextureDesc(sceneTextures.sceneColorTexture);
+        RenderGraphTextureDescription colorTextureDesc = renderGraph.GetTextureDesc(intermediateResources.colorTexture);
         RenderGraphTextureHandle colorTexture = renderGraph.CreateTexture(colorTextureDesc, "PathTracingColorTexture");
 
-        RenderGraphTextureDesc depthTextureDesc = RenderGraphTextureDesc::Create2D(
+        RenderGraphTextureDescription depthTextureDesc = RenderGraphTextureDescription::Create2D(
             renderResolution.width,
             renderResolution.height,
             RenderBackendTextureFormat::R32Float,
@@ -88,11 +88,11 @@ namespace Horizon
             RenderGraphPassFlags::RayTracing,
             [&](RenderGraphBuilder& builder)
             {
-                RenderGraphTextureHandle environmentMapTexture = builder.ReadTexture(sceneTextures.environmentMapTexture, RenderBackendResourceState::ShaderResource);
+                RenderGraphTextureHandle environmentMapTexture = builder.ReadTexture(intermediateResources.environmentMapTexture, RenderBackendResourceState::ShaderResource);
                 colorTexture = builder.WriteTexture(colorTexture, RenderBackendResourceState::UnorderedAccess);
                 depthTexture = builder.WriteTexture(depthTexture, RenderBackendResourceState::UnorderedAccess);
                 //RenderGraphTextureHandle normalTexture = builder.WriteTexture(normalTexture, RenderBackendResourceState::UnorderedAccess);
-                sceneTextures.sceneColorTexture = colorTexture;
+                intermediateResources.colorTexture = colorTexture;
 
                 return [=](RenderBackendCommandList& commandList, const RenderGraphResourceRegistry& resourceRegistry)
                 {

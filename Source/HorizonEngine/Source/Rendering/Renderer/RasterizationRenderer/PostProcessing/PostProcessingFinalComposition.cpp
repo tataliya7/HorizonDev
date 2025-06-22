@@ -10,8 +10,7 @@ namespace Horizon
         RenderGraphTextureHandle bloomTexture,
         RenderGraphTextureHandle localToneMappingTexture,
         RenderGraphTextureHandle colorTransformLUTTexture,
-        RenderGraphBufferHandle autoExposureBuffer,
-        bool outputInHDR)
+        RenderGraphBufferHandle autoExposureBuffer)
     {
         assert(colorTexture);
         assert(colorTransformLUTTexture);
@@ -58,7 +57,7 @@ namespace Horizon
         // }
 
         RenderBackendTextureFormat outputTextureFormat = RenderBackendTextureFormat::R10G10B10A2Unorm;
-        RenderGraphTextureDesc outputTextureDesc = RenderGraphTextureDesc::Create2D(
+        RenderGraphTextureDescription outputTextureDesc = RenderGraphTextureDescription::Create2D(
             targetResolution.width,
             targetResolution.height,
             outputTextureFormat,

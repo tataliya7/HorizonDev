@@ -87,7 +87,7 @@ namespace Horizon
         /**
          * Create a render graph tracked texture.
          */
-        RenderGraphTextureHandle CreateTexture(const RenderGraphTextureDesc& desc, const char* name);
+        RenderGraphTextureHandle CreateTexture(const RenderGraphTextureDescription& desc, const char* name);
 
         /**
          * Create a render graph tracked buffer.
@@ -100,12 +100,12 @@ namespace Horizon
         void UploadBufferDeferred(RenderGraphBufferHandle buffer, const void* data, uint64 size, RenderGraphSourceDataLifetimeHint hint);
 
         /**
-         * Finds a render graph texture associated with the external texture, or returns null if none is found.
+         * Find a render graph texture associated with the external texture, or returns null if none is found.
          */
         RenderGraphTextureHandle FindExternalTexture(RenderBackendTextureHandle renderBackendTexture);
 
         /**
-          * Finds a render graph buffer associated with the external buffer, or returns null if none is found.
+          * Find a render graph buffer associated with the external buffer, or returns null if none is found.
           */
         RenderGraphBufferHandle FindExternalBuffer(RenderBackendBufferHandle renderBackendBuffer);
 
@@ -125,7 +125,7 @@ namespace Horizon
 
         void ExportBufferDeferred(RenderGraphBufferHandle handle, RenderGraphPersistentBuffer** persistentBuffer);
 
-        const RenderGraphTextureDesc& GetTextureDesc(RenderGraphTextureHandle handle) const;
+        const RenderGraphTextureDescription& GetTextureDesc(RenderGraphTextureHandle handle) const;
 
         const RenderGraphBufferDesc& GetBufferDesc(RenderGraphBufferHandle handle) const;
 

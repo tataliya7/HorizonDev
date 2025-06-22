@@ -80,10 +80,6 @@ project "HorizonEditor"
         thirdpartypath("usd/include/tbb"),
     }
 
-    defines {
-        "HORIZON_EDITOR=1",
-    }
-
     filter "configurations:Debug"
         defines { "USE_OPTICK=1" }
 

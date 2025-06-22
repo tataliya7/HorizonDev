@@ -51,7 +51,7 @@ namespace Horizon
         const uint32 shadowCascadeCount = light.GetShadowCascadeCount();
         const uint32 shadowMapSize = light.GetShadowMapSize();
 
-        RenderGraphTextureDesc cascadedShadowMapDepthTextureDesc = RenderGraphTextureDesc::Create2DArray(
+        RenderGraphTextureDescription cascadedShadowMapDepthTextureDesc = RenderGraphTextureDescription::Create2DArray(
             shadowMapSize,
             shadowMapSize,
             RenderBackendTextureFormat::D32Float,
@@ -100,18 +100,18 @@ namespace Horizon
                 };
             });
 
-        RasterizationRendererSceneTextures& sceneTextures = renderGraph.blackboard.Get<RasterizationRendererSceneTextures>();
-        sceneTextures.cascadedShadowMapShaderParameterBuffer = cascadedShadowMapDataBuffer;
-        sceneTextures.cascadedShadowMapDepthTexture = cascadedShadowMapDepthTexture;
+        RasterizationRendererIntermediateResources& intermediateResources = renderGraph.blackboard.Get<RasterizationRendererIntermediateResources>();
+        intermediateResources.cascadedShadowMapShaderParameterBuffer = cascadedShadowMapDataBuffer;
+        intermediateResources.cascadedShadowMapDepthTexture = cascadedShadowMapDepthTexture;
     }
 
     void RasterizationRenderer::DispatchShadowMapProjection(RenderGraph& renderGraph, const SceneView& view)
     {
-        RasterizationRendererSceneTextures& sceneTextures = renderGraph.blackboard.Get<RasterizationRendererSceneTextures>();
+        RasterizationRendererIntermediateResources& intermediateResources = renderGraph.blackboard.Get<RasterizationRendererIntermediateResources>();
 
         RenderBackendBufferHandle& cascadedShadowMapShaderParameterBuffer = cascadedShadowMapShaderParameterBuffers[currentPerFrameDataBufferIndex];
 
-        RenderGraphTextureDesc screenSpaceShadowMaskTextureDesc = RenderGraphTextureDesc::Create2D(
+        RenderGraphTextureDescription screenSpaceShadowMaskTextureDesc = RenderGraphTextureDescription::Create2D(
             renderResolution.width,
             renderResolution.height,
             RenderBackendTextureFormat::R8G8B8A8Unorm,
@@ -125,10 +125,10 @@ namespace Horizon
             RenderGraphPassFlags::Compute,
             [&](RenderGraphBuilder& builder)
             {
-                RasterizationRendererSceneTextures& sceneTextures = renderGraph.blackboard.Get<RasterizationRendererSceneTextures>();
+                RasterizationRendererIntermediateResources& intermediateResources = renderGraph.blackboard.Get<RasterizationRendererIntermediateResources>();
 
-                RenderGraphTextureHandle sceneDepthTexture = builder.ReadTexture(sceneTextures.sceneDepthTexture, RenderBackendResourceState::ShaderResource);
-                RenderGraphTextureHandle cascadedShadowMapDepthTexture = builder.ReadTexture(sceneTextures.cascadedShadowMapDepthTexture, RenderBackendResourceState::ShaderResource);
+                RenderGraphTextureHandle sceneDepthTexture = builder.ReadTexture(intermediateResources.depthTexture, RenderBackendResourceState::ShaderResource);
+                RenderGraphTextureHandle cascadedShadowMapDepthTexture = builder.ReadTexture(intermediateResources.cascadedShadowMapDepthTexture, RenderBackendResourceState::ShaderResource);
                 screenSpaceShadowMaskTexture = builder.WriteTexture(screenSpaceShadowMaskTexture, RenderBackendResourceState::UnorderedAccess);
                 cascadedShadowMapDebugVisualizationTexture = builder.WriteTexture(cascadedShadowMapDebugVisualizationTexture, RenderBackendResourceState::UnorderedAccess);
 
@@ -157,8 +157,13 @@ namespace Horizon
                 };
             });
 
-        sceneTextures.shadowMaskTexture = screenSpaceShadowMaskTexture;
-        sceneTextures.cascadedShadowMapDebugVisualizationTexture = cascadedShadowMapDebugVisualizationTexture;
+        intermediateResources.shadowMaskTexture = screenSpaceShadowMaskTexture;
+        intermediateResources.cascadedShadowMapDebugVisualizationTexture = cascadedShadowMapDebugVisualizationTexture;
+
+        if (rendererSettings.debugVisualizationMode == RasterizationRendererDebugVisualizationMode::CascadedShadowMapCascadeIndex)
+        {
+            debugVisualizationCallback = std::bind(&RasterizationRenderer::DispatchCascadedShadowMapDebugVisualization, this, std::placeholders::_1, std::placeholders::_2);
+        }
     }
 
     RenderGraphTextureHandle RasterizationRenderer::RenderLocalLightShadows(
@@ -169,7 +174,7 @@ namespace Horizon
 
         static const uint32 cubeShadowMapSize = 256;
         static const uint32 localLightShadowMapAtlasSize = 4096;
-        RenderGraphTextureDesc localLightShadowMapAtlasDesc = RenderGraphTextureDesc::Create2DArray(
+        RenderGraphTextureDescription localLightShadowMapAtlasDesc = RenderGraphTextureDescription::Create2DArray(
             localLightShadowMapAtlasSize,
             localLightShadowMapAtlasSize,
             RenderBackendTextureFormat::D32Float,

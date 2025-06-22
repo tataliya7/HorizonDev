@@ -79,14 +79,14 @@ namespace Horizon
         const uint32 environmentMapTextureSize = skyLight->cubemapSize;
         const uint32 environmentMapTextureMipLevelCount = Math::MaxMipLevelCount(environmentMapTextureSize);
 
-        RenderGraphTextureDesc capturedEnvironmentMapTextureDesc = RenderGraphTextureDesc::CreateCube(
+        RenderGraphTextureDescription capturedEnvironmentMapTextureDesc = RenderGraphTextureDescription::CreateCube(
             environmentMapTextureSize,
             RenderBackendTextureFormat::R11G11B10Float,
             RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::UnorderedAccess,
             environmentMapTextureMipLevelCount);
         RenderGraphTextureHandle capturedEnvironmentMapTexture = renderGraph.CreateTexture(capturedEnvironmentMapTextureDesc, "CapturedEnvironmentMapTexture");
 
-        RasterizationRendererSceneTextures& sceneTextures = renderGraph.blackboard.Get<RasterizationRendererSceneTextures>();
+        RasterizationRendererIntermediateResources& intermediateResources = renderGraph.blackboard.Get<RasterizationRendererIntermediateResources>();
 
         if (IsSkyAtmosphereRenderingEnabled())
         {
@@ -175,7 +175,7 @@ namespace Horizon
         // test
         capturedEnvironmentMapTexture = renderGraph.ImportExternalTexture(skyLight->environmentMapTexture, "TestEnvironmentMapTexture");
 
-        sceneTextures.environmentMapTexture = capturedEnvironmentMapTexture;
+        intermediateResources.environmentMapTexture = capturedEnvironmentMapTexture;
 
         uint32 sampleCount = 64;
 
@@ -248,7 +248,7 @@ namespace Horizon
                 };
             });
 
-        sceneTextures.irradianceEnvironmentMapBuffer = irradianceEnvironmentMapBuffer;
-        sceneTextures.convolvedEnvironmentMapTexture = convolvedEnvironmentMapTexture;
+        intermediateResources.irradianceEnvironmentMapBuffer = irradianceEnvironmentMapBuffer;
+        intermediateResources.convolvedEnvironmentMapTexture = convolvedEnvironmentMapTexture;
     }
 }

@@ -168,7 +168,7 @@ namespace Horizon
 
         void* dlssContext = this;
 
-        RenderGraphTextureDesc outputTextureDesc = RenderGraphTextureDesc::Create2D(
+        RenderGraphTextureDescription outputTextureDesc = RenderGraphTextureDescription::Create2D(
                 view.targetWidth,
                 view.targetHeight,
                 RenderBackendTextureFormat::R16G16B16A16Float,

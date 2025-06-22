@@ -90,7 +90,7 @@ namespace Horizon
 
     bool RasterizationRenderer::IsSkyAtmosphereRenderingEnabled() const
     {
-        return features.enableSkyAtmosphereRendering;
+        return renderFeatures.enableSkyAtmosphereRendering;
     }
 
     void RasterizationRenderer::RenderSkyAtmosphereLUTs(
@@ -276,14 +276,14 @@ namespace Horizon
             RenderGraphPassFlags::Graphics,
             [&](RenderGraphBuilder& builder)
             {
-                RasterizationRendererSceneTextures& sceneTextures = renderGraph.blackboard.Get<RasterizationRendererSceneTextures>();
+                RasterizationRendererIntermediateResources& intermediateResources = renderGraph.blackboard.Get<RasterizationRendererIntermediateResources>();
                 RasterizationRendererSkyAtmosphereLUTs& skyAtmosphereLUTs = renderGraph.blackboard.Get<RasterizationRendererSkyAtmosphereLUTs>();
 
                 RenderGraphTextureHandle skyViewLut = builder.ReadTexture(skyAtmosphereLUTs.skyViewLut, RenderBackendResourceState::ShaderResource);
                 RenderGraphTextureHandle transmittanceLut = builder.ReadTexture(skyAtmosphereLUTs.transmittanceLut, RenderBackendResourceState::ShaderResource);
                 RenderGraphTextureHandle aerialPerspectiveVolume = builder.ReadTexture(skyAtmosphereLUTs.aerialPerspectiveVolume, RenderBackendResourceState::ShaderResource);
-                RenderGraphTextureHandle sceneDepthTexture = builder.ReadTexture(sceneTextures.sceneDepthTexture, RenderBackendResourceState::DepthStencilReadOnly);
-                RenderGraphTextureHandle sceneColorTexture = sceneTextures.sceneColorTexture = builder.WriteTexture(sceneTextures.sceneColorTexture, RenderBackendResourceState::RenderTarget);
+                RenderGraphTextureHandle sceneDepthTexture = builder.ReadTexture(intermediateResources.depthTexture, RenderBackendResourceState::DepthStencilReadOnly);
+                RenderGraphTextureHandle sceneColorTexture = intermediateResources.colorTexture = builder.WriteTexture(intermediateResources.colorTexture, RenderBackendResourceState::RenderTarget);
 
                 builder.SetRenderTargetBinding(0, sceneColorTexture, RenderBackendRenderPassLoadOperation::Load, RenderBackendRenderPassStoreOperation::Store);
                 builder.SetDepthStencilBinding(sceneDepthTexture,

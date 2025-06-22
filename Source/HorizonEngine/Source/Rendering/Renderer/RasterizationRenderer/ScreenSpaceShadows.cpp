@@ -23,7 +23,7 @@ namespace Horizon
         int maxRenderBounds[2] = { viewportSize[0], viewportSize[1] };
         const Bend::DispatchList dispatchList = Bend::BuildDispatchList(lightProjection, viewportSize, minRenderBounds, maxRenderBounds);
 
-        RenderGraphTextureDesc outputTextureDesc = RenderGraphTextureDesc::Create2D(
+        RenderGraphTextureDescription outputTextureDesc = RenderGraphTextureDescription::Create2D(
             renderResolution.width,
             renderResolution.height,
             RenderBackendTextureFormat::R32Float,
@@ -54,9 +54,9 @@ namespace Horizon
                 RenderGraphPassFlags::Compute,
                 [&](RenderGraphBuilder& builder)
                 {
-                    RasterizationRendererSceneTextures& sceneTextures = renderGraph.blackboard.Get<RasterizationRendererSceneTextures>();
+                    RasterizationRendererIntermediateResources& intermediateResources = renderGraph.blackboard.Get<RasterizationRendererIntermediateResources>();
 
-                    RenderGraphTextureHandle sceneDepthTexture = builder.ReadTexture(sceneTextures.sceneDepthTexture, RenderBackendResourceState::ShaderResource);
+                    RenderGraphTextureHandle sceneDepthTexture = builder.ReadTexture(intermediateResources.depthTexture, RenderBackendResourceState::ShaderResource);
                     outputTexture = builder.WriteTexture(outputTexture, RenderBackendResourceState::UnorderedAccess);
 
                     return [=](RenderBackendCommandList& commandList, const RenderGraphResourceRegistry& resourceRegistry)
@@ -150,8 +150,8 @@ namespace Horizon
 
         RenderGraphDebugLabelRegion debugLabelRegion(renderGraph, "ScreenSpaceShadows");
 
-        RasterizationRendererSceneTextures& sceneTextures = renderGraph.blackboard.Get<RasterizationRendererSceneTextures>();
-        RenderGraphTextureHandle& screenSpaceShadowMaskTexture = sceneTextures.shadowMaskTexture;
+        RasterizationRendererIntermediateResources& intermediateResources = renderGraph.blackboard.Get<RasterizationRendererIntermediateResources>();
+        RenderGraphTextureHandle& screenSpaceShadowMaskTexture = intermediateResources.shadowMaskTexture;
 
         //if ()
         //{
@@ -161,7 +161,7 @@ namespace Horizon
         {
             DispatchScreenSpaceShadowsBend(renderGraph, shaderCollection, view, light, renderResolution, screenSpaceShadowMaskTexture);
 
-            sceneTextures.shadowMaskTexture = screenSpaceShadowMaskTexture;
+            intermediateResources.shadowMaskTexture = screenSpaceShadowMaskTexture;
         }
     }
 }

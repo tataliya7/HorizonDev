@@ -5,23 +5,25 @@ namespace Horizon
 {
     bool RasterizationRenderer::IsLocalToneMappingEnabled() const
     {
-        return features.enableLocalToneMapping;
+        return renderFeatures.enableBilateralGridLocalToneMapping;
     }
 
     RenderGraphTextureHandle RasterizationRenderer::DispatchBilateralGridLocalToneMapping(
         RenderGraph& renderGraph,
         const SceneView& view,
-        const PostProcessingColorPyramid& colorPyramid,
         RenderGraphTextureHandle colorTexture,
+        const PostProcessingColorPyramid& colorPyramid,
         RenderGraphBufferHandle autoExposureBuffer)
     {
         RenderGraphDebugLabelRegion debugLabelRegion(renderGraph, "LocalToneMapping");
+
+        const RasterizationRendererPostProcessingSettings& postProcessingSettings = rendererSettings.postProcessingSettings;
 
         const uint32 bilateralGridTextureWidth = Math::CeilDiv(renderResolution.width, 8 * 8);
         const uint32 bilateralGridTextureHeight = Math::CeilDiv(renderResolution.height, 8 * 8);
         const uint32 bilateralGridTextureDepth = 64;
 
-        RenderGraphTextureDesc gridTextureDesc = RenderGraphTextureDesc::Create3D(
+        RenderGraphTextureDescription gridTextureDesc = RenderGraphTextureDescription::Create3D(
             bilateralGridTextureWidth,
             bilateralGridTextureHeight,
             bilateralGridTextureDepth,
@@ -63,11 +65,10 @@ namespace Horizon
 
         bilaterallyFilteredGridTexture = gridTexture;
 
-        // @todo
-        const RenderGraphTextureDesc gaussianFilterInputColorTextureDesc = colorPyramid.textureDescs[4];
         RenderGraphTextureHandle gaussianFilterInputColorTexture = colorPyramid.textures[4];
+        const RenderGraphTextureDescription gaussianFilterInputColorTextureDesc = renderGraph.GetTextureDesc(gaussianFilterInputColorTexture);
 
-        RenderGraphTextureDesc gaussianFilteredLogLuminanceTextureDesc = RenderGraphTextureDesc::Create2D(
+        RenderGraphTextureDescription gaussianFilteredLogLuminanceTextureDesc = RenderGraphTextureDescription::Create2D(
             gaussianFilterInputColorTextureDesc.width,
             gaussianFilterInputColorTextureDesc.height,
             RenderBackendTextureFormat::R16Float,
@@ -214,7 +215,7 @@ namespace Horizon
                 };
             });
 
-        RenderGraphTextureDesc localToneMappingTextureDesc = RenderGraphTextureDesc::Create2D(
+        RenderGraphTextureDescription localToneMappingTextureDesc = RenderGraphTextureDescription::Create2D(
             targetResolution.width,
             targetResolution.height,
             RenderBackendTextureFormat::R32Float,
@@ -246,10 +247,10 @@ namespace Horizon
                     shaderConstants.BindTextureSRV(3, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(gaussianFilteredLogLuminanceTexture));
                     shaderConstants.BindBufferSRV(4, resourceRegistry.GetBufferSRVBindlessResourceDescriptorIndex(autoExposureBuffer));
                     shaderConstants.BindTextureUAV(5, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndex(localToneMappingTexture, 0));
-                    shaderConstants.BindScalar(6, view.renderSettings.postProcessingSettings.bilateralGridLocalToneMappingShadows);
-                    shaderConstants.BindScalar(7, view.renderSettings.postProcessingSettings.bilateralGridLocalToneMappingHighlights);
-                    shaderConstants.BindScalar(8, view.renderSettings.postProcessingSettings.bilateralGridLocalToneMappingDetailStrength);
-                    shaderConstants.BindScalar(9, view.renderSettings.postProcessingSettings.bilateralGridLocalToneMappingGaussianFilterWeight);
+                    shaderConstants.BindScalar(6, postProcessingSettings.bilateralGridLocalToneMappingShadows);
+                    shaderConstants.BindScalar(7, postProcessingSettings.bilateralGridLocalToneMappingHighlights);
+                    shaderConstants.BindScalar(8, postProcessingSettings.bilateralGridLocalToneMappingDetailStrength);
+                    shaderConstants.BindScalar(9, postProcessingSettings.bilateralGridLocalToneMappingGaussianFilterWeight);
                     shaderConstants.BindScalar(10, 1.0f / float(bilateralGridTextureWidth));
                     shaderConstants.BindScalar(11, 1.0f / float(bilateralGridTextureHeight));
 
@@ -271,9 +272,10 @@ namespace Horizon
         RenderGraph& renderGraph,
         const SceneView& view,
         RenderGraphTextureHandle colorTexture,
+        const PostProcessingColorPyramid& colorPyramid,
         RenderGraphTextureHandle exposureTexture)
     {
-        const PostProcessingSettings& postProcessingSettings = view.renderSettings.postProcessingSettings;
+        const RasterizationRendererPostProcessingSettings& postProcessingSettings = rendererSettings.postProcessingSettings;
 
         float highlights = 1.0f;//std::pow(2.0f, -postProcessingSettings.localToneMappingHighlights);
         float shadows = 0.0f;//std::pow(2.0f, postProcessingSettings.localToneMappingShadows);
@@ -290,7 +292,7 @@ namespace Horizon
         coarsestMipLevel = std::clamp(coarsestMipLevel, 0, (int)mipLevelCount - 1);
         displayMipLevel = std::clamp(std::min(displayMipLevel, coarsestMipLevel), 0, (int)mipLevelCount - 1);
 
-        RenderGraphTextureDesc localToneMappingTextureDesc = RenderGraphTextureDesc::Create2D(
+        RenderGraphTextureDescription localToneMappingTextureDesc = RenderGraphTextureDescription::Create2D(
             width,
             height,
             RenderBackendTextureFormat::R16G16B16A16Float,
@@ -298,14 +300,14 @@ namespace Horizon
             RenderBackendTextureClearValue::Black,
             mipLevelCount);
 
-        RenderGraphTextureDesc exposureFusionLuminanceTextureDesc = RenderGraphTextureDesc::Create2D(
+        RenderGraphTextureDescription exposureFusionLuminanceTextureDesc = RenderGraphTextureDescription::Create2D(
            width,
            height,
            RenderBackendTextureFormat::R11G11B10Float,
            RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::UnorderedAccess,
            RenderBackendTextureClearValue::Black,
            mipLevelCount);
-        RenderGraphTextureDesc exposureFusionWeightTextureDesc = exposureFusionLuminanceTextureDesc;
+        RenderGraphTextureDescription exposureFusionWeightTextureDesc = exposureFusionLuminanceTextureDesc;
 
         RenderGraphTextureHandle exposureFusionLuminanceTexture = renderGraph.CreateTexture(exposureFusionLuminanceTextureDesc, "ExposureFusionLuminanceTexture");
         RenderGraphTextureHandle exposureFusionWeightTexture = renderGraph.CreateTexture(exposureFusionWeightTextureDesc, "ExposureFusionWeightTexture");

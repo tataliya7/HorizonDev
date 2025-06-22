@@ -15,7 +15,6 @@ namespace Horizon
         uint32 mipLevelCount = 0;
 
         /** 1/2, 1/4, 1/8, 1/16, 1/32 */
-        RenderGraphTextureDesc textureDescs[MaxMipLevelCount] = {};
         RenderGraphTextureHandle textures[MaxMipLevelCount] = {};
     };
 
@@ -24,6 +23,6 @@ namespace Horizon
         bool initialized = false;
         float whiteBalance;
 
-        bool Update(const SceneView& view, const PostProcessingSettings& postProcessingSettings);
+        bool Update(const SceneView& view, const RasterizationRendererPostProcessingSettings& postProcessingSettings);
     };
 }

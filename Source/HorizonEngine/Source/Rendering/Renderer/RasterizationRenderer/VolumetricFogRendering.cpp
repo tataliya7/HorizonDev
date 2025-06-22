@@ -34,7 +34,7 @@ namespace Horizon
         RenderGraph& renderGraph,
         const SceneView& view)
     {
-        uint32 localFogVolumeInstanceCount = uint32(view.scene->localFogVolumes.size());
+        uint32 localFogVolumeInstanceCount = uint32(view.GetRenderScene()->localFogVolumes.size());
 
         if (localFogVolumeInstanceCount == 0)
         {
@@ -49,7 +49,7 @@ namespace Horizon
 
         for (uint32 index = 0; index < localFogVolumeInstanceCount; index++)
         {
-            LocalFogVolumeRenderObject* localFogVolume = view.scene->localFogVolumes[index];
+            LocalFogVolumeRenderObject* localFogVolume = view.GetRenderScene()->localFogVolumes[index];
 
             LocalFogVolumeInstanceData& instanceData = renderData.instanceData[index];
             instanceData.localToWorldMatrix = localFogVolume->transform;
@@ -119,7 +119,7 @@ namespace Horizon
         RenderGraphBufferDesc volumetricFogShaderParameterBufferDesc = RenderGraphBufferDesc::CreateStructured(volumetricFogShaderParameterBufferSize, 1);
         RenderGraphBufferHandle volumetricFogShaderParameterBuffer = renderGraph.CreateBuffer(volumetricFogShaderParameterBufferDesc, "VolumetricFogShaderParameterBuffer");
 
-        RasterizationRendererSceneTextures& sceneTextures = renderGraph.blackboard.Get<RasterizationRendererSceneTextures>();
+        RasterizationRendererIntermediateResources& intermediateResources = renderGraph.blackboard.Get<RasterizationRendererIntermediateResources>();
 
         renderGraph.AddPass(
             std::format("UpdateVolumetricFog"),
@@ -137,7 +137,7 @@ namespace Horizon
                 };
             });
 
-        RenderGraphTextureDesc volumetricFogCommonTextureDesc = RenderGraphTextureDesc::Create3D(
+        RenderGraphTextureDescription volumetricFogCommonTextureDesc = RenderGraphTextureDescription::Create3D(
             volumetricFogTileCountX,
             volumetricFogTileCountY,
             volumetricFogDepthSliceCount,
@@ -192,7 +192,7 @@ namespace Horizon
             RenderGraphPassFlags::Compute,
             [&](RenderGraphBuilder& builder)
             {
-                RenderGraphTextureHandle shadowMapTexture = builder.ReadTexture(sceneTextures.cascadedShadowMapDepthTexture, RenderBackendResourceState::ShaderResource);
+                RenderGraphTextureHandle shadowMapTexture = builder.ReadTexture(intermediateResources.cascadedShadowMapDepthTexture, RenderBackendResourceState::ShaderResource);
                 volumetricFogParticipatingMediaPropertiesDataATexture = builder.ReadTexture(volumetricFogParticipatingMediaPropertiesDataATexture, RenderBackendResourceState::ShaderResource);
                 volumetricFogParticipatingMediaPropertiesDataBTexture = builder.ReadTexture(volumetricFogParticipatingMediaPropertiesDataBTexture, RenderBackendResourceState::ShaderResource);
                 previousVolumetricFogLightScatteringTexture = builder.ReadTexture(previousVolumetricFogLightScatteringTexture, RenderBackendResourceState::ShaderResource);
@@ -207,8 +207,8 @@ namespace Horizon
                     RenderBackendPushConstantValues shaderConstants = {};
                     shaderConstants.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
                     shaderConstants.BindBufferSRV(1, resourceRegistry.GetBufferSRVBindlessResourceDescriptorIndex(volumetricFogShaderParameterBuffer));
-                    shaderConstants.BindBufferSRV(2, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(view.scene->distantLightDataBuffer));
-                    shaderConstants.BindBufferSRV(3, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(sceneTextures.cascadedShadowMapShaderParameterBuffer));
+                    shaderConstants.BindBufferSRV(2, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(view.GetRenderScene()->distantLightDataBuffer));
+                    shaderConstants.BindBufferSRV(3, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(intermediateResources.cascadedShadowMapShaderParameterBuffer));
                     shaderConstants.BindTextureSRV(4, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(shadowMapTexture));
                     shaderConstants.BindTextureSRV(5, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(previousVolumetricFogLightScatteringTexture));
                     shaderConstants.BindTextureSRV(6, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(volumetricFogParticipatingMediaPropertiesDataATexture));
@@ -265,8 +265,8 @@ namespace Horizon
             [&](RenderGraphBuilder& builder)
             {
                 volumetricFogFinalIntegrationTexture = builder.ReadTexture(volumetricFogFinalIntegrationTexture, RenderBackendResourceState::ShaderResource);
-                RenderGraphTextureHandle sceneDepthTexture = builder.ReadTexture(sceneTextures.sceneDepthTexture, RenderBackendResourceState::ShaderResource);
-                RenderGraphTextureHandle sceneColorTexture = sceneTextures.sceneColorTexture = builder.WriteTexture(sceneTextures.sceneColorTexture, RenderBackendResourceState::RenderTarget);
+                RenderGraphTextureHandle sceneDepthTexture = builder.ReadTexture(intermediateResources.depthTexture, RenderBackendResourceState::ShaderResource);
+                RenderGraphTextureHandle sceneColorTexture = intermediateResources.colorTexture = builder.WriteTexture(intermediateResources.colorTexture, RenderBackendResourceState::RenderTarget);
 
                 builder.SetRenderTargetBinding(0, sceneColorTexture, RenderBackendRenderPassLoadOperation::Load, RenderBackendRenderPassStoreOperation::Store);
 
@@ -307,7 +307,7 @@ namespace Horizon
         RenderGraph& renderGraph,
         const SceneView& view)
     {
-        uint32 localFogVolumeInstanceCount = uint32(view.scene->localFogVolumes.size());
+        uint32 localFogVolumeInstanceCount = uint32(view.GetRenderScene()->localFogVolumes.size());
 
         if (localFogVolumeInstanceCount == 0)
         {
@@ -320,7 +320,7 @@ namespace Horizon
 
         for (uint32 index = 0; index < localFogVolumeInstanceCount; index++)
         {
-            LocalFogVolumeRenderObject* localFogVolume = view.scene->localFogVolumes[index];
+            LocalFogVolumeRenderObject* localFogVolume = view.GetRenderScene()->localFogVolumes[index];
 
             LocalFogVolumeInstanceData& instanceData = renderData.instanceData[index];
             instanceData.localToWorldMatrix = localFogVolume->transform;
@@ -369,10 +369,10 @@ namespace Horizon
             RenderGraphPassFlags::Graphics,
             [&](RenderGraphBuilder& builder)
             {
-                RasterizationRendererSceneTextures& sceneTextures = renderGraph.blackboard.Get<RasterizationRendererSceneTextures>();
+                RasterizationRendererIntermediateResources& intermediateResources = renderGraph.blackboard.Get<RasterizationRendererIntermediateResources>();
 
-                RenderGraphTextureHandle sceneColorTexture = sceneTextures.sceneColorTexture = builder.WriteTexture(sceneTextures.sceneColorTexture, RenderBackendResourceState::RenderTarget);
-                RenderGraphTextureHandle sceneDepthTexture = builder.ReadTexture(sceneTextures.sceneDepthTexture, RenderBackendResourceState::DepthStencilReadOnly);
+                RenderGraphTextureHandle sceneColorTexture = intermediateResources.colorTexture = builder.WriteTexture(intermediateResources.colorTexture, RenderBackendResourceState::RenderTarget);
+                RenderGraphTextureHandle sceneDepthTexture = builder.ReadTexture(intermediateResources.depthTexture, RenderBackendResourceState::DepthStencilReadOnly);
 
                 builder.SetRenderTargetBinding(0, sceneColorTexture, RenderBackendRenderPassLoadOperation::Load, RenderBackendRenderPassStoreOperation::Store);
                 builder.SetDepthStencilBinding(sceneDepthTexture,

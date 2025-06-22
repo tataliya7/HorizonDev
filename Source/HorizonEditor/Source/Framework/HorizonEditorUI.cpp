@@ -858,7 +858,9 @@ namespace Horizon
 
         static int currentViewModeIndex = 0;
         ImGui::Combo("##ViewMode", &currentViewModeIndex, ViewModeName, IM_ARRAYSIZE(ViewModeName));
-        currentDebugVisualizationMode = (SceneViewDebugVisualizationMode)currentViewModeIndex;
+        currentDebugVisualizationMode = (RasterizationRendererDebugVisualizationMode)currentViewModeIndex;
+
+        renderSettings.rasterRenderingSettings.debugVisualizationMode = currentDebugVisualizationMode;
 
         static RenderBackendTextureHandle renderDocIconTexture = RenderBackendTextureHandle::Null;
         if (renderDocIconTexture == RenderBackendTextureHandle::Null)
@@ -893,10 +895,12 @@ namespace Horizon
             ImGui::NextColumn();
             ImGui::PushItemWidth(-1);
 
-            static const char* renderModeNames[] = { "Rasterization", "Hybrid Rendering", "Path Tracing (Real-Time)", "Path Tracing (Reference)" };
+            static const char* renderModeNames[] = { "Raster Rendering", "Hybrid Rendering", "Path Tracing (Real-Time)", "Path Tracing (Reference)" };
             int renderMode = (int)renderSettings.renderMode;
             ImGui::Combo("##Rendering Mode", &renderMode, renderModeNames, IM_ARRAYSIZE(renderModeNames));
             renderSettings.renderMode = (RenderMode)renderMode;
+
+            RasterizationRendererSettings& rasterizationRendererSettings = renderSettings.rasterRenderingSettings;
 
             ImGui::Columns(1);
             ImGui::Separator();
@@ -915,10 +919,10 @@ namespace Horizon
                     ImGui::NextColumn();
                     ImGui::PushItemWidth(-1);
 
-                    const char* items[] = { "None", "Shadow Map", "Virtual Shadow Map", "Ray Tracing Shadows" };
-                    int item = (int)renderSettings.shadowsTechnique;
+                    const char* items[] = { "None", "Shadow Maps", "Virtual Shadow Maps", "Ray Tracing Shadows" };
+                    int item = (int)rasterizationRendererSettings.shadowsTechnique;
                     ImGui::Combo("##ShadowsTechnique", &item, items, IM_ARRAYSIZE(items));
-                    renderSettings.shadowsTechnique = (ShadowsTechnique)item;
+                    rasterizationRendererSettings.shadowsTechnique = (RasterizationRendererShadowsTechnique)item;
 
                     ImGui::PopItemWidth();
                     ImGui::NextColumn();
@@ -940,7 +944,7 @@ namespace Horizon
                     ImGui::TextUnformatted("Indirect Lighting Color");
                     ImGui::NextColumn();
                     ImGui::PushItemWidth(-1);
-                    if (ImGui::ColorEdit3("##indirectLightingColor", &renderSettings.globalIlluminationSettings.indirectLightingColor.x))
+                    if (ImGui::ColorEdit3("##indirectLightingColor", &rasterizationRendererSettings.globalIlluminationSettings.indirectLightingColor.x))
                     {
 
                     }
@@ -951,7 +955,7 @@ namespace Horizon
                     ImGui::TextUnformatted("Indirect Lighting Intensity");
                     ImGui::NextColumn();
                     ImGui::PushItemWidth(-1);
-                    if (ImGui::DragFloat("##indirectLightingIntensity", &renderSettings.globalIlluminationSettings.indirectLightingIntensity, 0.01f, 0.0f, 1000.0f))
+                    if (ImGui::DragFloat("##indirectLightingIntensity", &rasterizationRendererSettings.globalIlluminationSettings.indirectLightingIntensity, 0.01f, 0.0f, 1000.0f))
                     {
 
                     }
@@ -977,9 +981,9 @@ namespace Horizon
                     ImGui::PushItemWidth(-1);
 
                     const char* items[] = { "None", "Screen Space Reflections", "Ray Tracing Reflections" };
-                    int item = int(renderSettings.reflectionsTechnique);
+                    int item = int(rasterizationRendererSettings.reflectionsTechnique);
                     ImGui::Combo("##ReflectionsTechnique", &item, items, IM_ARRAYSIZE(items));
-                    renderSettings.reflectionsTechnique = (ReflectionsTechnique)item;
+                    rasterizationRendererSettings.reflectionsTechnique = (RasterizationRendererReflectionsTechnique)item;
 
                     ImGui::PopItemWidth();
                     ImGui::NextColumn();
@@ -988,7 +992,7 @@ namespace Horizon
                     ImGui::TextUnformatted("Denosing");
                     ImGui::NextColumn();
                     ImGui::PushItemWidth(-1);
-                    if (ImGui::Checkbox("##SSRDenosing", &renderSettings.ssrSettings.enableDenoising))
+                    if (ImGui::Checkbox("##SSRDenosing", &rasterizationRendererSettings.screenSpaceReflectionsSettings.enableDenoising))
                     {
 
                     }
@@ -1003,7 +1007,7 @@ namespace Horizon
                     const char* items2[] = { "Low", "Medium", "High", "    Epic" };
                     static int item2 = 0;
                     ImGui::Combo("##SSRQuality", &item2, items2, IM_ARRAYSIZE(items2));
-                    renderSettings.ssrSettings.quality = (ScreenSpaceReflectionsQuality)item2;
+                    rasterizationRendererSettings.screenSpaceReflectionsSettings.quality = (ScreenSpaceReflectionsQuality)item2;
 
                     ImGui::PopItemWidth();
                     ImGui::NextColumn();
@@ -1021,7 +1025,7 @@ namespace Horizon
                     ImGui::Columns(2);
                     ImGui::Separator();
 
-                    bool gtaoEnabled = (renderSettings.ambientOcclusionTechnique == AmbientOcclusionTechnique::GroundTruthAmbientOcclusion) ? true : false;
+                    bool gtaoEnabled = (rasterizationRendererSettings.ambientOcclusionTechnique == RasterizationRendererAmbientOcclusionTechnique::GroundTruthAmbientOcclusion) ? true : false;
                     ImGui::AlignTextToFramePadding();
                     ImGui::TextUnformatted("Enable");
                     ImGui::NextColumn();
@@ -1030,11 +1034,11 @@ namespace Horizon
                     {
                         if (gtaoEnabled)
                         {
-                            renderSettings.ambientOcclusionTechnique = AmbientOcclusionTechnique::GroundTruthAmbientOcclusion;
+                            rasterizationRendererSettings.ambientOcclusionTechnique = RasterizationRendererAmbientOcclusionTechnique::GroundTruthAmbientOcclusion;
                         }
                         else
                         {
-                            renderSettings.ambientOcclusionTechnique = AmbientOcclusionTechnique::None;
+                            rasterizationRendererSettings.ambientOcclusionTechnique = RasterizationRendererAmbientOcclusionTechnique::None;
                         }
                     }
                     ImGui::PopItemWidth();
@@ -1044,7 +1048,7 @@ namespace Horizon
                     ImGui::TextUnformatted("Radius");
                     ImGui::NextColumn();
                     ImGui::PushItemWidth(-1);
-                    if (ImGui::DragFloat("##Radius", &renderSettings.gtaoSettings.radius))
+                    if (ImGui::DragFloat("##Radius", &rasterizationRendererSettings.groundTruthAmbientOcclusionSettings.radius))
                     {
 
                     }
@@ -1055,7 +1059,7 @@ namespace Horizon
                     ImGui::TextUnformatted("Factor");
                     ImGui::NextColumn();
                     ImGui::PushItemWidth(-1);
-                    if (ImGui::DragFloat("##Factor", &renderSettings.gtaoSettings.factor))
+                    if (ImGui::DragFloat("##Factor", &rasterizationRendererSettings.groundTruthAmbientOcclusionSettings.factor))
                     {
 
                     }
@@ -1066,7 +1070,7 @@ namespace Horizon
                     ImGui::TextUnformatted("Thickness");
                     ImGui::NextColumn();
                     ImGui::PushItemWidth(-1);
-                    if (ImGui::DragFloat("##Thickness", &renderSettings.gtaoSettings.thickness))
+                    if (ImGui::DragFloat("##Thickness", &rasterizationRendererSettings.groundTruthAmbientOcclusionSettings.thickness))
                     {
 
                     }
@@ -1077,7 +1081,7 @@ namespace Horizon
                     ImGui::TextUnformatted("Multiple-Bounce");
                     ImGui::NextColumn();
                     ImGui::PushItemWidth(-1);
-                    if (ImGui::Checkbox("##MultipleBounce", &renderSettings.gtaoSettings.multiBounce))
+                    if (ImGui::Checkbox("##MultipleBounce", &rasterizationRendererSettings.groundTruthAmbientOcclusionSettings.multiBounce))
                     {
 
                     }
@@ -1178,9 +1182,9 @@ namespace Horizon
                 ImGui::PushItemWidth(-1);
 
                 const char* items[] = { "None", "AMD FSR", "NVIDIA DLSS" };
-                int item = int(renderSettings.superSamplingSettings.superSamplingTechnique);
+                int item = int(rasterizationRendererSettings.superSamplingSettings.superSamplingTechnique);
                 ImGui::Combo("##SuperResolutionTechnique", &item, items, IM_ARRAYSIZE(items));
-                renderSettings.superSamplingSettings.superSamplingTechnique = SuperSamplingTechnique(item);
+                rasterizationRendererSettings.superSamplingSettings.superSamplingTechnique = SuperSamplingTechnique(item);
 
                 ImGui::PopItemWidth();
                 ImGui::NextColumn();
@@ -1195,23 +1199,23 @@ namespace Horizon
                     ImGui::PushItemWidth(-1);
 
                     static const char* fsrQualityModeNames[] = { "Off", "Quality", "Balanced", "Performance", "Ultra Performance", "Custom" };
-                    int fsrQualityModeNameIndex = int(renderSettings.superSamplingSettings.qualityMode);
+                    int fsrQualityModeNameIndex = int(rasterizationRendererSettings.superSamplingSettings.qualityMode);
                     ImGui::Combo("##FSRQualityMode", &fsrQualityModeNameIndex, fsrQualityModeNames, IM_ARRAYSIZE(fsrQualityModeNames));
-                    renderSettings.superSamplingSettings.qualityMode = uint32(fsrQualityModeNameIndex);
+                    rasterizationRendererSettings.superSamplingSettings.qualityMode = uint32(fsrQualityModeNameIndex);
                     ImGui::PopItemWidth();
                     ImGui::NextColumn();
 
-                    //if (renderSettings.superSamplingSettings.qualityMode == FidelityFXSuperResolution2QualityMode::Custom)
+                    //if (rasterizationRendererSettings.superSamplingSettings.qualityMode == FidelityFXSuperResolution2QualityMode::Custom)
                     {
                         ImGui::AlignTextToFramePadding();
                         ImGui::TextUnformatted("Render Resolution Percentage");
                         ImGui::NextColumn();
                         ImGui::PushItemWidth(-1);
 
-                        int desiredRenderResolutionPercentage = int(renderSettings.superSamplingSettings.desiredRenderResolutionPercentage * 100.0f);
+                        int desiredRenderResolutionPercentage = int(rasterizationRendererSettings.superSamplingSettings.desiredRenderResolutionPercentage * 100.0f);
                         if (ImGui::DragInt("##desiredRenderResolutionPercentage", &desiredRenderResolutionPercentage, 1, 25, 100))
                         {
-                            renderSettings.superSamplingSettings.desiredRenderResolutionPercentage = 0.01f * desiredRenderResolutionPercentage;
+                            rasterizationRendererSettings.superSamplingSettings.desiredRenderResolutionPercentage = 0.01f * desiredRenderResolutionPercentage;
                         }
 
                         ImGui::PopItemWidth();
@@ -1222,7 +1226,7 @@ namespace Horizon
                     ImGui::TextUnformatted("Frame Interpolation");
                     ImGui::NextColumn();
                     ImGui::PushItemWidth(-1);
-                    if (ImGui::Checkbox("##FrameInterpolation", &renderSettings.superSamplingSettings.enableFrameInterpolation))
+                    if (ImGui::Checkbox("##FrameInterpolation", &rasterizationRendererSettings.superSamplingSettings.enableFrameInterpolation))
                     {
 
                     }
@@ -1239,7 +1243,7 @@ namespace Horizon
                     static const char* dlssQualityModeNames[] = { "Off", "Auto", "Quality", "Balanced", "Performance", "Ultra Performance", "Ultra Quality" };
                     static int dlssQualityModeNameIndex = 1;
                     ImGui::Combo("##DLSSQualityMode", &dlssQualityModeNameIndex, dlssQualityModeNames, IM_ARRAYSIZE(dlssQualityModeNames));
-                    renderSettings.superSamplingSettings.qualityMode = uint32(dlssQualityModeNameIndex);
+                    rasterizationRendererSettings.superSamplingSettings.qualityMode = uint32(dlssQualityModeNameIndex);
                     ImGui::PopItemWidth();
                     ImGui::NextColumn();
 
@@ -1249,10 +1253,10 @@ namespace Horizon
                         ImGui::NextColumn();
                         ImGui::PushItemWidth(-1);
 
-                        int desiredRenderResolutionPercentage = int(renderSettings.superSamplingSettings.desiredRenderResolutionPercentage * 100.0f);
+                        int desiredRenderResolutionPercentage = int(rasterizationRendererSettings.superSamplingSettings.desiredRenderResolutionPercentage * 100.0f);
                         if (ImGui::DragInt("##desiredRenderResolutionPercentage", &desiredRenderResolutionPercentage, 1, 25, 100))
                         {
-                            renderSettings.superSamplingSettings.desiredRenderResolutionPercentage = 0.01f * float(desiredRenderResolutionPercentage);
+                            rasterizationRendererSettings.superSamplingSettings.desiredRenderResolutionPercentage = 0.01f * float(desiredRenderResolutionPercentage);
                         }
 
                         ImGui::PopItemWidth();
@@ -1263,7 +1267,7 @@ namespace Horizon
                     ImGui::TextUnformatted("Frame Interpolation");
                     ImGui::NextColumn();
                     ImGui::PushItemWidth(-1);
-                    if (ImGui::Checkbox("##FrameInterpolation", &renderSettings.superSamplingSettings.enableFrameInterpolation))
+                    if (ImGui::Checkbox("##FrameInterpolation", &rasterizationRendererSettings.superSamplingSettings.enableFrameInterpolation))
                     {
 
                     }
@@ -1294,9 +1298,9 @@ namespace Horizon
                     ImGui::PushItemWidth(-1);
 
                     static const char* toneMappingOperatorNames[] = { "Linear", "ACES" };
-                    int toneMappingOperator = (int)renderSettings.toneMappingOperator;
+                    int toneMappingOperator = (int)rasterizationRendererSettings.toneMappingOperator;
                     ImGui::Combo("##ToneMappingOperator", &toneMappingOperator, toneMappingOperatorNames, IM_ARRAYSIZE(toneMappingOperatorNames));
-                    renderSettings.toneMappingOperator = (ToneMappingOperatorType)toneMappingOperator;
+                    rasterizationRendererSettings.toneMappingOperator = (ToneMappingOperatorType)toneMappingOperator;
 
                     ImGui::PopItemWidth();
                     ImGui::NextColumn();
@@ -1319,7 +1323,7 @@ namespace Horizon
                     ImGui::TextUnformatted("Intensity");
                     ImGui::NextColumn();
                     ImGui::PushItemWidth(-1);
-                    if (ImGui::DragFloat("##BloomIntensity", &renderSettings.postProcessingSettings.bloomIntensity, 0.01f, 0.0f, 10.0f))
+                    if (ImGui::DragFloat("##BloomIntensity", &rasterizationRendererSettings.postProcessingSettings.bloomIntensity, 0.01f, 0.0f, 10.0f))
                     {
 
                     }
@@ -1330,7 +1334,7 @@ namespace Horizon
                     ImGui::TextUnformatted("Radius");
                     ImGui::NextColumn();
                     ImGui::PushItemWidth(-1);
-                    if (ImGui::DragFloat("##BloomRadius", &renderSettings.postProcessingSettings.bloomRadius, 0.001f, 0.0f, 1.0f))
+                    if (ImGui::DragFloat("##BloomRadius", &rasterizationRendererSettings.postProcessingSettings.bloomRadius, 0.001f, 0.0f, 1.0f))
                     {
 
                     }
@@ -1354,7 +1358,7 @@ namespace Horizon
                     ImGui::TextUnformatted("Strength");
                     ImGui::NextColumn();
                     ImGui::PushItemWidth(-1);
-                    if (ImGui::DragFloat("##motionBlurIntensity", &renderSettings.postProcessingSettings.motionBlurIntensity, 0.001f, 0.0f, 1.0f))
+                    if (ImGui::DragFloat("##motionBlurIntensity", &rasterizationRendererSettings.postProcessingSettings.motionBlurIntensity, 0.001f, 0.0f, 1.0f))
                     {
 
                     }
@@ -1365,7 +1369,7 @@ namespace Horizon
                     ImGui::TextUnformatted("Max Velocity Length");
                     ImGui::NextColumn();
                     ImGui::PushItemWidth(-1);
-                    if (ImGui::DragFloat("##motionBlurMaxVelocityLength", &renderSettings.postProcessingSettings.motionBlurMaxVelocityLength, 0.001f, 0.0f, 100.0f))
+                    if (ImGui::DragFloat("##motionBlurMaxVelocityLength", &rasterizationRendererSettings.postProcessingSettings.motionBlurMaxVelocityLength, 0.001f, 0.0f, 100.0f))
                     {
 
                     }
@@ -1389,7 +1393,7 @@ namespace Horizon
                     ImGui::TextUnformatted("Intensity");
                     ImGui::NextColumn();
                     ImGui::PushItemWidth(-1);
-                    if (ImGui::DragFloat("##LensDirtIntensity", &renderSettings.postProcessingSettings.lensDirtIntensity, 0.001f, 0.0f, 1.0f))
+                    if (ImGui::DragFloat("##LensDirtIntensity", &rasterizationRendererSettings.postProcessingSettings.lensDirtIntensity, 0.001f, 0.0f, 1.0f))
                     {
 
                     }
@@ -1400,7 +1404,7 @@ namespace Horizon
                     ImGui::TextUnformatted("Tint");
                     ImGui::NextColumn();
                     ImGui::PushItemWidth(-1);
-                    if (ImGui::ColorEdit4("##LensDirtTint", &renderSettings.postProcessingSettings.lensDirtTint.x))
+                    if (ImGui::ColorEdit4("##LensDirtTint", &rasterizationRendererSettings.postProcessingSettings.lensDirtTint.x))
                     {
 
                     }
@@ -1424,7 +1428,7 @@ namespace Horizon
                     ImGui::TextUnformatted("Intensity");
                     ImGui::NextColumn();
                     ImGui::PushItemWidth(-1);
-                    if (ImGui::DragFloat("##lensFlareIntensity", &renderSettings.postProcessingSettings.lensFlareIntensity, 0.001f, 0.0f, 10.0f))
+                    if (ImGui::DragFloat("##lensFlareIntensity", &rasterizationRendererSettings.postProcessingSettings.lensFlareIntensity, 0.001f, 0.0f, 10.0f))
                     {
 
                     }
@@ -1435,7 +1439,7 @@ namespace Horizon
                     ImGui::TextUnformatted("Halo Intensity");
                     ImGui::NextColumn();
                     ImGui::PushItemWidth(-1);
-                    if (ImGui::DragFloat("##lensFlareHaloIntensity", &renderSettings.postProcessingSettings.lensFlareHaloIntensity, 0.001f, 0.0f, 10.0f))
+                    if (ImGui::DragFloat("##lensFlareHaloIntensity", &rasterizationRendererSettings.postProcessingSettings.lensFlareHaloIntensity, 0.001f, 0.0f, 10.0f))
                     {
 
                     }
@@ -1446,7 +1450,7 @@ namespace Horizon
                     ImGui::TextUnformatted("Halo Width");
                     ImGui::NextColumn();
                     ImGui::PushItemWidth(-1);
-                    if (ImGui::DragFloat("##lensFlareHaloWidth", &renderSettings.postProcessingSettings.lensFlareHaloWidth, 0.001f, 0.0f, 10.0f))
+                    if (ImGui::DragFloat("##lensFlareHaloWidth", &rasterizationRendererSettings.postProcessingSettings.lensFlareHaloWidth, 0.001f, 0.0f, 10.0f))
                     {
 
                     }
@@ -1457,7 +1461,7 @@ namespace Horizon
                     ImGui::TextUnformatted("Halo Chromatic Aberration Offset");
                     ImGui::NextColumn();
                     ImGui::PushItemWidth(-1);
-                    if (ImGui::DragFloat("##lensFlareHaloChromaticAberrationOffset", &renderSettings.postProcessingSettings.lensFlareHaloChromaticAberrationOffset, 0.001f, 0.0f, 10.0f))
+                    if (ImGui::DragFloat("##lensFlareHaloChromaticAberrationOffset", &rasterizationRendererSettings.postProcessingSettings.lensFlareHaloChromaticAberrationOffset, 0.001f, 0.0f, 10.0f))
                     {
 
                     }
@@ -1478,7 +1482,7 @@ namespace Horizon
                     ImGui::Separator();
 
                     const char* items[] = { "Fixed Exposure", "Auto Exposure" };
-                    int item = (int)renderSettings.postProcessingSettings.exposureMethod;
+                    int item = (int)rasterizationRendererSettings.postProcessingSettings.exposureMethod;
 
                     ImGui::AlignTextToFramePadding();
                     ImGui::TextUnformatted("Exposure Method");
@@ -1486,7 +1490,7 @@ namespace Horizon
                     ImGui::PushItemWidth(-1);
                     if (ImGui::Combo("##ExposureMethod", &item, items, IM_ARRAYSIZE(items)))
                     {
-                        renderSettings.postProcessingSettings.exposureMethod = (ExposureMethod)item;
+                        rasterizationRendererSettings.postProcessingSettings.exposureMethod = (ExposureMethod)item;
                     }
                     ImGui::PopItemWidth();
                     ImGui::NextColumn();
@@ -1495,7 +1499,7 @@ namespace Horizon
                     ImGui::TextUnformatted("Fixed Exposure Value");
                     ImGui::NextColumn();
                     ImGui::PushItemWidth(-1);
-                    if (ImGui::DragFloat("##fixedExposureValue", &renderSettings.postProcessingSettings.fixedExposureValue))
+                    if (ImGui::DragFloat("##fixedExposureValue", &rasterizationRendererSettings.postProcessingSettings.fixedExposureValue))
                     {
 
                     }
@@ -1506,7 +1510,7 @@ namespace Horizon
                     ImGui::TextUnformatted("Exposure Compensation");
                     ImGui::NextColumn();
                     ImGui::PushItemWidth(-1);
-                    if (ImGui::DragFloat("##autoExposureExposureCompensation", &renderSettings.postProcessingSettings.autoExposureExposureCompensation))
+                    if (ImGui::DragFloat("##autoExposureExposureCompensation", &rasterizationRendererSettings.postProcessingSettings.autoExposureExposureCompensation))
                     {
 
                     }
@@ -1517,7 +1521,7 @@ namespace Horizon
                     ImGui::TextUnformatted("Min Exposure Value");
                     ImGui::NextColumn();
                     ImGui::PushItemWidth(-1);
-                    if (ImGui::DragFloat("##autoExposureMinExposureValue", &renderSettings.postProcessingSettings.autoExposureMinExposureValue))
+                    if (ImGui::DragFloat("##autoExposureMinExposureValue", &rasterizationRendererSettings.postProcessingSettings.autoExposureMinExposureValue))
                     {
 
                     }
@@ -1528,7 +1532,7 @@ namespace Horizon
                     ImGui::TextUnformatted("Max Exposure Value");
                     ImGui::NextColumn();
                     ImGui::PushItemWidth(-1);
-                    if (ImGui::DragFloat("##autoExposureMaxExposureValue", &renderSettings.postProcessingSettings.autoExposureMaxExposureValue))
+                    if (ImGui::DragFloat("##autoExposureMaxExposureValue", &rasterizationRendererSettings.postProcessingSettings.autoExposureMaxExposureValue))
                     {
 
                     }
@@ -1539,7 +1543,7 @@ namespace Horizon
                     ImGui::TextUnformatted("Speed Dark to Bright");
                     ImGui::NextColumn();
                     ImGui::PushItemWidth(-1);
-                    if (ImGui::DragFloat("##autoExposureSpeedDarkToBright", &renderSettings.postProcessingSettings.autoExposureSpeedDarkToBright))
+                    if (ImGui::DragFloat("##autoExposureSpeedDarkToBright", &rasterizationRendererSettings.postProcessingSettings.autoExposureSpeedDarkToBright))
                     {
 
                     }
@@ -1551,7 +1555,7 @@ namespace Horizon
                     ImGui::TextUnformatted("Speed Bright to Dark");
                     ImGui::NextColumn();
                     ImGui::PushItemWidth(-1);
-                    if (ImGui::DragFloat("##autoExposureSpeedBrightToDark", &renderSettings.postProcessingSettings.autoExposureSpeedBrightToDark))
+                    if (ImGui::DragFloat("##autoExposureSpeedBrightToDark", &rasterizationRendererSettings.postProcessingSettings.autoExposureSpeedBrightToDark))
                     {
 
                     }
@@ -1562,7 +1566,7 @@ namespace Horizon
                     ImGui::TextUnformatted("Lower Percentage");
                     ImGui::NextColumn();
                     ImGui::PushItemWidth(-1);
-                    if (ImGui::DragFloat("##autoExposureHistogramLowerPercentage", &renderSettings.postProcessingSettings.autoExposureHistogramLowerPercentage, 0.1f, 0.0f, 100.0f))
+                    if (ImGui::DragFloat("##autoExposureHistogramLowerPercentage", &rasterizationRendererSettings.postProcessingSettings.autoExposureHistogramLowerPercentage, 0.1f, 0.0f, 100.0f))
                     {
 
                     }
@@ -1573,7 +1577,7 @@ namespace Horizon
                     ImGui::TextUnformatted("Higher Percentage");
                     ImGui::NextColumn();
                     ImGui::PushItemWidth(-1);
-                    if (ImGui::DragFloat("##autoExposureHistogramHigherPercentage", &renderSettings.postProcessingSettings.autoExposureHistogramHigherPercentage, 0.1f, 0.0f, 100.0f))
+                    if (ImGui::DragFloat("##autoExposureHistogramHigherPercentage", &rasterizationRendererSettings.postProcessingSettings.autoExposureHistogramHigherPercentage, 0.1f, 0.0f, 100.0f))
                     {
 
                     }
@@ -1584,7 +1588,7 @@ namespace Horizon
                     ImGui::TextUnformatted("Histogram Min EV100");
                     ImGui::NextColumn();
                     ImGui::PushItemWidth(-1);
-                    if (ImGui::DragFloat("##autoExposureHistogramMinEV100", &renderSettings.postProcessingSettings.autoExposureHistogramMinEV100))
+                    if (ImGui::DragFloat("##autoExposureHistogramMinEV100", &rasterizationRendererSettings.postProcessingSettings.autoExposureHistogramMinEV100))
                     {
 
                     }
@@ -1595,7 +1599,7 @@ namespace Horizon
                     ImGui::TextUnformatted("Histogram Max EV100");
                     ImGui::NextColumn();
                     ImGui::PushItemWidth(-1);
-                    if (ImGui::DragFloat("##autoExposureHistogramMaxEV100", &renderSettings.postProcessingSettings.autoExposureHistogramMaxEV100))
+                    if (ImGui::DragFloat("##autoExposureHistogramMaxEV100", &rasterizationRendererSettings.postProcessingSettings.autoExposureHistogramMaxEV100))
                     {
 
                     }
@@ -1621,20 +1625,20 @@ namespace Horizon
                     ImGui::PushItemWidth(-1);
                     {
                         static const char* localToneMappingMethodNames[] = { "None", "Bilateral Grid", "Exposure Fusion" };
-                        int localToneMappingMethod = (int)renderSettings.postProcessingSettings.localToneMappingMethod;
+                        int localToneMappingMethod = (int)rasterizationRendererSettings.postProcessingSettings.localToneMappingMethod;
                         ImGui::Combo("##LocalToneMappingMethod", &localToneMappingMethod, localToneMappingMethodNames, IM_ARRAYSIZE(localToneMappingMethodNames));
-                        renderSettings.postProcessingSettings.localToneMappingMethod = (LocalToneMappingMethod)localToneMappingMethod;
+                        rasterizationRendererSettings.postProcessingSettings.localToneMappingMethod = (LocalToneMappingMethod)localToneMappingMethod;
                     }
                     ImGui::PopItemWidth();
                     ImGui::NextColumn();
 
-                    if (renderSettings.postProcessingSettings.localToneMappingMethod == LocalToneMappingMethod::BilateralGrid)
+                    if (rasterizationRendererSettings.postProcessingSettings.localToneMappingMethod == LocalToneMappingMethod::BilateralGrid)
                     {
                         ImGui::AlignTextToFramePadding();
                         ImGui::TextUnformatted("Shadows");
                         ImGui::NextColumn();
                         ImGui::PushItemWidth(-1);
-                        if (ImGui::DragFloat("##bilateralGridLocalToneMappingShadows", &renderSettings.postProcessingSettings.bilateralGridLocalToneMappingShadows, 0.001f, 0.0f, 1.0f))
+                        if (ImGui::DragFloat("##bilateralGridLocalToneMappingShadows", &rasterizationRendererSettings.postProcessingSettings.bilateralGridLocalToneMappingShadows, 0.001f, 0.0f, 1.0f))
                         {
 
                         }
@@ -1645,7 +1649,7 @@ namespace Horizon
                         ImGui::TextUnformatted("Highlights");
                         ImGui::NextColumn();
                         ImGui::PushItemWidth(-1);
-                        if (ImGui::DragFloat("##bilateralGridLocalToneMappingHighlights", &renderSettings.postProcessingSettings.bilateralGridLocalToneMappingHighlights, 0.001f, 0.0f, 1.0f))
+                        if (ImGui::DragFloat("##bilateralGridLocalToneMappingHighlights", &rasterizationRendererSettings.postProcessingSettings.bilateralGridLocalToneMappingHighlights, 0.001f, 0.0f, 1.0f))
                         {
 
                         }
@@ -1656,7 +1660,7 @@ namespace Horizon
                         ImGui::TextUnformatted("Detail Strength");
                         ImGui::NextColumn();
                         ImGui::PushItemWidth(-1);
-                        if (ImGui::DragFloat("##bilateralGridLocalToneMappingDetailStrength", &renderSettings.postProcessingSettings.bilateralGridLocalToneMappingDetailStrength, 0.001f, 0.0f, 10.0f))
+                        if (ImGui::DragFloat("##bilateralGridLocalToneMappingDetailStrength", &rasterizationRendererSettings.postProcessingSettings.bilateralGridLocalToneMappingDetailStrength, 0.001f, 0.0f, 10.0f))
                         {
 
                         }
@@ -1667,7 +1671,7 @@ namespace Horizon
                         ImGui::TextUnformatted("Gaussian Filter Weight");
                         ImGui::NextColumn();
                         ImGui::PushItemWidth(-1);
-                        if (ImGui::DragFloat("##bilateralGridLocalToneMappingGaussianFilterWeight", &renderSettings.postProcessingSettings.bilateralGridLocalToneMappingGaussianFilterWeight, 0.001f, 0.0f, 1.0f))
+                        if (ImGui::DragFloat("##bilateralGridLocalToneMappingGaussianFilterWeight", &rasterizationRendererSettings.postProcessingSettings.bilateralGridLocalToneMappingGaussianFilterWeight, 0.001f, 0.0f, 1.0f))
                         {
 
                         }
@@ -1675,13 +1679,13 @@ namespace Horizon
                         ImGui::NextColumn();
                     }
 
-                    if (renderSettings.postProcessingSettings.localToneMappingMethod == LocalToneMappingMethod::ExposureFusion)
+                    if (rasterizationRendererSettings.postProcessingSettings.localToneMappingMethod == LocalToneMappingMethod::ExposureFusion)
                     {
                         ImGui::AlignTextToFramePadding();
                         ImGui::TextUnformatted("Shadows");
                         ImGui::NextColumn();
                         ImGui::PushItemWidth(-1);
-                        if (ImGui::DragFloat("##ExposureFusionLocalToneMappingShadows", &renderSettings.postProcessingSettings.exposureFusionLocalToneMappingShadows, 0.001f, 0.0f, 1.0f))
+                        if (ImGui::DragFloat("##ExposureFusionLocalToneMappingShadows", &rasterizationRendererSettings.postProcessingSettings.exposureFusionLocalToneMappingShadows, 0.001f, 0.0f, 1.0f))
                         {
 
                         }
@@ -1692,7 +1696,7 @@ namespace Horizon
                         ImGui::TextUnformatted("Highlights");
                         ImGui::NextColumn();
                         ImGui::PushItemWidth(-1);
-                        if (ImGui::DragFloat("##ExposureFusionLocalToneMappingHighlights", &renderSettings.postProcessingSettings.exposureFusionLocalToneMappingHighlights, 0.001f, 0.0f, 1.0f))
+                        if (ImGui::DragFloat("##ExposureFusionLocalToneMappingHighlights", &rasterizationRendererSettings.postProcessingSettings.exposureFusionLocalToneMappingHighlights, 0.001f, 0.0f, 1.0f))
                         {
 
                         }
@@ -1717,7 +1721,7 @@ namespace Horizon
                     ImGui::TextUnformatted("Scale");
                     ImGui::NextColumn();
                     ImGui::PushItemWidth(-1);
-                    if (ImGui::DragFloat("##DOFScale", &renderSettings.postProcessingSettings.dofScale))
+                    if (ImGui::DragFloat("##DOFScale", &rasterizationRendererSettings.postProcessingSettings.dofScale))
                     {
 
                     }
@@ -1728,7 +1732,7 @@ namespace Horizon
                     ImGui::TextUnformatted("Focal Distance");
                     ImGui::NextColumn();
                     ImGui::PushItemWidth(-1);
-                    if (ImGui::DragFloat("##DOFFocalDistance", &renderSettings.postProcessingSettings.dofFocalDistance))
+                    if (ImGui::DragFloat("##DOFFocalDistance", &rasterizationRendererSettings.postProcessingSettings.dofFocalDistance))
                     {
 
                     }
@@ -1739,7 +1743,7 @@ namespace Horizon
                     ImGui::TextUnformatted("Focal Region");
                     ImGui::NextColumn();
                     ImGui::PushItemWidth(-1);
-                    if (ImGui::DragFloat("##DOFFocalRegion", &renderSettings.postProcessingSettings.dofFocalRegion))
+                    if (ImGui::DragFloat("##DOFFocalRegion", &rasterizationRendererSettings.postProcessingSettings.dofFocalRegion))
                     {
 
                     }
@@ -1750,7 +1754,7 @@ namespace Horizon
                     ImGui::TextUnformatted("Focal Near Transition Region");
                     ImGui::NextColumn();
                     ImGui::PushItemWidth(-1);
-                    if (ImGui::DragFloat("##DOFFocalNearTransitionRegion", &renderSettings.postProcessingSettings.dofNearTransitionRegion))
+                    if (ImGui::DragFloat("##DOFFocalNearTransitionRegion", &rasterizationRendererSettings.postProcessingSettings.dofNearTransitionRegion))
                     {
 
                     }
@@ -1761,7 +1765,7 @@ namespace Horizon
                     ImGui::TextUnformatted("Focal Far Transition Region");
                     ImGui::NextColumn();
                     ImGui::PushItemWidth(-1);
-                    if (ImGui::DragFloat("##DOFFocalFarTransitionRegion", &renderSettings.postProcessingSettings.dofFarTransitionRegion))
+                    if (ImGui::DragFloat("##DOFFocalFarTransitionRegion", &rasterizationRendererSettings.postProcessingSettings.dofFarTransitionRegion))
                     {
 
                     }
@@ -1772,7 +1776,7 @@ namespace Horizon
                     ImGui::TextUnformatted("Focal Near Region Blur Size");
                     ImGui::NextColumn();
                     ImGui::PushItemWidth(-1);
-                    if (ImGui::DragFloat("##DOFFocalNearRegionBlurSize", &renderSettings.postProcessingSettings.dofNearRegionBlurSize))
+                    if (ImGui::DragFloat("##DOFFocalNearRegionBlurSize", &rasterizationRendererSettings.postProcessingSettings.dofNearRegionBlurSize))
                     {
 
                     }
@@ -1783,7 +1787,7 @@ namespace Horizon
                     ImGui::TextUnformatted("Focal Far Region Blur Size");
                     ImGui::NextColumn();
                     ImGui::PushItemWidth(-1);
-                    if (ImGui::DragFloat("##DOFFocalFarRegionBlurSize", &renderSettings.postProcessingSettings.dofFarRegionBlurSize))
+                    if (ImGui::DragFloat("##DOFFocalFarRegionBlurSize", &rasterizationRendererSettings.postProcessingSettings.dofFarRegionBlurSize))
                     {
 
                     }
@@ -1807,7 +1811,7 @@ namespace Horizon
                     ImGui::TextUnformatted("Intensity");
                     ImGui::NextColumn();
                     ImGui::PushItemWidth(-1);
-                    if (ImGui::DragFloat("##ChromaticAberrationIntensity", &renderSettings.postProcessingSettings.chromaticAberrationIntensity))
+                    if (ImGui::DragFloat("##ChromaticAberrationIntensity", &rasterizationRendererSettings.postProcessingSettings.chromaticAberrationIntensity))
                     {
 
                     }
@@ -1818,7 +1822,7 @@ namespace Horizon
                     ImGui::TextUnformatted("Offset");
                     ImGui::NextColumn();
                     ImGui::PushItemWidth(-1);
-                    if (ImGui::DragFloat("##ChromaticAberrationOffset", &renderSettings.postProcessingSettings.chromaticAberrationOffset))
+                    if (ImGui::DragFloat("##ChromaticAberrationOffset", &rasterizationRendererSettings.postProcessingSettings.chromaticAberrationOffset))
                     {
 
                     }
@@ -1842,7 +1846,7 @@ namespace Horizon
                     ImGui::TextUnformatted("Saturation");
                     ImGui::NextColumn();
                     ImGui::PushItemWidth(-1);
-                    if (ImGui::ColorEdit4("##colorCorrectionSaturation", &renderSettings.postProcessingSettings.colorCorrectionSaturation.x))
+                    if (ImGui::ColorEdit4("##colorCorrectionSaturation", &rasterizationRendererSettings.postProcessingSettings.colorCorrectionSaturation.x))
                     {
 
                     }
@@ -1853,7 +1857,7 @@ namespace Horizon
                     ImGui::TextUnformatted("Contrast");
                     ImGui::NextColumn();
                     ImGui::PushItemWidth(-1);
-                    if (ImGui::ColorEdit4("##colorCorrectionContrast", &renderSettings.postProcessingSettings.colorCorrectionContrast.x))
+                    if (ImGui::ColorEdit4("##colorCorrectionContrast", &rasterizationRendererSettings.postProcessingSettings.colorCorrectionContrast.x))
                     {
 
                     }
@@ -1864,7 +1868,7 @@ namespace Horizon
                     ImGui::TextUnformatted("Gamma");
                     ImGui::NextColumn();
                     ImGui::PushItemWidth(-1);
-                    if (ImGui::ColorEdit4("##colorCorrectionGamma", &renderSettings.postProcessingSettings.colorCorrectionGamma.x))
+                    if (ImGui::ColorEdit4("##colorCorrectionGamma", &rasterizationRendererSettings.postProcessingSettings.colorCorrectionGamma.x))
                     {
 
                     }
@@ -1875,7 +1879,7 @@ namespace Horizon
                     ImGui::TextUnformatted("Gain");
                     ImGui::NextColumn();
                     ImGui::PushItemWidth(-1);
-                    if (ImGui::ColorEdit4("##colorCorrectionGain", &renderSettings.postProcessingSettings.colorCorrectionGain.x))
+                    if (ImGui::ColorEdit4("##colorCorrectionGain", &rasterizationRendererSettings.postProcessingSettings.colorCorrectionGain.x))
                     {
 
                     }
@@ -1886,7 +1890,7 @@ namespace Horizon
                     ImGui::TextUnformatted("Offset");
                     ImGui::NextColumn();
                     ImGui::PushItemWidth(-1);
-                    if (ImGui::ColorEdit4("##colorCorrectionOffset", &renderSettings.postProcessingSettings.colorCorrectionOffset.x))
+                    if (ImGui::ColorEdit4("##colorCorrectionOffset", &rasterizationRendererSettings.postProcessingSettings.colorCorrectionOffset.x))
                     {
 
                     }
@@ -1910,7 +1914,7 @@ namespace Horizon
                     ImGui::TextUnformatted("White Balance");
                     ImGui::NextColumn();
                     ImGui::PushItemWidth(-1);
-                    if (ImGui::DragFloat("##WhiteBalance", &renderSettings.postProcessingSettings.whiteBalance, 0.1f, 1000.0f, 25000.0f))
+                    if (ImGui::DragFloat("##WhiteBalance", &rasterizationRendererSettings.postProcessingSettings.whiteBalance, 0.1f, 1000.0f, 25000.0f))
                     {
 
                     }
@@ -1934,7 +1938,7 @@ namespace Horizon
                     ImGui::TextUnformatted("Intensity");
                     ImGui::NextColumn();
                     ImGui::PushItemWidth(-1);
-                    if (ImGui::DragFloat("##vignetteIntensity", &renderSettings.postProcessingSettings.vignetteIntensity, 0.1f, 0.0f, 100.0f))
+                    if (ImGui::DragFloat("##vignetteIntensity", &rasterizationRendererSettings.postProcessingSettings.vignetteIntensity, 0.1f, 0.0f, 100.0f))
                     {
 
                     }
@@ -1959,7 +1963,7 @@ namespace Horizon
                 ImGui::TextUnformatted("Fixed Pre-Exposure");
                 ImGui::NextColumn();
                 ImGui::PushItemWidth(-1);
-                if (ImGui::Checkbox("##FixedPreExposure", &renderSettings.enableFixedPreExposure))
+                if (ImGui::Checkbox("##FixedPreExposure", &rasterizationRendererSettings.enableFixedPreExposure))
                 {
 
                 }
@@ -1970,7 +1974,7 @@ namespace Horizon
                 ImGui::TextUnformatted("Pre-Exposure");
                 ImGui::NextColumn();
                 ImGui::PushItemWidth(-1);
-                if (ImGui::DragFloat("##PreExposure", &renderSettings.fixedPreExposure))
+                if (ImGui::DragFloat("##PreExposure", &rasterizationRendererSettings.fixedPreExposure))
                 {
 
                 }

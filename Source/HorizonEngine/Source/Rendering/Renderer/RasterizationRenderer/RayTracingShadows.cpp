@@ -56,8 +56,8 @@ namespace Horizon
                 RenderGraphPassFlags::Compute,
                 [&](RenderGraphBuilder& builder)
                 {
-                    RasterizationRendererSceneTextures& sceneTextures = renderGraph.blackboard.Get<RasterizationRendererSceneTextures>();
-                    RenderGraphTextureHandle sceneDepthTexture = builder.ReadTexture(sceneTextures.sceneDepthTexture, RenderBackendResourceState::ShaderResource);
+                    RasterizationRendererIntermediateResources& intermediateResources = renderGraph.blackboard.Get<RasterizationRendererIntermediateResources>();
+                    RenderGraphTextureHandle sceneDepthTexture = builder.ReadTexture(intermediateResources.depthTexture, RenderBackendResourceState::ShaderResource);
                     screenSpaceShadowMaskTexture = builder.WriteTexture(screenSpaceShadowMaskTexture, RenderBackendResourceState::UnorderedAccess);
 
                     return [=](RenderBackendCommandList& commandList, const RenderGraphResourceRegistry& resourceRegistry)
@@ -66,7 +66,7 @@ namespace Horizon
                         uint32 threadGroupCountY = ComputeShaderThreadGroupCount(renderResolution.height, 4);
                         uint32 threadGroupCountZ = 1;
 
-                        RayTracingScene* rayTracingScene = view.scene->GetRayTracingScene();
+                        RayTracingScene* rayTracingScene = view.GetRenderScene()->GetRayTracingScene();
 
                         RenderBackendPushConstantValues shaderConstants = {};
                         shaderConstants.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
@@ -96,8 +96,8 @@ namespace Horizon
                 RenderGraphPassFlags::RayTracing,
                 [&](RenderGraphBuilder& builder)
                 {
-                    RasterizationRendererSceneTextures& sceneTextures = renderGraph.blackboard.Get<RasterizationRendererSceneTextures>();
-                    RenderGraphTextureHandle sceneDepthTexture = builder.ReadTexture(sceneTextures.sceneDepthTexture, RenderBackendResourceState::ShaderResource);
+                    RasterizationRendererIntermediateResources& intermediateResources = renderGraph.blackboard.Get<RasterizationRendererIntermediateResources>();
+                    RenderGraphTextureHandle sceneDepthTexture = builder.ReadTexture(intermediateResources.depthTexture, RenderBackendResourceState::ShaderResource);
                     screenSpaceShadowMaskTexture = builder.WriteTexture(screenSpaceShadowMaskTexture, RenderBackendResourceState::UnorderedAccess);
 
                     return [=](RenderBackendCommandList& commandList, const RenderGraphResourceRegistry& resourceRegistry)
@@ -106,7 +106,7 @@ namespace Horizon
                         uint32 dispatchHeight = renderResolution.height;
                         uint32 dispatchDepth = 1;
 
-                        RayTracingScene* rayTracingScene = view.scene->GetRayTracingScene();
+                        RayTracingScene* rayTracingScene = view.GetRenderScene()->GetRayTracingScene();
 
                         RenderBackendPushConstantValues shaderConstants = {};
                         shaderConstants.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));

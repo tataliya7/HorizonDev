@@ -61,7 +61,7 @@ namespace Horizon
 
         for (uint32 passIndex = 0; passIndex < PostProcessingColorPyramid::MaxMipLevelCount; passIndex++)
         {
-            RenderGraphTextureDesc outputTextureDesc = RenderGraphTextureDesc::Create2D(
+            RenderGraphTextureDescription outputTextureDesc = RenderGraphTextureDescription::Create2D(
                 inputTextureWidth / 2,
                 inputTextureHeight / 2,
                 RenderBackendTextureFormat::R11G11B10Float,
@@ -71,7 +71,6 @@ namespace Horizon
 
             outputTexture = AddDownsamplePass(renderGraph, view, inputTextureWidth, inputTextureHeight, inputTextureWidth / 2, inputTextureHeight / 2, inputTexture, outputTexture);
 
-            outMipChain->textureDescs[passIndex] = outputTextureDesc;
             outMipChain->textures[passIndex] = outputTexture;
             outMipChain->mipLevelCount++;
 

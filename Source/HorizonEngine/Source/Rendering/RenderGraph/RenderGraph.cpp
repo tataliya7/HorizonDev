@@ -40,7 +40,7 @@ namespace Horizon
         return std::move(stream.str());
     }
 
-    RenderGraphTextureHandle RenderGraph::CreateTexture(const RenderGraphTextureDesc& desc, const char* name)
+    RenderGraphTextureHandle RenderGraph::CreateTexture(const RenderGraphTextureDescription& desc, const char* name)
     {
         uint32 index = (uint32)textures.size();
         RenderGraphTextureHandle handle = RenderGraphTextureHandle(index, 0);
@@ -178,6 +178,9 @@ namespace Horizon
         }
 
         RenderBackendTextureHandle renderBackendTextureHandle = externalTexture->GetHandle();
+
+        renderBackend->SetObjectName(renderBackendTextureHandle, name);
+
         RenderGraphTextureHandle found = FindExternalTexture(renderBackendTextureHandle);
         if (found)
         {
@@ -272,7 +275,7 @@ namespace Horizon
         exportedBuffers.emplace_back(exportedBuffer);
     }
 
-    const RenderGraphTextureDesc& RenderGraph::GetTextureDesc(RenderGraphTextureHandle handle) const
+    const RenderGraphTextureDescription& RenderGraph::GetTextureDesc(RenderGraphTextureHandle handle) const
     {
         return textures[handle.GetIndex()]->GetDesc();
     }

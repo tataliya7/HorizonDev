@@ -102,16 +102,16 @@ namespace Horizon
         const RenderGraphResourceType type;
     };
 
-    using RenderGraphTextureDesc = RenderBackendTextureDesc;
+    using RenderGraphTextureDescription = RenderBackendTextureDesc;
 
     class RenderGraphTexture final : public RenderGraphResource
     {
     public:
-        RenderGraphTexture(const char* name, const RenderGraphTextureDesc& desc)
+        RenderGraphTexture(const char* name, const RenderGraphTextureDescription& desc)
             : RenderGraphResource(name, RenderGraphResourceType::Texture)
             , desc(desc)
             , subresourceLayout(desc.mipLevelCount, desc.arrayLayerCount) {}
-        const RenderGraphTextureDesc& GetDesc() const
+        const RenderGraphTextureDescription& GetDesc() const
         {
             return desc;
         }
@@ -140,7 +140,7 @@ namespace Horizon
             this->finalState = initialState;
             this->intermediateState = initialState;
         }
-        const RenderGraphTextureDesc desc;
+        const RenderGraphTextureDescription desc;
         const RenderGraphTextureSubresourceLayout subresourceLayout;
         RenderGraphPersistentTexture* internalTexture = nullptr;
     };

@@ -8,17 +8,32 @@ namespace Horizon
     {
         RenderGraphDebugLabelRegion debugLabelRegion(renderGraph, "DepthPyramidGeneration");
 
-        RasterizationRendererSceneTextures& sceneTextures = renderGraph.blackboard.Get<RasterizationRendererSceneTextures>();
-        const RenderGraphTextureDesc& depthPyramidTextureDesc = sceneTextures.depthPyramidTextureDesc;
+        RasterizationRendererIntermediateResources& intermediateResources = renderGraph.blackboard.Get<RasterizationRendererIntermediateResources>();
+
+        // Hierarchical z-buffer must be aligned quad tree.
+        uint32 depthPyramidTextureWidth = Math::Max(Math::RoundUpToPowerOfTwo(renderResolution.width) >> 1, 1u);
+        uint32 depthPyramidTextureHeight = Math::Max(Math::RoundUpToPowerOfTwo(renderResolution.height) >> 1, 1u);
+        uint32 depthPyramidTextureMipLevelCount = Math::MaxMipLevelCount(depthPyramidTextureWidth, depthPyramidTextureHeight);
+
+        RenderGraphTextureDescription depthPyramidTextureDesc = RenderGraphTextureDescription::Create2D(
+            depthPyramidTextureWidth,
+            depthPyramidTextureHeight,
+            RenderBackendTextureFormat::R32Float,
+            RenderBackendTextureCreateFlags::UnorderedAccess | RenderBackendTextureCreateFlags::ShaderResource,
+            RenderBackendTextureClearValue::DepthZero,
+            depthPyramidTextureMipLevelCount);
+
+        intermediateResources.minDepthPyramidTexture = renderGraph.CreateTexture(depthPyramidTextureDesc, "MinDepthPyramidTexture");
+        intermediateResources.maxDepthPyramidTexture = renderGraph.CreateTexture(depthPyramidTextureDesc, "MaxDepthPyramidTexture");
 
         renderGraph.AddPass(
             std::format("BuildDepthPyramid-Min (Compute, {}x{})", depthPyramidTextureDesc.width, depthPyramidTextureDesc.height),
             RenderGraphPassFlags::Compute,
             [&](RenderGraphBuilder& builder)
             {
-                RenderGraphTextureHandle sceneDepthTexture = builder.ReadTexture(sceneTextures.sceneDepthTexture, RenderBackendResourceState::ShaderResource);
-                RenderGraphTextureHandle minDepthPyramidTexture = sceneTextures.minDepthPyramidTexture = builder.WriteTexture(sceneTextures.minDepthPyramidTexture, RenderBackendResourceState::UnorderedAccess);
-                //RenderGraphTextureHandle maxDepthPyramidTexture = sceneTextures.maxDepthPyramidTexture = builder.WriteTexture(sceneTextures.maxDepthPyramidTexture, RenderBackendResourceState::UnorderedAccess);
+                RenderGraphTextureHandle sceneDepthTexture = builder.ReadTexture(intermediateResources.depthTexture, RenderBackendResourceState::ShaderResource);
+                RenderGraphTextureHandle minDepthPyramidTexture = intermediateResources.minDepthPyramidTexture = builder.WriteTexture(intermediateResources.minDepthPyramidTexture, RenderBackendResourceState::UnorderedAccess);
+                //RenderGraphTextureHandle maxDepthPyramidTexture = intermediateResources.maxDepthPyramidTexture = builder.WriteTexture(intermediateResources.maxDepthPyramidTexture, RenderBackendResourceState::UnorderedAccess);
 
                 return [=](RenderBackendCommandList& commandList, const RenderGraphResourceRegistry& resourceRegistry)
                 {

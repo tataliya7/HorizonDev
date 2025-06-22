@@ -5,7 +5,7 @@ namespace Horizon
 {
     bool RasterizationRenderer::IsSurfelGIEnabled() const
     {
-        return features.enableSurfelGI;
+        return renderFeatures.enableSurfelGI;
     }
 
 //     void RasterizationRenderer::AddSurfleGIPasses(
@@ -15,7 +15,7 @@ namespace Horizon
 //         uint32 surfelGIRenderWidth = renderResolution.width;
 //         uint32 surfelGIRenderHeight = renderResolution.height;
 //
-//         auto& sceneTextures = renderGraph.blackboard.Get<RasterizationRendererSceneTextures>();
+//         auto& intermediateResources = renderGraph.blackboard.Get<RasterizationRendererSceneTextures>();
 //
 //         if (view.frameIndex == 0)
 //         {
@@ -44,8 +44,8 @@ namespace Horizon
 //         renderGraph.AddPass(std::format("SurfelGIGapFilling"), RenderGraphPassFlags::Compute,
 //             [&](RenderGraphBuilder& builder)
 //             {
-//                 auto sceneDepthTexture = builder.ReadTexture(sceneTextures.sceneDepthTexture, RenderBackendResourceState::ShaderResource);
-//                 auto gbuffer0 = builder.ReadTexture(sceneTextures.gbuffer0, RenderBackendResourceState::ShaderResource);
+//                 auto sceneDepthTexture = builder.ReadTexture(intermediateResources.sceneDepthTexture, RenderBackendResourceState::ShaderResource);
+//                 auto gbuffer0 = builder.ReadTexture(intermediateResources.gbuffer0, RenderBackendResourceState::ShaderResource);
 //
 //
 //                 {
@@ -158,15 +158,15 @@ namespace Horizon
 //         RenderGraph& renderGraph,
 //         const SceneView& view)
 //     {
-//         auto& sceneTextures = renderGraph.blackboard.Get<RasterizationRendererSceneTextures>();
+//         auto& intermediateResources = renderGraph.blackboard.Get<RasterizationRendererSceneTextures>();
 //
-//         RenderGraphTextureHandle outputTexture = renderGraph.CreateTexture(sceneTextures.sceneColorTextureDesc, "SurfelGIVisualizationTexture");
+//         RenderGraphTextureHandle outputTexture = renderGraph.CreateTexture(intermediateResources.sceneColorTextureDesc, "SurfelGIVisualizationTexture");
 //
 //         renderGraph.AddPass(std::format("SurfelGIVisualization (Compute, {}x{})", renderResolution.width, renderResolution.height), RenderGraphPassFlags::Compute,
 //             [&](RenderGraphBuilder& builder)
 //             {
-//                 auto sceneColorTexture = builder.ReadTexture(sceneTextures.sceneColorTexture, RenderBackendResourceState::ShaderResource);
-//                 auto sceneDepthTexture = builder.ReadTexture(sceneTextures.sceneDepthTexture, RenderBackendResourceState::ShaderResource);
+//                 auto sceneColorTexture = builder.ReadTexture(intermediateResources.sceneColorTexture, RenderBackendResourceState::ShaderResource);
+//                 auto sceneDepthTexture = builder.ReadTexture(intermediateResources.sceneDepthTexture, RenderBackendResourceState::ShaderResource);
 //
 //                 outputTexture = builder.WriteTexture(outputTexture, RenderBackendResourceState::UnorderedAccess);
 //
@@ -194,7 +194,7 @@ namespace Horizon
 //                 };
 //             });
 //
-//         sceneTextures.sceneColorTexture = outputTexture;
+//         intermediateResources.sceneColorTexture = outputTexture;
 //
 //         return outputTexture;
 //     }

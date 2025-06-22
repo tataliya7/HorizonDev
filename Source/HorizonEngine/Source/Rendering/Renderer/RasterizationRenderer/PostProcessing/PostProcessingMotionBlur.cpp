@@ -7,11 +7,6 @@ namespace Horizon
     static constexpr uint32 GMotionBlurTileSize = 16;
     static constexpr uint32 GMotionBlurVelocityDilationQuadCountPerInstance = 8;
 
-    bool RasterizationRenderer::IsMotionBlurEnabled() const
-    {
-        return features.enableMotionBlur;
-    }
-
     RenderGraphTextureHandle RasterizationRenderer::DispatchMotionBlur(
         RenderGraph& renderGraph,
         const SceneView& view,
@@ -25,14 +20,14 @@ namespace Horizon
         const uint32 tileCountY = Math::CeilDiv(renderResolution.height, GMotionBlurTileSize);
         const uint32 tileCount = tileCountX * tileCountY;
 
-        RenderGraphTextureDesc velocityAndDepthTextureDesc = RenderGraphTextureDesc::Create2D(
+        RenderGraphTextureDescription velocityAndDepthTextureDesc = RenderGraphTextureDescription::Create2D(
             renderResolution.width,
             renderResolution.height,
             RenderBackendTextureFormat::R32G32Float,
             RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::UnorderedAccess);
         RenderGraphTextureHandle velocityAndDepthTexture = renderGraph.CreateTexture(velocityAndDepthTextureDesc, "MotionBlurVelocityAndDepthTexture");
 
-        RenderGraphTextureDesc velocityRangeTextureDesc = RenderGraphTextureDesc::Create2D(
+        RenderGraphTextureDescription velocityRangeTextureDesc = RenderGraphTextureDescription::Create2D(
             tileCountX,
             tileCountY,
             RenderBackendTextureFormat::R16G16B16A16Float,
@@ -78,7 +73,7 @@ namespace Horizon
                 };
             });
 
-        RenderGraphTextureDesc velocityDilationDepthTextureDesc = RenderGraphTextureDesc::Create2D(
+        RenderGraphTextureDescription velocityDilationDepthTextureDesc = RenderGraphTextureDescription::Create2D(
             tileCountX,
             tileCountY,
             RenderBackendTextureFormat::D16Unorm,
@@ -154,7 +149,7 @@ namespace Horizon
                 };
             });
 
-        RenderGraphTextureDesc motionBlurColorTextureDesc = RenderGraphTextureDesc::Create2D(
+        RenderGraphTextureDescription motionBlurColorTextureDesc = RenderGraphTextureDescription::Create2D(
             targetResolution.width,
             targetResolution.height,
             RenderBackendTextureFormat::R11G11B10Float,

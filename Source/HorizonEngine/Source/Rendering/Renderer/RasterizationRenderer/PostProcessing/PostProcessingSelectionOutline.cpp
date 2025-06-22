@@ -14,14 +14,14 @@
 
 namespace Horizon
 {
-    RenderGraphTextureHandle RasterizationRenderer::AddEditorSelectionOutlinePass(
+    RenderGraphTextureHandle RasterizationRenderer::DispatchEditorSelectionOutline(
         RenderGraph& renderGraph,
         const SceneView& view,
         RenderGraphTextureHandle sceneColorTexture)
     {
         RenderGraphDebugLabelRegion debugLabelRegion(renderGraph, "EditorSelectionOutline");
 
-        RenderGraphTextureDesc maskTextureDesc = RenderGraphTextureDesc::Create2D(
+        RenderGraphTextureDescription maskTextureDesc = RenderGraphTextureDescription::Create2D(
             targetResolution.width,
             targetResolution.height,
             RenderBackendTextureFormat::R8Unorm,
@@ -72,7 +72,7 @@ namespace Horizon
                 };
             });
 
-        RenderGraphTextureDesc jumpFloodTextureDesc = RenderGraphTextureDesc::Create2D(
+        RenderGraphTextureDescription jumpFloodTextureDesc = RenderGraphTextureDescription::Create2D(
             targetResolution.width,
             targetResolution.height,
             RenderBackendTextureFormat::R16G16B16A16Float,

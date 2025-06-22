@@ -32,4 +32,34 @@ namespace Horizon
         clipToWorldMatrix = viewToWorldMatrix * clipToViewMatrix;
         viewSpaceDepthToNDCSpaceDepthTransform = ComputeViewSpaceDepthToNDCSpaceDepthTransform(viewToClipMatrix);
     }
+
+    SceneView::SceneView(const SceneViewDescription& description)
+        : scene(description.scene)
+        , renderSettings(description.renderSettings)
+        , deltaTimeInSeconds(description.deltaTimeInSeconds)
+        , frameIndex(description.frameIndex)
+        , reset(description.reset)
+        , enableInfiniteFarClippingPlane(false)
+        , cameraPosition(description.cameraPosition)
+        , cameraRotation(description.cameraRotation)
+        , cameraUpVector(description.cameraUpVector)
+        , cameraRightVector(description.cameraRightVector)
+        , cameraForwardVector(description.cameraForwardVector)
+        , verticalFOV(description.verticalFOV)
+        , tanHalfVerticalFOV(std::tan(verticalFOV * 0.5f))
+        , aspectRatio(description.aspectRatio)
+        , nearClippingPlane(description.nearClippingPlane)
+        , farClippingPlane(description.farClippingPlane)
+        , backgroundColor(description.backgroundColor)
+        , targetWidth(description.targetWidth)
+        , targetHeight(description.targetHeight)
+        , targetTexture(description.targetTexture)
+        , displayWidth(description.displayWidth)
+        , displayHeight(description.displayHeight)
+        , swapChain(description.swapChain)
+        , cursorPosition(description.cursorPosition)
+    {
+        transformations.Update(cameraPosition, cameraRotation, verticalFOV, aspectRatio, nearClippingPlane, farClippingPlane);
+        SetupViewFrustum();
+    }
 }

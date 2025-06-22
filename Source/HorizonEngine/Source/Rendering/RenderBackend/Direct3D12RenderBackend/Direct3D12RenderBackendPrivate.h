@@ -1023,7 +1023,8 @@ namespace Horizon
                 .Flags = GetD3D12ResourceFlags(desc->flags)
             };
 
-            D3D12MA::ALLOCATION_DESC allocationDesc = {
+            D3D12MA::ALLOCATION_DESC allocationDesc =
+            {
                 .Flags = D3D12MA::ALLOCATION_FLAG_NONE,
                 .HeapType = D3D12_HEAP_TYPE_DEFAULT,
                 .ExtraHeapFlags = D3D12_HEAP_FLAG_NONE, // TODO
@@ -2662,6 +2663,16 @@ namespace Horizon
         RenderBackendRayTracingAccelerationStructureHandle CreateRayTracingTopLevelAccelerationStructure(const RenderBackendRayTracingTopLevelAccelerationStructureDesc* desc, const char* name) override;
         RenderBackendRayTracingPipelineStateHandle CreateRayTracingPipelineState(const RenderBackendRayTracingPipelineStateDesc* desc, const char* name) override;
         RenderBackendBufferHandle CreateRayTracingShaderBindingTable(const RenderBackendRayTracingShaderBindingTableDesc* desc, const char* name) override;
+        void SetObjectName(RenderBackendTextureHandle handle, const char* name) override
+        {
+            D3D12Texture* texture = devices[0]->GetTexture(handle);
+            texture->GetID3D12Resource()->SetName(D3D12Utils::Widen(name).c_str());
+        }
+        void SetObjectName(RenderBackendBufferHandle handle, const char* name) override
+        {
+            D3D12Buffer* buffer = devices[0]->GetBuffer(handle);
+            buffer->GetID3D12Resource()->SetName(D3D12Utils::Widen(name).c_str());
+        }
         bool IsTearingSupported() const
         {
             return tearingSupported;

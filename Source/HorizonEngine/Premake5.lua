@@ -8,6 +8,10 @@ project "HorizonEngine"
     targetdir "%{wks.location}/Build/Bin/%{cfg.buildcfg}"
     scanformoduledependencies "true"
 
+    defines {
+        "HORIZON_EDITOR=1",
+    }
+
     files {
         "**.lua",
         "**.ini",

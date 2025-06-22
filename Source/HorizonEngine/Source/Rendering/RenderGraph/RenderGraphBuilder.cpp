@@ -3,7 +3,7 @@
 
 namespace Horizon
 {
-    RenderGraphTextureHandle RenderGraphBuilder::CreateTransientTexture(const RenderGraphTextureDesc& desc, const char* name)
+    RenderGraphTextureHandle RenderGraphBuilder::CreateTransientTexture(const RenderGraphTextureDescription& desc, const char* name)
     {
         return RenderGraphTextureHandle();
     }

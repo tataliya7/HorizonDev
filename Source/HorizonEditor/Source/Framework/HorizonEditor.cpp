@@ -134,7 +134,7 @@ namespace Horizon
         swapChainHeight = window->GetHeight();
 
         RenderBackendTextureFormat targetTextureFormat = RenderBackendTextureFormat::R10G10B10A2Unorm;
-        RenderGraphTextureDesc targetTextureDesc = RenderGraphTextureDesc::Create2D(
+        RenderGraphTextureDescription targetTextureDesc = RenderGraphTextureDescription::Create2D(
             swapChainWidth,
             swapChainHeight,
             targetTextureFormat,
@@ -145,7 +145,7 @@ namespace Horizon
             RenderBackendResourceState::ShaderResource); // TODO: handle transition
         targetTexture = renderGraphResourcePool->AllocateTexture(targetTextureDesc, "SceneViewTexture");
 
-        RenderGraphTextureDesc previewTextureDesc = RenderGraphTextureDesc::Create2D(
+        RenderGraphTextureDescription previewTextureDesc = RenderGraphTextureDescription::Create2D(
             previewTextureWidth,
             previewTextureHeight,
             targetTextureFormat,
@@ -270,14 +270,16 @@ namespace Horizon
         editorCamera.cameraSpeed = 1.0f;
         editorCamera.overrideAspectRatio = false;
 
-        renderSettings.globalIlluminationSettings.indirectLightingIntensity = 1.0f;
-        renderSettings.shadowsTechnique = ShadowsTechnique::ShadowMap;
-        renderSettings.reflectionsTechnique = ReflectionsTechnique::ScreenSpaceReflections;
-        renderSettings.superSamplingSettings.superSamplingTechnique = SuperSamplingTechnique::FSR;
-        renderSettings.superSamplingSettings.qualityMode = 5;
-        renderSettings.superSamplingSettings.desiredRenderResolutionPercentage = 1.0f;
-        renderSettings.postProcessingSettings.localToneMappingMethod = LocalToneMappingMethod::BilateralGrid;
-        renderSettings.postProcessingSettings.bilateralGridLocalToneMappingShadows = 0.8f;
+        renderSettings.renderMode = RenderMode::RasterRendering;
+        renderSettings.rasterRenderingSettings.debugVisualizationMode = RasterizationRendererDebugVisualizationMode::Lighting;
+        renderSettings.rasterRenderingSettings.globalIlluminationSettings.indirectLightingIntensity = 1.0f;
+        renderSettings.rasterRenderingSettings.shadowsTechnique = RasterizationRendererShadowsTechnique::ShadowMaps;
+        renderSettings.rasterRenderingSettings.reflectionsTechnique = RasterizationRendererReflectionsTechnique::ScreenSpaceReflections;
+        renderSettings.rasterRenderingSettings.superSamplingSettings.superSamplingTechnique = SuperSamplingTechnique::FSR;
+        renderSettings.rasterRenderingSettings.superSamplingSettings.qualityMode = 5;
+        renderSettings.rasterRenderingSettings.superSamplingSettings.desiredRenderResolutionPercentage = 1.0f;
+        renderSettings.rasterRenderingSettings.postProcessingSettings.localToneMappingMethod = LocalToneMappingMethod::BilateralGrid;
+        renderSettings.rasterRenderingSettings.postProcessingSettings.bilateralGridLocalToneMappingShadows = 0.8f;
 
 //        ShaderGraphSystemInit();
 //
@@ -375,284 +377,48 @@ namespace Horizon
         Vector3f cameraForwardVector = Math::Normalize(cameraOrientation * Vector3f(0.0f, 1.0f, 0.0f));
         Vector3f cameraUpVector      = Math::Normalize(cameraOrientation * Vector3f(0.0f, 0.0f, 1.0f));
 
-        SceneView sceneView = {};
-        sceneView.frameIndex = frameIndex;
-        sceneView.deltaTimeInSeconds = deltaTimeInSeconds;
-        sceneView.scene = editorSceneManager->GetActiveScene()->GetRenderScene();
-        sceneView.renderSettings = renderSettings;
-        sceneView.debugVisualizationMode = currentDebugVisualizationMode;
-        sceneView.reset = false;
-        sceneView.cameraPosition = editorCamera.GetPosition();
-        sceneView.cameraRotation = editorCamera.GetRotation();
-        sceneView.cameraUpVector = cameraUpVector;
-        sceneView.cameraRightVector = cameraRightVector;
-        sceneView.cameraForwardVector = cameraForwardVector;
-        sceneView.verticalFOV = editorCamera.fieldOfView;
+        RenderScene* renderScene = editorSceneManager->GetActiveScene()->GetRenderScene();
+
+        float verticalFOV = editorCamera.fieldOfView;
         if (editorCamera.fieldOfViewAxis == FieldOfViewAxis::Horizontal)
         {
-            sceneView.verticalFOV = HorizontalFOVToVerticalFOV(editorCamera.fieldOfView, editorCamera.aspectRatio);
+            verticalFOV = HorizontalFOVToVerticalFOV(editorCamera.fieldOfView, editorCamera.aspectRatio);
         }
-        sceneView.aspectRatio = editorCamera.aspectRatio;
-        sceneView.tanHalfVerticalFOV = std::tan(editorCamera.fieldOfView * 0.5f);
-        sceneView.nearClippingPlane = std::max(editorCamera.nearClippingPlane, MinNearClippingPlane);
-        sceneView.farClippingPlane = editorCamera.farClippingPlane;
-        sceneView.backgroundColor = Vector3f(0.0f, 0.0f, 0.0f);
-        sceneView.targetWidth = swapChainWidth;
-        sceneView.targetHeight = swapChainHeight;
-        sceneView.targetTexture = targetTexture;
-        sceneView.displayWidth = swapChainWidth;
-        sceneView.displayHeight = swapChainHeight;
 
-        sceneView.transformations.Update(sceneView.cameraPosition, sceneView.cameraRotation, sceneView.verticalFOV, sceneView.aspectRatio, sceneView.nearClippingPlane, sceneView.farClippingPlane);
-        sceneView.SetupViewFrustum();
+        SceneViewDescription sceneViewDescription = {};
+        sceneViewDescription.scene = renderScene;
+        sceneViewDescription.frameIndex = frameIndex;
+        sceneViewDescription.deltaTimeInSeconds = deltaTimeInSeconds;
+        sceneViewDescription.renderSettings = renderSettings;
+        sceneViewDescription.reset = false;
+        sceneViewDescription.cameraPosition = editorCamera.GetPosition();
+        sceneViewDescription.cameraRotation = editorCamera.GetRotation();
+        sceneViewDescription.cameraUpVector = cameraUpVector;
+        sceneViewDescription.cameraRightVector = cameraRightVector;
+        sceneViewDescription.cameraForwardVector = cameraForwardVector;
+        sceneViewDescription.verticalFOV = verticalFOV;
+        sceneViewDescription.aspectRatio = editorCamera.aspectRatio;
+        sceneViewDescription.nearClippingPlane = std::max(editorCamera.nearClippingPlane, MinimumNearClippingPlane);
+        sceneViewDescription.farClippingPlane = editorCamera.farClippingPlane;
+        sceneViewDescription.backgroundColor = Vector3f(0.0f, 0.0f, 0.0f);
+        sceneViewDescription.targetWidth = swapChainWidth;
+        sceneViewDescription.targetHeight = swapChainHeight;
+        sceneViewDescription.targetTexture = targetTexture;
+        sceneViewDescription.displayWidth = swapChainWidth;
+        sceneViewDescription.displayHeight = swapChainHeight;
 
-        viewMatrix_deprecated = sceneView.transformations.worldToViewMatrix;
-        projectionMatrix_deprecated = sceneView.transformations.viewToClipMatrix;
+        SceneView sceneView(sceneViewDescription);
+
+        viewMatrix_deprecated = sceneView.GetWorldToViewMatrix();
+        projectionMatrix_deprecated = sceneView.GetViewToClipMatrix();
 
         RenderBackendCommandList* commandListUpload = new RenderBackendCommandList(GArena);
         engine->GetSubsystem<RenderSystem>()->UpdateImGuiData(commandListUpload);
-        sceneView.scene->UpdateGPUScene(commandListUpload);
+        renderScene->UpdateGPUScene(commandListUpload);
         renderBackend->SubmitCommandLists(&commandListUpload, 1, RenderBackendSwapChainHandle::Null);
         delete commandListUpload;
 
-        SceneView previewSceneView = {};
-
-        bool renderPreview = false;
-        if (preview)
-        {
-            if (editorSceneManager->GetActiveScene()->GetEntityManager()->HasEntity(selectedEntity) && editorSceneManager->GetActiveScene()->GetEntityManager()->HasComponent<CameraComponent>(selectedEntity))
-            {
-                CameraComponent& previewCamera = editorSceneManager->GetActiveScene()->GetEntityManager()->GetComponent<CameraComponent>(selectedEntity);
-                TransformComponent& transform = editorSceneManager->GetActiveScene()->GetEntityManager()->GetComponent<TransformComponent>(selectedEntity);
-
-                Quaternion previewCameraOrientation = Math::QuaternionFromEulerAngles(Math::DegreesToRadians(transform.rotation));
-
-                Vector3f preivewCameraUpVector = Math::Normalize(previewCameraOrientation * Vector3f(0.0f, 0.0f, 1.0f));
-                Vector3f preivewCameraRightVector = Math::Normalize(previewCameraOrientation * Vector3f(1.0f, 0.0f, 0.0f));
-                Vector3f preivewCameraForwardVector = Math::Normalize(previewCameraOrientation * Vector3f(0.0f, 1.0f, 0.0f));
-
-                previewSceneView.frameIndex = frameIndex;
-                previewSceneView.deltaTimeInSeconds = deltaTimeInSeconds;
-                previewSceneView.scene = editorSceneManager->GetActiveScene()->GetRenderScene();
-                previewSceneView.renderSettings = renderSettings;
-                previewSceneView.debugVisualizationMode = currentDebugVisualizationMode;
-                previewSceneView.reset = false;
-                previewSceneView.cameraPosition = transform.position;
-                previewSceneView.cameraRotation = transform.rotation;
-                previewSceneView.cameraUpVector = preivewCameraUpVector;
-                previewSceneView.cameraRightVector = preivewCameraRightVector;
-                previewSceneView.cameraForwardVector = preivewCameraForwardVector;
-                previewSceneView.verticalFOV = previewCamera.fieldOfView;
-                if (previewCamera.fieldOfViewAxis == FieldOfViewAxis::Horizontal)
-                {
-                    previewSceneView.verticalFOV = HorizontalFOVToVerticalFOV(previewCamera.fieldOfView, previewCamera.aspectRatio);
-                }
-                previewSceneView.aspectRatio = previewCamera.aspectRatio;
-                previewSceneView.tanHalfVerticalFOV = std::tan(previewCamera.fieldOfView * 0.5f);
-                previewSceneView.nearClippingPlane = std::max(previewCamera.nearClippingPlane, MinNearClippingPlane);
-                previewSceneView.farClippingPlane = previewCamera.farClippingPlane;
-                previewSceneView.backgroundColor = Vector3f(0.0f, 0.0f, 0.0f);
-                previewSceneView.targetWidth = previewTextureWidth;
-                previewSceneView.targetHeight = previewTextureHeight;
-                previewSceneView.targetTexture = previewTexture;
-                previewSceneView.displayWidth = previewTextureWidth;
-                previewSceneView.displayHeight = previewTextureHeight;
-                previewSceneView.transformations.Update(previewSceneView.cameraPosition, previewSceneView.cameraRotation, previewSceneView.verticalFOV, previewSceneView.aspectRatio, previewSceneView.nearClippingPlane, previewSceneView.farClippingPlane);
-                previewSceneView.SetupViewFrustum();
-
-                renderPreview = true;
-            }
-            else
-            {
-                // Clear preview texture
-            }
-        }
-
-        if (renderPreview)
-        {
-            float distanceNear = previewSceneView.nearClippingPlane;
-            float distanceFar = previewSceneView.farClippingPlane;
-            float uLenNear = distanceNear * previewSceneView.tanHalfVerticalFOV;
-            float rLenNear = uLenNear * previewSceneView.aspectRatio;
-            float uLenFar = distanceFar * previewSceneView.tanHalfVerticalFOV;
-            float rLenFar = uLenFar * previewSceneView.aspectRatio;
-            Vector3f uNear = uLenNear * previewSceneView.cameraUpVector;
-            Vector3f rNear = rLenNear * previewSceneView.cameraRightVector;
-            Vector3f uFar = uLenFar * previewSceneView.cameraUpVector;
-            Vector3f rFar = rLenFar * previewSceneView.cameraRightVector;
-            Vector3f nearCenterPoint = previewSceneView.cameraPosition + distanceNear * previewSceneView.cameraForwardVector;
-            Vector3f farCenterPoint = previewSceneView.cameraPosition + distanceFar * previewSceneView.cameraForwardVector;
-
-            Vector3f corners[8];
-            corners[0] = nearCenterPoint - uNear - rNear; // left-bottom
-            corners[1] = nearCenterPoint - uNear + rNear; // right-bottom
-            corners[2] = nearCenterPoint + uNear - rNear; // left-up
-            corners[3] = nearCenterPoint + uNear + rNear; // right-up
-            corners[4] = farCenterPoint - uFar - rFar; // left-bottom
-            corners[5] = farCenterPoint - uFar + rFar; // right-bottom
-            corners[6] = farCenterPoint + uFar - rFar; // left-up
-            corners[7] = farCenterPoint + uFar + rFar; // right-up
-
-            renderer->DrawLine(corners[0], corners[1], Vector4f(1.0f, 0.0f, 0.0f, 1.0f), 1.0f, 0);
-            renderer->DrawLine(corners[1], corners[3], Vector4f(1.0f, 0.0f, 0.0f, 1.0f), 1.0f, 0);
-            renderer->DrawLine(corners[2], corners[3], Vector4f(1.0f, 0.0f, 0.0f, 1.0f), 1.0f, 0);
-            renderer->DrawLine(corners[2], corners[0], Vector4f(1.0f, 0.0f, 0.0f, 1.0f), 1.0f, 0);
-            renderer->DrawLine(corners[0+4], corners[1+4], Vector4f(1.0f, 0.0f, 0.0f, 1.0f), 1.0f, 0);
-            renderer->DrawLine(corners[1+4], corners[3+4], Vector4f(1.0f, 0.0f, 0.0f, 1.0f), 1.0f, 0);
-            renderer->DrawLine(corners[2+4], corners[3+4], Vector4f(1.0f, 0.0f, 0.0f, 1.0f), 1.0f, 0);
-            renderer->DrawLine(corners[2+4], corners[0+4], Vector4f(1.0f, 0.0f, 0.0f, 1.0f), 1.0f, 0);
-            renderer->DrawLine(corners[0], corners[4], Vector4f(1.0f, 0.0f, 0.0f, 1.0f), 1.0f, 0);
-            renderer->DrawLine(corners[1], corners[5], Vector4f(1.0f, 0.0f, 0.0f, 1.0f), 1.0f, 0);
-            renderer->DrawLine(corners[2], corners[6], Vector4f(1.0f, 0.0f, 0.0f, 1.0f), 1.0f, 0);
-            renderer->DrawLine(corners[3], corners[7], Vector4f(1.0f, 0.0f, 0.0f, 1.0f), 1.0f, 0);
-
-            previewSceneView.transformations.Finalize();
-
-            uint32 mi = 0;
-            for (auto meshlet : sceneView.scene->meshlets)
-            {
-                if (mi == 501)
-                {
-                    Vector3f vmin = meshlet.boundingBoxCenter - meshlet.boundingBoxExtent;
-                    Vector3f vmax = meshlet.boundingBoxCenter + meshlet.boundingBoxExtent;
-
-                    Vector3f cornerst[8] =
-                    {
-                        Vector3f(vmin.x, vmin.y, vmin.z),
-                        Vector3f(vmin.x, vmax.y, vmin.z),
-                        Vector3f(vmin.x, vmin.y, vmax.z),
-                        Vector3f(vmin.x, vmax.y, vmax.z),
-                        Vector3f(vmax.x, vmin.y, vmin.z),
-                        Vector3f(vmax.x, vmax.y, vmin.z),
-                        Vector3f(vmax.x, vmin.y, vmax.z),
-                        Vector3f(vmax.x, vmax.y, vmax.z)
-                    };
-
-                    for (uint32 i = 0; i < 8; i++)
-                    {
-                        cornerst[i] = glm::scale(Matrix4x4f(1.0f), Vector3f(0.01f, 0.01f, 0.01f)) * Vector4f(cornerst[i], 1.0f);
-                    }
-
-                    bool visible = true;
-                    for (uint32 i = 0; i < 6; i++)
-                    {
-                        Vector4f p = Vector4f(previewSceneView.viewFrustum.planes[i].normal, previewSceneView.viewFrustum.planes[i].distance);
-                        if ((glm::dot(p, Vector4f(cornerst[0], 1.0f)) < 0.0f) &&
-                            (glm::dot(p, Vector4f(cornerst[1], 1.0f)) < 0.0f) &&
-                            (glm::dot(p, Vector4f(cornerst[2], 1.0f)) < 0.0f) &&
-                            (glm::dot(p, Vector4f(cornerst[3], 1.0f)) < 0.0f) &&
-                            (glm::dot(p, Vector4f(cornerst[4], 1.0f)) < 0.0f) &&
-                            (glm::dot(p, Vector4f(cornerst[5], 1.0f)) < 0.0f) &&
-                            (glm::dot(p, Vector4f(cornerst[6], 1.0f)) < 0.0f) &&
-                            (glm::dot(p, Vector4f(cornerst[7], 1.0f)) < 0.0f))
-                        {
-                            visible = false;
-                            break;
-                        }
-                    }
-
-                    if (visible)
-                    {
-                        renderer->DrawLine(cornerst[0], cornerst[1], Vector4f(1.0f, 0.0f, 0.0f, 1.0f), 1.0f, 0);
-                        renderer->DrawLine(cornerst[1], cornerst[3], Vector4f(1.0f, 0.0f, 0.0f, 1.0f), 1.0f, 0);
-                        renderer->DrawLine(cornerst[2], cornerst[3], Vector4f(1.0f, 0.0f, 0.0f, 1.0f), 1.0f, 0);
-                        renderer->DrawLine(cornerst[2], cornerst[0], Vector4f(1.0f, 0.0f, 0.0f, 1.0f), 1.0f, 0);
-                        renderer->DrawLine(cornerst[0 + 4], cornerst[1 + 4], Vector4f(1.0f, 0.0f, 0.0f, 1.0f), 1.0f, 0);
-                        renderer->DrawLine(cornerst[1 + 4], cornerst[3 + 4], Vector4f(1.0f, 0.0f, 0.0f, 1.0f), 1.0f, 0);
-                        renderer->DrawLine(cornerst[2 + 4], cornerst[3 + 4], Vector4f(1.0f, 0.0f, 0.0f, 1.0f), 1.0f, 0);
-                        renderer->DrawLine(cornerst[2 + 4], cornerst[0 + 4], Vector4f(1.0f, 0.0f, 0.0f, 1.0f), 1.0f, 0);
-                        renderer->DrawLine(cornerst[0], cornerst[4], Vector4f(1.0f, 0.0f, 0.0f, 1.0f), 1.0f, 0);
-                        renderer->DrawLine(cornerst[1], cornerst[5], Vector4f(1.0f, 0.0f, 0.0f, 1.0f), 1.0f, 0);
-                        renderer->DrawLine(cornerst[2], cornerst[6], Vector4f(1.0f, 0.0f, 0.0f, 1.0f), 1.0f, 0);
-                        renderer->DrawLine(cornerst[3], cornerst[7], Vector4f(1.0f, 0.0f, 0.0f, 1.0f), 1.0f, 0);
-                    }
-                }
-
-                mi++;
-            }
-
-            LightRenderObject* sunLight = editorSceneManager->GetActiveScene()->GetRenderScene()->GetAtmosphericLight();
-            uint32 shadowCascadeCount = sunLight->shadowCascadeCount;
-            float shadowCascadeSplitLambda = sunLight->shadowCascadeSplitLambda;
-            float cameraNearClippingPlane = previewSceneView.nearClippingPlane;
-            float cameraFarClippingPlane = previewSceneView.farClippingPlane;
-            float tanHalfVerticalFOV = previewSceneView.tanHalfVerticalFOV;
-            float aspectRatio = previewSceneView.aspectRatio;
-            Matrix4x4f inverseViewMatrix = previewSceneView.transformations.viewToWorldMatrix;
-            Vector3f lightDirection = sunLight->GetDirection();
-            const float maxShadowDistance = std::min(sunLight->maxShadowDistance, cameraFarClippingPlane);
-
-            for (uint32 cascadeIndex = 0; cascadeIndex < shadowCascadeCount; cascadeIndex++)
-            {
-                float cascadeStartDistance = CascadedShadowMapPracticalSplitScheme(cascadeIndex, shadowCascadeCount, cameraNearClippingPlane, maxShadowDistance, shadowCascadeSplitLambda);
-                float cascadeEndDistance = CascadedShadowMapPracticalSplitScheme(cascadeIndex + 1, shadowCascadeCount, cameraNearClippingPlane, maxShadowDistance, shadowCascadeSplitLambda);
-
-#if 1
-                float halfCascadeFrustumNearPlaneExtentX = cascadeStartDistance * tanHalfVerticalFOV * aspectRatio;
-                float halfCascadeFrustumNearPlaneExtentY = cascadeStartDistance * tanHalfVerticalFOV;
-
-                float halfCascadeFrustumFarPlaneExtentX = cascadeEndDistance * tanHalfVerticalFOV * aspectRatio;
-                float halfCascadeFrustumFarPlaneExtentY = cascadeEndDistance * tanHalfVerticalFOV;
-
-                Vector4f cascadeFrustumCorners[8] =
-                {
-                    Vector4f( halfCascadeFrustumNearPlaneExtentX,  halfCascadeFrustumNearPlaneExtentY, -cascadeStartDistance, 1.0f), // top right
-                    Vector4f( halfCascadeFrustumNearPlaneExtentX, -halfCascadeFrustumNearPlaneExtentY, -cascadeStartDistance, 1.0f), // bottom right
-                    Vector4f(-halfCascadeFrustumNearPlaneExtentX,  halfCascadeFrustumNearPlaneExtentY, -cascadeStartDistance, 1.0f), // top left
-                    Vector4f(-halfCascadeFrustumNearPlaneExtentX, -halfCascadeFrustumNearPlaneExtentY, -cascadeStartDistance, 1.0f), // bottom left
-                    Vector4f( halfCascadeFrustumFarPlaneExtentX,  halfCascadeFrustumFarPlaneExtentY, -cascadeEndDistance, 1.0f), // top right
-                    Vector4f( halfCascadeFrustumFarPlaneExtentX, -halfCascadeFrustumFarPlaneExtentY, -cascadeEndDistance, 1.0f), // bottom right
-                    Vector4f(-halfCascadeFrustumFarPlaneExtentX,  halfCascadeFrustumFarPlaneExtentY, -cascadeEndDistance, 1.0f), // top left
-                    Vector4f(-halfCascadeFrustumFarPlaneExtentX, -halfCascadeFrustumFarPlaneExtentY, -cascadeEndDistance, 1.0f)  // bottom left
-                };
-
-                Vector3f boundingSphereCenter = Vector3f(0.0f, 0.0f, 0.0f);
-                for (uint32 i = 0; i < 8; i++)
-                {
-                    cascadeFrustumCorners[i] = inverseViewMatrix * cascadeFrustumCorners[i];
-                    boundingSphereCenter += Vector3f(cascadeFrustumCorners[i].x, cascadeFrustumCorners[i].y, cascadeFrustumCorners[i].z);
-                }
-                boundingSphereCenter /= 8.0f;
-
-                float boundingSphereRadius = 0.0f;
-                for (uint32 i = 0; i < 8; i++)
-                {
-                    float distance = glm::length(Vector3f(cascadeFrustumCorners[i].x, cascadeFrustumCorners[i].y, cascadeFrustumCorners[i].z) - boundingSphereCenter);
-                    boundingSphereRadius = glm::max(boundingSphereRadius, distance);
-                }
-                boundingSphereRadius = std::ceil(boundingSphereRadius); // Use the ceilling function to increase stability.
-
-                Vector4f boundingSphere = Vector4f(boundingSphereCenter.x, boundingSphereCenter.y, boundingSphereCenter.z, boundingSphereRadius);
-#else
-                Vector4f viewSpaceBoundingSphere = ComputeViewSpaceShadowCascadeMinimumBoundingSphere(cascadeStartDistance, cascadeEndDistance, tanHalfVerticalFOV, aspectRatio);
-                float boundingSphereRadius = std::ceil(viewSpaceBoundingSphere.w); // Use the ceilling function to increase stability.
-
-                Vector4f viewSpaceBoundingSphereCenter = Vector4f(viewSpaceBoundingSphere.x, viewSpaceBoundingSphere.y, viewSpaceBoundingSphere.z, 1.0f);
-
-                Vector4f boundingSphere = inverseViewMatrix * viewSpaceBoundingSphereCenter;
-                boundingSphere.w = boundingSphereRadius;
-
-                Vector3f boundingSphereCenter = Vector3f(boundingSphere.x, boundingSphere.y, boundingSphere.z);
-#endif
-                float minZ = -100.0f;//-boundingSphereRadius;
-                float maxZ = boundingSphereRadius;
-
-                Matrix4x4f viewMatrix = glm::lookAt(boundingSphereCenter, boundingSphereCenter + lightDirection, Vector3f(0.0f, 1.0f, 0.0f));
-                Matrix4x4f projectionMatrix = Math::OrthographicProjection_ReverseZ_ZO(-boundingSphereRadius, boundingSphereRadius, -boundingSphereRadius, boundingSphereRadius, minZ, maxZ);
-
-                renderer->DrawSphere(boundingSphereCenter, boundingSphereRadius, Vector4f(1.0f, 0.0f, 0.0f, 1.0f));
-
-                Vector3f fff = previewSceneView.cameraPosition + cascadeEndDistance * previewSceneView.cameraForwardVector;
-                renderer->DrawLine(previewSceneView.cameraPosition + float(cascadeIndex) * previewSceneView.cameraRightVector, fff + float(cascadeIndex) * previewSceneView.cameraRightVector, Vector4f(1.0f, 0.0f, 0.0f, 1.0f), 1.0f, 0);
-            }
-        }
-
         engine->GetSubsystem<RenderSystem>()->RenderSceneView(renderer, &sceneView);
-
-        if (renderPreview)
-        {
-            engine->GetSubsystem<RenderSystem>()->RenderSceneView(previewRenderer, &previewSceneView);
-        }
 
         RenderBackendCommandList* commandList = new RenderBackendCommandList(GArena);
 

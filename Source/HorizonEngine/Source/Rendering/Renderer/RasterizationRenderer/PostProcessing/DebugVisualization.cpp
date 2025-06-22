@@ -3,11 +3,11 @@
 
 namespace Horizon
 {
-    RenderGraphTextureHandle RasterizationRenderer::AddVisualizeDepthPass(
+    RenderGraphTextureHandle RasterizationRenderer::DispatchDepthDebugVisualization(
         RenderGraph& renderGraph,
         const SceneView& view)
     {
-        const RasterizationRendererSceneTextures& sceneTextures = renderGraph.blackboard.Get<RasterizationRendererSceneTextures>();
+        const RasterizationRendererIntermediateResources& intermediateResources = renderGraph.blackboard.Get<RasterizationRendererIntermediateResources>();
 
         // TODO
         RenderGraphTextureHandle outputTexture = renderGraph.ImportExternalTexture(view.targetTexture, "TargetTexture");
@@ -18,7 +18,7 @@ namespace Horizon
             RenderGraphPassFlags::Compute,
             [&](RenderGraphBuilder& builder)
             {
-                RenderGraphTextureHandle sceneDepthTexture = builder.ReadTexture(sceneTextures.sceneDepthTexture, RenderBackendResourceState::ShaderResource);
+                RenderGraphTextureHandle sceneDepthTexture = builder.ReadTexture(intermediateResources.depthTexture, RenderBackendResourceState::ShaderResource);
 
                 outputTexture = builder.WriteTexture(outputTexture, RenderBackendResourceState::UnorderedAccess);
 
@@ -47,11 +47,11 @@ namespace Horizon
         return outputTexture;
     }
 
-    RenderGraphTextureHandle RasterizationRenderer::AddVisualizeWorldSpaceNormalPass(
+    RenderGraphTextureHandle RasterizationRenderer::DispatchWorldSpaceNormalDebugVisualization(
         RenderGraph& renderGraph,
         const SceneView& view)
     {
-        const RasterizationRendererSceneTextures& sceneTextures = renderGraph.blackboard.Get<RasterizationRendererSceneTextures>();
+        const RasterizationRendererIntermediateResources& intermediateResources = renderGraph.blackboard.Get<RasterizationRendererIntermediateResources>();
 
         // TODO
         RenderGraphTextureHandle outputTexture = renderGraph.ImportExternalTexture(view.targetTexture, "TargetTexture");
@@ -62,7 +62,7 @@ namespace Horizon
             RenderGraphPassFlags::Compute,
             [&](RenderGraphBuilder& builder)
             {
-                RenderGraphTextureHandle gbuffer0 = builder.ReadTexture(sceneTextures.gbuffer0, RenderBackendResourceState::ShaderResource);
+                RenderGraphTextureHandle gbuffer0 = builder.ReadTexture(intermediateResources.gbuffer0, RenderBackendResourceState::ShaderResource);
 
                 outputTexture = builder.WriteTexture(outputTexture, RenderBackendResourceState::UnorderedAccess);
 
@@ -91,11 +91,11 @@ namespace Horizon
         return outputTexture;
     }
 
-    RenderGraphTextureHandle RasterizationRenderer::AddVisualizeMotionVectorsPass(
+    RenderGraphTextureHandle RasterizationRenderer::DispatchMotionVectorDebugVisualization(
         RenderGraph& renderGraph,
         const SceneView& view)
     {
-        const RasterizationRendererSceneTextures& sceneTextures = renderGraph.blackboard.Get<RasterizationRendererSceneTextures>();
+        const RasterizationRendererIntermediateResources& intermediateResources = renderGraph.blackboard.Get<RasterizationRendererIntermediateResources>();
 
         // TODO
         RenderGraphTextureHandle outputTexture = renderGraph.ImportExternalTexture(view.targetTexture, "TargetTexture");
@@ -106,7 +106,7 @@ namespace Horizon
             RenderGraphPassFlags::Compute,
             [&](RenderGraphBuilder& builder)
             {
-                RenderGraphTextureHandle motionVectorTexture = builder.ReadTexture(sceneTextures.motionVectorTexture, RenderBackendResourceState::ShaderResource);
+                RenderGraphTextureHandle motionVectorTexture = builder.ReadTexture(intermediateResources.motionVectorTexture, RenderBackendResourceState::ShaderResource);
 
                 outputTexture = builder.WriteTexture(outputTexture, RenderBackendResourceState::UnorderedAccess);
 
@@ -139,7 +139,7 @@ namespace Horizon
         RenderGraph& renderGraph,
         const SceneView& view)
     {
-        const RasterizationRendererSceneTextures& sceneTextures = renderGraph.blackboard.Get<RasterizationRendererSceneTextures>();
+        const RasterizationRendererIntermediateResources& intermediateResources = renderGraph.blackboard.Get<RasterizationRendererIntermediateResources>();
 
         // TODO
         RenderGraphTextureHandle outputTexture = renderGraph.ImportExternalTexture(view.targetTexture, "TargetTexture");
@@ -150,7 +150,7 @@ namespace Horizon
             RenderGraphPassFlags::Compute,
             [&](RenderGraphBuilder& builder)
             {
-                RenderGraphTextureHandle ambientOcclusionTexture = builder.ReadTexture(sceneTextures.ambientOcclusionTexture, RenderBackendResourceState::ShaderResource);
+                RenderGraphTextureHandle ambientOcclusionTexture = builder.ReadTexture(intermediateResources.ambientOcclusionTexture, RenderBackendResourceState::ShaderResource);
 
                 outputTexture = builder.WriteTexture(outputTexture, RenderBackendResourceState::UnorderedAccess);
 
@@ -231,50 +231,6 @@ namespace Horizon
         //     });
         //
         // return outputTexture;
-    }
-
-    RenderGraphTextureHandle RasterizationRenderer::AddVisualizeCascadedShadowMapPass(
-        RenderGraph& renderGraph,
-        const SceneView& view)
-    {
-        const RasterizationRendererSceneTextures& sceneTextures = renderGraph.blackboard.Get<RasterizationRendererSceneTextures>();
-
-        // TODO
-        RenderGraphTextureHandle outputTexture = renderGraph.ImportExternalTexture(view.targetTexture, "TargetTexture");
-
-        renderGraph.AddPass(
-            std::format("VisualizeCascadedShadowMap (Compute, {}x{}->{}x{})", renderResolution.width, renderResolution.height, targetResolution.width, targetResolution.height),
-            RenderGraphPassFlags::Compute,
-            [&](RenderGraphBuilder& builder)
-            {
-                RenderGraphTextureHandle debugVisualizationTexture = builder.ReadTexture(sceneTextures.cascadedShadowMapDebugVisualizationTexture, RenderBackendResourceState::ShaderResource);
-
-                debugVisualizationTexture = builder.ReadTexture(debugVisualizationTexture, RenderBackendResourceState::ShaderResource);
-                outputTexture = builder.WriteTexture(outputTexture, RenderBackendResourceState::UnorderedAccess);
-
-                return [=](RenderBackendCommandList& commandList, const RenderGraphResourceRegistry& resourceRegistry)
-                {
-                    uint32 threadGroupCountX = ComputeShaderThreadGroupCount(targetResolution.width, PostProcessingThreadGroupSizeX);
-                    uint32 threadGroupCountY = ComputeShaderThreadGroupCount(targetResolution.height, PostProcessingThreadGroupSizeY);
-                    uint32 threadGroupCountZ = 1;
-
-                    RenderBackendPushConstantValues shaderConstants = {};
-                    shaderConstants.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
-                    shaderConstants.BindTextureSRV(1, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(debugVisualizationTexture));
-                    shaderConstants.BindTextureUAV(2, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndex(outputTexture, 0));
-
-                    RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::VisualizeCascadedShadowMap);
-
-                    commandList.Dispatch(
-                        computeShader,
-                        shaderConstants,
-                        threadGroupCountX,
-                        threadGroupCountY,
-                        threadGroupCountZ);
-                };
-            });
-
-        return outputTexture;
     }
 
     RenderGraphTextureHandle RasterizationRenderer::AddDebugDrawPass(

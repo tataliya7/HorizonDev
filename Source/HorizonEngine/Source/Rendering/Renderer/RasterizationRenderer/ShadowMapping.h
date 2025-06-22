@@ -1,6 +1,6 @@
 #pragma once
 
-#include "RasterizationRenderer.h"
+#include "RasterizationRendererCommon.h"
 
 namespace Horizon
 {

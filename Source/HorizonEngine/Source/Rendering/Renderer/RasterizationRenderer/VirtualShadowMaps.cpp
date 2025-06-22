@@ -305,7 +305,7 @@ namespace Horizon
             }
         }
 
-        RasterizationRendererSceneTextures& sceneTextures = renderGraph.blackboard.Get<RasterizationRendererSceneTextures>();
+        RasterizationRendererIntermediateResources& intermediateResources = renderGraph.blackboard.Get<RasterizationRendererIntermediateResources>();
 
         RenderGraphBufferDesc virtualShadowMapPageRequestBufferDesc = RenderGraphBufferDesc::CreateByteAddress(virtualShadowMapMaximumVirtualPageCount * sizeof(uint32));
         RenderGraphBufferHandle virtualShadowMapPageRequestBuffer = renderGraph.CreateBuffer(virtualShadowMapPageRequestBufferDesc, "VirtualShadowMapPageRequestBuffer");
@@ -325,7 +325,7 @@ namespace Horizon
         RenderGraphBufferDesc virtualShadowMapActivePhysicalPageIndexBufferDesc = RenderGraphBufferDesc::CreateByteAddress(virtualShadowMapPhysicalPageCount * sizeof(uint32));
         RenderGraphBufferHandle virtualShadowMapActivePhysicalPageIndexBuffer = renderGraph.CreateBuffer(virtualShadowMapActivePhysicalPageIndexBufferDesc, "VirtualShadowMapActivePhysicalPageIndexBuffer");
 
-        RenderGraphTextureDesc virtualShadowMapDepthTextureDesc = RenderGraphTextureDesc::Create2DArray(
+        RenderGraphTextureDescription virtualShadowMapDepthTextureDesc = RenderGraphTextureDescription::Create2DArray(
             virtualShadowMapSize,
             virtualShadowMapSize,
             RenderBackendTextureFormat::R32Uint,
@@ -336,7 +336,7 @@ namespace Horizon
             1,
             RenderBackendResourceState::UnorderedAccess);
 
-        RenderGraphTextureHandle virtualShadowMapDepthTexture = sceneTextures.virtualShadowMapDepthTexture = renderGraph.CreateTexture(virtualShadowMapDepthTextureDesc, "VirtualShadowMapDepthTexture");
+        RenderGraphTextureHandle virtualShadowMapDepthTexture = intermediateResources.virtualShadowMapDepthTexture = renderGraph.CreateTexture(virtualShadowMapDepthTextureDesc, "VirtualShadowMapDepthTexture");
 
         renderGraph.AddPass(
             std::format("VirtualShadowMapClearPageDataBuffer ({} bytes)", virtualShadowMapPhysicalPageDataBufferDesc.size),
@@ -415,7 +415,7 @@ namespace Horizon
             RenderGraphPassFlags::Compute,
             [&](RenderGraphBuilder& builder)
             {
-                RenderGraphTextureHandle sceneDepthTexture = builder.ReadTexture(sceneTextures.sceneDepthTexture, RenderBackendResourceState::ShaderResource);
+                RenderGraphTextureHandle sceneDepthTexture = builder.ReadTexture(intermediateResources.depthTexture, RenderBackendResourceState::ShaderResource);
                 virtualShadowMapEntryBuffer = builder.ReadBuffer(virtualShadowMapEntryBuffer, RenderBackendResourceState::ShaderResource);
                 virtualShadowMapPageRequestBuffer = builder.WriteBuffer(virtualShadowMapPageRequestBuffer, RenderBackendResourceState::UnorderedAccess);
 
@@ -517,7 +517,7 @@ namespace Horizon
             [&](RenderGraphBuilder& builder)
             {
                 virtualShadowMapIndirectArgumentBuffer = builder.ReadBuffer(virtualShadowMapIndirectArgumentBuffer, RenderBackendResourceState::IndirectArgument);
-                virtualShadowMapDepthTexture = builder.WriteTexture(sceneTextures.virtualShadowMapDepthTexture, RenderBackendResourceState::UnorderedAccess);
+                virtualShadowMapDepthTexture = builder.WriteTexture(intermediateResources.virtualShadowMapDepthTexture, RenderBackendResourceState::UnorderedAccess);
 
                 return [=](RenderBackendCommandList& commandList, const RenderGraphResourceRegistry& resourceRegistry)
                 {
@@ -541,7 +541,7 @@ namespace Horizon
             RenderGraphPassFlags::Compute,
             [&](RenderGraphBuilder& builder)
             {
-                virtualShadowMapDepthTexture = builder.WriteTexture(sceneTextures.virtualShadowMapDepthTexture, RenderBackendResourceState::UnorderedAccess);
+                virtualShadowMapDepthTexture = builder.WriteTexture(intermediateResources.virtualShadowMapDepthTexture, RenderBackendResourceState::UnorderedAccess);
 
 
                 {
@@ -590,17 +590,17 @@ namespace Horizon
                };
            });
 
-        sceneTextures.virtualShadowMapPageTableBuffer = virtualShadowMapPageTableBuffer;
-        sceneTextures.virtualShadowMapEntryBuffer = virtualShadowMapEntryBuffer;
+        intermediateResources.virtualShadowMapPageTableBuffer = virtualShadowMapPageTableBuffer;
+        intermediateResources.virtualShadowMapEntryBuffer = virtualShadowMapEntryBuffer;
     }
 
     void RasterizationRenderer::DispatchVirtualShadowMapProjection(RenderGraph& renderGraph, const SceneView& view)
     {
-        RasterizationRendererSceneTextures& sceneTextures = renderGraph.blackboard.Get<RasterizationRendererSceneTextures>();
+        RasterizationRendererIntermediateResources& intermediateResources = renderGraph.blackboard.Get<RasterizationRendererIntermediateResources>();
 
         RenderBackendBufferHandle& virtualShadowMapShaderParameterBuffer = virtualShadowMapShaderParameterBuffers[currentPerFrameDataBufferIndex];
 
-        RenderGraphTextureDesc screenSpaceShadowMaskTextureDesc = RenderGraphTextureDesc::Create2D(
+        RenderGraphTextureDescription screenSpaceShadowMaskTextureDesc = RenderGraphTextureDescription::Create2D(
             renderResolution.width,
             renderResolution.height,
             RenderBackendTextureFormat::R8G8B8A8Unorm,
@@ -610,11 +610,11 @@ namespace Horizon
         RenderGraphTextureHandle debugVisualizationTexture = renderGraph.CreateTexture(screenSpaceShadowMaskTextureDesc, "VirtualShadowMapDebugVisualizationTexture");
 
         uint32 virtualShadowMapDebugVisualizationMode = 0;
-        if (view.debugVisualizationMode == SceneViewDebugVisualizationMode::VirtualShadowMapMipmap)
+        if (rendererSettings.debugVisualizationMode == RasterizationRendererDebugVisualizationMode::VirtualShadowMapMipmap)
         {
             virtualShadowMapDebugVisualizationMode = 0;
         }
-        if (view.debugVisualizationMode == SceneViewDebugVisualizationMode::VirtualShadowMapVirtualPage)
+        if (rendererSettings.debugVisualizationMode == RasterizationRendererDebugVisualizationMode::VirtualShadowMapVirtualPage)
         {
             virtualShadowMapDebugVisualizationMode = 1;
         }
@@ -624,10 +624,10 @@ namespace Horizon
             RenderGraphPassFlags::Compute,
             [&](RenderGraphBuilder& builder)
             {
-                RenderGraphBufferHandle virtualShadowMapPageTableBuffer = builder.ReadBuffer(sceneTextures.virtualShadowMapPageTableBuffer, RenderBackendResourceState::ShaderResource);
-                RenderGraphBufferHandle virtualShadowMapEntryBuffer = builder.ReadBuffer(sceneTextures.virtualShadowMapEntryBuffer, RenderBackendResourceState::ShaderResource);
-                RenderGraphTextureHandle sceneDepthTexture = builder.ReadTexture(sceneTextures.sceneDepthTexture, RenderBackendResourceState::ShaderResource);
-                RenderGraphTextureHandle virtualShadowMapDepthTexture = builder.ReadTexture(sceneTextures.virtualShadowMapDepthTexture, RenderBackendResourceState::ShaderResource);
+                RenderGraphBufferHandle virtualShadowMapPageTableBuffer = builder.ReadBuffer(intermediateResources.virtualShadowMapPageTableBuffer, RenderBackendResourceState::ShaderResource);
+                RenderGraphBufferHandle virtualShadowMapEntryBuffer = builder.ReadBuffer(intermediateResources.virtualShadowMapEntryBuffer, RenderBackendResourceState::ShaderResource);
+                RenderGraphTextureHandle sceneDepthTexture = builder.ReadTexture(intermediateResources.depthTexture, RenderBackendResourceState::ShaderResource);
+                RenderGraphTextureHandle virtualShadowMapDepthTexture = builder.ReadTexture(intermediateResources.virtualShadowMapDepthTexture, RenderBackendResourceState::ShaderResource);
                 screenSpaceShadowMaskTexture = builder.WriteTexture(screenSpaceShadowMaskTexture, RenderBackendResourceState::UnorderedAccess);
                 debugVisualizationTexture = builder.WriteTexture(debugVisualizationTexture, RenderBackendResourceState::UnorderedAccess);
 
@@ -659,15 +659,23 @@ namespace Horizon
                 };
             });
 
-        sceneTextures.shadowMaskTexture = screenSpaceShadowMaskTexture;
-        sceneTextures.virtualShadowMapDebugVisualizationTexture = debugVisualizationTexture;
+        intermediateResources.shadowMaskTexture = screenSpaceShadowMaskTexture;
+        intermediateResources.virtualShadowMapDebugVisualizationTexture = debugVisualizationTexture;
+
+        const bool isVirtualShadowMapDebugVisualizationEnabled =
+            (rendererSettings.debugVisualizationMode == RasterizationRendererDebugVisualizationMode::VirtualShadowMapMipmap) ||
+            (rendererSettings.debugVisualizationMode == RasterizationRendererDebugVisualizationMode::VirtualShadowMapVirtualPage);
+        if (isVirtualShadowMapDebugVisualizationEnabled)
+        {
+            debugVisualizationCallback = std::bind(&RasterizationRenderer::DispatchVirtualShadowMapDebugVisualization, this, std::placeholders::_1, std::placeholders::_2);
+        }
     }
 
-    RenderGraphTextureHandle RasterizationRenderer::AddVisualizeVirtualShadowMapPass(
+    RenderGraphTextureHandle RasterizationRenderer::DispatchVirtualShadowMapDebugVisualization(
         RenderGraph& renderGraph,
         const SceneView& view)
     {
-        const RasterizationRendererSceneTextures& sceneTextures = renderGraph.blackboard.Get<RasterizationRendererSceneTextures>();
+        const RasterizationRendererIntermediateResources& intermediateResources = renderGraph.blackboard.Get<RasterizationRendererIntermediateResources>();
 
         // TODO
         RenderGraphTextureHandle outputTexture = renderGraph.ImportExternalTexture(view.targetTexture, "TargetTexture");
@@ -677,7 +685,7 @@ namespace Horizon
             RenderGraphPassFlags::Compute,
             [&](RenderGraphBuilder& builder)
             {
-                RenderGraphTextureHandle debugVisualizationTexture = builder.ReadTexture(sceneTextures.virtualShadowMapDebugVisualizationTexture, RenderBackendResourceState::ShaderResource);
+                RenderGraphTextureHandle debugVisualizationTexture = builder.ReadTexture(intermediateResources.virtualShadowMapDebugVisualizationTexture, RenderBackendResourceState::ShaderResource);
 
                 debugVisualizationTexture = builder.ReadTexture(debugVisualizationTexture, RenderBackendResourceState::ShaderResource);
                 outputTexture = builder.WriteTexture(outputTexture, RenderBackendResourceState::UnorderedAccess);

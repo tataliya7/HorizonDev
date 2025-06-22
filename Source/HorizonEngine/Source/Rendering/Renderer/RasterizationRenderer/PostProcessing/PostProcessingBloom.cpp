@@ -5,18 +5,19 @@ namespace Horizon
 {
     bool RasterizationRenderer::IsGaussianBloomEnabled() const
     {
-        return features.enableGaussianBloom;
+        return renderFeatures.enableGaussianBloom;
     }
 
     bool RasterizationRenderer::IsConvolutionBloomEnabled() const
     {
-        return features.enableConvolutionBloom;
+        return renderFeatures.enableConvolutionBloom;
     }
 
     RenderGraphTextureHandle RasterizationRenderer::DispatchGaussianBloom(
         RenderGraph& renderGraph,
         const SceneView& view,
-        RenderGraphTextureHandle halfResolutionSceneColorTexture)
+        RenderGraphTextureHandle colorTexture,
+        const PostProcessingColorPyramid& colorPyramid)
     {
         uint32 mip0Width = targetResolution.width / 2;
         uint32 mip0Height = targetResolution.height / 2;
@@ -30,6 +31,7 @@ namespace Horizon
 
         RenderGraphDebugLabelRegion debugLabelRegion(renderGraph, "GaussianBloom");
 
+        RenderGraphTextureHandle halfResolutionSceneColorTexture = colorPyramid.textures[0];
         std::vector<RenderGraphTextureHandle> downsampleMipChain;
         downsampleMipChain.push_back(halfResolutionSceneColorTexture);
 
@@ -42,7 +44,7 @@ namespace Horizon
                 uint32 outputTextureWidth = mip0Width >> (1 + passIndex);
                 uint32 outputTextureHeight = mip0Height >> (1 + passIndex);
 
-                RenderGraphTextureDesc outputTextureDesc = RenderGraphTextureDesc::Create2D(
+                RenderGraphTextureDescription outputTextureDesc = RenderGraphTextureDescription::Create2D(
                     outputTextureWidth,
                     outputTextureHeight,
                     RenderBackendTextureFormat::R11G11B10Float,
@@ -98,7 +100,7 @@ namespace Horizon
                 uint32 outputTextureWidth = mip0Width >> (passCount - passIndex - 1);
                 uint32 outputTextureHeight = mip0Height >> (passCount - passIndex - 1);
 
-                RenderGraphTextureDesc outputTextureDesc = RenderGraphTextureDesc::Create2D(
+                RenderGraphTextureDescription outputTextureDesc = RenderGraphTextureDescription::Create2D(
                     outputTextureWidth,
                     outputTextureHeight,
                     RenderBackendTextureFormat::R11G11B10Float,
@@ -147,7 +149,8 @@ namespace Horizon
     RenderGraphTextureHandle RasterizationRenderer::DispatchConvolutionBloom(
         RenderGraph& renderGraph,
         const SceneView& view,
-        RenderGraphTextureHandle sceneColorTexture)
+        RenderGraphTextureHandle colorTexture,
+        const PostProcessingColorPyramid& colorPyramid)
     {
         return RenderGraphTextureHandle::Null;
     }

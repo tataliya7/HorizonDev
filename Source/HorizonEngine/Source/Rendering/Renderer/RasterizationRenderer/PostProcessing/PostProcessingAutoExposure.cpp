@@ -6,11 +6,6 @@ namespace Horizon
     // TODO: Make it configurable
     static constexpr uint32 GHistogramBinCount = 256;
 
-    bool RasterizationRenderer::IsAutoExposureEnabled() const
-    {
-        return features.enableAutoExposure;
-    }
-
     void RasterizationRenderer::UpdateAutoExposureDataFromReadbackBuffer()
     {
         RenderGraphPersistentBuffer* autoExposureReadbackBuffer = autoExposureReadbackBuffers[currentAutoExposureReadbackBufferIndex];
@@ -33,35 +28,37 @@ namespace Horizon
         RenderGraph& renderGraph,
         const SceneView& view,
         RenderGraphTextureHandle colorTexture,
+        const PostProcessingColorPyramid& colorPyramid,
         RenderGraphBufferHandle previousAutoExposureBuffer)
     {
         RenderGraphDebugLabelRegion debugLabelRegion(renderGraph, "AutoExposure");
 
-        const RenderGraphTextureDesc& colorTextureDesc = renderGraph.GetTextureDesc(colorTexture);
+        RenderGraphTextureHandle inputColorTexture = colorPyramid.textures[0];
+        const RenderGraphTextureDescription& inputColorTextureDescription = renderGraph.GetTextureDesc(inputColorTexture);
 
-        RenderGraphTextureDesc autoExposureHistogramTextureDesc = RenderGraphTextureDesc::Create1D(
+        RenderGraphTextureDescription autoExposureHistogramTextureDesc = RenderGraphTextureDescription::Create1D(
             GHistogramBinCount,
             RenderBackendTextureFormat::R32Uint,
             RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::UnorderedAccess);
         RenderGraphTextureHandle autoExposureHistogramTexture = renderGraph.CreateTexture(autoExposureHistogramTextureDesc, "AutoExposureHistogramTexture");
 
         renderGraph.AddPass(
-            std::format("AutoExposureBuildHistogram (Compute, {}x{})", colorTextureDesc.width, colorTextureDesc.height),
+            std::format("AutoExposureBuildHistogram (Compute, {}x{})", inputColorTextureDescription.width, inputColorTextureDescription.height),
             RenderGraphPassFlags::Compute,
             [&](RenderGraphBuilder& builder)
             {
-                colorTexture = builder.ReadTexture(colorTexture, RenderBackendResourceState::ShaderResource);
+                inputColorTexture = builder.ReadTexture(inputColorTexture, RenderBackendResourceState::ShaderResource);
                 autoExposureHistogramTexture = builder.WriteTexture(autoExposureHistogramTexture, RenderBackendResourceState::UnorderedAccess);
 
                 return [=](RenderBackendCommandList& commandList, const RenderGraphResourceRegistry& resourceRegistry)
                 {
-                    uint32 threadGroupCountX = ComputeShaderThreadGroupCount(colorTextureDesc.width, 16);
-                    uint32 threadGroupCountY = ComputeShaderThreadGroupCount(colorTextureDesc.height, 16);
+                    uint32 threadGroupCountX = ComputeShaderThreadGroupCount(inputColorTextureDescription.width, 16);
+                    uint32 threadGroupCountY = ComputeShaderThreadGroupCount(inputColorTextureDescription.height, 16);
                     uint32 threadGroupCountZ = 1;
 
                     RenderBackendPushConstantValues shaderConstants = {};
                     shaderConstants.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
-                    shaderConstants.BindTextureSRV(1, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(colorTexture));
+                    shaderConstants.BindTextureSRV(1, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(inputColorTexture));
                     shaderConstants.BindTextureUAV(2, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndex(autoExposureHistogramTexture, 0));
 
                     commandList.ClearTextureUAV(RenderBackendTextureUAVDesc::Create(resourceRegistry.GetRenderBackendTextureHandle(autoExposureHistogramTexture), 0), RenderBackendTextureClearValue::CreateColorValueFloat4(0.0f, 0.0f, 0.0f, 0.0f));
@@ -136,7 +133,7 @@ namespace Horizon
         const SceneView& view,
         RenderGraphBufferHandle autoExposureBuffer)
     {
-        RenderGraphTextureDesc exposureTextureDesc = RenderGraphTextureDesc::Create2D(
+        RenderGraphTextureDescription exposureTextureDesc = RenderGraphTextureDescription::Create2D(
             1,
             1,
             RenderBackendTextureFormat::R32Float,

@@ -5,16 +5,19 @@ namespace Horizon
 {
     bool RasterizationRenderer::IsLensFlareEnabled() const
     {
-        return features.enableLensFlare;
+        return renderFeatures.enableLensFlare;
     }
 
-    RenderGraphTextureHandle RasterizationRenderer::AddLensFlarePass(
+    RenderGraphTextureHandle RasterizationRenderer::DispatchLensFlarePass(
         RenderGraph& renderGraph,
         const SceneView& view,
-        RenderGraphTextureHandle halfResolutionSceneColorTexture,
+        RenderGraphTextureHandle colorTexture,
+        const PostProcessingColorPyramid& colorPyramid,
         RenderGraphTextureHandle bloomTexture)
     {
         RenderGraphDebugLabelRegion debugLabelRegion(renderGraph, "LensFlare");
+
+        RenderGraphTextureHandle halfResolutionColorTexture = colorPyramid.textures[0];
 
         uint32 lensFlareTextureWidth = targetResolution.width / 2;
         uint32 lensFlareTextureHeight = targetResolution.height / 2;
@@ -24,7 +27,7 @@ namespace Horizon
         uint32 outputTextureHeight = targetResolution.height / 2;
         const Vector4f outputTextureSize = Vector4f(outputTextureWidth, outputTextureHeight, 1.0f / outputTextureWidth, 1.0f / outputTextureHeight);
 
-        RenderGraphTextureDesc lensFlareGhostTextureDesc = RenderGraphTextureDesc::Create2D(
+        RenderGraphTextureDescription lensFlareGhostTextureDesc = RenderGraphTextureDescription::Create2D(
             lensFlareTextureWidth,
             lensFlareTextureHeight,
             RenderBackendTextureFormat::R11G11B10Float,
@@ -182,7 +185,7 @@ namespace Horizon
                     shaderConstants.BindTextureSRV(1, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(lensFlareGradientTexture));
                     shaderConstants.BindTextureSRV(2, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(lensFlareGhostTexture));
                     shaderConstants.BindTextureSRV(3, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(lensFlareGlareTexture));
-                    shaderConstants.BindTextureSRV(4, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(halfResolutionSceneColorTexture));
+                    shaderConstants.BindTextureSRV(4, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(halfResolutionColorTexture));
                     shaderConstants.BindScalar(5, outputTextureSize.z);
                     shaderConstants.BindScalar(6, outputTextureSize.w);
 

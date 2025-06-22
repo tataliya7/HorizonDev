@@ -9,7 +9,7 @@ namespace Horizon
     static constexpr uint32 threadGroupCountY = ColorTransformLUTTextureSize / 8;
     static constexpr uint32 threadGroupCountZ = ColorTransformLUTTextureSize / 8;
 
-    bool PostProcessingColorTransformLUTSettings::Update(const SceneView& view, const PostProcessingSettings& postProcessingSettings)
+    bool PostProcessingColorTransformLUTSettings::Update(const SceneView& view, const RasterizationRendererPostProcessingSettings& postProcessingSettings)
     {
         bool changed = false;
 
@@ -44,7 +44,7 @@ namespace Horizon
             return colorTransformLUTTexture;
         }
 
-        RenderGraphTextureDesc colorTransformLUTTextureDesc = RenderGraphTextureDesc::Create3D(
+        RenderGraphTextureDescription colorTransformLUTTextureDesc = RenderGraphTextureDescription::Create3D(
             ColorTransformLUTTextureSize,
             ColorTransformLUTTextureSize,
             ColorTransformLUTTextureSize,

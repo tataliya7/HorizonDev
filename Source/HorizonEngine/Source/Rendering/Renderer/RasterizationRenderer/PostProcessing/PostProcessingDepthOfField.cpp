@@ -44,7 +44,7 @@ namespace Horizon
 
     bool RasterizationRenderer::IsDepthOfFieldEnabled() const
     {
-        return features.enableDepthOfField;
+        return renderFeatures.enableDepthOfField;
     }
 
 
@@ -100,10 +100,10 @@ namespace Horizon
         renderGraph.AddPass("DepthOfFieldSetup", RenderGraphPassFlags::Compute,
             [&](RenderGraphBuilder& builder)
             {
-                const auto& sceneTextures = renderGraph.blackboard.Get<RasterizationRendererSceneTextures>();
+                const auto& intermediateResources = renderGraph.blackboard.Get<RasterizationRendererSceneTextures>();
 
                 builder.ReadTexture(sceneColorTexture, RenderBackendResourceState::ShaderResource);
-                auto sceneDepthTexture = builder.ReadTexture(sceneTextures.sceneDepthTexture, RenderBackendResourceState::ShaderResource);
+                auto sceneDepthTexture = builder.ReadTexture(intermediateResources.sceneDepthTexture, RenderBackendResourceState::ShaderResource);
 
                 depthOfFieldCoCTexture = builder.WriteTexture(depthOfFieldCoCTexture, RenderBackendResourceState::UnorderedAccess);
 

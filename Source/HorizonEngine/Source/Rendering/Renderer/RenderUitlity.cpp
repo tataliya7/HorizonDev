@@ -23,7 +23,7 @@ namespace Horizon
     void RendererDefaultResources::Initialize(RenderBackendCommandList& commandList)
     {
         assert(!initialized);
-        RenderGraphTextureDesc dummyTextureDesc = RenderGraphTextureDesc::Create2D(
+        RenderGraphTextureDescription dummyTextureDesc = RenderGraphTextureDescription::Create2D(
             1,
             1,
             RenderBackendTextureFormat::B8G8R8A8Unorm,

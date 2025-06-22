@@ -368,7 +368,7 @@ namespace Horizon
 
     void RenderSystem::RenderUserInterface(RenderGraph& renderGraph, const SceneView& view)
     {
-        RenderGraphTextureDesc uiColorAndAlphaTextureDesc = RenderGraphTextureDesc::Create2D(
+        RenderGraphTextureDescription uiColorAndAlphaTextureDesc = RenderGraphTextureDescription::Create2D(
             view.displayWidth,
             view.displayHeight,
             RenderBackendTextureFormat::R8G8B8A8Unorm,

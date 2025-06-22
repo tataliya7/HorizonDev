@@ -67,16 +67,13 @@ namespace Horizon
         historyFrame.temporalSuperSamplingOutputTexture = nullptr;
     }
 
-    bool RasterizationRenderer::IsBloomEnabled() const
-    {
-        return IsGaussianBloomEnabled() || IsConvolutionBloomEnabled();
-    }
-
     void RasterizationRenderer::InitializeSceneView(SceneView* v)
     {
+        debugVisualizationCallback = {};
+
         sceneView = v;
         SceneView& view = *sceneView;
-        const RenderSettings& renderSettings = view.renderSettings;
+        rendererSettings = view.renderSettings.rasterRenderingSettings;
 
         // TODO: initialize buffer
         UpdateAutoExposureDataFromReadbackBuffer();
@@ -86,26 +83,26 @@ namespace Horizon
         {
             preExposure = autoExposureData.adaptedExposure;
         }
-        if (renderSettings.enableFixedPreExposure)
+        if (rendererSettings.enableFixedPreExposure)
         {
-            preExposure = renderSettings.fixedPreExposure;
+            preExposure = rendererSettings.fixedPreExposure;
         }
 
         renderResolutionPercentage = 1.0f;
 
         if (temporalSuperSamplingInterface == nullptr)
         {
-            if (renderSettings.superSamplingSettings.superSamplingTechnique == SuperSamplingTechnique::FSR)
+            if (rendererSettings.superSamplingSettings.superSamplingTechnique == SuperSamplingTechnique::FSR)
             {
                 temporalSuperSamplingInterface = FidelityFXSuperResolution2Create(renderBackend);
             }
-            else if (renderSettings.superSamplingSettings.superSamplingTechnique == SuperSamplingTechnique::DLSS)
+            else if (rendererSettings.superSamplingSettings.superSamplingTechnique == SuperSamplingTechnique::DLSS)
             {
                 temporalSuperSamplingInterface = StreamlineDLSSSuperResolutionCreate(renderBackend);
             }
         }
 
-        if (renderSettings.superSamplingSettings.superSamplingTechnique == SuperSamplingTechnique::None)
+        if (rendererSettings.superSamplingSettings.superSamplingTechnique == SuperSamplingTechnique::None)
         {
             // TODO: destroy resources
 
@@ -121,8 +118,8 @@ namespace Horizon
         if (temporalSuperSamplingInterface != nullptr)
         {
             TemporalSuperSamplingOptions tssOptions = {};
-            tssOptions.qualityMode = renderSettings.superSamplingSettings.qualityMode;
-            tssOptions.desiredRenderResolutionPercentage = renderSettings.superSamplingSettings.desiredRenderResolutionPercentage;
+            tssOptions.qualityMode = rendererSettings.superSamplingSettings.qualityMode;
+            tssOptions.desiredRenderResolutionPercentage = rendererSettings.superSamplingSettings.desiredRenderResolutionPercentage;
             tssOptions.outputWidth = targetResolution.width;
             tssOptions.outputHeight = targetResolution.height;
             tssOptions.preExposure = preExposure;
@@ -183,30 +180,25 @@ namespace Horizon
         //    preExposure = view.renderSettings.fixedPreExposure;
         //}
 
-        finalPostProcessingSettings = view.renderSettings.postProcessingSettings;
+        finalPostProcessingSettings = rendererSettings.postProcessingSettings;
 
         const RenderScene* scene = view.GetRenderScene();
 
-        features.enableSuperResolution = temporalSuperSamplingInterface != nullptr;
-
-        features.enableSkyAtmosphereRendering =
+        renderFeatures.enableTemporalSuperSampling = temporalSuperSamplingInterface != nullptr;
+        renderFeatures.enableSkyAtmosphereRendering =
             scene != nullptr &&
             scene->HasAtmosphericLight() &&
             scene->HasActiveSkyAtmosphere();
-
-        features.enableScreenSpaceShadows = true;
-        features.enableScreenSpaceAmbientOcclusion = false;
-        features.enableScreenSpaceLightShafts = true;
-
-        features.enableDepthOfField = false;// finalPostProcessingSettings.depthOfFieldScale > 0.0f;
-        features.enableMotionBlur = finalPostProcessingSettings.motionBlurIntensity > 0.0f;
-
-        features.enableAutoExposure = (finalPostProcessingSettings.exposureMethod == ExposureMethod::AutoExposure);
-
-        features.enableGaussianBloom = finalPostProcessingSettings.bloomIntensity > 0.0f;
-        features.enableLensFlare = finalPostProcessingSettings.lensFlareIntensity > 0.0f;
-
-        features.enableConvolutionBloom = false;
+        renderFeatures.enableScreenSpaceShadows = true;
+        renderFeatures.enableScreenSpaceAmbientOcclusion = false;
+        renderFeatures.enableScreenSpaceLightShafts = true;
+        renderFeatures.enableDepthOfField = false;// finalPostProcessingSettings.depthOfFieldScale > 0.0f;
+        renderFeatures.enableMotionBlur = finalPostProcessingSettings.motionBlurIntensity > 0.0f;
+        renderFeatures.enableAutoExposure = (finalPostProcessingSettings.exposureMethod == ExposureMethod::AutoExposure);
+        renderFeatures.enableGaussianBloom = finalPostProcessingSettings.bloomIntensity > 0.0f;
+        renderFeatures.enableLensFlare = finalPostProcessingSettings.lensFlareIntensity > 0.0f;
+        renderFeatures.enableConvolutionBloom = false;
+        renderFeatures.enableEditorSelectionOutline = false;
 
         if (!IsAutoExposureEnabled())
         {
@@ -254,8 +246,8 @@ namespace Horizon
     void RasterizationRenderer::GatherVisibleLights()
     {
         const SceneView& view = *sceneView;
-        const RenderScene* scene = view.scene;
-        const RenderSettings& renderSettings = view.renderSettings;
+        const RenderScene* scene = view.GetRenderScene();
+        const RenderSettings& renderSettings = view.GetRenderSettings();
 
         visibleLocalLights.reserve(scene->lights.size());
 
@@ -297,8 +289,8 @@ namespace Horizon
     void RasterizationRenderer::CreateDynamicShadowData()
     {
         const SceneView& view = *sceneView;
-        const RenderScene* scene = view.scene;
-        const RenderSettings& renderSettings = view.renderSettings;
+        const RenderScene* scene = view.GetRenderScene();
+        const RenderSettings& renderSettings = view.GetRenderSettings();
 
         for (LightRenderObject* light : scene->lights)
         {
@@ -309,8 +301,8 @@ namespace Horizon
             }
 
             // todo: visible
-            const bool useCascadedShadowMap = (renderSettings.shadowsTechnique == ShadowsTechnique::ShadowMap) && (light->lightType == LightType::DistantLight);
-            const bool useVirtualShadowMap = (renderSettings.shadowsTechnique == ShadowsTechnique::VirtualShadowMap) && (light->lightType == LightType::DistantLight);
+            const bool useCascadedShadowMap = (rendererSettings.shadowsTechnique == RasterizationRendererShadowsTechnique::ShadowMaps) && (light->lightType == LightType::DistantLight);
+            const bool useVirtualShadowMap = (rendererSettings.shadowsTechnique == RasterizationRendererShadowsTechnique::VirtualShadowMaps) && (light->lightType == LightType::DistantLight);
 
             if (useCascadedShadowMap)
             {
@@ -326,8 +318,8 @@ namespace Horizon
     void RasterizationRenderer::UpdatePerFrameDataBuffer()
     {
         const SceneView& view = *sceneView;
-        const RenderSettings& renderSettings = view.renderSettings;
-        const RenderScene* scene = view.scene;
+        const RenderSettings& renderSettings = view.GetRenderSettings();
+        const RenderScene* scene = view.GetRenderScene();
 
         // Setup PerFrameShaderParameters
         {
@@ -406,7 +398,7 @@ namespace Horizon
             // TODO: move this to other place?
             historyFrame.preExposure = preExposure;
 
-            perFrameShaderParameters.indirectLightingMultiplier = renderSettings.globalIlluminationSettings.indirectLightingIntensity * renderSettings.globalIlluminationSettings.indirectLightingColor;
+            perFrameShaderParameters.indirectLightingMultiplier = rendererSettings.globalIlluminationSettings.indirectLightingIntensity * rendererSettings.globalIlluminationSettings.indirectLightingColor;
 
             if (scene != nullptr)
             {
@@ -582,51 +574,53 @@ namespace Horizon
             });
 
         const SceneView& view = *sceneView;
+        const RenderSettings& renderSettings = view.GetRenderSettings();
+        RenderScene* renderScene = view.GetRenderScene();
 
-        RasterizationRendererSceneTextures& sceneTextures = renderGraph.blackboard.Create<RasterizationRendererSceneTextures>();
+        RasterizationRendererIntermediateResources& intermediateResources = renderGraph.blackboard.Create<RasterizationRendererIntermediateResources>();
         //RasterizationRendererDebugViewModeTextures& debugViewModeTextures = renderGraph.blackboard.Create<RasterizationRendererDebugViewModeTextures>();
 
-        RenderGraphTextureDesc vbuffer0Desc = RenderGraphTextureDesc::Create2D(
+        RenderGraphTextureDescription vbuffer0Desc = RenderGraphTextureDescription::Create2D(
             renderResolution.width,
             renderResolution.height,
             RenderBackendTextureFormat::R32Uint,
             RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::RenderTarget,
             clearVisibilityBufferColor);
-        sceneTextures.vbuffer0 = renderGraph.CreateTexture(vbuffer0Desc, "VBuffer0");
+        intermediateResources.vbuffer0 = renderGraph.CreateTexture(vbuffer0Desc, "VBuffer0");
 
-        RenderGraphTextureDesc vbuffer1Desc = RenderGraphTextureDesc::Create2D(
+        RenderGraphTextureDescription vbuffer1Desc = RenderGraphTextureDescription::Create2D(
             renderResolution.width,
             renderResolution.height,
             RenderBackendTextureFormat::R32G32B32A32Float,
             RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::RenderTarget,
             clearVisibilityBufferColor);
-        sceneTextures.vbuffer1 = renderGraph.CreateTexture(vbuffer1Desc, "VBuffer1");
+        intermediateResources.vbuffer1 = renderGraph.CreateTexture(vbuffer1Desc, "VBuffer1");
 
-        RenderGraphTextureDesc gbuffer0Desc = RenderGraphTextureDesc::Create2D(
+        RenderGraphTextureDescription gbuffer0Desc = RenderGraphTextureDescription::Create2D(
             renderResolution.width,
             renderResolution.height,
             RenderBackendTextureFormat::R10G10B10A2Unorm,
             RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::UnorderedAccess,
             clearColor);
-        sceneTextures.gbuffer0 = renderGraph.CreateTexture(gbuffer0Desc, "GBuffer0");
+        intermediateResources.gbuffer0 = renderGraph.CreateTexture(gbuffer0Desc, "GBuffer0");
 
-        RenderGraphTextureDesc gbuffer1Desc = RenderGraphTextureDesc::Create2D(
+        RenderGraphTextureDescription gbuffer1Desc = RenderGraphTextureDescription::Create2D(
             renderResolution.width,
             renderResolution.height,
             RenderBackendTextureFormat::R8G8B8A8Unorm,
             RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::UnorderedAccess,
             clearColor);
-        sceneTextures.gbuffer1 = renderGraph.CreateTexture(gbuffer1Desc, "GBuffer1");
+        intermediateResources.gbuffer1 = renderGraph.CreateTexture(gbuffer1Desc, "GBuffer1");
 
-        RenderGraphTextureDesc gbuffer2Desc = RenderGraphTextureDesc::Create2D(
+        RenderGraphTextureDescription gbuffer2Desc = RenderGraphTextureDescription::Create2D(
             renderResolution.width,
             renderResolution.height,
             RenderBackendTextureFormat::R8G8B8A8Unorm,
             RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::UnorderedAccess,
             clearColor);
-        sceneTextures.gbuffer2 = renderGraph.CreateTexture(gbuffer2Desc, "GBuffer2");
+        intermediateResources.gbuffer2 = renderGraph.CreateTexture(gbuffer2Desc, "GBuffer2");
 
-        RenderGraphTextureDesc sceneColorTextureDesc = RenderGraphTextureDesc::Create2D(
+        RenderGraphTextureDescription sceneColorTextureDesc = RenderGraphTextureDescription::Create2D(
             renderResolution.width,
             renderResolution.height,
             RenderBackendTextureFormat::R16G16B16A16Float,
@@ -635,9 +629,9 @@ namespace Horizon
             1,
             1,
             RenderBackendResourceState::UnorderedAccess);
-        sceneTextures.sceneColorTexture = renderGraph.CreateTexture(sceneColorTextureDesc, "SceneColorTexture");
+        intermediateResources.colorTexture = renderGraph.CreateTexture(sceneColorTextureDesc, "SceneColorTexture");
 
-        RenderGraphTextureDesc sceneDepthTextureDesc = RenderGraphTextureDesc::Create2D(
+        RenderGraphTextureDescription sceneDepthTextureDesc = RenderGraphTextureDescription::Create2D(
             renderResolution.width,
             renderResolution.height,
             RenderBackendTextureFormat::D32FloatS8Uint,
@@ -646,30 +640,14 @@ namespace Horizon
             1,
             1,
             RenderBackendResourceState::DepthStencil);
-        sceneTextures.sceneDepthTexture = renderGraph.CreateTexture(sceneDepthTextureDesc, "SceneDepthTexture");
+        intermediateResources.depthTexture = renderGraph.CreateTexture(sceneDepthTextureDesc, "SceneDepthTexture");
 
-        // Hierarchical z-buffer must be aligned quad tree.
-        uint32 depthPyramidTextureWidth = Math::Max(Math::RoundUpToPowerOfTwo(renderResolution.width) >> 1, 1u);
-        uint32 depthPyramidTextureHeight = Math::Max(Math::RoundUpToPowerOfTwo(renderResolution.height) >> 1, 1u);
-        uint32 depthPyramidTextureMipLevelCount = Math::MaxMipLevelCount(depthPyramidTextureWidth, depthPyramidTextureHeight);
-
-        RenderGraphTextureDesc depthPyramidTextureDesc = RenderGraphTextureDesc::Create2D(
-            depthPyramidTextureWidth,
-            depthPyramidTextureHeight,
-            RenderBackendTextureFormat::R32Float,
-            RenderBackendTextureCreateFlags::UnorderedAccess | RenderBackendTextureCreateFlags::ShaderResource,
-            RenderBackendTextureClearValue::DepthZero,
-            depthPyramidTextureMipLevelCount);
-        sceneTextures.depthPyramidTextureDesc = depthPyramidTextureDesc;
-        sceneTextures.minDepthPyramidTexture = renderGraph.CreateTexture(depthPyramidTextureDesc, "MinDepthPyramidTexture");
-        sceneTextures.maxDepthPyramidTexture = renderGraph.CreateTexture(depthPyramidTextureDesc, "MaxDepthPyramidTexture");
-
-        RenderGraphTextureDesc motionVectorTextureDesc = RenderGraphTextureDesc::Create2D(
+        RenderGraphTextureDescription motionVectorTextureDesc = RenderGraphTextureDescription::Create2D(
             renderResolution.width,
             renderResolution.height,
             RenderBackendTextureFormat::R16G16Float,
             RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::UnorderedAccess);
-        sceneTextures.motionVectorTexture = renderGraph.CreateTexture(motionVectorTextureDesc, "MotionVectorTexture");
+        intermediateResources.motionVectorTexture = renderGraph.CreateTexture(motionVectorTextureDesc, "MotionVectorTexture");
 
         if (IsSkyAtmosphereRenderingEnabled())
         {
@@ -688,11 +666,11 @@ namespace Horizon
 
         DispatchDepthPyramidGeneration(renderGraph, view);
 
-        if (view.renderSettings.shadowsTechnique == ShadowsTechnique::ShadowMap)
+        if (rendererSettings.shadowsTechnique == RasterizationRendererShadowsTechnique::ShadowMaps)
         {
             RenderShadowMapDepth(renderGraph, view);
         }
-        else if (view.renderSettings.shadowsTechnique == ShadowsTechnique::VirtualShadowMap)
+        else if (rendererSettings.shadowsTechnique == RasterizationRendererShadowsTechnique::VirtualShadowMaps)
         {
             RenderVirtualShadowMapDepth(renderGraph, view);
         }
@@ -706,7 +684,7 @@ namespace Horizon
             RenderGraphPassFlags::Compute,
             [&](RenderGraphBuilder& builder)
             {
-                RenderGraphTextureHandle sceneColorTexture = sceneTextures.sceneColorTexture = builder.WriteTexture(sceneTextures.sceneColorTexture, RenderBackendResourceState::UnorderedAccess);
+                RenderGraphTextureHandle sceneColorTexture = intermediateResources.colorTexture = builder.WriteTexture(intermediateResources.colorTexture, RenderBackendResourceState::UnorderedAccess);
 
                 return [=](RenderBackendCommandList& commandList, const RenderGraphResourceRegistry& resourceRegistry)
                 {
@@ -724,7 +702,7 @@ namespace Horizon
             RenderGraphPassFlags::Compute,
             [&](RenderGraphBuilder& builder)
             {
-                RenderGraphTextureHandle sceneColorTexture = sceneTextures.sceneColorTexture = builder.WriteTexture(sceneTextures.sceneColorTexture, RenderBackendResourceState::RenderTarget);
+                RenderGraphTextureHandle sceneColorTexture = intermediateResources.colorTexture = builder.WriteTexture(intermediateResources.colorTexture, RenderBackendResourceState::RenderTarget);
 
                 return [=](RenderBackendCommandList& commandList, const RenderGraphResourceRegistry& resourceRegistry)
                 {
@@ -739,15 +717,16 @@ namespace Horizon
 
         if (IsScreenSpaceAmbientOcclusionEnabled())
         {
-            sceneTextures.ambientOcclusionTexture = RenderScreenSpaceAmbientOcclusion(renderGraph, view);
+            intermediateResources.ambientOcclusionTexture = RenderScreenSpaceAmbientOcclusion(renderGraph, view);
         }
         else
         {
-            sceneTextures.ambientOcclusionTexture = defaultResources->ImportWhiteDummyTexture2D(renderGraph);
+            intermediateResources.ambientOcclusionTexture = defaultResources->ImportWhiteDummyTexture2D(renderGraph);
         }
+
         // if (IsRayTracingAmbientOcclusionEnabled())
         // {
-        //     sceneTextures.ambientOcclusionTexture = RenderRayTracingAmbientOcclusion(renderGraph, view);
+        //     intermediateResources.ambientOcclusionTexture = RenderRayTracingAmbientOcclusion(renderGraph, view);
         // }
 
         RenderScreenSpaceIndirectDiffuse(renderGraph, view);
@@ -768,7 +747,7 @@ namespace Horizon
         //     RenderBackendTextureCreateFlags::UnorderedAccess | RenderBackendTextureCreateFlags::ShaderResource),
         //     "SSRDebugOutputTexture");
         //
-        if (view.renderSettings.reflectionsTechnique == ReflectionsTechnique::ScreenSpaceReflections)
+        if (rendererSettings.reflectionsTechnique == RasterizationRendererReflectionsTechnique::ScreenSpaceReflections)
         {
             RenderScreenSpaceReflections(
                renderGraph,
@@ -798,7 +777,7 @@ namespace Horizon
 
         // AddSurfleGIPasses(renderGraph, view);
 
-        RenderGraphTextureDesc screenSpaceShadowMaskTextureDesc = RenderGraphTextureDesc::Create2D(
+        RenderGraphTextureDescription screenSpaceShadowMaskTextureDesc = RenderGraphTextureDescription::Create2D(
             renderResolution.width,
             renderResolution.height,
             RenderBackendTextureFormat::R8G8B8A8Unorm,
@@ -811,47 +790,47 @@ namespace Horizon
         //    debugViewModeTextures.screenSpaceShadowMaskTexture = renderGraph.CreateTexture(screenSpaceShadowMaskTextureDesc, "ScreenSpaceShadowMaskTexture (Copy)");
         //}
 
-        RenderGraphTextureDesc rayDistanceTextureDesc = RenderGraphTextureDesc::Create2D(
+        RenderGraphTextureDescription rayDistanceTextureDesc = RenderGraphTextureDescription::Create2D(
             renderResolution.width,
             renderResolution.height,
             RenderBackendTextureFormat::R16Float,
             RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::UnorderedAccess);
         RenderGraphTextureHandle rayDistanceTexture = renderGraph.CreateTexture(rayDistanceTextureDesc, "RayTracingShadowsRayDistanceTexture");
 
-        if (view.renderSettings.shadowsTechnique == ShadowsTechnique::ShadowMap)
+        if (rendererSettings.shadowsTechnique == RasterizationRendererShadowsTechnique::ShadowMaps)
         {
             DispatchShadowMapProjection(renderGraph, view);
 
-            const LightRenderObject* light = view.scene->GetAtmosphericLight();
+            const LightRenderObject* light = renderScene->GetAtmosphericLight();
             if (light && light->enableScreenSpaceShadows)
             {
                 DispatchScreenSpaceShadows(renderGraph, view, *light);
             }
         }
-        else if (view.renderSettings.shadowsTechnique == ShadowsTechnique::VirtualShadowMap)
+        else if (rendererSettings.shadowsTechnique == RasterizationRendererShadowsTechnique::VirtualShadowMaps)
         {
             DispatchVirtualShadowMapProjection(renderGraph, view);
         }
-        else if (view.renderSettings.shadowsTechnique == ShadowsTechnique::RayTracingShadows)
+        else if (rendererSettings.shadowsTechnique == RasterizationRendererShadowsTechnique::RayTracingShadows)
         {
-            const LightRenderObject* light = view.scene->GetAtmosphericLight();
+            const LightRenderObject* light = renderScene->GetAtmosphericLight();
             if (light)
             {
                 DispatchRayTracingShadows(renderGraph, view, *light, screenSpaceShadowMaskTexture, rayDistanceTexture);
 
-                sceneTextures.shadowMaskTexture = screenSpaceShadowMaskTexture;
+                intermediateResources.shadowMaskTexture = screenSpaceShadowMaskTexture;
             }
         }
         else
         {
-            sceneTextures.shadowMaskTexture = defaultResources->ImportWhiteDummyTexture2D(renderGraph);
+            intermediateResources.shadowMaskTexture = defaultResources->ImportWhiteDummyTexture2D(renderGraph);
         }
 
         RenderGraphTextureHandle localLightShadowMapAtlas = RenderLocalLightShadows(renderGraph, view);
 
         AddDirectLightingPass(renderGraph, view, localLightShadowMapAtlas);
 
-        if (view.renderSettings.renderMode == RenderMode::ReferencePathTracing)
+        if (renderSettings.renderMode == RenderMode::ReferencePathTracing)
         {
             DispatchPathTracing(renderGraph, view);
         }
@@ -881,12 +860,15 @@ namespace Horizon
         RenderVolumetricFog(renderGraph, view);
         //RenderLocalFogVolumes(renderGraph, view);
 
+        // @todo Refactor this
+        intermediateResources.colorTexture = AddDebugDrawPass(renderGraph, view, intermediateResources.colorTexture, intermediateResources.depthTexture);
+
         ExecutePostProcessingPipeline(renderGraph, view);
 
         historyFrame.cameraJitterOffset = cameraJitterOffset;
-        historyFrame.cameraPosition = view.cameraPosition;
+        historyFrame.cameraPosition = view.GetCameraPosition();
         historyFrame.preExposure = preExposure;
-        historyFrame.transformations = view.transformations;
+        historyFrame.transformations = view.GetCameraTransformations();
 
         currentPerFrameDataBufferIndex = (currentPerFrameDataBufferIndex + 1) % MaxNumFramesInFlight;
     }

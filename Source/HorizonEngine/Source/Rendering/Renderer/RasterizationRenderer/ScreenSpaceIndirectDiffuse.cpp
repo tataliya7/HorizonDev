@@ -12,25 +12,25 @@ namespace Horizon
             previousSceneColorTexture = renderGraph.ImportExternalTexture(historyFrame.temporalSuperSamplingOutputTexture, "SSGIInputColorTexture");
         }
 
-        RenderGraphTextureDesc indirectDiffuseTextureDesc = RenderGraphTextureDesc::Create2D(
+        RenderGraphTextureDescription indirectDiffuseTextureDesc = RenderGraphTextureDescription::Create2D(
             renderResolution.width,
             renderResolution.height,
             RenderBackendTextureFormat::R16G16B16A16Float,
             RenderBackendTextureCreateFlags::UnorderedAccess | RenderBackendTextureCreateFlags::ShaderResource);
         RenderGraphTextureHandle indirectDiffuseTexture = renderGraph.CreateTexture(indirectDiffuseTextureDesc, "ScreenSpaceIndirectDiffuseTexture");
 
-        RasterizationRendererSceneTextures& sceneTextures = renderGraph.blackboard.Get<RasterizationRendererSceneTextures>();
+        RasterizationRendererIntermediateResources& intermediateResources = renderGraph.blackboard.Get<RasterizationRendererIntermediateResources>();
 
         renderGraph.AddPass(
             std::format("ScreenSpaceIndirectDiffuse (Compute, {}x{})", renderResolution.width, renderResolution.height),
             RenderGraphPassFlags::Compute,
             [&](RenderGraphBuilder& builder)
             {
-                RenderGraphTextureHandle gbuffer0 = builder.ReadTexture(sceneTextures.gbuffer0, RenderBackendResourceState::ShaderResource);
-                RenderGraphTextureHandle gbuffer1 = builder.ReadTexture(sceneTextures.gbuffer1, RenderBackendResourceState::ShaderResource);
-                RenderGraphTextureHandle sceneDepthTexture = builder.ReadTexture(sceneTextures.sceneDepthTexture, RenderBackendResourceState::ShaderResource);
-                //RenderGraphTextureHandle depthPyramidTexture = builder.ReadTexture(sceneTextures.depthPyramidTexture, RenderBackendResourceState::ShaderResource);
-                RenderGraphTextureHandle motionVectorTexture = builder.ReadTexture(sceneTextures.motionVectorTexture, RenderBackendResourceState::ShaderResource);
+                RenderGraphTextureHandle gbuffer0 = builder.ReadTexture(intermediateResources.gbuffer0, RenderBackendResourceState::ShaderResource);
+                RenderGraphTextureHandle gbuffer1 = builder.ReadTexture(intermediateResources.gbuffer1, RenderBackendResourceState::ShaderResource);
+                RenderGraphTextureHandle sceneDepthTexture = builder.ReadTexture(intermediateResources.depthTexture, RenderBackendResourceState::ShaderResource);
+                //RenderGraphTextureHandle depthPyramidTexture = builder.ReadTexture(intermediateResources.depthPyramidTexture, RenderBackendResourceState::ShaderResource);
+                RenderGraphTextureHandle motionVectorTexture = builder.ReadTexture(intermediateResources.motionVectorTexture, RenderBackendResourceState::ShaderResource);
                 previousSceneColorTexture = builder.ReadTexture(previousSceneColorTexture, RenderBackendResourceState::ShaderResource);
                 indirectDiffuseTexture = builder.WriteTexture(indirectDiffuseTexture, RenderBackendResourceState::UnorderedAccess);
 
@@ -61,6 +61,6 @@ namespace Horizon
                 };
             });
 
-        sceneTextures.indirectDiffuseTexture = indirectDiffuseTexture;
+        intermediateResources.indirectDiffuseTexture = indirectDiffuseTexture;
     }
 }
