@@ -256,15 +256,15 @@ namespace Horizon
         const RenderGraphTextureUAVDesc desc;
     };
 
-    using RenderGraphBufferDesc = RenderBackendBufferDesc;
+    using RenderGraphBufferDescription = RenderBackendBufferDescription;
 
     class RenderGraphBuffer final : public RenderGraphResource
     {
     public:
-        RenderGraphBuffer(const char* name, const RenderGraphBufferDesc& desc)
+        RenderGraphBuffer(const char* name, const RenderGraphBufferDescription& desc)
             : RenderGraphResource(name, RenderGraphResourceType::Buffer)
             , desc(desc) {}
-        const RenderGraphBufferDesc& GetDesc() const
+        const RenderGraphBufferDescription& GetDesc() const
         {
             return desc;
         }
@@ -286,7 +286,7 @@ namespace Horizon
             this->finalState = initialState;
             this->intermediateState = initialState;
         }
-        const RenderGraphBufferDesc desc;
+        const RenderGraphBufferDescription desc;
         RenderGraphPersistentBuffer* internalBuffer = nullptr;
     };
 

@@ -61,7 +61,7 @@ namespace Horizon
             VirtualGeometryBuildOutput output;
             bool result = BuildVirtualGeometry(settings, input, output);
 
-            RenderBackendBufferDesc vertexBufferDesc = RenderBackendBufferDesc::CreateByteAddress(sizeof(VirtualGeometryVertex) * vertices.size());
+            RenderBackendBufferDescription vertexBufferDesc = RenderBackendBufferDescription::CreateByteAddress(sizeof(VirtualGeometryVertex) * vertices.size());
             renderObject->vertexBuffer = renderBackend->CreateBuffer(&vertexBufferDesc, vertices.data(), "VertexBuffer");
 
 #if 0
@@ -74,11 +74,11 @@ namespace Horizon
             RenderBackendBufferDesc meshletTriangleBufferDesc = RenderBackendBufferDesc::CreateByteAddress(sizeof(uint32) * meshlet_triangles_ttt.size());
             renderObject->meshletTriangleBuffer = renderBackend->CreateBuffer(&meshletTriangleBufferDesc, meshlet_triangles_ttt.data(), "MeshletTriangleBuffer");
 #else
-            RenderBackendBufferDesc meshletBufferDesc = RenderBackendBufferDesc::CreateByteAddress(sizeof(GPUSceneMeshletData) * output.meshlets.size());
+            RenderBackendBufferDescription meshletBufferDesc = RenderBackendBufferDescription::CreateByteAddress(sizeof(GPUSceneMeshletData) * output.meshlets.size());
             renderObject->meshletBuffer = renderBackend->CreateBuffer(&meshletBufferDesc, output.meshlets.data(), "MeshletBuffer");
 
             assert(indexCount == output.indices.size());
-            RenderBackendBufferDesc meshletVertexBufferDesc = RenderBackendBufferDesc::CreateByteAddress(sizeof(uint32) * output.indices.size());
+            RenderBackendBufferDescription meshletVertexBufferDesc = RenderBackendBufferDescription::CreateByteAddress(sizeof(uint32) * output.indices.size());
             renderObject->meshletVertexBuffer = renderBackend->CreateBuffer(&meshletVertexBufferDesc, output.indices.data(), "MeshletVertexBuffer");
             renderObject->meshletCount = uint32(output.meshlets.size());
 
@@ -91,25 +91,25 @@ namespace Horizon
 #endif
             // @todo Refactor this.
             {
-                RenderBackendBufferDesc vertexBuffer0Desc = RenderBackendBufferDesc::CreateByteAddress(vertexCount * sizeof(Vector3f));
+                RenderBackendBufferDescription vertexBuffer0Desc = RenderBackendBufferDescription::CreateByteAddress(vertexCount * sizeof(Vector3f));
                 vertexBuffer0Desc.flags |= RenderBackendBufferCreateFlags::RayTracingAccelerationStructure; // TODO
                 renderObject->vertexBuffers[0] = renderBackend->CreateBuffer(&vertexBuffer0Desc, positions.data(), "VertexPosition");
 
-                RenderBackendBufferDesc vertexBuffer1Desc = RenderBackendBufferDesc::CreateByteAddress(normals.size() * sizeof(Vector3f));
+                RenderBackendBufferDescription vertexBuffer1Desc = RenderBackendBufferDescription::CreateByteAddress(normals.size() * sizeof(Vector3f));
                 renderObject->vertexBuffers[1] = renderBackend->CreateBuffer(&vertexBuffer1Desc, normals.data(), "VertexNormal");
 
-                RenderBackendBufferDesc vertexBuffer2Desc = RenderBackendBufferDesc::CreateByteAddress(tangents.size() * sizeof(Vector4f));
+                RenderBackendBufferDescription vertexBuffer2Desc = RenderBackendBufferDescription::CreateByteAddress(tangents.size() * sizeof(Vector4f));
                 renderObject->vertexBuffers[2] = renderBackend->CreateBuffer(&vertexBuffer2Desc, tangents.data(), "VertexTangent");
 
                 if (!texCoords.empty())
                 {
-                    RenderBackendBufferDesc vertexBuffer3Desc = RenderBackendBufferDesc::CreateByteAddress(texCoords.size() * sizeof(Vector2f));
+                    RenderBackendBufferDescription vertexBuffer3Desc = RenderBackendBufferDescription::CreateByteAddress(texCoords.size() * sizeof(Vector2f));
                     renderObject->vertexBuffers[3] = renderBackend->CreateBuffer(&vertexBuffer3Desc, texCoords.data(), "VertexTextureCoord0");
                 }
 
                 if (indexCount > 0)
                 {
-                    RenderBackendBufferDesc indexBufferDesc = RenderBackendBufferDesc::CreateIndex(sizeof(uint32), indexCount);
+                    RenderBackendBufferDescription indexBufferDesc = RenderBackendBufferDescription::CreateIndex(sizeof(uint32), indexCount);
                     indexBufferDesc.flags |= RenderBackendBufferCreateFlags::RayTracingAccelerationStructure; // TODO
                     renderObject->indexBuffer = renderBackend->CreateBuffer(&indexBufferDesc, indices.data(), "IndexBuffer");
                     renderObject->indexBuffer = renderObject->meshletVertexBuffer;
@@ -144,10 +144,10 @@ namespace Horizon
                     materialData.emplace_back(materialShaderParameters);
                 }
 
-                RenderBackendBufferDesc materialBufferDesc = RenderBackendBufferDesc::CreateByteAddress(materialData.size() * sizeof(MaterialShaderParameters));
+                RenderBackendBufferDescription materialBufferDesc = RenderBackendBufferDescription::CreateByteAddress(materialData.size() * sizeof(MaterialShaderParameters));
                 renderObject->materialBuffer = renderBackend->CreateBuffer(&materialBufferDesc, materialData.data(), "MaterialBuffer");
 
-                RenderBackendBufferDesc materialIndexBufferDesc = RenderBackendBufferDesc::CreateByteAddress((indexCount / 3) * sizeof(uint32));
+                RenderBackendBufferDescription materialIndexBufferDesc = RenderBackendBufferDescription::CreateByteAddress((indexCount / 3) * sizeof(uint32));
                 renderObject->materialIndexBuffer = renderBackend->CreateBuffer(&materialIndexBufferDesc, materialIndices.data(), "MaterialIndexBuffer");
             }
 

@@ -6,11 +6,6 @@ namespace Horizon
     static constexpr uint32 ScreenSpaceLightShaftsRadialBlurPassCount = 3;
     static constexpr uint32 ScreenSpaceLightShaftsRadialBlurSampleCount = 8;
 
-    bool RasterizationRenderer::IsScreenSpaceLightShaftsEnabled() const
-    {
-        return renderFeatures.enableScreenSpaceLightShafts;
-    }
-
     void RasterizationRenderer::RenderScreenSpaceLightShafts(
         RenderGraph& renderGraph,
         const SceneView& view)

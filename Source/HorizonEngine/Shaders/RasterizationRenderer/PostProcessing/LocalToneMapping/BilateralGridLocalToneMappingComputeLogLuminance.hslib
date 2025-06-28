@@ -26,7 +26,7 @@ void BilateralGridLocalToneMappingComputeLogLuminanceCS(uint3 dispatchThreadID :
 
     float inversePreExposure = frameShaderParameters.inversePreExposure;
 
-    float luminance = RelativeLuminance(inputTexture[pixelCoord].rgb * inversePreExposure);
+    float luminance = max(RelativeLuminance(inputTexture[pixelCoord].rgb * inversePreExposure), frameShaderParameters.autoExposureMinimumLuminance);
     float logLuminance = log2(luminance);
 
     outputTexture[pixelCoord] = logLuminance;

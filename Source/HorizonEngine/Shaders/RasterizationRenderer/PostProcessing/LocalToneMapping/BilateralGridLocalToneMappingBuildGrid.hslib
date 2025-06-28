@@ -61,10 +61,10 @@ void BilateralGridLocalToneMappingBuildGridCS(
                 float4 inputColorB = inputColorTexture.GatherBlue(GlobalSamplerPointClamp, uv) * inversePreExposure;
 
                 float luminance[4];
-                luminance[0] = RelativeLuminance(float3(inputColorR.x, inputColorG.x, inputColorB.x));
-                luminance[1] = RelativeLuminance(float3(inputColorR.y, inputColorG.y, inputColorB.y));
-                luminance[2] = RelativeLuminance(float3(inputColorR.z, inputColorG.z, inputColorB.z));
-                luminance[3] = RelativeLuminance(float3(inputColorR.w, inputColorG.w, inputColorB.w));
+                luminance[0] = max(RelativeLuminance(float3(inputColorR.x, inputColorG.x, inputColorB.x)), frameShaderParameters.autoExposureMinimumLuminance);
+                luminance[1] = max(RelativeLuminance(float3(inputColorR.y, inputColorG.y, inputColorB.y)), frameShaderParameters.autoExposureMinimumLuminance);
+                luminance[2] = max(RelativeLuminance(float3(inputColorR.z, inputColorG.z, inputColorB.z)), frameShaderParameters.autoExposureMinimumLuminance);
+                luminance[3] = max(RelativeLuminance(float3(inputColorR.w, inputColorG.w, inputColorB.w)), frameShaderParameters.autoExposureMinimumLuminance);
 
                 [unroll(4)]
                 for (uint i = 0; i < 4; i++)

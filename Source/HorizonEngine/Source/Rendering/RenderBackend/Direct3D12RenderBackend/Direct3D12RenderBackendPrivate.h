@@ -195,7 +195,7 @@ namespace Horizon
         Microsoft::WRL::ComPtr<ID3D12Resource> resource;
         Microsoft::WRL::ComPtr<D3D12MA::Allocation> allocation;
         RenderBackendBufferCreateFlags flags;
-        RenderBackendBufferDesc desc;
+        RenderBackendBufferDescription desc;
         D3D12_RESOURCE_DESC1 resourceDesc;
         D3D12_BARRIER_LAYOUT initialLayout;
         D3D12_GPU_VIRTUAL_ADDRESS gpuAddress;
@@ -631,7 +631,7 @@ namespace Horizon
             return bufferIndex;
         }
 
-        uint32 CreateD3D12Buffer(const RenderBackendBufferDesc* desc, const void* data, const char* name)
+        uint32 CreateD3D12Buffer(const RenderBackendBufferDescription* desc, const void* data, const char* name)
         {
             uint32 index = AllocateBuffer();
             D3D12Buffer* buffer = buffers[index];
@@ -897,7 +897,7 @@ namespace Horizon
             }
 
             // TODO:
-            RenderBackendBufferDesc* desc = &buffer->desc;
+            RenderBackendBufferDescription* desc = &buffer->desc;
             desc->elementCount = uint32(size / desc->elementSize);
 
             if (EnumClassHasFlags(desc->flags, RenderBackendBufferCreateFlags::UniformBuffer))
@@ -2270,7 +2270,7 @@ namespace Horizon
             uint32 callableShaderTableOffset = AlignUp(sbtBufferSize, D3D12_RAYTRACING_SHADER_TABLE_BYTE_ALIGNMENT);
             sbtBufferSize = callableShaderTableOffset + 0;
 
-            RenderBackendBufferDesc sbtBufferDesc = RenderBackendBufferDesc::CreateShaderBindingTable(sbtBufferSize);
+            RenderBackendBufferDescription sbtBufferDesc = RenderBackendBufferDescription::CreateShaderBindingTable(sbtBufferSize);
             uint32 index = CreateD3D12Buffer(&sbtBufferDesc, nullptr, "SBT");
             D3D12Buffer& sbtBuffer = *buffers[index];
 
@@ -2385,7 +2385,7 @@ namespace Horizon
 
             D3D12_CHECK(workload.commandList->Close());
 
-            RenderBackendBufferDesc uploadBufferDesc = RenderBackendBufferDesc::CreateUpload(bufferSize);
+            RenderBackendBufferDescription uploadBufferDesc = RenderBackendBufferDescription::CreateUpload(bufferSize);
             uint32 uploadBufferIndex = CreateD3D12Buffer(&uploadBufferDesc, nullptr, "CopyWorkload_UploadBuffer");
             workload.uploadBuffer = buffers[uploadBufferIndex];
 
@@ -2633,7 +2633,7 @@ namespace Horizon
         void ResizeSwapChain(RenderBackendSwapChainHandle swapChain, uint32* width, uint32* height) override;
         bool PresentSwapChain(RenderBackendSwapChainHandle swapChain) override;
         RenderBackendTextureHandle GetActiveSwapChainBuffer(RenderBackendSwapChainHandle swapChain) override;
-        RenderBackendBufferHandle CreateBuffer(const RenderBackendBufferDesc* desc, const void* data, const char* name) override;
+        RenderBackendBufferHandle CreateBuffer(const RenderBackendBufferDescription* desc, const void* data, const char* name) override;
         void ResizeBuffer(RenderBackendBufferHandle buffer, uint64 size) override;
         void MapBuffer(RenderBackendBufferHandle buffer, void** data) override;
         void UnmapBuffer(RenderBackendBufferHandle buffer) override;

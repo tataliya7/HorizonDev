@@ -148,81 +148,81 @@ namespace Horizon
         uint64 size;
     };
 
-    struct RenderBackendBufferDesc
+    struct RenderBackendBufferDescription
     {
-        static RenderBackendBufferDesc Create(uint32 elementSize, uint32 elementCount, RenderBackendBufferCreateFlags flags)
+        static RenderBackendBufferDescription Create(uint32 elementSize, uint32 elementCount, RenderBackendBufferCreateFlags flags)
         {
-            return RenderBackendBufferDesc(elementSize, elementCount, flags);
+            return RenderBackendBufferDescription(elementSize, elementCount, flags);
         }
-        static RenderBackendBufferDesc CreateUpload(uint64 bytes)
+        static RenderBackendBufferDescription CreateUpload(uint64 bytes)
         {
             RenderBackendBufferCreateFlags flags = RenderBackendBufferCreateFlags::Upload | RenderBackendBufferCreateFlags::CreateMapped;
-            return RenderBackendBufferDesc(4, (uint32)(bytes >> 2), flags);
+            return RenderBackendBufferDescription(4, (uint32)(bytes >> 2), flags);
         }
-        static RenderBackendBufferDesc CreateUpload(uint64 bytes, RenderBackendBufferCreateFlags flags)
+        static RenderBackendBufferDescription CreateUpload(uint64 bytes, RenderBackendBufferCreateFlags flags)
         {
             flags |= RenderBackendBufferCreateFlags::Upload | RenderBackendBufferCreateFlags::CreateMapped;
-            return RenderBackendBufferDesc(4, (uint32)(bytes >> 2), flags);
+            return RenderBackendBufferDescription(4, (uint32)(bytes >> 2), flags);
         }
-        static RenderBackendBufferDesc CreateReadback(uint64 bytes)
+        static RenderBackendBufferDescription CreateReadback(uint64 bytes)
         {
             RenderBackendBufferCreateFlags flags = RenderBackendBufferCreateFlags::Readback | RenderBackendBufferCreateFlags::CreateMapped;
-            return RenderBackendBufferDesc(4, (uint32)(bytes >> 2), flags);
+            return RenderBackendBufferDescription(4, (uint32)(bytes >> 2), flags);
         }
-        static RenderBackendBufferDesc CreateIndirectArguments(uint64 bytes)
+        static RenderBackendBufferDescription CreateIndirectArguments(uint64 bytes)
         {
             RenderBackendBufferCreateFlags flags = RenderBackendBufferCreateFlags::IndirectArguments | RenderBackendBufferCreateFlags::UnorderedAccess | RenderBackendBufferCreateFlags::ShaderResource;
-            return RenderBackendBufferDesc(4, (uint32)(bytes >> 2), flags);
+            return RenderBackendBufferDescription(4, (uint32)(bytes >> 2), flags);
         }
-        static RenderBackendBufferDesc CreateIndirectArguments(uint32 elementSize, uint32 elementCount)
+        static RenderBackendBufferDescription CreateIndirectArguments(uint32 elementSize, uint32 elementCount)
         {
             RenderBackendBufferCreateFlags flags = RenderBackendBufferCreateFlags::IndirectArguments | RenderBackendBufferCreateFlags::UnorderedAccess | RenderBackendBufferCreateFlags::ShaderResource;
-            return RenderBackendBufferDesc(elementSize, elementCount, flags);
+            return RenderBackendBufferDescription(elementSize, elementCount, flags);
         }
-        static RenderBackendBufferDesc CreateIndex(uint32 indexStride, uint32 indexCount)
+        static RenderBackendBufferDescription CreateIndex(uint32 indexStride, uint32 indexCount)
         {
             RenderBackendBufferCreateFlags flags = RenderBackendBufferCreateFlags::IndexBuffer | RenderBackendBufferCreateFlags::ShaderResource;
             // TODO: Remove this
             flags |= RenderBackendBufferCreateFlags::UnorderedAccess;
-            return RenderBackendBufferDesc(indexStride, indexCount, flags);
+            return RenderBackendBufferDescription(indexStride, indexCount, flags);
         }
-        static RenderBackendBufferDesc CreateConstant(uint64 bytes)
+        static RenderBackendBufferDescription CreateConstant(uint64 bytes)
         {
             RenderBackendBufferCreateFlags flags = RenderBackendBufferCreateFlags::UniformBuffer | RenderBackendBufferCreateFlags::CpuToGpu;
-            return RenderBackendBufferDesc(4, (uint32)(bytes >> 2), flags);
+            return RenderBackendBufferDescription(4, (uint32)(bytes >> 2), flags);
         }
-        static RenderBackendBufferDesc CreateByteAddress(uint64 bytes, bool dynamic = false)
+        static RenderBackendBufferDescription CreateByteAddress(uint64 bytes, bool dynamic = false)
         {
             RenderBackendBufferCreateFlags flags = RenderBackendBufferCreateFlags::UnorderedAccess | RenderBackendBufferCreateFlags::ShaderResource;
             if (dynamic)
             {
                 flags |= RenderBackendBufferCreateFlags::CpuToGpu;
             }
-            return RenderBackendBufferDesc(4, (uint32)(bytes >> 2), flags);
+            return RenderBackendBufferDescription(4, (uint32)(bytes >> 2), flags);
         }
-        static RenderBackendBufferDesc CreateStructured(uint32 elementSize, uint32 elementCount)
+        static RenderBackendBufferDescription CreateStructured(uint32 elementSize, uint32 elementCount)
         {
             RenderBackendBufferCreateFlags flags = RenderBackendBufferCreateFlags::UnorderedAccess | RenderBackendBufferCreateFlags::ShaderResource | RenderBackendBufferCreateFlags::StructuredBuffer;
-            return RenderBackendBufferDesc(elementSize, elementCount, flags);
+            return RenderBackendBufferDescription(elementSize, elementCount, flags);
         }
-        static RenderBackendBufferDesc CreateShaderBindingTable(uint64 bytes)
+        static RenderBackendBufferDescription CreateShaderBindingTable(uint64 bytes)
         {
             RenderBackendBufferCreateFlags flags = RenderBackendBufferCreateFlags::ShaderBindingTable | RenderBackendBufferCreateFlags::CpuOnly | RenderBackendBufferCreateFlags::CreateMapped;
-            return RenderBackendBufferDesc(4, (uint32)(bytes >> 2), flags);
+            return RenderBackendBufferDescription(4, (uint32)(bytes >> 2), flags);
         }
-        static RenderBackendBufferDesc CreateShaderBindingTable(uint64 handleSize, uint32 handleCount)
+        static RenderBackendBufferDescription CreateShaderBindingTable(uint64 handleSize, uint32 handleCount)
         {
             RenderBackendBufferCreateFlags flags = RenderBackendBufferCreateFlags::ShaderBindingTable | RenderBackendBufferCreateFlags::CpuOnly | RenderBackendBufferCreateFlags::CreateMapped;
-            return RenderBackendBufferDesc(4, (uint32)((handleSize * handleCount) >> 2), flags);
+            return RenderBackendBufferDescription(4, (uint32)((handleSize * handleCount) >> 2), flags);
         }
-        RenderBackendBufferDesc() = default;
-        RenderBackendBufferDesc(uint32 elementSize, uint32 elementCount, RenderBackendBufferCreateFlags flags)
+        RenderBackendBufferDescription() = default;
+        RenderBackendBufferDescription(uint32 elementSize, uint32 elementCount, RenderBackendBufferCreateFlags flags)
             : elementSize(elementSize)
             , elementCount(elementCount)
             , size(elementSize * elementCount)
             , flags(flags) {}
 
-        bool operator==(const RenderBackendBufferDesc& rhs) const
+        bool operator==(const RenderBackendBufferDescription& rhs) const
         {
             return size == rhs.size
                 && elementSize == rhs.elementSize

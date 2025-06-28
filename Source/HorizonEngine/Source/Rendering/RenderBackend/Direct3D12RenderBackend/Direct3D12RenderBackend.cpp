@@ -1554,7 +1554,7 @@ namespace Horizon
         return swapChain->buffers[swapChain->GetCurrentBackBufferIndex()];
     }
 
-    RenderBackendBufferHandle D3D12RenderBackend::CreateBuffer(const RenderBackendBufferDesc* desc, const void* data, const char* name)
+    RenderBackendBufferHandle D3D12RenderBackend::CreateBuffer(const RenderBackendBufferDescription* desc, const void* data, const char* name)
     {
         RenderBackendBufferHandle handle = handleManager.Allocate<RenderBackendBufferHandle>();
         D3D12Device* device = devices[0];

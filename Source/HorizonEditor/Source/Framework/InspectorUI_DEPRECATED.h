@@ -7,5 +7,6 @@ namespace Horizon
     extern bool DrawComponentUI_LightComponent(const char* lable, LightComponent& component);
     extern bool DrawComponentUI_SkyLightComponent(const char* lable, SkyLightComponent& component);
     extern bool DrawComponentUI_SkyAtmosphereComponent(const char* lable, SkyAtmosphereComponent& component);
+    extern bool DrawComponentUI_GlobalFogComponent(const char* lable, GlobalFogComponent& component);
     extern bool DrawComponentUI_LocalFogVolumeComponent(const char* lable, LocalFogVolumeComponent& component);
 }

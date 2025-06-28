@@ -764,7 +764,7 @@ namespace Horizon
         }*/
     }
 
-    uint32 VulkanDevice::CreateBuffer(const RenderBackendBufferDesc* desc, const void* data, const char* name)
+    uint32 VulkanDevice::CreateBuffer(const RenderBackendBufferDescription* desc, const void* data, const char* name)
     {
         VulkanBuffer buffer =
         {
@@ -831,7 +831,7 @@ namespace Horizon
         if (data != nullptr)
         {
             uint64 bufferSize = (uint32)buffer.size;
-            RenderBackendBufferDesc uploadBufferDesc = RenderBackendBufferDesc::CreateUpload(bufferSize);
+            RenderBackendBufferDescription uploadBufferDesc = RenderBackendBufferDescription::CreateUpload(bufferSize);
             uint32 bufferIndex = CreateBuffer(&uploadBufferDesc, nullptr, "UploadBuffer");
             VulkanBuffer& uploadBuffer = buffers[bufferIndex];
 
@@ -1297,7 +1297,7 @@ namespace Horizon
 
         if (data != nullptr)
         {
-            RenderBackendBufferDesc uploadBufferDesc = RenderBackendBufferDesc::CreateUpload((uint32)texture.allocationInfo.size);
+            RenderBackendBufferDescription uploadBufferDesc = RenderBackendBufferDescription::CreateUpload((uint32)texture.allocationInfo.size);
             uint32 bufferIndex = CreateBuffer(&uploadBufferDesc, nullptr, "UploadBuffer");
             VulkanBuffer& uploadBuffer = buffers[bufferIndex];
             MapBuffer(bufferIndex);
@@ -4357,7 +4357,7 @@ namespace Horizon
         return device.GetActiveSwapChainBackBuffer(index);
     }
 
-    RenderBackendBufferHandle VulkanRenderBackend::CreateBuffer(const RenderBackendBufferDesc* desc, const void* data, const char* name)
+    RenderBackendBufferHandle VulkanRenderBackend::CreateBuffer(const RenderBackendBufferDescription* desc, const void* data, const char* name)
     {
         RenderBackendBufferHandle handle = handleManager.Allocate<RenderBackendBufferHandle>();
         uint32 index = device.CreateBuffer(desc, data, name);
@@ -4435,7 +4435,7 @@ namespace Horizon
             }
 
             {
-                RenderBackendBufferDesc uploadBufferDesc = RenderBackendBufferDesc::Create(1, (uint32)data.totalSize, RenderBackendBufferCreateFlags::CpuOnly | RenderBackendBufferCreateFlags::CreateMapped);
+                RenderBackendBufferDescription uploadBufferDesc = RenderBackendBufferDescription::Create(1, (uint32)data.totalSize, RenderBackendBufferCreateFlags::CpuOnly | RenderBackendBufferCreateFlags::CreateMapped);
                 uint32 bufferIndex = device.CreateBuffer(&uploadBufferDesc, nullptr,  "UploadBuffer");
                 VulkanBuffer& uploadBuffer = device.buffers[bufferIndex];
                 device.MapBuffer(bufferIndex);
@@ -5165,7 +5165,7 @@ namespace Horizon
 
             uint32 sbtBufferSize = rayGenGroupStride + numMissShaders * missGroupStride + numHitGroups * hitGroupStride;
 
-            RenderBackendBufferDesc sbtBufferDesc = RenderBackendBufferDesc::CreateShaderBindingTable(sbtBufferSize);
+            RenderBackendBufferDescription sbtBufferDesc = RenderBackendBufferDescription::CreateShaderBindingTable(sbtBufferSize);
             uint32 index = device.CreateBuffer(&sbtBufferDesc, nullptr, "SBT");
             VulkanBuffer& sbtBuffer = device.buffers[index];
             uint8* sbtBufferData = reinterpret_cast<uint8*>(device.MapBuffer(index));

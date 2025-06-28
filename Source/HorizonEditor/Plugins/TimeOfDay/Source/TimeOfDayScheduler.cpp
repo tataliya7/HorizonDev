@@ -72,6 +72,8 @@ namespace Horizon
 
         {
             GlobalFogComponent& component = scene->GetEntityManager()->AddComponent<GlobalFogComponent>(entityHandle);
+            component.scattering = Vector3f(7.0f / 255.0f, 8.0f / 255.0f, 8.0f / 255.0f);
+            component.CreateRenderObject(scene->GetRenderScene());
         }
         globalFog = scene->GetEntityManager()->TryGetComponent<GlobalFogComponent>(entityHandle);
 

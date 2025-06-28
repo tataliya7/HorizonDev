@@ -53,7 +53,7 @@ namespace Horizon
                 RenderBackendTimingQueryHeapDesc timingQueryHeapDesc(MaxTimingQueryRegionCount);
                 frames[i].timingQueryHeap = renderBackend->CreateTimingQueryHeap(&timingQueryHeapDesc, "GPUProfiler");
 
-                RenderBackendBufferDesc bufferDesc = RenderBackendBufferDesc::CreateReadback(sizeof(uint64) * 2 * MaxTimingQueryRegionCount);
+                RenderBackendBufferDescription bufferDesc = RenderBackendBufferDescription::CreateReadback(sizeof(uint64) * 2 * MaxTimingQueryRegionCount);
                 frames[i].timingQueryResults = renderBackend->CreateBuffer(&bufferDesc, nullptr, "TimingQueryResults");
             }
 

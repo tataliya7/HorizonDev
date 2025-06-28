@@ -69,16 +69,16 @@ namespace Horizon
 
         for (uint32 t = 0; t < 3; t++)
         {
-            RenderBackendBufferDesc vertexBufferDesc = RenderBackendBufferDesc::CreateStructured(sizeof(ImDrawVert), 1);
+            RenderBackendBufferDescription vertexBufferDesc = RenderBackendBufferDescription::CreateStructured(sizeof(ImDrawVert), 1);
             vertexBuffer[t] = renderBackend->CreateBuffer(&vertexBufferDesc, nullptr, "ImGuiVertexBuffer");
 
-            RenderBackendBufferDesc vertexBufferUploadDesc = RenderBackendBufferDesc::CreateUpload(4);
+            RenderBackendBufferDescription vertexBufferUploadDesc = RenderBackendBufferDescription::CreateUpload(4);
             vertexBufferUpload[t] = renderBackend->CreateBuffer(&vertexBufferUploadDesc, nullptr, "ImGuiVertexBufferUpload");
 
-            RenderBackendBufferDesc indexBufferDesc = RenderBackendBufferDesc::CreateIndex(sizeof(uint32), 1);
+            RenderBackendBufferDescription indexBufferDesc = RenderBackendBufferDescription::CreateIndex(sizeof(uint32), 1);
             indexBuffer[t] = renderBackend->CreateBuffer(&indexBufferDesc, nullptr, "ImGuiIndexBuffer");
 
-            RenderBackendBufferDesc indexBufferUploadDesc = RenderBackendBufferDesc::CreateUpload(4);
+            RenderBackendBufferDescription indexBufferUploadDesc = RenderBackendBufferDescription::CreateUpload(4);
             indexBufferUpload[t] = renderBackend->CreateBuffer(&indexBufferUploadDesc, nullptr, "ImGuiIndexBufferUpload");
 
             vertexBufferSize[t] = 4;

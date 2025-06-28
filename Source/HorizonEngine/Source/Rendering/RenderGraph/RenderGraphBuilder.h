@@ -16,7 +16,7 @@ namespace Horizon
             : renderGraph(renderGraph), pass(pass) {}
         ~RenderGraphBuilder() = default;
         RenderGraphTextureHandle CreateTransientTexture(const RenderGraphTextureDescription& desc, const char* name);
-        RenderGraphBufferHandle CreateTransientBuffer(const RenderGraphBufferDesc& desc, const char* name);
+        RenderGraphBufferHandle CreateTransientBuffer(const RenderGraphBufferDescription& desc, const char* name);
         RenderGraphTextureHandle ReadTexture(RenderGraphTextureHandle handle, RenderBackendResourceState initialState);
         RenderGraphTextureHandle WriteTexture(RenderGraphTextureHandle handle, RenderBackendResourceState initialState);
         RenderGraphTextureHandle WriteTexture(RenderGraphTextureHandle handle, RenderBackendResourceState initialState, RenderBackendResourceState finalState);

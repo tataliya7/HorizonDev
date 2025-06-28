@@ -26,8 +26,8 @@ namespace Horizon
             return result;
         };
 
-        float offsetX = HaltonSequence(index + 1, 2) - 0.5f;
-        float offsetY = HaltonSequence(index + 1, 3) - 0.5f;
+        float offsetX = HaltonSequence((index % phaseCount) + 1, 2) - 0.5f;
+        float offsetY = HaltonSequence((index % phaseCount) + 1, 3) - 0.5f;
 
         // Unit pixel space offset
         Vector2f jitterOffset = Vector2f(offsetX, offsetY);

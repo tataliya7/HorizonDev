@@ -47,6 +47,12 @@ namespace Horizon
                     bool dirty = DrawComponentUI_SkyAtmosphereComponent("Sky Atmosphere Component", skyAtmosphereComponent);
                 }
 
+                if (editorSceneManager->GetActiveScene()->GetEntityManager()->HasComponent<GlobalFogComponent>(selectedEntity))
+                {
+                    GlobalFogComponent& globalFogComponent = editorSceneManager->GetActiveScene()->GetEntityManager()->GetComponent<GlobalFogComponent>(selectedEntity);
+                    bool dirty = DrawComponentUI_GlobalFogComponent("Global Fog Component", globalFogComponent);
+                }
+
                 if (editorSceneManager->GetActiveScene()->GetEntityManager()->HasComponent<LocalFogVolumeComponent>(selectedEntity))
                 {
                     LocalFogVolumeComponent& localFogVolumeComponent = editorSceneManager->GetActiveScene()->GetEntityManager()->GetComponent<LocalFogVolumeComponent>(selectedEntity);
@@ -708,6 +714,66 @@ namespace Horizon
             ImGui::NextColumn();
             ImGui::PushItemWidth(-1);
             if (ImGui::ColorEdit3("##SkyAtmosphereComponent_skyLuminanceColor", &component.skyLuminanceColor.x))
+            {
+                dirty = true;
+            }
+            ImGui::PopItemWidth();
+            ImGui::NextColumn();
+
+            ImGui::Columns(1);
+            ImGui::Separator();
+            ImGui::PopStyleVar();
+        }
+        return dirty;
+    }
+
+    bool DrawComponentUI_GlobalFogComponent(const char* lable, GlobalFogComponent& component)
+    {
+        bool dirty = false;
+        if (ImGui::CollapsingHeader(lable, ImGuiTreeNodeFlags_DefaultOpen))
+        {
+            ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(2, 2));
+            ImGui::Columns(2);
+            ImGui::Separator();
+
+            ImGui::AlignTextToFramePadding();
+            ImGui::TextUnformatted("Scattering");
+            ImGui::NextColumn();
+            ImGui::PushItemWidth(-1);
+            if (ImGui::ColorEdit3("##GF_Scattering", &component.scattering.x))
+            {
+                dirty = true;
+            }
+            ImGui::PopItemWidth();
+            ImGui::NextColumn();
+
+            ImGui::AlignTextToFramePadding();
+            ImGui::TextUnformatted("Absorption");
+            ImGui::NextColumn();
+            ImGui::PushItemWidth(-1);
+            if (ImGui::ColorEdit3("##GF_Absorption", &component.absorption.x))
+            {
+                dirty = true;
+            }
+            ImGui::PopItemWidth();
+            ImGui::NextColumn();
+
+            ImGui::AlignTextToFramePadding();
+            ImGui::TextUnformatted("Emission");
+            ImGui::NextColumn();
+            ImGui::PushItemWidth(-1);
+            if (ImGui::ColorEdit3("##GF_Emission", &component.emission.x))
+            {
+                dirty = true;
+            }
+            ImGui::PopItemWidth();
+            ImGui::NextColumn();
+
+            ImGui::AlignTextToFramePadding();
+            ImGui::TextUnformatted("PhaseG");
+            ImGui::NextColumn();
+            ImGui::PushItemWidth(-1);
+            if (ImGui::DragFloat("##GF_PhaseG", &component.phaseG, 0.01f, 0.0f, 1.0f))
             {
                 dirty = true;
             }

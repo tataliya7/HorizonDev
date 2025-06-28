@@ -169,7 +169,7 @@ struct PerFrameShaderParameters
 
     float autoExposureHistogramMinEV100;
     float autoExposureHistogramMaxEV100;
-    float padding11;
+    float autoExposureMinimumLuminance;
     float padding12;
 
     float bloomIntensity;

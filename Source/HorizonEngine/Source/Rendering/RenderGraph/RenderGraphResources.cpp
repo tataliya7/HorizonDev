@@ -56,7 +56,7 @@ namespace Horizon
         return persistentTexture;
     }
 
-    RenderGraphPersistentBuffer* RenderGraphResourcePool::CacheBuffer(RenderBackendBufferHandle handle, const RenderBackendBufferDesc& desc, const char* name)
+    RenderGraphPersistentBuffer* RenderGraphResourcePool::CacheBuffer(RenderBackendBufferHandle handle, const RenderBackendBufferDescription& desc, const char* name)
     {
         RenderGraphPersistentBuffer* persistentBuffer = new RenderGraphPersistentBuffer(name, desc, handle);
         persistentBuffer->active = true;
@@ -91,7 +91,7 @@ namespace Horizon
         return persistentTexture;
     }
 
-    RenderGraphPersistentBuffer* RenderGraphResourcePool::AllocateBuffer(const RenderBackendBufferDesc& desc, const char* name)
+    RenderGraphPersistentBuffer* RenderGraphResourcePool::AllocateBuffer(const RenderBackendBufferDescription& desc, const char* name)
     {
         for (RenderGraphPersistentBuffer* buffer : allocatedBuffers)
         {
@@ -144,7 +144,7 @@ namespace Horizon
 
     RenderGraphStagingBuffer* RenderGraphResourcePool::AllocateStagingBuffer(uint64 size)
     {
-        RenderBackendBufferDesc desc = RenderBackendBufferDesc::CreateUpload(size);
+        RenderBackendBufferDescription desc = RenderBackendBufferDescription::CreateUpload(size);
 
         for (uint32 index = 0; index < uint32(bufferUploader[currentFrameIndex].freeStagingBuffers.size()); index++)
         {

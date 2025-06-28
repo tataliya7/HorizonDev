@@ -179,7 +179,7 @@ namespace Horizon
 
         uint32 sampleCount = 64;
 
-        RenderGraphBufferDesc irradianceEnvironmentMapBufferDesc = RenderGraphBufferDesc::CreateByteAddress(sizeof(float) * 9 * 3);
+        RenderGraphBufferDescription irradianceEnvironmentMapBufferDesc = RenderGraphBufferDescription::CreateByteAddress(sizeof(float) * 9 * 3);
         RenderGraphBufferHandle irradianceEnvironmentMapBuffer = renderGraph.CreateBuffer(irradianceEnvironmentMapBufferDesc, "IrradianceEnvironmentMapBuffer");
 
         renderGraph.AddPass(

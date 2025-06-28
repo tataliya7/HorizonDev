@@ -8,7 +8,7 @@ namespace Horizon
         return RenderGraphTextureHandle();
     }
 
-    RenderGraphBufferHandle RenderGraphBuilder::CreateTransientBuffer(const RenderGraphBufferDesc& desc, const char* name)
+    RenderGraphBufferHandle RenderGraphBuilder::CreateTransientBuffer(const RenderGraphBufferDescription& desc, const char* name)
     {
         return RenderGraphBufferHandle();
     }

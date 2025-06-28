@@ -68,19 +68,19 @@ namespace Horizon
 
         RasterizationRendererIntermediateResources& intermediateResources = renderGraph.blackboard.Get<RasterizationRendererIntermediateResources>();
 
-        RenderGraphBufferDesc meshletCullingArgumentBufferDesc = RenderGraphBufferDesc::CreateIndirectArguments(sizeof(RenderBackendDispatchIndirectArguments), 1);
+        RenderGraphBufferDescription meshletCullingArgumentBufferDesc = RenderGraphBufferDescription::CreateIndirectArguments(sizeof(RenderBackendDispatchIndirectArguments), 1);
         RenderGraphBufferHandle meshletCullingArgumentBuffer = renderGraph.CreateBuffer(meshletCullingArgumentBufferDesc, "VirtualGeometryIndirectArgumentBuffer");
 
-        RenderGraphBufferDesc drawIndirectArgumentBufferDesc = RenderGraphBufferDesc::CreateIndirectArguments(sizeof(RenderBackendDrawIndirectArguments), 1);
+        RenderGraphBufferDescription drawIndirectArgumentBufferDesc = RenderGraphBufferDescription::CreateIndirectArguments(sizeof(RenderBackendDrawIndirectArguments), 1);
         RenderGraphBufferHandle drawIndirectArgumentBuffer = renderGraph.CreateBuffer(drawIndirectArgumentBufferDesc, "VirtualGeometryDrawIndirectArgumentBuffer");
 
-        RenderGraphBufferDesc candidateVisibleMeshletBufferDesc = RenderGraphBufferDesc::CreateByteAddress(sizeof(VisibleMeshletEntry) * MaximumCandidateVisibleMeshletCount);
+        RenderGraphBufferDescription candidateVisibleMeshletBufferDesc = RenderGraphBufferDescription::CreateByteAddress(sizeof(VisibleMeshletEntry) * MaximumCandidateVisibleMeshletCount);
         RenderGraphBufferHandle candidateVisibleMeshletBuffer = renderGraph.CreateBuffer(candidateVisibleMeshletBufferDesc, "CandidateVisibleMeshletBuffer");
 
-        RenderGraphBufferDesc visibleMeshletBufferDesc = RenderGraphBufferDesc::CreateByteAddress(sizeof(VisibleMeshletEntry) * MaximumVisibleMeshletCount);
+        RenderGraphBufferDescription visibleMeshletBufferDesc = RenderGraphBufferDescription::CreateByteAddress(sizeof(VisibleMeshletEntry) * MaximumVisibleMeshletCount);
         RenderGraphBufferHandle visibleMeshletBuffer = renderGraph.CreateBuffer(visibleMeshletBufferDesc, "VisibleMeshletBuffer");
 
-        RenderGraphBufferDesc visibleMeshletCounterBufferDesc = RenderGraphBufferDesc::CreateByteAddress(sizeof(uint32));
+        RenderGraphBufferDescription visibleMeshletCounterBufferDesc = RenderGraphBufferDescription::CreateByteAddress(sizeof(uint32));
         RenderGraphBufferHandle visibleMeshletCounterBuffer = renderGraph.CreateBuffer(visibleMeshletCounterBufferDesc, "VisibleMeshletCounterBuffer");
 
         renderGraph.AddPass(
@@ -879,10 +879,10 @@ namespace Horizon
 
         if (!debugDrawLinesVertexBuffer)
         {
-            RenderBackendBufferDesc bufferDesc = RenderBackendBufferDesc::CreateByteAddress(newDebugDrawLinesVertexBufferSize);
+            RenderBackendBufferDescription bufferDesc = RenderBackendBufferDescription::CreateByteAddress(newDebugDrawLinesVertexBufferSize);
             debugDrawLinesVertexBuffer = renderBackend->CreateBuffer(&bufferDesc, nullptr, "DebugDrawLinesVertexBuffer");
 
-            RenderBackendBufferDesc debugDrawLinesVertexUploadBufferDesc = RenderBackendBufferDesc::CreateUpload(newDebugDrawLinesVertexBufferSize);
+            RenderBackendBufferDescription debugDrawLinesVertexUploadBufferDesc = RenderBackendBufferDescription::CreateUpload(newDebugDrawLinesVertexBufferSize);
             debugDrawLinesVertexUploadBuffer = renderBackend->CreateBuffer(&debugDrawLinesVertexUploadBufferDesc, nullptr, "DebugDrawLinesVertexUploadBuffer");
         }
         else if (debugDrawLinesVertexBufferSize < newDebugDrawLinesVertexBufferSize)

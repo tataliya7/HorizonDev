@@ -18,7 +18,7 @@ namespace Horizon
         RenderGraphTexture* GetImportedTexture(RenderBackendTextureHandle handle) const;
         RenderGraphBuffer* GetImportedBuffer(RenderBackendBufferHandle handle) const;
         const RenderBackendTextureDesc& GetTextureDesc(RenderGraphTextureHandle handle) const;
-        const RenderBackendBufferDesc& GetBufferDesc(RenderGraphBufferHandle handle) const;
+        const RenderBackendBufferDescription& GetBufferDesc(RenderGraphBufferHandle handle) const;
         RenderBackendTextureHandle GetRenderBackendTextureHandle(RenderGraphTextureHandle handle) const;
         RenderBackendBufferHandle GetRenderBackendBufferHandle(RenderGraphBufferHandle handle) const;
         int32 GetTextureSRVBindlessResourceDescriptorIndex(RenderGraphTextureHandle handle) const;

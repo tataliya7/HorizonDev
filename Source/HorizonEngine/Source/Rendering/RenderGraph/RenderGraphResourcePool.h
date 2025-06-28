@@ -66,7 +66,7 @@ namespace Horizon
     class RenderGraphPersistentBuffer
     {
     public:
-        RenderGraphPersistentBuffer(const char* name, const RenderBackendBufferDesc& desc, RenderBackendBufferHandle handle)
+        RenderGraphPersistentBuffer(const char* name, const RenderBackendBufferDescription& desc, RenderBackendBufferHandle handle)
             : active(false)
             , name(name)
             , desc(desc)
@@ -86,7 +86,7 @@ namespace Horizon
         {
             return handle;
         }
-        const RenderBackendBufferDesc& GetDesc() const
+        const RenderBackendBufferDescription& GetDesc() const
         {
             return desc;
         }
@@ -94,14 +94,14 @@ namespace Horizon
         friend class RenderGraphResourcePool;
         bool active;
         std::string name;
-        RenderBackendBufferDesc desc;
+        RenderBackendBufferDescription desc;
         RenderBackendBufferHandle handle;
     };
 
     class RenderGraphStagingBuffer : public RenderGraphPersistentBuffer
     {
     public:
-        RenderGraphStagingBuffer(const char* name, const RenderBackendBufferDesc& desc, RenderBackendBufferHandle handle)
+        RenderGraphStagingBuffer(const char* name, const RenderBackendBufferDescription& desc, RenderBackendBufferHandle handle)
             : RenderGraphPersistentBuffer(name, desc, handle)
         {
 
@@ -115,9 +115,9 @@ namespace Horizon
         ~RenderGraphResourcePool();
         void Tick();
         RenderGraphPersistentTexture* CacheTexture(RenderBackendTextureHandle handle, const RenderBackendTextureDesc& desc, const char* name);
-        RenderGraphPersistentBuffer* CacheBuffer(RenderBackendBufferHandle handle, const RenderBackendBufferDesc& desc, const char* name);
+        RenderGraphPersistentBuffer* CacheBuffer(RenderBackendBufferHandle handle, const RenderBackendBufferDescription& desc, const char* name);
         RenderGraphPersistentTexture* AllocateTexture(const RenderBackendTextureDesc& desc, const char* name);
-        RenderGraphPersistentBuffer* AllocateBuffer(const RenderBackendBufferDesc& desc, const char* name);
+        RenderGraphPersistentBuffer* AllocateBuffer(const RenderBackendBufferDescription& desc, const char* name);
         void ReleaseTexture(RenderGraphPersistentTexture* texture);
         void ReleaseBuffer(RenderGraphPersistentBuffer* buffer);
 

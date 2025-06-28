@@ -306,6 +306,12 @@ namespace Horizon
             skyAtmosphereComponent.UpdateRenderObject();
         });
 
+        entityManager->GetView<GlobalFogComponent>().each([&](EntityHandle entity)
+        {
+            GlobalFogComponent& globalFogComponent = entityManager->GetComponent<GlobalFogComponent>(entity);
+            globalFogComponent.UpdateRenderObject();
+        });
+
         entityManager->GetView<LocalFogVolumeComponent>().each([&](EntityHandle entity)
         {
             const TransformComponent& transformComponent = entityManager->GetComponent<TransformComponent>(entity);

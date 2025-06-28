@@ -368,6 +368,24 @@ namespace Horizon
         Vector3f skyLuminanceFactor;
     };
 
+    class GlobalFogRenderObject
+    {
+    public:
+
+        GlobalFogRenderObject();
+
+        ~GlobalFogRenderObject();
+
+        float distance;
+
+        Vector3f scattering;
+        Vector3f absorption;
+        Vector3f emission;
+        float phaseG;
+
+    private:
+    };
+
     struct GPUSceneGeometryData
     {
         int vertexBuffer0;
@@ -515,6 +533,14 @@ namespace Horizon
 
         virtual void RemoveSkyAtmosphere(SkyAtmosphereRenderObject* skyAtmosphere);
 
+        virtual bool HasActiveGlobalFog() const;
+
+        virtual GlobalFogRenderObject* GetActiveGlobalFog() const;
+
+        virtual void AddGlobalFog(GlobalFogRenderObject* globalFog);
+
+        virtual void RemoveGlobalFog(GlobalFogRenderObject* globalFog);
+
         virtual bool HasAnyLocalFogVolume() const;
 
         virtual void AddLocalFogVolume(LocalFogVolumeRenderObject* localFogVolume);
@@ -559,6 +585,10 @@ namespace Horizon
 
         std::vector<SkyAtmosphereRenderObject*> skyAtmospheres;
 
+        std::vector<GlobalFogRenderObject*> globalFogs;
+
+        GlobalFogRenderObject* activeGlobalFog;
+
         std::vector<LocalFogVolumeRenderObject*> localFogVolumes;
 
         GPUScene* gpuScene;
@@ -581,7 +611,7 @@ namespace Horizon
 
         std::vector<DrawCallInfo> drawList;
 
-        RenderBackendBufferDesc instanceBufferDesc;
+        RenderBackendBufferDescription instanceBufferDesc;
         RenderBackendBufferHandle instanceBuffer;
         RenderBackendBufferHandle instanceUploadBuffer;
 

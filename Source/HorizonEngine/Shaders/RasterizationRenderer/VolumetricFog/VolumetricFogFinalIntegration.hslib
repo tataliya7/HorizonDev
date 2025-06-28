@@ -30,6 +30,7 @@ void VolumetricFogFinalIntegrationCS(uint3 groupID : SV_GroupID, uint3 groupThre
 
     float3 accumulatedRadiance = float3(0.0f, 0.0f, 0.0f);
     float accumulatedTransmittance = 1.0f;
+
     for (uint sliceIndex = 0; sliceIndex < volumetricFogShaderParameters.volumeResolution.z; sliceIndex++)
     {
         uint3 voxelCoordinate = uint3(dispatchThreadID.xy, sliceIndex);

@@ -44,7 +44,7 @@ void BilateralGridLocalToneMappingUpsamplingCS(uint3 dispatchThreadID : SV_Dispa
     float exposureCompensation = autoExposureData.z;
 
     float4 inputColor = colorTexture.SampleLevel(GlobalSamplerPointClamp, uv, 0.0f);
-    float inputLuminance = RelativeLuminance(inputColor.rgb * inversePreExposure);
+    float inputLuminance = max(RelativeLuminance(inputColor.rgb * inversePreExposure), frameShaderParameters.autoExposureMinimumLuminance);
     float inputLogLuminance = log2(inputLuminance) + logGlobalExposure;
 
     float2 inverseGridTextureSize = float2(ShaderConstants.GetInverseGridTextureWidth(), ShaderConstants.GetInverseGridTextureHeight());

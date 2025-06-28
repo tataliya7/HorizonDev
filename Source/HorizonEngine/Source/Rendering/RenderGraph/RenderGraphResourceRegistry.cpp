@@ -36,7 +36,7 @@ namespace Horizon
         return GetTexture(handle)->GetDesc();
     }
 
-    const RenderBackendBufferDesc& RenderGraphResourceRegistry::GetBufferDesc(RenderGraphBufferHandle handle) const
+    const RenderBackendBufferDescription& RenderGraphResourceRegistry::GetBufferDesc(RenderGraphBufferHandle handle) const
     {
         return GetBuffer(handle)->GetDesc();
     }

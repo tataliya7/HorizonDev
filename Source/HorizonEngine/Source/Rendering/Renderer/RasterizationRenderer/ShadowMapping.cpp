@@ -25,9 +25,9 @@ namespace Horizon
         RenderBackendBufferHandle& cascadedShadowMapDataBuffer = cascadedShadowMapShaderParameterBuffers[currentPerFrameDataBufferIndex];
         if (!cascadedShadowMapDataBuffer)
         {
-            RenderBackendBufferDesc cascadedShadowMapDataUploadBufferDesc = RenderBackendBufferDesc::CreateUpload(sizeof(CascadedShadowMapShaderParameters));
+            RenderBackendBufferDescription cascadedShadowMapDataUploadBufferDesc = RenderBackendBufferDescription::CreateUpload(sizeof(CascadedShadowMapShaderParameters));
             cascadedShadowMapDataUploadBuffer = renderBackend->CreateBuffer(&cascadedShadowMapDataUploadBufferDesc, nullptr, "CascadedShadowMapDataUploadBuffer");
-            RenderBackendBufferDesc cascadedShadowMapDataBufferDesc = RenderBackendBufferDesc::CreateStructured(sizeof(CascadedShadowMapShaderParameters), 1);
+            RenderBackendBufferDescription cascadedShadowMapDataBufferDesc = RenderBackendBufferDescription::CreateStructured(sizeof(CascadedShadowMapShaderParameters), 1);
             cascadedShadowMapDataBuffer = renderBackend->CreateBuffer(&cascadedShadowMapDataBufferDesc, nullptr, "CascadedShadowMapDataBuffer");
         }
         renderBackend->UpdateBuffer(cascadedShadowMapDataUploadBuffer, 0, &cascadedShadowMapShaderParameters, sizeof(CascadedShadowMapShaderParameters));

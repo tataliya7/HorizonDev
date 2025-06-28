@@ -174,7 +174,7 @@ float3 ReconstructWorldSpacePositionFromUVZ(float2 uv, float depth, float4x4 cli
     return position.xyz / position.w;
 }
 
-float3 ReconstructViewSpacePositionFromDepth(float2 uv, float depth, float4x4 clipToViewMatrix)
+float3 ReconstructViewSpacePositionFromUVZ(float2 uv, float depth, float4x4 clipToViewMatrix)
 {
     float2 xy = float2(uv.x * 2.0 - 1.0, (1.0 - uv.y) * 2.0 - 1.0);
     float4 clipSpacePosition = float4(xy, depth, 1.0);

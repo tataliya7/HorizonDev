@@ -187,8 +187,6 @@ namespace Horizon
 
         bool IsScreenSpaceReflectionsEnabled() const;
 
-        bool IsScreenSpaceLightShaftsEnabled() const;
-
         //bool IsRayTracingShadowsEnabled() const;
 
         //bool IsRayTracingReflectionsEnabled() const;

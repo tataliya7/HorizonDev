@@ -267,9 +267,9 @@ namespace Horizon
         RenderBackendBufferHandle& virtualShadowMapShaderParameterBuffer = virtualShadowMapShaderParameterBuffers[currentPerFrameDataBufferIndex];
         if (!virtualShadowMapShaderParameterBuffer)
         {
-            RenderBackendBufferDesc virtualShadowMapShaderParameterUploadBufferDesc = RenderBackendBufferDesc::CreateUpload(sizeof(VirtualShadowMapShaderParameters));
+            RenderBackendBufferDescription virtualShadowMapShaderParameterUploadBufferDesc = RenderBackendBufferDescription::CreateUpload(sizeof(VirtualShadowMapShaderParameters));
             virtualShadowMapShaderParameterUploadBuffer = renderBackend->CreateBuffer(&virtualShadowMapShaderParameterUploadBufferDesc, nullptr, "VirtualShadowMapShaderParameterUploadBuffer");
-            RenderBackendBufferDesc virtualShadowMapShaderParameterBufferDesc = RenderBackendBufferDesc::CreateStructured(sizeof(VirtualShadowMapShaderParameters), 1);
+            RenderBackendBufferDescription virtualShadowMapShaderParameterBufferDesc = RenderBackendBufferDescription::CreateStructured(sizeof(VirtualShadowMapShaderParameters), 1);
             virtualShadowMapShaderParameterBuffer = renderBackend->CreateBuffer(&virtualShadowMapShaderParameterBufferDesc, nullptr, "VirtualShadowMapShaderParameterBuffer");
         }
         renderBackend->UpdateBuffer(virtualShadowMapShaderParameterUploadBuffer, 0, &virtualShadowMapShaderParameters, sizeof(VirtualShadowMapShaderParameters));
@@ -291,7 +291,7 @@ namespace Horizon
             });
 
         uint32 virtualShadowMapEntryBufferSize = virtualShadowMapEntryCount * sizeof(VirtualShadowMapEntryShaderParameters);
-        RenderGraphBufferHandle virtualShadowMapEntryBuffer = renderGraph.CreateBuffer(RenderGraphBufferDesc::CreateByteAddress(virtualShadowMapEntryBufferSize), "VirtualShadowMapEntryBuffer");
+        RenderGraphBufferHandle virtualShadowMapEntryBuffer = renderGraph.CreateBuffer(RenderGraphBufferDescription::CreateByteAddress(virtualShadowMapEntryBufferSize), "VirtualShadowMapEntryBuffer");
         renderGraph.UploadBufferDeferred(virtualShadowMapEntryBuffer, virtualShadowMapManager->virtualShadowMapEntries.data(), virtualShadowMapEntryBufferSize, RenderGraphSourceDataLifetimeHint::ValidUntilExecution);
 
         uint32 distantLightVirtualShadowMapEntryCount = 0;
@@ -307,22 +307,22 @@ namespace Horizon
 
         RasterizationRendererIntermediateResources& intermediateResources = renderGraph.blackboard.Get<RasterizationRendererIntermediateResources>();
 
-        RenderGraphBufferDesc virtualShadowMapPageRequestBufferDesc = RenderGraphBufferDesc::CreateByteAddress(virtualShadowMapMaximumVirtualPageCount * sizeof(uint32));
+        RenderGraphBufferDescription virtualShadowMapPageRequestBufferDesc = RenderGraphBufferDescription::CreateByteAddress(virtualShadowMapMaximumVirtualPageCount * sizeof(uint32));
         RenderGraphBufferHandle virtualShadowMapPageRequestBuffer = renderGraph.CreateBuffer(virtualShadowMapPageRequestBufferDesc, "VirtualShadowMapPageRequestBuffer");
 
-        RenderGraphBufferDesc virtualShadowMapPageTableBufferDesc = RenderGraphBufferDesc::CreateByteAddress(virtualShadowMapMaximumVirtualPageCount * sizeof(uint32));
+        RenderGraphBufferDescription virtualShadowMapPageTableBufferDesc = RenderGraphBufferDescription::CreateByteAddress(virtualShadowMapMaximumVirtualPageCount * sizeof(uint32));
         RenderGraphBufferHandle virtualShadowMapPageTableBuffer = renderGraph.CreateBuffer(virtualShadowMapPageTableBufferDesc, "VirtualShadowMapPageTableBuffer");
 
-        RenderGraphBufferDesc virtualShadowMapPhysicalPageDataBufferDesc = RenderGraphBufferDesc::CreateByteAddress(virtualShadowMapPhysicalPageCount * sizeof(uint32));
+        RenderGraphBufferDescription virtualShadowMapPhysicalPageDataBufferDesc = RenderGraphBufferDescription::CreateByteAddress(virtualShadowMapPhysicalPageCount * sizeof(uint32));
         RenderGraphBufferHandle virtualShadowMapPhysicalPageDataBuffer = renderGraph.CreateBuffer(virtualShadowMapPhysicalPageDataBufferDesc, "VirtualShadowMapPhysicalPageDataBuffer");
 
-        RenderGraphBufferDesc virtualShadowMapPhysicalPageListBufferDesc = RenderGraphBufferDesc::CreateByteAddress(sizeof(uint32), 1);
+        RenderGraphBufferDescription virtualShadowMapPhysicalPageListBufferDesc = RenderGraphBufferDescription::CreateByteAddress(sizeof(uint32), 1);
         RenderGraphBufferHandle virtualShadowMapPhysicalPageListBuffer = renderGraph.CreateBuffer(virtualShadowMapPhysicalPageListBufferDesc, "VirtualShadowMapPhysicalPageListBuffer");
 
-        RenderGraphBufferDesc virtualShadowMapIndirectArgumentBufferDesc = RenderGraphBufferDesc::CreateIndirectArguments(sizeof(uint32), 3);
+        RenderGraphBufferDescription virtualShadowMapIndirectArgumentBufferDesc = RenderGraphBufferDescription::CreateIndirectArguments(sizeof(uint32), 3);
         RenderGraphBufferHandle virtualShadowMapIndirectArgumentBuffer = renderGraph.CreateBuffer(virtualShadowMapIndirectArgumentBufferDesc, "VirtualShadowMapIndirectArgumentBuffer");
 
-        RenderGraphBufferDesc virtualShadowMapActivePhysicalPageIndexBufferDesc = RenderGraphBufferDesc::CreateByteAddress(virtualShadowMapPhysicalPageCount * sizeof(uint32));
+        RenderGraphBufferDescription virtualShadowMapActivePhysicalPageIndexBufferDesc = RenderGraphBufferDescription::CreateByteAddress(virtualShadowMapPhysicalPageCount * sizeof(uint32));
         RenderGraphBufferHandle virtualShadowMapActivePhysicalPageIndexBuffer = renderGraph.CreateBuffer(virtualShadowMapActivePhysicalPageIndexBufferDesc, "VirtualShadowMapActivePhysicalPageIndexBuffer");
 
         RenderGraphTextureDescription virtualShadowMapDepthTextureDesc = RenderGraphTextureDescription::Create2DArray(

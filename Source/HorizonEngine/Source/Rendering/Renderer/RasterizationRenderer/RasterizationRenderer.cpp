@@ -29,7 +29,7 @@ namespace Horizon
         //}
 
         AutoExposureData defaultAutoExposureData;
-        RenderBackendBufferDesc autoExposureReadbackBufferDesc = RenderBackendBufferDesc::CreateReadback(sizeof(AutoExposureData));
+        RenderBackendBufferDescription autoExposureReadbackBufferDesc = RenderBackendBufferDescription::CreateReadback(sizeof(AutoExposureData));
         for (uint32 index = 0; index < NumAutoExposureReadbackBuffers; index++)
         {
             RenderBackendBufferHandle autoExposureReadbackBuffer = renderBackend->CreateBuffer(&autoExposureReadbackBufferDesc, &defaultAutoExposureData, "AutoExposureReadBackBuffer");
@@ -59,7 +59,7 @@ namespace Horizon
         historyFrame.preExposure = 1.0f;
 
         AutoExposureData defaultAutoExposureData;
-        RenderBackendBufferDesc autoExposureBufferDesc = RenderBackendBufferDesc::Create(sizeof(AutoExposureData), 1, RenderBackendBufferCreateFlags::ShaderResource | RenderBackendBufferCreateFlags::UnorderedAccess);
+        RenderBackendBufferDescription autoExposureBufferDesc = RenderBackendBufferDescription::Create(sizeof(AutoExposureData), 1, RenderBackendBufferCreateFlags::ShaderResource | RenderBackendBufferCreateFlags::UnorderedAccess);
         RenderBackendBufferHandle autoExposureBuffer = renderBackend->CreateBuffer(&autoExposureBufferDesc, &defaultAutoExposureData, "AutoExposureBuffer");
         historyFrame.autoExposureBuffer = resourcePool->CacheBuffer(autoExposureBuffer, autoExposureBufferDesc, "AutoExposureBuffer");
 
@@ -483,6 +483,7 @@ namespace Horizon
                 perFrameShaderParameters.autoExposureHistogramMinEV100 = finalPostProcessingSettings.autoExposureHistogramMinEV100;
                 perFrameShaderParameters.autoExposureHistogramMaxEV100 = finalPostProcessingSettings.autoExposureHistogramMaxEV100;
                 perFrameShaderParameters.autoExposureUseTargetExposure = (view.NeedToBeReset() || !renderFeatures.enableAutoExposure) ? 1.0f : 0.0f; // TODO: forceUseTargetExposure;
+                perFrameShaderParameters.autoExposureMinimumLuminance = std::exp2(finalPostProcessingSettings.autoExposureHistogramMinEV100);
 
                 perFrameShaderParameters.bloomIntensity = finalPostProcessingSettings.bloomIntensity;
                 perFrameShaderParameters.bloomRadius = finalPostProcessingSettings.bloomRadius;
@@ -540,9 +541,9 @@ namespace Horizon
 
         if (!perFrameConstantBuffers[currentPerFrameDataBufferIndex])
         {
-            RenderBackendBufferDesc perFrameConstantUploadBufferDesc = RenderBackendBufferDesc::CreateUpload(sizeof(PerFrameShaderParameters));
+            RenderBackendBufferDescription perFrameConstantUploadBufferDesc = RenderBackendBufferDescription::CreateUpload(sizeof(PerFrameShaderParameters));
             perFrameConstantUploadBuffers[currentPerFrameDataBufferIndex] = renderBackend->CreateBuffer(&perFrameConstantUploadBufferDesc, nullptr, "PerFrameConstantUploadBuffer");
-            RenderBackendBufferDesc perFrameConstantBufferDesc = RenderBackendBufferDesc::CreateStructured(sizeof(PerFrameShaderParameters), 1);
+            RenderBackendBufferDescription perFrameConstantBufferDesc = RenderBackendBufferDescription::CreateStructured(sizeof(PerFrameShaderParameters), 1);
             perFrameConstantBuffers[currentPerFrameDataBufferIndex] = renderBackend->CreateBuffer(&perFrameConstantBufferDesc, nullptr, "PerFrameConstantBuffer");
         }
         renderBackend->UpdateBuffer(perFrameConstantUploadBuffers[currentPerFrameDataBufferIndex], 0, &perFrameShaderParameters, sizeof(PerFrameShaderParameters));
@@ -851,20 +852,20 @@ namespace Horizon
             RenderSkyAtmosphere(renderGraph, view);
         }
 
-        // const bool isVisualizeSufelEnabled = (view.visualizationMode == SceneViewVisualizationMode::SurfelGISurfel);
+        // const bool isVisualizeSurfelEnabled = (view.visualizationMode == SceneViewVisualizationMode::SurfelGISurfel);
         //
-        // if (isVisualizeSufelEnabled)
+        // if (isVisualizeSurfelEnabled)
         // {
-        //     AddSurfleGIVisualizationPass(renderGraph, view);
+        //     AddSurfelGIVisualizationPass(renderGraph, view);
         // }
-
-        if (IsScreenSpaceLightShaftsEnabled())
-        {
-            RenderScreenSpaceLightShafts(renderGraph, view);
-        }
 
         RenderVolumetricFog(renderGraph, view);
         //RenderLocalFogVolumes(renderGraph, view);
+
+        if (renderFeatures.enableScreenSpaceLightShafts)
+        {
+            RenderScreenSpaceLightShafts(renderGraph, view);
+        }
 
         // @todo Refactor this
         intermediateResources.colorTexture = AddDebugDrawPass(renderGraph, view, intermediateResources.colorTexture, intermediateResources.depthTexture);

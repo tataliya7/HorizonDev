@@ -75,7 +75,7 @@ namespace Horizon
                 builder.SetBindlessResourceSRV(0, GetCurrentPerFrameConstantBuffer());
                 builder.SetBindlessResourceSRV(1, intermediateResources.depthTexture);
                 builder.SetBindlessResourceSRV(2, horizonSearchIntegralOutputTexture);
-                builder.SetBindlessResourceSRV(3, spatialFilteringOutputTexture);
+                builder.SetBindlessResourceUAV(3, spatialFilteringOutputTexture, 0);
 
                 RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::GTAOSpatialFiltering);
 
@@ -169,7 +169,7 @@ namespace Horizon
                     builder.SetBindlessResourceSRV(0, GetCurrentPerFrameConstantBuffer());
                     builder.SetBindlessResourceSRV(1, upsamplingInputTexture);
                     builder.SetBindlessResourceSRV(2, depthTexture);
-                    builder.SetBindlessResourceSRV(3, upsamplingOutputTexture);
+                    builder.SetBindlessResourceUAV(3, upsamplingOutputTexture, 0);
 
                     RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::GTAOUpsampling);
 

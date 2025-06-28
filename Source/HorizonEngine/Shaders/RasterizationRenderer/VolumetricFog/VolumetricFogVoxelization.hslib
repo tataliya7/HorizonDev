@@ -29,11 +29,19 @@ void VolumetricFogVoxelizationCS(uint3 groupID : SV_GroupID, uint3 groupThreadID
         return;
     }
 
+#if 0
     float3 scattering = float3(0.0f, 0.0f, 0.0f);
     float3 absorption = float3(0.0f, 0.0f, 0.0f);
     float3 emission = float3(0.0f, 0.0f, 0.0f);
     float phaseG = 0.0f;
+#else
+    float3 scattering = volumetricFogShaderParameters.scattering;
+    float3 absorption = volumetricFogShaderParameters.absorption;
+    float3 emission = volumetricFogShaderParameters.emission;
+    float phaseG = 0.98f;
+#endif
 
+#if 0
     uint localFogVolumeInstanceCount = volumetricFogShaderParameters.localFogVolumeInstanceCount;
     if (localFogVolumeInstanceCount > 0)
     {
@@ -48,6 +56,7 @@ void VolumetricFogVoxelizationCS(uint3 groupID : SV_GroupID, uint3 groupThreadID
             emission += instanceData.emission;
         }
     }
+#endif
 
     float extinction = max(RelativeLuminance(scattering) + RelativeLuminance(absorption), 0.0f);
 

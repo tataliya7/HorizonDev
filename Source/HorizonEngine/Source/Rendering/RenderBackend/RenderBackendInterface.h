@@ -114,7 +114,7 @@ namespace Horizon
         /**
          * TBD.
          */
-        virtual RenderBackendBufferHandle CreateBuffer(const RenderBackendBufferDesc* desc, const void* data, const char* name) = 0;
+        virtual RenderBackendBufferHandle CreateBuffer(const RenderBackendBufferDescription* desc, const void* data, const char* name) = 0;
 
         /**
          * TBD.

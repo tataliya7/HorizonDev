@@ -118,7 +118,7 @@ namespace Horizon
         const uint32 gaussianFilterKernelSize = 2 * gaussianFilterRadius + 1;
         const float gaussianFilterSigma = 0.3f * (float(gaussianFilterKernelSize - 1) * 0.5f - 1.0f) + 0.8f;
 
-        RenderGraphBufferDesc gaussianDistributionBufferDesc = RenderGraphBufferDesc::CreateByteAddress(2 * sizeof(float) * GaussianFilterMaxKernelSize);
+        RenderGraphBufferDescription gaussianDistributionBufferDesc = RenderGraphBufferDescription::CreateByteAddress(2 * sizeof(float) * GaussianFilterMaxKernelSize);
         RenderGraphBufferHandle gaussianDistributionBuffer = renderGraph.CreateBuffer(gaussianDistributionBufferDesc, "GaussianDistributionBuffer");
 
         renderGraph.AddPass(

@@ -72,11 +72,20 @@ namespace Horizon
 
     }
 
+    GlobalFogRenderObject::GlobalFogRenderObject()
+    {
+    }
+
+    GlobalFogRenderObject::~GlobalFogRenderObject()
+    {
+    }
+
     RenderScene::RenderScene(RenderBackend* renderBackend, ShaderCollection* shaderLibrary)
         : renderBackend(renderBackend)
         , shaderLibrary(shaderLibrary)
         , atmosphericLight(nullptr)
         , activeSkyAtmosphere(nullptr)
+        , activeGlobalFog(nullptr)
     {
         gpuScene = new GPUScene();
 
@@ -177,6 +186,36 @@ namespace Horizon
         activeSkyAtmosphere = skyAtmospheres.empty() ? nullptr : skyAtmospheres.back();
     }
 
+    bool RenderScene::HasActiveGlobalFog() const
+    {
+        return activeGlobalFog != nullptr;
+    }
+
+    GlobalFogRenderObject* RenderScene::GetActiveGlobalFog() const
+    {
+        return activeGlobalFog;
+    }
+
+    void RenderScene::AddGlobalFog(GlobalFogRenderObject* globalFog)
+    {
+        assert(globalFog != nullptr);
+        assert(std::ranges::find(globalFogs, globalFog) == globalFogs.end());
+
+        globalFogs.push_back(globalFog);
+
+        activeGlobalFog = globalFogs.back();
+    }
+
+    void RenderScene::RemoveGlobalFog(GlobalFogRenderObject* globalFog)
+    {
+        assert(globalFog != nullptr);
+        assert(std::ranges::find(globalFogs, globalFog) != globalFogs.end());
+
+        globalFogs.erase(std::ranges::remove(globalFogs, globalFog).begin(), globalFogs.end());
+
+        activeGlobalFog = globalFogs.empty() ? nullptr : globalFogs.back();
+    }
+
     bool RenderScene::HasAnyLocalFogVolume() const
     {
         return !localFogVolumes.empty();
@@ -266,9 +305,9 @@ namespace Horizon
         uint32 newGeometryDataBufferSize = geometryCount * sizeof(GPUSceneGeometryData);
         if (gpuScene->geometryDataBuffer == RenderBackendBufferHandle::Null && newGeometryDataBufferSize > 0)
         {
-            RenderBackendBufferDesc geometryUploadBufferDesc = RenderBackendBufferDesc::CreateUpload(newGeometryDataBufferSize);
+            RenderBackendBufferDescription geometryUploadBufferDesc = RenderBackendBufferDescription::CreateUpload(newGeometryDataBufferSize);
             gpuScene->geometryDataUploadBuffer = renderBackend->CreateBuffer(&geometryUploadBufferDesc, nullptr, "GeometryDataUploadBuffer");
-            RenderBackendBufferDesc geometryBufferDesc = RenderBackendBufferDesc::CreateByteAddress(newGeometryDataBufferSize);
+            RenderBackendBufferDescription geometryBufferDesc = RenderBackendBufferDescription::CreateByteAddress(newGeometryDataBufferSize);
             gpuScene->geometryDataBuffer = renderBackend->CreateBuffer(&geometryBufferDesc, nullptr, "GeometryDataBuffer");
             gpuScene->geometryDataBufferSize = newGeometryDataBufferSize;
         }
@@ -309,9 +348,9 @@ namespace Horizon
         uint32 newGeometryInstanceDataBufferSize = geometryInstanceCount * sizeof(GPUSceneGeometryInstanceData);
         if (gpuScene->geometryInstanceDataBuffer == RenderBackendBufferHandle::Null && newGeometryInstanceDataBufferSize > 0)
         {
-            RenderBackendBufferDesc geometryInstanceUploadBufferDesc = RenderBackendBufferDesc::CreateUpload(newGeometryInstanceDataBufferSize);
+            RenderBackendBufferDescription geometryInstanceUploadBufferDesc = RenderBackendBufferDescription::CreateUpload(newGeometryInstanceDataBufferSize);
             gpuScene->geometryInstanceDataUploadBuffer = renderBackend->CreateBuffer(&geometryInstanceUploadBufferDesc, nullptr, "GeometryInstanceDataUploadBuffer");
-            RenderBackendBufferDesc geometryInstanceBufferDesc = RenderBackendBufferDesc::CreateByteAddress(newGeometryInstanceDataBufferSize);
+            RenderBackendBufferDescription geometryInstanceBufferDesc = RenderBackendBufferDescription::CreateByteAddress(newGeometryInstanceDataBufferSize);
             gpuScene->geometryInstanceDataBuffer = renderBackend->CreateBuffer(&geometryInstanceBufferDesc, nullptr, "GeometryInstanceDataBuffer");
             gpuScene->geometryInstanceDataBufferSize = newGeometryInstanceDataBufferSize;
         }
@@ -345,9 +384,9 @@ namespace Horizon
 
         if (!distantLightDataBuffer)
         {
-            RenderBackendBufferDesc distantLightDataUploadBufferDesc = RenderBackendBufferDesc::CreateUpload(sizeof(DistantLightShaderParameters));
+            RenderBackendBufferDescription distantLightDataUploadBufferDesc = RenderBackendBufferDescription::CreateUpload(sizeof(DistantLightShaderParameters));
             distantLightDataUploadBuffer = renderBackend->CreateBuffer(&distantLightDataUploadBufferDesc, nullptr, "DistantLightDataUploadBuffer");
-            RenderBackendBufferDesc distantLightDataBufferDesc = RenderBackendBufferDesc::CreateStructured(sizeof(DistantLightShaderParameters), 1);
+            RenderBackendBufferDescription distantLightDataBufferDesc = RenderBackendBufferDescription::CreateStructured(sizeof(DistantLightShaderParameters), 1);
             distantLightDataBuffer = renderBackend->CreateBuffer(&distantLightDataBufferDesc, nullptr, "DistantLightDataBuffer");
         }
         {
@@ -386,7 +425,7 @@ namespace Horizon
                 RenderBackendTextureCreateFlags::UnorderedAccess | RenderBackendTextureCreateFlags::ShaderResource);
             irradianceEnvironmentMapTexture = renderBackend->CreateTexture(&irradianceEnvironmentMapTextureDesc, nullptr, "IrradianceEnvironmentMapTexture");
 
-            RenderBackendBufferDesc irradianceEnvironmentMapBufferDesc = RenderBackendBufferDesc::CreateByteAddress(sizeof(float) * 27);
+            RenderBackendBufferDescription irradianceEnvironmentMapBufferDesc = RenderBackendBufferDescription::CreateByteAddress(sizeof(float) * 27);
             irradianceEnvironmentMapBuffer = renderBackend->CreateBuffer(&irradianceEnvironmentMapBufferDesc, nullptr, "IrradianceEnvironmentMapBuffer");
             irradianceEnvironmentMapBufferFast = renderBackend->CreateBuffer(&irradianceEnvironmentMapBufferDesc, nullptr, "IrradianceEnvironmentMapBufferFast");
 
@@ -409,9 +448,9 @@ namespace Horizon
             if (first11 == 0)
             {
                 rayTracingScene->transformMatrixCount = uint32(meshes.size());
-                RenderBackendBufferDesc transformBufferRowMajorUploadDesc = RenderBackendBufferDesc::CreateUpload(rayTracingScene->transformMatrixCount * uint32(sizeof(float)) * 16);
+                RenderBackendBufferDescription transformBufferRowMajorUploadDesc = RenderBackendBufferDescription::CreateUpload(rayTracingScene->transformMatrixCount * uint32(sizeof(float)) * 16);
                 rayTracingScene->transformBufferRowMajorUpload = renderBackend->CreateBuffer(&transformBufferRowMajorUploadDesc, nullptr, "RowMajorTransformUploadBuffer");
-                RenderBackendBufferDesc transformBufferRowMajorDesc = RenderBackendBufferDesc::Create(uint32(sizeof(float)) * 16, rayTracingScene->transformMatrixCount, RenderBackendBufferCreateFlags::ShaderResource);
+                RenderBackendBufferDescription transformBufferRowMajorDesc = RenderBackendBufferDescription::Create(uint32(sizeof(float)) * 16, rayTracingScene->transformMatrixCount, RenderBackendBufferCreateFlags::ShaderResource);
                 rayTracingScene->transformBufferRowMajor = renderBackend->CreateBuffer(&transformBufferRowMajorDesc, nullptr, "RowMajorTransformBuffer");
 
                 for (const MeshRenderObject* mesh : meshes)

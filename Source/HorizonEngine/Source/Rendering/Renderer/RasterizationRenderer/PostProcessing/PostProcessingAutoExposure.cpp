@@ -74,7 +74,7 @@ namespace Horizon
                 };
             });
 
-        RenderGraphBufferDesc autoExposureBufferDesc = RenderGraphBufferDesc::CreateByteAddress(sizeof(AutoExposureData));
+        RenderGraphBufferDescription autoExposureBufferDesc = RenderGraphBufferDescription::CreateByteAddress(sizeof(AutoExposureData));
         RenderGraphBufferHandle autoExposureBuffer = renderGraph.CreateBuffer(autoExposureBufferDesc, "AutoExposureBuffer");
 
         renderGraph.AddPass(

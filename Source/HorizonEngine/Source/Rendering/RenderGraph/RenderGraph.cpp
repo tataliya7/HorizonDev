@@ -50,7 +50,7 @@ namespace Horizon
         return handle;
     }
 
-    RenderGraphBufferHandle RenderGraph::CreateBuffer(const RenderGraphBufferDesc& desc, const char* name)
+    RenderGraphBufferHandle RenderGraph::CreateBuffer(const RenderGraphBufferDescription& desc, const char* name)
     {
         uint32 index = uint32(buffers.size());
         RenderGraphBufferHandle handle = RenderGraphBufferHandle(index, 0);
@@ -221,7 +221,7 @@ namespace Horizon
         uint32 index = (uint32)buffers.size();
         RenderGraphBufferHandle handle = RenderGraphBufferHandle(index, 0);
 
-        const RenderBackendBufferDesc& bufferDesc = externalBuffer->GetDesc();
+        const RenderBackendBufferDescription& bufferDesc = externalBuffer->GetDesc();
 
         RenderBackendResourceState state = RenderBackendResourceState::ShaderResource;
         if (EnumClassHasFlags(bufferDesc.flags, RenderBackendBufferCreateFlags::Readback))
@@ -280,7 +280,7 @@ namespace Horizon
         return textures[handle.GetIndex()]->GetDesc();
     }
 
-    const RenderGraphBufferDesc& RenderGraph::GetBufferDesc(RenderGraphBufferHandle handle) const
+    const RenderGraphBufferDescription& RenderGraph::GetBufferDesc(RenderGraphBufferHandle handle) const
     {
         return buffers[handle.GetIndex()]->GetDesc();
     }
@@ -358,6 +358,7 @@ namespace Horizon
             if (/* !texture->IsCulled() && */!texture->IsImported() && !texture->HasInternalTexture())
             {
                 RenderGraphPersistentTexture* newTexture = resourcePool->AllocateTexture(texture->GetDesc(), texture->GetName());
+                renderBackend->SetObjectName(newTexture->GetHandle(), newTexture->GetName());
                 texture->SetInternalTexture(newTexture, RenderBackendResourceState::Undefined);
             }
         }
@@ -367,6 +368,7 @@ namespace Horizon
             if (/* !buffer->IsCulled() && */!buffer->IsImported() && !buffer->HasInternalBuffer())
             {
                 RenderGraphPersistentBuffer* newBuffer = resourcePool->AllocateBuffer(buffer->GetDesc(), buffer->GetName());
+                renderBackend->SetObjectName(newBuffer->GetHandle(), newBuffer->GetName());
                 buffer->SetInternalBuffer(newBuffer, RenderBackendResourceState::Undefined);
             }
         }

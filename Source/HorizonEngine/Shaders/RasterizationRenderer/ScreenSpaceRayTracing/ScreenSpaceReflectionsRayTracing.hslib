@@ -304,8 +304,8 @@ void ScreenSpaceReflectionsRayTracingCS(uint3 groupID : SV_GroupID, uint3 groupT
         confidence *= vignette;
 
     #if 0
-        float3 viewSpaceSurfacePosition = ReconstructViewSpacePositionFromDepth(hit.xy, surfaceDepth, frameShaderParameters.clipToViewMatrix);
-        float3 viewSpaceHitPosition = ReconstructViewSpacePositionFromDepth(hit.xy, hit.z, frameShaderParameters.clipToViewMatrix);
+        float3 viewSpaceSurfacePosition = ReconstructViewSpacePositionFromUVZ(hit.xy, surfaceDepth, frameShaderParameters.clipToViewMatrix);
+        float3 viewSpaceHitPosition = ReconstructViewSpacePositionFromUVZ(hit.xy, hit.z, frameShaderParameters.clipToViewMatrix);
         float distance = length(viewSpaceSurfacePosition - viewSpaceHitPosition);
         // We accept all hits that are within a reasonable distance below the surface.
         confidence *= (1.0 - smoothstep(0.0, DepthBufferThickness, distance));

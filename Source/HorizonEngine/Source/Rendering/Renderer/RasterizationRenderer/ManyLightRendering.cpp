@@ -51,9 +51,9 @@ namespace Horizon
         RenderBackendBufferHandle& localLightDataBuffer = localLightDataBuffers[currentPerFrameDataBufferIndex];
         if (!localLightDataBuffer)
         {
-            RenderBackendBufferDesc localLightDataUploadBufferDesc = RenderBackendBufferDesc::CreateUpload(sizeof(LocalLightShaderParameters) * localLightCount);
+            RenderBackendBufferDescription localLightDataUploadBufferDesc = RenderBackendBufferDescription::CreateUpload(sizeof(LocalLightShaderParameters) * localLightCount);
             localLightDataUploadBuffer = renderBackend->CreateBuffer(&localLightDataUploadBufferDesc, nullptr, "LocalLightDataUploadBuffer");
-            RenderBackendBufferDesc localLightDataBufferDesc = RenderBackendBufferDesc::CreateStructured(sizeof(LocalLightShaderParameters), localLightCount);
+            RenderBackendBufferDescription localLightDataBufferDesc = RenderBackendBufferDescription::CreateStructured(sizeof(LocalLightShaderParameters), localLightCount);
             localLightDataBuffer = renderBackend->CreateBuffer(&localLightDataBufferDesc, nullptr, "LocalLightDataBuffer");
         }
         renderBackend->UpdateBuffer(localLightDataUploadBuffer, 0, localLightData.data(), sizeof(LocalLightShaderParameters) * localLightCount);
@@ -85,13 +85,13 @@ namespace Horizon
 
         uint32 cellCount = lightGridSizeX * lightGridSizeY * lightGridSizeZ;
 
-        RenderGraphBufferDesc cellDataBufferDesc = RenderGraphBufferDesc::CreateStructured(sizeof(uint32) * 2, cellCount);
+        RenderGraphBufferDescription cellDataBufferDesc = RenderGraphBufferDescription::CreateStructured(sizeof(uint32) * 2, cellCount);
         RenderGraphBufferHandle cellDataBuffer = renderGraph.CreateBuffer(cellDataBufferDesc, "LightGridCellDataBuffer");
 
-        RenderGraphBufferDesc lightListBufferDesc = RenderGraphBufferDesc::CreateStructured(sizeof(uint32), cellCount * GLightGridMaxLightCountPerCell);
+        RenderGraphBufferDescription lightListBufferDesc = RenderGraphBufferDescription::CreateStructured(sizeof(uint32), cellCount * GLightGridMaxLightCountPerCell);
         RenderGraphBufferHandle lightListBuffer = renderGraph.CreateBuffer(lightListBufferDesc, "LightGridLightListBuffer");
 
-        RenderGraphBufferDesc lightListStartOffsetBufferDesc = RenderGraphBufferDesc::CreateStructured(sizeof(uint32), 1);
+        RenderGraphBufferDescription lightListStartOffsetBufferDesc = RenderGraphBufferDescription::CreateStructured(sizeof(uint32), 1);
         RenderGraphBufferHandle lightListStartOffsetBuffer = renderGraph.CreateBuffer(lightListStartOffsetBufferDesc, "LightGridLightListStartOffsetBuffer");
 
         renderGraph.AddPass(

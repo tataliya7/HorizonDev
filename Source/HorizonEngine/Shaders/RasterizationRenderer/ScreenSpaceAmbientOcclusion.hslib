@@ -88,7 +88,7 @@ float2 GTAOSearchForHorizons(
         // Positive Direction
         {
             float depth = depthTexture.SampleLevel(GlobalSamplerPointClamp, sampleUV.xy, 0).r;
-            float3 depthVector = ReconstructViewSpacePositionFromDepth(sampleUV.xy, depth, clipToViewMatrix) - viewSpacePosition;
+            float3 depthVector = ReconstructViewSpacePositionFromUVZ(sampleUV.xy, depth, clipToViewMatrix) - viewSpacePosition;
             float depthVectorLengthSquare = dot(depthVector, depthVector);
             float inverseDepthVectorLength = rsqrt(depthVectorLengthSquare + 0.0001f);
             float cosAngle = dot(depthVector, viewVector) * inverseDepthVectorLength;
@@ -109,7 +109,7 @@ float2 GTAOSearchForHorizons(
         // Negative Direction
         {
             float depth = depthTexture.SampleLevel(GlobalSamplerPointClamp, sampleUV.zw, 0).r;
-            float3 depthVector = ReconstructViewSpacePositionFromDepth(sampleUV.zw, depth, clipToViewMatrix) - viewSpacePosition;
+            float3 depthVector = ReconstructViewSpacePositionFromUVZ(sampleUV.zw, depth, clipToViewMatrix) - viewSpacePosition;
             float depthVectorLengthSquare = dot(depthVector, depthVector);
             float inverseDepthVectorLength = rsqrt(depthVectorLengthSquare + 0.0001f);
             float cosAngle = dot(depthVector, viewVector) * inverseDepthVectorLength;
@@ -208,7 +208,7 @@ void GTAOHorizonSearchIntegralCS(uint3 dispatchThreadID : SV_DispatchThreadID, u
     float4 gbuffer0Data = gbuffer0.SampleLevel(GlobalSamplerPointClamp, uv, 0);
     float3 worldSpaceNormal = DecodeNormalFromGBuffer(gbuffer0Data.xyz);
 
-    float3 viewSpacePosition = ReconstructViewSpacePositionFromDepth(uv, depth, frameShaderParameters.clipToViewMatrix);
+    float3 viewSpacePosition = ReconstructViewSpacePositionFromUVZ(uv, depth, frameShaderParameters.clipToViewMatrix);
     float3 viewSpaceNormal = normalize(mul((float3x3)frameShaderParameters.worldToViewMatrix, worldSpaceNormal));
     float3 viewVector = normalize(-viewSpacePosition);
 

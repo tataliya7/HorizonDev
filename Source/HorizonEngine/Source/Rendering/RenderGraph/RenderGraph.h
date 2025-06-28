@@ -92,7 +92,7 @@ namespace Horizon
         /**
          * Create a render graph tracked buffer.
          */
-        RenderGraphBufferHandle CreateBuffer(const RenderGraphBufferDesc& desc, const char* name);
+        RenderGraphBufferHandle CreateBuffer(const RenderGraphBufferDescription& desc, const char* name);
 
         //RenderGraphTextureSRVHandle CreateTextureSRV(RenderGraphTextureHandle texture, const RenderGraphTextureSRVDesc& desc);
         //RenderGraphTextureUAVHandle CreateTextureUAV(RenderGraphTextureHandle texture, uint32 mipLevel);
@@ -127,7 +127,7 @@ namespace Horizon
 
         const RenderGraphTextureDescription& GetTextureDesc(RenderGraphTextureHandle handle) const;
 
-        const RenderGraphBufferDesc& GetBufferDesc(RenderGraphBufferHandle handle) const;
+        const RenderGraphBufferDescription& GetBufferDesc(RenderGraphBufferHandle handle) const;
 
         void BeginTimingQuery();
 

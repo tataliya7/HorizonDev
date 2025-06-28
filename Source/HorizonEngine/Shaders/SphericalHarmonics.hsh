@@ -81,6 +81,8 @@ SH3CoefficientsRGB SampleSHCoefficientsRGB(float3 l, float3 n, float w)
     return result;
 }
 
+// @todo Add a fast version
+// @todo Add a version that only does the first 3 components
 float3 EvaluateSHCosineWeighted(SH3CoefficientsRGB sh, float3 n)
 {
     float y0 =  0.282095f;

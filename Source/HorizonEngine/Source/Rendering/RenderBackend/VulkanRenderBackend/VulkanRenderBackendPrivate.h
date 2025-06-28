@@ -722,7 +722,7 @@ namespace Horizon
         RenderBackendTextureHandle GetActiveSwapChainBackBuffer(uint32 index);
         uint32 CreateSwapChain(const RenderBackendSwapChainDesc* desc);
         void DestroySwapChain(uint32 index);
-        uint32 CreateBuffer(const RenderBackendBufferDesc* desc, const void* data, const char* name);
+        uint32 CreateBuffer(const RenderBackendBufferDescription* desc, const void* data, const char* name);
         void DestroyBuffer(uint32 index);
         void ResizeBuffer(uint32 index, uint64 size);
         void* MapBuffer(uint32 index);
@@ -1185,7 +1185,7 @@ namespace Horizon
         void ResizeSwapChain(RenderBackendSwapChainHandle swapChain, uint32* width, uint32* height) override;
         bool PresentSwapChain(RenderBackendSwapChainHandle swapChain) override;
         RenderBackendTextureHandle GetActiveSwapChainBuffer(RenderBackendSwapChainHandle swapChain) override;
-        RenderBackendBufferHandle CreateBuffer(const RenderBackendBufferDesc* desc, const void* data, const char* name) override;
+        RenderBackendBufferHandle CreateBuffer(const RenderBackendBufferDescription* desc, const void* data, const char* name) override;
         void DestroyBuffer(RenderBackendBufferHandle buffer) override;
         void ResizeBuffer(RenderBackendBufferHandle buffer, uint64 size) override;
         void MapBuffer(RenderBackendBufferHandle buffer, void** data) override;
@@ -1295,7 +1295,7 @@ namespace Horizon::Refactor
         void WaitIdle();
 
         VulkanBuffer* CreateBuffer(
-            const RenderBackendBufferDesc* desc,
+            const RenderBackendBufferDescription* desc,
             const void* data,
             const char* name);
 
