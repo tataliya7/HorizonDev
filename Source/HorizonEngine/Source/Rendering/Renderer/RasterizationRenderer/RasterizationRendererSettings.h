@@ -81,10 +81,9 @@ namespace Horizon
 
     struct RasterizationRendererGroundTruthAmbientOcclusionSettings
     {
-        float radius = 0.2f;
-        float factor = 1.0f;
+        float strength = 1.0f;
+        float radius = 2.0f;
         float thickness = 0.75f;
-        bool multiBounce = true;
     };
 
     enum class ScreenSpaceReflectionsQuality

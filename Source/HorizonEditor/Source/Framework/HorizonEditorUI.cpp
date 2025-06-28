@@ -1045,10 +1045,10 @@ namespace Horizon
                     ImGui::NextColumn();
 
                     ImGui::AlignTextToFramePadding();
-                    ImGui::TextUnformatted("Radius");
+                    ImGui::TextUnformatted("Strength");
                     ImGui::NextColumn();
                     ImGui::PushItemWidth(-1);
-                    if (ImGui::DragFloat("##Radius", &rasterizationRendererSettings.groundTruthAmbientOcclusionSettings.radius))
+                    if (ImGui::DragFloat("##GTAOStrength", &rasterizationRendererSettings.groundTruthAmbientOcclusionSettings.strength, 0.01f, 0.0f, 10.0f))
                     {
 
                     }
@@ -1056,32 +1056,22 @@ namespace Horizon
                     ImGui::NextColumn();
 
                     ImGui::AlignTextToFramePadding();
-                    ImGui::TextUnformatted("Factor");
+                    ImGui::TextUnformatted("Radius");
                     ImGui::NextColumn();
                     ImGui::PushItemWidth(-1);
-                    if (ImGui::DragFloat("##Factor", &rasterizationRendererSettings.groundTruthAmbientOcclusionSettings.factor))
+                    if (ImGui::DragFloat("##GTAORadius", &rasterizationRendererSettings.groundTruthAmbientOcclusionSettings.radius, 0.01f, 0.0f, 100.0f))
                     {
 
                     }
                     ImGui::PopItemWidth();
                     ImGui::NextColumn();
+
 
                     ImGui::AlignTextToFramePadding();
                     ImGui::TextUnformatted("Thickness");
                     ImGui::NextColumn();
                     ImGui::PushItemWidth(-1);
-                    if (ImGui::DragFloat("##Thickness", &rasterizationRendererSettings.groundTruthAmbientOcclusionSettings.thickness))
-                    {
-
-                    }
-                    ImGui::PopItemWidth();
-                    ImGui::NextColumn();
-
-                    ImGui::AlignTextToFramePadding();
-                    ImGui::TextUnformatted("Multiple-Bounce");
-                    ImGui::NextColumn();
-                    ImGui::PushItemWidth(-1);
-                    if (ImGui::Checkbox("##MultipleBounce", &rasterizationRendererSettings.groundTruthAmbientOcclusionSettings.multiBounce))
+                    if (ImGui::DragFloat("##GTAOThickness", &rasterizationRendererSettings.groundTruthAmbientOcclusionSettings.thickness, 0.01f, 0.0f, 1.0f))
                     {
 
                     }

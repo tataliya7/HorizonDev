@@ -16,13 +16,15 @@ SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(6, AmbientOcclusionTextureSRV);
 SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(7, IndirectDiffuseTextureSRV);
 SHADER_CONSTANTS_STRUCT_END();
 
-float3 GTAOMultiBounce(float ao, float3 albedo)
+// Calculates approximate multi-bounce visibility
+// Practical Realtime Strategies for Accurate Indirect Occlusion
+float3 MultiBounceAmbientOcclusion(float visibility, float3 albedo)
 {
     float3 a =  2.0404 * albedo - 0.3324;
     float3 b = -4.7951 * albedo + 0.6417;
     float3 c =  2.7552 * albedo + 0.6903;
 
-    const float x = ao;
+    const float x = visibility;
     return max(x, ((x * a + b) * x + c) * x);
 }
 
@@ -58,8 +60,8 @@ void IndirectDiffuseCompositionPS(in float4 position : SV_Position, out float4 o
     float roughness = gbuffer1Data.z;
     float4 baseColor = gbuffer2Data;
 
-    /* Median luminance. Because colored multibounce looks bad. */
-    ambientOcclusion *= GTAOMultiBounce(ambientOcclusion, dot(baseColor, 0.3333f)).r;
+    /* Use luminance. Because colored multibounce looks bad. */
+    ambientOcclusion *= MultiBounceAmbientOcclusion(ambientOcclusion.r, RelativeLuminance(baseColor.rgb)).r;
 
     float3 diffuseBRDF = baseColor.rgb * (1.0f / PI) * (1.0f - metallic);
 

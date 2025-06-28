@@ -1,0 +1,482 @@
+/*
+ * Implementation of the Practical Realtime Strategies for Accurate Indirect Occlusion, GTAO [Jimenez et al., 2016].
+ */
+
+#include "../ShaderCommon.hsh"
+#include "../BRDFCommon.hsh"
+#include "../Random.hsh"
+#include "RasterizationRendererCommon.hsh"
+
+#define GTAO_PI         3.14159265358979323846
+#define GTAO_HALF_PI    1.57079632679489661923
+
+float GTAOFastSqrt(float x)
+{
+    // [Drobot2014a] Low Level Optimization for GCN
+    return asfloat(0x1FBD1DF5 + (asint(x) >> 1));
+}
+
+float GTAOFastAcos(float x)
+{
+    // [Eberly2014] GPGPU Programming for Games and Science
+    float result = -0.156583 * abs(x) + (GTAO_PI * 0.5);
+    result *= sqrt(1.0 - abs(x));
+    return (x >= 0) ? result : GTAO_PI - result;
+}
+
+float3 GTAOMultiBounce(float visibility, float3 albedo)
+{
+    float3 a =  2.0404 * albedo - 0.3324;
+    float3 b = -4.7951 * albedo + 0.6417;
+    float3 c =  2.7552 * albedo + 0.6903;
+
+    float x = visibility;
+    return max(x, ((x * a + b) * x + c) * x);
+}
+
+float2 GTAONoise(uint spatialIndex, uint temporalIndex)
+{
+    uint randSeed = RandInit(spatialIndex, temporalIndex);
+    return float2(Rand(randSeed), Rand(randSeed));
+}
+
+float2 GTAORandomVector(float noise)
+{
+    noise *= GTAO_HALF_PI;
+    return float2(cos(noise), sin(noise));
+}
+
+#if GTAO_HORIZON_SEARCH_INTEGRAL
+
+#define GTAO_HORIZON_SEARCH_STEP_COUNT 8
+#define GTAO_ENABLE_THICKNESS_HEURISTIC 1
+
+float2 GTAOSearchForHorizons(
+    Texture2D depthTexture,
+    float2 centerUV,
+    float4x4 clipToViewMatrix,
+    float3 viewSpacePosition,
+    float3 viewVector,
+    float2 searchDirection,
+    float searchRadius,
+    uint sliceIndex,
+    uint stepCount,
+    float startOffset,
+    float sampleNoise,
+    float inverseRadiusSquare,
+    float thickness)
+{
+    uint depthTextureWidth, depthTextureHeight;
+    depthTexture.GetDimensions(depthTextureWidth, depthTextureHeight);
+    float2 pixelSize = float2(1.0f / depthTextureWidth, 1.0f / depthTextureHeight);
+
+    float2 horizons = float2(-1.0f, -1.0f);
+
+    //[unroll]
+    for (uint i = 0; i < stepCount; i++)
+    {
+        // R1 sequence
+        // https://extremelearning.com.au/unreasonable-effectiveness-of-quasirandom-sequences/
+        float stepNoise = frac(sampleNoise + float(sliceIndex + i * stepCount) * 0.61803398875f);
+
+        float sampleOffsetLength = startOffset + ((float(i) + stepNoise) / float(stepCount)) * searchRadius;
+        float2 sampleOffset = searchDirection * sampleOffsetLength;
+        sampleOffset *= pixelSize;
+
+        float4 sampleUV = float4(centerUV + sampleOffset, centerUV - sampleOffset);
+
+        // Positive Direction
+        {
+            float depth = depthTexture.SampleLevel(GlobalSamplerPointClamp, sampleUV.xy, 0).r;
+            float3 depthVector = ReconstructViewSpacePositionFromDepth(sampleUV.xy, depth, clipToViewMatrix) - viewSpacePosition;
+            float depthVectorLengthSquare = dot(depthVector, depthVector);
+            float inverseDepthVectorLength = rsqrt(depthVectorLengthSquare + 0.0001f);
+            float cosAngle = dot(depthVector, viewVector) * inverseDepthVectorLength;
+
+            // Falloff
+            {
+                float fallOff = saturate(depthVectorLengthSquare * inverseRadiusSquare);
+                cosAngle = lerp(cosAngle, horizons.x, fallOff);
+            }
+
+#if GTAO_ENABLE_THICKNESS_HEURISTIC
+            horizons.x = (cosAngle > horizons.x) ? cosAngle : lerp(cosAngle, horizons.x, thickness);
+#else // Thickness heuristic
+            horizons.x = max(cosAngle, horizons.x);
+#endif
+        }
+
+        // Negative Direction
+        {
+            float depth = depthTexture.SampleLevel(GlobalSamplerPointClamp, sampleUV.zw, 0).r;
+            float3 depthVector = ReconstructViewSpacePositionFromDepth(sampleUV.zw, depth, clipToViewMatrix) - viewSpacePosition;
+            float depthVectorLengthSquare = dot(depthVector, depthVector);
+            float inverseDepthVectorLength = rsqrt(depthVectorLengthSquare + 0.0001f);
+            float cosAngle = dot(depthVector, viewVector) * inverseDepthVectorLength;
+
+            // Falloff
+            {
+                float fallOff = saturate(depthVectorLengthSquare * inverseRadiusSquare);
+                cosAngle = lerp(cosAngle, horizons.y, fallOff);
+            }
+
+#if GTAO_ENABLE_THICKNESS_HEURISTIC
+            horizons.y = max(cosAngle, horizons.y);
+#else
+            horizons.y = (cosAngle > horizons.y) ? cosAngle : lerp(cosAngle, horizons.y, thickness);
+#endif
+        }
+    }
+
+    horizons.x = -GTAOFastAcos(clamp(horizons.x, -1.0f, 1.0f));
+    horizons.y = GTAOFastAcos(clamp(horizons.y, -1.0f, 1.0f));
+
+    return horizons;
+}
+
+float GTAOComputeInnerIntegral(float2 horizons, float3 direction, float3 viewVector, float3 viewSpaceNormal)
+{
+    // Normal projection
+    float3 slicePlaneNormal = normalize(cross(direction, viewVector));
+    float3 slicePlaneTangent = cross(viewVector, slicePlaneNormal);
+    float3 projectedNormal = viewSpaceNormal - slicePlaneNormal * dot(viewSpaceNormal, slicePlaneNormal);
+    float projectedNormalLength = length(projectedNormal) + 0.000001f;
+
+    float cosN = dot(projectedNormal, viewVector) / projectedNormalLength;
+    float angleN = sign(dot(projectedNormal, slicePlaneTangent)) * GTAOFastAcos(cosN);
+    float sinN = sin(angleN);
+
+    // Clamp horizons to normal hemisphere
+    float h1 = angleN + max(horizons.x - angleN, -GTAO_HALF_PI);
+    float h2 = angleN + min(horizons.y - angleN,  GTAO_HALF_PI);
+
+    // IntegrateArc(h1, h2, N)
+    float Vd = 0.25f * ((-cos(2.0f * h1 - angleN) + cosN + 2.0f * h1 * sinN) + (-cos((2.0f * h2) - angleN) + cosN + 2.0f * h2 * sinN));
+
+    // Scale by the length of the projected normal
+    // @todo This causes the plane to be slightly overdarkened at certain angles, and we need to find a solution
+    Vd *= projectedNormalLength;
+
+    return Vd;
+}
+
+SHADER_CONSTANTS_STRUCT_BEGIN();
+SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferSRV);
+SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(1, DepthTextureSRV);
+SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(2, GBuffer0SRV);
+SHADER_CONSTANTS_TEXTURE_2D_UAV(3, float, OutputTextureUAV);
+SHADER_CONSTANTS_SCALAR(4, float, Strength);
+SHADER_CONSTANTS_SCALAR(5, float, Radius);
+SHADER_CONSTANTS_SCALAR(6, float, Thickness);
+SHADER_CONSTANTS_STRUCT_END();
+
+[shader("compute")]
+[numthreads(8, 8, 1)]
+void GTAOHorizonSearchIntegralCS(uint3 dispatchThreadID : SV_DispatchThreadID, uint2 groupThreadID : SV_GroupThreadID, uint2 groupID : SV_GroupID)
+{
+    StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
+    PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
+    Texture2D depthTexture = ShaderConstants.GetDepthTextureSRV();
+    Texture2D gbuffer0 = ShaderConstants.GetGBuffer0SRV();
+    RWTexture2D<float> outputTexture = ShaderConstants.GetOutputTextureUAV();
+
+    float strength = ShaderConstants.GetStrength();
+    float radius = ShaderConstants.GetRadius();
+    float thickness = ShaderConstants.GetThickness();
+
+    uint2 pixelCoord = dispatchThreadID.xy;
+
+    uint outputTextureWidth, outputTextureHeight;
+    outputTexture.GetDimensions(outputTextureWidth, outputTextureHeight);
+    if (pixelCoord.x >= outputTextureWidth || pixelCoord.y >= outputTextureHeight)
+    {
+        return;
+    }
+
+    float2 uv = (float2(pixelCoord.x, pixelCoord.y) + 0.5f) / float2(outputTextureWidth, outputTextureHeight);
+
+    float depth = depthTexture.SampleLevel(GlobalSamplerPointClamp, uv, 0).r;
+    if (depth == FAR_CLIPPING_PLANE_DEPTH_VALUE)
+    {
+        outputTexture[pixelCoord] = 1.0f;
+        return;
+    }
+
+    uint depthTextureWidth, depthTextureHeight;
+    depthTexture.GetDimensions(depthTextureWidth, depthTextureHeight);
+
+    float4 gbuffer0Data = gbuffer0.SampleLevel(GlobalSamplerPointClamp, uv, 0);
+    float3 worldSpaceNormal = DecodeNormalFromGBuffer(gbuffer0Data.xyz);
+
+    float3 viewSpacePosition = ReconstructViewSpacePositionFromDepth(uv, depth, frameShaderParameters.clipToViewMatrix);
+    float3 viewSpaceNormal = normalize(mul((float3x3)frameShaderParameters.worldToViewMatrix, worldSpaceNormal));
+    float3 viewVector = normalize(-viewSpacePosition);
+
+    float2 noise = GTAONoise(pixelCoord.x + pixelCoord.y * outputTextureWidth, frameShaderParameters.frameIndex);
+
+    float directionNoise = noise.x;
+    float sampleNoise = noise.y;
+
+    float2 searchDirection = GTAORandomVector(directionNoise);
+    float fovCorrection = depthTextureHeight * 0.5f / frameShaderParameters.tanHalfFovY / viewSpacePosition.z;
+    float searchRadius = radius * fovCorrection;
+    float inverseRadiusSquare = 1.0f / (radius * radius);
+
+    // This is the min distance to start sampling from to avoid sampling from the center pixel
+    float startOffset = 1.3f;
+
+    float visibility = 0.0f;
+
+    const uint sliceCount = 2;
+
+    [unroll]
+    for (uint sliceIndex = 0; sliceIndex < sliceCount; sliceIndex++)
+    {
+        float2 horizons = GTAOSearchForHorizons(
+            depthTexture,
+            uv,
+            frameShaderParameters.clipToViewMatrix,
+            viewSpacePosition,
+            viewVector,
+            searchDirection,
+            searchRadius,
+            sliceIndex,
+            GTAO_HORIZON_SEARCH_STEP_COUNT,
+            startOffset,
+            sampleNoise,
+            inverseRadiusSquare,
+            thickness);
+
+        visibility += GTAOComputeInnerIntegral(
+            horizons,
+            float3(searchDirection.x, -searchDirection.y, 0.0f),
+            viewVector,
+            viewSpaceNormal);
+
+        // Rotate 90 degrees
+        // Only a quarter of a turn because we integrate using 2 slices
+        searchDirection = float2(-searchDirection.y, searchDirection.x);
+    }
+    visibility /= sliceCount;
+    visibility = pow(visibility, strength);
+
+    outputTexture[pixelCoord] = visibility;
+}
+
+#endif
+
+#if GTAO_SPATIAL_FILTERING
+
+SHADER_CONSTANTS_STRUCT_BEGIN();
+SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferSRV);
+SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(1, DepthTextureSRV);
+SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(2, InputTextureSRV);
+SHADER_CONSTANTS_TEXTURE_2D_UAV(3, float, OutputTextureUAV);
+SHADER_CONSTANTS_STRUCT_END();
+
+[shader("compute")]
+[numthreads(8, 8, 1)]
+void GTAOSpatialFilteringCS(uint3 dispatchThreadID : SV_DispatchThreadID)
+{
+    StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
+    PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
+    Texture2D inputTexture = ShaderConstants.GetInputTextureSRV();
+    Texture2D depthTexture = ShaderConstants.GetDepthTextureSRV();
+    RWTexture2D<float> outputTexture = ShaderConstants.GetOutputTextureUAV();
+
+    uint2 pixelCoord = dispatchThreadID.xy;
+
+    uint outputTextureWidth, outputTextureHeight;
+    outputTexture.GetDimensions(outputTextureWidth, outputTextureHeight);
+    if (pixelCoord.x >= outputTextureWidth || pixelCoord.y >= outputTextureHeight)
+    {
+        return;
+    }
+
+    float2 uv = (float2(pixelCoord.x, pixelCoord.y) + 0.5f) / float2(outputTextureWidth, outputTextureHeight);
+
+#define BILATERAL_FILTERING 1
+#if BILATERAL_FILTERING
+    float centerDepth = depthTexture.SampleLevel(GlobalSamplerPointClamp, uv, 0).r;
+    centerDepth = LinearDepth01(centerDepth, frameShaderParameters.nearClippingPlane, frameShaderParameters.farClippingPlane);
+
+	float result = 0.0f;
+	float totalWeight = 0.0f;
+
+    int x, y;
+    for (y = -2; y <= 2; y++)
+    {
+        for (x = -2; x <= 2; x++)
+        {
+            float2 sampleUV = uv + float2(x, y) / float2(outputTextureWidth, outputTextureHeight);
+            float sampleValue = inputTexture.SampleLevel(GlobalSamplerLinearClamp, sampleUV, 0).r;
+            float sampleDepth = depthTexture.SampleLevel(GlobalSamplerPointClamp, sampleUV, 0).r;
+            sampleDepth = LinearDepth01(sampleDepth, frameShaderParameters.nearClippingPlane, frameShaderParameters.farClippingPlane);
+
+            float sampleWeight = 1.0f - saturate(abs(sampleDepth - centerDepth));
+
+            result += sampleValue * sampleWeight;
+            totalWeight += sampleWeight;
+        }
+    }
+    result /= max(totalWeight, 0.0001f);
+
+    outputTexture[pixelCoord] = result;
+#else
+    float result = inputTexture.SampleLevel(GlobalSamplerLinearClamp, uv, 0).r;
+    outputTexture[pixelCoord] = result;
+#endif
+}
+
+#endif
+
+#if GTAO_TEMPORAL_FILTERING
+
+SHADER_CONSTANTS_STRUCT_BEGIN();
+SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferSRV);
+SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(1, InputTextureSRV);
+SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(2, HistoryTextureSRV);
+SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(3, DepthTextureSRV);
+SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(4, MotionVectorTextureSRV);
+SHADER_CONSTANTS_TEXTURE_2D_UAV(5, float, OutputTextureUAV);
+SHADER_CONSTANTS_STRUCT_END();
+
+[shader("compute")]
+[numthreads(8, 8, 1)]
+void GTAOTemporalFilteringCS(uint3 dispatchThreadID : SV_DispatchThreadID)
+{
+    StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
+    PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
+    Texture2D inputTexture = ShaderConstants.GetInputTextureSRV();
+    Texture2D historyTexture = ShaderConstants.GetHistoryTextureSRV();
+    Texture2D depthTexture = ShaderConstants.GetDepthTextureSRV();
+    Texture2D motionVectorTexture = ShaderConstants.GetMotionVectorTextureSRV();
+    RWTexture2D<float> outputTexture = ShaderConstants.GetOutputTextureUAV();
+
+    uint2 pixelCoord = dispatchThreadID.xy;
+
+    uint outputTextureWidth, outputTextureHeight;
+    outputTexture.GetDimensions(outputTextureWidth, outputTextureHeight);
+    if (pixelCoord.x >= outputTextureWidth || pixelCoord.y >= outputTextureHeight)
+    {
+        return;
+    }
+
+    float2 uv = (float2(pixelCoord.x, pixelCoord.y) + 0.5f) / float2(outputTextureWidth, outputTextureHeight);
+
+    float currentAO = inputTexture.SampleLevel(GlobalSamplerLinearClamp, uv, 0).r;
+    float depth = depthTexture.SampleLevel(GlobalSamplerPointClamp, uv, 0).r;
+
+    // Reprojection
+    float2 motionVector = motionVectorTexture.SampleLevel(GlobalSamplerPointClamp, uv, 0).rg;
+    float2 historySampleUV = uv + motionVector;
+
+    float motionVectorLength = length(motionVector);
+
+    // @todo Reject invalid history
+
+    // Sample hisotry
+    float historyAO = historyTexture.SampleLevel(GlobalSamplerLinearClamp, historySampleUV, 0).r;
+
+    // Clamp history
+    float range = lerp(0.2f, 0.0f, saturate(motionVectorLength));
+    float minAO = saturate(currentAO - range);
+    float maxAO = saturate(currentAO + range);
+    historyAO = clamp(historyAO, minAO, maxAO);
+
+    float blendFactor = lerp(0.05f, 0.2f, saturate(100.0f * motionVectorLength));
+    float result = lerp(historyAO, currentAO, blendFactor);
+
+    outputTexture[pixelCoord] = result;
+}
+
+#endif
+
+#if GTAO_UPSAMPLING
+
+SHADER_CONSTANTS_STRUCT_BEGIN();
+SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferSRV);
+SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(1, InputTextureSRV);
+SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(2, DepthTextureSRV);
+SHADER_CONSTANTS_TEXTURE_2D_UAV(3, float, OutputTextureUAV);
+SHADER_CONSTANTS_STRUCT_END();
+
+[shader("compute")]
+[numthreads(8, 8, 1)]
+void GTAOUpsamplingCS(uint3 dispatchThreadID : SV_DispatchThreadID)
+{
+    StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
+    PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
+    Texture2D inputTexture = ShaderConstants.GetInputTextureSRV();
+    Texture2D depthTexture = ShaderConstants.GetDepthTextureSRV();
+    RWTexture2D<float> outputTexture = ShaderConstants.GetOutputTextureUAV();
+
+    uint2 pixelCoord = dispatchThreadID.xy;
+
+    uint outputTextureWidth, outputTextureHeight;
+    outputTexture.GetDimensions(outputTextureWidth, outputTextureHeight);
+    if (pixelCoord.x >= outputTextureWidth || pixelCoord.y >= outputTextureHeight)
+    {
+        return;
+    }
+
+    float2 uv = (float2(pixelCoord.x, pixelCoord.y) + 0.5f) / float2(outputTextureWidth, outputTextureHeight);
+
+    uint inputTextureWidth, inputTextureHeight;
+    inputTexture.GetDimensions(inputTextureWidth, inputTextureHeight);
+    float4 inputTextureSize = float4(inputTextureWidth, inputTextureHeight, 1.0f / inputTextureWidth, 1.0f / inputTextureHeight);
+
+#define UPSAMPLING_METHOD 1
+#if UPSAMPLING_METHOD == 0 // Bilinear upsampling
+    float result = inputTexture.SampleLevel(GlobalSamplerLinearClamp, uv, 0).r;
+#else // Bilateral upsampling
+    float depth = depthTexture.SampleLevel(GlobalSamplerPointClamp, uv, 0).r;
+    depth = LinearDepth01(depth, frameShaderParameters.nearClippingPlane, frameShaderParameters.farClippingPlane);
+
+    float2 position = uv * inputTextureSize.xy + 0.5f;
+    float2 centerCoord = floor(position);
+    float2 centerOffset = frac(position) - 0.5f;
+    float2 centerUV = centerCoord * inputTextureSize.zw;
+
+    /**
+     * 00 10
+     * 01 11
+     */
+    float2 sample00UV = centerUV + float2(-0.5f, -0.5f) * inputTextureSize.zw;
+    float2 sample01UV = centerUV + float2(-0.5f,  0.5f) * inputTextureSize.zw;
+    float2 sample10UV = centerUV + float2( 0.5f, -0.5f) * inputTextureSize.zw;
+    float2 sample11UV = centerUV + float2( 0.5f,  0.5f) * inputTextureSize.zw;
+
+    float sample00Value = inputTexture.SampleLevel(GlobalSamplerLinearClamp, sample00UV, 0).r;
+    float sample01Value = inputTexture.SampleLevel(GlobalSamplerLinearClamp, sample01UV, 0).r;
+    float sample10Value = inputTexture.SampleLevel(GlobalSamplerLinearClamp, sample10UV, 0).r;
+    float sample11Value = inputTexture.SampleLevel(GlobalSamplerLinearClamp, sample11UV, 0).r;
+    float4 sampleValues = float4(sample00Value, sample01Value, sample10Value, sample11Value);
+
+    float sample00Depth = depthTexture.SampleLevel(GlobalSamplerPointClamp, sample00UV, 0).r;
+    float sample01Depth = depthTexture.SampleLevel(GlobalSamplerPointClamp, sample01UV, 0).r;
+    float sample10Depth = depthTexture.SampleLevel(GlobalSamplerPointClamp, sample10UV, 0).r;
+    float sample11Depth = depthTexture.SampleLevel(GlobalSamplerPointClamp, sample11UV, 0).r;
+    sample00Depth = LinearDepth01(sample00Depth, frameShaderParameters.nearClippingPlane, frameShaderParameters.farClippingPlane);
+    sample01Depth = LinearDepth01(sample01Depth, frameShaderParameters.nearClippingPlane, frameShaderParameters.farClippingPlane);
+    sample10Depth = LinearDepth01(sample10Depth, frameShaderParameters.nearClippingPlane, frameShaderParameters.farClippingPlane);
+    sample11Depth = LinearDepth01(sample11Depth, frameShaderParameters.nearClippingPlane, frameShaderParameters.farClippingPlane);
+    float4 sampleDepthValues = float4(sample00Depth, sample01Depth, sample10Depth, sample11Depth);
+
+    float2 bilinearWeightsUV = saturate((uv - sample00UV) * inputTextureSize.xy);
+    float4 bilinearWeights = float4(
+        (1.0f - bilinearWeightsUV.x) * (1.0f - bilinearWeightsUV.y),
+        bilinearWeightsUV.x * (1.0f - bilinearWeightsUV.y),
+        (1.0f - bilinearWeightsUV.x) * bilinearWeightsUV.y,
+        bilinearWeightsUV.y * bilinearWeightsUV.x);
+
+    float4 depthWeights = 1.0f / (abs(sampleDepthValues - depth.xxxx) + 0.0001f);
+    float4 weights = bilinearWeights * depthWeights;
+    float totalWeight = weights.x + weights.y + weights.z + weights.w;
+
+    float result = dot(sampleValues, weights) / max(totalWeight, 0.0001f);
+#endif
+    outputTexture[pixelCoord] = result;
+}
+
+#endif

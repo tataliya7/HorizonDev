@@ -2,165 +2,201 @@
 
 namespace Horizon
 {
-    bool RasterizationRenderer::IsScreenSpaceAmbientOcclusionEnabled() const
-    {
-        return renderFeatures.enableScreenSpaceAmbientOcclusion;
-    }
-
     RenderGraphTextureHandle RasterizationRenderer::RenderScreenSpaceAmbientOcclusion(
         RenderGraph& renderGraph,
         const SceneView& view)
     {
-        return RenderGraphTextureHandle::Null;
-//         const auto& settings = this->settings.gtaoSettings;
-//
-//         uint32 downsampleFactor = 1;
-//         uint32 gtaoTextureWidth = ComputeWorkGroupCount(renderResolution.width, downsampleFactor);
-//         uint32 gtaoTextureHeight = ComputeWorkGroupCount(renderResolution.height, downsampleFactor);
-//
-//         //RenderBackendTextureFormat ambientOcclusionTextureFormat = RenderBackendTextureFormat::R8Unorm;
-//         RenderBackendTextureFormat ambientOcclusionTextureFormat = RenderBackendTextureFormat::R16Float;
-//
-//         RenderGraphTextureDesc ambientOcclusionTextureDesc = RenderGraphTextureDesc::Create2D(
-//             renderResolution.width,
-//             renderResolution.height,
-//             ambientOcclusionTextureFormat,
-//             RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::UnorderedAccess);
-//         RenderGraphTextureHandle ambientOcclusionTexture = renderGraph.CreateTexture(ambientOcclusionTextureDesc, "AmbientOcclusionTexture");
-//
-//         RenderGraphTextureDesc gtaoTextureDesc = RenderGraphTextureDesc::Create2D(
-//             gtaoTextureWidth,
-//             gtaoTextureHeight,
-//             ambientOcclusionTextureFormat,
-//             RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::UnorderedAccess);
-//         RenderGraphTextureHandle gtaoHorizonSearchAndIntegralTexture = renderGraph.CreateTexture(gtaoTextureDesc, "GTAOHorizonSearchAndIntegralTexture");
-//         RenderGraphTextureHandle gtaoSpatialFilteringTexture = renderGraph.CreateTexture(gtaoTextureDesc, "GTAOSpatialFilteringTexture");
-//         RenderGraphTextureHandle gtaoTemporalFilteringTexture = renderGraph.CreateTexture(gtaoTextureDesc, "GTAOTemporalFilteringTexture");
-//
-//         RenderGraphTextureHandle gtaoDebugOutputTexture = renderGraph.CreateTexture(gtaoTextureDesc, "GTAODebugOutputTexture");
-//
-//         auto& intermediateResources = renderGraph.blackboard.Get<RasterizationRendererSceneTextures>();
-//
-//         renderGraph.AddPass(std::format("GTAOHorizonSearchAndIntegral (Compute, {}, {})", gtaoTextureWidth, gtaoTextureHeight), RenderGraphPassFlags::AsyncCompute,
-//             [&](RenderGraphBuilder& builder)
-//             {
-//                 auto gbuffer0 = builder.ReadTexture(intermediateResources.gbuffer0, RenderBackendResourceState::ShaderResource);
-//                 auto sceneDepthTexture = builder.ReadTexture(intermediateResources.sceneDepthTexture, RenderBackendResourceState::ShaderResource);
-//
-//                 gtaoHorizonSearchAndIntegralTexture = builder.WriteTexture(gtaoHorizonSearchAndIntegralTexture, RenderBackendResourceState::UnorderedAccess);
-//                 gtaoDebugOutputTexture = builder.WriteTexture(gtaoDebugOutputTexture, RenderBackendResourceState::UnorderedAccess);
-//
-//
-//                 {
-//                     uint32 threadGroupCountX = ComputeWorkGroupCount(gtaoTextureWidth, 8);
-//                     uint32 threadGroupCountY = ComputeWorkGroupCount(gtaoTextureHeight, 8);
-//
-//                     RenderBackendPushConstantValues shaderConstants = {};
-//                     shaderConstants.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
-//                     shaderConstants.BindTextureSRV(1, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(sceneDepthTexture)));
-//                     shaderConstants.BindTextureSRV(2, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(gbuffer0)));
-//                     shaderConstants.BindTextureUAV(3, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndexgtaoHorizonSearchAndIntegralTexture), 0));
-//                     shaderConstants.BindTextureUAV(4, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndexgtaoDebugOutputTexture), 0));
-//                     shaderConstants.PushConstants(0, 1.0f / gtaoTextureWidth);
-//                     shaderConstants.PushConstants(1, 1.0f / gtaoTextureHeight);
-//                     shaderConstants.PushConstants(2, settings.radius);
-//                     shaderConstants.PushConstants(3, settings.thickness);
-//                     shaderConstants.PushConstants(4, 100.0f);
-//
-//                     commandList.ClearTextureUAV(resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndexgtaoDebugOutputTexture), 0), RenderBackendTextureClearValue::CreateColorValueFloat4(0.0f, 0.0f, 0.0f, 0.0f));
-//
-//                     RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::GTAOHorizonSearchAndIntegral);
-//                     commandList.Dispatch2D(
-//                         computeShader,
-//                         shaderConstants,
-//                         threadGroupCountX,
-//                         groupCountY);
-//                 };
-//             });
-//
-//         renderGraph.AddPass(std::format("GTAOSpatialFiltering (Compute, {}x{})", gtaoTextureWidth, gtaoTextureHeight), RenderGraphPassFlags::AsyncCompute,
-//             [&](RenderGraphBuilder& builder)
-//             {
-//                 auto sceneDepthTexture = builder.ReadTexture(intermediateResources.sceneDepthTexture, RenderBackendResourceState::ShaderResource);
-//                 builder.ReadTexture(gtaoHorizonSearchAndIntegralTexture, RenderBackendResourceState::ShaderResource);
-//
-//                 gtaoSpatialFilteringTexture = builder.WriteTexture(gtaoSpatialFilteringTexture, RenderBackendResourceState::UnorderedAccess);
-//
-//
-//                 {
-//                     uint32 threadGroupCountX = ComputeWorkGroupCount(gtaoTextureWidth, 8);
-//                     uint32 threadGroupCountY = ComputeWorkGroupCount(gtaoTextureHeight, 8);
-//
-//                     RenderBackendPushConstantValues shaderConstants = {};
-//                     shaderConstants.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
-//                     shaderConstants.BindTextureSRV(1, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(sceneDepthTexture)));
-//                     shaderConstants.BindTextureSRV(2, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(gtaoHorizonSearchAndIntegralTexture)));
-//                     shaderConstants.BindTextureUAV(3, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndexgtaoSpatialFilteringTexture), 0));
-//                     shaderConstants.PushConstants(0, 1.0f / float(gtaoTextureWidth));
-//                     shaderConstants.PushConstants(1, 0.0f);
-//
-//                     RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::GTAOSpatialFiltering);
-//                     commandList.Dispatch2D(
-//                         computeShader,
-//                         shaderConstants,
-//                         threadGroupCountX,
-//                         groupCountY);
-//                 };
-//             });
-//
-//         /*   uint32 deviceMask = ~0u;
-//         if (!historyAmbientOcclusionTextureCache.texture || (historyAmbientOcclusionTextureCache.desc != ambientOcclusionTextureDesc))
-//         {
-//             historyAmbientOcclusionTextureCache.desc = ambientOcclusionTextureDesc;
-//             historyAmbientOcclusionTextureCache.texture = renderBackend->CreateTexture(deviceMask, &historyAmbientOcclusionTextureCache.desc, nullptr, "HistoryAmbientOcclusionTexture");
-//             historyAmbientOcclusionTextureCache.initialState = RenderBackendResourceState::ShaderResource;
-//         }
-//         auto historyAmbientOcclusionTexture = renderGraph.ImportExternalTexture(historyAmbientOcclusionTextureCache.texture, historyAmbientOcclusionTextureCache.desc, historyAmbientOcclusionTextureCache.initialState, "HistoryAmbientOcclusionTexture");
-//         renderGraph.ExportTextureDeferred(ambientOcclusionTexture, &historyAmbientOcclusionTextureCache);
-//
-//         renderGraph.AddPass(std::format("GTAOTemporalFiltering (Compute, {}x{})", ambientOcclusionTextureWidth, ambientOcclusionTextureHeight), RenderGraphPassFlags::AsyncCompute,
-//             [&](RenderGraphBuilder& builder)
-//             {
-//                 auto& intermediateResources = renderGraph.blackboard.Get<RasterizationRendererSceneTextures>();
-//                 auto& historyInfo = renderGraph.blackboard.Get<RasterizationRendererHistoryInfo>();
-//
-//                 auto sceneDepthTexture = builder.ReadTexture(intermediateResources.sceneDepthTexture, RenderBackendResourceState::ShaderResource);
-//                 auto historySceneDepthTexture = builder.ReadTexture(historyInfo.historySceneDepthTexture, RenderBackendResourceState::ShaderResource);
-//                 auto motionVectorTexture = builder.ReadTexture(intermediateResources.motionVectorTexture, RenderBackendResourceState::ShaderResource);
-//                 builder.ReadTexture(historyAmbientOcclusionTexture, RenderBackendResourceState::ShaderResource);
-//                 builder.ReadTexture(horizonSearchAndIntegralTexture, RenderBackendResourceState::ShaderResource);
-//
-//                 ambientOcclusionTexture = builder.WriteTexture(ambientOcclusionTexture, RenderBackendResourceState::UnorderedAccess);
-//
-//
-//                 {
-//                     uint32 threadGroupCountX = ComputeWorkGroupCount(ambientOcclusionTextureWidth, 8);
-//                     uint32 threadGroupCountY = ComputeWorkGroupCount(ambientOcclusionTextureHeight, 8);
-//
-//                     RenderBackendPushConstantValues shaderConstants = {};
-//                     shaderConstants.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
-//                     shaderConstants.BindTextureSRV(1, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(sceneDepthTexture)));
-//                     shaderConstants.BindTextureSRV(7, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(motionVectorTexture)));
-//                     shaderConstants.BindTextureSRV(8, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(historySceneDepthTexture)));
-//                     shaderConstants.BindTextureSRV(9, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(horizonSearchAndIntegralTexture)));
-//                     shaderConstants.BindTextureSRV(10, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(historyAmbientOcclusionTexture)));
-//                     shaderConstants.BindTextureUAV(11, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndexambientOcclusionTexture), 0));
-//
-//                     RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::GTAOTemporalFiltering);
-//                     commandList.Dispatch2D(
-//                         computeShader,
-//                         shaderConstants,
-//                         threadGroupCountX,
-//                         groupCountY);
-//                 };
-//             });*/
-//
-//         ambientOcclusionTexture = gtaoSpatialFilteringTexture;
-//
-//         return ambientOcclusionTexture;
+        RenderGraphDebugLabelRegion debugLabelRegion(renderGraph, "ScreenSpaceAmbientOcclusion");
+
+        RasterizationRendererIntermediateResources& intermediateResources = renderGraph.blackboard.Get<RasterizationRendererIntermediateResources>();
+
+        const float strength = rendererSettings.groundTruthAmbientOcclusionSettings.strength;
+        const float radius = rendererSettings.groundTruthAmbientOcclusionSettings.radius;
+        const float thickness = rendererSettings.groundTruthAmbientOcclusionSettings.thickness;
+
+        // @todo Make it a configurable parameter.
+        uint32 downsampleFactor = 2;
+        RenderBackendTextureFormat ambientOcclusionTextureFormat = RenderBackendTextureFormat::R8Unorm;
+
+        uint32 intermediateTextureWidth = std::max(1u, Math::CeilDiv(renderResolution.width, downsampleFactor));
+        uint32 intermediateTextureHeight = std::max(1u, Math::CeilDiv(renderResolution.height, downsampleFactor));
+
+        RenderGraphTextureDescription horizonSearchIntegralOutputTextureDescription = RenderGraphTextureDescription::Create2D(
+            intermediateTextureWidth,
+            intermediateTextureHeight,
+            ambientOcclusionTextureFormat,
+            RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::UnorderedAccess);
+        RenderGraphTextureHandle horizonSearchIntegralOutputTexture = renderGraph.CreateTexture(horizonSearchIntegralOutputTextureDescription, "GTAOHorizonSearchIntegralOutputTexture");
+
+        RenderGraphTextureDescription spatialFilteringOutputTextureDescription = RenderGraphTextureDescription::Create2D(
+            intermediateTextureWidth,
+            intermediateTextureHeight,
+            ambientOcclusionTextureFormat,
+            RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::UnorderedAccess);
+        RenderGraphTextureHandle spatialFilteringOutputTexture = renderGraph.CreateTexture(spatialFilteringOutputTextureDescription, "GTAOSpatialFilteringOutputTexture");
+
+        renderGraph.AddPass(
+            std::format("GTAOHorizonSearchIntegral (Compute, {}x{})", horizonSearchIntegralOutputTextureDescription.width, horizonSearchIntegralOutputTextureDescription.height),
+            RenderGraphPassFlags::Compute,
+            [&](RenderGraphBuilder& builder)
+            {
+                builder.SetBindlessResourceSRV(0, GetCurrentPerFrameConstantBuffer());
+                builder.SetBindlessResourceSRV(1, intermediateResources.depthTexture);
+                builder.SetBindlessResourceSRV(2, intermediateResources.gbuffer0);
+                builder.SetBindlessResourceUAV(3, horizonSearchIntegralOutputTexture, 0);
+                builder.SetShaderConstantValue(4, strength);
+                builder.SetShaderConstantValue(5, radius);
+                builder.SetShaderConstantValue(6, thickness);
+
+                RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::GTAOHorizonSearchIntegral);
+
+                uint32 threadGroupCountX = Math::CeilDiv(horizonSearchIntegralOutputTextureDescription.width, 8);
+                uint32 threadGroupCountY = Math::CeilDiv(horizonSearchIntegralOutputTextureDescription.height, 8);
+                uint32 threadGroupCountZ = 1;
+
+                return [=](RenderBackendCommandList& commandList, const RenderGraphResourceRegistry& resourceRegistry)
+                {
+                    RenderBackendPushConstantValues pushConstantValues = resourceRegistry.GetPushConstantValues();
+
+                    commandList.Dispatch(
+                        computeShader,
+                        pushConstantValues,
+                        threadGroupCountX,
+                        threadGroupCountY,
+                        threadGroupCountZ);
+                };
+            });
+
+        renderGraph.AddPass(
+            std::format("GTAOSpatialFiltering (Compute, {}x{})", spatialFilteringOutputTextureDescription.width, spatialFilteringOutputTextureDescription.height),
+            RenderGraphPassFlags::Compute,
+            [&](RenderGraphBuilder& builder)
+            {
+                builder.SetBindlessResourceSRV(0, GetCurrentPerFrameConstantBuffer());
+                builder.SetBindlessResourceSRV(1, intermediateResources.depthTexture);
+                builder.SetBindlessResourceSRV(2, horizonSearchIntegralOutputTexture);
+                builder.SetBindlessResourceSRV(3, spatialFilteringOutputTexture);
+
+                RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::GTAOSpatialFiltering);
+
+                uint32 threadGroupCountX = Math::CeilDiv(spatialFilteringOutputTextureDescription.width, 8);
+                uint32 threadGroupCountY = Math::CeilDiv(spatialFilteringOutputTextureDescription.height, 8);
+                uint32 threadGroupCountZ = 1;
+
+                return [=](RenderBackendCommandList& commandList, const RenderGraphResourceRegistry& resourceRegistry)
+                {
+                    RenderBackendPushConstantValues pushConstantValues = resourceRegistry.GetPushConstantValues();
+
+                    commandList.Dispatch(
+                        computeShader,
+                        pushConstantValues,
+                        threadGroupCountX,
+                        threadGroupCountY,
+                        threadGroupCountZ);
+                };
+            });
+
+        RenderGraphTextureHandle ambientOcclusionTexture = spatialFilteringOutputTexture;
+
+        {
+            RenderGraphTextureHandle temporalFilteringInputTexture = ambientOcclusionTexture;
+            RenderGraphTextureHandle temporalFilteringHistoryTexture = renderGraph.ImportExternalTexture(historyFrame.ambientOcclusionTexture, "HistoryAmbientOcclusionTexture");
+            if (temporalFilteringHistoryTexture.IsNull())
+            {
+                temporalFilteringHistoryTexture = defaultResources->ImportWhiteDummyTexture2D(renderGraph);
+            }
+
+            RenderGraphTextureDescription temporalFilteringOutputTextureDescription = RenderGraphTextureDescription::Create2D(
+                intermediateTextureWidth,
+                intermediateTextureHeight,
+                ambientOcclusionTextureFormat,
+                RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::UnorderedAccess);
+            RenderGraphTextureHandle temporalFilteringOutputTexture = renderGraph.CreateTexture(temporalFilteringOutputTextureDescription, "GTAOTemporalFilteringOutputTexture");
+
+            renderGraph.AddPass(
+                std::format("GTAOTemporalFiltering (Compute, {}x{})", temporalFilteringOutputTextureDescription.width, temporalFilteringOutputTextureDescription.height),
+                RenderGraphPassFlags::Compute,
+                [&](RenderGraphBuilder& builder)
+                {
+                    builder.SetBindlessResourceSRV(0, GetCurrentPerFrameConstantBuffer());
+                    builder.SetBindlessResourceSRV(1, temporalFilteringInputTexture);
+                    builder.SetBindlessResourceSRV(2, temporalFilteringHistoryTexture);
+                    builder.SetBindlessResourceSRV(3, intermediateResources.depthTexture);
+                    builder.SetBindlessResourceSRV(4, intermediateResources.motionVectorTexture);
+                    builder.SetBindlessResourceUAV(5, temporalFilteringOutputTexture, 0);
+
+                    RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::GTAOTemporalFiltering);
+
+                    uint32 threadGroupCountX = Math::CeilDiv(temporalFilteringOutputTextureDescription.width, 8);
+                    uint32 threadGroupCountY = Math::CeilDiv(temporalFilteringOutputTextureDescription.height, 8);
+                    uint32 threadGroupCountZ = 1;
+
+                    return [=](RenderBackendCommandList& commandList, const RenderGraphResourceRegistry& resourceRegistry)
+                    {
+                        RenderBackendPushConstantValues pushConstantValues = resourceRegistry.GetPushConstantValues();
+
+                        commandList.Dispatch(
+                            computeShader,
+                            pushConstantValues,
+                            threadGroupCountX,
+                            threadGroupCountY,
+                            threadGroupCountZ);
+                    };
+                });
+
+            renderGraph.ExportTextureDeferred(temporalFilteringOutputTexture, &historyFrame.ambientOcclusionTexture);
+
+            ambientOcclusionTexture = temporalFilteringOutputTexture;
+        }
+
+        if (downsampleFactor > 1)
+        {
+            RenderGraphTextureHandle upsamplingInputTexture = ambientOcclusionTexture;
+            RenderGraphTextureHandle depthTexture = intermediateResources.depthTexture;
+
+            RenderGraphTextureDescription upsamplingOutputTextureDescription = RenderGraphTextureDescription::Create2D(
+                renderResolution.width,
+                renderResolution.height,
+                ambientOcclusionTextureFormat,
+                RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::UnorderedAccess);
+            RenderGraphTextureHandle upsamplingOutputTexture = renderGraph.CreateTexture(upsamplingOutputTextureDescription, "UpsampledAmbientOcclusionTexture");
+
+            renderGraph.AddPass(
+                std::format("GTAOUpsampling (Compute, {}x{}->{}x{})", intermediateTextureWidth, intermediateTextureHeight, upsamplingOutputTextureDescription.width, upsamplingOutputTextureDescription.height),
+                RenderGraphPassFlags::Compute,
+                [&](RenderGraphBuilder& builder)
+                {
+                    builder.SetBindlessResourceSRV(0, GetCurrentPerFrameConstantBuffer());
+                    builder.SetBindlessResourceSRV(1, upsamplingInputTexture);
+                    builder.SetBindlessResourceSRV(2, depthTexture);
+                    builder.SetBindlessResourceSRV(3, upsamplingOutputTexture);
+
+                    RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::GTAOUpsampling);
+
+                    uint32 threadGroupCountX = Math::CeilDiv(upsamplingOutputTextureDescription.width, 8);
+                    uint32 threadGroupCountY = Math::CeilDiv(upsamplingOutputTextureDescription.height, 8);
+                    uint32 threadGroupCountZ = 1;
+
+                    return [=](RenderBackendCommandList& commandList, const RenderGraphResourceRegistry& resourceRegistry)
+                    {
+                        RenderBackendPushConstantValues pushConstantValues = resourceRegistry.GetPushConstantValues();
+
+                        commandList.Dispatch(
+                            computeShader,
+                            pushConstantValues,
+                            threadGroupCountX,
+                            threadGroupCountY,
+                            threadGroupCountZ);
+                    };
+                });
+
+            ambientOcclusionTexture = upsamplingOutputTexture;
+        }
+
+        return ambientOcclusionTexture;
     }
 
-    RenderGraphTextureHandle RasterizationRenderer::AddVisualizeAmbientOcclusionPass(
+    RenderGraphTextureHandle RasterizationRenderer::DispatchAmbientOcclusionDebugVisualization(
         RenderGraph& renderGraph,
         const SceneView& view)
     {

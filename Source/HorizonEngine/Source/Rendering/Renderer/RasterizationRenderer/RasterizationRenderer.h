@@ -187,8 +187,6 @@ namespace Horizon
 
         bool IsScreenSpaceReflectionsEnabled() const;
 
-        bool IsScreenSpaceAmbientOcclusionEnabled() const;
-
         bool IsScreenSpaceLightShaftsEnabled() const;
 
         //bool IsRayTracingShadowsEnabled() const;
@@ -477,7 +475,7 @@ namespace Horizon
             RenderGraph& renderGraph,
             const SceneView& view);
 
-        RenderGraphTextureHandle AddVisualizeAmbientOcclusionPass(
+        RenderGraphTextureHandle DispatchAmbientOcclusionDebugVisualization(
             RenderGraph& renderGraph,
             const SceneView& view);
 

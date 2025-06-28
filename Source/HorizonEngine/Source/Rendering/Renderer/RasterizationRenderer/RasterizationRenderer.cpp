@@ -190,7 +190,7 @@ namespace Horizon
             scene->HasAtmosphericLight() &&
             scene->HasActiveSkyAtmosphere();
         renderFeatures.enableScreenSpaceShadows = true;
-        renderFeatures.enableScreenSpaceAmbientOcclusion = false;
+        renderFeatures.enableScreenSpaceAmbientOcclusion = rendererSettings.ambientOcclusionTechnique == RasterizationRendererAmbientOcclusionTechnique::GroundTruthAmbientOcclusion;
         renderFeatures.enableScreenSpaceLightShafts = true;
         renderFeatures.enableDepthOfField = false;// finalPostProcessingSettings.depthOfFieldScale > 0.0f;
         renderFeatures.enableMotionBlur = finalPostProcessingSettings.motionBlurIntensity > 0.0f;
@@ -344,6 +344,7 @@ namespace Horizon
             perFrameShaderParameters.cameraRightVector = view.cameraRightVector;
             perFrameShaderParameters.cameraForwardVector = view.cameraForwardVector;
             perFrameShaderParameters.halfFovInRadians = view.verticalFOV * 0.5f;
+            perFrameShaderParameters.tanHalfFovY = std::tan(view.verticalFOV * 0.5f);
             perFrameShaderParameters.aspectRatio = view.aspectRatio;
             perFrameShaderParameters.nearClippingPlane = view.nearClippingPlane;
             perFrameShaderParameters.farClippingPlane = view.farClippingPlane;
@@ -715,13 +716,18 @@ namespace Horizon
             });
         }
 
-        if (IsScreenSpaceAmbientOcclusionEnabled())
+        if (renderFeatures.enableScreenSpaceAmbientOcclusion)
         {
             intermediateResources.ambientOcclusionTexture = RenderScreenSpaceAmbientOcclusion(renderGraph, view);
         }
         else
         {
             intermediateResources.ambientOcclusionTexture = defaultResources->ImportWhiteDummyTexture2D(renderGraph);
+        }
+
+        if (rendererSettings.debugVisualizationMode == RasterizationRendererDebugVisualizationMode::AmbientOcclusion)
+        {
+            debugVisualizationCallback = std::bind(&RasterizationRenderer::DispatchAmbientOcclusionDebugVisualization, this, std::placeholders::_1, std::placeholders::_2);
         }
 
         // if (IsRayTracingAmbientOcclusionEnabled())

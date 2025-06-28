@@ -47,9 +47,9 @@ struct PerFrameShaderParameters
     float padding2;
 
     float3 cameraForwardVector;
-    float padding3;
 
     float halfFovInRadians;
+    float tanHalfFovY;
     float aspectRatio;
     float nearClippingPlane;
     float farClippingPlane;

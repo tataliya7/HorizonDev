@@ -287,18 +287,26 @@ namespace Horizon
         //    {ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RasterizationRenderer/ScreenSpaceReflectionsSpatialFiltering.hslib", "SSRSpatialFilteringCS");
         //    shaderLibrary->LoadShader(ShaderID::SSRSpatialFiltering, shaderDesc);
         //}
-        // {
-        //     ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RasterizationRenderer/GTAOHorizonSearchAndIntegral.hslib", "GTAOHorizonSearchAndIntegralCS");
-        //     shaderLibrary->LoadShader(ShaderID::GTAOHorizonSearchAndIntegral, shaderDesc);
-        // }
-        // {
-        //     ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RasterizationRenderer/GTAOSpatialFiltering.hslib", "GTAOSpatialFilteringCS");
-        //     shaderLibrary->LoadShader(ShaderID::GTAOSpatialFiltering, shaderDesc);
-        // }
-        // {
-        //     ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RasterizationRenderer/ScreenSpaceAmbientOcclusion.hslib", "GTAOTemporalFilteringCS");
-        //     shaderLibrary->LoadShader(ShaderID::GTAOTemporalFiltering, shaderDesc);
-        // }
+        {
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RasterizationRenderer/ScreenSpaceAmbientOcclusion.hslib", "GTAOHorizonSearchIntegralCS");
+            shaderDesc.AddDefine("GTAO_HORIZON_SEARCH_INTEGRAL", 1);
+            shaderLibrary->LoadShader(ShaderID::GTAOHorizonSearchIntegral, shaderDesc);
+        }
+        {
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RasterizationRenderer/ScreenSpaceAmbientOcclusion.hslib", "GTAOSpatialFilteringCS");
+            shaderDesc.AddDefine("GTAO_SPATIAL_FILTERING", 1);
+            shaderLibrary->LoadShader(ShaderID::GTAOSpatialFiltering, shaderDesc);
+        }
+        {
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RasterizationRenderer/ScreenSpaceAmbientOcclusion.hslib", "GTAOTemporalFilteringCS");
+            shaderDesc.AddDefine("GTAO_TEMPORAL_FILTERING", 1);
+            shaderLibrary->LoadShader(ShaderID::GTAOTemporalFiltering, shaderDesc);
+        }
+        {
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RasterizationRenderer/ScreenSpaceAmbientOcclusion.hslib", "GTAOUpsamplingCS");
+            shaderDesc.AddDefine("GTAO_UPSAMPLING", 1);
+            shaderLibrary->LoadShader(ShaderID::GTAOUpsampling, shaderDesc);
+        }
         {
             ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Pixel, "Shaders/RasterizationRenderer/IndirectDiffuseComposition.hslib", "IndirectDiffuseCompositionPS");
             shaderLibrary->LoadShader(ShaderID::IndirectDiffuseComposition, shaderDesc);
