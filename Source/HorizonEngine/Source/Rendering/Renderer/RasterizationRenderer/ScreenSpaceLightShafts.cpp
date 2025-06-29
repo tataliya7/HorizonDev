@@ -63,21 +63,21 @@ namespace Horizon
                         uint32 threadGroupCountY = ComputeShaderThreadGroupCount(lightShaftsTextureSize.height, 8);
                         uint32 threadGroupCountZ = 1;
 
-                        RenderBackendPushConstantValues shaderConstants = {};
-                        shaderConstants.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
-                        shaderConstants.BindTextureSRV(1, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(sceneColorTexture));
-                        shaderConstants.BindTextureSRV(2, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(sceneDepthTexture));
-                        shaderConstants.BindTextureUAV(3, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndex(lightShaftsDownsampleOutputTexture, 0));
-                        shaderConstants.BindScalar(4, lightShaftsOrigin.x);
-                        shaderConstants.BindScalar(5, lightShaftsOrigin.y);
-                        shaderConstants.BindScalar(6, aspectRatio.x);
-                        shaderConstants.BindScalar(7, aspectRatio.y);
+                        RenderBackendPushConstantValues pushConstantValues = {};
+                        pushConstantValues.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
+                        pushConstantValues.BindTextureSRV(1, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(sceneColorTexture));
+                        pushConstantValues.BindTextureSRV(2, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(sceneDepthTexture));
+                        pushConstantValues.BindTextureUAV(3, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndex(lightShaftsDownsampleOutputTexture, 0));
+                        pushConstantValues.BindScalar(4, lightShaftsOrigin.x);
+                        pushConstantValues.BindScalar(5, lightShaftsOrigin.y);
+                        pushConstantValues.BindScalar(6, aspectRatio.x);
+                        pushConstantValues.BindScalar(7, aspectRatio.y);
 
                         RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::ScreenSpaceLightShaftsDownsample);
 
                         commandList.Dispatch(
                             computeShader,
-                            shaderConstants,
+                            pushConstantValues,
                             threadGroupCountX,
                             threadGroupCountY,
                             threadGroupCountZ);
@@ -113,18 +113,18 @@ namespace Horizon
                             uint32 threadGroupCountY = ComputeShaderThreadGroupCount(lightShaftsTextureSize.height, 8);
                             uint32 threadGroupCountZ = 1;
 
-                            RenderBackendPushConstantValues shaderConstants = {};
-                            shaderConstants.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
-                            shaderConstants.BindTextureSRV(1, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(inputColorTexture));
-                            shaderConstants.BindTextureSRV(2, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(inputDepthTexture));
-                            shaderConstants.BindTextureSRV(3, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(historyColorTexture));
-                            shaderConstants.BindTextureUAV(4, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndex(outputColorTexture, 0));
+                            RenderBackendPushConstantValues pushConstantValues = {};
+                            pushConstantValues.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
+                            pushConstantValues.BindTextureSRV(1, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(inputColorTexture));
+                            pushConstantValues.BindTextureSRV(2, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(inputDepthTexture));
+                            pushConstantValues.BindTextureSRV(3, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(historyColorTexture));
+                            pushConstantValues.BindTextureUAV(4, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndex(outputColorTexture, 0));
 
                             RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::ScreenSpaceLightShaftsTemporalFiltering);
 
                             commandList.Dispatch(
                                 computeShader,
-                                shaderConstants,
+                                pushConstantValues,
                                 threadGroupCountX,
                                 threadGroupCountY,
                                 threadGroupCountZ);
@@ -157,20 +157,20 @@ namespace Horizon
                             uint32 threadGroupCountY = ComputeShaderThreadGroupCount(lightShaftsTextureSize.height, 8);
                             uint32 threadGroupCountZ = 1;
 
-                            RenderBackendPushConstantValues shaderConstants = {};
-                            shaderConstants.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
-                            shaderConstants.BindTextureSRV(1, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(radialBlurInputTexture));
-                            shaderConstants.BindTextureUAV(2, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndex(radialBlurOutputTexture, 0));
-                            shaderConstants.BindScalar(3, lightShaftsOrigin.x);
-                            shaderConstants.BindScalar(4, lightShaftsOrigin.y);
-                            shaderConstants.BindScalar(5, blurPassIndex);
-                            shaderConstants.BindScalar(6, ScreenSpaceLightShaftsRadialBlurSampleCount);
+                            RenderBackendPushConstantValues pushConstantValues = {};
+                            pushConstantValues.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
+                            pushConstantValues.BindTextureSRV(1, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(radialBlurInputTexture));
+                            pushConstantValues.BindTextureUAV(2, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndex(radialBlurOutputTexture, 0));
+                            pushConstantValues.BindScalar(3, lightShaftsOrigin.x);
+                            pushConstantValues.BindScalar(4, lightShaftsOrigin.y);
+                            pushConstantValues.BindScalar(5, blurPassIndex);
+                            pushConstantValues.BindScalar(6, ScreenSpaceLightShaftsRadialBlurSampleCount);
 
                             RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::ScreenSpaceLightShaftsRadialBlur);
 
                             commandList.Dispatch(
                                 computeShader,
-                                shaderConstants,
+                                pushConstantValues,
                                 threadGroupCountX,
                                 threadGroupCountY,
                                 threadGroupCountZ);
@@ -197,13 +197,13 @@ namespace Horizon
                         graphicsPipelineState.depthStencilState.depthTestEnable = false;
                         graphicsPipelineState.colorBlendState.targetBlends[0] = RenderBackendColorBlendAttachmentState::AdditiveRGB;
 
-                        RenderBackendPushConstantValues shaderConstants = {};
-                        shaderConstants.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
-                        shaderConstants.BindTextureSRV(1, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(lightShaftsTexture));
-                        shaderConstants.BindScalar(2, lightShaftsIntensity);
-                        shaderConstants.BindScalar(3, lightShaftsColor.x);
-                        shaderConstants.BindScalar(4, lightShaftsColor.y);
-                        shaderConstants.BindScalar(5, lightShaftsColor.z);
+                        RenderBackendPushConstantValues pushConstantValues = {};
+                        pushConstantValues.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
+                        pushConstantValues.BindTextureSRV(1, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(lightShaftsTexture));
+                        pushConstantValues.BindScalar(2, lightShaftsIntensity);
+                        pushConstantValues.BindScalar(3, lightShaftsColor.x);
+                        pushConstantValues.BindScalar(4, lightShaftsColor.y);
+                        pushConstantValues.BindScalar(5, lightShaftsColor.z);
 
                         RenderBackendShaderHandle vertexShader = shaderCollection->GetShader(ShaderID::DrawFullscreenQuadVS);
                         RenderBackendShaderHandle pixelShader = shaderCollection->GetShader(ShaderID::ScreenSpaceLightShaftsComposition);
@@ -212,7 +212,7 @@ namespace Horizon
                             vertexShader,
                             pixelShader,
                             graphicsPipelineState,
-                            shaderConstants,
+                            pushConstantValues,
                             3, 1, 0, 0,
                             RenderBackendPrimitiveTopology::TriangleList);
                     };

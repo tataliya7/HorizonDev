@@ -408,10 +408,10 @@ namespace Horizon
                     graphicsPipelineState.colorBlendState.targetBlends[0].alphaBlendOp = RenderBackendBlendOp::Add;
                     graphicsPipelineState.colorBlendState.targetBlends[0].writeMask = RenderBackendColorComponentFlags::RGBA;
 
-                    RenderBackendPushConstantValues shaderConstants = {};
-                    shaderConstants.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
-                    shaderConstants.BindBufferSRV(1, resourceRegistry.GetBufferSRVBindlessResourceDescriptorIndex(localFogVolumeInstanceDataBuffer));
-                    shaderConstants.BindTextureSRV(2, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(sceneDepthTexture));
+                    RenderBackendPushConstantValues pushConstantValues = {};
+                    pushConstantValues.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
+                    pushConstantValues.BindBufferSRV(1, resourceRegistry.GetBufferSRVBindlessResourceDescriptorIndex(localFogVolumeInstanceDataBuffer));
+                    pushConstantValues.BindTextureSRV(2, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(sceneDepthTexture));
 
                     RenderBackendShaderHandle vertexShader = shaderCollection->GetShader(ShaderID::LocalFogVolumeVS);
                     RenderBackendShaderHandle pixelShader = shaderCollection->GetShader(ShaderID::LocalFogVolumePS);
@@ -420,7 +420,7 @@ namespace Horizon
                         vertexShader,
                         pixelShader,
                         graphicsPipelineState,
-                        shaderConstants,
+                        pushConstantValues,
                         36, localFogVolumeInstanceCount, 0, 0,
                         RenderBackendPrimitiveTopology::TriangleList);
                 };

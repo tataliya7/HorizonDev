@@ -103,14 +103,14 @@ namespace Horizon
 
                 return [=](RenderBackendCommandList& commandList, const RenderGraphResourceRegistry& resourceRegistry)
                 {
-                    RenderBackendPushConstantValues shaderConstants = {};
-                    shaderConstants.BindTextureUAV(0, resourceRegistry.GetBufferUAVBindlessResourceDescriptorIndex(lightListStartOffsetBuffer));
+                    RenderBackendPushConstantValues pushConstantValues = {};
+                    pushConstantValues.BindTextureUAV(0, resourceRegistry.GetBufferUAVBindlessResourceDescriptorIndex(lightListStartOffsetBuffer));
 
                     RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::LightGridBufferInitialization);
 
                     commandList.Dispatch(
                         computeShader,
-                        shaderConstants,
+                        pushConstantValues,
                         1,
                         1,
                         1);
@@ -133,23 +133,23 @@ namespace Horizon
                     uint32 threadGroupCountY = ComputeShaderThreadGroupCount(lightGridSizeY, GLocalLightCullingThreadGroupSize);
                     uint32 threadGroupCountZ = ComputeShaderThreadGroupCount(lightGridSizeZ, GLocalLightCullingThreadGroupSize);
 
-                    RenderBackendPushConstantValues shaderConstants = {};
-                    shaderConstants.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
-                    shaderConstants.BindBufferCBV(1, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(localLightDataBuffer));
-                    //shaderConstants.BindTextureSRV(1, resourceRegistry.GetBufferSRVBindlessResourceDescriptorIndex(localLightDataBuffer));
-                    shaderConstants.BindTextureUAV(2, resourceRegistry.GetBufferUAVBindlessResourceDescriptorIndex(cellDataBuffer));
-                    shaderConstants.BindTextureUAV(3, resourceRegistry.GetBufferUAVBindlessResourceDescriptorIndex(lightListBuffer));
-                    shaderConstants.BindTextureUAV(4, resourceRegistry.GetBufferUAVBindlessResourceDescriptorIndex(lightListStartOffsetBuffer));
-                    shaderConstants.BindScalar(5, localLightCount);
-                    shaderConstants.BindScalar(6, lightGridSizeX);
-                    shaderConstants.BindScalar(7, lightGridSizeY);
-                    shaderConstants.BindScalar(8, lightGridSizeZ);
+                    RenderBackendPushConstantValues pushConstantValues = {};
+                    pushConstantValues.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
+                    pushConstantValues.BindBufferCBV(1, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(localLightDataBuffer));
+                    //pushConstantValues.BindTextureSRV(1, resourceRegistry.GetBufferSRVBindlessResourceDescriptorIndex(localLightDataBuffer));
+                    pushConstantValues.BindTextureUAV(2, resourceRegistry.GetBufferUAVBindlessResourceDescriptorIndex(cellDataBuffer));
+                    pushConstantValues.BindTextureUAV(3, resourceRegistry.GetBufferUAVBindlessResourceDescriptorIndex(lightListBuffer));
+                    pushConstantValues.BindTextureUAV(4, resourceRegistry.GetBufferUAVBindlessResourceDescriptorIndex(lightListStartOffsetBuffer));
+                    pushConstantValues.BindScalar(5, localLightCount);
+                    pushConstantValues.BindScalar(6, lightGridSizeX);
+                    pushConstantValues.BindScalar(7, lightGridSizeY);
+                    pushConstantValues.BindScalar(8, lightGridSizeZ);
 
                     RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::LightGridLocalLightCulling);
 
                     commandList.Dispatch(
                         computeShader,
-                        shaderConstants,
+                        pushConstantValues,
                         threadGroupCountX,
                         threadGroupCountY,
                         threadGroupCountZ);

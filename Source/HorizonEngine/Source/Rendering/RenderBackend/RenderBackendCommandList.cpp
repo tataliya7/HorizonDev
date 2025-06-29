@@ -168,7 +168,7 @@ namespace Horizon
 
     void RenderBackendCommandList::Dispatch(
         RenderBackendShaderHandle computeShader,
-        const RenderBackendPushConstantValues& shaderConstants,
+        const RenderBackendPushConstantValues& pushConstantValues,
         uint32 threadGroupCountX,
         uint32 threadGroupCountY,
         uint32 threadGroupCountZ)
@@ -178,7 +178,7 @@ namespace Horizon
         command->threadGroupCountX = threadGroupCountX;
         command->threadGroupCountY = threadGroupCountY;
         command->threadGroupCountZ = threadGroupCountZ;
-        memcpy(&command->shaderConstants, &shaderConstants, sizeof(RenderBackendPushConstantValues));
+        memcpy(&command->pushConstantValues, &pushConstantValues, sizeof(RenderBackendPushConstantValues));
     }
 
     void RenderBackendCommandList::DispatchIndirect(
@@ -190,7 +190,7 @@ namespace Horizon
 
     void RenderBackendCommandList::DispatchIndirect(
         RenderBackendShaderHandle computeShader,
-        const RenderBackendPushConstantValues& shaderConstants,
+        const RenderBackendPushConstantValues& pushConstantValues,
         RenderBackendBufferHandle argumentBuffer,
         uint64 argumentBufferOffset)
     {
@@ -198,7 +198,7 @@ namespace Horizon
         command->computeShader = computeShader;
         command->argumentBuffer = argumentBuffer;
         command->argumentBufferOffset = argumentBufferOffset;
-        memcpy(&command->shaderConstants, &shaderConstants, sizeof(RenderBackendPushConstantValues));
+        memcpy(&command->pushConstantValues, &pushConstantValues, sizeof(RenderBackendPushConstantValues));
     }
 
     void RenderBackendCommandList::SetViewports(
@@ -242,7 +242,7 @@ namespace Horizon
         RenderBackendShaderHandle vertexShader,
         RenderBackendShaderHandle pixelShader,
         const RenderBackendGraphicsPipelineStateDescription& graphicsPipelineState,
-        const RenderBackendPushConstantValues& shaderConstants,
+        const RenderBackendPushConstantValues& pushConstantValues,
         uint32 vertexCount,
         uint32 instanceCount,
         uint32 firstVertex,
@@ -259,14 +259,14 @@ namespace Horizon
         command->draw.firstInstance = firstInstance;
         command->topology = topology;
         command->indexBuffer = RenderBackendBufferHandle::Null;
-        memcpy(&command->shaderConstants, &shaderConstants, sizeof(RenderBackendPushConstantValues));
+        memcpy(&command->pushConstantValues, &pushConstantValues, sizeof(RenderBackendPushConstantValues));
     }
 
     void RenderBackendCommandList::DrawIndexed(
         RenderBackendShaderHandle vertexShader,
         RenderBackendShaderHandle pixelShader,
         const RenderBackendGraphicsPipelineStateDescription& graphicsPipelineState,
-        const RenderBackendPushConstantValues& shaderConstants,
+        const RenderBackendPushConstantValues& pushConstantValues,
         RenderBackendBufferHandle indexBuffer,
         uint32 indexCount,
         uint32 instanceCount,
@@ -286,14 +286,14 @@ namespace Horizon
         command->drawIndexed.vertexOffset = vertexOffset;
         command->drawIndexed.firstInstance = firstInstance;
         command->topology = topology;
-        memcpy(&command->shaderConstants, &shaderConstants, sizeof(RenderBackendPushConstantValues));
+        memcpy(&command->pushConstantValues, &pushConstantValues, sizeof(RenderBackendPushConstantValues));
     }
 
     void RenderBackendCommandList::DrawIndirect(
         RenderBackendShaderHandle vertexShader,
         RenderBackendShaderHandle pixelShader,
         const RenderBackendGraphicsPipelineStateDescription& graphicsPipelineState,
-        const RenderBackendPushConstantValues& shaderConstants,
+        const RenderBackendPushConstantValues& pushConstantValues,
         RenderBackendBufferHandle argumentBuffer,
         uint64 argumentBufferOffset,
         uint32 drawCount,
@@ -308,14 +308,14 @@ namespace Horizon
         command->argumentBufferOffset = argumentBufferOffset;
         command->drawCount = drawCount;
         command->topology = topology;
-        memcpy(&command->shaderConstants, &shaderConstants, sizeof(RenderBackendPushConstantValues));
+        memcpy(&command->pushConstantValues, &pushConstantValues, sizeof(RenderBackendPushConstantValues));
     }
 
     void RenderBackendCommandList::DrawIndexedIndirect(
         RenderBackendShaderHandle vertexShader,
         RenderBackendShaderHandle pixelShader,
         const RenderBackendGraphicsPipelineStateDescription& graphicsPipelineState,
-        const RenderBackendPushConstantValues& shaderConstants,
+        const RenderBackendPushConstantValues& pushConstantValues,
         RenderBackendBufferHandle indexBuffer,
         RenderBackendBufferHandle argumentBuffer,
         uint64 argumentBufferOffset,
@@ -331,7 +331,7 @@ namespace Horizon
         command->argumentBufferOffset = argumentBufferOffset;
         command->drawCount = drawCount;
         command->topology = topology;
-        memcpy(&command->shaderConstants, &shaderConstants, sizeof(RenderBackendPushConstantValues));
+        memcpy(&command->pushConstantValues, &pushConstantValues, sizeof(RenderBackendPushConstantValues));
     }
 
     void RenderBackendCommandList::DispatchMesh(
@@ -339,7 +339,7 @@ namespace Horizon
         RenderBackendShaderHandle meshShader,
         RenderBackendShaderHandle pixelShader,
         const RenderBackendGraphicsPipelineStateDescription& graphicsPipelineState,
-        const RenderBackendPushConstantValues& shaderConstants,
+        const RenderBackendPushConstantValues& pushConstantValues,
         uint32 threadGroupCountX,
         uint32 threadGroupCountY,
         uint32 threadGroupCountZ,
@@ -354,7 +354,7 @@ namespace Horizon
         command->threadGroupCountX = threadGroupCountX;
         command->threadGroupCountY = threadGroupCountY;
         command->threadGroupCountZ = threadGroupCountZ;
-        memcpy(&command->shaderConstants, &shaderConstants, sizeof(RenderBackendPushConstantValues));
+        memcpy(&command->pushConstantValues, &pushConstantValues, sizeof(RenderBackendPushConstantValues));
     }
 
     void RenderBackendCommandList::DispatchMeshIndirect(
@@ -362,7 +362,7 @@ namespace Horizon
         RenderBackendShaderHandle meshShader,
         RenderBackendShaderHandle pixelShader,
         const RenderBackendGraphicsPipelineStateDescription& graphicsPipelineState,
-        const RenderBackendPushConstantValues& shaderConstants,
+        const RenderBackendPushConstantValues& pushConstantValues,
         RenderBackendBufferHandle argumentBuffer,
         uint64 argumentBufferOffset,
         uint32 drawCount,
@@ -377,7 +377,7 @@ namespace Horizon
         command->argumentBuffer = argumentBuffer;
         command->argumentBufferOffset = argumentBufferOffset;
         command->drawCount = drawCount;
-        memcpy(&command->shaderConstants, &shaderConstants, sizeof(RenderBackendPushConstantValues));
+        memcpy(&command->pushConstantValues, &pushConstantValues, sizeof(RenderBackendPushConstantValues));
     }
 
     void RenderBackendCommandList::BuildRayTracingBottomLevelAccelerationStructure(
@@ -417,7 +417,7 @@ namespace Horizon
     void RenderBackendCommandList::DispatchRays(
         RenderBackendRayTracingPipelineStateHandle pipelineState,
         RenderBackendBufferHandle shaderBindingTable,
-        const RenderBackendPushConstantValues& shaderConstants,
+        const RenderBackendPushConstantValues& pushConstantValues,
         uint32 width,
         uint32 height,
         uint32 depth)
@@ -428,7 +428,7 @@ namespace Horizon
         command->width = width;
         command->height = height;
         command->depth = depth;
-        memcpy(&command->shaderConstants, &shaderConstants, sizeof(RenderBackendPushConstantValues));
+        memcpy(&command->pushConstantValues, &pushConstantValues, sizeof(RenderBackendPushConstantValues));
     }
 
     void RenderBackendCommandList::DispatchSuperSampling(

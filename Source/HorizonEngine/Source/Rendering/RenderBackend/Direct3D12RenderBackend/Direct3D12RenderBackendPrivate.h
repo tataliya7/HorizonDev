@@ -2745,8 +2745,8 @@ namespace Horizon
         bool CompileRenderBackendCommand(const RenderBackendCommandDispatchRays& command);
         bool CompileRenderBackendCommand(const RenderBackendCommandDispatchSuperSampling& command);
     private:
-        bool PrepareForDispatch(RenderBackendShaderHandle computeShader, const RenderBackendPushConstantValues& shaderConstants);
-        bool PrepareForDraw(RenderBackendShaderHandle vertexShader, RenderBackendShaderHandle pixelShader, const RenderBackendGraphicsPipelineStateDescription& pipelineState, RenderBackendPrimitiveTopology topology, RenderBackendBufferHandle indexBuffer, const RenderBackendPushConstantValues& shaderConstants);
+        bool PrepareForDispatch(RenderBackendShaderHandle computeShader, const RenderBackendPushConstantValues& pushConstantValues);
+        bool PrepareForDraw(RenderBackendShaderHandle vertexShader, RenderBackendShaderHandle pixelShader, const RenderBackendGraphicsPipelineStateDescription& pipelineState, RenderBackendPrimitiveTopology topology, RenderBackendBufferHandle indexBuffer, const RenderBackendPushConstantValues& pushConstantValues);
         D3D12Device* device;
         D3D12CommandQueueType queueType;
         D3D12CommandList* commandList;

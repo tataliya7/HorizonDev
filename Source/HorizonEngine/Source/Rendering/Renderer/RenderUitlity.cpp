@@ -172,11 +172,11 @@ namespace Horizon
 
             commandList.BeginRenderPass(renderPass);
 
-            RenderBackendPushConstantValues shaderConstants = {};
-            shaderConstants.BindTextureSRV(0, renderBackend->GetTextureSRVBindlessResourceDescriptorIndex(textureHandle));
-            shaderConstants.BindScalar(2, mipLevel - 1u);
-            shaderConstants.BindScalar(3, float(width));
-            shaderConstants.BindScalar(4, float(height));
+            RenderBackendPushConstantValues pushConstantValues = {};
+            pushConstantValues.BindTextureSRV(0, renderBackend->GetTextureSRVBindlessResourceDescriptorIndex(textureHandle));
+            pushConstantValues.BindScalar(2, mipLevel - 1u);
+            pushConstantValues.BindScalar(3, float(width));
+            pushConstantValues.BindScalar(4, float(height));
 
             RenderBackendGraphicsPipelineStateDescription graphicsPipelineState = {};
 
@@ -184,7 +184,7 @@ namespace Horizon
                 vertexShader,
                 pixelShader,
                 graphicsPipelineState,
-                shaderConstants,
+                pushConstantValues,
                 3, 1, 0, 0,
                 RenderBackendPrimitiveTopology::TriangleList);
 
@@ -196,7 +196,7 @@ namespace Horizon
 
             //commandList.Dispatch(
             //    downsampleTexture2DCS,
-            //    shaderConstants,
+            //    pushConstantValues,
             //    threadGroupCountX,
             //    threadGroupCountY,
             //    threadGroupCountZ);

@@ -27,15 +27,15 @@ namespace Horizon
                     uint32 threadGroupCountY = ComputeShaderThreadGroupCount(outputTextureHeight, 8);
                     uint32 threadGroupCountZ = 1;
 
-                    RenderBackendPushConstantValues shaderConstants = {};
-                    shaderConstants.BindTextureSRV(0, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(inputTexture));
-                    shaderConstants.BindTextureUAV(1, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndex(outputTexture, 0));
+                    RenderBackendPushConstantValues pushConstantValues = {};
+                    pushConstantValues.BindTextureSRV(0, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(inputTexture));
+                    pushConstantValues.BindTextureUAV(1, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndex(outputTexture, 0));
 
                     RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::BuildColorPyramid);
 
                     commandList.Dispatch(
                         computeShader,
-                        shaderConstants,
+                        pushConstantValues,
                         threadGroupCountX,
                         threadGroupCountY,
                         threadGroupCountZ);

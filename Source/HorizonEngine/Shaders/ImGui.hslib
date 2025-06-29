@@ -38,13 +38,13 @@ struct ImGuiVSOutput
 
 [shader("vertex")]
 void ImGuiVS(
-    [[vk::builtin("BaseInstance")]] in uint StartInstanceLocation : SV_StartInstanceLocation,
+    [[vk::builtin("BaseInstance")]] in uint startInstanceLocation : SV_StartInstanceLocation,
     in uint vertexID : SV_VertexID,
     out float4 position : SV_Position,
     out ImGuiVSOutput output)
 {
     StructuredBuffer<ImGuiDrawData> drawDataBuffer = ShaderConstants.GetImGuiDrawDataBufferSRV();
-    ImGuiDrawData drawData = drawDataBuffer[StartInstanceLocation];
+    ImGuiDrawData drawData = drawDataBuffer[startInstanceLocation];
 
     StructuredBuffer<ImGuiVertex> vertexBuffer = ShaderConstants.GetVertexBufferSRV();
     ImGuiVertex vertex = vertexBuffer.Load(drawData.vertexOffset + vertexID);

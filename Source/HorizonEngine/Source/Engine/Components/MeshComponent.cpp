@@ -78,9 +78,9 @@ namespace Horizon
             renderObject->meshletBuffer = renderBackend->CreateBuffer(&meshletBufferDesc, output.meshlets.data(), "MeshletBuffer");
 
             assert(indexCount == output.indices.size());
-            RenderBackendBufferDescription meshletVertexBufferDesc = RenderBackendBufferDescription::CreateByteAddress(sizeof(uint32) * output.indices.size());
+            RenderBackendBufferDescription meshletVertexBufferDesc = RenderBackendBufferDescription::CreateIndex(sizeof(uint32), static_cast<uint32>(output.indices.size()));
             renderObject->meshletVertexBuffer = renderBackend->CreateBuffer(&meshletVertexBufferDesc, output.indices.data(), "MeshletVertexBuffer");
-            renderObject->meshletCount = uint32(output.meshlets.size());
+            renderObject->meshletCount = static_cast<uint32>(output.meshlets.size());
 
             normals = output.vertices.normals;
             texCoords = output.vertices.textureCoordinates[0];
@@ -92,7 +92,7 @@ namespace Horizon
             // @todo Refactor this.
             {
                 RenderBackendBufferDescription vertexBuffer0Desc = RenderBackendBufferDescription::CreateByteAddress(vertexCount * sizeof(Vector3f));
-                vertexBuffer0Desc.flags |= RenderBackendBufferCreateFlags::RayTracingAccelerationStructure; // TODO
+                //vertexBuffer0Desc.flags |= RenderBackendBufferCreateFlags::RayTracingAccelerationStructure; // TODO
                 renderObject->vertexBuffers[0] = renderBackend->CreateBuffer(&vertexBuffer0Desc, positions.data(), "VertexPosition");
 
                 RenderBackendBufferDescription vertexBuffer1Desc = RenderBackendBufferDescription::CreateByteAddress(normals.size() * sizeof(Vector3f));
@@ -110,7 +110,7 @@ namespace Horizon
                 if (indexCount > 0)
                 {
                     RenderBackendBufferDescription indexBufferDesc = RenderBackendBufferDescription::CreateIndex(sizeof(uint32), indexCount);
-                    indexBufferDesc.flags |= RenderBackendBufferCreateFlags::RayTracingAccelerationStructure; // TODO
+                    //indexBufferDesc.flags |= RenderBackendBufferCreateFlags::RayTracingAccelerationStructure; // TODO
                     renderObject->indexBuffer = renderBackend->CreateBuffer(&indexBufferDesc, indices.data(), "IndexBuffer");
                     renderObject->indexBuffer = renderObject->meshletVertexBuffer;
                 }

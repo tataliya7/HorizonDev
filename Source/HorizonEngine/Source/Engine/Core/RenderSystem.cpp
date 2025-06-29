@@ -20,7 +20,7 @@ namespace Horizon
     void RenderSystem::Init()
     {
         enableHardwareRayTracing = false;
-        renderBackendType = RenderBackendType::Direct3D12;
+        renderBackendType = RenderBackendType::Vulkan;
 
 #if HORIZON_CONFIGURATION_RELEASE
         enableDebugLayer = false;
@@ -226,7 +226,7 @@ namespace Horizon
                     currentVertexBufferDataSize[frameInFlightCounter]);
                 RenderBackendBarrier barrier2[] =
                 {
-                    RenderBackendBarrier(vertexBuffer[frameInFlightCounter], RenderBackendBufferSubresourceRange::Whole, RenderBackendResourceState::CopyDst, RenderBackendResourceState::UnorderedAccess)
+                    RenderBackendBarrier(vertexBuffer[frameInFlightCounter], RenderBackendBufferSubresourceRange::Whole, RenderBackendResourceState::CopyDst, RenderBackendResourceState::ShaderResource)
                 };
                 commandList->Barriers(barrier2, 1);
             }
@@ -257,14 +257,14 @@ namespace Horizon
     {
         ImDrawData* drawData = ImGui::GetDrawData();
         // Avoid rendering when minimized, scale coordinates for retina displays (screen coordinates != framebuffer coordinates)
-        int fbWidth = (int)(drawData->DisplaySize.x * drawData->FramebufferScale.x);
-        int fbHeight = (int)(drawData->DisplaySize.y * drawData->FramebufferScale.y);
+        int fbWidth = static_cast<int>(drawData->DisplaySize.x * drawData->FramebufferScale.x);
+        int fbHeight = static_cast<int>(drawData->DisplaySize.y * drawData->FramebufferScale.y);
         if (fbWidth <= 0 || fbHeight <= 0)
         {
             return;
         }
 
-        RenderBackendViewport viewport(0.0f, 0.0f, (float)fbWidth, (float)fbHeight);
+        RenderBackendViewport viewport(0.0f, 0.0f, static_cast<float>(fbWidth), static_cast<float>(fbHeight));
         commandList.SetViewports(&viewport, 1);
 
         RenderBackendRenderPassInfo renderPass =
@@ -302,18 +302,15 @@ namespace Horizon
         graphicsPipelineState.colorBlendState.targetBlends[0].writeMask = RenderBackendColorComponentFlags::RGBA;
 
         // Render command lists
-        // (Because we merged all buffers into a single one, we maintain our own offset into them)
+        // Because we merged all buffers into a single one, we maintain our own offset into them
         int globalIndexOffset = 0;
         int globalVertexOffset = 0;
         for (int i = 0; i < drawData->CmdListsCount; i++)
         {
             const ImDrawList* cmdList = drawData->CmdLists[i];
+
             for (int drawCallIndex = 0; drawCallIndex < cmdList->CmdBuffer.Size; drawCallIndex++)
             {
-                //if (drawCallIndex >= 1)
-                //{
-                //    int a = 0;
-                //}
                 const ImDrawCmd* pcmd = &cmdList->CmdBuffer[drawCallIndex];
 
                 // Project scissor/clipping rectangles into framebuffer space
@@ -321,36 +318,35 @@ namespace Horizon
                 ImVec2 clipMax((pcmd->ClipRect.z - clipOffset.x) * clipScale.x, (pcmd->ClipRect.w - clipOffset.y) * clipScale.y);
 
                 // Clamp to viewport as vkCmdSetScissor() won't accept values that are off bounds
-                if (clipMin.x < 0.0f) { clipMin.x = 0.0f; }
-                if (clipMin.y < 0.0f) { clipMin.y = 0.0f; }
-                if (clipMax.x > fbWidth) { clipMax.x = (float)fbWidth; }
-                if (clipMax.y > fbHeight) { clipMax.y = (float)fbHeight; }
+                clipMin.x = std::clamp(clipMin.x, 0.0f, static_cast<float>(fbWidth));
+                clipMin.y = std::clamp(clipMin.y, 0.0f, static_cast<float>(fbHeight));
+
                 if (clipMax.x <= clipMin.x || clipMax.y <= clipMin.y)
                 {
                     continue;
                 }
 
-                RenderBackendScissor scissor((int32)(clipMin.x), (int32)(clipMin.y), (uint32)(clipMax.x - clipMin.x), (uint32)(clipMax.y - clipMin.y));
+                RenderBackendScissor scissor(static_cast<int32>(clipMin.x), static_cast<int32>(clipMin.y), static_cast<uint32>(clipMax.x - clipMin.x), static_cast<uint32>(clipMax.y - clipMin.y));
                 commandList.SetScissors(&scissor, 1);
 
                 Vector2f scale = Vector2f(2.0f / drawData->DisplaySize.x, -2.0f / drawData->DisplaySize.y);
                 Vector2f translate = Vector2f(-1.0f - drawData->DisplayPos.x * scale.x, 1.0f + drawData->DisplayPos.y * scale.y);
                 int vertexOffset = pcmd->VtxOffset + globalVertexOffset;
 
-                RenderBackendPushConstantValues shaderConstants = {};
-                shaderConstants.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(vertexBuffer[frameInFlightCounter]));
-                shaderConstants.BindTextureSRV(1, renderBackend->GetTextureSRVBindlessResourceDescriptorIndex(RenderBackendTextureHandle(pcmd->TextureId)));
-                shaderConstants.BindScalar(2, scale.x);
-                shaderConstants.BindScalar(3, scale.y);
-                shaderConstants.BindScalar(4, translate.x);
-                shaderConstants.BindScalar(5, translate.y);
-                shaderConstants.BindScalar(6, vertexOffset);
+                RenderBackendPushConstantValues pushConstantValues = {};
+                pushConstantValues.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(vertexBuffer[frameInFlightCounter]));
+                pushConstantValues.BindTextureSRV(1, renderBackend->GetTextureSRVBindlessResourceDescriptorIndex(RenderBackendTextureHandle(pcmd->TextureId)));
+                pushConstantValues.BindScalar(2, scale.x);
+                pushConstantValues.BindScalar(3, scale.y);
+                pushConstantValues.BindScalar(4, translate.x);
+                pushConstantValues.BindScalar(5, translate.y);
+                pushConstantValues.BindScalar(6, vertexOffset);
 
                 commandList.DrawIndexed(
                     vertexShader,
                     pixelShader,
                     graphicsPipelineState,
-                    shaderConstants,
+                    pushConstantValues,
                     indexBuffer[frameInFlightCounter],
                     pcmd->ElemCount,
                     1,
@@ -359,6 +355,7 @@ namespace Horizon
                     0,
                     RenderBackendPrimitiveTopology::TriangleList);
             }
+
             globalIndexOffset += cmdList->IdxBuffer.Size;
             globalVertexOffset += cmdList->VtxBuffer.Size;
         }
@@ -424,8 +421,8 @@ namespace Horizon
                     graphicsPipelineState.colorBlendState.targetBlends[0].alphaBlendOp = RenderBackendBlendOp::Add;
                     graphicsPipelineState.colorBlendState.targetBlends[0].writeMask = RenderBackendColorComponentFlags::RGBA;
 
-                    RenderBackendPushConstantValues shaderConstants = {};
-                    shaderConstants.BindTextureSRV(0, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(uiColorAndAlphaTexture));
+                    RenderBackendPushConstantValues pushConstantValues = {};
+                    pushConstantValues.BindTextureSRV(0, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(uiColorAndAlphaTexture));
 
                     RenderBackendShaderHandle vertexShader = shaderLibrary->GetShader(ShaderID::DrawFullscreenQuadVS);
                     RenderBackendShaderHandle pixelShader = shaderLibrary->GetShader(ShaderID::GUICompositionPS);
@@ -434,7 +431,7 @@ namespace Horizon
                         vertexShader,
                         pixelShader,
                         graphicsPipelineState,
-                        shaderConstants,
+                        pushConstantValues,
                         3, 1, 0, 0,
                         RenderBackendPrimitiveTopology::TriangleList);
                 };

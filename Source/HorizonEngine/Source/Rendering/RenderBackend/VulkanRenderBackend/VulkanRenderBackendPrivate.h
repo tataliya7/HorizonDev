@@ -446,8 +446,8 @@ namespace Horizon
         RenderBackendTextureHandle buffers[RenderBackendMaxSwapChainBufferCount];
         uint32                     numSemaphores;
         uint32                     semaphoreIndex;
-        VkFence                    imageAcquiredFences[RenderBackendMaxSwapChainBufferCount];
-        VkSemaphore                imageAcquiredSemaphores[RenderBackendMaxSwapChainBufferCount];
+        VkFence                    imageAcquiredFences[RenderBackendMaxSwapChainBufferCount + 100];
+        VkSemaphore                imageAcquiredSemaphores[RenderBackendMaxSwapChainBufferCount + 100];
     };
 
     struct VulkanCpuReadbackBuffer
@@ -1141,9 +1141,9 @@ namespace Horizon
         bool CompileRenderBackendCommand(const RenderBackendCommandDispatchSuperSampling& command);
     private:
         void ApplyTransitions();
-        bool PrepareForDispatch(RenderBackendShaderHandle computeShader, const RenderBackendPushConstantValues& shaderConstants);
-        bool PrepareForDraw(RenderBackendShaderHandle vertexShader, RenderBackendShaderHandle pixelShader, const RenderBackendGraphicsPipelineStateDescription& pipelineState, RenderBackendPrimitiveTopology topology, RenderBackendBufferHandle indexBuffer, const RenderBackendPushConstantValues& shaderConstants);
-        bool PrepareForMeshShading(RenderBackendShaderHandle amplificationShader, RenderBackendShaderHandle meshShader, RenderBackendShaderHandle pixelShader, const RenderBackendGraphicsPipelineStateDescription& pipelineState, RenderBackendPrimitiveTopology topology, RenderBackendBufferHandle indexBuffer, const RenderBackendPushConstantValues& shaderConstants);
+        bool PrepareForDispatch(RenderBackendShaderHandle computeShader, const RenderBackendPushConstantValues& pushConstantValues);
+        bool PrepareForDraw(RenderBackendShaderHandle vertexShader, RenderBackendShaderHandle pixelShader, const RenderBackendGraphicsPipelineStateDescription& pipelineState, RenderBackendPrimitiveTopology topology, RenderBackendBufferHandle indexBuffer, const RenderBackendPushConstantValues& pushConstantValues);
+        bool PrepareForMeshShading(RenderBackendShaderHandle amplificationShader, RenderBackendShaderHandle meshShader, RenderBackendShaderHandle pixelShader, const RenderBackendGraphicsPipelineStateDescription& pipelineState, RenderBackendPrimitiveTopology topology, RenderBackendBufferHandle indexBuffer, const RenderBackendPushConstantValues& pushConstantValues);
         VulkanDevice* device;
         RenderBackendQueueFamily queueFamily;
         VkCommandBuffer commandBuffer;

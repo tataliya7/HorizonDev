@@ -65,19 +65,19 @@ namespace Horizon
                             uint32 threadGroupCountY = ComputeShaderThreadGroupCount(outputTextureHeight, PostProcessingThreadGroupSizeY);
                             uint32 threadGroupCountZ = 1;
 
-                            RenderBackendPushConstantValues shaderConstants = {};
-                            shaderConstants.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
-                            shaderConstants.BindTextureSRV(1, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(inputTexture));
-                            shaderConstants.BindTextureUAV(2, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndex(outputTexture, 0));
-                            shaderConstants.BindScalar(3, 1.0f / float(outputTextureWidth));
-                            shaderConstants.BindScalar(4, 1.0f / float(outputTextureHeight));
-                            shaderConstants.BindScalar(5, useKarisAverage ? 1 : 0);
+                            RenderBackendPushConstantValues pushConstantValues = {};
+                            pushConstantValues.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
+                            pushConstantValues.BindTextureSRV(1, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(inputTexture));
+                            pushConstantValues.BindTextureUAV(2, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndex(outputTexture, 0));
+                            pushConstantValues.BindScalar(3, 1.0f / float(outputTextureWidth));
+                            pushConstantValues.BindScalar(4, 1.0f / float(outputTextureHeight));
+                            pushConstantValues.BindScalar(5, useKarisAverage ? 1 : 0);
 
                             RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::GaussianBloomDownsample);
 
                             commandList.Dispatch(
                                 computeShader,
-                                shaderConstants,
+                                pushConstantValues,
                                 threadGroupCountX,
                                 threadGroupCountY,
                                 threadGroupCountZ);
@@ -217,14 +217,14 @@ namespace Horizon
                     uint32 threadGroupCountY = ComputeWorkGroupCount(bloomKernelTextureDesc.height, PostProcessingThreadGroupSizeY);
                     uint32 threadGroupCountZ = 1;
 
-                    RenderBackendPushConstantValues shaderConstants = {};
-                    shaderConstants.BindTextureSRV(0, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(bloomKernelTexture)));
-                    shaderConstants.BindTextureUAV(1, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndexresizedBloomKernelTexture), 0));
+                    RenderBackendPushConstantValues pushConstantValues = {};
+                    pushConstantValues.BindTextureSRV(0, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(bloomKernelTexture)));
+                    pushConstantValues.BindTextureUAV(1, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndexresizedBloomKernelTexture), 0));
 
                     RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::ConvolutionBloomResizeKernel);
                     commandList.Dispatch(
                         computeShader,
-                        shaderConstants,
+                        pushConstantValues,
                         threadGroupCountX,
                         threadGroupCountY,
                         threadGroupCountZ);

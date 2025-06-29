@@ -48,11 +48,11 @@ namespace Horizon
                         Vector2f inverseInputTextureSize = Vector2f(1.0f / float(inputTextureSize.x), 1.0f / float(inputTextureSize.y));
                         Vector2f inverseOutputTextureSize = Vector2f(1.0f / float(outputTextureSize.x), 1.0f / float(outputTextureSize.y));
 
-                        RenderBackendPushConstantValues shaderConstants = {};
-                        shaderConstants.BindTextureSRV(0, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(sceneDepthTexture));
-                        shaderConstants.BindTextureUAV(1, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndex(minDepthPyramidTexture, targetMipLevel));
-                        shaderConstants.BindScalar(3, inverseInputTextureSize.x);
-                        shaderConstants.BindScalar(4, inverseInputTextureSize.y);
+                        RenderBackendPushConstantValues pushConstantValues = {};
+                        pushConstantValues.BindTextureSRV(0, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(sceneDepthTexture));
+                        pushConstantValues.BindTextureUAV(1, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndex(minDepthPyramidTexture, targetMipLevel));
+                        pushConstantValues.BindScalar(3, inverseInputTextureSize.x);
+                        pushConstantValues.BindScalar(4, inverseInputTextureSize.y);
 
                         uint32 threadGroupCountX = ComputeShaderThreadGroupCount(outputTextureSize.x, 8);
                         uint32 threadGroupCountY = ComputeShaderThreadGroupCount(outputTextureSize.y, 8);
@@ -60,7 +60,7 @@ namespace Horizon
 
                         commandList.Dispatch(
                             computeShader,
-                            shaderConstants,
+                            pushConstantValues,
                             threadGroupCountX,
                             threadGroupCountY,
                             threadGroupCountZ);
@@ -81,11 +81,11 @@ namespace Horizon
                         transitions.emplace_back(RenderBackendBarrier(resourceRegistry.GetRenderBackendTextureHandle(minDepthPyramidTexture), RenderBackendTextureSubresourceRange(mipLevel - 1, 1, 0, 1), RenderBackendResourceState::UnorderedAccess, RenderBackendResourceState::ShaderResource));
                         commandList.Barriers(transitions.data(), (uint32)transitions.size());
 
-                        RenderBackendPushConstantValues shaderConstants = {};
-                        shaderConstants.BindTextureSRV(0, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(minDepthPyramidTexture, sourceMipLevel));
-                        shaderConstants.BindTextureUAV(1, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndex(minDepthPyramidTexture, targetMipLevel));
-                        shaderConstants.BindScalar(3, inverseInputTextureSize.x);
-                        shaderConstants.BindScalar(4, inverseInputTextureSize.y);
+                        RenderBackendPushConstantValues pushConstantValues = {};
+                        pushConstantValues.BindTextureSRV(0, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(minDepthPyramidTexture, sourceMipLevel));
+                        pushConstantValues.BindTextureUAV(1, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndex(minDepthPyramidTexture, targetMipLevel));
+                        pushConstantValues.BindScalar(3, inverseInputTextureSize.x);
+                        pushConstantValues.BindScalar(4, inverseInputTextureSize.y);
 
                         uint32 threadGroupCountX = ComputeShaderThreadGroupCount(outputTextureSize.x, 8);
                         uint32 threadGroupCountY = ComputeShaderThreadGroupCount(outputTextureSize.y, 8);
@@ -93,7 +93,7 @@ namespace Horizon
 
                         commandList.Dispatch(
                             computeShader,
-                            shaderConstants,
+                            pushConstantValues,
                             threadGroupCountX,
                             threadGroupCountY,
                             threadGroupCountZ);

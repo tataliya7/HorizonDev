@@ -85,27 +85,27 @@ namespace Horizon
                     uint32 threadGroupCountY = ComputeShaderThreadGroupCount(outputTextureDesc.height, PostProcessingThreadGroupSizeY);
                     uint32 threadGroupCountZ = 1;
 
-                    RenderBackendPushConstantValues shaderConstants = {};
-                    shaderConstants.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
-                    shaderConstants.BindTextureSRV(1, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(colorTexture));
-                    shaderConstants.BindTextureSRV(2, renderBackend->GetTextureSRVBindlessResourceDescriptorIndex(lensDirtTexture));
-                    shaderConstants.BindTextureSRV(3, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(bloomTexture));
-                    shaderConstants.BindTextureSRV(4, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(localToneMappingTexture));
-                    shaderConstants.BindTextureSRV(5, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(colorTransformLUTTexture));
-                    shaderConstants.BindBufferSRV(6, resourceRegistry.GetBufferSRVBindlessResourceDescriptorIndex(autoExposureBuffer));
-                    shaderConstants.BindTextureUAV(7, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndex(outputTexture, 0));
+                    RenderBackendPushConstantValues pushConstantValues = {};
+                    pushConstantValues.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
+                    pushConstantValues.BindTextureSRV(1, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(colorTexture));
+                    pushConstantValues.BindTextureSRV(2, renderBackend->GetTextureSRVBindlessResourceDescriptorIndex(lensDirtTexture));
+                    pushConstantValues.BindTextureSRV(3, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(bloomTexture));
+                    pushConstantValues.BindTextureSRV(4, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(localToneMappingTexture));
+                    pushConstantValues.BindTextureSRV(5, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(colorTransformLUTTexture));
+                    pushConstantValues.BindBufferSRV(6, resourceRegistry.GetBufferSRVBindlessResourceDescriptorIndex(autoExposureBuffer));
+                    pushConstantValues.BindTextureUAV(7, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndex(outputTexture, 0));
 
-                    //shaderConstants.BindTextureSRV(10, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(testTexture));
+                    //pushConstantValues.BindTextureSRV(10, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(testTexture));
 
-                    //shaderConstants.BindScalar(0, (float)flags);
-                    //shaderConstants.BindScalar(1, chromaticAberrationScale.x);
-                    //shaderConstants.BindScalar(2, chromaticAberrationScale.y);
+                    //pushConstantValues.BindScalar(0, (float)flags);
+                    //pushConstantValues.BindScalar(1, chromaticAberrationScale.x);
+                    //pushConstantValues.BindScalar(2, chromaticAberrationScale.y);
 
                     RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::FinalComposition);
 
                     commandList.Dispatch(
                         computeShader,
-                        shaderConstants,
+                        pushConstantValues,
                         threadGroupCountX,
                         threadGroupCountY,
                         threadGroupCountZ);

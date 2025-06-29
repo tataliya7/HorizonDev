@@ -644,40 +644,40 @@ namespace Horizon
             shaderLibrary->LoadShader(ShaderID::DebugDrawPS, shaderDesc);
         }
 
+        if (false)
         {
-            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::RayGen, "Shaders/RasterizationRenderer/HardwareRayTracing/RayTracingShadows.hslib", "RayTracingShadowsRayGen");
-            shaderDesc.AddDefine("RAY_TRACING_ENABLED", 1);
-            //if (shaderLibrary->renderBackend->GetType() == RenderBackendType::Vulkan) // Avoid vulkan validation errors.
-            //{
-            //    shaderDesc.shaderCompilerOptions.skipOptimization = false;
-            //    shaderDesc.shaderCompilerOptions.generateDebugInfo = false;
-            //}
-            shaderLibrary->LoadShader(ShaderID::RayTracingShadowsRayGen, shaderDesc);
-        }
-        {
-            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Miss, "Shaders/RasterizationRenderer/HardwareRayTracing/RayTracingShadows.hslib", "RayTracingShadowsMiss");
-            shaderDesc.AddDefine("RAY_TRACING_ENABLED", 1);
-            if (shaderLibrary->renderBackend->GetType() == RenderBackendType::Vulkan) // Avoid vulkan validation errors.
             {
-                shaderDesc.shaderCompilerOptions.skipOptimization = false;
-                shaderDesc.shaderCompilerOptions.generateDebugInfo = false;
+                ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::RayGen, "Shaders/RasterizationRenderer/HardwareRayTracing/RayTracingShadows.hslib", "RayTracingShadowsRayGen");
+                shaderDesc.AddDefine("RAY_TRACING_ENABLED", 1);
+                //if (shaderLibrary->renderBackend->GetType() == RenderBackendType::Vulkan) // Avoid vulkan validation errors.
+                //{
+                //    shaderDesc.shaderCompilerOptions.skipOptimization = false;
+                //    shaderDesc.shaderCompilerOptions.generateDebugInfo = false;
+                //}
+                shaderLibrary->LoadShader(ShaderID::RayTracingShadowsRayGen, shaderDesc);
             }
-            shaderLibrary->LoadShader(ShaderID::RayTracingShadowsMiss, shaderDesc);
-        }
-
-        {
-            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RasterizationRenderer/HardwareRayTracing/RayTracingShadows.hslib", "RayTracingShadowsInlineRayTracingCS");
-            shaderDesc.AddDefine("RAY_TRACING_ENABLED", 1);
-            //shaderDesc.shaderCompilerOptions.inlineRayTracing = true;
-            //if (shaderLibrary->renderBackend->GetType() == RenderBackendType::Vulkan) // Avoid vulkan validation errors.
             {
-                shaderDesc.shaderCompilerOptions.skipOptimization = false;
-                shaderDesc.shaderCompilerOptions.generateDebugInfo = false;
+                ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Miss, "Shaders/RasterizationRenderer/HardwareRayTracing/RayTracingShadows.hslib", "RayTracingShadowsMiss");
+                shaderDesc.AddDefine("RAY_TRACING_ENABLED", 1);
+                if (shaderLibrary->renderBackend->GetType() == RenderBackendType::Vulkan) // Avoid vulkan validation errors.
+                {
+                    shaderDesc.shaderCompilerOptions.skipOptimization = false;
+                    shaderDesc.shaderCompilerOptions.generateDebugInfo = false;
+                }
+                shaderLibrary->LoadShader(ShaderID::RayTracingShadowsMiss, shaderDesc);
             }
-            shaderLibrary->LoadShader(ShaderID::RayTracingShadowsInlineRayTracing, shaderDesc);
-        }
 
-        {
+            {
+                ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RasterizationRenderer/HardwareRayTracing/RayTracingShadows.hslib", "RayTracingShadowsInlineRayTracingCS");
+                shaderDesc.AddDefine("RAY_TRACING_ENABLED", 1);
+                //shaderDesc.shaderCompilerOptions.inlineRayTracing = true;
+                //if (shaderLibrary->renderBackend->GetType() == RenderBackendType::Vulkan) // Avoid vulkan validation errors.
+                {
+                    shaderDesc.shaderCompilerOptions.skipOptimization = false;
+                    shaderDesc.shaderCompilerOptions.generateDebugInfo = false;
+                }
+                shaderLibrary->LoadShader(ShaderID::RayTracingShadowsInlineRayTracing, shaderDesc);
+            }
             {
                 ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::RayGen, "Shaders/PathTracingRenderer/PathTracing.hslib", "PathTracingRayGen");
                 shaderDesc.AddDefine("RAY_TRACING_ENABLED", 1);

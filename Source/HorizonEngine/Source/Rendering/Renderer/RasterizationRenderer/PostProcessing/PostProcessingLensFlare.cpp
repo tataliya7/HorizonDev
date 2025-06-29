@@ -54,11 +54,11 @@ namespace Horizon
                     RenderBackendScissor scissor(0, 0, lensFlareTextureWidth, lensFlareTextureHeight);
                     commandList.SetScissors(&scissor, 1);
 
-                    RenderBackendPushConstantValues shaderConstants = {};
-                    shaderConstants.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
-                    shaderConstants.BindTextureSRV(1, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(bloomTexture));
-                    shaderConstants.BindScalar(2, lensFlareTextureSize.z);
-                    shaderConstants.BindScalar(3, lensFlareTextureSize.w);
+                    RenderBackendPushConstantValues pushConstantValues = {};
+                    pushConstantValues.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
+                    pushConstantValues.BindTextureSRV(1, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(bloomTexture));
+                    pushConstantValues.BindScalar(2, lensFlareTextureSize.z);
+                    pushConstantValues.BindScalar(3, lensFlareTextureSize.w);
 
                     RenderBackendGraphicsPipelineStateDescription graphicsPipelineState = {};
                     graphicsPipelineState.colorBlendState.targetBlends[0] = RenderBackendColorBlendAttachmentState::Additive;
@@ -70,7 +70,7 @@ namespace Horizon
                         vertexShader,
                         pixelShader,
                         graphicsPipelineState,
-                        shaderConstants,
+                        pushConstantValues,
                         3, 1, 0, 0,
                         RenderBackendPrimitiveTopology::TriangleList);
                 };
@@ -99,14 +99,14 @@ namespace Horizon
         //            uint32 threadGroupCountX = ComputeWorkGroupCount(lensFlareTileCullingTextureDesc.width, PostProcessingThreadGroupSizeX);
         //            uint32 threadGroupCountY = ComputeWorkGroupCount(lensFlareTileCullingTextureDesc.height, PostProcessingThreadGroupSizeY);
 
-        //            RenderBackendPushConstantValues shaderConstants = {};
-        //            shaderConstants.BindTextureSRV(0, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(halfResolutionSceneColorTexture)));
-        //            shaderConstants.BindTextureUAV(1, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndextileCullingTexture), 0));
+        //            RenderBackendPushConstantValues pushConstantValues = {};
+        //            pushConstantValues.BindTextureSRV(0, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(halfResolutionSceneColorTexture)));
+        //            pushConstantValues.BindTextureUAV(1, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndextileCullingTexture), 0));
 
         //            RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::LensFlareTileCulling);
         //            commandList.Dispatch2D(
         //                computeShader,
-        //                shaderConstants,
+        //                pushConstantValues,
         //                threadGroupCountX,
         //                groupCountY);
         //        };
@@ -138,11 +138,11 @@ namespace Horizon
         //            RenderBackendScissor scissor(0, 0, lensFlareTextureWidth, lensFlareTextureHeight);
         //            commandList.SetScissors(&scissor, 1);
 
-        //            RenderBackendPushConstantValues shaderConstants = {};
-        //            shaderConstants.BindTextureSRV(0, RenderBackendTextureSRVDesc::Create(lensFlareGlareLUTTexture));
-        //            shaderConstants.BindTextureSRV(1, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(tileCullingTexture)));
-        //            shaderConstants.PushConstants(0, (float)lensFlareTextureWidth);
-        //            shaderConstants.PushConstants(1, (float)lensFlareTextureHeight);
+        //            RenderBackendPushConstantValues pushConstantValues = {};
+        //            pushConstantValues.BindTextureSRV(0, RenderBackendTextureSRVDesc::Create(lensFlareGlareLUTTexture));
+        //            pushConstantValues.BindTextureSRV(1, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(tileCullingTexture)));
+        //            pushConstantValues.PushConstants(0, (float)lensFlareTextureWidth);
+        //            pushConstantValues.PushConstants(1, (float)lensFlareTextureHeight);
 
         //            RenderBackendGraphicsPipelineStateDescription graphicsPipelineState = {};
         //            graphicsPipelineState.colorBlendState.targetBlends[0] = additiveColorBlendAttachmentStateRGB;
@@ -152,7 +152,7 @@ namespace Horizon
         //            commandList.Draw(
         //                graphicsShader,
         //                graphicsPipelineState,
-        //                shaderConstants,
+        //                pushConstantValues,
         //                4, tileCount * 3, 0, 0,
         //                RenderBackendPrimitiveTopology::TriangleStrip);
         //        };
@@ -180,14 +180,14 @@ namespace Horizon
                     RenderBackendScissor scissor(0, 0, outputTextureWidth, outputTextureHeight);
                     commandList.SetScissors(&scissor, 1);
 
-                    RenderBackendPushConstantValues shaderConstants = {};
-                    shaderConstants.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
-                    shaderConstants.BindTextureSRV(1, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(lensFlareGradientTexture));
-                    shaderConstants.BindTextureSRV(2, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(lensFlareGhostTexture));
-                    shaderConstants.BindTextureSRV(3, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(lensFlareGlareTexture));
-                    shaderConstants.BindTextureSRV(4, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(halfResolutionColorTexture));
-                    shaderConstants.BindScalar(5, outputTextureSize.z);
-                    shaderConstants.BindScalar(6, outputTextureSize.w);
+                    RenderBackendPushConstantValues pushConstantValues = {};
+                    pushConstantValues.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
+                    pushConstantValues.BindTextureSRV(1, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(lensFlareGradientTexture));
+                    pushConstantValues.BindTextureSRV(2, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(lensFlareGhostTexture));
+                    pushConstantValues.BindTextureSRV(3, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(lensFlareGlareTexture));
+                    pushConstantValues.BindTextureSRV(4, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(halfResolutionColorTexture));
+                    pushConstantValues.BindScalar(5, outputTextureSize.z);
+                    pushConstantValues.BindScalar(6, outputTextureSize.w);
 
                     RenderBackendGraphicsPipelineStateDescription graphicsPipelineState = {};
                     graphicsPipelineState.colorBlendState.targetBlends[0] = RenderBackendColorBlendAttachmentState::Additive;
@@ -199,7 +199,7 @@ namespace Horizon
                         vertexShader,
                         pixelShader,
                         graphicsPipelineState,
-                        shaderConstants,
+                        pushConstantValues,
                         3, 1, 0, 0,
                         RenderBackendPrimitiveTopology::TriangleList);
                 };

@@ -552,7 +552,7 @@ namespace Horizon
         return true;
     }
 
-    bool D3D12RenderBackendCommandListContext::PrepareForDispatch(RenderBackendShaderHandle computeShader, const RenderBackendPushConstantValues& shaderConstants)
+    bool D3D12RenderBackendCommandListContext::PrepareForDispatch(RenderBackendShaderHandle computeShader, const RenderBackendPushConstantValues& pushConstantValues)
     {
         D3D12Shader* d3d12Shader = device->GetShader(computeShader);
         D3D12ComputePipelineState* pipelineState = device->FindOrCreateComputePipelineState(d3d12Shader);
@@ -567,7 +567,7 @@ namespace Horizon
 
         if (RenderBackendPushConstantsBytes > 0)
         {
-            const void* pushConstantsData = &shaderConstants.data;
+            const void* pushConstantsData = &pushConstantValues.data;
             commandList->GetID3D12GraphicsCommandList6()->SetComputeRoot32BitConstants(
                 0, // TODO
                 RenderBackendPushConstantsBytes / 4,
@@ -582,7 +582,7 @@ namespace Horizon
     {
         OPTICK_EVENT();
 
-        if (!PrepareForDispatch(command.computeShader, command.shaderConstants))
+        if (!PrepareForDispatch(command.computeShader, command.pushConstantValues))
         {
             return false;
         }
@@ -594,7 +594,7 @@ namespace Horizon
     {
         OPTICK_EVENT();
 
-        if (!PrepareForDispatch(command.computeShader, command.shaderConstants))
+        if (!PrepareForDispatch(command.computeShader, command.pushConstantValues))
         {
             return false;
         }
@@ -679,7 +679,7 @@ namespace Horizon
 
         if (RenderBackendPushConstantsBytes > 0)
         {
-            const void* pushConstantsData = &command.shaderConstants.data;
+            const void* pushConstantsData = &command.pushConstantValues.data;
             commandList->GetID3D12GraphicsCommandList4()->SetComputeRoot32BitConstants(
                 0, // TODO
                 RenderBackendPushConstantsBytes / 4,
@@ -915,7 +915,7 @@ namespace Horizon
         return true;
     }
 
-    bool D3D12RenderBackendCommandListContext::PrepareForDraw(RenderBackendShaderHandle vertexShader, RenderBackendShaderHandle pixelShader, const RenderBackendGraphicsPipelineStateDescription& pipelineStateDesc, RenderBackendPrimitiveTopology topology, RenderBackendBufferHandle indexBuffer, const RenderBackendPushConstantValues& shaderConstants)
+    bool D3D12RenderBackendCommandListContext::PrepareForDraw(RenderBackendShaderHandle vertexShader, RenderBackendShaderHandle pixelShader, const RenderBackendGraphicsPipelineStateDescription& pipelineStateDesc, RenderBackendPrimitiveTopology topology, RenderBackendBufferHandle indexBuffer, const RenderBackendPushConstantValues& pushConstantValues)
     {
         assert(insideRenderPass);
 
@@ -945,7 +945,7 @@ namespace Horizon
 
         if (RenderBackendPushConstantsBytes > 0)
         {
-            const void* pushConstantsData = &shaderConstants.data;
+            const void* pushConstantsData = &pushConstantValues.data;
             commandList->GetID3D12GraphicsCommandList6()->SetGraphicsRoot32BitConstants(
                 0, // TODO
                 RenderBackendPushConstantsBytes / 4,
@@ -960,7 +960,7 @@ namespace Horizon
     {
         OPTICK_EVENT();
 
-        if (!PrepareForDraw(command.vertexShader, command.pixelShader, command.pipelineState, command.topology, command.indexBuffer, command.shaderConstants))
+        if (!PrepareForDraw(command.vertexShader, command.pixelShader, command.pipelineState, command.topology, command.indexBuffer, command.pushConstantValues))
         {
             return false;
         }
@@ -986,7 +986,7 @@ namespace Horizon
 
     bool D3D12RenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandDrawIndirect& command)
     {
-        if (!PrepareForDraw(command.vertexShader, command.pixelShader, command.pipelineState, command.topology, command.indexBuffer, command.shaderConstants))
+        if (!PrepareForDraw(command.vertexShader, command.pixelShader, command.pipelineState, command.topology, command.indexBuffer, command.pushConstantValues))
         {
             return false;
         }
@@ -1015,7 +1015,7 @@ namespace Horizon
 
     bool D3D12RenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandDispatchMesh& command)
     {
-        // if (!PrepareForMeshShading(command.amplificationShader, command.meshShader, command.pixelShader, command.pipelineStateObject, command.topology, command.shaderConstants))
+        // if (!PrepareForMeshShading(command.amplificationShader, command.meshShader, command.pixelShader, command.pipelineStateObject, command.topology, command.pushConstantValues))
         // {
         //     return false;
         // }
@@ -1028,7 +1028,7 @@ namespace Horizon
 
     bool D3D12RenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandDispatchMeshIndirect& command)
     {
-        // if (!PrepareForMeshShading(command.amplificationShader, command.meshShader, command.pixelShader, command.pipelineStateObject, command.topology, command.shaderConstants))
+        // if (!PrepareForMeshShading(command.amplificationShader, command.meshShader, command.pixelShader, command.pipelineStateObject, command.topology, command.pushConstantValues))
         // {
         //     return false;
         // }

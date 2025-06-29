@@ -182,12 +182,15 @@ namespace Horizon
                 .pNext = &physicalDevice.separateDepthStencilLayoutsFeatures,
             };
 
+#if !HORIZON_CONFIGURATION_RELEASE
+            // @todo Debug only
             {
                 physicalDevice.shaderRelaxedExtendedInstructionFeatures = {
                     .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_RELAXED_EXTENDED_INSTRUCTION_FEATURES_KHR,
                     .pNext = &physicalDevice.separateDepthStencilLayoutsFeatures,
                 };
             }
+#endif
 
             physicalDevice.separateDepthStencilLayoutsFeatures = {
                 .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SEPARATE_DEPTH_STENCIL_LAYOUTS_FEATURES_KHR,
@@ -2670,26 +2673,24 @@ namespace Horizon
         VkImage swapchainImages[RenderBackendMaxSwapChainBufferCount] = { 0 };
         VK_CHECK(deviceFunctions.vkGetSwapchainImagesKHR(handle, swapchain.handle, &swapchain.numBuffers, swapchainImages));
 
-        VkSemaphoreTypeCreateInfo semaphoreTypeCreateInfo =
-        {
-            .sType = VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO,
-            .semaphoreType = VK_SEMAPHORE_TYPE_BINARY,
-        };
         VkSemaphoreCreateInfo semaphoreCreateInfo =
         {
             .sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
-            .pNext = &semaphoreTypeCreateInfo,
+            .pNext = nullptr,
         };
+
         VkFenceCreateInfo fenceInfo =
         {
             .sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,
             .flags = VK_FENCE_CREATE_SIGNALED_BIT
         };
+
         for (uint32 i = 0; i < swapchain.numSemaphores; i++)
         {
             VK_CHECK(deviceFunctions.vkCreateSemaphore(handle, &semaphoreCreateInfo, VULKAN_ALLOCATION_CALLBACKS, &swapchain.imageAcquiredSemaphores[i]));
             VK_CHECK(deviceFunctions.vkCreateFence(handle, &fenceInfo, VULKAN_ALLOCATION_CALLBACKS, &swapchain.imageAcquiredFences[i]));
         }
+        swapchain.semaphoreIndex = swapchain.numSemaphores - 1;
 
         for (uint32 i = 0; i < swapchain.numBuffers; i++)
         {
@@ -2722,6 +2723,7 @@ namespace Horizon
             swapchain.buffers[i] = backend->handleManager.Allocate<RenderBackendTextureHandle>(deviceMask);
             SetRenderBackendHandleRepresentation(swapchain.buffers[i].GetIndex(), textureIndex);
         }
+
         AcquireImageIndex(index);
     }
 
@@ -2831,25 +2833,25 @@ namespace Horizon
         VkImage swapchainImages[RenderBackendMaxSwapChainBufferCount] = { 0 };
         VK_CHECK(deviceFunctions.vkGetSwapchainImagesKHR(handle, swapchain.handle, &swapchain.numBuffers, swapchainImages));
 
-        VkSemaphoreTypeCreateInfo semaphoreTypeCreateInfo = {
-            .sType = VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO,
-            .semaphoreType = VK_SEMAPHORE_TYPE_BINARY,
-        };
-        VkSemaphoreCreateInfo semaphoreCreateInfo = {
+        VkSemaphoreCreateInfo semaphoreCreateInfo =
+        {
             .sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
-            .pNext = &semaphoreTypeCreateInfo,
+            .pNext = nullptr,
         };
-        VkFenceCreateInfo fenceInfo = {
+
+        VkFenceCreateInfo fenceInfo =
+        {
             .sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,
             .flags = VK_FENCE_CREATE_SIGNALED_BIT
         };
 
-        swapchain.numSemaphores = swapchain.numBuffers + 1;
+        swapchain.numSemaphores = swapchain.numBuffers + 100;
         for (uint32 i = 0; i < swapchain.numSemaphores; i++)
         {
             VK_CHECK(deviceFunctions.vkCreateSemaphore(handle, &semaphoreCreateInfo, VULKAN_ALLOCATION_CALLBACKS, &swapchain.imageAcquiredSemaphores[i]));
             VK_CHECK(deviceFunctions.vkCreateFence(handle, &fenceInfo, VULKAN_ALLOCATION_CALLBACKS, &swapchain.imageAcquiredFences[i]));
         }
+        swapchain.semaphoreIndex = swapchain.numSemaphores - 1;
 
         for (uint32 i = 0; i < swapchain.numBuffers; i++)
         {
@@ -2986,10 +2988,12 @@ namespace Horizon
             requiredDeviceExtensions.push_back(VK_EXT_SHADER_VIEWPORT_INDEX_LAYER_EXTENSION_NAME);
             requiredDeviceExtensions.push_back(VK_EXT_SHADER_DEMOTE_TO_HELPER_INVOCATION_EXTENSION_NAME);
 
-            if (false)
+#if !HORIZON_CONFIGURATION_RELEASE
+            // @todo Debug only
             {
                 requiredDeviceExtensions.push_back(VK_KHR_SHADER_RELAXED_EXTENDED_INSTRUCTION_EXTENSION_NAME);
             }
+#endif
 
 #if HORIZON_EXPERIMENTAL_STREAMLINE // TODO
             requiredDeviceExtensions.push_back(VK_NVX_IMAGE_VIEW_HANDLE_EXTENSION_NAME);
@@ -3058,9 +3062,9 @@ namespace Horizon
             {
                 .sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
                 .pNext = &physicalDevice->enabledFeatures,
-                .queueCreateInfoCount = (uint32)(queueInfos.size()),
+                .queueCreateInfoCount = static_cast<uint32>(queueInfos.size()),
                 .pQueueCreateInfos = queueInfos.data(),
-                .enabledExtensionCount = (uint32)(enabledDeviceExtensions.size()),
+                .enabledExtensionCount = static_cast<uint32>(enabledDeviceExtensions.size()),
                 .ppEnabledExtensionNames = enabledDeviceExtensions.data(),
                 .pEnabledFeatures = nullptr // If the pNext chain includes a VkPhysicalDeviceFeatures2 structure, then pEnabledFeatures must be NULL.
             };
@@ -3737,7 +3741,7 @@ namespace Horizon
         }
     }
 
-    bool VulkanRenderBackendCommandListContext::PrepareForDispatch(RenderBackendShaderHandle computeShader, const RenderBackendPushConstantValues& shaderConstants)
+    bool VulkanRenderBackendCommandListContext::PrepareForDispatch(RenderBackendShaderHandle computeShader, const RenderBackendPushConstantValues& pushConstantValues)
     {
         uint32 pushConstantsSize = device->bindlessDescriptorManager.pushConstantsSize;
         VulkanPipeline* pipeline = device->FindOrCreateComputePipeline(device->GetShader(computeShader), pushConstantsSize);
@@ -3751,7 +3755,7 @@ namespace Horizon
 
         if (pushConstantsSize > 0)
         {
-            const void* pushConstantsData = &shaderConstants.data;
+            const void* pushConstantsData = &pushConstantValues.data;
             device->deviceFunctions.vkCmdPushConstants(commandBuffer, pipeline->layout, VK_SHADER_STAGE_COMPUTE_BIT, 0, pushConstantsSize, pushConstantsData);
         }
 
@@ -3760,7 +3764,7 @@ namespace Horizon
 
     bool VulkanRenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandDispatch& command)
     {
-        if (!PrepareForDispatch(command.computeShader, command.shaderConstants))
+        if (!PrepareForDispatch(command.computeShader, command.pushConstantValues))
         {
             return false;
         }
@@ -3770,7 +3774,7 @@ namespace Horizon
 
     bool VulkanRenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandDispatchIndirect& command)
     {
-        if (!PrepareForDispatch(command.computeShader, command.shaderConstants))
+        if (!PrepareForDispatch(command.computeShader, command.pushConstantValues))
         {
             return false;
         }
@@ -3868,7 +3872,7 @@ namespace Horizon
 
         if (pushConstantsSize > 0)
         {
-            const void* pushConstantsData = &command.shaderConstants.data;
+            const void* pushConstantsData = &command.pushConstantValues.data;
             device->deviceFunctions.vkCmdPushConstants(commandBuffer, pipelineState->pipelineLayout, VK_SHADER_STAGE_ALL, 0, pushConstantsSize, pushConstantsData);
         }
 
@@ -3902,7 +3906,7 @@ namespace Horizon
         return true;
     }
 
-    bool VulkanRenderBackendCommandListContext::PrepareForDraw(RenderBackendShaderHandle vertexShader, RenderBackendShaderHandle pixelShader, const RenderBackendGraphicsPipelineStateDescription& pipelineState, RenderBackendPrimitiveTopology topology, RenderBackendBufferHandle indexBuffer, const RenderBackendPushConstantValues& shaderConstants)
+    bool VulkanRenderBackendCommandListContext::PrepareForDraw(RenderBackendShaderHandle vertexShader, RenderBackendShaderHandle pixelShader, const RenderBackendGraphicsPipelineStateDescription& pipelineState, RenderBackendPrimitiveTopology topology, RenderBackendBufferHandle indexBuffer, const RenderBackendPushConstantValues& pushConstantValues)
     {
         uint32 pushConstantsSize = device->bindlessDescriptorManager.pushConstantsSize;
 
@@ -3928,10 +3932,10 @@ namespace Horizon
         }
         if (pushConstantsSize > 0)
         {
-            const void* pushConstantsData = &shaderConstants.data;
+            const void* pushConstantsData = &pushConstantValues.data;
             device->deviceFunctions.vkCmdPushConstants(commandBuffer, pipeline->layout, VK_SHADER_STAGE_ALL, 0, pushConstantsSize, pushConstantsData);
         }
-        if (indexBuffer)
+        if (indexBuffer.IsValid())
         {
             VulkanBuffer* buffer = device->GetBuffer(indexBuffer);
             device->deviceFunctions.vkCmdBindIndexBuffer(commandBuffer, buffer->handle, 0, buffer->indexType);
@@ -3944,7 +3948,7 @@ namespace Horizon
     {
         OPTICK_EVENT();
 
-        if (!PrepareForDraw(command.vertexShader, command.pixelShader, command.pipelineState, command.topology, command.indexBuffer, command.shaderConstants))
+        if (!PrepareForDraw(command.vertexShader, command.pixelShader, command.pipelineState, command.topology, command.indexBuffer, command.pushConstantValues))
         {
             return false;
         }
@@ -3972,7 +3976,7 @@ namespace Horizon
 
     bool VulkanRenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandDrawIndirect& command)
     {
-        if (!PrepareForDraw(command.vertexShader, command.pixelShader, command.pipelineState, command.topology, command.indexBuffer, command.shaderConstants))
+        if (!PrepareForDraw(command.vertexShader, command.pixelShader, command.pipelineState, command.topology, command.indexBuffer, command.pushConstantValues))
         {
             return false;
         }
@@ -3999,7 +4003,7 @@ namespace Horizon
 
     bool VulkanRenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandDispatchMesh& command)
     {
-        // if (!PrepareForDraw(nullptr, command.pixelShader, command.pipelineStateObject, command.topology, RenderBackendBufferHandle::Null, command.shaderConstants))
+        // if (!PrepareForDraw(nullptr, command.pixelShader, command.pipelineStateObject, command.topology, RenderBackendBufferHandle::Null, command.pushConstantValues))
         // {
         //     return false;
         // }
@@ -4013,7 +4017,7 @@ namespace Horizon
 
     bool VulkanRenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandDispatchMeshIndirect& command)
     {
-        // if (!PrepareForDraw(nullptr, command.pixelShader, command.pipelineStateObject, command.topology, RenderBackendBufferHandle::Null, command.shaderConstants))
+        // if (!PrepareForDraw(nullptr, command.pixelShader, command.pipelineStateObject, command.topology, RenderBackendBufferHandle::Null, command.pushConstantValues))
         // {
         //     return false;
         // }
@@ -4824,7 +4828,8 @@ namespace Horizon
 
             submitContext.completeFence = primaryCommandBuffer->fence;
 
-            VkCommandBufferBeginInfo commandBufferBeginInfo = {
+            VkCommandBufferBeginInfo commandBufferBeginInfo =
+            {
                 .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
                 .flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
             };
@@ -4862,7 +4867,8 @@ namespace Horizon
                 submitContext.completeSemaphore = primaryCommandBuffer->semaphore;
                 device.presentSemaphores[0] = submitContext.completeSemaphore;
 
-                VkSemaphoreSubmitInfo waitSemaphoreInfo = {
+                VkSemaphoreSubmitInfo waitSemaphoreInfo =
+                {
                     .sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
                     .semaphore = swapchain->imageAcquiredSemaphores[swapchain->semaphoreIndex],
                     .stageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,
@@ -4879,13 +4885,15 @@ namespace Horizon
                 signalSemaphoreInfos.emplace_back(signalSemaphoreInfo);
             }
 
-            VkCommandBufferSubmitInfo commandBufferSubmitInfo = {
+            VkCommandBufferSubmitInfo commandBufferSubmitInfo =
+            {
                 .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO,
                 .commandBuffer = primaryCommandBuffer->handle,
                 //.deviceMask = ,
             };
 
-            VkSubmitInfo2 submitInfo = {
+            VkSubmitInfo2 submitInfo =
+            {
                 .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO_2,
                 .pNext = nullptr,
                 .waitSemaphoreInfoCount = (uint32)waitSemaphoreInfos.size(),

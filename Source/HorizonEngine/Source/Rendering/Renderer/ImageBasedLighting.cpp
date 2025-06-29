@@ -19,12 +19,12 @@ namespace Horizon
         uint32 threadGroupCountY = ComputeShaderThreadGroupCount(GEnvironmentBrdfLutTextureSize, 8);
         uint32 threadGroupCountZ = 1;
 
-        RenderBackendPushConstantValues shaderConstants = {};
-        shaderConstants.BindTextureUAV(0, renderBackend->GetTextureUAVBindlessResourceDescriptorIndex(environmentBrdfLutTexture, 0));
+        RenderBackendPushConstantValues pushConstantValues = {};
+        pushConstantValues.BindTextureUAV(0, renderBackend->GetTextureUAVBindlessResourceDescriptorIndex(environmentBrdfLutTexture, 0));
 
         commandList.Dispatch(
             computeShader,
-            shaderConstants,
+            pushConstantValues,
             threadGroupCountX,
             threadGroupCountY,
             threadGroupCountZ);
@@ -49,14 +49,14 @@ namespace Horizon
             uint32 threadGroupCountY = ComputeShaderThreadGroupCount(1 << (mipLevelCount - mipLevel - 1), 8);
             uint32 threadGroupCountZ = 1;
 
-            RenderBackendPushConstantValues shaderConstants = {};
-            shaderConstants.BindTextureSRV(0, renderBackend->GetTextureSRVBindlessResourceDescriptorIndex(cubemapTexture));
-            shaderConstants.BindTextureUAV(1, renderBackend->GetTextureUAVBindlessResourceDescriptorIndex(cubemapTexture, mipLevel));
-            shaderConstants.BindScalar(2, mipLevel - 1u);
+            RenderBackendPushConstantValues pushConstantValues = {};
+            pushConstantValues.BindTextureSRV(0, renderBackend->GetTextureSRVBindlessResourceDescriptorIndex(cubemapTexture));
+            pushConstantValues.BindTextureUAV(1, renderBackend->GetTextureUAVBindlessResourceDescriptorIndex(cubemapTexture, mipLevel));
+            pushConstantValues.BindScalar(2, mipLevel - 1u);
 
             commandList.Dispatch(
                 computeShader,
-                shaderConstants,
+                pushConstantValues,
                 threadGroupCountX,
                 threadGroupCountY,
                 threadGroupCountZ);
@@ -77,14 +77,14 @@ namespace Horizon
         uint32 threadGroupCountY = ComputeShaderThreadGroupCount(GIrradianceEnvironmentMapSize, 8);
         uint32 threadGroupCountZ = 1;
 
-        RenderBackendPushConstantValues shaderConstants = {};
-        shaderConstants.BindTextureSRV(0, renderBackend->GetTextureSRVBindlessResourceDescriptorIndex(environmentMap));
-        shaderConstants.BindTextureUAV(1, renderBackend->GetTextureUAVBindlessResourceDescriptorIndex(irradianceEnvironmentMap, 0));
-        shaderConstants.BindScalar(2, mipLevel);
+        RenderBackendPushConstantValues pushConstantValues = {};
+        pushConstantValues.BindTextureSRV(0, renderBackend->GetTextureSRVBindlessResourceDescriptorIndex(environmentMap));
+        pushConstantValues.BindTextureUAV(1, renderBackend->GetTextureUAVBindlessResourceDescriptorIndex(irradianceEnvironmentMap, 0));
+        pushConstantValues.BindScalar(2, mipLevel);
 
         commandList.Dispatch(
             computeShader,
-            shaderConstants,
+            pushConstantValues,
             threadGroupCountX,
             threadGroupCountY,
             threadGroupCountZ);
@@ -101,14 +101,14 @@ namespace Horizon
         {
             RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::IrradianceEnvironmentMapSHSampling);
 
-            RenderBackendPushConstantValues shaderConstants = {};
-            shaderConstants.BindTextureSRV(0, renderBackend->GetTextureSRVBindlessResourceDescriptorIndex(environmentMap));
-            shaderConstants.BindBufferUAV(1, renderBackend->GetBufferUAVBindlessResourceDescriptorIndex(irradianceEnvironmentMapSHCoefficientsRGBBuffer));
-            shaderConstants.BindScalar(2, sourceMipLevel);
+            RenderBackendPushConstantValues pushConstantValues = {};
+            pushConstantValues.BindTextureSRV(0, renderBackend->GetTextureSRVBindlessResourceDescriptorIndex(environmentMap));
+            pushConstantValues.BindBufferUAV(1, renderBackend->GetBufferUAVBindlessResourceDescriptorIndex(irradianceEnvironmentMapSHCoefficientsRGBBuffer));
+            pushConstantValues.BindScalar(2, sourceMipLevel);
 
             commandList.Dispatch(
                 computeShader,
-                shaderConstants,
+                pushConstantValues,
                 1,
                 1,
                 1);
@@ -117,14 +117,14 @@ namespace Horizon
         {
             RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::IrradianceEnvironmentMapSHIntegration);
 
-            RenderBackendPushConstantValues shaderConstants = {};
-            shaderConstants.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(irradianceEnvironmentMapSHCoefficientsRGBBuffer));
-            shaderConstants.BindBufferUAV(1, renderBackend->GetBufferUAVBindlessResourceDescriptorIndex(irradianceEnvironmentMapBuffer));
-            shaderConstants.BindScalar(2, shCoefficientsRGBCount);
+            RenderBackendPushConstantValues pushConstantValues = {};
+            pushConstantValues.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(irradianceEnvironmentMapSHCoefficientsRGBBuffer));
+            pushConstantValues.BindBufferUAV(1, renderBackend->GetBufferUAVBindlessResourceDescriptorIndex(irradianceEnvironmentMapBuffer));
+            pushConstantValues.BindScalar(2, shCoefficientsRGBCount);
 
             commandList.Dispatch(
                 computeShader,
-                shaderConstants,
+                pushConstantValues,
                 1,
                 1,
                 1);
@@ -138,14 +138,14 @@ namespace Horizon
 
         RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::IrradianceEnvironmentMapSHOnePass);
 
-        RenderBackendPushConstantValues shaderConstants = {};
-        shaderConstants.BindTextureSRV(0, renderBackend->GetTextureSRVBindlessResourceDescriptorIndex(environmentMap));
-        shaderConstants.BindBufferUAV(1, renderBackend->GetBufferUAVBindlessResourceDescriptorIndex(irradianceEnvironmentMapBuffer));
-        shaderConstants.BindScalar(2, sourceMipLevel);
+        RenderBackendPushConstantValues pushConstantValues = {};
+        pushConstantValues.BindTextureSRV(0, renderBackend->GetTextureSRVBindlessResourceDescriptorIndex(environmentMap));
+        pushConstantValues.BindBufferUAV(1, renderBackend->GetBufferUAVBindlessResourceDescriptorIndex(irradianceEnvironmentMapBuffer));
+        pushConstantValues.BindScalar(2, sourceMipLevel);
 
         commandList.Dispatch(
             computeShader,
-            shaderConstants,
+            pushConstantValues,
             1,
             1,
             1);
@@ -166,14 +166,14 @@ namespace Horizon
 
             float roughness = (float)mipLevel / (float)(numMipLevels - 1);
 
-            RenderBackendPushConstantValues shaderConstants = {};
-            shaderConstants.BindTextureSRV(0, renderBackend->GetTextureSRVBindlessResourceDescriptorIndex(environmentMap));
-            shaderConstants.BindTextureUAV(1, renderBackend->GetTextureUAVBindlessResourceDescriptorIndex(convolvedEnvironmentMap, mipLevel));
-            shaderConstants.BindScalar(2, roughness);
+            RenderBackendPushConstantValues pushConstantValues = {};
+            pushConstantValues.BindTextureSRV(0, renderBackend->GetTextureSRVBindlessResourceDescriptorIndex(environmentMap));
+            pushConstantValues.BindTextureUAV(1, renderBackend->GetTextureUAVBindlessResourceDescriptorIndex(convolvedEnvironmentMap, mipLevel));
+            pushConstantValues.BindScalar(2, roughness);
 
             commandList.Dispatch(
                 computeShader,
-                shaderConstants,
+                pushConstantValues,
                 threadGroupCountX,
                 threadGroupCountY,
                 threadGroupCountZ);
@@ -218,15 +218,15 @@ namespace Horizon
         uint32 threadGroupCountY = ComputeShaderThreadGroupCount(cubemapTextureSize, 8);
         uint32 threadGroupCountZ = 1;
 
-        RenderBackendPushConstantValues shaderConstants = {};
-        shaderConstants.BindTextureSRV(0, renderBackend->GetTextureSRVBindlessResourceDescriptorIndex(latLongTexture));
-        shaderConstants.BindTextureUAV(1, renderBackend->GetTextureUAVBindlessResourceDescriptorIndex(cubemapTexture, 0));
+        RenderBackendPushConstantValues pushConstantValues = {};
+        pushConstantValues.BindTextureSRV(0, renderBackend->GetTextureSRVBindlessResourceDescriptorIndex(latLongTexture));
+        pushConstantValues.BindTextureUAV(1, renderBackend->GetTextureUAVBindlessResourceDescriptorIndex(cubemapTexture, 0));
 
         RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::LatLongToCubemap);
 
         commandList.Dispatch(
             computeShader,
-            shaderConstants,
+            pushConstantValues,
             threadGroupCountX,
             threadGroupCountY,
             threadGroupCountZ);
