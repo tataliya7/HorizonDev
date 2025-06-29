@@ -1181,7 +1181,7 @@ namespace Horizon
 
                 switch (item)
                 {
-                case uint32(SuperSamplingTechnique::FSR):
+                case uint32(SuperSamplingTechnique::FSR2):
                 {
                     ImGui::AlignTextToFramePadding();
                     ImGui::TextUnformatted("Quality Mode");

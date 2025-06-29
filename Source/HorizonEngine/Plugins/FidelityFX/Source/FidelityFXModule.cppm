@@ -1,2 +1,2 @@
-export import FidelityFX.SuperResolution2;
-//export import FidelityFX.BrixelizerGI;
+export import FidelityFX.FSR2;
+export import FidelityFX.FSR3;

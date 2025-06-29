@@ -804,7 +804,8 @@ namespace Horizon
             }
         }
 
-        VmaAllocationCreateInfo memoryInfo = {
+        VmaAllocationCreateInfo memoryInfo =
+        {
             .flags = buffer.allocationFlags,
             .usage = buffer.memeryUsage,
         };
@@ -862,12 +863,16 @@ namespace Horizon
         if (EnumClassHasFlags(desc->flags, RenderBackendBufferCreateFlags::UnorderedAccess))
         {
             uint32 index = bindlessDescriptorManager.AllocateStorageBufferIndex();
-            VkDescriptorBufferInfo descriptorBufferInfo = {
+
+            VkDescriptorBufferInfo descriptorBufferInfo =
+            {
                 .buffer = buffer.handle,
                 .offset = 0,
                 .range = VK_WHOLE_SIZE
             };
-            VkWriteDescriptorSet write = {
+
+            VkWriteDescriptorSet write =
+            {
                 .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
                 .dstSet = bindlessDescriptorManager.set,
                 .dstBinding = BINDLESS_RESOURCE_BINDING_BUFFER_SRV_AND_UAV,
@@ -876,7 +881,9 @@ namespace Horizon
                 .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
                 .pBufferInfo = &descriptorBufferInfo,
             };
+
             deviceFunctions.vkUpdateDescriptorSets(handle, 1, &write, 0, nullptr);
+
             buffer.bindlessResourceDescriptorIndexSRV = buffer.bindlessResourceDescriptorIndexUAV = index;
         }
         else if (EnumClassHasFlags(desc->flags, RenderBackendBufferCreateFlags::UniformBuffer))
@@ -933,6 +940,7 @@ namespace Horizon
     void VulkanDevice::ResizeBuffer(uint32 index, uint64 size)
     {
         VulkanBuffer& buffer = buffers[index];
+
         if (buffer.handle != VK_NULL_HANDLE)
         {
             ResourceToDestroy resource =
@@ -943,26 +951,31 @@ namespace Horizon
             };
             resourcesToDestroy.emplace(resource);
         }
+
         if (size > 0)
         {
             buffer.size = size;
 
-            VkBufferCreateInfo bufferInfo = {
+            VkBufferCreateInfo bufferInfo =
+            {
                 .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
                 .size = buffer.size,
                 .usage = buffer.usageFlags,
                 .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
             };
-            VmaAllocationCreateInfo memoryInfo = {
+
+            VmaAllocationCreateInfo memoryInfo =
+            {
                 .flags = buffer.allocationFlags,
                 .usage = buffer.memeryUsage,
             };
+
             VmaAllocationInfo allocationInfo = {};
             VK_CHECK(vmaCreateBuffer(vmaAllocator, &bufferInfo, &memoryInfo, &buffer.handle, &buffer.allocation, &allocationInfo));
 
             if (!buffer.name.empty())
             {
-                SetDebugUtilsObjectName(VK_OBJECT_TYPE_BUFFER, (uint64)buffer.handle, buffer.name.c_str());
+                SetDebugUtilsObjectName(VK_OBJECT_TYPE_BUFFER, reinterpret_cast<uint64>(buffer.handle), buffer.name.c_str());
             }
 
             if (bufferInfo.usage & VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT)
@@ -979,27 +992,35 @@ namespace Horizon
                 buffer.mapped = true;
             }
 
-            if ((buffer.usageFlags & VK_BUFFER_USAGE_STORAGE_BUFFER_BIT))
+            buffer.bindlessResourceDescriptorIndexCBV = -1;
+            buffer.bindlessResourceDescriptorIndexSRV = -1;
+            buffer.bindlessResourceDescriptorIndexUAV = -1;
+
+            if (buffer.usageFlags & VK_BUFFER_USAGE_STORAGE_BUFFER_BIT)
             {
-                assert(buffer.bindlessResourceDescriptorIndexSRV == buffer.bindlessResourceDescriptorIndexUAV);
-                if (buffer.bindlessResourceDescriptorIndexUAV >= 0)
+                uint32 descriptorIndex = bindlessDescriptorManager.AllocateStorageBufferIndex();
+
+                VkDescriptorBufferInfo descriptorBufferInfo =
                 {
-                    VkDescriptorBufferInfo descriptorBufferInfo = {
-                       .buffer = buffer.handle,
-                       .offset = 0,
-                       .range = VK_WHOLE_SIZE
-                    };
-                    VkWriteDescriptorSet write = {
-                        .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-                        .dstSet = bindlessDescriptorManager.set,
-                        .dstBinding = BINDLESS_RESOURCE_BINDING_BUFFER_SRV_AND_UAV,
-                        .dstArrayElement = (uint32)buffer.bindlessResourceDescriptorIndexUAV,
-                        .descriptorCount = 1,
-                        .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-                        .pBufferInfo = &descriptorBufferInfo,
-                    };
-                    deviceFunctions.vkUpdateDescriptorSets(handle, 1, &write, 0, nullptr);
-                }
+                    .buffer = buffer.handle,
+                    .offset = 0,
+                    .range = VK_WHOLE_SIZE
+                };
+
+                VkWriteDescriptorSet write =
+                {
+                    .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+                    .dstSet = bindlessDescriptorManager.set,
+                    .dstBinding = BINDLESS_RESOURCE_BINDING_BUFFER_SRV_AND_UAV,
+                    .dstArrayElement = descriptorIndex,
+                    .descriptorCount = 1,
+                    .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+                    .pBufferInfo = &descriptorBufferInfo,
+                };
+
+                deviceFunctions.vkUpdateDescriptorSets(handle, 1, &write, 0, nullptr);
+
+                buffer.bindlessResourceDescriptorIndexSRV = buffer.bindlessResourceDescriptorIndexUAV = descriptorIndex;
             }
         }
         else

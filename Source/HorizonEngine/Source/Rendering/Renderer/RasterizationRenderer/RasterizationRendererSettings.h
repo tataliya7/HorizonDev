@@ -45,7 +45,8 @@ namespace Horizon
     {
         None,
         TSS,
-        FSR,
+        FSR2,
+        FSR3,
         DLSS,
     };
 

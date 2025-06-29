@@ -106,9 +106,13 @@ project "HorizonEditorLauncher"
 
             thirdpartypath("python/310/libs/python310.lib"),
 
-            thirdpartypath("ffx/sdk/bin/ffx_sdk/ffx_backend_dx12_x64d.lib"),
-            thirdpartypath("ffx/sdk/bin/ffx_sdk/ffx_backend_vk_x64d.lib"),
-            thirdpartypath("ffx/sdk/bin/ffx_sdk/ffx_fsr2_x64d.lib"),
+            thirdpartypath("FidelityFX/sdk/bin/ffx_sdk/ffx_backend_dx12_x64d.lib"),
+            thirdpartypath("FidelityFX/sdk/bin/ffx_sdk/ffx_backend_vk_x64d.lib"),
+            thirdpartypath("FidelityFX/sdk/bin/ffx_sdk/ffx_fsr2_x64d.lib"),
+            thirdpartypath("FidelityFX/sdk/bin/ffx_sdk/ffx_opticalflow_x64d.lib"),
+            thirdpartypath("FidelityFX/sdk/bin/ffx_sdk/ffx_fsr3_x64d.lib"),
+            thirdpartypath("FidelityFX/sdk/bin/ffx_sdk/ffx_fsr3upscaler_x64d.lib"),
+            thirdpartypath("FidelityFX/sdk/bin/ffx_sdk/ffx_frameinterpolation_x64d.lib"),
 
             thirdpartypath("metis/metis-5.1.0/libmetis/Debug/metis.lib"),
         }
@@ -142,9 +146,13 @@ project "HorizonEditorLauncher"
             "{COPY} %{wks.location}/ThirdParty/python/310/lib %{cfg.targetdir}/python310/lib",
             "{COPY} %{wks.location}/ThirdParty/python/310/DLLs %{cfg.targetdir}/python310/DLLs",
 
-            "{COPY} %{wks.location}/ThirdParty/ffx/sdk/bin/ffx_sdk/ffx_backend_dx12_x64d.dll %{cfg.targetdir}",
-            "{COPY} %{wks.location}/ThirdParty/ffx/sdk/bin/ffx_sdk/ffx_backend_vk_x64d.dll %{cfg.targetdir}",
-            "{COPY} %{wks.location}/ThirdParty/ffx/sdk/bin/ffx_sdk/ffx_fsr2_x64d.dll %{cfg.targetdir}",
+            "{COPY} %{wks.location}/ThirdParty/FidelityFX/sdk/bin/ffx_sdk/ffx_backend_dx12_x64d.dll %{cfg.targetdir}",
+            "{COPY} %{wks.location}/ThirdParty/FidelityFX/sdk/bin/ffx_sdk/ffx_backend_vk_x64d.dll %{cfg.targetdir}",
+            "{COPY} %{wks.location}/ThirdParty/FidelityFX/sdk/bin/ffx_sdk/ffx_fsr2_x64d.dll %{cfg.targetdir}",
+            "{COPY} %{wks.location}/ThirdParty/FidelityFX/sdk/bin/ffx_sdk/ffx_opticalflow_x64d.dll %{cfg.targetdir}",
+            "{COPY} %{wks.location}/ThirdParty/FidelityFX/sdk/bin/ffx_sdk/ffx_fsr3_x64d.dll %{cfg.targetdir}",
+            "{COPY} %{wks.location}/ThirdParty/FidelityFX/sdk/bin/ffx_sdk/ffx_fsr3upscaler_x64d.dll %{cfg.targetdir}",
+            "{COPY} %{wks.location}/ThirdParty/FidelityFX/sdk/bin/ffx_sdk/ffx_frameinterpolation_x64d.dll %{cfg.targetdir}",
 
             "{COPY} %{wks.location}/ThirdParty/streamline/Streamline-2.4.15/bin/x64/development/NvLowLatencyVk.dll %{cfg.targetdir}",
             "{COPY} %{wks.location}/ThirdParty/streamline/Streamline-2.4.15/bin/x64/development/nvngx_dlss.dll %{cfg.targetdir}",
@@ -191,9 +199,13 @@ project "HorizonEditorLauncher"
 
             thirdpartypath("python/310/libs/python310.lib"),
 
-            thirdpartypath("ffx/sdk/bin/ffx_sdk/ffx_backend_dx12_x64.lib"),
-            thirdpartypath("ffx/sdk/bin/ffx_sdk/ffx_backend_vk_x64.lib"),
-            thirdpartypath("ffx/sdk/bin/ffx_sdk/ffx_fsr2_x64.lib"),
+            thirdpartypath("FidelityFX/sdk/bin/ffx_sdk/ffx_backend_dx12_x64.lib"),
+            thirdpartypath("FidelityFX/sdk/bin/ffx_sdk/ffx_backend_vk_x64.lib"),
+            thirdpartypath("FidelityFX/sdk/bin/ffx_sdk/ffx_fsr2_x64.lib"),
+            thirdpartypath("FidelityFX/sdk/bin/ffx_sdk/ffx_opticalflow_x64.lib"),
+            thirdpartypath("FidelityFX/sdk/bin/ffx_sdk/ffx_fsr3_x64.lib"),
+            thirdpartypath("FidelityFX/sdk/bin/ffx_sdk/ffx_fsr3upscaler_x64.lib"),
+            thirdpartypath("FidelityFX/sdk/bin/ffx_sdk/ffx_frameinterpolation_x64.lib"),
 
             thirdpartypath("metis/metis-5.1.0/libmetis/Release/metis.lib"),
         }
@@ -228,9 +240,13 @@ project "HorizonEditorLauncher"
             "{COPY} %{wks.location}/ThirdParty/python/310/lib %{cfg.targetdir}/python310/lib",
             "{COPY} %{wks.location}/ThirdParty/python/310/DLLs %{cfg.targetdir}/python310/DLLs",
 
-            "{COPY} %{wks.location}/ThirdParty/ffx/sdk/bin/ffx_sdk/ffx_backend_dx12_x64.dll %{cfg.targetdir}",
-            "{COPY} %{wks.location}/ThirdParty/ffx/sdk/bin/ffx_sdk/ffx_backend_vk_x64.dll %{cfg.targetdir}",
-            "{COPY} %{wks.location}/ThirdParty/ffx/sdk/bin/ffx_sdk/ffx_fsr2_x64.dll %{cfg.targetdir}",
+            "{COPY} %{wks.location}/ThirdParty/FidelityFX/sdk/bin/ffx_sdk/ffx_backend_dx12_x64.dll %{cfg.targetdir}",
+            "{COPY} %{wks.location}/ThirdParty/FidelityFX/sdk/bin/ffx_sdk/ffx_backend_vk_x64.dll %{cfg.targetdir}",
+            "{COPY} %{wks.location}/ThirdParty/FidelityFX/sdk/bin/ffx_sdk/ffx_fsr2_x64.dll %{cfg.targetdir}",
+            "{COPY} %{wks.location}/ThirdParty/FidelityFX/sdk/bin/ffx_sdk/ffx_opticalflow_x64.dll %{cfg.targetdir}",
+            "{COPY} %{wks.location}/ThirdParty/FidelityFX/sdk/bin/ffx_sdk/ffx_fsr3_x64.dll %{cfg.targetdir}",
+            "{COPY} %{wks.location}/ThirdParty/FidelityFX/sdk/bin/ffx_sdk/ffx_fsr3upscaler_x64.dll %{cfg.targetdir}",
+            "{COPY} %{wks.location}/ThirdParty/FidelityFX/sdk/bin/ffx_sdk/ffx_frameinterpolation_x64.dll %{cfg.targetdir}",
 
             "{COPY} %{wks.location}/ThirdParty/streamline/Streamline-2.4.15/bin/x64/NvLowLatencyVk.dll %{cfg.targetdir}",
             "{COPY} %{wks.location}/ThirdParty/streamline/Streamline-2.4.15/bin/x64/nvngx_dlss.dll %{cfg.targetdir}",

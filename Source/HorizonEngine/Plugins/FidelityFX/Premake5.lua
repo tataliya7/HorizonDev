@@ -21,6 +21,6 @@ project "FidelityFX"
         thirdpartypath("entt/include"),
         thirdpartypath("imgui/imgui-1.89.9-docking"),
         thirdpartypath("python/310/include"),
-        thirdpartypath("ffx-fsr2/include"),
         thirdpartypath("vulkan/1.4.304.0/Include"),
+        thirdpartypath("FidelityFX/sdk/include"),
     }

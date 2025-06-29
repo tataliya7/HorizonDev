@@ -155,8 +155,8 @@ namespace Horizon
 
         ImDrawData* drawData = ImGui::GetDrawData();
         // Avoid rendering when minimized, scale coordinates for retina displays (screen coordinates != framebuffer coordinates)
-        int fbWidth = (int)(drawData->DisplaySize.x * drawData->FramebufferScale.x);
-        int fbHeight = (int)(drawData->DisplaySize.y * drawData->FramebufferScale.y);
+        int fbWidth = static_cast<int>(drawData->DisplaySize.x * drawData->FramebufferScale.x);
+        int fbHeight = static_cast<int>(drawData->DisplaySize.y * drawData->FramebufferScale.y);
         if (fbWidth <= 0 || fbHeight <= 0)
         {
             return;

@@ -5,7 +5,8 @@
 
 #include <optick.h>
 
-import FidelityFX.SuperResolution2;
+import FidelityFX.FSR2;
+import FidelityFX.FSR3;
 
 namespace Horizon
 {
@@ -92,7 +93,7 @@ namespace Horizon
 
         if (temporalSuperSamplingInterface == nullptr)
         {
-            if (rendererSettings.superSamplingSettings.superSamplingTechnique == SuperSamplingTechnique::FSR)
+            if (rendererSettings.superSamplingSettings.superSamplingTechnique == SuperSamplingTechnique::FSR2)
             {
                 temporalSuperSamplingInterface = FidelityFXSuperResolution2Create(renderBackend);
             }

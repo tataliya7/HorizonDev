@@ -276,7 +276,7 @@ namespace Horizon
         renderSettings.rasterRenderingSettings.shadowsTechnique = RasterizationRendererShadowsTechnique::ShadowMaps;
         renderSettings.rasterRenderingSettings.ambientOcclusionTechnique = RasterizationRendererAmbientOcclusionTechnique::GroundTruthAmbientOcclusion;
         renderSettings.rasterRenderingSettings.reflectionsTechnique = RasterizationRendererReflectionsTechnique::ScreenSpaceReflections;
-        renderSettings.rasterRenderingSettings.superSamplingSettings.superSamplingTechnique = SuperSamplingTechnique::FSR;
+        renderSettings.rasterRenderingSettings.superSamplingSettings.superSamplingTechnique = SuperSamplingTechnique::FSR2;
         renderSettings.rasterRenderingSettings.superSamplingSettings.qualityMode = 5;
         renderSettings.rasterRenderingSettings.superSamplingSettings.desiredRenderResolutionPercentage = 1.0f;
         renderSettings.rasterRenderingSettings.postProcessingSettings.localToneMappingMethod = LocalToneMappingMethod::BilateralGrid;

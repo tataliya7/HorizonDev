@@ -81,9 +81,9 @@ project "HorizonEngine"
         thirdpartypath("python/310/include"),
         thirdpartypath("miniaudio/include"),
         thirdpartypath("streamline/Streamline-2.4.15/include"),
-        thirdpartypath("ffx/sdk/include"),
         thirdpartypath("concurrentqueue/include"),
         thirdpartypath("metis/metis-5.1.0/include"),
+        thirdpartypath("FidelityFX/sdk/include"),
     }
 
     links {
