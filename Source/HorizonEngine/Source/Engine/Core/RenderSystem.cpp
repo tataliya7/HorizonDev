@@ -20,7 +20,7 @@ namespace Horizon
     void RenderSystem::Init()
     {
         enableHardwareRayTracing = false;
-        renderBackendType = RenderBackendType::Vulkan;
+        renderBackendType = RenderBackendType::Direct3D12;
 
 #if HORIZON_CONFIGURATION_RELEASE
         enableDebugLayer = false;
@@ -67,22 +67,22 @@ namespace Horizon
 
         renderBackend->FlushRenderDevices();
 
-        for (uint32 t = 0; t < 3; t++)
+        for (uint32 t = 0; t < maxFramesInFlight; t++)
         {
-            RenderBackendBufferDescription vertexBufferDesc = RenderBackendBufferDescription::CreateStructured(sizeof(ImDrawVert), 1);
+            RenderBackendBufferDescription vertexBufferDesc = RenderBackendBufferDescription::CreateStructured(sizeof(ImDrawVert), 10000);
             vertexBuffer[t] = renderBackend->CreateBuffer(&vertexBufferDesc, nullptr, "ImGuiVertexBuffer");
 
-            RenderBackendBufferDescription vertexBufferUploadDesc = RenderBackendBufferDescription::CreateUpload(4);
+            RenderBackendBufferDescription vertexBufferUploadDesc = RenderBackendBufferDescription::CreateUpload(vertexBufferDesc.size);
             vertexBufferUpload[t] = renderBackend->CreateBuffer(&vertexBufferUploadDesc, nullptr, "ImGuiVertexBufferUpload");
 
-            RenderBackendBufferDescription indexBufferDesc = RenderBackendBufferDescription::CreateIndex(sizeof(uint32), 1);
+            RenderBackendBufferDescription indexBufferDesc = RenderBackendBufferDescription::CreateIndex(sizeof(uint32), 10000);
             indexBuffer[t] = renderBackend->CreateBuffer(&indexBufferDesc, nullptr, "ImGuiIndexBuffer");
 
-            RenderBackendBufferDescription indexBufferUploadDesc = RenderBackendBufferDescription::CreateUpload(4);
+            RenderBackendBufferDescription indexBufferUploadDesc = RenderBackendBufferDescription::CreateUpload(indexBufferDesc.size);
             indexBufferUpload[t] = renderBackend->CreateBuffer(&indexBufferUploadDesc, nullptr, "ImGuiIndexBufferUpload");
 
-            vertexBufferSize[t] = 4;
-            indexBufferSize[t] = 4;
+            vertexBufferSize[t] = vertexBufferDesc.size;
+            indexBufferSize[t] = indexBufferDesc.size;
         }
     }
 
@@ -162,7 +162,7 @@ namespace Horizon
             return;
         }
 
-        frameInFlightCounter = (frameInFlightCounter + 1) % 3;
+        frameInFlightCounter = (frameInFlightCounter + 1) % maxFramesInFlight;
 
         // @todo Underlying buffer
         currentVertexBufferDataSize[frameInFlightCounter] = 0;
@@ -209,6 +209,12 @@ namespace Horizon
 
     void RenderSystem::UpdateImGuiData(RenderBackendCommandList* commandList)
     {
+        RenderBackendBarrier barrier[] =
+        {
+            RenderBackendBarrier()
+        };
+        commandList->Barriers(barrier, 1);
+
         // Update vertex buffer and index buffer for ImGui
         {
             if (currentVertexBufferDataSize[frameInFlightCounter] > 0)

@@ -181,28 +181,29 @@ namespace Horizon
         // RenderBackendTextureHandle defaultFontTexture;
         //
         uint32 frameInFlightCounter = 0;
+        static constexpr uint32 maxFramesInFlight = 3;
 
-        uint64 vertexBufferSize[3];
-        uint64 currentVertexBufferDataSize[3];
-        RenderBackendBufferHandle vertexBuffer[3];
-        RenderBackendBufferHandle vertexBufferUpload[3];
+        uint64 vertexBufferSize[maxFramesInFlight];
+        uint64 currentVertexBufferDataSize[maxFramesInFlight];
+        RenderBackendBufferHandle vertexBuffer[maxFramesInFlight];
+        RenderBackendBufferHandle vertexBufferUpload[maxFramesInFlight];
 
-        uint64 indexBufferSize[3];
-        uint64 currentIndexBufferDataSize[3];
-        RenderBackendBufferHandle indexBuffer[3];
-        RenderBackendBufferHandle indexBufferUpload[3];
+        uint64 indexBufferSize[maxFramesInFlight];
+        uint64 currentIndexBufferDataSize[maxFramesInFlight];
+        RenderBackendBufferHandle indexBuffer[maxFramesInFlight];
+        RenderBackendBufferHandle indexBufferUpload[maxFramesInFlight];
 
         uint32 totalDrawCommandCount = 0;
 
-        uint64 drawDataBufferSize[3];
-        uint64 currentDrawDataBufferDataSize[3];
-        RenderBackendBufferHandle drawDataBuffer[3];
-        RenderBackendBufferHandle drawDataBufferUpload[3];
+        uint64 drawDataBufferSize[maxFramesInFlight];
+        uint64 currentDrawDataBufferDataSize[maxFramesInFlight];
+        RenderBackendBufferHandle drawDataBuffer[maxFramesInFlight];
+        RenderBackendBufferHandle drawDataBufferUpload[maxFramesInFlight];
 
-        uint64 drawIndexedIndirectCommandBufferSize[3];
-        uint64 currentDrawIndexedIndirectCommandBufferDataSize[3];
-        RenderBackendBufferHandle drawIndexedIndirectCommandBuffer[3];
-        RenderBackendBufferHandle drawIndexedIndirectCommandBufferUpload[3];
+        uint64 drawIndexedIndirectCommandBufferSize[maxFramesInFlight];
+        uint64 currentDrawIndexedIndirectCommandBufferDataSize[maxFramesInFlight];
+        RenderBackendBufferHandle drawIndexedIndirectCommandBuffer[maxFramesInFlight];
+        RenderBackendBufferHandle drawIndexedIndirectCommandBufferUpload[maxFramesInFlight];
 
         //
         // bool shouldUpdateRayTracingScene = false;

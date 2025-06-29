@@ -2176,6 +2176,7 @@ namespace Horizon
         VkSemaphore& imageAcquiredSemaphore = swapchain->imageAcquiredSemaphores[semaphoreIndex];
         VkFence& imageAcquiredFence = swapchain->imageAcquiredFences[semaphoreIndex];
 
+        //deviceFunctions.vkDeviceWaitIdle(handle);
         // TODO: investigate this
         if (deviceFunctions.vkGetFenceStatus(handle, imageAcquiredFence) == VK_NOT_READY)
         {
@@ -3611,6 +3612,27 @@ namespace Horizon
 
             switch (barrier.type)
             {
+            case RenderBackendBarrier::Type::Global:
+            {
+                VkPipelineStageFlags2 srcStageMask = VK_PIPELINE_STAGE_2_HOST_BIT;
+                VkPipelineStageFlags2 dstStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT | VK_PIPELINE_STAGE_2_COPY_BIT | VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT_KHR;
+
+                VkAccessFlags2 srcAccessMask = VK_ACCESS_2_HOST_WRITE_BIT;
+                VkAccessFlags2 dstAccessMask = VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_TRANSFER_READ_BIT_KHR;
+
+                VkMemoryBarrier2 memoryBarrier =
+                {
+                    .sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER_2,
+                    .pNext = nullptr,
+                    .srcStageMask = srcStageMask,
+                    .srcAccessMask = srcAccessMask,
+                    .dstStageMask = dstStageMask,
+                    .dstAccessMask = dstAccessMask,
+                };
+
+                memoryBarriers.push_back(memoryBarrier);
+            }
+            break;
             case RenderBackendBarrier::Type::Texture:
             {
                 VulkanTexture* texture = device->GetTexture(barrier.texture);
@@ -3633,6 +3655,7 @@ namespace Horizon
                 VkImageMemoryBarrier2 imageBarrier =
                 {
                     .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
+                    .pNext = nullptr,
                     .srcStageMask = srcStageMask,
                     .srcAccessMask = srcAccessMask,
                     .dstStageMask = dstStageMask,
@@ -3651,7 +3674,8 @@ namespace Horizon
                         .layerCount = barrier.textureRange.arrayLayers,
                     },
                 };
-                imageBarriers.push_back(std::move(imageBarrier));
+
+                imageBarriers.push_back(imageBarrier);
             }
             break;
             case RenderBackendBarrier::Type::Buffer:
@@ -3660,6 +3684,7 @@ namespace Horizon
                 VkPipelineStageFlags2 srcStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
                 VkPipelineStageFlags2 dstStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
                 VkAccessFlags2 srcAccessMask, dstAccessMask;
+
                 GetBarrierInfo2(
                     barrier.stateBefore,
                     barrier.stateAfter,
@@ -3669,8 +3694,11 @@ namespace Horizon
                     &dstStageMask,
                     &srcAccessMask,
                     &dstAccessMask);
-                VkBufferMemoryBarrier2 bufferMemoryBarrier = {
+
+                VkBufferMemoryBarrier2 bufferMemoryBarrier =
+                {
                     .sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2,
+                    .pNext = nullptr,
                     .srcStageMask = srcStageMask,
                     .srcAccessMask = srcAccessMask,
                     .dstStageMask = dstStageMask,
@@ -3681,7 +3709,8 @@ namespace Horizon
                     .offset = barrier.bufferRange.offset,
                     .size = barrier.bufferRange.size,
                 };
-                bufferBarriers.push_back(std::move(bufferMemoryBarrier));
+
+                bufferBarriers.push_back(bufferMemoryBarrier);
             }
             break;
             }
@@ -3692,12 +3721,17 @@ namespace Horizon
             VkDependencyInfo dependency =
             {
                 .sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
-                .bufferMemoryBarrierCount = (uint32)bufferBarriers.size(),
+                .memoryBarrierCount = static_cast<uint32>(memoryBarriers.size()),
+                .pMemoryBarriers =  memoryBarriers.data(),
+                .bufferMemoryBarrierCount = static_cast<uint32>(bufferBarriers.size()),
                 .pBufferMemoryBarriers = bufferBarriers.data(),
-                .imageMemoryBarrierCount = (uint32)imageBarriers.size(),
+                .imageMemoryBarrierCount = static_cast<uint32>(imageBarriers.size()),
                 .pImageMemoryBarriers = imageBarriers.data(),
             };
+
             device->deviceFunctions.vkCmdPipelineBarrier2(commandBuffer, &dependency);
+
+            memoryBarriers.clear();
             imageBarriers.clear();
             bufferBarriers.clear();
         }

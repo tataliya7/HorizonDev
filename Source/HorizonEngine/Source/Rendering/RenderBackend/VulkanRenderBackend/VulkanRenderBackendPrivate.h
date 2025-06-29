@@ -1154,6 +1154,7 @@ namespace Horizon
         VkPipeline activeComputePipeline;
         VkPipeline activeGraphicsPipeline;
         VkPipeline activeRayTracingPipeline;
+        std::vector<VkMemoryBarrier2> memoryBarriers;
         std::vector<VkImageMemoryBarrier2> imageBarriers;
         std::vector<VkBufferMemoryBarrier2> bufferBarriers;
     };

@@ -1226,6 +1226,7 @@ namespace Horizon
                 RenderBackendBufferSubresourceRange bufferRange;
             };
         };
+        RenderBackendBarrier() : type(Type::Global) {}
         RenderBackendBarrier(RenderBackendTextureHandle texture, RenderBackendTextureSubresourceRange range, RenderBackendResourceState srcState, RenderBackendResourceState dstState)
             : type(Type::Texture), texture(texture), textureRange(range), stateBefore(srcState), stateAfter(dstState) {}
         RenderBackendBarrier(RenderBackendBufferHandle buffer, RenderBackendBufferSubresourceRange range, RenderBackendResourceState srcState, RenderBackendResourceState dstState)
