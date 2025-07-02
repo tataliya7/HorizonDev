@@ -19,6 +19,7 @@ namespace Horizon
         Vector3f scattering;
         Vector3f absorption;
         Vector3f emission;
+        float phaseG;
         Vector3f jitterOffsets[8];
     };
 
@@ -121,6 +122,7 @@ namespace Horizon
         volumetricFogShaderParameters.scattering = globalFog->scattering;
         volumetricFogShaderParameters.absorption = globalFog->absorption;
         volumetricFogShaderParameters.emission = globalFog->emission;
+        volumetricFogShaderParameters.phaseG = globalFog->phaseG;
         for (uint32 index = 0; index < 8; index++)
         {
             int32 phaseCount = 16;
@@ -205,6 +207,9 @@ namespace Horizon
 
         RenderGraphTextureHandle volumetricFogLightScatteringTexture = renderGraph.CreateTexture(volumetricFogCommonTextureDescription, "VolumetricFogLightScatteringTexture");
 
+        RasterizationRendererLightGridData& lightGridData = renderGraph.blackboard.Get<RasterizationRendererLightGridData>();
+        RenderBackendBufferHandle localLightDataBuffer = localLightDataBuffers[currentPerFrameDataBufferIndex];
+
         renderGraph.AddPass(
             std::format("VolumetricFogLightScattering (Compute, {}x{}x{})", volumetricFogTileCountX, volumetricFogTileCountY, volumetricFogDepthSliceCount),
             RenderGraphPassFlags::Compute,
@@ -215,11 +220,17 @@ namespace Horizon
                 builder.SetBindlessResourceSRV(2, view.GetRenderScene()->distantLightDataBuffer);
                 builder.SetBindlessResourceSRV(3, intermediateResources.cascadedShadowMapShaderParameterBuffer);
                 builder.SetBindlessResourceSRV(4, intermediateResources.cascadedShadowMapDepthTexture);
-                builder.SetBindlessResourceSRV(5, intermediateResources.irradianceEnvironmentMapBuffer);
-                builder.SetBindlessResourceSRV(6, previousVolumetricFogLightScatteringTexture);
-                builder.SetBindlessResourceSRV(7, volumetricFogParticipatingMediaPropertiesDataATexture);
-                builder.SetBindlessResourceSRV(8, volumetricFogParticipatingMediaPropertiesDataBTexture);
-                builder.SetBindlessResourceUAV(9, volumetricFogLightScatteringTexture, 0);
+                builder.SetBindlessResourceSRV(5, localLightDataBuffer);
+                builder.SetBindlessResourceSRV(6, lightGridData.lightGridCellDataBuffer);
+                builder.SetBindlessResourceSRV(7, lightGridData.lightGridLightListBuffer);
+                builder.SetBindlessResourceSRV(8, intermediateResources.irradianceEnvironmentMapBuffer);
+                builder.SetBindlessResourceSRV(9, previousVolumetricFogLightScatteringTexture);
+                builder.SetBindlessResourceSRV(10, volumetricFogParticipatingMediaPropertiesDataATexture);
+                builder.SetBindlessResourceSRV(11, volumetricFogParticipatingMediaPropertiesDataBTexture);
+                builder.SetBindlessResourceUAV(12, volumetricFogLightScatteringTexture, 0);
+                builder.SetShaderConstantValue(13, lightGridData.lightGridInfo.lightGridSizeX);
+                builder.SetShaderConstantValue(14, lightGridData.lightGridInfo.lightGridSizeY);
+                builder.SetShaderConstantValue(15, lightGridData.lightGridInfo.lightGridSizeZ);
 
                 RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::VolumetricFogLightScattering);
 

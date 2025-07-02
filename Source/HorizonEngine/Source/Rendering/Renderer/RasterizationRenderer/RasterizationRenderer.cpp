@@ -427,7 +427,7 @@ namespace Horizon
                     perFrameShaderParameters.atmosphericLightOuterSpaceIlluminance = Vector3f(0.0f, 0.0f, 0.0f);
                 }
 
-                if (IsSkyAtmosphereRenderingEnabled())
+                if (renderFeatures.enableSkyAtmosphereRendering)
                 {
                     const SkyAtmosphereRenderObject& skyAtmosphere = *scene->GetActiveSkyAtmosphere();
 
@@ -652,7 +652,7 @@ namespace Horizon
             RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::UnorderedAccess);
         intermediateResources.motionVectorTexture = renderGraph.CreateTexture(motionVectorTextureDesc, "MotionVectorTexture");
 
-        if (IsSkyAtmosphereRenderingEnabled())
+        if (renderFeatures.enableSkyAtmosphereRendering)
         {
             RenderSkyAtmosphereLUTs(renderGraph, view);
         }
@@ -843,22 +843,15 @@ namespace Horizon
             DispatchPathTracing(renderGraph, view);
         }
 
-        if (IsSubsurfaceScatteringEnabled())
+        if (renderFeatures.enableSubsurfaceScattering)
         {
             RenderSubsurfaceScattering(renderGraph, view);
         }
 
-        if (IsSkyAtmosphereRenderingEnabled())
+        if (renderFeatures.enableSkyAtmosphereRendering)
         {
             RenderSkyAtmosphere(renderGraph, view);
         }
-
-        // const bool isVisualizeSurfelEnabled = (view.visualizationMode == SceneViewVisualizationMode::SurfelGISurfel);
-        //
-        // if (isVisualizeSurfelEnabled)
-        // {
-        //     AddSurfelGIVisualizationPass(renderGraph, view);
-        // }
 
         RenderVolumetricFog(renderGraph, view);
         //RenderLocalFogVolumes(renderGraph, view);

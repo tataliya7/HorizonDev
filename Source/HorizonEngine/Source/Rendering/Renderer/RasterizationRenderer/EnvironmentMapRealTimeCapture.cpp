@@ -88,7 +88,7 @@ namespace Horizon
 
         RasterizationRendererIntermediateResources& intermediateResources = renderGraph.blackboard.Get<RasterizationRendererIntermediateResources>();
 
-        if (IsSkyAtmosphereRenderingEnabled())
+        if (renderFeatures.enableSkyAtmosphereRendering)
         {
             for (uint32 faceIndex = 0; faceIndex < 6; faceIndex++)
             {

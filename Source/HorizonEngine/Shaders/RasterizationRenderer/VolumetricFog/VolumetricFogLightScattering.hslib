@@ -12,11 +12,17 @@ SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(1, VolumetricFogShaderParameters, Volumet
 SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(2, DistantLightData, DistantLightDataBufferSRV);
 SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(3, CascadedShadowMapShaderParameters, CascadedShadowMapShaderParameterBufferSRV);
 SHADER_CONSTANTS_TEXTURE_2D_ARRAY_DEFAULT_SRV(4, ShadowMapTextureSRV);
-SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_SRV(5, IrradianceEnvironmentMapBufferSRV);
-SHADER_CONSTANTS_TEXTURE_3D_SRV(6, float4, PreviousVolumetricFogLightScatteringTextureSRV);
-SHADER_CONSTANTS_TEXTURE_3D_SRV(7, float4, VolumetricFogParticipatingMediaPropertiesDataATextureSRV);
-SHADER_CONSTANTS_TEXTURE_3D_SRV(8, float4, VolumetricFogParticipatingMediaPropertiesDataBTextureSRV);
-SHADER_CONSTANTS_TEXTURE_3D_UAV(9, float4, VolumetricFogLightScatteringTextureUAV);
+SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(5, LocalLightData, LocalLightDataBufferSRV);
+SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(6, uint2, LightGridCellDataBufferSRV);
+SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(7, uint, LightGridLightListBufferSRV);
+SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_SRV(8, IrradianceEnvironmentMapBufferSRV);
+SHADER_CONSTANTS_TEXTURE_3D_SRV(9, float4, PreviousVolumetricFogLightScatteringTextureSRV);
+SHADER_CONSTANTS_TEXTURE_3D_SRV(10, float4, VolumetricFogParticipatingMediaPropertiesDataATextureSRV);
+SHADER_CONSTANTS_TEXTURE_3D_SRV(11, float4, VolumetricFogParticipatingMediaPropertiesDataBTextureSRV);
+SHADER_CONSTANTS_TEXTURE_3D_UAV(12, float4, VolumetricFogLightScatteringTextureUAV);
+SHADER_CONSTANTS_SCALAR(13, uint, LightGridSizeX);
+SHADER_CONSTANTS_SCALAR(14, uint, LightGridSizeY);
+SHADER_CONSTANTS_SCALAR(15, uint, LightGridSizeZ);
 SHADER_CONSTANTS_STRUCT_END();
 
 #define SAMPLE_COUNT_PER_VOXEL 1
@@ -60,6 +66,9 @@ void VolumetricFogLightScatteringCS(uint3 groupID : SV_GroupID, uint3 groupThrea
     StructuredBuffer<DistantLightData> distantLightDataBuffer = ShaderConstants.GetDistantLightDataBufferSRV();
     StructuredBuffer<CascadedShadowMapShaderParameters> cascadedShadowMapShaderParameterBuffer = ShaderConstants.GetCascadedShadowMapShaderParameterBufferSRV();
     Texture2DArray shadowMapTexture = ShaderConstants.GetShadowMapTextureSRV();
+    StructuredBuffer<LocalLightData> localLightDataBuffer = ShaderConstants.GetLocalLightDataBufferSRV();
+    StructuredBuffer<uint2> lightGridCellDataBuffer = ShaderConstants.GetLightGridCellDataBufferSRV();
+    StructuredBuffer<uint> lightGridLightListBuffer = ShaderConstants.GetLightGridLightListBufferSRV();
     ByteAddressBuffer irradianceEnvironmentMapBuffer = ShaderConstants.GetIrradianceEnvironmentMapBufferSRV();
     Texture3D<float4> previousLightScatteringTexture = ShaderConstants.GetPreviousVolumetricFogLightScatteringTextureSRV();
     Texture3D<float4> participatingMediaPropertiesDataATexture = ShaderConstants.GetVolumetricFogParticipatingMediaPropertiesDataATextureSRV();
@@ -108,20 +117,52 @@ void VolumetricFogLightScatteringCS(uint3 groupID : SV_GroupID, uint3 groupThrea
         //jitterOffset = float3(0.5f, 0.5f, volumetricFogShaderParameters.jitterOffsets[sampleIndex].z);
         //jitterOffset = float3(0.5f, 0.5f, 0.5f);
         float3 worldSpacePosition = ComputeVoxelWorldPosition(frameShaderParameters, volumetricFogShaderParameters, voxelCoordinate, jitterOffset);
-        float3 w = normalize(frameShaderParameters.cameraPosition - worldSpacePosition);
+        float3 viewVector = normalize(frameShaderParameters.cameraPosition - worldSpacePosition);
 
         [branch]
         if (isDistantLightValid)
         {
             float distantLightShadowFactor = ComputeDistantLightShadowFactorCSM(frameShaderParameters, cascadedShadowMapParameters, shadowMapTexture, worldSpacePosition);
 
-            radiance += distantLightColor * distantLightShadowFactor * HenyeyGreensteinPhaseFunction(phaseG, dot(distantLightDirection, w));
+            radiance += distantLightColor * distantLightShadowFactor * HenyeyGreensteinPhaseFunction(phaseG, dot(distantLightDirection, viewVector));
         }
+
+        const uint3 lightGridSize = uint3(ShaderConstants.GetLightGridSizeX(), ShaderConstants.GetLightGridSizeY(), ShaderConstants.GetLightGridSizeZ());
+        const uint lightGridCellIndex = GetLightGridCellIndex(0, lightGridSize);
+        const LightGridCellData lightGridCellData = GetLightGridCellData(lightGridCellDataBuffer, lightGridCellIndex);
+        const uint relevantLocalLightCount = lightGridCellData.lightCount;
+
+        float3 localLightContribution = 0.0f;
+
+        [loop]
+        for (uint lightIndex = 0; lightIndex < relevantLocalLightCount; lightIndex++)
+        {
+            const uint localLightID = lightGridLightListBuffer[lightGridCellData.startOffset + lightIndex];
+            const LocalLightData localLightData = GetLocalLightData(localLightDataBuffer, localLightID);
+
+            const float3 lightColor = localLightData.data3.xyz;
+            const float3 lightPosition = localLightData.data0.xyz;
+            const float3 lightDireciton = normalize(lightPosition - worldSpacePosition);
+            const float lightRadius = localLightData.data0.w;
+
+            float distanceSqaure = dot(lightPosition - worldSpacePosition, lightPosition - worldSpacePosition);
+
+            // Inverse squared falloff (1 is added here to avoid infinite intensity)
+            float attenuation =  1.0f / (distanceSqaure + 1.0f);
+
+            // Ensure that the light intensity is 0 at a distance of the light's radius and the transition is smooth
+            float smoothFactor = sqr(saturate(1.0f - sqr(distanceSqaure / max(0.0001f, (lightRadius * lightRadius)))));
+            attenuation *= smoothFactor;
+
+            localLightContribution += attenuation * lightColor * HenyeyGreensteinPhaseFunction(phaseG, dot(lightDireciton, viewVector));
+        }
+
+        radiance += localLightContribution;
 
         // Sky lighting
         {
             SH3CoefficientsRGB irradianceEnvironmentMapSH = irradianceEnvironmentMapBuffer.Load<SH3CoefficientsRGB>(0);
-            radiance += EvaluateSHCosineWeighted(irradianceEnvironmentMapSH, -w * phaseG);
+            radiance += EvaluateSHCosineWeighted(irradianceEnvironmentMapSH, -viewVector * phaseG);
         }
     }
     radiance /= float(SAMPLE_COUNT_PER_VOXEL);

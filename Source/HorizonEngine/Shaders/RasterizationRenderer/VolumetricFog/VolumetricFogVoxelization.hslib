@@ -38,7 +38,7 @@ void VolumetricFogVoxelizationCS(uint3 groupID : SV_GroupID, uint3 groupThreadID
     float3 scattering = volumetricFogShaderParameters.scattering;
     float3 absorption = volumetricFogShaderParameters.absorption;
     float3 emission = volumetricFogShaderParameters.emission;
-    float phaseG = 0.98f;
+    float phaseG = volumetricFogShaderParameters.phaseG;
 #endif
 
 #if 0

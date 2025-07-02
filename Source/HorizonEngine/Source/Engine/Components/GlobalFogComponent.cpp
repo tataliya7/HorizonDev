@@ -25,8 +25,8 @@ namespace Horizon
         {
             renderObject = new GlobalFogRenderObject();
             renderObject->distance = distance;
-            renderObject->absorption = absorption;
             renderObject->scattering = scattering;
+            renderObject->absorption = absorption;
             renderObject->emission = emission;
             renderObject->phaseG = phaseG;
             scene->AddGlobalFog(renderObject);
@@ -43,8 +43,8 @@ namespace Horizon
         if (renderObject)
         {
             renderObject->distance = distance;
+            renderObject->scattering = scattering * 0.003996f;
             renderObject->absorption = absorption;
-            renderObject->scattering = scattering;
             renderObject->emission = emission;
             renderObject->phaseG = phaseG;
         }

@@ -13,6 +13,7 @@ struct VolumetricFogShaderParameters
     float3 scattering;
     float3 absorption;
     float3 emission;
+    float phaseG;
     float3 jitterOffsets[8];
 };
 DECLARE_ALIASED_ARRAY_STRUCTURED_BUFFER_SRV(VolumetricFogShaderParameters);

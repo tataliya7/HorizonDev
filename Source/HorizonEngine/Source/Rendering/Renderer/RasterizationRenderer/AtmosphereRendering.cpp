@@ -88,11 +88,6 @@ namespace Horizon
         outParameters.skyViewLutReferential = Matrix3x3f(forwardVector, rightVector, upVector);
     }
 
-    bool RasterizationRenderer::IsSkyAtmosphereRenderingEnabled() const
-    {
-        return renderFeatures.enableSkyAtmosphereRendering;
-    }
-
     void RasterizationRenderer::RenderSkyAtmosphereLUTs(
         RenderGraph& renderGraph,
         const SceneView& view)

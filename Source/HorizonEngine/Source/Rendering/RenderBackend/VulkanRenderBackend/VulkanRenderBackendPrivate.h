@@ -552,7 +552,7 @@ namespace Horizon
         VkIndexType indexType;
         VkBufferUsageFlags usageFlags;
         VmaAllocationCreateFlags allocationFlags;
-        VmaMemoryUsage memeryUsage;
+        VmaMemoryUsage memeoryUsage;
         bool createMapped;
         bool mapped;
         void* mappedData;

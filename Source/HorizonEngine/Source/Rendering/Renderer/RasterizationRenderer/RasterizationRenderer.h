@@ -175,11 +175,7 @@ namespace Horizon
 
         bool IsLocalToneMappingEnabled() const;
 
-        bool IsSkyAtmosphereRenderingEnabled() const;
-
         bool IsSkyAtmosphereDebugVisualizationEnabled() const;
-
-        bool IsSubsurfaceScatteringEnabled() const;
 
         bool IsSurfelGIEnabled() const;
 

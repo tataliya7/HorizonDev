@@ -443,7 +443,7 @@ namespace Horizon
         RenderGraphTextureHandle localLightShadowMapAtlas)
     {
         RenderGraphTextureHandle skyAtmosphereTransmittanceLUT = defaultResources->ImportWhiteDummyTexture2D(renderGraph);
-        if (IsSkyAtmosphereRenderingEnabled())
+        if (renderFeatures.enableSkyAtmosphereRendering)
         {
             RasterizationRendererSkyAtmosphereLUTs& skyAtmosphereLUTs = renderGraph.blackboard.Get<RasterizationRendererSkyAtmosphereLUTs>();
             skyAtmosphereTransmittanceLUT = skyAtmosphereLUTs.transmittanceLut;

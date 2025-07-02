@@ -785,7 +785,7 @@ namespace Horizon
         };
 
         buffer.allocationFlags = GetVmaAllocationCreateFlags(desc->flags);
-        buffer.memeryUsage = GetVmaMemoryUsage(desc->flags);
+        buffer.memeoryUsage = GetVmaMemoryUsage(desc->flags);
         buffer.createMapped = (buffer.allocationFlags & VMA_ALLOCATION_CREATE_MAPPED_BIT) ? true : false;
         buffer.createMapped = false;
         buffer.indexType = VK_INDEX_TYPE_NONE_KHR;
@@ -807,7 +807,7 @@ namespace Horizon
         VmaAllocationCreateInfo memoryInfo =
         {
             .flags = buffer.allocationFlags,
-            .usage = buffer.memeryUsage,
+            .usage = buffer.memeoryUsage,
         };
 
         VmaAllocationInfo allocationInfo = {};
@@ -967,7 +967,7 @@ namespace Horizon
             VmaAllocationCreateInfo memoryInfo =
             {
                 .flags = buffer.allocationFlags,
-                .usage = buffer.memeryUsage,
+                .usage = buffer.memeoryUsage,
             };
 
             VmaAllocationInfo allocationInfo = {};
@@ -3614,23 +3614,23 @@ namespace Horizon
             {
             case RenderBackendBarrier::Type::Global:
             {
-                VkPipelineStageFlags2 srcStageMask = VK_PIPELINE_STAGE_2_HOST_BIT;
-                VkPipelineStageFlags2 dstStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT | VK_PIPELINE_STAGE_2_COPY_BIT | VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT_KHR;
-
-                VkAccessFlags2 srcAccessMask = VK_ACCESS_2_HOST_WRITE_BIT;
-                VkAccessFlags2 dstAccessMask = VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_TRANSFER_READ_BIT_KHR;
-
-                VkMemoryBarrier2 memoryBarrier =
-                {
-                    .sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER_2,
-                    .pNext = nullptr,
-                    .srcStageMask = srcStageMask,
-                    .srcAccessMask = srcAccessMask,
-                    .dstStageMask = dstStageMask,
-                    .dstAccessMask = dstAccessMask,
-                };
-
-                memoryBarriers.push_back(memoryBarrier);
+                // VkPipelineStageFlags2 srcStageMask = VK_PIPELINE_STAGE_2_HOST_BIT;
+                // VkPipelineStageFlags2 dstStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT | VK_PIPELINE_STAGE_2_COPY_BIT | VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT_KHR;
+                //
+                // VkAccessFlags2 srcAccessMask = VK_ACCESS_2_HOST_WRITE_BIT;
+                // VkAccessFlags2 dstAccessMask = VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_TRANSFER_READ_BIT_KHR;
+                //
+                // VkMemoryBarrier2 memoryBarrier =
+                // {
+                //     .sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER_2,
+                //     .pNext = nullptr,
+                //     .srcStageMask = srcStageMask,
+                //     .srcAccessMask = srcAccessMask,
+                //     .dstStageMask = dstStageMask,
+                //     .dstAccessMask = dstAccessMask,
+                // };
+                //
+                // memoryBarriers.push_back(memoryBarrier);
             }
             break;
             case RenderBackendBarrier::Type::Texture:

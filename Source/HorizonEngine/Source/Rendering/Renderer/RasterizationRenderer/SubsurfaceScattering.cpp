@@ -4,11 +4,6 @@ namespace Horizon
 {
     static constexpr uint32 GSubsurfaceScatteringTileSize = 8;
 
-    bool RasterizationRenderer::IsSubsurfaceScatteringEnabled() const
-    {
-        return renderFeatures.enableSubsurfaceScattering;
-    }
-
     void RasterizationRenderer::RenderSubsurfaceScattering(
         RenderGraph& renderGraph,
         const SceneView& view)
