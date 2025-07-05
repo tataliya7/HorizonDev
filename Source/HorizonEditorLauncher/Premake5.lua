@@ -319,10 +319,10 @@ project "HorizonEditorLauncher"
             thirdpartypath("physx/lib/release/SceneQuery_static_64.lib"),
 
 
-            thirdpartypath("OpenUSD/OpenUSD-25.05.01/lib/release/tbb_debug.lib"),
-            thirdpartypath("OpenUSD/OpenUSD-25.05.01/lib/release/tbb12_debug.lib"),
-            thirdpartypath("OpenUSD/OpenUSD-25.05.01/lib/release/tbbmalloc_debug.lib"),
-            thirdpartypath("OpenUSD/OpenUSD-25.05.01/lib/release/tbbmalloc_proxy_debug.lib"),
+            thirdpartypath("OpenUSD/OpenUSD-25.05.01/lib/release/tbb.lib"),
+            thirdpartypath("OpenUSD/OpenUSD-25.05.01/lib/release/tbb12.lib"),
+            thirdpartypath("OpenUSD/OpenUSD-25.05.01/lib/release/tbbmalloc.lib"),
+            thirdpartypath("OpenUSD/OpenUSD-25.05.01/lib/release/tbbmalloc_proxy.lib"),
 
             thirdpartypath("OpenUSD/OpenUSD-25.05.01/lib/release/MaterialXCore.lib"),
             thirdpartypath("OpenUSD/OpenUSD-25.05.01/lib/release/MaterialXFormat.lib"),
@@ -424,9 +424,9 @@ project "HorizonEditorLauncher"
             "{COPY} %{wks.location}/ThirdParty/physx/lib/release/PhysXCooking_64.dll %{cfg.targetdir}",
             "{COPY} %{wks.location}/ThirdParty/physx/lib/release/PVDRuntime_64.dll %{cfg.targetdir}",
 
-            "{COPY} %{wks.location}/ThirdParty/OpenUSD/OpenUSD-25.05.01/bin/release/tbb12_debug.dll %{cfg.targetdir}",
-            "{COPY} %{wks.location}/ThirdParty/OpenUSD/OpenUSD-25.05.01/bin/release/tbbmalloc_debug.dll %{cfg.targetdir}",
-            "{COPY} %{wks.location}/ThirdParty/OpenUSD/OpenUSD-25.05.01/bin/release/tbbmalloc_proxy_debug.dll %{cfg.targetdir}",
+            "{COPY} %{wks.location}/ThirdParty/OpenUSD/OpenUSD-25.05.01/bin/release/tbb12.dll %{cfg.targetdir}",
+            "{COPY} %{wks.location}/ThirdParty/OpenUSD/OpenUSD-25.05.01/bin/release/tbbmalloc.dll %{cfg.targetdir}",
+            "{COPY} %{wks.location}/ThirdParty/OpenUSD/OpenUSD-25.05.01/bin/release/tbbmalloc_proxy.dll %{cfg.targetdir}",
 
             "{COPY} %{wks.location}/ThirdParty/OpenUSD/OpenUSD-25.05.01/bin/release/MaterialXCore.dll %{cfg.targetdir}",
             "{COPY} %{wks.location}/ThirdParty/OpenUSD/OpenUSD-25.05.01/bin/release/MaterialXFormat.dll %{cfg.targetdir}",
