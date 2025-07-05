@@ -22,10 +22,7 @@ project "USD"
         thirdpartypath("entt/include"),
         thirdpartypath("imgui/imgui-1.89.9-docking"),
         thirdpartypath("python/310/include"),
-
-        thirdpartypath("usd/include"),
-        thirdpartypath("usd/include/boost-1_78"),
-        thirdpartypath("usd/include/tbb"),
+        thirdpartypath("OpenUSD/OpenUSD-25.05.01/include"),
     }
 
     defines {
@@ -35,11 +32,13 @@ project "USD"
     filter "configurations:Debug"
         defines {
             "TBB_USE_DEBUG=1",
-            --"__TBB_NO_IMPLICIT_LINKAGE=1",
+            "__TBB_NO_IMPLICIT_LINKAGE=1",
+            "__TBBMALLOC_NO_IMPLICIT_LINKAGE=1",
         }
 
     filter "configurations:Test or Release"
         defines {
             "TBB_USE_DEBUG=0",
-            --"__TBB_NO_IMPLICIT_LINKAGE=1",
+            "__TBB_NO_IMPLICIT_LINKAGE=1",
+            "__TBBMALLOC_NO_IMPLICIT_LINKAGE=1",
         }
