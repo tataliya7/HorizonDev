@@ -75,10 +75,23 @@ project "HorizonEditor"
         thirdpartypath("streamline/Streamline-2.4.15/include"),
         thirdpartypath("spdlog/include"),
         thirdpartypath("stb/include"),
-        thirdpartypath("usd/include"),
-        thirdpartypath("usd/include/boost-1_78"),
-        thirdpartypath("usd/include/tbb"),
+        thirdpartypath("python/310/include"),
+        thirdpartypath("OpenUSD/OpenUSD-25.05.01/include"),
     }
+
+    filter "configurations:Debug"
+        defines {
+            "TBB_USE_DEBUG=0",
+            "__TBB_NO_IMPLICIT_LINKAGE=1",
+            "__TBBMALLOC_NO_IMPLICIT_LINKAGE=1",
+        }
+
+    filter "configurations:Test or Release"
+        defines {
+            "TBB_USE_DEBUG=0",
+            "__TBB_NO_IMPLICIT_LINKAGE=1",
+            "__TBBMALLOC_NO_IMPLICIT_LINKAGE=1",
+        }
 
     filter "configurations:Debug"
         defines { "USE_OPTICK=1" }
