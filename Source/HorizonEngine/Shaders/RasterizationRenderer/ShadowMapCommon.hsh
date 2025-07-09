@@ -1,6 +1,10 @@
 #pragma once
 
+#include "ShadowFiltering.hsh"
+
 #define MAX_SHADOW_CASCADE_COUNT 4
+
+#define DEFAULT_CONSTANT_SHADOW_DEPTH_BIAS (1.0f / 65536.0f)
 
 struct CascadedShadowMapShaderParameters
 {
@@ -115,4 +119,9 @@ float EncodeShadowFactor(float x)
 float DecodeShadowFactor(float x)
 {
     return x * x;
+}
+
+float3 ComputeShadowBiasNormalOffset(float3 normal, float normalOffsetScale)
+{
+    return normal * normalOffsetScale;
 }
