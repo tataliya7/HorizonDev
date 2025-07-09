@@ -1,8 +1,8 @@
 #pragma once
 
-#define PCF_QUALITY 2
+#define PCF_QUALITY 3
 
-#define PCF_KERNEL_SHAPE 0
+#define PCF_KERNEL_SHAPE 1
 
 #define PCF_SHADOW_BLUR 1
 
@@ -39,19 +39,50 @@ void PCFComputeSampleUVsAndWeights_3x3_BoxFilter(in float2 shadowMapTextureUV, i
     sampleWeights[3] = sampleWeightsU.y * sampleWeightsV.y;
 }
 
+void PCFComputeTexelWeights_3x3_TentFilter(in float offset, out float weights[4])
+{
+    float offsetLeft = min(offset, 0.0f);
+    float offsetRight = max(offset, 0.0f);
+
+    float s0 = (0.5f - offset) * (0.5f - offset) * 0.5f;
+    float s1 = 1.0f - offset - offsetLeft * offsetLeft;
+    float s2 = 1.0f + offset - offsetRight * offsetRight;
+    float s3 = s0 + offset; // (0.5f + offset) * (0.5f + offset) * 0.5f
+
+    float inverseTriangleArea = 0.444444f; // 1 / (3 * 1.5 * 0.5)
+
+    weights[0] = s0 * inverseTriangleArea;
+    weights[1] = s1 * inverseTriangleArea;
+    weights[2] = s2 * inverseTriangleArea;
+    weights[3] = s3 * inverseTriangleArea;
+}
+
 void PCFComputeSampleUVsAndWeights_3x3_TentFilter(in float2 shadowMapTextureUV, in float2 shadowMapTextureSize, out float2 sampleUVs[4], out float sampleWeights[4])
 {
-    float2 centerUV = shadowMapTextureUV;
+    float2 texelPosition = shadowMapTextureUV * shadowMapTextureSize.x + 0.5f;
+    float2 centerCoordinate = floor(texelPosition);
+    float2 centerOffset = frac(texelPosition) - 0.5f;
+    float2 centerUV = centerCoordinate * shadowMapTextureSize.y;
 
-    sampleUVs[0] = centerUV + float2( shadowMapTextureSize.y,  shadowMapTextureSize.y);
-    sampleUVs[1] = centerUV + float2( shadowMapTextureSize.y, -shadowMapTextureSize.y);
-    sampleUVs[2] = centerUV + float2(-shadowMapTextureSize.y,  shadowMapTextureSize.y);
-    sampleUVs[3] = centerUV + float2(-shadowMapTextureSize.y, -shadowMapTextureSize.y);
+    float texelWeightsU[4]; float texelWeightsV[4];
+    PCFComputeTexelWeights_3x3_TentFilter(centerOffset.x, texelWeightsU);
+    PCFComputeTexelWeights_3x3_TentFilter(centerOffset.y, texelWeightsV);
 
-    sampleWeights[0] = 0.25f;
-    sampleWeights[1] = 0.25f;
-    sampleWeights[2] = 0.25f;
-    sampleWeights[3] = 0.25f;
+    float2 sampleWeightsU = float2(texelWeightsU[0] + texelWeightsU[1], texelWeightsU[2] + texelWeightsU[3]);
+    float2 sampleWeightsV = float2(texelWeightsV[0] + texelWeightsV[1], texelWeightsV[2] + texelWeightsV[3]);
+
+    float2 sampleOffsetsU = (float2(texelWeightsU[1], texelWeightsU[3]) / sampleWeightsU + float2(-1.5f, 0.5f)) * shadowMapTextureSize.y;
+    float2 sampleOffsetsV = (float2(texelWeightsV[1], texelWeightsV[3]) / sampleWeightsV + float2(-1.5f, 0.5f)) * shadowMapTextureSize.y;
+
+    sampleUVs[0] = centerUV + float2(sampleOffsetsU.x, sampleOffsetsV.x);
+    sampleUVs[1] = centerUV + float2(sampleOffsetsU.x, sampleOffsetsV.y);
+    sampleUVs[2] = centerUV + float2(sampleOffsetsU.y, sampleOffsetsV.x);
+    sampleUVs[3] = centerUV + float2(sampleOffsetsU.y, sampleOffsetsV.y);
+
+    sampleWeights[0] = sampleWeightsU.x * sampleWeightsV.x;
+    sampleWeights[1] = sampleWeightsU.x * sampleWeightsV.y;
+    sampleWeights[2] = sampleWeightsU.y * sampleWeightsV.x;
+    sampleWeights[3] = sampleWeightsU.y * sampleWeightsV.y;
 }
 
 void PCFComputeSampleUVsAndWeights_5x5_BoxFilter(in float2 shadowMapTextureUV, in float2 shadowMapTextureSize, out float2 sampleUVs[9], out float sampleWeights[9])
@@ -88,8 +119,31 @@ void PCFComputeSampleUVsAndWeights_5x5_BoxFilter(in float2 shadowMapTextureUV, i
     sampleWeights[8] = sampleWeightsU.z * sampleWeightsV.z;
 }
 
+void PCFComputeTexelWeights_5x5_TentFilter(in float offset, out float weights[6])
+{
+    float offsetLeft = min(offset, 0.0f);
+    float offsetRight = max(offset, 0.0f);
+
+    float s0 = (0.5f - offset) * (0.5f - offset) * 0.5f;
+    float s1 = 1.0f - offset;
+    float s2 = 2.0f - offset - offsetLeft * offsetLeft;
+    float s3 = 2.0f + offset - offsetRight * offsetRight;
+    float s4 = 1.0f + offset; 
+    float s5 = s0 + offset; // (0.5f + offset) * (0.5f + offset) * 0.5f
+
+    float inverseTriangleArea = 0.16f; // 1 / (5 * 2.5 * 0.5)
+
+    weights[0] = s0 * inverseTriangleArea;
+    weights[1] = s1 * inverseTriangleArea;
+    weights[2] = s2 * inverseTriangleArea;
+    weights[3] = s3 * inverseTriangleArea;
+    weights[4] = s4 * inverseTriangleArea;
+    weights[5] = s5 * inverseTriangleArea;
+}
+
 void PCFComputeSampleUVsAndWeights_5x5_TentFilter(in float2 shadowMapTextureUV, in float2 shadowMapTextureSize, out float2 sampleUVs[9], out float sampleWeights[9])
 {
+#if 0
     float2 centerUV = shadowMapTextureUV;
     sampleUVs[0] = centerUV + float2(-shadowMapTextureSize.y, -shadowMapTextureSize.y);
     sampleUVs[1] = centerUV + float2(-shadowMapTextureSize.y,  0);
@@ -110,6 +164,120 @@ void PCFComputeSampleUVsAndWeights_5x5_TentFilter(in float2 shadowMapTextureUV, 
     sampleWeights[6] = 1.0f / 9.0f;
     sampleWeights[7] = 1.0f / 9.0f;
     sampleWeights[8] = 1.0f / 9.0f;
+#else
+    float2 texelPosition = shadowMapTextureUV * shadowMapTextureSize.x + 0.5f;
+    float2 centerCoordinate = floor(texelPosition);
+    float2 centerOffset = frac(texelPosition) - 0.5f;
+    float2 centerUV = centerCoordinate * shadowMapTextureSize.y;
+
+    float texelWeightsU[6]; float texelWeightsV[6];
+    PCFComputeTexelWeights_5x5_TentFilter(centerOffset.x, texelWeightsU);
+    PCFComputeTexelWeights_5x5_TentFilter(centerOffset.y, texelWeightsV);
+
+    float3 sampleWeightsU = float3(texelWeightsU[0] + texelWeightsU[1], texelWeightsU[2] + texelWeightsU[3], texelWeightsU[4] + texelWeightsU[5]);
+    float3 sampleWeightsV = float3(texelWeightsV[0] + texelWeightsV[1], texelWeightsV[2] + texelWeightsV[3], texelWeightsV[4] + texelWeightsV[5]);
+
+    float3 sampleOffsetsU = (float3(texelWeightsU[1], texelWeightsU[3], texelWeightsU[5]) / sampleWeightsU + float3(-2.5f, -0.5f, 1.5f)) * shadowMapTextureSize.y;
+    float3 sampleOffsetsV = (float3(texelWeightsV[1], texelWeightsV[3], texelWeightsV[5]) / sampleWeightsV + float3(-2.5f, -0.5f, 1.5f)) * shadowMapTextureSize.y;
+
+    sampleUVs[0] = centerUV + float2(sampleOffsetsU.x, sampleOffsetsV.x);
+    sampleUVs[1] = centerUV + float2(sampleOffsetsU.x, sampleOffsetsV.y);
+    sampleUVs[2] = centerUV + float2(sampleOffsetsU.x, sampleOffsetsV.z);
+    sampleUVs[3] = centerUV + float2(sampleOffsetsU.y, sampleOffsetsV.x);
+    sampleUVs[4] = centerUV + float2(sampleOffsetsU.y, sampleOffsetsV.y);
+    sampleUVs[5] = centerUV + float2(sampleOffsetsU.y, sampleOffsetsV.z);
+    sampleUVs[6] = centerUV + float2(sampleOffsetsU.z, sampleOffsetsV.x);
+    sampleUVs[7] = centerUV + float2(sampleOffsetsU.z, sampleOffsetsV.y);
+    sampleUVs[8] = centerUV + float2(sampleOffsetsU.z, sampleOffsetsV.z);
+
+    sampleWeights[0] = sampleWeightsU.x * sampleWeightsV.x;
+    sampleWeights[1] = sampleWeightsU.x * sampleWeightsV.y;
+    sampleWeights[2] = sampleWeightsU.x * sampleWeightsV.z;
+    sampleWeights[3] = sampleWeightsU.y * sampleWeightsV.x;
+    sampleWeights[4] = sampleWeightsU.y * sampleWeightsV.y;
+    sampleWeights[5] = sampleWeightsU.y * sampleWeightsV.z;
+    sampleWeights[6] = sampleWeightsU.z * sampleWeightsV.x;
+    sampleWeights[7] = sampleWeightsU.z * sampleWeightsV.y;
+    sampleWeights[8] = sampleWeightsU.z * sampleWeightsV.z;
+#endif
+}
+
+void PCFComputeTexelWeights_7x7_TentFilter(in float offset, out float weights[8])
+{
+    float offsetLeft = min(offset, 0.0f);
+    float offsetRight = max(offset, 0.0f);
+
+    float s0 = (0.5f - offset) * (0.5f - offset) * 0.5f;
+    float s1 = 1.0f - offset;
+    float s2 = 2.0f - offset;
+    float s3 = 3.0f - offset - offsetLeft * offsetLeft;
+    float s4 = 3.0f + offset - offsetRight * offsetRight;
+    float s5 = 2.0f + offset;
+    float s6 = 1.0f + offset; 
+    float s7 = s0 + offset; // (0.5f + offset) * (0.5f + offset) * 0.5f
+
+    float inverseTriangleArea = 0.081633f; // 1 / (7 * 3.5 * 0.5)
+
+    weights[0] = s0 * inverseTriangleArea;
+    weights[1] = s1 * inverseTriangleArea;
+    weights[2] = s2 * inverseTriangleArea;
+    weights[3] = s3 * inverseTriangleArea;
+    weights[4] = s4 * inverseTriangleArea;
+    weights[5] = s5 * inverseTriangleArea;
+    weights[6] = s6 * inverseTriangleArea;
+    weights[7] = s7 * inverseTriangleArea;
+}
+
+void PCFComputeSampleUVsAndWeights_7x7_TentFilter(in float2 shadowMapTextureUV, in float2 shadowMapTextureSize, out float2 sampleUVs[16], out float sampleWeights[16])
+{
+    float2 texelPosition = shadowMapTextureUV * shadowMapTextureSize.x + 0.5f;
+    float2 centerCoordinate = floor(texelPosition);
+    float2 centerOffset = frac(texelPosition) - 0.5f;
+    float2 centerUV = centerCoordinate * shadowMapTextureSize.y;
+
+    float texelWeightsU[8]; float texelWeightsV[8];
+    PCFComputeTexelWeights_7x7_TentFilter(centerOffset.x, texelWeightsU);
+    PCFComputeTexelWeights_7x7_TentFilter(centerOffset.y, texelWeightsV);
+
+    float4 sampleWeightsU = float4(texelWeightsU[0] + texelWeightsU[1], texelWeightsU[2] + texelWeightsU[3], texelWeightsU[4] + texelWeightsU[5], texelWeightsU[6] + texelWeightsU[7]);
+    float4 sampleWeightsV = float4(texelWeightsV[0] + texelWeightsV[1], texelWeightsV[2] + texelWeightsV[3], texelWeightsV[4] + texelWeightsV[5], texelWeightsV[6] + texelWeightsV[7]);
+
+    float4 sampleOffsetsU = (float4(texelWeightsU[1], texelWeightsU[3], texelWeightsU[5], texelWeightsU[7]) / sampleWeightsU + float4(-3.5f, -1.5f, 0.5f, 2.5f)) * shadowMapTextureSize.y;
+    float4 sampleOffsetsV = (float4(texelWeightsV[1], texelWeightsV[3], texelWeightsV[5], texelWeightsV[7]) / sampleWeightsV + float4(-3.5f, -1.5f, 0.5f, 2.5f)) * shadowMapTextureSize.y;
+
+    sampleUVs[0] = centerUV + float2(sampleOffsetsU.x, sampleOffsetsV.x);
+    sampleUVs[1] = centerUV + float2(sampleOffsetsU.x, sampleOffsetsV.y);
+    sampleUVs[2] = centerUV + float2(sampleOffsetsU.x, sampleOffsetsV.z);
+    sampleUVs[3] = centerUV + float2(sampleOffsetsU.x, sampleOffsetsV.w);
+    sampleUVs[4] = centerUV + float2(sampleOffsetsU.y, sampleOffsetsV.x);
+    sampleUVs[5] = centerUV + float2(sampleOffsetsU.y, sampleOffsetsV.y);
+    sampleUVs[6] = centerUV + float2(sampleOffsetsU.y, sampleOffsetsV.z);
+    sampleUVs[7] = centerUV + float2(sampleOffsetsU.y, sampleOffsetsV.w);
+    sampleUVs[8] = centerUV + float2(sampleOffsetsU.z, sampleOffsetsV.x);
+    sampleUVs[9] = centerUV + float2(sampleOffsetsU.z, sampleOffsetsV.y);
+    sampleUVs[10] = centerUV + float2(sampleOffsetsU.z, sampleOffsetsV.z);
+    sampleUVs[11] = centerUV + float2(sampleOffsetsU.z, sampleOffsetsV.w);
+    sampleUVs[12] = centerUV + float2(sampleOffsetsU.w, sampleOffsetsV.x);
+    sampleUVs[13] = centerUV + float2(sampleOffsetsU.w, sampleOffsetsV.y);
+    sampleUVs[14] = centerUV + float2(sampleOffsetsU.w, sampleOffsetsV.z);
+    sampleUVs[15] = centerUV + float2(sampleOffsetsU.w, sampleOffsetsV.w);
+
+    sampleWeights[0] = sampleWeightsU.x * sampleWeightsV.x;
+    sampleWeights[1] = sampleWeightsU.x * sampleWeightsV.y;
+    sampleWeights[2] = sampleWeightsU.x * sampleWeightsV.z;
+    sampleWeights[3] = sampleWeightsU.x * sampleWeightsV.w;
+    sampleWeights[4] = sampleWeightsU.y * sampleWeightsV.x;
+    sampleWeights[5] = sampleWeightsU.y * sampleWeightsV.y;
+    sampleWeights[6] = sampleWeightsU.y * sampleWeightsV.z;
+    sampleWeights[7] = sampleWeightsU.y * sampleWeightsV.w;
+    sampleWeights[8] = sampleWeightsU.z * sampleWeightsV.x;
+    sampleWeights[9] = sampleWeightsU.z * sampleWeightsV.y;
+    sampleWeights[10] = sampleWeightsU.z * sampleWeightsV.z;
+    sampleWeights[11] = sampleWeightsU.z * sampleWeightsV.w;
+    sampleWeights[12] = sampleWeightsU.w * sampleWeightsV.x;
+    sampleWeights[13] = sampleWeightsU.w * sampleWeightsV.y;
+    sampleWeights[14] = sampleWeightsU.w * sampleWeightsV.z;
+    sampleWeights[15] = sampleWeightsU.w * sampleWeightsV.w;
 }
 
 float ShadowFilteringHardShadow(Texture2DArray shadowMapTexture, uint cascadeIndex, float2 shadowMapTextureUV, float receiverDepth)
@@ -172,63 +340,51 @@ float PercentageCloserFiltering5x5(Texture2DArray shadowMapTexture, float2 shado
     return PCFShadowBlur(shadowFactor);
 }
 
+float PercentageCloserFiltering7x7(Texture2DArray shadowMapTexture, float2 shadowMapTextureSize, uint cascadeIndex, float2 shadowMapTextureUV, float receiverDepth)
+{
+    float2 sampleUVs[16]; float sampleWeights[16];
+#if PCF_KERNEL_SHAPE == 0 // Box filter
+    PCFComputeSampleUVsAndWeights_7x7_BoxFilter(shadowMapTextureUV, shadowMapTextureSize, sampleUVs, sampleWeights);
+#else // Tent filter
+    PCFComputeSampleUVsAndWeights_7x7_TentFilter(shadowMapTextureUV, shadowMapTextureSize, sampleUVs, sampleWeights);
+#endif
+
+    float shadowFactor = 0.0f;
+#if 0
+    for (uint i = 0; i < 16; i++)
+    {
+        shadowFactor += sampleWeights[i] * shadowMapTexture.SampleCmpLevelZero(GlobalSamplerComparisonGreaterLinearClamp, float3(sampleUVs[i], cascadeIndex), receiverDepth);
+    }
+#else
+    shadowFactor += sampleWeights[0] * shadowMapTexture.SampleCmpLevelZero(GlobalSamplerComparisonGreaterLinearClamp, float3(sampleUVs[0], cascadeIndex), receiverDepth);
+    shadowFactor += sampleWeights[1] * shadowMapTexture.SampleCmpLevelZero(GlobalSamplerComparisonGreaterLinearClamp, float3(sampleUVs[1], cascadeIndex), receiverDepth);
+    shadowFactor += sampleWeights[2] * shadowMapTexture.SampleCmpLevelZero(GlobalSamplerComparisonGreaterLinearClamp, float3(sampleUVs[2], cascadeIndex), receiverDepth);
+    shadowFactor += sampleWeights[3] * shadowMapTexture.SampleCmpLevelZero(GlobalSamplerComparisonGreaterLinearClamp, float3(sampleUVs[3], cascadeIndex), receiverDepth);
+    shadowFactor += sampleWeights[4] * shadowMapTexture.SampleCmpLevelZero(GlobalSamplerComparisonGreaterLinearClamp, float3(sampleUVs[4], cascadeIndex), receiverDepth);
+    shadowFactor += sampleWeights[5] * shadowMapTexture.SampleCmpLevelZero(GlobalSamplerComparisonGreaterLinearClamp, float3(sampleUVs[5], cascadeIndex), receiverDepth);
+    shadowFactor += sampleWeights[6] * shadowMapTexture.SampleCmpLevelZero(GlobalSamplerComparisonGreaterLinearClamp, float3(sampleUVs[6], cascadeIndex), receiverDepth);
+    shadowFactor += sampleWeights[7] * shadowMapTexture.SampleCmpLevelZero(GlobalSamplerComparisonGreaterLinearClamp, float3(sampleUVs[7], cascadeIndex), receiverDepth);
+    shadowFactor += sampleWeights[8] * shadowMapTexture.SampleCmpLevelZero(GlobalSamplerComparisonGreaterLinearClamp, float3(sampleUVs[8], cascadeIndex), receiverDepth);
+    shadowFactor += sampleWeights[9] * shadowMapTexture.SampleCmpLevelZero(GlobalSamplerComparisonGreaterLinearClamp, float3(sampleUVs[9], cascadeIndex), receiverDepth);
+    shadowFactor += sampleWeights[10] * shadowMapTexture.SampleCmpLevelZero(GlobalSamplerComparisonGreaterLinearClamp, float3(sampleUVs[10], cascadeIndex), receiverDepth);
+    shadowFactor += sampleWeights[11] * shadowMapTexture.SampleCmpLevelZero(GlobalSamplerComparisonGreaterLinearClamp, float3(sampleUVs[11], cascadeIndex), receiverDepth);
+    shadowFactor += sampleWeights[12] * shadowMapTexture.SampleCmpLevelZero(GlobalSamplerComparisonGreaterLinearClamp, float3(sampleUVs[12], cascadeIndex), receiverDepth);
+    shadowFactor += sampleWeights[13] * shadowMapTexture.SampleCmpLevelZero(GlobalSamplerComparisonGreaterLinearClamp, float3(sampleUVs[13], cascadeIndex), receiverDepth);
+    shadowFactor += sampleWeights[14] * shadowMapTexture.SampleCmpLevelZero(GlobalSamplerComparisonGreaterLinearClamp, float3(sampleUVs[14], cascadeIndex), receiverDepth);
+    shadowFactor += sampleWeights[15] * shadowMapTexture.SampleCmpLevelZero(GlobalSamplerComparisonGreaterLinearClamp, float3(sampleUVs[15], cascadeIndex), receiverDepth);
+#endif
+    return PCFShadowBlur(shadowFactor);
+}
+
 float PercentageCloserFiltering(Texture2DArray shadowMapTexture, float2 shadowMapTextureSize, uint cascadeIndex, float2 shadowMapTextureUV, float receiverDepth)
 {
-#if PCF_QUALITY == 0 // No filtering, hard shadow
+#if PCF_QUALITY == 0 // No filtering
     return ShadowFilteringHardShadow(shadowMapTexture, cascadeIndex, shadowMapTextureUV, receiverDepth);
 #elif PCF_QUALITY == 1 // 3x3 PCF
     return PercentageCloserFiltering3x3(shadowMapTexture, shadowMapTextureSize, cascadeIndex, shadowMapTextureUV, receiverDepth);
-#else // 5x5 PCF
+#elif PCF_QUALITY == 2 // 5x5 PCF
     return PercentageCloserFiltering5x5(shadowMapTexture, shadowMapTextureSize, cascadeIndex, shadowMapTextureUV, receiverDepth);
+#else // 7x7 PCF
+    return PercentageCloserFiltering7x7(shadowMapTexture, shadowMapTextureSize, cascadeIndex, shadowMapTextureUV, receiverDepth);
 #endif
-}
-
-static const float2 PoissonOffsets[32] =
-{
-    float2(0.06407013, 0.05409927),
-    float2(0.7366577, 0.5789394),
-    float2(-0.6270542, -0.5320278),
-    float2(-0.4096107, 0.8411095),
-    float2(0.6849564, -0.4990818),
-    float2(-0.874181, -0.04579735),
-    float2(0.9989998, 0.0009880066),
-    float2(-0.004920578, -0.9151649),
-    float2(0.1805763, 0.9747483),
-    float2(-0.2138451, 0.2635818),
-    float2(0.109845, 0.3884785),
-    float2(0.06876755, -0.3581074),
-    float2(0.374073, -0.7661266),
-    float2(0.3079132, -0.1216763),
-    float2(-0.3794335, -0.8271583),
-    float2(-0.203878, -0.07715034),
-    float2(0.5912697, 0.1469799),
-    float2(-0.88069, 0.3031784),
-    float2(0.5040108, 0.8283722),
-    float2(-0.5844124, 0.5494877),
-    float2(0.6017799, -0.1726654),
-    float2(-0.5554981, 0.1559997),
-    float2(-0.3016369, -0.3900928),
-    float2(-0.5550632, -0.1723762),
-    float2(0.925029, 0.2995041),
-    float2(-0.2473137, 0.5538505),
-    float2(0.9183037, -0.2862392),
-    float2(0.2469421, 0.6718712),
-    float2(0.3916397, -0.4328209),
-    float2(-0.03576927, -0.6220032),
-    float2(-0.04661255, 0.7995201),
-    float2(0.4402924, 0.3640312),
-};
-
-float PCFPoissonSampling(Texture2DArray shadowMapTexture, uint cascadeIndex, float2 shadowMapPosition, float receiverDepth, float filterSize, float offsetScale, float2 offsetRotation)
-{
-    float result = 0.0f;
-    uint sampleCount = 32;
-    for (uint i = 0; i < sampleCount; i++)
-    {
-        float2 offset = offsetScale * PoissonOffsets[i] * filterSize;
-        offset = float2(offset.x * offsetRotation.x - offset.y * offsetRotation.y, offset.y * offsetRotation.x + offset.x * offsetRotation.y);
-        float shadowFactor = shadowMapTexture.SampleCmpLevelZero(GlobalSamplerComparisonGreaterLinearClamp, float3(shadowMapPosition + offset, cascadeIndex), receiverDepth);
-        result += shadowFactor;
-    }
-    return result / float(sampleCount);
 }
