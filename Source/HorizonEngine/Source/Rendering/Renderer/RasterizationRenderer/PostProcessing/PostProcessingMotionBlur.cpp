@@ -87,8 +87,6 @@ namespace Horizon
             [&](RenderGraphBuilder& builder)
             {
                 velocityRangeTexture = builder.ReadTexture(velocityRangeTexture, RenderBackendResourceState::ShaderResource);
-                dilatedVelocityRangeTexture = builder.WriteTexture(dilatedVelocityRangeTexture, RenderBackendResourceState::RenderTarget);
-                velocityDilationDepthTexture = builder.WriteTexture(velocityDilationDepthTexture, RenderBackendResourceState::DepthStencil);
 
                 builder.SetRenderTargetBinding(0, dilatedVelocityRangeTexture, RenderBackendRenderPassLoadOperation::Discard, RenderBackendRenderPassStoreOperation::Store);
                 builder.SetDepthStencilBinding(velocityDilationDepthTexture,

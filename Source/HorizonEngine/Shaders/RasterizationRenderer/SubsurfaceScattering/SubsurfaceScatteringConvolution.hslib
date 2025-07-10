@@ -1,0 +1,87 @@
+#include "../../ShaderCommon.hsh"
+#include "../../Random.hsh"
+#include "../RasterizationRendererCommon.hsh"
+#include "SubsurfaceScatteringCommon.hsh"
+
+SHADER_CONSTANTS_STRUCT_BEGIN();
+SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferSRV);
+SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(1, ColorTextureSRV);
+SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(2, DepthTextureSRV);
+SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_SRV(3, SubsurfaceScatteringTileDataBufferSRV);
+SHADER_CONSTANTS_TEXTURE_2D_UAV(4, float4, OutputTextureUAV);
+SHADER_CONSTANTS_STRUCT_END();
+
+struct SubsurfaceScatteringSample
+{
+    float radius; // expressed in millimeters
+    float pdf;
+    float cosTheta;
+    float sinTheta;
+};
+
+[shader("compute")]
+[numthreads(SUBSURFACE_SCATTERING_TILE_SIZE * SUBSURFACE_SCATTERING_TILE_SIZE, 1, 1)]
+void SubsurfaceScatteringConvolutionCS(uint3 groupID : SV_GroupID, uint groupIndex : SV_GroupIndex)
+{
+    StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
+    PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
+    ByteAddressBuffer tileDataBuffer = ShaderConstants.GetSubsurfaceScatteringTileDataBufferSRV();
+    RWTexture2D<float4> outputTexture = ShaderConstants.GetOutputTextureUAV();
+
+    uint outputWidth, outputHeight;
+    outputTexture.GetDimensions(outputWidth, outputHeight);
+
+    uint2 tileIndex = tileDataBuffer.Load<uint2>(groupID.x * sizeof(uint2));
+    uint2 pixelCoord = tileIndex * SUBSURFACE_SCATTERING_TILE_SIZE + uint2(groupIndex / 8, groupIndex % 8);
+    float2 centerUV = (pixelCoord + 0.5f) / float2(outputWidth, outputHeight);
+
+    if (pixelCoord.x >= outputWidth || pixelCoord.y >= outputHeight)
+    {
+        return;
+    }
+
+    outputTexture[pixelCoord] = 20;
+    // outputTexture[pixelCoord] = float4(radiance, float(numSamples));
+
+    // // float3 worldSpaceNormal = DecodeNormalFromONV(gbuffer0.SampleLevel(GlobalSamplerPointClamp, uv, 0).xy);
+
+    // uint sampleCount = 32; // TODO
+    // // sampleCount = clamp(sampleCount, 8, SUBSURFACE_SCATTERING_MAX_SAMPLE_COUNT);
+    // float oneOverSampleCount = 1.0f / float(sampleCount);
+
+    // float3 totalWeight = 0.0f;
+    // float3 totalIrradiance = 0.0f;
+
+    // // Monte carlo integration
+    // // Perform disk sampling in the screen space (the disk is parallel to the screen plane).
+    // for (uint sampleIndex = 0; sampleIndex < numSamples; sampleIndex++)
+    // {
+    //     float2 uvOffset =  * float2(cosTheta, sinTheta);
+
+    //     float2 sampleUV = centerUV + uvOffset;
+
+    //     float4 irradianceAndDepth = ;
+
+    //     float3 irradiance = irradianceAndDepth.rgb;
+
+    // //     float mipLevel = 0;
+
+    // //     burleySample = 0;
+
+    // //     float3 sampleWorldSpaceNormal = DecodeNormalFromONV(gbuffer0.SampleLevel(GlobalSamplerPointClamp, sampleUV, 0).xy);
+    // //     float normalWeight = sqrt(saturate(dot(sampleWorldSpaceNormal, worldSpaceNormal) * 0.5 + 0.5));
+
+    //     float3 rR = ComputeBurleyNormalizedDiffusionProfile(BurleyParameter.DiffuseMeanFreePath.xyz, S3D.xyz, RadiusSampledInMM);
+    //     float3 weight = rR / pdf;
+
+    //     totalWeight += weight;
+    //     totalIrradiance += weight * irradiance;
+    // }
+
+    // // TODO: energy conservation
+    // float3 irradiance = totalIrradiance * select(totalWeight == 0.0f, 0.0f, 1.0f / totalWeight);
+    // //radiance = select(weightSum == 0, 0, radiance / weightSum);
+    // radiance *= invNumSamples;
+
+    // outputTexture[pixelCoord] = float4(radiance, float(numSamples));
+}

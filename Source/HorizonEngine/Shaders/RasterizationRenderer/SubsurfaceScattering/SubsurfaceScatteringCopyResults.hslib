@@ -15,25 +15,27 @@ struct SubsurfaceScatteringCopyResultsVSOutput
 };
 
 [shader("vertex")]
-void SubsurfaceScatteringCopyResultsVS(uint VertexID : SV_VertexID, uint InstanceID : SV_InstanceID, out SubsurfaceScatteringCopyResultsVSOutput vsOutput)
+void SubsurfaceScatteringCopyResultsVS(uint vertexID : SV_VertexID, uint instanceID : SV_InstanceID, out SubsurfaceScatteringCopyResultsVSOutput output)
 {
     StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
     PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
     ByteAddressBuffer tileDataBuffer = ShaderConstants.GetSubsurfaceScatteringTileDataBufferSRV();
 
-    uint2 tileIndex = tileDataBuffer.Load<uint2>(InstanceID * sizeof(uint2));
-    uint2 vertexPosition = tileIndex * SUBSURFACE_SCATTERING_TILE_SIZE + SubsurfaceScatteringTileVertexPositionOffsets[VertexID];
+    uint2 tileIndex = tileDataBuffer.Load<uint2>(instanceID * sizeof(uint2));
+    uint2 vertexPosition = tileIndex * SUBSURFACE_SCATTERING_TILE_SIZE + SubsurfaceScatteringTileVertexPositionOffsets[vertexID];
 
-    vsOutput.uv = float2(vertexPosition) * frameShaderParameters.renderResolution.zw;
-    vsOutput.position = float4(ScreenSpaceUVToNDCSpaceXY(vsOutput.uv), 0.0f, 1.0f);
+    float2 uv = float2(vertexPosition) * frameShaderParameters.renderResolution.zw;
+
+    output.position = float4(ScreenSpaceUVToNDCSpaceXY(uv), 0.0f, 1.0f);
+    output.uv = uv;
 }
 
 [shader("pixel")]
-void SubsurfaceScatteringCopyResultsPS(SubsurfaceScatteringCopyResultsVSOutput vsOutput, out float4 outColor : SV_Target0)
+void SubsurfaceScatteringCopyResultsPS(SubsurfaceScatteringCopyResultsVSOutput input, out float4 outColor : SV_Target0)
 {
     Texture2D subsurfaceScatteringTexture = ShaderConstants.GetSubsurfaceScatteringTextureSRV();
 
-    const float2 uv = vsOutput.uv;
+    const float2 uv = input.uv;
 
     outColor = subsurfaceScatteringTexture.SampleLevel(GlobalSamplerPointClamp, uv, 0.0f);
 }

@@ -1171,7 +1171,7 @@ namespace Horizon
                 ImGui::NextColumn();
                 ImGui::PushItemWidth(-1);
 
-                const char* items[] = { "None", "AMD FSR", "NVIDIA DLSS" };
+                const char* items[] = { "None", "Temporal Super Sampling", "AMD FSR2", "AMD FSR3", "NVIDIA DLSS" };
                 int item = int(rasterizationRendererSettings.superSamplingSettings.superSamplingTechnique);
                 ImGui::Combo("##SuperResolutionTechnique", &item, items, IM_ARRAYSIZE(items));
                 rasterizationRendererSettings.superSamplingSettings.superSamplingTechnique = SuperSamplingTechnique(item);

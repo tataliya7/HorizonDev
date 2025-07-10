@@ -2,53 +2,58 @@
 #include "../RasterizationRendererCommon.hsh"
 #include "SubsurfaceScatteringCommon.hsh"
 
-BIND_BUFFER_CBV(0, PerFrameShaderParameters);
-BIND_BYTE_ADDRESS_BUFFER_SRV(1, SubsurfaceScatteringTileDataBuffer);
-BIND_TEXTURE_2D_SRV(2, SceneColorTexture);
-BIND_TEXTURE_2D_SRV(3, BurleyNormalizedTexture);
+SHADER_CONSTANTS_STRUCT_BEGIN();
+SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferSRV);
+SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_SRV(1, SubsurfaceScatteringTileDataBufferSRV);
+SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(2, ColorTextureSRV);
+SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(3, ConvolvedSurfaceScatteringTextureSRV);
+SHADER_CONSTANTS_STRUCT_END();
 
-struct SubsurfaceScatteringRecombineVSOutput
+struct SubsurfaceScatteringLightingCompositionVSOutput
 {
     float4 position : SV_Position;
     float2 uv : TEXCOORD0;
 };
 
 [shader("vertex")]
-void SubsurfaceScatteringRecombineVS(uint VertexID : SV_VertexID, uint InstanceID : SV_InstanceID, out SubsurfaceScatteringRecombineVSOutput output)
+void SubsurfaceScatteringLightingCompositionVS(uint vertexID : SV_VertexID, uint instanceID : SV_InstanceID, out SubsurfaceScatteringLightingCompositionVSOutput output)
 {
     StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
     PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
-    ByteAddressBuffer tileDataBuffer = GetSubsurfaceScatteringTileDataBufferSRV();
+    ByteAddressBuffer tileDataBuffer = ShaderConstants.GetSubsurfaceScatteringTileDataBufferSRV();
 
-    uint2 tileIndex = tileDataBuffer.Load<uint2>(InstanceID * sizeof(uint2));
-    uint2 vertexPosition = tileIndex * SUBSURFACE_SCATTERING_TILE_SIZE + SubsurfaceScatteringTileVertexPositionOffsets[VertexID];
+    uint2 tileIndex = tileDataBuffer.Load<uint2>(instanceID * sizeof(uint2));
+    uint2 vertexPosition = tileIndex * SUBSURFACE_SCATTERING_TILE_SIZE + SubsurfaceScatteringTileVertexPositionOffsets[vertexID];
 
-    output.position = float4(output.uv * float2(2.0f, -2.0f) + float2(-1.0, 1.0f), 0.0f, 1.0f);
-    output.uv = float2(vertexPosition) * frameShaderParameters.renderResolution.zw;
+    float2 uv = float2(vertexPosition) * frameShaderParameters.renderResolution.zw;
+
+    output.position = float4(ScreenSpaceUVToNDCSpaceXY(uv), 0.0f, 1.0f);
+    output.uv = uv;
 }
 
 [shader("pixel")]
-void SubsurfaceScatteringRecombinePS(SubsurfaceScatteringRecombineVSOutput vsOutput, out float4 outColor : SV_Target0)
+void SubsurfaceScatteringLightingCompositionPS(SubsurfaceScatteringLightingCompositionVSOutput input, out float4 outColor : SV_Target0)
 {
-    Texture2D sceneColorTexture = GetSceneColorTextureSRV();
-    Texture2D burleyNormalizedTexture = GetBurleyNormalizedTextureSRV();
+    Texture2D colorTexture = ShaderConstants.GetColorTextureSRV();
+    Texture2D convolvedSurfaceScatteringTextureSRV = ShaderConstants.GetConvolvedSurfaceScatteringTextureSRV();
 
-    float2 uv = vsOutput.uv;
+    float2 uv = input.uv;
 
-    float4 sceneColor = sceneColorTexture.SampleLevel(GlobalSamplerPointBorder, uv, 0);
+    float4 color = colorTexture.SampleLevel(GlobalSamplerPointBorder, uv, 0);
 
     bool useSubsurfaceScattering = true;
     if (!useSubsurfaceScattering)
     {
-        outColor = sceneColor;
+        outColor = color;
         return;
     }
 
-    float3 baseColor = 0;
+    float3 baseColor = 1.0f;
 
-    float3 subsurfaceScatteringColor = burleyNormalizedTexture.SampleLevel(GlobalSamplerPointBorder, uv, 0).rgb;
+    float3 subsurfaceScatteringColor = convolvedSurfaceScatteringTextureSRV.SampleLevel(GlobalSamplerPointBorder, uv, 0).rgb;
 
-    SubsurfaceScatteringDiffuseAndSpecluar diffuseAndSpecluar = ReconstructDiffuseAndSpecluar(sceneColor.rgb, sceneColor.a);
+    SubsurfaceScatteringDiffuseAndSpecluar diffuseAndSpecluar = ReconstructDiffuseAndSpecluar(color.rgb, color.a);
 
     outColor = float4(subsurfaceScatteringColor * baseColor + diffuseAndSpecluar.specular, 0.0f);
+    outColor = float4(diffuseAndSpecluar.diffuse + diffuseAndSpecluar.specular, 0.0f);
 }

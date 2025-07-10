@@ -168,6 +168,7 @@ namespace Horizon
         uint32 mipLevel)
     {
         pass->SetRenderTargetBinding(slot, handle, mipLevel, loadOperation, storeOperation);
+        WriteTexture(handle, RenderBackendResourceState::RenderTarget);
     }
 
     void RenderGraphBuilder::SetDepthStencilBinding(
@@ -179,6 +180,19 @@ namespace Horizon
         RenderBackendDepthStencilAccessType depthStencilAccessType)
     {
         pass->SetDepthStencilBinding(handle, depthLoadOperation, depthStoreOperation, stencilLoadOperation, stencilStoreOperation, depthStencilAccessType);
+
+        if (depthStencilAccessType == RenderBackendDepthStencilAccessType::DepthReadOnly_StencilNoAccess ||
+            depthStencilAccessType == RenderBackendDepthStencilAccessType::DepthReadOnly_StencilWrite ||
+            depthStencilAccessType == RenderBackendDepthStencilAccessType::DepthReadOnly_StencilReadOnly)
+        {
+            ReadTexture(handle, RenderBackendResourceState::DepthStencilReadOnly);
+        }
+        else if (depthStencilAccessType == RenderBackendDepthStencilAccessType::DepthWrite_StencilNoAccess ||
+            depthStencilAccessType == RenderBackendDepthStencilAccessType::DepthWrite_StencilReadOnly ||
+            depthStencilAccessType == RenderBackendDepthStencilAccessType::DepthWrite_StencilWrite)
+        {
+            WriteTexture(handle, RenderBackendResourceState::DepthStencil);
+        }
     }
 
     void RenderGraphBuilder::SetRenderArea(int32 x, int32 y, uint32 width, uint32 height)

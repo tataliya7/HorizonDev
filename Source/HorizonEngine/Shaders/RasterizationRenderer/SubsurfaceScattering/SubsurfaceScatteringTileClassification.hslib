@@ -8,9 +8,11 @@ SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, PerFrameShaderParameters, PerFrameShad
 SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(1, ColorTextureSRV);
 SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(2, DepthTextureSRV);
 SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_UAV(3, SubsurfaceScatteringTileCountBufferUAV);
-SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_UAV(3, SubsurfaceScatteringTileDataBufferUAV);
-SHADER_CONSTANTS_TEXTURE_2D_UAV(4, float4, OutputTextureUAV);
+SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_UAV(4, SubsurfaceScatteringTileDataBufferUAV);
+SHADER_CONSTANTS_TEXTURE_2D_UAV(5, float4, OutputTextureUAV);
 SHADER_CONSTANTS_STRUCT_END();
+
+groupshared uint GroupSharedActivePixelCount;
 
 [shader("compute")]
 [numthreads(SUBSURFACE_SCATTERING_TILE_SIZE, SUBSURFACE_SCATTERING_TILE_SIZE, 1)]
@@ -29,6 +31,11 @@ void SubsurfaceScatteringTileClassificationCS(uint3 dispatchThreadID : SV_Dispat
     if (dispatchThreadID.x >= outputWidth || dispatchThreadID.y >= outputWidth)
     {
         return;
+    }
+
+    if (groupIndex == 0)
+    {
+        GroupSharedActivePixelCount = 0;
     }
 
     uint2 pixelCoord = dispatchThreadID.xy;
@@ -57,11 +64,26 @@ void SubsurfaceScatteringTileClassificationCS(uint3 dispatchThreadID : SV_Dispat
 
     outputTexture[pixelCoord] = outColor;
 
+	const uint waveActivePixelCount = WaveActiveCountBits(hasSubsurfaceProfile);
+	if (WaveIsFirstLane() && waveActivePixelCount > 0)
+	{
+		uint unused = 0;
+		InterlockedAdd(GroupSharedActivePixelCount, waveActivePixelCount, unused);
+	}
+
+	GroupMemoryBarrierWithGroupSync();
+
+    bool writeTileData = false;
+
     if (groupIndex == 0)
     {
-        uint tileCount = 0;
-        tileCountBuffer.InterlockedAdd(0, 1, tileCount);
+        writeTileData = GroupSharedActivePixelCount > 0 ? true : false;
+    }
 
-        tileDataBuffer.Store<uint2>(tileCount * sizeof(uint2), groupID.xy);
+    if (writeTileData)
+    {
+        uint tileIndex = 0;
+        tileCountBuffer.InterlockedAdd(0, 1, tileIndex);
+        tileDataBuffer.Store<uint2>(tileIndex * sizeof(uint2), groupID.xy);
     }
 }

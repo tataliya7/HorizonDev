@@ -19,8 +19,6 @@ namespace Horizon
         const uint32 tileCountY = Math::CeilDiv(colorTextureDescription.height, SubsurfaceScatteringTileSize);
         const uint32 tileCount = tileCountX * tileCountY;
 
-        RenderGraphTextureHandle subsurfaceScatteringTexture = renderGraph.CreateTexture(colorTextureDescription, "SubsurfaceScatteringTexture");
-
         RenderGraphBufferHandle tileCountBuffer = renderGraph.CreateBuffer(RenderGraphBufferDescription::CreateByteAddress(sizeof(uint32)), "SubsurfaceScatteringTileCountBuffer");
         RenderGraphBufferHandle tileDataBuffer = renderGraph.CreateBuffer(RenderGraphBufferDescription::CreateByteAddress(sizeof(uint32) * 2 * tileCount), "SubsurfaceScatteringTileDataBuffer");
 
@@ -49,6 +47,8 @@ namespace Horizon
                 };
             });
 
+        RenderGraphTextureHandle tileClassificationOutputTexture = renderGraph.CreateTexture(colorTextureDescription, "SubsurfaceScatteringTileClassificationOutputTexture");
+
         renderGraph.AddPass(
             std::format("SubsurfaceScatteringTileClassification (Compute, {}x{})", colorTextureDescription.width, colorTextureDescription.height),
             RenderGraphPassFlags::Compute,
@@ -59,6 +59,7 @@ namespace Horizon
                 builder.SetBindlessResourceSRV(2, intermediateResources.depthTexture);
                 builder.SetBindlessResourceUAV(3, tileCountBuffer);
                 builder.SetBindlessResourceUAV(4, tileDataBuffer);
+                builder.SetBindlessResourceUAV(5, tileClassificationOutputTexture, 0);
 
                 RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::SubsurfaceScatteringTileClassification);
 
@@ -93,7 +94,7 @@ namespace Horizon
                 return [=](RenderBackendCommandList& commandList, const RenderGraphResourceRegistry& resourceRegistry)
                 {
                     RenderBackendPushConstantValues pushConstantValues = resourceRegistry.GetPushConstantValues();
-                    
+
                     commandList.Dispatch(
                         computeShader,
                         pushConstantValues,
@@ -103,77 +104,60 @@ namespace Horizon
                 };
             });
 
-#if 0
-        renderGraph.AddPass(std::format("SubsurfaceScatteringSampleDiffusionProfile (Compute, Tiled)"), RenderGraphPassFlags::Graphics,
-            [&](RenderGraphBuilder& builder)
-            {
-                builder.ReadBuffer(dispatchIndirectArgumentBuffer, RenderBackendResourceState::IndirectArgument);
-                builder.ReadBuffer(tileCountBuffer, RenderBackendResourceState::ShaderResource);
-
-                argumentBuffer = builder.WriteBuffer(argumentBuffer, RenderBackendResourceState::UnorderedAccess);
-
-
-                {
-                    RenderBackendPushConstantValues pushConstantValues = {};
-                    pushConstantValues.BindBuffer(0, resourceRegistry.GetRenderBackendBufferHandle(tileCountBuffer), 0);
-                    pushConstantValues.BindBuffer(1, resourceRegistry.GetRenderBackendBufferHandle(argumentBuffer), 0);
-
-                    RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::SubsurfaceScatteringSampleDiffusionProfile);
-                    commandList.DispatchIndirect(
-                        computeShader,
-                        pushConstantValues,
-                        resourceRegistry.GetRenderBackendBufferHandle(dispatchIndirectArgumentBuffer),
-                        0);
-                };
-            });
-
-        renderGraph.AddPass(std::format("SubsurfaceScatteringComputeVariance (Compute, Tiled)"), RenderGraphPassFlags::Graphics,
-            [&](RenderGraphBuilder& builder)
-            {
-                builder.ReadBuffer(dispatchIndirectArgumentBuffer, RenderBackendResourceState::IndirectArgument);
-                builder.ReadBuffer(tileCountBuffer, RenderBackendResourceState::ShaderResource);
-
-                argumentBuffer = builder.WriteBuffer(argumentBuffer, RenderBackendResourceState::UnorderedAccess);
-
-
-                {
-                    RenderBackendPushConstantValues pushConstantValues = {};
-                    pushConstantValues.BindBuffer(0, resourceRegistry.GetRenderBackendBufferHandle(tileCountBuffer), 0);
-                    pushConstantValues.BindBuffer(1, resourceRegistry.GetRenderBackendBufferHandle(argumentBuffer), 0);
-
-                    RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::SubsurfaceScatteringComputeVariance);
-                    commandList.DispatchIndirect(
-                        computeShader,
-                        pushConstantValues,
-                        resourceRegistry.GetRenderBackendBufferHandle(dispatchIndirectArgumentBuffer),
-                        0);
-                };
-            });
-#endif
+        RenderGraphTextureHandle convolutionOutputTexture = renderGraph.CreateTexture(colorTextureDescription, "SubsurfaceScatteringConvolutionOutputTexture");
 
         renderGraph.AddPass(
-            std::format("SubsurfaceScatteringRecombine (Graphics, Tiled)"),
+            std::format("SubsurfaceScatteringConvolution (Compute, Tiled)"),
             RenderGraphPassFlags::Graphics,
             [&](RenderGraphBuilder& builder)
             {
                 builder.SetBindlessResourceSRV(0, GetCurrentPerFrameConstantBuffer());
-                builder.SetBindlessResourceSRV(1, tileDataBuffer);
-                builder.SetBindlessResourceSRV(2, subsurfaceScatteringTexture);
+                builder.SetBindlessResourceSRV(1, intermediateResources.colorTexture);
+                builder.SetBindlessResourceSRV(2, intermediateResources.depthTexture);
+                builder.SetBindlessResourceSRV(3, tileDataBuffer);
+                builder.SetBindlessResourceUAV(4, convolutionOutputTexture, 0);
+
+                RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::SubsurfaceScatteringConvolution);
+
+                return [=](RenderBackendCommandList& commandList, const RenderGraphResourceRegistry& resourceRegistry)
+                {
+                    RenderBackendPushConstantValues pushConstantValues = resourceRegistry.GetPushConstantValues();
+
+                    RenderBackendBufferHandle argumentBuffer = resourceRegistry.GetRenderBackendBufferHandle(dispatchIndirectArgumentBuffer);
+
+                    commandList.DispatchIndirect(
+                        computeShader,
+                        pushConstantValues,
+                        argumentBuffer,
+                        0);
+                };
+            });
+
+        RenderGraphTextureHandle lightingCompositionOutputTexture = renderGraph.CreateTexture(colorTextureDescription, "SubsurfaceScatteringLightingCompositionOutputTexture");
+
+        renderGraph.AddPass(
+            std::format("SubsurfaceScatteringLightingComposition (Graphics, Tiled)"),
+            RenderGraphPassFlags::Graphics,
+            [&](RenderGraphBuilder& builder)
+            {
                 builder.ReadBuffer(drawIndirectArgumentBuffer, RenderBackendResourceState::IndirectArgument);
 
-                auto sceneColorTexture = builder.WriteTexture(intermediateResources.colorTexture, RenderBackendResourceState::RenderTarget);
+                builder.SetBindlessResourceSRV(0, GetCurrentPerFrameConstantBuffer());
+                builder.SetBindlessResourceSRV(1, tileDataBuffer);
+                builder.SetBindlessResourceSRV(2, intermediateResources.colorTexture);
+                builder.SetBindlessResourceSRV(3, convolutionOutputTexture);
 
-                builder.SetRenderTargetBinding(0, sceneColorTexture, RenderBackendRenderPassLoadOperation::Discard, RenderBackendRenderPassStoreOperation::Store);
+                builder.SetRenderTargetBinding(0, lightingCompositionOutputTexture, RenderBackendRenderPassLoadOperation::Discard, RenderBackendRenderPassStoreOperation::Store);
 
                 RenderBackendShaderHandle vertexShader = shaderCollection->GetShader(ShaderID::SubsurfaceScatteringLightingCompositionVS);
                 RenderBackendShaderHandle pixelShader = shaderCollection->GetShader(ShaderID::SubsurfaceScatteringLightingCompositionPS);
 
                 return [=](RenderBackendCommandList& commandList, const RenderGraphResourceRegistry& resourceRegistry)
                 {
-                    RenderBackendViewport viewport(0.0f, 0.0f, (float)renderResolution.width, (float)renderResolution.height);
+                    RenderBackendViewport viewport(0.0f, 0.0f, static_cast<float>(colorTextureDescription.width), static_cast<float>(colorTextureDescription.height));
                     commandList.SetViewports(&viewport, 1);
 
-                    RenderBackendScissor scissor(0, 0, renderResolution.width, renderResolution.height);
+                    RenderBackendScissor scissor(0, 0, colorTextureDescription.width, colorTextureDescription.height);
                     commandList.SetScissors(&scissor, 1);
 
                     RenderBackendGraphicsPipelineStateDescription graphicsPipelineState = {};
@@ -182,13 +166,15 @@ namespace Horizon
                     graphicsPipelineState.depthStencilState.depthWriteEnable = false;
 
                     RenderBackendPushConstantValues pushConstantValues = resourceRegistry.GetPushConstantValues();
-                    
+
+                    RenderBackendBufferHandle argumentBuffer = resourceRegistry.GetRenderBackendBufferHandle(drawIndirectArgumentBuffer);
+
                     commandList.DrawIndirect(
                         vertexShader,
                         pixelShader,
                         graphicsPipelineState,
                         pushConstantValues,
-                        resourceRegistry.GetRenderBackendBufferHandle(drawIndirectArgumentBuffer),
+                        argumentBuffer,
                         0,
                         1,
                         RenderBackendPrimitiveTopology::TriangleList);
@@ -200,34 +186,40 @@ namespace Horizon
             RenderGraphPassFlags::Graphics,
             [&](RenderGraphBuilder& builder)
             {
-                drawIndirectArgumentBuffer = builder.ReadBuffer(drawIndirectArgumentBuffer, RenderBackendResourceState::IndirectArgument);
-                tileDataBuffer = builder.ReadBuffer(tileDataBuffer, RenderBackendResourceState::ShaderResource);
-                subsurfaceScatteringTexture = builder.ReadTexture(subsurfaceScatteringTexture, RenderBackendResourceState::ShaderResource);
-                RenderGraphTextureHandle sceneColorTexture = builder.WriteTexture(intermediateResources.colorTexture, RenderBackendResourceState::RenderTarget);
+                builder.ReadBuffer(drawIndirectArgumentBuffer, RenderBackendResourceState::IndirectArgument);
 
-                builder.SetRenderTargetBinding(0, sceneColorTexture, RenderBackendRenderPassLoadOperation::Load, RenderBackendRenderPassStoreOperation::Store);
+                builder.SetBindlessResourceSRV(0, GetCurrentPerFrameConstantBuffer());
+                builder.SetBindlessResourceSRV(1, tileDataBuffer);
+                builder.SetBindlessResourceSRV(2, lightingCompositionOutputTexture);
+
+                builder.SetRenderTargetBinding(0, intermediateResources.colorTexture, RenderBackendRenderPassLoadOperation::Load, RenderBackendRenderPassStoreOperation::Store);
+
+                RenderBackendShaderHandle vertexShader = shaderCollection->GetShader(ShaderID::SubsurfaceScatteringCopyResultsVS);
+                RenderBackendShaderHandle pixelShader = shaderCollection->GetShader(ShaderID::SubsurfaceScatteringCopyResultsPS);
 
                 return [=](RenderBackendCommandList& commandList, const RenderGraphResourceRegistry& resourceRegistry)
                 {
+                    RenderBackendViewport viewport(0.0f, 0.0f, static_cast<float>(colorTextureDescription.width), static_cast<float>(colorTextureDescription.height));
+                    commandList.SetViewports(&viewport, 1);
+
+                    RenderBackendScissor scissor(0, 0, colorTextureDescription.width, colorTextureDescription.height);
+                    commandList.SetScissors(&scissor, 1);
+
                     RenderBackendGraphicsPipelineStateDescription graphicsPipelineState = {};
                     graphicsPipelineState.rasterizationState.cullMode = RenderBackendRasterizationCullMode::None;
                     graphicsPipelineState.depthStencilState.depthTestEnable = false;
                     graphicsPipelineState.depthStencilState.depthWriteEnable = false;
 
-                    RenderBackendPushConstantValues pushConstantValues = {};
-                    pushConstantValues.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
-                    pushConstantValues.BindBufferSRV(1, resourceRegistry.GetBufferSRVBindlessResourceDescriptorIndex(tileDataBuffer));
-                    pushConstantValues.BindTextureSRV(2, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(subsurfaceScatteringTexture));
+                    RenderBackendPushConstantValues pushConstantValues = resourceRegistry.GetPushConstantValues();
 
-                    RenderBackendShaderHandle vertexShader = shaderCollection->GetShader(ShaderID::SubsurfaceScatteringCopyResultsVS);
-                    RenderBackendShaderHandle pixelShader = shaderCollection->GetShader(ShaderID::SubsurfaceScatteringCopyResultsPS);
+                    RenderBackendBufferHandle argumentBuffer = resourceRegistry.GetRenderBackendBufferHandle(drawIndirectArgumentBuffer);
 
                     commandList.DrawIndirect(
                         vertexShader,
                         pixelShader,
                         graphicsPipelineState,
                         pushConstantValues,
-                        resourceRegistry.GetRenderBackendBufferHandle(drawIndirectArgumentBuffer),
+                        argumentBuffer,
                         0,
                         1,
                         RenderBackendPrimitiveTopology::TriangleList);

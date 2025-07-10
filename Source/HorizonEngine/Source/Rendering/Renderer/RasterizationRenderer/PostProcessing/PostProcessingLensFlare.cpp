@@ -42,7 +42,6 @@ namespace Horizon
             [&](RenderGraphBuilder& builder)
             {
                 bloomTexture = builder.ReadTexture(bloomTexture, RenderBackendResourceState::ShaderResource);
-                lensFlareGhostTexture = builder.WriteTexture(lensFlareGhostTexture, RenderBackendResourceState::RenderTarget);
 
                 builder.SetRenderTargetBinding(0, lensFlareGhostTexture, RenderBackendRenderPassLoadOperation::Clear, RenderBackendRenderPassStoreOperation::Store);
 
@@ -168,7 +167,6 @@ namespace Horizon
             {
                 lensFlareGhostTexture = builder.ReadTexture(lensFlareGhostTexture, RenderBackendResourceState::ShaderResource);
                 lensFlareGlareTexture = builder.ReadTexture(lensFlareGlareTexture, RenderBackendResourceState::ShaderResource);
-                outputTexture = builder.WriteTexture(outputTexture, RenderBackendResourceState::RenderTarget);
 
                 builder.SetRenderTargetBinding(0, outputTexture, RenderBackendRenderPassLoadOperation::Load, RenderBackendRenderPassStoreOperation::Store);
 

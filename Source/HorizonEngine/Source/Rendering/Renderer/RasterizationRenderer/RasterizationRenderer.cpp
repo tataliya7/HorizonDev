@@ -200,7 +200,7 @@ namespace Horizon
         renderFeatures.enableLensFlare = finalPostProcessingSettings.lensFlareIntensity > 0.0f;
         renderFeatures.enableConvolutionBloom = false;
         renderFeatures.enableEditorSelectionOutline = false;
-        renderFeatures.enableSubsurfaceScattering = true;
+        renderFeatures.enableSubsurfaceScattering = false;
 
         if (!renderFeatures.enableAutoExposure)
         {
@@ -706,7 +706,7 @@ namespace Horizon
             RenderGraphPassFlags::Compute,
             [&](RenderGraphBuilder& builder)
             {
-                RenderGraphTextureHandle sceneColorTexture = intermediateResources.colorTexture = builder.WriteTexture(intermediateResources.colorTexture, RenderBackendResourceState::RenderTarget);
+                RenderGraphTextureHandle sceneColorTexture = intermediateResources.colorTexture;
 
                 return [=](RenderBackendCommandList& commandList, const RenderGraphResourceRegistry& resourceRegistry)
                 {

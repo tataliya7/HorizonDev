@@ -34,8 +34,6 @@ namespace Horizon
             RenderGraphPassFlags::Graphics,
             [&](RenderGraphBuilder& builder)
             {
-                maskTexture = builder.WriteTexture(maskTexture, RenderBackendResourceState::RenderTarget);
-
                 builder.SetRenderTargetBinding(0, maskTexture, RenderBackendRenderPassLoadOperation::Clear, RenderBackendRenderPassStoreOperation::Store);
 
                 return [=](RenderBackendCommandList& commandList, const RenderGraphResourceRegistry& resourceRegistry)

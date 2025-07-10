@@ -392,8 +392,8 @@ namespace Horizon
             {
                 RasterizationRendererIntermediateResources& intermediateResources = renderGraph.blackboard.Get<RasterizationRendererIntermediateResources>();
 
-                RenderGraphTextureHandle sceneColorTexture = intermediateResources.colorTexture = builder.WriteTexture(intermediateResources.colorTexture, RenderBackendResourceState::RenderTarget);
-                RenderGraphTextureHandle sceneDepthTexture = builder.ReadTexture(intermediateResources.depthTexture, RenderBackendResourceState::DepthStencilReadOnly);
+                RenderGraphTextureHandle sceneColorTexture = intermediateResources.colorTexture;
+                RenderGraphTextureHandle sceneDepthTexture = intermediateResources.depthTexture;
 
                 builder.SetRenderTargetBinding(0, sceneColorTexture, RenderBackendRenderPassLoadOperation::Load, RenderBackendRenderPassStoreOperation::Store);
                 builder.SetDepthStencilBinding(sceneDepthTexture,

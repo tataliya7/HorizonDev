@@ -198,9 +198,9 @@ namespace Horizon
             {
                 drawIndirectArgumentBuffer = builder.ReadBuffer(drawIndirectArgumentBuffer, RenderBackendResourceState::IndirectArgument);
                 visibleMeshletBuffer = builder.ReadBuffer(visibleMeshletBuffer, RenderBackendResourceState::ShaderResource);
-                RenderGraphTextureHandle vbuffer0 = intermediateResources.vbuffer0 = builder.WriteTexture(intermediateResources.vbuffer0, RenderBackendResourceState::RenderTarget);
-                RenderGraphTextureHandle vbuffer1 = intermediateResources.vbuffer1 = builder.WriteTexture(intermediateResources.vbuffer1, RenderBackendResourceState::RenderTarget);
-                RenderGraphTextureHandle sceneDepthTexture = intermediateResources.depthTexture = builder.WriteTexture(intermediateResources.depthTexture, RenderBackendResourceState::DepthStencil);
+                RenderGraphTextureHandle vbuffer0 = intermediateResources.vbuffer0;
+                RenderGraphTextureHandle vbuffer1 = intermediateResources.vbuffer1;
+                RenderGraphTextureHandle sceneDepthTexture = intermediateResources.depthTexture;
 
                 builder.SetRenderTargetBinding(0, vbuffer0, RenderBackendRenderPassLoadOperation::Clear, RenderBackendRenderPassStoreOperation::Store);
                 builder.SetRenderTargetBinding(1, vbuffer1, RenderBackendRenderPassLoadOperation::Clear, RenderBackendRenderPassStoreOperation::Store);
@@ -288,9 +288,9 @@ namespace Horizon
             {
                 auto& intermediateResources = renderGraph.blackboard.Get<RasterizationRendererSceneTextures>();
 
-                auto vbuffer0 = intermediateResources.vbuffer0 = builder.WriteTexture(intermediateResources.vbuffer0, RenderBackendResourceState::RenderTarget);
-                auto vbuffer1 = intermediateResources.vbuffer1 = builder.WriteTexture(intermediateResources.vbuffer1, RenderBackendResourceState::RenderTarget);
-                auto sceneDepthTexture = intermediateResources.sceneDepthTexture = builder.WriteTexture(intermediateResources.sceneDepthTexture, RenderBackendResourceState::DepthStencil);
+                auto vbuffer0 = intermediateResources.vbuffer0;
+                auto vbuffer1 = intermediateResources.vbuffer1;
+                auto sceneDepthTexture = intermediateResources.sceneDepthTexture;
 
                 builder.SetRenderTargetBinding(0, vbuffer0, RenderBackendRenderPassLoadOperation::Clear, RenderBackendRenderPassStoreOperation::Load);
                 builder.SetRenderTargetBinding(1, vbuffer1, RenderBackendRenderPassLoadOperation::Clear, RenderBackendRenderPassStoreOperation::Load);
@@ -468,7 +468,7 @@ namespace Horizon
                 RenderGraphTextureHandle gbuffer2 = builder.ReadTexture(intermediateResources.gbuffer2, RenderBackendResourceState::ShaderResource);
                 // TODO: which state should be?
                 //RenderGraphTextureHandle sceneDepthTexture = builder.ReadTexture(intermediateResources.sceneDepthTexture, RenderBackendResourceState::ShaderResource);
-                RenderGraphTextureHandle sceneDepthTexture = builder.ReadTexture(intermediateResources.depthTexture, RenderBackendResourceState::DepthStencilReadOnly);
+                RenderGraphTextureHandle sceneDepthTexture = intermediateResources.depthTexture;
                 RenderGraphTextureHandle screenSpaceShadowMaskTexture = builder.ReadTexture(intermediateResources.shadowMaskTexture, RenderBackendResourceState::ShaderResource);
                 localLightShadowMapAtlas = builder.ReadTexture(localLightShadowMapAtlas, RenderBackendResourceState::ShaderResource);
                 skyAtmosphereTransmittanceLUT = builder.ReadTexture(skyAtmosphereTransmittanceLUT, RenderBackendResourceState::ShaderResource);
@@ -476,7 +476,7 @@ namespace Horizon
                 RenderGraphBufferHandle lightGridCellDataBuffer = builder.ReadBuffer(lightGridData.lightGridCellDataBuffer, RenderBackendResourceState::ShaderResource);
                 RenderGraphBufferHandle lightGridLightListBuffer = builder.ReadBuffer(lightGridData.lightGridLightListBuffer, RenderBackendResourceState::ShaderResource);
 
-                RenderGraphTextureHandle sceneColorTexture = intermediateResources.colorTexture = builder.WriteTexture(intermediateResources.colorTexture, RenderBackendResourceState::RenderTarget);
+                RenderGraphTextureHandle sceneColorTexture = intermediateResources.colorTexture;
 
                 builder.SetRenderTargetBinding(0, sceneColorTexture, RenderBackendRenderPassLoadOperation::Load, RenderBackendRenderPassStoreOperation::Store);
                 builder.SetDepthStencilBinding(sceneDepthTexture,
@@ -546,12 +546,12 @@ namespace Horizon
                 RenderGraphTextureHandle gbuffer0 = builder.ReadTexture(intermediateResources.gbuffer0, RenderBackendResourceState::ShaderResource);
                 RenderGraphTextureHandle gbuffer1 = builder.ReadTexture(intermediateResources.gbuffer1, RenderBackendResourceState::ShaderResource);
                 RenderGraphTextureHandle gbuffer2 = builder.ReadTexture(intermediateResources.gbuffer2, RenderBackendResourceState::ShaderResource);
-                RenderGraphTextureHandle sceneDepthTexture = builder.ReadTexture(intermediateResources.depthTexture, RenderBackendResourceState::DepthStencilReadOnly);
+                RenderGraphTextureHandle sceneDepthTexture = intermediateResources.depthTexture;
                 RenderGraphBufferHandle irradianceEnvironmentMapBuffer = builder.ReadBuffer(intermediateResources.irradianceEnvironmentMapBuffer, RenderBackendResourceState::ShaderResource);
                 RenderGraphTextureHandle ambientOcclusionTexture = builder.ReadTexture(intermediateResources.ambientOcclusionTexture, RenderBackendResourceState::ShaderResource);
                 RenderGraphTextureHandle indirectDiffuseTexture = builder.ReadTexture(intermediateResources.indirectDiffuseTexture, RenderBackendResourceState::ShaderResource);
 
-                RenderGraphTextureHandle sceneColorTexture = intermediateResources.colorTexture = builder.WriteTexture(intermediateResources.colorTexture, RenderBackendResourceState::RenderTarget);
+                RenderGraphTextureHandle sceneColorTexture = intermediateResources.colorTexture;
 
                 builder.SetRenderTargetBinding(0, sceneColorTexture, RenderBackendRenderPassLoadOperation::Load, RenderBackendRenderPassStoreOperation::Store);
                 builder.SetDepthStencilBinding(sceneDepthTexture,
@@ -617,11 +617,11 @@ namespace Horizon
                 RenderGraphTextureHandle gbuffer0 = builder.ReadTexture(intermediateResources.gbuffer0, RenderBackendResourceState::ShaderResource);
                 RenderGraphTextureHandle gbuffer1 = builder.ReadTexture(intermediateResources.gbuffer1, RenderBackendResourceState::ShaderResource);
                 RenderGraphTextureHandle gbuffer2 = builder.ReadTexture(intermediateResources.gbuffer2, RenderBackendResourceState::ShaderResource);
-                RenderGraphTextureHandle sceneDepthTexture = builder.ReadTexture(intermediateResources.depthTexture, RenderBackendResourceState::DepthStencilReadOnly);
+                RenderGraphTextureHandle sceneDepthTexture = intermediateResources.depthTexture;
                 //RenderGraphTextureHandle screenSpaceReflectionTexture = builder.ReadTexture(intermediateResources.screenSpaceReflectionTexture, RenderBackendResourceState::ShaderResource);
                 RenderGraphTextureHandle ambientOcclusionTexture = builder.ReadTexture(intermediateResources.ambientOcclusionTexture, RenderBackendResourceState::ShaderResource);
                 RenderGraphTextureHandle convolvedEnvironmentMapTexture = builder.ReadTexture(intermediateResources.convolvedEnvironmentMapTexture, RenderBackendResourceState::ShaderResource);
-                RenderGraphTextureHandle sceneColorTexture = intermediateResources.colorTexture = builder.WriteTexture(intermediateResources.colorTexture, RenderBackendResourceState::RenderTarget);
+                RenderGraphTextureHandle sceneColorTexture = intermediateResources.colorTexture;
 
                 builder.SetRenderTargetBinding(0, sceneColorTexture, RenderBackendRenderPassLoadOperation::Load, RenderBackendRenderPassStoreOperation::Store);
                 builder.SetDepthStencilBinding(sceneDepthTexture,
@@ -921,9 +921,6 @@ namespace Horizon
             RenderGraphPassFlags::Graphics,
             [&](RenderGraphBuilder& builder)
             {
-                sceneColorTexture = builder.WriteTexture(sceneColorTexture, RenderBackendResourceState::RenderTarget);
-                sceneDepthTexture = builder.WriteTexture(sceneDepthTexture, RenderBackendResourceState::DepthStencil);
-
                 builder.SetRenderTargetBinding(0, sceneColorTexture, RenderBackendRenderPassLoadOperation::Load, RenderBackendRenderPassStoreOperation::Store);
                 builder.SetDepthStencilBinding(
                     sceneDepthTexture,

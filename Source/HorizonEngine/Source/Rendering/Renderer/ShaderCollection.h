@@ -92,7 +92,7 @@ namespace Horizon
         SubsurfaceScatteringInitialization,
         SubsurfaceScatteringTileClassification,
         SubsurfaceScatteringBuildIndirectArguments,
-        SubsurfaceScatteringSampleDiffusionProfile,
+        SubsurfaceScatteringConvolution,
         SubsurfaceScatteringComputeVariance,
         SubsurfaceScatteringLightingCompositionVS,
         SubsurfaceScatteringLightingCompositionPS,

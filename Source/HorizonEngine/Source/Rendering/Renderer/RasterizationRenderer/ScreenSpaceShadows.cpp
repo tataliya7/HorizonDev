@@ -98,7 +98,6 @@ namespace Horizon
             [&](RenderGraphBuilder& builder)
             {
                 outputTexture = builder.ReadTexture(outputTexture, RenderBackendResourceState::ShaderResource);
-                screenSpaceShadowMaskTexture = builder.WriteTexture(screenSpaceShadowMaskTexture, RenderBackendResourceState::RenderTarget);
 
                 builder.SetRenderTargetBinding(0, screenSpaceShadowMaskTexture, RenderBackendRenderPassLoadOperation::Load, RenderBackendRenderPassStoreOperation::Store);
 

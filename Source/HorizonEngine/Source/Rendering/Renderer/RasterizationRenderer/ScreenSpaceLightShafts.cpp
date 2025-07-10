@@ -186,7 +186,7 @@ namespace Horizon
                 [&](RenderGraphBuilder& builder)
                 {
                     RenderGraphTextureHandle lightShaftsTexture = builder.ReadTexture(radialBlurOutputTexture, RenderBackendResourceState::ShaderResource);
-                    RenderGraphTextureHandle sceneColorTexture = intermediateResources.colorTexture = builder.WriteTexture(intermediateResources.colorTexture, RenderBackendResourceState::RenderTarget);
+                    RenderGraphTextureHandle sceneColorTexture = intermediateResources.colorTexture;
 
                     builder.SetRenderTargetBinding(0, sceneColorTexture, RenderBackendRenderPassLoadOperation::Load, RenderBackendRenderPassStoreOperation::Store);
 
