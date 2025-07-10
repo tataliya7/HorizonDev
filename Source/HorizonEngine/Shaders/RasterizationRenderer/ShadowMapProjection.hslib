@@ -2,7 +2,6 @@
 #include "../Random.hsh"
 #include "RasterizationRendererCommon.hsh"
 #include "ShadowMapCommon.hsh"
-#include "ShadowFilteringCommon.hsh"
 
 #define CSM_CASCADE_SELECTION_METHOD 1
 #define CSM_CASCADE_BLENDING_METHOD 0
@@ -12,10 +11,11 @@
 SHADER_CONSTANTS_STRUCT_BEGIN();
 SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferSRV);
 SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(1, CascadedShadowMapShaderParameters, CascadeShadowMapDataBufferSRV);
-SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(2, SceneDepthTextureSRV);
-SHADER_CONSTANTS_TEXTURE_2D_ARRAY_DEFAULT_SRV(3, ShadowMapTextureSRV);
-SHADER_CONSTANTS_TEXTURE_2D_UAV(4, float4, ShadowMaskTextureUAV);
-SHADER_CONSTANTS_TEXTURE_2D_UAV(5, float4, CascadedShadowMapDebugVisualizationTextureUAV);
+SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(2, DepthTextureSRV);
+SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(3, NormalTextureSRV);
+SHADER_CONSTANTS_TEXTURE_2D_ARRAY_DEFAULT_SRV(4, ShadowMapTextureSRV);
+SHADER_CONSTANTS_TEXTURE_2D_UAV(5, float4, ShadowMaskTextureUAV);
+SHADER_CONSTANTS_TEXTURE_2D_UAV(6, float4, CascadedShadowMapDebugVisualizationTextureUAV);
 SHADER_CONSTANTS_STRUCT_END();
 
 float CSMShadowMapSampling(
@@ -43,7 +43,8 @@ float CSMShadowMapSampling(
                 cascadedShadowMapShaderParameters.shadowMapSize,
                 cascadeIndex,
                 shadowMapTextureCoord.xy,
-                shadowMapTextureCoord.z);
+                shadowMapTextureCoord.z,
+                DEFAULT_CONSTANT_SHADOW_DEPTH_BIAS);
         }
     }
 
@@ -55,6 +56,7 @@ float CSMEvaluateShadowFactor_SlicePlaneSelection_Dither(
     in Texture2DArray shadowMapTexture,
     in float2 pixelPosition,
     in float3 worldSpacePosition,
+    in float3 worldSpaceNormal,
     in float cameraSpaceDepth,
     out uint outCascadeIndex)
 {
@@ -88,6 +90,7 @@ float CSMEvaluateShadowFactor_SlicePlaneSelection_Blend(
     in Texture2DArray shadowMapTexture,
     in float2 pixelPosition,
     in float3 worldSpacePosition,
+    in float3 worldSpaceNormal,
     in float cameraSpaceDepth,
     out uint outCascadeIndex)
 {
@@ -125,6 +128,7 @@ float CSMEvaluateShadowFactor_BoundingShpereSelection_Dither(
     in Texture2DArray shadowMapTexture,
     in float2 pixelPosition,
     in float3 worldSpacePosition,
+    in float3 worldSpaceNormal,
     in float cameraSpaceDepth,
     out uint outCascadeIndex)
 {
@@ -164,6 +168,7 @@ float CSMEvaluateShadowFactor_BoundingShpereSelection_Blend(
     in Texture2DArray shadowMapTexture,
     in float2 pixelPosition,
     in float3 worldSpacePosition,
+    in float3 worldSpaceNormal,
     in float cameraSpaceDepth,
     out uint outCascadeIndex)
 {
@@ -217,12 +222,14 @@ void ShadowMapProjectionForDistantLightCS(uint3 dispatchThreadID : SV_DispatchTh
     float2 uv = (pixelCoord + 0.5f) * frameShaderParameters.renderResolution.zw;
 
     StructuredBuffer<CascadedShadowMapShaderParameters> cascadedShadowMapDataBuffer = ShaderConstants.GetCascadeShadowMapDataBufferSRV();
-    Texture2D sceneDepthTexture = ShaderConstants.GetSceneDepthTextureSRV();
+    Texture2D depthTexture = ShaderConstants.GetDepthTextureSRV();
+    Texture2D normalTexture = ShaderConstants.GetNormalTextureSRV();
     Texture2DArray shadowMapTexture = ShaderConstants.GetShadowMapTextureSRV();
     RWTexture2D<float4> shadowMaskTexture = ShaderConstants.GetShadowMaskTextureUAV();
 
     CascadedShadowMapShaderParameters cascadedShadowMapShaderParameters = cascadedShadowMapDataBuffer[0];
-    float depth = sceneDepthTexture.SampleLevel(GlobalSamplerPointClamp, uv, 0).r;
+    float depth = depthTexture.SampleLevel(GlobalSamplerPointClamp, uv, 0).r;
+    float3 worldSpaceNormal = DecodeNormalFromGBuffer(normalTexture.SampleLevel(GlobalSamplerPointClamp, uv, 0).rgb);
     float3 worldSpacePosition = ReconstructWorldSpacePositionFromUVZ(uv, depth, frameShaderParameters.clipToWorldMatrix);
     float4 cameraSpacePosition = mul(frameShaderParameters.worldToViewMatrix, float4(worldSpacePosition, 1.0f));
 
@@ -247,6 +254,7 @@ void ShadowMapProjectionForDistantLightCS(uint3 dispatchThreadID : SV_DispatchTh
             shadowMapTexture,
             pixelCoord,
             worldSpacePosition,
+            worldSpaceNormal,
             cameraSpaceDepth,
             cascadeIndex);
     #else
@@ -255,6 +263,7 @@ void ShadowMapProjectionForDistantLightCS(uint3 dispatchThreadID : SV_DispatchTh
             shadowMapTexture,
             pixelCoord,
             worldSpacePosition,
+            worldSpaceNormal,
             cameraSpaceDepth,
             cascadeIndex);
     #endif
@@ -265,6 +274,7 @@ void ShadowMapProjectionForDistantLightCS(uint3 dispatchThreadID : SV_DispatchTh
             shadowMapTexture,
             pixelCoord,
             worldSpacePosition,
+            worldSpaceNormal,
             cameraSpaceDepth,
             cascadeIndex);
     #else
@@ -273,6 +283,7 @@ void ShadowMapProjectionForDistantLightCS(uint3 dispatchThreadID : SV_DispatchTh
             shadowMapTexture,
             pixelCoord,
             worldSpacePosition,
+            worldSpaceNormal,
             cameraSpaceDepth,
             cascadeIndex);
     #endif
