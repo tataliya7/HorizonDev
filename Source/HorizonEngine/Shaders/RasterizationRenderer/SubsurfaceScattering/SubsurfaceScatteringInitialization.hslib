@@ -1,0 +1,15 @@
+#include "../../ShaderCommon.hsh"
+#include "../RasterizationRendererCommon.hsh"
+#include "SubsurfaceScatteringCommon.hsh"
+
+SHADER_CONSTANTS_STRUCT_BEGIN();
+SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_UAV(0, SubsurfaceScatteringTileCountBufferUAV);
+SHADER_CONSTANTS_STRUCT_END();
+
+[shader("compute")]
+[numthreads(1, 1, 1)]
+void SubsurfaceScatteringInitializationCS(uint3 dispatchThreadID : SV_DispatchThreadID)
+{
+    RWByteAddressBuffer tileCountBuffer = ShaderConstants.GetSubsurfaceScatteringTileCountBufferUAV();
+    tileCountBuffer.Store<uint>(0, 0);
+}

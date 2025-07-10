@@ -200,6 +200,7 @@ namespace Horizon
         renderFeatures.enableLensFlare = finalPostProcessingSettings.lensFlareIntensity > 0.0f;
         renderFeatures.enableConvolutionBloom = false;
         renderFeatures.enableEditorSelectionOutline = false;
+        renderFeatures.enableSubsurfaceScattering = true;
 
         if (!renderFeatures.enableAutoExposure)
         {
@@ -623,7 +624,7 @@ namespace Horizon
             clearColor);
         intermediateResources.gbuffer2 = renderGraph.CreateTexture(gbuffer2Desc, "GBuffer2");
 
-        RenderGraphTextureDescription sceneColorTextureDesc = RenderGraphTextureDescription::Create2D(
+        RenderGraphTextureDescription colorTextureDescription = RenderGraphTextureDescription::Create2D(
             renderResolution.width,
             renderResolution.height,
             RenderBackendTextureFormat::R16G16B16A16Float,
@@ -632,7 +633,7 @@ namespace Horizon
             1,
             1,
             RenderBackendResourceState::UnorderedAccess);
-        intermediateResources.colorTexture = renderGraph.CreateTexture(sceneColorTextureDesc, "SceneColorTexture");
+        intermediateResources.colorTexture = renderGraph.CreateTexture(colorTextureDescription, "SceneColorTexture");
 
         RenderGraphTextureDescription sceneDepthTextureDesc = RenderGraphTextureDescription::Create2D(
             renderResolution.width,

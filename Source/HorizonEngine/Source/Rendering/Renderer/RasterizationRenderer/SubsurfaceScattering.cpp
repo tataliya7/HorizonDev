@@ -2,7 +2,7 @@
 
 namespace Horizon
 {
-    static constexpr uint32 GSubsurfaceScatteringTileSize = 8;
+    static constexpr uint32 SubsurfaceScatteringTileSize = 8;
 
     void RasterizationRenderer::RenderSubsurfaceScattering(
         RenderGraph& renderGraph,
@@ -10,18 +10,16 @@ namespace Horizon
     {
         RenderGraphDebugLabelRegion debugLabelRegion(renderGraph, "SubsurfaceScattering");
 
-        return;
-
         const RasterizationRendererIntermediateResources& intermediateResources = renderGraph.blackboard.Get<RasterizationRendererIntermediateResources>();
-        const RenderGraphTextureDescription& sceneColorTextureDesc = renderGraph.GetTextureDesc(intermediateResources.colorTexture);
+        const RenderGraphTextureDescription& colorTextureDescription = renderGraph.GetTextureDesc(intermediateResources.colorTexture);
 
-        assert((renderResolution.width == sceneColorTextureDesc.width) && (renderResolution.height == sceneColorTextureDesc.height));
+        assert((renderResolution.width == colorTextureDescription.width) && (renderResolution.height == colorTextureDescription.height));
 
-        const uint32 tileCountX = Math::CeilDiv(sceneColorTextureDesc.width, GSubsurfaceScatteringTileSize);
-        const uint32 tileCountY = Math::CeilDiv(sceneColorTextureDesc.height, GSubsurfaceScatteringTileSize);
+        const uint32 tileCountX = Math::CeilDiv(colorTextureDescription.width, SubsurfaceScatteringTileSize);
+        const uint32 tileCountY = Math::CeilDiv(colorTextureDescription.height, SubsurfaceScatteringTileSize);
         const uint32 tileCount = tileCountX * tileCountY;
 
-        RenderGraphTextureHandle subsurfaceScatteringTexture = renderGraph.CreateTexture(sceneColorTextureDesc, "SubsurfaceScatteringTexture");
+        RenderGraphTextureHandle subsurfaceScatteringTexture = renderGraph.CreateTexture(colorTextureDescription, "SubsurfaceScatteringTexture");
 
         RenderGraphBufferHandle tileCountBuffer = renderGraph.CreateBuffer(RenderGraphBufferDescription::CreateByteAddress(sizeof(uint32)), "SubsurfaceScatteringTileCountBuffer");
         RenderGraphBufferHandle tileDataBuffer = renderGraph.CreateBuffer(RenderGraphBufferDescription::CreateByteAddress(sizeof(uint32) * 2 * tileCount), "SubsurfaceScatteringTileDataBuffer");
@@ -30,18 +28,17 @@ namespace Horizon
         RenderGraphBufferHandle dispatchIndirectArgumentBuffer = renderGraph.CreateBuffer(RenderGraphBufferDescription::CreateIndirectArguments(sizeof(RenderBackendDispatchIndirectArguments), 1), "SubsurfaceScatteringDispatchIndirectArgumentBuffer");
 
         renderGraph.AddPass(
-            std::format("SubsurfaceScatteringInitialize (Compute, 1x1x1)"),
+            std::format("SubsurfaceScatteringInitialization (Compute, 1x1x1)"),
             RenderGraphPassFlags::Compute,
             [&](RenderGraphBuilder& builder)
             {
-                tileCountBuffer = builder.WriteBuffer(tileCountBuffer, RenderBackendResourceState::UnorderedAccess);
+                builder.SetBindlessResourceUAV(0, tileCountBuffer);
+
+                RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::SubsurfaceScatteringInitialization);
 
                 return [=](RenderBackendCommandList& commandList, const RenderGraphResourceRegistry& resourceRegistry)
                 {
-                    RenderBackendPushConstantValues pushConstantValues = {};
-                    pushConstantValues.BindBufferUAV(0, resourceRegistry.GetBufferUAVBindlessResourceDescriptorIndex(tileCountBuffer));
-
-                    RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::SubsurfaceScatteringInitialize);
+                    RenderBackendPushConstantValues pushConstantValues = resourceRegistry.GetPushConstantValues();
 
                     commandList.Dispatch(
                         computeShader,
@@ -53,29 +50,25 @@ namespace Horizon
             });
 
         renderGraph.AddPass(
-            std::format("SubsurfaceScatteringClassifyTiles (Compute, {}x{})", sceneColorTextureDesc.width, sceneColorTextureDesc.height),
+            std::format("SubsurfaceScatteringTileClassification (Compute, {}x{})", colorTextureDescription.width, colorTextureDescription.height),
             RenderGraphPassFlags::Compute,
             [&](RenderGraphBuilder& builder)
             {
-                RenderGraphTextureHandle sceneColorTexture = builder.ReadTexture(intermediateResources.colorTexture, RenderBackendResourceState::ShaderResource);
-                RenderGraphTextureHandle sceneDepthTexture = builder.ReadTexture(intermediateResources.depthTexture, RenderBackendResourceState::ShaderResource);
-                tileCountBuffer = builder.WriteBuffer(tileCountBuffer, RenderBackendResourceState::UnorderedAccess);
-                tileDataBuffer = builder.WriteBuffer(tileDataBuffer, RenderBackendResourceState::UnorderedAccess);
+                builder.SetBindlessResourceSRV(0, GetCurrentPerFrameConstantBuffer());
+                builder.SetBindlessResourceSRV(1, intermediateResources.colorTexture);
+                builder.SetBindlessResourceSRV(2, intermediateResources.depthTexture);
+                builder.SetBindlessResourceUAV(3, tileCountBuffer);
+                builder.SetBindlessResourceUAV(4, tileDataBuffer);
+
+                RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::SubsurfaceScatteringTileClassification);
+
+                uint32 threadGroupCountX = ComputeShaderThreadGroupCount(colorTextureDescription.width, SubsurfaceScatteringTileSize);
+                uint32 threadGroupCountY = ComputeShaderThreadGroupCount(colorTextureDescription.height, SubsurfaceScatteringTileSize);
+                uint32 threadGroupCountZ = 1;
 
                 return [=](RenderBackendCommandList& commandList, const RenderGraphResourceRegistry& resourceRegistry)
                 {
-                    uint32 threadGroupCountX = ComputeShaderThreadGroupCount(sceneColorTextureDesc.width, GSubsurfaceScatteringTileSize);
-                    uint32 threadGroupCountY = ComputeShaderThreadGroupCount(sceneColorTextureDesc.height, GSubsurfaceScatteringTileSize);
-                    uint32 threadGroupCountZ = 1;
-
-                    RenderBackendPushConstantValues pushConstantValues = {};
-                    pushConstantValues.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
-                    pushConstantValues.BindTextureSRV(1, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(sceneColorTexture));
-                    pushConstantValues.BindTextureSRV(2, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(sceneDepthTexture));
-                    pushConstantValues.BindBufferUAV(3, resourceRegistry.GetBufferUAVBindlessResourceDescriptorIndex(tileCountBuffer));
-                    pushConstantValues.BindBufferUAV(4, resourceRegistry.GetBufferUAVBindlessResourceDescriptorIndex(tileDataBuffer));
-
-                    RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::SubsurfaceScatteringClassifyTiles);
+                    RenderBackendPushConstantValues pushConstantValues = resourceRegistry.GetPushConstantValues();
 
                     commandList.Dispatch(
                         computeShader,
@@ -91,19 +84,16 @@ namespace Horizon
             RenderGraphPassFlags::Compute,
             [&](RenderGraphBuilder& builder)
             {
-                tileCountBuffer = builder.ReadBuffer(tileCountBuffer, RenderBackendResourceState::ShaderResource);
-                drawIndirectArgumentBuffer = builder.WriteBuffer(drawIndirectArgumentBuffer, RenderBackendResourceState::UnorderedAccess);
-                dispatchIndirectArgumentBuffer = builder.WriteBuffer(dispatchIndirectArgumentBuffer, RenderBackendResourceState::UnorderedAccess);
+                builder.SetBindlessResourceSRV(0, tileCountBuffer);
+                builder.SetBindlessResourceUAV(1, drawIndirectArgumentBuffer);
+                builder.SetBindlessResourceUAV(2, dispatchIndirectArgumentBuffer);
+
+                RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::SubsurfaceScatteringBuildIndirectArguments);
 
                 return [=](RenderBackendCommandList& commandList, const RenderGraphResourceRegistry& resourceRegistry)
                 {
-                    RenderBackendPushConstantValues pushConstantValues = {};
-                    pushConstantValues.BindBufferSRV(0, resourceRegistry.GetBufferSRVBindlessResourceDescriptorIndex(tileCountBuffer));
-                    pushConstantValues.BindBufferUAV(1, resourceRegistry.GetBufferUAVBindlessResourceDescriptorIndex(drawIndirectArgumentBuffer));
-                    pushConstantValues.BindBufferUAV(2, resourceRegistry.GetBufferUAVBindlessResourceDescriptorIndex(dispatchIndirectArgumentBuffer));
-
-                    RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::SubsurfaceScatteringBuildIndirectArguments);
-
+                    RenderBackendPushConstantValues pushConstantValues = resourceRegistry.GetPushConstantValues();
+                    
                     commandList.Dispatch(
                         computeShader,
                         pushConstantValues,
@@ -166,13 +156,17 @@ namespace Horizon
             RenderGraphPassFlags::Graphics,
             [&](RenderGraphBuilder& builder)
             {
+                builder.SetBindlessResourceSRV(0, GetCurrentPerFrameConstantBuffer());
+                builder.SetBindlessResourceSRV(1, tileDataBuffer);
+                builder.SetBindlessResourceSRV(2, subsurfaceScatteringTexture);
                 builder.ReadBuffer(drawIndirectArgumentBuffer, RenderBackendResourceState::IndirectArgument);
-                builder.ReadBuffer(tileDataBuffer, RenderBackendResourceState::ShaderResource);
-                builder.ReadTexture(subsurfaceScatteringTexture, RenderBackendResourceState::ShaderResource);
 
                 auto sceneColorTexture = builder.WriteTexture(intermediateResources.colorTexture, RenderBackendResourceState::RenderTarget);
 
                 builder.SetRenderTargetBinding(0, sceneColorTexture, RenderBackendRenderPassLoadOperation::Discard, RenderBackendRenderPassStoreOperation::Store);
+
+                RenderBackendShaderHandle vertexShader = shaderCollection->GetShader(ShaderID::SubsurfaceScatteringLightingCompositionVS);
+                RenderBackendShaderHandle pixelShader = shaderCollection->GetShader(ShaderID::SubsurfaceScatteringLightingCompositionPS);
 
                 return [=](RenderBackendCommandList& commandList, const RenderGraphResourceRegistry& resourceRegistry)
                 {
@@ -187,14 +181,8 @@ namespace Horizon
                     graphicsPipelineState.depthStencilState.depthTestEnable = false;
                     graphicsPipelineState.depthStencilState.depthWriteEnable = false;
 
-                    RenderBackendPushConstantValues pushConstantValues = {};
-                    pushConstantValues.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
-                    pushConstantValues.BindBufferSRV(1, resourceRegistry.GetBufferSRVBindlessResourceDescriptorIndex(tileDataBuffer));
-                    pushConstantValues.BindTextureSRV(2, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(subsurfaceScatteringTexture));
-
-                    RenderBackendShaderHandle vertexShader = shaderCollection->GetShader(ShaderID::SubsurfaceScatteringRecombineVS);
-                    RenderBackendShaderHandle pixelShader = shaderCollection->GetShader(ShaderID::SubsurfaceScatteringRecombinePS);
-
+                    RenderBackendPushConstantValues pushConstantValues = resourceRegistry.GetPushConstantValues();
+                    
                     commandList.DrawIndirect(
                         vertexShader,
                         pixelShader,
@@ -208,7 +196,7 @@ namespace Horizon
             });
 
         renderGraph.AddPass(
-            std::format("SubsurfaceScatteringCopyResults (Graphics, Tiled, {}x{})", sceneColorTextureDesc.width, sceneColorTextureDesc.height),
+            std::format("SubsurfaceScatteringCopyResults (Graphics, Tiled, {}x{})", colorTextureDescription.width, colorTextureDescription.height),
             RenderGraphPassFlags::Graphics,
             [&](RenderGraphBuilder& builder)
             {

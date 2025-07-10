@@ -36,15 +36,14 @@ float3 ComputeBurleyDiffusionProfileShapeParamter(float3 A, float3 l)
 
 // r * R(r) = A * (e^(-r / d) + e^(-r / (3 * d))) / (8 * π * d)
 // The r parameter is the radial distance between entry point and exit point.
-// The d parameter shapes the height and width of the curve and can
-// be set based on artistic preference or determined based on physical
-// parameters.
+// The d parameter shapes the height and width of the curve and can be set 
+// based on artistic preference or determined based on physical parameters.
 float3 ComputeBurleyDiffusionProfile(float r, float3 d, float A)
 {
 #if 0
     return A * (exp(-r / d) + exp(-r / (3.0f * d))) / (8.0f * PI * d);
 #else
-    float t = exp(-r / (3.0f * d));
+    float3 t = exp(-r / (3.0f * d));
     return A * (((t * t) + 1.0f) * t) / (8.0f * PI * d);
 #endif
 }
@@ -55,7 +54,7 @@ float3 ComputeBurleyDiffusionProfileCDF(float r, float3 d)
 #if 0
     return 1.0f - 0.25f * exp(-r / d) - 0.75f * exp(-r / (3.0f * d));
 #else
-    float t = exp(-r / (3.0f * d));
+    float3 t = exp(-r / (3.0f * d));
     return 1.0f - 0.25f * t * t * t - 0.75f * t;
 #endif
 }

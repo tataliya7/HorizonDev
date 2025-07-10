@@ -2,17 +2,19 @@
 #include "../RasterizationRendererCommon.hsh"
 #include "SubsurfaceScatteringCommon.hsh"
 
-BIND_BYTE_ADDRESS_BUFFER_SRV(0, SubsurfaceScatteringTileCountBuffer);
-BIND_BYTE_ADDRESS_BUFFER_UAV(1, SubsurfaceScatteringDrawIndirectArgumentBuffer);
-BIND_BYTE_ADDRESS_BUFFER_UAV(2, SubsurfaceScatteringDispatchIndirectArgumentBuffer);
+SHADER_CONSTANTS_STRUCT_BEGIN();
+SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_SRV(0, SubsurfaceScatteringTileCountBufferSRV);
+SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_UAV(1, SubsurfaceScatteringDrawIndirectArgumentBufferUAV);
+SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_UAV(2, SubsurfaceScatteringDispatchIndirectArgumentBufferUAV);
+SHADER_CONSTANTS_STRUCT_END();
 
 [shader("compute")]
 [numthreads(1, 1, 1)]
 void SubsurfaceScatteringBuildIndirectArgumentsCS(uint3 dispatchThreadID : SV_DispatchThreadID)
 {
-    ByteAddressBuffer tileCountBuffer = GetSubsurfaceScatteringTileCountBufferSRV();
-    RWByteAddressBuffer drawIndirectArgumentBuffer = GetSubsurfaceScatteringDrawIndirectArgumentBufferUAV();
-    RWByteAddressBuffer dispatchIndirectArgumentBuffer = GetSubsurfaceScatteringDispatchIndirectArgumentBufferUAV();
+    ByteAddressBuffer tileCountBuffer = ShaderConstants.GetSubsurfaceScatteringTileCountBufferSRV();
+    RWByteAddressBuffer drawIndirectArgumentBuffer = ShaderConstants.GetSubsurfaceScatteringDrawIndirectArgumentBufferUAV();
+    RWByteAddressBuffer dispatchIndirectArgumentBuffer = ShaderConstants.GetSubsurfaceScatteringDispatchIndirectArgumentBufferUAV();
 
     const uint tileCount = tileCountBuffer.Load<uint>(0);
 

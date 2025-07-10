@@ -332,18 +332,18 @@ namespace Horizon
         //     ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Pixel, "Shaders/RasterizationRenderer/SkyBox.hslib", "SkyBoxPS");
         //     shaderLibrary->LoadShader(ShaderID::SkyBoxPS, shaderDesc);
         // }
-        //{
-        //    ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RasterizationRenderer/SubsurfaceScattering/SubsurfaceScatteringInitialize.hslib", "SubsurfaceScatteringInitializeCS");
-        //    shaderLibrary->LoadShader(ShaderID::SubsurfaceScatteringInitialize, shaderDesc);
-        //}
-        //{
-        //    ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RasterizationRenderer/SubsurfaceScattering/SubsurfaceScatteringClassifyTiles.hslib", "SubsurfaceScatteringClassifyTilesCS");
-        //    shaderLibrary->LoadShader(ShaderID::SubsurfaceScatteringClassifyTiles, shaderDesc);
-        //}
-        //{
-        //    ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RasterizationRenderer/SubsurfaceScattering/SubsurfaceScatteringBuildIndirectArguments.hslib", "SubsurfaceScatteringBuildIndirectArgumentsCS");
-        //    shaderLibrary->LoadShader(ShaderID::SubsurfaceScatteringBuildIndirectArguments, shaderDesc);
-        //}
+        {
+           ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RasterizationRenderer/SubsurfaceScattering/SubsurfaceScatteringInitialization.hslib", "SubsurfaceScatteringInitializationCS");
+           shaderLibrary->LoadShader(ShaderID::SubsurfaceScatteringInitialization, shaderDesc);
+        }
+        {
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RasterizationRenderer/SubsurfaceScattering/SubsurfaceScatteringTileClassification.hslib", "SubsurfaceScatteringTileClassificationCS");
+            shaderLibrary->LoadShader(ShaderID::SubsurfaceScatteringTileClassification, shaderDesc);
+        }
+        {
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RasterizationRenderer/SubsurfaceScattering/SubsurfaceScatteringBuildIndirectArguments.hslib", "SubsurfaceScatteringBuildIndirectArgumentsCS");
+            shaderLibrary->LoadShader(ShaderID::SubsurfaceScatteringBuildIndirectArguments, shaderDesc);
+        }
         //{
         //    ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RasterizationRenderer/SubsurfaceScattering/SubsurfaceScatteringSampleDiffusionProfile.hslib", "SubsurfaceScatteringSampleDiffusionProfileCS");
         //    shaderLibrary->LoadShader(ShaderID::SubsurfaceScatteringSampleDiffusionProfile, shaderDesc);
@@ -352,22 +352,22 @@ namespace Horizon
         //    ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RasterizationRenderer/SubsurfaceScattering/SubsurfaceScatteringComputeVariance.hslib", "SubsurfaceScatteringComputeVarianceCS");
         //    shaderLibrary->LoadShader(ShaderID::SubsurfaceScatteringComputeVariance, shaderDesc);
         //}
-        //{
-        //    ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Vertex, "Shaders/RasterizationRenderer/SubsurfaceScattering/SubsurfaceScatteringCopyResults.hslib", "SubsurfaceScatteringCopyResultsVS");
-        //    shaderLibrary->LoadShader(ShaderID::SubsurfaceScatteringCopyResultsVS, shaderDesc);
-        //}
-        //{
-        //    ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Pixel, "Shaders/RasterizationRenderer/SubsurfaceScattering/SubsurfaceScatteringCopyResults.hslib", "SubsurfaceScatteringCopyResultsPS");
-        //    shaderLibrary->LoadShader(ShaderID::SubsurfaceScatteringCopyResultsPS, shaderDesc);
-        //}
-        //{
-        //    ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Vertex, "Shaders/RasterizationRenderer/SubsurfaceScattering/SubsurfaceScatteringRecombine.hslib", "SubsurfaceScatteringRecombineVS");
-        //    shaderLibrary->LoadShader(ShaderID::SubsurfaceScatteringRecombineVS, shaderDesc);
-        //}
-        //{
-        //    ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Pixel, "Shaders/RasterizationRenderer/SubsurfaceScattering/SubsurfaceScatteringRecombine.hslib", "SubsurfaceScatteringRecombinePS");
-        //    shaderLibrary->LoadShader(ShaderID::SubsurfaceScatteringRecombinePS, shaderDesc);
-        //}
+        {
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Vertex, "Shaders/RasterizationRenderer/SubsurfaceScattering/SubsurfaceScatteringLightingComposition.hslib", "SubsurfaceScatteringLightingCompositionVS");
+            shaderLibrary->LoadShader(ShaderID::SubsurfaceScatteringLightingCompositionVS, shaderDesc);
+        }
+        {
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Pixel, "Shaders/RasterizationRenderer/SubsurfaceScattering/SubsurfaceScatteringLightingComposition.hslib", "SubsurfaceScatteringLightingCompositionPS");
+            shaderLibrary->LoadShader(ShaderID::SubsurfaceScatteringLightingCompositionPS, shaderDesc);
+        }
+        {
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Vertex, "Shaders/RasterizationRenderer/SubsurfaceScattering/SubsurfaceScatteringCopyResults.hslib", "SubsurfaceScatteringCopyResultsVS");
+            shaderLibrary->LoadShader(ShaderID::SubsurfaceScatteringCopyResultsVS, shaderDesc);
+        }
+        {
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Pixel, "Shaders/RasterizationRenderer/SubsurfaceScattering/SubsurfaceScatteringCopyResults.hslib", "SubsurfaceScatteringCopyResultsPS");
+            shaderLibrary->LoadShader(ShaderID::SubsurfaceScatteringCopyResultsPS, shaderDesc);
+        }
         // {
         //     ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RasterizationRenderer/SurfelGI/SurfelGIFreeSurfels.hslib", "SurfelGIFreeSurfelsCS");
         //     shaderLibrary->LoadShader(ShaderID::SurfelGIFreeSurfels, shaderDesc);

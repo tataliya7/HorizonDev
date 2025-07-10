@@ -160,7 +160,7 @@ namespace Horizon
 //     {
 //         auto& intermediateResources = renderGraph.blackboard.Get<RasterizationRendererSceneTextures>();
 //
-//         RenderGraphTextureHandle outputTexture = renderGraph.CreateTexture(intermediateResources.sceneColorTextureDesc, "SurfelGIVisualizationTexture");
+//         RenderGraphTextureHandle outputTexture = renderGraph.CreateTexture(intermediateResources.colorTextureDescription, "SurfelGIVisualizationTexture");
 //
 //         renderGraph.AddPass(std::format("SurfelGIVisualization (Compute, {}x{})", renderResolution.width, renderResolution.height), RenderGraphPassFlags::Compute,
 //             [&](RenderGraphBuilder& builder)

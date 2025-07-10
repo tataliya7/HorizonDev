@@ -2,9 +2,11 @@
 #include "../RasterizationRendererCommon.hsh"
 #include "SubsurfaceScatteringCommon.hsh"
 
-BIND_BUFFER_CBV(0, PerFrameShaderParameters);
-BIND_BYTE_ADDRESS_BUFFER_SRV(1, SubsurfaceScatteringTileDataBuffer);
-BIND_TEXTURE_2D_SRV(2, SubsurfaceScatteringTexture);
+SHADER_CONSTANTS_STRUCT_BEGIN();
+SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferSRV);
+SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_SRV(1, SubsurfaceScatteringTileDataBufferSRV);
+SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(2, SubsurfaceScatteringTextureSRV);
+SHADER_CONSTANTS_STRUCT_END();
 
 struct SubsurfaceScatteringCopyResultsVSOutput
 {
@@ -17,7 +19,7 @@ void SubsurfaceScatteringCopyResultsVS(uint VertexID : SV_VertexID, uint Instanc
 {
     StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
     PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
-    ByteAddressBuffer tileDataBuffer = GetSubsurfaceScatteringTileDataBufferSRV();
+    ByteAddressBuffer tileDataBuffer = ShaderConstants.GetSubsurfaceScatteringTileDataBufferSRV();
 
     uint2 tileIndex = tileDataBuffer.Load<uint2>(InstanceID * sizeof(uint2));
     uint2 vertexPosition = tileIndex * SUBSURFACE_SCATTERING_TILE_SIZE + SubsurfaceScatteringTileVertexPositionOffsets[VertexID];
@@ -29,7 +31,7 @@ void SubsurfaceScatteringCopyResultsVS(uint VertexID : SV_VertexID, uint Instanc
 [shader("pixel")]
 void SubsurfaceScatteringCopyResultsPS(SubsurfaceScatteringCopyResultsVSOutput vsOutput, out float4 outColor : SV_Target0)
 {
-    Texture2D subsurfaceScatteringTexture = GetSubsurfaceScatteringTextureSRV();
+    Texture2D subsurfaceScatteringTexture = ShaderConstants.GetSubsurfaceScatteringTextureSRV();
 
     const float2 uv = vsOutput.uv;
 
