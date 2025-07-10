@@ -31,7 +31,7 @@ namespace Horizon
 
         AutoExposureData defaultAutoExposureData;
         RenderBackendBufferDescription autoExposureReadbackBufferDesc = RenderBackendBufferDescription::CreateReadback(sizeof(AutoExposureData));
-        for (uint32 index = 0; index < NumAutoExposureReadbackBuffers; index++)
+        for (uint32 index = 0; index < AutoExposureReadbackBufferCount; index++)
         {
             RenderBackendBufferHandle autoExposureReadbackBuffer = renderBackend->CreateBuffer(&autoExposureReadbackBufferDesc, &defaultAutoExposureData, "AutoExposureReadBackBuffer");
             autoExposureReadbackBuffers[index] = resourcePool->CacheBuffer(autoExposureReadbackBuffer, autoExposureReadbackBufferDesc, "AutoExposureReadBackBuffer");

@@ -587,9 +587,9 @@ namespace Horizon
             float exposureCompensation = 0.0f;
             float averageSceneLuminance = 0.0f;
         };
-        static const int32 NumAutoExposureReadbackBuffers = 4;
+        static const int32 AutoExposureReadbackBufferCount = 4;
         int32 currentAutoExposureReadbackBufferIndex = 0;
-        RenderGraphPersistentBuffer* autoExposureReadbackBuffers[NumAutoExposureReadbackBuffers];
+        RenderGraphPersistentBuffer* autoExposureReadbackBuffers[AutoExposureReadbackBufferCount];
 
         AutoExposureData autoExposureData;
 
