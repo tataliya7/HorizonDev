@@ -11,10 +11,123 @@
 #include <pxr/usd/usdGeom/subset.h>
 #include <pxr/usd/usdGeom/primvarsAPI.h>
 #include <pxr/usd/usdShade/materialBindingAPI.h>
+#include <pxr/usd/usdSkel/bindingAPI.h>
 #include "USDIncludeEnd.h"
 
 namespace Horizon::USDImporter
 {
+    void ImportSkeletonBinding(const USDImportContext* context, const pxr::UsdPrim& prim, MeshComponent& mesh)
+    {
+         if (prim.IsInstanceProxy())
+        {
+            return;
+        }
+
+        pxr::UsdSkelBindingAPI skelBindingApi = pxr::UsdSkelBindingAPI::Apply(prim);
+        if (!skelBindingApi)
+        {
+            return;
+        }
+
+        // pxr::UsdSkelSkeleton skelSkeleton;
+        // if (!skelBindingApi.GetSkeleton(&skelSkeleton))
+        // {
+        //     return;
+        // }
+
+        pxr::UsdSkelSkeleton skelSkeleton = skelBindingApi.GetInheritedSkeleton();
+        if (!skelSkeleton)
+        {
+            return;
+        }
+
+        pxr::VtArray<pxr::TfToken> joints;
+        if (skelBindingApi.GetJointsAttr().HasAuthoredValue())
+        {
+            skelBindingApi.GetJointsAttr().Get(&joints);
+        }
+        else if (skelSkeleton.GetJointsAttr().HasAuthoredValue())
+        {
+            skelSkeleton.GetJointsAttr().Get(&joints);
+        }
+
+        if (joints.empty())
+        {
+            return;
+        }
+
+        pxr::UsdGeomPrimvar jointIndicesPrimvar = skelBindingApi.GetJointIndicesPrimvar();
+        if (!(jointIndicesPrimvar && jointIndicesPrimvar.HasAuthoredValue()))
+        {
+            return;
+        }
+
+        pxr::UsdGeomPrimvar jointWeightsPrimvar = skelBindingApi.GetJointWeightsPrimvar();
+        if (!(jointWeightsPrimvar && jointWeightsPrimvar.HasAuthoredValue()))
+        {
+            return;
+        }
+
+        int jointIndicesElementSize = jointIndicesPrimvar.GetElementSize();
+        int jointWeightsElementSize = jointWeightsPrimvar.GetElementSize();
+
+        if (jointIndicesElementSize != jointWeightsElementSize)
+        {
+            return;
+        }
+
+        pxr::VtIntArray jointIndices;
+        jointIndicesPrimvar.ComputeFlattened(&jointIndices);
+
+        pxr::VtFloatArray jointWeights;
+        jointWeightsPrimvar.ComputeFlattened(&jointWeights);
+
+        if (jointIndices.empty() || jointWeights.empty())
+        {
+            return;
+        }
+
+        if (jointIndices.size() != jointWeights.size())
+        {
+            return;
+        }
+
+        // const pxr::TfToken interpolation = jointWeightsPrimvar.GetInterpolation();
+        // if (interpolation != pxr::UsdGeomTokens->constant)
+        // {
+        //
+        // }
+
+        std::string skeletonPath = skelSkeleton.GetPath().GetAsString();
+        mesh.skeleton = context->skeletons.find(skeletonPath)->second;
+
+        mesh.jointTransforms.resize(mesh.skeleton->joints.size());
+        for (uint32 jointIndex = 0; jointIndex < mesh.jointTransforms.size(); jointIndex++)
+        {
+            mesh.jointTransforms[jointIndex] = mesh.skeleton->joints[jointIndex].bindTransform;
+        }
+
+        mesh.jointIndices.resize(mesh.vertexCount * jointIndicesElementSize);
+        mesh.jointWeights.resize(mesh.vertexCount * jointIndicesElementSize);
+
+        for (uint32 i = 0; i < mesh.jointIndices.size(); i++)
+        {
+            mesh.jointIndices[i] = -1;
+        }
+
+        for (uint32 vertexIndex = 0; vertexIndex < mesh.vertexCount; vertexIndex++)
+        {
+            for (uint32 j = 0; j < uint32(jointIndicesElementSize); j++)
+            {
+                const int32 jointIndex = jointIndices[j];
+                const float jointWeight = jointWeights[j];
+
+                mesh.jointIndices[vertexIndex * jointIndicesElementSize + j] = jointIndex;
+                mesh.jointWeights[vertexIndex * jointIndicesElementSize + j] = jointWeight;
+            }
+        }
+    }
+
     static pxr::UsdShadeMaterial ComputeBoundMaterial(const pxr::UsdPrim& prim)
     {
         pxr::UsdShadeMaterialBindingAPI bindingAPI = pxr::UsdShadeMaterialBindingAPI(prim);
@@ -172,9 +285,62 @@ namespace Horizon::USDImporter
             }
         }
 
+        // Indices
+        for (size_t faceIndex = 0; faceIndex < faceVertexCounts.size(); faceIndex++)
+        {
+            assert(faceVertexCounts[faceIndex] == 3);
+            mesh.indices.push_back(faceVertexIndices[3 * faceIndex + 0]);
+            mesh.indices.push_back(faceVertexIndices[3 * faceIndex + 1]);
+            mesh.indices.push_back(faceVertexIndices[3 * faceIndex + 2]);
+        }
+
         // Normals
         {
-            if (!normals.empty())
+            if (normals.empty())
+            {
+                for (uint32 faceIndex = 0; faceIndex < faceCount; faceIndex++)
+                {
+                    normals.push_back(pxr::GfCross(positions[faceVertexIndices[3 * faceIndex + 2]] - positions[faceVertexIndices[3 * faceIndex + 0]], positions[faceVertexIndices[3 * faceIndex + 1]] - positions[faceVertexIndices[3 * faceIndex + 0]]));
+                    normals.push_back(pxr::GfCross(positions[faceVertexIndices[3 * faceIndex + 2]] - positions[faceVertexIndices[3 * faceIndex + 1]], positions[faceVertexIndices[3 * faceIndex + 0]] - positions[faceVertexIndices[3 * faceIndex + 1]]));
+                    normals.push_back(pxr::GfCross(positions[faceVertexIndices[3 * faceIndex + 0]] - positions[faceVertexIndices[3 * faceIndex + 2]], positions[faceVertexIndices[3 * faceIndex + 1]] - positions[faceVertexIndices[3 * faceIndex + 2]]));
+                }
+
+                normalInterpolationType = pxr::UsdGeomTokens->faceVarying;
+            }
+
+            if (normalInterpolationType == pxr::UsdGeomTokens->faceVarying)
+            {
+                assert(normals.size() == faceCount * 3);
+
+                std::vector<uint32> relevantFaceCount(vertexCount);
+                std::vector<Vector3f> vertexNormals(vertexCount);
+
+                for (uint32 i = 0; i < vertexCount; i++)
+                {
+                    relevantFaceCount[i] = 0;
+                    vertexNormals[i] = Vector3f(0.0f, 0.0f, 0.0f);
+                }
+
+                for (size_t faceIndex = 0; faceIndex < faceCount; faceIndex++)
+                {
+                    vertexNormals[faceVertexIndices[3 * faceIndex + 0]] += Vector3f(normals[3 * faceIndex + 0][0], normals[3 * faceIndex + 0][1], normals[3 * faceIndex + 0][2]);
+                    vertexNormals[faceVertexIndices[3 * faceIndex + 1]] += Vector3f(normals[3 * faceIndex + 1][0], normals[3 * faceIndex + 1][1], normals[3 * faceIndex + 1][2]);
+                    vertexNormals[faceVertexIndices[3 * faceIndex + 2]] += Vector3f(normals[3 * faceIndex + 2][0], normals[3 * faceIndex + 2][1], normals[3 * faceIndex + 2][2]);
+
+                    relevantFaceCount[faceVertexIndices[3 * faceIndex + 0]] += 1;
+                    relevantFaceCount[faceVertexIndices[3 * faceIndex + 1]] += 1;
+                    relevantFaceCount[faceVertexIndices[3 * faceIndex + 2]] += 1;
+                }
+
+                for (size_t i = 0; i < vertexNormals.size(); i++)
+                {
+                    vertexNormals[i] /= static_cast<float>(relevantFaceCount[i]);
+                    vertexNormals[i] = glm::normalize(vertexNormals[i]);
+                }
+
+                mesh.normals = vertexNormals;
+            }
+            else
             {
                 mesh.normals.resize(normals.size());
                 for (size_t i = 0; i < normals.size(); i++)
@@ -182,44 +348,136 @@ namespace Horizon::USDImporter
                     mesh.normals[i] = Vector3f(normals[i][0], normals[i][1], normals[i][2]);
                 }
             }
-            else
-            {
-                for (uint32 faceIndex = 0; faceIndex < faceCount; faceIndex++)
-                {
-                    mesh.normals.push_back(glm::cross(mesh.positions[faceVertexIndices[3 * faceIndex + 2]] - mesh.positions[faceVertexIndices[3 * faceIndex + 0]], mesh.positions[faceVertexIndices[3 * faceIndex + 1]] - mesh.positions[faceVertexIndices[3 * faceIndex + 0]]));
-                    mesh.normals.push_back(glm::cross(mesh.positions[faceVertexIndices[3 * faceIndex + 2]] - mesh.positions[faceVertexIndices[3 * faceIndex + 1]], mesh.positions[faceVertexIndices[3 * faceIndex + 0]] - mesh.positions[faceVertexIndices[3 * faceIndex + 1]]));
-                    mesh.normals.push_back(glm::cross(mesh.positions[faceVertexIndices[3 * faceIndex + 0]] - mesh.positions[faceVertexIndices[3 * faceIndex + 2]], mesh.positions[faceVertexIndices[3 * faceIndex + 1]] - mesh.positions[faceVertexIndices[3 * faceIndex + 2]]));
-                }
-            }
         }
 
         // UVs
         {
-            mesh.texCoords.resize(uvs.size());
-            for (size_t i = 0; i < uvs.size(); i++)
+            if (uvInterpolationType == pxr::UsdGeomTokens->faceVarying)
             {
-                mesh.texCoords[i] = Vector2f(uvs[i][0], uvs[i][1]);
+                assert(uvs.size() == faceCount * 3);
+
+                std::vector<uint32> relevantFaceCount(vertexCount);
+                std::vector<Vector2f> vertexUVs(vertexCount);
+
+                for (uint32 i = 0; i < vertexCount; i++)
+                {
+                    relevantFaceCount[i] = 0;
+                    vertexUVs[i] = Vector2f(0.0f, 0.0f);
+                }
+
+                for (size_t faceIndex = 0; faceIndex < faceCount; faceIndex++)
+                {
+                    vertexUVs[faceVertexIndices[3 * faceIndex + 0]] += Vector2f(uvs[3 * faceIndex + 0][0], uvs[3 * faceIndex + 0][1]);
+                    vertexUVs[faceVertexIndices[3 * faceIndex + 1]] += Vector2f(uvs[3 * faceIndex + 1][0], uvs[3 * faceIndex + 1][1]);
+                    vertexUVs[faceVertexIndices[3 * faceIndex + 2]] += Vector2f(uvs[3 * faceIndex + 2][0], uvs[3 * faceIndex + 2][1]);
+
+                    relevantFaceCount[faceVertexIndices[3 * faceIndex + 0]] += 1;
+                    relevantFaceCount[faceVertexIndices[3 * faceIndex + 1]] += 1;
+                    relevantFaceCount[faceVertexIndices[3 * faceIndex + 2]] += 1;
+                }
+
+                for (size_t i = 0; i < vertexUVs.size(); i++)
+                {
+                    vertexUVs[i] /= static_cast<float>(relevantFaceCount[i]);
+                }
+
+                mesh.texCoords = vertexUVs;
+            }
+            else
+            {
+                mesh.texCoords.resize(uvs.size());
+                for (size_t i = 0; i < uvs.size(); i++)
+                {
+                    mesh.texCoords[i] = Vector2f(uvs[i][0], uvs[i][1]);
+                }
+            }
+        }
+
+        mesh.tangents.resize(mesh.normals.size());
+        for (size_t i = 0; i < mesh.tangents.size(); i++)
+        {
+            mesh.tangents[i] = Vector4f(1.0f, .0f, 0.0f, 1.0f);
+        }
+
+        if (hasUVs)
+        {
+            std::vector<Vector3f> tan1(vertexCount);
+            std::vector<Vector3f> tan2(vertexCount);
+
+            for (size_t i = 0; i < tan1.size(); i++)
+            {
+                tan1[i] = Vector3f(0.0f);
+                tan2[i] = Vector3f(0.0f);
             }
 
-            for (size_t faceIndex = 0; faceIndex < faceVertexCounts.size(); faceIndex++)
+            for (uint64 faceIndex = 0; faceIndex < faceCount; faceIndex++)
             {
-                assert(faceVertexCounts[faceIndex] == 3);
-                mesh.indices.push_back(faceVertexIndices[3 * faceIndex + 0]);
-                mesh.indices.push_back(faceVertexIndices[3 * faceIndex + 1]);
-                mesh.indices.push_back(faceVertexIndices[3 * faceIndex + 2]);
+                uint32 i0 = faceVertexIndices[3 * faceIndex + 0];
+                uint32 i1 = faceVertexIndices[3 * faceIndex + 1];
+                uint32 i2 = faceVertexIndices[3 * faceIndex + 2];
+
+                Vector3f p0 = mesh.positions[i0];
+                Vector3f p1 = mesh.positions[i1];
+                Vector3f p2 = mesh.positions[i2];
+
+                Vector3f v = p1 - p0;
+                Vector3f w = p2 - p0;
+
+                float sx = mesh.texCoords[i1].x - mesh.texCoords[i0].x;
+                float sy = mesh.texCoords[i1].y - mesh.texCoords[i0].y;
+                float tx = mesh.texCoords[i2].x - mesh.texCoords[i0].x;
+                float ty = mesh.texCoords[i2].y - mesh.texCoords[i0].y;
+
+                float dir = (tx * sy - ty * sx) < 0.0f ? -1.0f : 1.0f;
+
+                if (std::abs(tx * sy - ty * sx) <= std::numeric_limits<float>::epsilon())
+                {
+                    sx = 0.0f;
+                    sy = 1.0f;
+                    tx = 1.0f;
+                    ty = 0.0f;
+                }
+
+                Vector3f tangent, bitangent;
+                tangent.x = (w.x * sy - v.x * ty) * dir;
+                tangent.y = (w.y * sy - v.y * ty) * dir;
+                tangent.z = (w.z * sy - v.z * ty) * dir;
+                bitangent.x = (w.x * sx - v.x * tx) * dir;
+                bitangent.y = (w.y * sx - v.y * tx) * dir;
+                bitangent.z = (w.z * sx - v.z * tx) * dir;
+
+                tan1[i0] += tangent;
+                tan1[i1] += tangent;
+                tan1[i2] += tangent;
+
+                tan2[i0] += bitangent;
+                tan2[i1] += bitangent;
+                tan2[i2] += bitangent;
             }
+
+            std::vector<Vector4f> vertexTangents(vertexCount);
+            for (uint32 i = 0; i < vertexCount; i++)
+            {
+                const Vector3f& n = mesh.normals[i];
+                const Vector3f& t = glm::normalize(tan1[i]);
+                const Vector3f& b = glm::normalize(tan2[i]);
+
+                // Gram-Schmidt orthogonalize
+                Vector3f ttt = glm::normalize(t - n * glm::dot(n, t));
+                vertexTangents[i].x = ttt.x;
+                vertexTangents[i].y = ttt.y;
+                vertexTangents[i].z = ttt.z;
+
+                // Calculate handedness
+                vertexTangents[i].w = (glm::dot(glm::cross(n, t), b) < 0.0f) ? -1.0f : 1.0f;
+            }
+
+            mesh.tangents = vertexTangents;
         }
 
         // Colors
         {
 
-        }
-
-        // TODO: support tangents
-        mesh.tangents.resize(mesh.normals.size());
-        for (size_t i = 0; i < mesh.normals.size(); i++)
-        {
-            mesh.tangents[i] = Vector4f(0, 0, 0, 0);
         }
 
         MeshComponent::MeshSubset& subset = mesh.subsets.emplace_back();
@@ -276,9 +534,9 @@ namespace Horizon::USDImporter
             }
         }
 
+        ImportSkeletonBinding(context, prim, mesh);
+
         // TODO
         mesh.CreateRenderObject(scene->GetRenderScene());
-
-        //ImportSkeletonBinding(prim);
     }
 }

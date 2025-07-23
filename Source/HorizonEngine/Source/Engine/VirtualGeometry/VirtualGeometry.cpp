@@ -24,9 +24,7 @@ namespace Horizon
     std::vector<ClusterIndices> BuildTriangleClusters(
         const VirtualGeometryVertexArray& vertices,
         const std::vector<uint32>& indices,
-        const std::vector<uint32>& materialIndices,
-        const std::vector<Vector3f>& normals,
-        const std::vector<Vector2f>& uvs)
+        const std::vector<uint32>& materialIndices)
     {
         uint32 triangleCount = uint32(indices.size()) / 3;
 
@@ -113,13 +111,6 @@ namespace Horizon
             meshlets[part[i]].indices.push_back(indices[i * 3 + 1]);
             meshlets[part[i]].indices.push_back(indices[i * 3 + 2]);
             meshlets[part[i]].materialIndices.push_back(materialIndices[i]);
-
-            meshlets[part[i]].normals.push_back(normals[i * 3 + 0]);
-            meshlets[part[i]].normals.push_back(normals[i * 3 + 1]);
-            meshlets[part[i]].normals.push_back(normals[i * 3 + 2]);
-            meshlets[part[i]].uvs.push_back(uvs[i * 3 + 0]);
-            meshlets[part[i]].uvs.push_back(uvs[i * 3 + 1]);
-            meshlets[part[i]].uvs.push_back(uvs[i * 3 + 2]);
         }
 
         for (int i = 0; i < nparts; ++i)
@@ -132,9 +123,7 @@ namespace Horizon
                 std::vector<ClusterIndices> splits = BuildTriangleClusters(
                     vertices,
                     meshlets[i].indices,
-                    meshlets[i].materialIndices,
-                    meshlets[i].normals,
-                    meshlets[i].uvs);
+                    meshlets[i].materialIndices);
 
                 assert(splits.size() > 1);
 
@@ -162,9 +151,7 @@ namespace Horizon
         auto clusters = BuildTriangleClusters(
             input.vertices,
             input.indices,
-            input.materialIndices,
-            input.vertices.normals,
-            input.vertices.textureCoordinates[0]);
+            input.materialIndices);
 
         output.indices.clear();
         output.materialIndices.clear();
@@ -221,7 +208,7 @@ namespace Horizon
                 .boundingBoxCenter = bounds.GetCenter(),
                 .padding0 = 0,
                 .boundingBoxExtent = bounds.GetExtent(),
-                .padding1 = 0
+                .isSkinned = 0
             };
 
             output.meshlets.push_back(meshlet);

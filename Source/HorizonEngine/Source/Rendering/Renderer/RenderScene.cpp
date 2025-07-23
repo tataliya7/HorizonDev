@@ -285,6 +285,9 @@ namespace Horizon
             geometry.meshletTriangleBuffer = renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(mesh->meshletTriangleBuffer);
             geometry.materialBuffer = renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(mesh->materialBuffer);
             geometry.materialIndexBuffer = renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(mesh->materialIndexBuffer);
+            geometry.jointIndexBuffer = mesh->jointIndexBuffer ? renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(mesh->jointIndexBuffer) : -1;
+            geometry.jointWeightBuffer = mesh->jointWeightBuffer ? renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(mesh->jointWeightBuffer) : -1;
+            geometry.jointTransformBuffer = mesh->jointTransformBuffer ? renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(mesh->jointTransformBuffer) : -1;
             geometry.vertexCount = mesh->vertexCount;
             geometry.indexCount = mesh->indexCount;
             //geometry.boundsMin = mesh.boundsMin;

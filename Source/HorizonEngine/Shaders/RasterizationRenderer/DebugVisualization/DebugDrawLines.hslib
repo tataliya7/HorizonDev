@@ -16,7 +16,11 @@ void DebugDrawLinesVS(uint vertexIndex : SV_VertexID, out float4 color : COLOR, 
     float3 vertexPosition = vertexBuffer.Load<float3>(vertexIndex * sizeof(float3));
     float4 clipSpacePosition = mul(frameShaderParameters.nonJitteredWorldToClipMatrix, float4(vertexPosition, 1.0f));
 
-    color = float4(1, 1, 0, 1);
+    color = float4(1, 1, 1, 1);
+    if (vertexIndex % 2 == 1)
+    {
+        color = float4(0, 0, 1, 1);
+    }
     position = clipSpacePosition;
 }
 

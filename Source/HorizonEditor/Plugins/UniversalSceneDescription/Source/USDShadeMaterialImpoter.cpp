@@ -105,6 +105,62 @@ namespace Horizon::USDImporter
                 }
             }
 
+            pxr::UsdShadeInput normalInput = surfaceShader.GetInput(UsdTokens::normal);
+            if (normalInput)
+            {
+                if (normalInput.HasConnectedSource())
+                {
+                    pxr::UsdShadeConnectableAPI source;
+                    pxr::TfToken sourceName;
+                    pxr::UsdShadeAttributeType sourceType;
+                    normalInput.GetConnectedSource(&source, &sourceName, &sourceType);
+
+                    if (source && source.GetPrim().IsA<pxr::UsdShadeShader>())
+                    {
+                        pxr::UsdShadeShader sourceShader(source.GetPrim());
+                        if (sourceShader)
+                        {
+                            pxr::TfToken shaderId;
+                            if (sourceShader.GetShaderId(&shaderId))
+                            {
+                                if (shaderId == UsdTokens::UsdUVTexture)
+                                {
+                                    pxr::UsdShadeInput fileInput = sourceShader.GetInput(UsdTokens::file);
+                                    if (fileInput)
+                                    {
+                                        pxr::VtValue fileValue;
+                                        if (fileInput.Get(&fileValue) && fileValue.IsHolding<pxr::SdfAssetPath>())
+                                        {
+                                            const pxr::SdfAssetPath& assetPath = fileValue.Get<pxr::SdfAssetPath>();
+                                            std::string path = assetPath.GetResolvedPath();
+                                            if (!path.empty())
+                                            {
+                                                printf("Path: %s\n", path.c_str());
+
+                                                RenderBackendTextureHandle gpuTexture;
+                                                if (context->textureMap.find(path) != context->textureMap.end())
+                                                {
+                                                    gpuTexture = context->textureMap.at(path);
+                                                }
+                                                else
+                                                {
+                                                    gpuTexture = LoadTextureFromFile(renderBackend, shaderLibrary, path.c_str(), true, true, RenderBackendTextureFormat::R8G8B8A8Unorm);
+                                                    context->textureMap.emplace(path, gpuTexture);
+                                                }
+
+                                                newMaterial.textures[Material::TextureSlot::NormalMap].path = path;
+                                                newMaterial.textures[Material::TextureSlot::NormalMap].gpuTexture = gpuTexture;
+                                                newMaterial.textures[Material::TextureSlot::NormalMap].used = true;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
             pxr::UsdShadeInput metallicInput = surfaceShader.GetInput(UsdTokens::metallic);
             if (metallicInput)
             {

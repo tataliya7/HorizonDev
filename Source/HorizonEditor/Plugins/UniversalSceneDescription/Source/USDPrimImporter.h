@@ -43,6 +43,7 @@ namespace Horizon::USDImporter
         virtual void AddComponents(Scene* scene) = 0;
 
     protected:
+
         const USDImportContext* context;
         pxr::UsdPrim prim;
         USDPrimImporter* parent;

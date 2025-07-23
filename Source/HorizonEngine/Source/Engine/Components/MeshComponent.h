@@ -6,8 +6,10 @@
 
 namespace Horizon
 {
+    class Skeleton;
+
     /**
-     * MeshComponent is used to create an instance of a renderable collection of triangles.
+     * MeshComponent is used to create an instance of a renderable collection consist of triangles.
      */
     class MeshComponent
     {
@@ -31,8 +33,9 @@ namespace Horizon
         std::vector<Vector2f> texCoords;
         std::vector<VirtualGeometryVertex> vertices;
         std::vector<uint32> indices;
-        std::vector<uint32> boneIndices;
-        std::vector<float> boneWeights;
+        std::vector<int32> jointIndices;
+        std::vector<float> jointWeights;
+        std::vector<Matrix4x4f> jointTransforms;
         std::vector<GPUSceneMeshletData> meshlets;
 
         struct MeshSubset
@@ -78,14 +81,6 @@ namespace Horizon
 
         int materialBufferOffset = 0;
 
-        //RenderBackendBufferHandle transformBuffer;
-        //RenderBackendBufferHandle transformTransposeBuffer;
-        //RenderBackendBufferHandle previousTransformBuffer;
-
-        //RenderBackendBufferHandle boneIndexBuffer;
-        //RenderBackendBufferHandle boneWeightBuffer;
-        //RenderBackendBufferHandle boneTransformBuffer;
-
         //RayTracingGeometry rayTracingGeometry;
 
         int64 updateCounter = -100;
@@ -96,6 +91,8 @@ namespace Horizon
         //{
         //    return armature != EntityHandle::Null;
         //}
+
+        Skeleton* skeleton = nullptr;
 
     private:
 

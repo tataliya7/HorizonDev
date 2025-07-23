@@ -21,39 +21,27 @@ void SurfaceInit(inout Surface surface, PerFrameShaderParameters frameShaderPara
     uint index1 = indexBuffer.Load<uint>((/*geometry.baseIndex + */primitiveID * 3 + 1) * sizeof(uint));
     uint index2 = indexBuffer.Load<uint>((/*geometry.baseIndex + */primitiveID * 3 + 2) * sizeof(uint));
 
-    ByteAddressBuffer vertexBuffer0 = GetByteAddressBufferNonUniform(geometryData.vertexBuffer0);
-    float3 vertex0 = vertexBuffer0.Load<float3>(index0 * sizeof(float3));
-    float3 vertex1 = vertexBuffer0.Load<float3>(index1 * sizeof(float3));
-    float3 vertex2 = vertexBuffer0.Load<float3>(index2 * sizeof(float3));
-
-    ByteAddressBuffer vertexBuffer1 = GetByteAddressBufferNonUniform(geometryData.vertexBuffer1);
-#if 1 //FACE_VARYING
-    float3 normal0 = vertexBuffer1.Load<float3>((primitiveID * 3 + 0) * sizeof(float3));
-    float3 normal1 = vertexBuffer1.Load<float3>((primitiveID * 3 + 1) * sizeof(float3));
-    float3 normal2 = vertexBuffer1.Load<float3>((primitiveID * 3 + 2) * sizeof(float3));
-#elif 1
-    float3 normal0 = vertexBuffer1.Load<float3>(index0 * sizeof(float3));
-    float3 normal1 = vertexBuffer1.Load<float3>(index1 * sizeof(float3));
-    float3 normal2 = vertexBuffer1.Load<float3>(index2 * sizeof(float3));
-#else
     GPUSceneGeometryVertexAttributes vertexAttributes0 = GetGPUSceneGeometryVertexAttributes(geometryData, index0);
     GPUSceneGeometryVertexAttributes vertexAttributes1 = GetGPUSceneGeometryVertexAttributes(geometryData, index1);
     GPUSceneGeometryVertexAttributes vertexAttributes2 = GetGPUSceneGeometryVertexAttributes(geometryData, index2);
+
+    float3 vertex0 = vertexAttributes0.position;
+    float3 vertex1 = vertexAttributes1.position;
+    float3 vertex2 = vertexAttributes2.position;
+
     float3 normal0 = vertexAttributes0.normal;
     float3 normal1 = vertexAttributes1.normal;
     float3 normal2 = vertexAttributes2.normal;
-#endif
 
-    ByteAddressBuffer vertexBuffer2 = GetByteAddressBufferNonUniform(geometryData.vertexBuffer2);
-    float4 tangent0 = vertexBuffer2.Load<float4>(index0 * sizeof(float4));
-    float4 tangent1 = vertexBuffer2.Load<float4>(index1 * sizeof(float4));
-    float4 tangent2 = vertexBuffer2.Load<float4>(index2 * sizeof(float4));
+    float4 tangent0 = vertexAttributes0.tangent;
+    float4 tangent1 = vertexAttributes1.tangent;
+    float4 tangent2 = vertexAttributes2.tangent;
 
     float4x4 worldTransform = geometryInstanceData.localToWorldMatrix;
 
-    float3 worldPosition0 = mul(worldTransform, float4(vertex0, 1.0)).xyz;
-    float3 worldPosition1 = mul(worldTransform, float4(vertex1, 1.0)).xyz;
-    float3 worldPosition2 = mul(worldTransform, float4(vertex2, 1.0)).xyz;
+    float3 worldPosition0 = mul(worldTransform, float4(vertex0, 1.0f)).xyz;
+    float3 worldPosition1 = mul(worldTransform, float4(vertex1, 1.0f)).xyz;
+    float3 worldPosition2 = mul(worldTransform, float4(vertex2, 1.0f)).xyz;
 
     float3 worldNormal0 = normalize(mul((float3x3)worldTransform, normal0));
     float3 worldNormal1 = normalize(mul((float3x3)worldTransform, normal1));
@@ -71,34 +59,34 @@ void SurfaceInit(inout Surface surface, PerFrameShaderParameters frameShaderPara
     float3x3 tangentSpace1 = float3x3(worldTangent1, worldBitangent1, worldNormal1);
     float3x3 tangentSpace2 = float3x3(worldTangent2, worldBitangent2, worldNormal2);
 
-    const float3 sSSS = normalize(cross(worldPosition2 - worldPosition1, worldPosition1 - worldPosition0));
-
-    surface.P = barycentrics.x * worldPosition0 + barycentrics.y * worldPosition1 + barycentrics.z * worldPosition2;
-    surface.N = normalize(barycentrics.x * worldNormal0 + barycentrics.y * worldNormal1 + barycentrics.z * worldNormal2);
-    surface.V = normalize(frameShaderParameters.cameraPosition - surface.P);
-    surface.distance = length(frameShaderParameters.cameraPosition - surface.P);
-
+    float3 N = normalize(barycentrics.x * worldNormal0 + barycentrics.y * worldNormal1 + barycentrics.z * worldNormal2);
     float3 B = normalize(barycentrics.x * worldBitangent0 + barycentrics.y * worldBitangent1 + barycentrics.z * worldBitangent2);
     float3 T = normalize(barycentrics.x * worldTangent0 + barycentrics.y * worldTangent1 + barycentrics.z * worldTangent2);
-    float3x3 TBN = float3x3(T, B, surface.N);
 
+    float3x3 TBN = float3x3(T, B, N);
+
+    float3x3 tangentSpace = barycentrics.x * tangentSpace0 + barycentrics.y * tangentSpace1 + barycentrics.z * tangentSpace2;
+
+    surface.P = barycentrics.x * worldPosition0 + barycentrics.y * worldPosition1 + barycentrics.z * worldPosition2;
+    surface.N = N;
+    surface.V = normalize(frameShaderParameters.cameraPosition - surface.P);
+    surface.distance = length(frameShaderParameters.cameraPosition - surface.P);
     surface.baseColor = material.baseColor;
 
-    [branch]
-    if (geometryData.vertexBuffer3 >= 0)
+    //[branch]
+    //if (geometryData.vertexBuffer3 >= 0)
     {
-        ByteAddressBuffer vertexBuffer3 = GetByteAddressBufferNonUniform(geometryData.vertexBuffer3);
-        float2 texCoord00 = vertexBuffer3.Load<float2>((primitiveID * 3 + 0) * sizeof(float2));
-        float2 texCoord01 = vertexBuffer3.Load<float2>((primitiveID * 3 + 1) * sizeof(float2));
-        float2 texCoord02 = vertexBuffer3.Load<float2>((primitiveID * 3 + 2) * sizeof(float2));
+        float2 textureCoordinates00 = vertexAttributes0.textureCoordinates[0];
+        float2 textureCoordinates01 = vertexAttributes1.textureCoordinates[0];
+        float2 textureCoordinates02 = vertexAttributes2.textureCoordinates[0];
 
         const float materialTextureMipLodBias = frameShaderParameters.materialTextureMipLodBias;
 
-        const float2 texCoord0 = barycentrics.x * texCoord00 + barycentrics.y * texCoord01 + barycentrics.z * texCoord02;
+        const float2 texCoord0 = barycentrics.x * textureCoordinates00 + barycentrics.y * textureCoordinates01 + barycentrics.z * textureCoordinates02;
 
         const float P_a = length(cross(worldPosition1 - worldPosition0, worldPosition2 - worldPosition0));
-        const float T_a = abs((texCoord01.x - texCoord00.x) * (texCoord02.y - texCoord00.y) - (texCoord02.x - texCoord00.x) * (texCoord01.y - texCoord00.y));
-        const float baseTriangleLOD = 0.5 * log2(T_a / P_a);
+        const float T_a = abs((textureCoordinates01.x - textureCoordinates00.x) * (textureCoordinates02.y - textureCoordinates00.y) - (textureCoordinates02.x - textureCoordinates00.x) * (textureCoordinates01.y - textureCoordinates00.y));
+        const float baseTriangleLOD = 0.5f * log2(T_a / P_a);
 
         // because it generates good results and we have not seen any discrepancies in the periphery.
         const float spreadAngle = atan(2.0 * frameShaderParameters.clipToViewMatrix[1][1] / frameShaderParameters.renderHeight); // Eq. 30
@@ -107,12 +95,12 @@ void SurfaceInit(inout Surface surface, PerFrameShaderParameters frameShaderPara
 
         if (material.GetNormalMapIndex() >= 0) // In some cases, using normal mapping will result in some pixels having a normal value of NaN. Needs to be fixed!
         {
-            Texture2D normalMap = GetTexture2D(material.GetNormalMapIndex());
+            Texture2D normalMap = GetTexture2DNonUniform(material.GetNormalMapIndex());
             uint textureWidth, textureHeight;
             normalMap.GetDimensions(textureWidth, textureHeight);
             float mipLod = ComputeTextureLODRayCones(baseTriangleLOD, textureWidth, textureHeight, rayConeWidth, surface.V, surfaceNormal);
-            float3 tangentNormal = normalize(normalize(normalMap.SampleLevel(GlobalSamplerLinearWarp, texCoord0, mipLod + materialTextureMipLodBias).xyz) * 2.0 - 1.0);
-            surface.N = normalize(mul(tangentNormal, TBN));
+            float3 tangentSpaceNormal = normalize(normalize(normalMap.SampleLevel(GlobalSamplerLinearWarp, texCoord0, mipLod + materialTextureMipLodBias).xyz) * 2.0f - 1.0f);
+            //surface.N = normalize(mul(tangentSpaceNormal, TBN));
         }
 
         if (material.GetBaseColorMapIndex() >= 0)

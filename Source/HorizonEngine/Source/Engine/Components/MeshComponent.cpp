@@ -39,6 +39,10 @@ namespace Horizon
 
             vertices.resize(positions.size());
 
+            assert(positions.size() == normals.size());
+            assert(positions.size() == tangents.size());
+            assert(positions.size() == texCoords.size());
+
             for (size_t i = 0; i < vertices.size(); i++)
             {
                 vertices[i].position = positions[i];
@@ -50,62 +54,59 @@ namespace Horizon
                 vertices[i].textureCoordinates[1] = Vector2f(0, 0);
             }
 
-            VirtualGeometryBuildSettings settings;
-            VirtualGeometryBuildInput input;
-            input.vertices.position = positions;
-            input.vertices.normals = normals;
-            input.vertices.tangents = tangents;
-            input.vertices.textureCoordinates[0] = texCoords;
-            input.indices = indices;
-            input.materialIndices = materialIndices;
-            VirtualGeometryBuildOutput output;
-            bool result = BuildVirtualGeometry(settings, input, output);
-
             RenderBackendBufferDescription vertexBufferDesc = RenderBackendBufferDescription::CreateByteAddress(sizeof(VirtualGeometryVertex) * vertices.size());
             renderObject->vertexBuffer = renderBackend->CreateBuffer(&vertexBufferDesc, vertices.data(), "VertexBuffer");
 
-#if 0
-            RenderBackendBufferDesc meshletBufferDesc = RenderBackendBufferDesc::CreateByteAddress(sizeof(GPUSceneMeshletData) * meshlet_count);
-            renderObject->meshletBuffer = renderBackend->CreateBuffer(&meshletBufferDesc, m.data(), "MeshletBuffer");
+            {
+                VirtualGeometryBuildSettings settings;
+                VirtualGeometryBuildInput input;
+                input.vertices.position = positions;
+                input.vertices.normals = normals;
+                input.vertices.tangents = tangents;
+                input.vertices.textureCoordinates[0] = texCoords;
+                input.indices = indices;
+                input.materialIndices = materialIndices;
+                VirtualGeometryBuildOutput output;
+                bool result = BuildVirtualGeometry(settings, input, output);
 
-            RenderBackendBufferDesc meshletVertexBufferDesc = RenderBackendBufferDesc::CreateByteAddress(sizeof(uint32) * meshlet_vertices.size());
-            renderObject->meshletVertexBuffer = renderBackend->CreateBuffer(&meshletVertexBufferDesc, meshlet_vertices.data(), "MeshletVertexBuffer");
+                RenderBackendBufferDescription meshletBufferDesc = RenderBackendBufferDescription::CreateByteAddress(sizeof(GPUSceneMeshletData) * output.meshlets.size());
+                renderObject->meshletBuffer = renderBackend->CreateBuffer(&meshletBufferDesc, output.meshlets.data(), "MeshletBuffer");
 
-            RenderBackendBufferDesc meshletTriangleBufferDesc = RenderBackendBufferDesc::CreateByteAddress(sizeof(uint32) * meshlet_triangles_ttt.size());
-            renderObject->meshletTriangleBuffer = renderBackend->CreateBuffer(&meshletTriangleBufferDesc, meshlet_triangles_ttt.data(), "MeshletTriangleBuffer");
-#else
-            RenderBackendBufferDescription meshletBufferDesc = RenderBackendBufferDescription::CreateByteAddress(sizeof(GPUSceneMeshletData) * output.meshlets.size());
-            renderObject->meshletBuffer = renderBackend->CreateBuffer(&meshletBufferDesc, output.meshlets.data(), "MeshletBuffer");
+                assert(indexCount == output.indices.size());
+                RenderBackendBufferDescription meshletVertexBufferDesc = RenderBackendBufferDescription::CreateIndex(sizeof(uint32), static_cast<uint32>(output.indices.size()));
+                renderObject->meshletVertexBuffer = renderBackend->CreateBuffer(&meshletVertexBufferDesc, output.indices.data(), "MeshletVertexBuffer");
+                renderObject->meshletCount = static_cast<uint32>(output.meshlets.size());
 
-            assert(indexCount == output.indices.size());
-            RenderBackendBufferDescription meshletVertexBufferDesc = RenderBackendBufferDescription::CreateIndex(sizeof(uint32), static_cast<uint32>(output.indices.size()));
-            renderObject->meshletVertexBuffer = renderBackend->CreateBuffer(&meshletVertexBufferDesc, output.indices.data(), "MeshletVertexBuffer");
-            renderObject->meshletCount = static_cast<uint32>(output.meshlets.size());
+                materialIndices = output.materialIndices;
 
-            normals = output.vertices.normals;
-            texCoords = output.vertices.textureCoordinates[0];
-            materialIndices = output.materialIndices;
+                scene->meshlets = output.meshlets;
 
-            scene->meshlets = output.meshlets;
-            scene->localToWorldMatrix = localToWorldMatrix;
-#endif
+                for (auto m : scene->meshlets)
+                {
+                    if (skeleton)
+                    {
+                        m.isSkinned = 1;
+                    }
+                }
+            }
+
             // @todo Refactor this.
             {
                 RenderBackendBufferDescription vertexBuffer0Desc = RenderBackendBufferDescription::CreateByteAddress(vertexCount * sizeof(Vector3f));
                 //vertexBuffer0Desc.flags |= RenderBackendBufferCreateFlags::RayTracingAccelerationStructure; // TODO
                 renderObject->vertexBuffers[0] = renderBackend->CreateBuffer(&vertexBuffer0Desc, positions.data(), "VertexPosition");
 
-                RenderBackendBufferDescription vertexBuffer1Desc = RenderBackendBufferDescription::CreateByteAddress(normals.size() * sizeof(Vector3f));
-                renderObject->vertexBuffers[1] = renderBackend->CreateBuffer(&vertexBuffer1Desc, normals.data(), "VertexNormal");
-
-                RenderBackendBufferDescription vertexBuffer2Desc = RenderBackendBufferDescription::CreateByteAddress(tangents.size() * sizeof(Vector4f));
-                renderObject->vertexBuffers[2] = renderBackend->CreateBuffer(&vertexBuffer2Desc, tangents.data(), "VertexTangent");
-
-                if (!texCoords.empty())
-                {
-                    RenderBackendBufferDescription vertexBuffer3Desc = RenderBackendBufferDescription::CreateByteAddress(texCoords.size() * sizeof(Vector2f));
-                    renderObject->vertexBuffers[3] = renderBackend->CreateBuffer(&vertexBuffer3Desc, texCoords.data(), "VertexTextureCoord0");
-                }
+                // RenderBackendBufferDescription vertexBuffer1Desc = RenderBackendBufferDescription::CreateByteAddress(normals.size() * sizeof(Vector3f));
+                // renderObject->vertexBuffers[1] = renderBackend->CreateBuffer(&vertexBuffer1Desc, normals.data(), "VertexNormal");
+                //
+                // RenderBackendBufferDescription vertexBuffer2Desc = RenderBackendBufferDescription::CreateByteAddress(tangents.size() * sizeof(Vector4f));
+                // renderObject->vertexBuffers[2] = renderBackend->CreateBuffer(&vertexBuffer2Desc, tangents.data(), "VertexTangent");
+                //
+                // if (!texCoords.empty())
+                // {
+                //     RenderBackendBufferDescription vertexBuffer3Desc = RenderBackendBufferDescription::CreateByteAddress(texCoords.size() * sizeof(Vector2f));
+                //     renderObject->vertexBuffers[3] = renderBackend->CreateBuffer(&vertexBuffer3Desc, texCoords.data(), "VertexTextureCoord0");
+                // }
 
                 if (indexCount > 0)
                 {
@@ -149,6 +150,18 @@ namespace Horizon
 
                 RenderBackendBufferDescription materialIndexBufferDesc = RenderBackendBufferDescription::CreateByteAddress((indexCount / 3) * sizeof(uint32));
                 renderObject->materialIndexBuffer = renderBackend->CreateBuffer(&materialIndexBufferDesc, materialIndices.data(), "MaterialIndexBuffer");
+            }
+
+            if (skeleton)
+            {
+                RenderBackendBufferDescription jointIndexBufferDesc = RenderBackendBufferDescription::CreateByteAddress(jointIndices.size() * sizeof(int32));
+                renderObject->jointIndexBuffer = renderBackend->CreateBuffer(&jointIndexBufferDesc, jointIndices.data(), "jointIndexBuffer");
+
+                RenderBackendBufferDescription jointWeightBufferDesc = RenderBackendBufferDescription::CreateByteAddress(jointWeights.size() * sizeof(float));
+                renderObject->jointWeightBuffer = renderBackend->CreateBuffer(&jointWeightBufferDesc, jointWeights.data(), "jointWeightBuffer");
+
+                RenderBackendBufferDescription jointTransformBufferDesc = RenderBackendBufferDescription::CreateByteAddress(jointTransforms.size() * sizeof(Matrix4x4f));
+                renderObject->jointTransformBuffer = renderBackend->CreateBuffer(&jointTransformBufferDesc, jointTransforms.data(), "jointTransformBuffer");
             }
 
             scene->AddMesh(renderObject);

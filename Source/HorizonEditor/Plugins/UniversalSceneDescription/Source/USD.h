@@ -11,6 +11,7 @@ extern "C"
         bool importMeshes;
         bool importMaterials;
         bool importSkeletons;
+        bool importAnimations;
     };
 
     struct USDExportSettings

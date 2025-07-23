@@ -1,9 +1,9 @@
 #pragma once
 
 #include "RendererCommon.h"
+#include "RendererPrivate.h" // TODO
 #include "RenderStatistics.h"
 #include "ShaderCollection.h"
-#include "RendererPrivate.h" // TODO
 #include "RayTracing/RayTracingScene.h"
 
 namespace Horizon
@@ -118,6 +118,10 @@ namespace Horizon
         RenderBackendBufferHandle meshletTriangleBuffer;
         RenderBackendBufferHandle materialBuffer;
         RenderBackendBufferHandle materialIndexBuffer;
+
+        RenderBackendBufferHandle jointIndexBuffer;
+        RenderBackendBufferHandle jointWeightBuffer;
+        RenderBackendBufferHandle jointTransformBuffer;
 
         std::string name;
 
@@ -400,6 +404,9 @@ namespace Horizon
         int meshletTriangleBuffer;
         int materialBuffer;
         int materialIndexBuffer;
+        int jointIndexBuffer;
+        int jointWeightBuffer;
+        int jointTransformBuffer;
         uint32 vertexCount;
         uint32 indexCount;
         uint32 meshletCount;
@@ -423,7 +430,7 @@ namespace Horizon
         Vector3f boundingBoxCenter;
         float padding0;
         Vector3f boundingBoxExtent;
-        float padding1;
+        int isSkinned;
     };
 
     static constexpr uint32 VirtualGeometryVertexMaximumTextureCoordinateCount = 2;

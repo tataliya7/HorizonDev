@@ -2,9 +2,7 @@
 
 #include "USDIncludeBegin.h"
 #include <pxr/usd/usdSkel/skeletonQuery.h>
-#include <pxr/usd/usdSkel/animation.h>
 #include <pxr/usd/usdSkel/bindingAPI.h>
-#include <pxr/usd/usdSkel/blendShape.h>
 #include <pxr/usd/usdSkel/cache.h>
 #include <pxr/usd/usdSkel/utils.h>
 #include "USDIncludeEnd.h"
@@ -32,9 +30,8 @@ namespace Horizon::USDImporter
             return nullptr;
         }
 
-        const pxr::UsdSkelTopology skelTopology = usdSkelSkeletonQuery.GetTopology();
-
         pxr::VtTokenArray jointOrder = usdSkelSkeletonQuery.GetJointOrder();
+        const pxr::UsdSkelTopology skelTopology = usdSkelSkeletonQuery.GetTopology();
 
         if (jointOrder.size() != skelTopology.size())
         {
@@ -47,128 +44,82 @@ namespace Horizon::USDImporter
             return nullptr;
         }
 
+        const std::string& skeletonName = usdSkelSkeleton.GetPrim().GetName().GetString();
+
+        Skeleton* skeleton = new Skeleton();
+        skeleton->SetName(skeletonName);
+        skeleton->joints.clear();
+        skeleton->joints.resize(numJoints);
+
+        if (numJoints == 0)
+        {
+            return nullptr;
+        }
+
         pxr::VtMatrix4dArray jointWorldBindTransforms;
         if (!usdSkelSkeletonQuery.GetJointWorldBindTransforms(&jointWorldBindTransforms))
         {
             return nullptr;
         }
 
-        if (jointWorldBindTransforms.size() != numJoints)
+        if (numJoints != jointWorldBindTransforms.size())
         {
             return nullptr;
         }
 
-        const std::string& skeletonName = usdSkelSkeleton.GetPrim().GetName().GetString();
-
-        Skeleton* skeleton = new Skeleton();
-        skeleton->SetName(skeletonName);
-
         for (size_t i = 0; i < numJoints; i++)
         {
+		    pxr::SdfPath jointPath(jointOrder[i]);
             pxr::GfMatrix4f bindTransform(jointWorldBindTransforms[i]);
-            //skeleton.bindTransform = UsdToHorizon::ConvertMatrix(bindTransform);
-        }
-
-        for (size_t i = 0; i < numJoints; i++)
-        {
             const int parentIndex = skelTopology.GetParent(i);
 
-            //if (parentIndex >= numJoints)
-            //{
-            //    assert(false);
-            //}
+            Joint& joint = skeleton->joints[i];
+            joint.name = jointPath.GetName();
+            joint.parentIndex = parentIndex;
+            joint.bindTransform = UsdToHorizon::ConvertMatrix(bindTransform);
+        }
+
+        const pxr::UsdSkelAnimQuery& usdSkelAnimQuery = usdSkelSkeletonQuery.GetAnimQuery();
+
+        if (!usdSkelAnimQuery)
+        {
+            return nullptr;
+        }
+
+        std::vector<double> jointTransformTimeSamples;
+        usdSkelAnimQuery.GetJointTransformTimeSamples(&jointTransformTimeSamples);
+
+        if (jointTransformTimeSamples.empty())
+        {
+            return nullptr;
+        }
+
+        const size_t numJointTransformTimeSamples = jointTransformTimeSamples.size();
+
+        //pxr::VtTokenArray jointOrder = usdSkelAnimQuery.GetJointOrder();
+
+        pxr::VtMatrix4dArray usdJointLocalTransforms;
+        for (double time : jointTransformTimeSamples)
+        {
+            if (!usdSkelAnimQuery.ComputeJointLocalTransforms(&usdJointLocalTransforms, time))
+            {
+                continue;
+            }
+
+            for (size_t jointIndex = 0; jointIndex < usdJointLocalTransforms.size(); jointIndex++)
+            {
+                pxr::GfMatrix4d localTransform = usdJointLocalTransforms[jointIndex];
+
+                pxr::GfVec3f translation; pxr::GfQuatf rotation; pxr::GfVec3h scale;
+                if (!pxr::UsdSkelDecomposeTransform(localTransform, &translation, &rotation, &scale))
+                {
+                    continue;
+                }
 
 
+            }
         }
 
         return skeleton;
-#if 0
-        if (prim.IsInstanceProxy())
-        {
-            return;
-        }
-
-        pxr::UsdSkelBindingAPI skelBindingApi = pxr::UsdSkelBindingAPI::Apply(prim);
-        if (!skelBindingApi)
-        {
-            return;
-        }
-
-        pxr::UsdSkelSkeleton skelSkeleton = skelBindingApi.GetInheritedSkeleton();
-        if (!skelSkeleton)
-        {
-            return;
-        }
-
-        pxr::VtArray<pxr::TfToken> joints;
-        if (skelBindingApi.GetJointsAttr().HasAuthoredValue())
-        {
-            skelBindingApi.GetJointsAttr().Get(&joints);
-        }
-        else if (skelSkeleton.GetJointsAttr().HasAuthoredValue())
-        {
-            skelSkeleton.GetJointsAttr().Get(&joints);
-        }
-
-        if (joints.empty())
-        {
-            return;
-        }
-
-        pxr::UsdGeomPrimvar jointIndicesPrimvar = skelBindingApi.GetJointIndicesPrimvar();
-        if (!(jointIndicesPrimvar && jointIndicesPrimvar.HasAuthoredValue()))
-        {
-            return;
-        }
-
-        pxr::UsdGeomPrimvar jointWeightsPrimvar = skelBindingApi.GetJointWeightsPrimvar();
-        if (!(jointWeightsPrimvar && jointWeightsPrimvar.HasAuthoredValue()))
-        {
-            return;
-        }
-
-        int jointIndicesElementSize = jointIndicesPrimvar.GetElementSize();
-        int jointWeightsElementSize = jointWeightsPrimvar.GetElementSize();
-
-        if (jointIndicesElementSize != jointWeightsElementSize)
-        {
-            //WM_reportf(RPT_WARNING, "%s: Joint weights and joint indices element size mismatch for prim %s", __func__, prim.GetPath().GetAsString().c_str());
-            return;
-        }
-
-        pxr::VtIntArray joint_indices;
-        joint_indices_primvar.ComputeFlattened(&joint_indices);
-
-        pxr::VtFloatArray joint_weights;
-        joint_weights_primvar.ComputeFlattened(&joint_weights);
-
-        if (joint_indices.empty() || joint_weights.empty())
-        {
-            return;
-        }
-
-        if (joint_indices.size() != joint_weights.size())
-        {
-            return;
-        }
-
-
-        // const pxr::TfToken interpolation = jointWeightsPrimvar.GetInterpolation();
-        // if (interpolation != pxr::UsdGeomTokens->constant)
-        // {
-        //
-        // }
-
-        for (uint32 vertexIndex = 0; vertexIndex < ; vertexIndex++)
-        {
-            for (uint32 j = 0; j < jointIndicesElementSize; j++)
-            {
-                const uint32 jointIndex = ;
-                const float jointWeight = ;
-
-                mesh->SetJointForVertex();
-            }
-        }
-#endif
     }
 }

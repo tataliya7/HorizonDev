@@ -4,7 +4,6 @@ namespace Horizon
 {
     Skeleton::Skeleton()
         : name("Unnamed")
-        , jointCount(0)
     {
 
     }
@@ -13,4 +12,134 @@ namespace Horizon
     {
 
     }
+
+	SkeletonAnimation::SkeletonAnimation()
+		: mFrameCounter(0)
+		, mSpeed(1.0f)
+		, mCurrentTime(0)
+		, mTimeLengthInSeconds(0)
+		, mTargetSkeleton(nullptr)
+	{
+
+	}
+
+	SkeletonAnimation::~SkeletonAnimation()
+	{
+
+	}
+
+	void SkeletonAnimation::SamplePose(Pose& outPose)
+	{
+		// TODO
+		{
+			static auto startTime = std::chrono::high_resolution_clock::now();
+
+			auto currentTime = std::chrono::high_resolution_clock::now();
+
+			float time = static_cast<float>(std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - startTime).count()) / 1000.0f;
+
+			mCurrentTime = time;
+
+			if (mCurrentTime >= mTimeLengthInSeconds)
+			{
+				mCurrentTime = 0;
+				startTime = currentTime;
+			}
+		}
+
+		const uint32 boneCount = (uint32)mTargetSkeleton->joints.size();
+		assert(boneCount == (uint32)mBoneMotions.size());
+
+		outPose.transformData.resize(boneCount);
+
+		for (uint32 boneIndex = 0; boneIndex < boneCount; boneIndex++)
+		{
+			auto& transformData = outPose.transformData[boneIndex];
+
+			const Joint& joint = mTargetSkeleton->joints[boneIndex];
+			assert(joint.parentIndex < (int)boneIndex);
+
+			Sample_Internal(boneIndex, mCurrentTime, transformData.translation, transformData.rotation, transformData.scale);
+			transformData.localTransform = glm::translate(glm::mat4(1), transformData.translation) * glm::mat4(transformData.rotation) * glm::scale(glm::mat4(1.0f), transformData.scale);
+
+			if (joint.parentIndex != -1)
+			{
+				const auto& parentBone = outPose.transformData[joint.parentIndex];
+				transformData.derivedLocalTransform = parentBone.derivedLocalTransform * transformData.localTransform;
+			}
+			else
+			{
+				transformData.derivedLocalTransform = transformData.localTransform;
+			}
+
+			transformData.localToWorldMatrix = transformData.derivedLocalTransform * joint.bindTransform;
+		}
+	}
+
+	void SkeletonAnimation::Sample_Internal(uint32 boneIndex, float time, Vector3f& outTranslation, Quaternion& outRotaion, Vector3f& outScale)
+	{
+		SampleTranslation_Internal(mBoneMotions[boneIndex].translationTrackIndex, time, outTranslation);
+		SampleRotation_Internal(mBoneMotions[boneIndex].rotationTrackIndex, time, outRotaion);
+		SampleScale_Internal(mBoneMotions[boneIndex].scaleTrackIndex, time, outScale);
+	}
+
+	void SkeletonAnimation::SampleTranslation_Internal(uint32 translationTrackIndex, float time, Vector3f& outTranslation)
+	{
+		auto& translationTrack = mTranslationTracks[translationTrackIndex];
+		if (time > translationTrack.times.back())
+		{
+			//outTranslation = translationTrack.translations.back();
+			//outTranslation = Vector3(0, 0, 0);
+			return;
+		}
+		for (uint64 i = 0; i < translationTrack.times.size(); i++)
+		{
+			if (time >= translationTrack.times[i] && time <= translationTrack.times[i+1])
+			{
+				float ratio = (time - translationTrack.times[i]) / (translationTrack.times[i + 1] - translationTrack.times[i]);
+				outTranslation = glm::mix(translationTrack.translations[i], translationTrack.translations[i + 1], ratio);
+				return;
+			}
+		}
+	}
+
+	void SkeletonAnimation::SampleRotation_Internal(uint32 rotationTrackIndex, float time, Quaternion& outRotaion)
+	{
+		auto& rotationTrack = mRotationTracks[rotationTrackIndex];
+		if (time > rotationTrack.times.back())
+		{
+			//outRotaion = rotationTrack.rotations.back();
+			//outRotaion = Quaternion(1, 0, 0, 0);
+			return;
+		}
+		for (uint64 i = 0; i < rotationTrack.times.size(); i++)
+		{
+			if (time >= rotationTrack.times[i] && time <= rotationTrack.times[i + 1])
+			{
+				float ratio = (time - rotationTrack.times[i]) / (rotationTrack.times[i + 1] -  rotationTrack.times[i]);
+				outRotaion = glm::normalize(glm::lerp(rotationTrack.rotations[i], rotationTrack.rotations[i + 1], ratio));
+				return;
+			}
+		}
+	}
+
+	void SkeletonAnimation::SampleScale_Internal(uint32 scaleTrackIndex, float time, Vector3f& outScale)
+	{
+		auto& scaleTrack = mScaleTracks[scaleTrackIndex];
+		if (time > scaleTrack.times.back())
+		{
+			//outScale = scaleTrack.scales.back();
+			//outScale = Vector3(1, 1, 1);
+			return;
+		}
+		for (uint64 i = 0; i < scaleTrack.times.size(); i++)
+		{
+			if (time >= scaleTrack.times[i] && time <= scaleTrack.times[i + 1])
+			{
+				float ratio = (time - scaleTrack.times[i]) / (scaleTrack.times[i+1] - scaleTrack.times[i]);
+				outScale = glm::mix(scaleTrack.scales[i], scaleTrack.scales[i + 1], ratio);
+				return;
+			}
+		}
+	}
 }

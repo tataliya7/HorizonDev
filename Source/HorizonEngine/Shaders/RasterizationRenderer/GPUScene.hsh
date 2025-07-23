@@ -17,6 +17,9 @@ struct GPUSceneGeometryData
     int meshletTriangleBuffer;
     int materialBuffer;
     int materialIndexBuffer;
+    int jointIndexBuffer;
+    int jointWeightBuffer;
+    int jointTransformBuffer;
     uint vertexCount;
     uint indexCount;
     uint meshletCount;
@@ -91,6 +94,36 @@ GPUSceneGeometryVertexAttributes GetGPUSceneGeometryVertexAttributes(GPUSceneGeo
 
     GPUSceneGeometryVertexAttributes vertexAttributes = (GPUSceneGeometryVertexAttributes)0;
     vertexAttributes = vertexBuffer.Load<GPUSceneGeometryVertexAttributes>(vertexIndex * sizeof(GPUSceneGeometryVertexAttributes));
+
+    [branch]
+    if (geometryData.jointIndexBuffer >= 0)
+    {
+        ByteAddressBuffer jointIndexBuffer = GetByteAddressBufferNonUniform(geometryData.jointIndexBuffer);
+        ByteAddressBuffer jointWeightBuffer = GetByteAddressBufferNonUniform(geometryData.jointWeightBuffer);
+        ByteAddressBuffer jointTransformBuffer = GetByteAddressBufferNonUniform(geometryData.jointTransformBuffer);
+
+        float3 skinnedPosition = float3(0.0f, 0.0f, 0.0f);
+        float3 skinnedNormal = float3(0.0f, 0.0f, 0.0f);
+        float3 skinnedTangent = float3(0.0f, 0.0f, 0.0f);
+
+        for (uint i = 0; i < 6; i++)
+        {
+            int jointIndex = jointIndexBuffer.Load<int>((vertexIndex * 6 + i) * sizeof(int));
+            if (jointIndex >= 0)
+            {
+                float jointWeight = jointWeightBuffer.Load<float>((vertexIndex * 6 + i) * sizeof(float));
+                float4x4 jointTransform = jointTransformBuffer.Load<float4x4>(jointIndex * sizeof(float4x4));
+                skinnedPosition += mul(jointTransform, float4(vertexAttributes.position, 1.0f)).xyz * jointWeight;
+                skinnedNormal += mul((float3x3)jointTransform, vertexAttributes.normal) * jointWeight;
+                skinnedTangent += mul((float3x3)jointTransform, vertexAttributes.tangent.xyz) * jointWeight;
+            }
+        }
+
+        vertexAttributes.position = skinnedPosition;
+        vertexAttributes.normal = skinnedNormal;
+        vertexAttributes.tangent.xyz = skinnedTangent;
+    }
+
     return vertexAttributes;
 }
 
@@ -103,7 +136,7 @@ struct GPUSceneMeshletData
     float3 boundingBoxCenter;
     float padding0;
     float3 boundingBoxExtent;
-    float padding1;
+    int isSkinned;
 };
 
 GPUSceneMeshletData GetGPUSceneMeshletData(GPUSceneGeometryData geometryData, uint meshletID)

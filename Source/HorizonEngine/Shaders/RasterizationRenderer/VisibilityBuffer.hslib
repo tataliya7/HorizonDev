@@ -32,8 +32,8 @@ void VisibilityBufferVS(
     ByteAddressBuffer geometryInstanceDataBuffer = ShaderConstants.GetGeometryInstanceDataBufferSRV();
     ByteAddressBuffer visibleMeshletEntryBuffer = ShaderConstants.GetVisibleMeshletEntryBufferSRV();
 
-	uint triangleIndexInCurrentMeshlet = vertexIndexInCurrentMeshlet / 3;
-	uint vertexIndexInCurrentTriangle = vertexIndexInCurrentMeshlet - triangleIndexInCurrentMeshlet * 3;
+    uint triangleIndexInCurrentMeshlet = vertexIndexInCurrentMeshlet / 3;
+    uint vertexIndexInCurrentTriangle = vertexIndexInCurrentMeshlet - triangleIndexInCurrentMeshlet * 3;
 
     VisibleMeshletEntry visibleMeshletEntry = GetVisibleMeshletEntry(visibleMeshletEntryBuffer, visibleMeshletIndex);
 
@@ -58,7 +58,7 @@ void VisibilityBufferVS(
 
         output.packedPrimitiveID = PackVisiblePrimitiveID(visibleMeshletIndex, triangleIndexInCurrentMeshlet);
 #if !ENABLE_BARYCENTRICS_SEMANTIC_SYSTEM_VALUE_SUPPORT
-		output.barycentrics = float2(vertexIndexInCurrentTriangle == 0, vertexIndexInCurrentTriangle == 1);
+        output.barycentrics = float2(vertexIndexInCurrentTriangle == 0, vertexIndexInCurrentTriangle == 1);
 #endif
         output.position = clipSpaceVertexPosition;
     }
