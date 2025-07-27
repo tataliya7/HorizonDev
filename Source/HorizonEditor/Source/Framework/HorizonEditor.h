@@ -13,7 +13,7 @@ struct ImGuiContext;
 
 namespace Horizon
 {
-    //class FileBrowserWindow;
+    class AssetBrowserWindow;
     //class SceneViewportWindow;
 
     //struct ImNodesEditorContext;
@@ -102,6 +102,7 @@ namespace Horizon
 
         void SetColorTheme(HorizonEditorColorTheme theme) const;
 
+        void DrawMenuBar();
         void DrawSceneViewWindow();
 
         //void OnUpdate(float deltaTime);
@@ -176,7 +177,7 @@ namespace Horizon
         //RenderBackendTextureHandle pauseButtonIcon;
 
         //SceneViewportWindow* sceneViewportWindow = nullptr;
-        //FileBrowserWindow* fileBrowserWindow = nullptr;
+        AssetBrowserWindow* fileBrowserWindow = nullptr;
 
         //enum class SceneViewportState
         //{
@@ -193,7 +194,7 @@ namespace Horizon
             return editorSceneManager;
         }
 
-    private:
+    //private:
 
         void InitializeImGuiContext();
 
@@ -267,7 +268,8 @@ namespace Horizon
         Point2D currentMousePosition;
         RasterizationRenderer* renderer;
         RasterizationRenderer* previewRenderer;
-        RenderGraphPersistentTexture* targetTexture;
+        RenderGraphPersistentTexture* targetTexture = nullptr;
+        RenderGraphPersistentTexture* displayTexture = nullptr;
 
         uint32 previewTextureWidth = 512;
         uint32 previewTextureHeight = 512;

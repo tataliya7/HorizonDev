@@ -20,7 +20,7 @@ namespace Horizon
         }
     }
 
-    enum class FileBrowserActionFlags
+    enum class AssetBrowserActionFlags
     {
         None = 0,
         Refresh = 1 << 0,
@@ -37,66 +37,66 @@ namespace Horizon
         OpenExternally = 1 << 11,
         Reload = 1 << 12,
     };
-    HORIZON_ENUM_CLASS_OPERATORS(FileBrowserActionFlags);
+    HORIZON_OVERLOAD_ENUM_CLASS_OPERATORS(AssetBrowserActionFlags);
 
-    enum class FileBrowserItemType
+    enum class AssetBrowserItemType
     {
         Directory,
         File,
     };
 
     #define MAX_INPUT_BUFFER_LENGTH 128
-    class FileBrowserItem
+    class AssetBrowserItem
     {
     public:
-        FileBrowserItem(const std::string& name, const std::filesystem::path& path, FileBrowserItemType type, RenderBackendTextureHandle icon)
+        AssetBrowserItem(const std::string& name, const std::filesystem::path& path, AssetBrowserItemType type, RenderBackendTextureHandle icon)
             : name(name), path(path), type(type), icon(icon) {}
-        virtual ~FileBrowserItem() {}
+        virtual ~AssetBrowserItem() {}
         bool IsSelected() const { return isSelected; }
-        FileBrowserItemType GetType() const { return type; }
+        AssetBrowserItemType GetType() const { return type; }
         const std::string& GetName() const { return name; }
         RenderBackendTextureHandle GetIcon() const { return icon; }
         std::filesystem::path GetPath() const { return path; }
     private:
-        friend class FileBrowserWindow;
+        friend class AssetBrowserWindow;
         virtual void RenderCustomContextItems() {}
     protected:
         std::string name;
         std::filesystem::path path;
-        FileBrowserItemType type;
+        AssetBrowserItemType type;
         RenderBackendTextureHandle icon;
         bool isSelected = false;
         bool isRenaming = false;
         bool isDragging = false;
     };
 
-    class FileBrowserDirectory : public FileBrowserItem
+    class AssetBrowserDirectory : public AssetBrowserItem
     {
     public:
-        FileBrowserDirectory(std::filesystem::path path, FileBrowserDirectory* parent, RenderBackendTextureHandle icon)
-            : FileBrowserItem(path.filename().string(), path, FileBrowserItemType::Directory, icon), parent(parent) {}
-        ~FileBrowserDirectory() {}
+        AssetBrowserDirectory(std::filesystem::path path, AssetBrowserDirectory* parent, RenderBackendTextureHandle icon)
+            : AssetBrowserItem(path.filename().string(), path, AssetBrowserItemType::Directory, icon), parent(parent) {}
+        ~AssetBrowserDirectory() {}
     private:
-        friend class FileBrowserWindow;
-        FileBrowserDirectory* parent;
+        friend class AssetBrowserWindow;
+        AssetBrowserDirectory* parent;
         std::vector<std::filesystem::path> assets;
-        std::unordered_map<std::string, FileBrowserDirectory*> subdirectories;
+        std::unordered_map<std::string, AssetBrowserDirectory*> subdirectories;
     };
 
-    class FileBrowserAsset : public FileBrowserItem
+    class AssetBrowserAsset : public AssetBrowserItem
     {
     public:
-        FileBrowserAsset(std::filesystem::path path, RenderBackendTextureHandle icon)
-            : FileBrowserItem(path.stem().string(), path, FileBrowserItemType::File, icon) {}
-        ~FileBrowserAsset() {}
+        AssetBrowserAsset(std::filesystem::path path, RenderBackendTextureHandle icon)
+            : AssetBrowserItem(path.stem().string(), path, AssetBrowserItemType::File, icon) {}
+        ~AssetBrowserAsset() {}
     private:
-        friend class FileBrowserWindow;
+        friend class AssetBrowserWindow;
     };
 
-    class FileBrowserSelectionStack
+    class AssetBrowserSelectionStack
     {
     public:
-        void CopyFrom(const FileBrowserSelectionStack& other)
+        void CopyFrom(const AssetBrowserSelectionStack& other)
         {
             items.assign(other.begin(), other.end());
         }
@@ -149,25 +149,25 @@ namespace Horizon
         std::vector<std::filesystem::path> items;
     };
 
-    struct FileBrowserItemList
+    struct AssetBrowserItemList
     {
         static const uint32 InvalidIndex = std::numeric_limits<uint32>::max();
-        std::vector<FileBrowserItem> items;
-        std::vector<FileBrowserItem>::iterator begin() { return items.begin(); }
-        std::vector<FileBrowserItem>::iterator end() { return items.end(); }
-        std::vector<FileBrowserItem>::const_iterator begin() const { return items.begin(); }
-        std::vector<FileBrowserItem>::const_iterator end() const { return items.end(); }
-        FileBrowserItem& operator[](uint32 index) { return items[index]; }
-        const FileBrowserItem& operator[](uint32 index) const { return items[index]; }
+        std::vector<AssetBrowserItem> items;
+        std::vector<AssetBrowserItem>::iterator begin() { return items.begin(); }
+        std::vector<AssetBrowserItem>::iterator end() { return items.end(); }
+        std::vector<AssetBrowserItem>::const_iterator begin() const { return items.begin(); }
+        std::vector<AssetBrowserItem>::const_iterator end() const { return items.end(); }
+        AssetBrowserItem& operator[](uint32 index) { return items[index]; }
+        const AssetBrowserItem& operator[](uint32 index) const { return items[index]; }
         void Clear()
         {
             items.clear();
         }
-        FileBrowserItem& Add(FileBrowserDirectory item)
+        AssetBrowserItem& Add(AssetBrowserDirectory item)
         {
             return items.emplace_back(item);
         }
-        FileBrowserItem& Add(FileBrowserAsset item)
+        AssetBrowserItem& Add(AssetBrowserAsset item)
         {
             return items.emplace_back(item);
         }
@@ -193,14 +193,14 @@ namespace Horizon
         }
     };
 
-    class FileBrowserWindow
+    class AssetBrowserWindow
     {
     public:
-        FileBrowserWindow(HorizonEditor* editor, AssetManager* assetManager);
-        ~FileBrowserWindow();
-        void UpdateDropArea(FileBrowserDirectory* directory);
-        void ChangeDirectory(FileBrowserDirectory* directory);
-        void RenderDirectoryHierarchy(FileBrowserDirectory* directory);
+        AssetBrowserWindow(HorizonEditor* editor);
+        ~AssetBrowserWindow();
+        void UpdateDropArea(AssetBrowserDirectory* directory);
+        void ChangeDirectory(AssetBrowserDirectory* directory);
+        void RenderDirectoryHierarchy(AssetBrowserDirectory* directory);
         void RenderTopBar();
         void RenderItems();
         void RenderBottomBar();
@@ -209,31 +209,36 @@ namespace Horizon
         void UpdateInput();
         void RenameSelectedItems();
         void DeleteSelectedItems();
-        void StartRenamingItem(FileBrowserItem* item);
-        void SelectItem(FileBrowserItem* item);
-        void DeselectItem(FileBrowserItem* item);
+        void StartRenamingItem(AssetBrowserItem* item);
+        void SelectItem(AssetBrowserItem* item);
+        void DeselectItem(AssetBrowserItem* item);
         void ClearSelections();
         void SortItemList();
-        FileBrowserItemList Search(const std::string& content, FileBrowserDirectory* directory);
+        AssetBrowserItemList Search(const std::string& content, AssetBrowserDirectory* directory);
     private:
-        FileBrowserDirectory* GetDirectory(const std::filesystem::path& path) const;
-        const std::filesystem::path& ProcessDirectory(const std::filesystem::path& path, FileBrowserDirectory* parent);
+        AssetBrowserDirectory* GetDirectory(const std::filesystem::path& path) const;
+        const std::filesystem::path& ProcessDirectory(const std::filesystem::path& path, AssetBrowserDirectory* parent);
         HorizonEditor* editor;
-        AssetManager* assetManager;
         std::mutex lockMutex;
         bool isHovered;
         bool isFocused;
         bool isAnyItemHovered;
-        FileBrowserItemList currentItems;
-        FileBrowserSelectionStack selectedItems;
-        FileBrowserSelectionStack copiedAssets;
-        FileBrowserDirectory* baseDirectory;
-        FileBrowserDirectory* previousDirectory;
-        FileBrowserDirectory* currentDirectory;
-        FileBrowserDirectory* nextDirectory;
+        AssetBrowserItemList currentItems;
+        AssetBrowserSelectionStack selectedItems;
+        AssetBrowserSelectionStack copiedAssets;
+        AssetBrowserDirectory* baseDirectory;
+        AssetBrowserDirectory* previousDirectory;
+        AssetBrowserDirectory* currentDirectory;
+        AssetBrowserDirectory* nextDirectory;
         bool m_UpdateNavigationPath = false;
-        std::vector<FileBrowserDirectory*> m_BreadCrumbData;
-        std::unordered_map<std::string, FileBrowserDirectory*> directories;
+        std::vector<AssetBrowserDirectory*> m_BreadCrumbData;
+        std::unordered_map<std::string, AssetBrowserDirectory*> directories;
+
+        RenderBackendTextureHandle fileIcon;
+        RenderBackendTextureHandle directoryIcon;
+        RenderBackendTextureHandle backwardButtonIcon;
+        RenderBackendTextureHandle forwardButtonIcon;
+        RenderBackendTextureHandle refreshButtonIcon;
 
         std::map<std::string, RenderBackendTextureHandle> iconMap;
         float thumbnailSize = 156.0f;

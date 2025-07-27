@@ -146,6 +146,8 @@ namespace Horizon
 
         uint32 displayHeight;
 
+        RenderGraphPersistentTexture* displayTexture;
+
         RenderBackendSwapChainHandle swapChain;
 
         Vector2u cursorPosition;
@@ -388,6 +390,8 @@ namespace Horizon
         uint32 displayWidth;
 
         uint32 displayHeight;
+
+        RenderGraphPersistentTexture* displayTexture;
 
         RenderBackendSwapChainHandle swapChain;
 

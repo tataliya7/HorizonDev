@@ -384,8 +384,6 @@ namespace Horizon
             RenderGraphPassFlags::Graphics | RenderGraphPassFlags::SkipRenderPass,
             [&](RenderGraphBuilder& builder)
             {
-                uiColorAndAlphaTexture = builder.WriteTexture(uiColorAndAlphaTexture, RenderBackendResourceState::RenderTarget);
-
                 builder.SetRenderTargetBinding(0, uiColorAndAlphaTexture, RenderBackendRenderPassLoadOperation::Clear, RenderBackendRenderPassStoreOperation::Store);
 
                 return [=](RenderBackendCommandList& commandList, const RenderGraphResourceRegistry& resourceRegistry)
@@ -394,17 +392,20 @@ namespace Horizon
                 };
             });
 
-        RenderGraphTextureHandle displayTexture = renderGraph.ImportExternalTexture(view.targetTexture, "TargetTexture");
+        RenderGraphTextureHandle displayTexture = renderGraph.ImportExternalTexture(view.displayTexture, "DisplayTexture");
+        bool offscreen = view.displayTexture != view.targetTexture;
 
         renderGraph.AddPass(
             std::format("GUIComposition (Graphics, {}x{})", view.displayWidth, view.displayHeight),
             RenderGraphPassFlags::Graphics,
             [&](RenderGraphBuilder& builder)
             {
-                uiColorAndAlphaTexture = builder.ReadTexture(uiColorAndAlphaTexture, RenderBackendResourceState::ShaderResource);
-                displayTexture = builder.WriteTexture(displayTexture, RenderBackendResourceState::RenderTarget);
+                builder.SetBindlessResourceSRV(0, uiColorAndAlphaTexture);
 
-                builder.SetRenderTargetBinding(0, displayTexture, RenderBackendRenderPassLoadOperation::Load, RenderBackendRenderPassStoreOperation::Store);
+                builder.SetRenderTargetBinding(0, displayTexture, offscreen ? RenderBackendRenderPassLoadOperation::Clear : RenderBackendRenderPassLoadOperation::Load, RenderBackendRenderPassStoreOperation::Store);
+
+                RenderBackendShaderHandle vertexShader = shaderLibrary->GetShader(ShaderID::DrawFullscreenQuadVS);
+                RenderBackendShaderHandle pixelShader = shaderLibrary->GetShader(ShaderID::GUICompositionPS);
 
                 return [=](RenderBackendCommandList& commandList, const RenderGraphResourceRegistry& resourceRegistry)
                 {
@@ -427,11 +428,7 @@ namespace Horizon
                     graphicsPipelineState.colorBlendState.targetBlends[0].alphaBlendOp = RenderBackendBlendOp::Add;
                     graphicsPipelineState.colorBlendState.targetBlends[0].writeMask = RenderBackendColorComponentFlags::RGBA;
 
-                    RenderBackendPushConstantValues pushConstantValues = {};
-                    pushConstantValues.BindTextureSRV(0, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(uiColorAndAlphaTexture));
-
-                    RenderBackendShaderHandle vertexShader = shaderLibrary->GetShader(ShaderID::DrawFullscreenQuadVS);
-                    RenderBackendShaderHandle pixelShader = shaderLibrary->GetShader(ShaderID::GUICompositionPS);
+                    RenderBackendPushConstantValues pushConstantValues = resourceRegistry.GetPushConstantValues();
 
                     commandList.Draw(
                         vertexShader,

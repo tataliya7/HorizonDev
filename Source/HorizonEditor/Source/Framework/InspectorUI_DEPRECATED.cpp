@@ -468,7 +468,7 @@ namespace Horizon
                 ImGui::TextUnformatted("Enable Light Shafts");
                 ImGui::NextColumn();
                 ImGui::PushItemWidth(-1);
-                if (ImGui::Checkbox("##enableLightShafts", &component.enableLightShafts))
+                if (ImGui::Checkbox("##enableLightShafts", &component.enableScreenSpaceLightShafts))
                 {
                     dirty = true;
                 }

@@ -26,7 +26,7 @@ namespace Horizon
             component.maxShadowDistance = 45.0f;
             component.shadowCascadeSplitLambda = 0.8f;
             component.enableScreenSpaceShadows = true;
-            component.enableLightShafts = true;
+            component.enableScreenSpaceLightShafts = false;
             component.CreateRenderObject(scene->GetRenderScene());
         }
         sunLight = scene->GetEntityManager()->TryGetComponent<LightComponent>(entityHandle);

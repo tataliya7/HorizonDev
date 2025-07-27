@@ -56,6 +56,7 @@ namespace Horizon
         , targetTexture(description.targetTexture)
         , displayWidth(description.displayWidth)
         , displayHeight(description.displayHeight)
+        , displayTexture(description.displayTexture)
         , swapChain(description.swapChain)
         , cursorPosition(description.cursorPosition)
     {

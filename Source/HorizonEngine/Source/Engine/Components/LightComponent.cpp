@@ -28,7 +28,7 @@ namespace Horizon
             description.enableScreenSpaceShadows = enableScreenSpaceShadows;
             description.screenSpaceShadowsSurfaceThickness = screenSpaceShadowsSurfaceThickness;
             description.screenSpaceShadowsShadowContrast = screenSpaceShadowsShadowContrast;
-            description.enableLightShafts = enableLightShafts;
+            description.enableLightShafts = enableScreenSpaceLightShafts;
             description.lightShaftsIntensity = lightShaftsIntensity;
             description.lightShaftsColor = lightShaftsColor;
 
@@ -78,7 +78,7 @@ namespace Horizon
             renderObject->enableScreenSpaceShadows = enableScreenSpaceShadows;
             renderObject->screenSpaceShadowsSurfaceThickness = screenSpaceShadowsSurfaceThickness;
             renderObject->screenSpaceShadowsShadowContrast = screenSpaceShadowsShadowContrast;
-            renderObject->enableLightShafts = enableLightShafts;
+            renderObject->enableLightShafts = enableScreenSpaceLightShafts;
             renderObject->lightShaftsIntensity = lightShaftsIntensity;
             renderObject->lightShaftsColor = lightShaftsColor;
 

@@ -1,7 +1,8 @@
-#include "FileBrowserWindow.h"
+#include "AssetBrowserWindow.h"
 
 #include <imgui_internal.h>
 
+#include <Windows.h>
 #include <shellapi.h>
 
 namespace Horizon
@@ -137,13 +138,13 @@ namespace Horizon::UI
 
 namespace Horizon
 {
-    void FileBrowserWindow::SelectItem(FileBrowserItem* item)
+    void AssetBrowserWindow::SelectItem(AssetBrowserItem* item)
     {
         item->isSelected = true;
         selectedItems.Add(item->GetPath());
     }
 
-    void FileBrowserWindow::DeselectItem(FileBrowserItem* item)
+    void AssetBrowserWindow::DeselectItem(AssetBrowserItem* item)
     {
         item->isSelected = false;
         selectedItems.Remove(item->GetPath());
@@ -151,7 +152,7 @@ namespace Horizon
         memset(renameBuffer, 0, MAX_INPUT_BUFFER_LENGTH);
     }
 
-    void FileBrowserWindow::ClearSelections()
+    void AssetBrowserWindow::ClearSelections()
     {
         for (auto& item : currentItems)
         {
@@ -160,7 +161,7 @@ namespace Horizon
         selectedItems.Clear();
     }
 
-    void FileBrowserWindow::ChangeDirectory(FileBrowserDirectory* directory)
+    void AssetBrowserWindow::ChangeDirectory(AssetBrowserDirectory* directory)
     {
         if (!directory)
         {
@@ -173,9 +174,9 @@ namespace Horizon
         {
             for (const auto& [guid, subdir] : directory->subdirectories)
             {
-                currentItems.Add(FileBrowserDirectory(subdir->path, directory, editor->directoryIcon));
+                currentItems.Add(AssetBrowserDirectory(subdir->path, directory, directoryIcon));
             }
-            std::vector<Guid> invalidAssets;
+            std::vector<UUID> invalidAssets;
             for (const auto& path : directory->assets)
             {
                 //const auto& assetFile = assetManager->GetAsset(guid);
@@ -186,7 +187,7 @@ namespace Horizon
                 //else
                 {
                     //const auto& icon = iconMap.find(path.extension().string()) != iconMap.end() ? iconMap[path.extension().string()] : editor->fileIcon;
-                    currentItems.Add(FileBrowserAsset(path, editor->fileIcon));
+                    currentItems.Add(AssetBrowserAsset(path, fileIcon));
                 }
             }
             /*for (auto invalidHandle : invalidAssets)
@@ -202,7 +203,7 @@ namespace Horizon
         currentDirectory = directory;
     }
 
-void FileBrowserWindow::UpdateDropArea(FileBrowserDirectory* directory)
+void AssetBrowserWindow::UpdateDropArea(AssetBrowserDirectory* directory)
 {
     /*if ((directory->guid != currentDirectory->guid) && ImGui::BeginDragDropTarget())
     {
@@ -224,7 +225,7 @@ void FileBrowserWindow::UpdateDropArea(FileBrowserDirectory* directory)
     }*/
 }
 
-void FileBrowserWindow::RenderDirectoryHierarchy(FileBrowserDirectory* directory)
+void AssetBrowserWindow::RenderDirectoryHierarchy(AssetBrowserDirectory* directory)
 {
     std::string name = directory->path.filename().string();
     std::string id = name + "_TreeNode";
@@ -251,9 +252,9 @@ void FileBrowserWindow::RenderDirectoryHierarchy(FileBrowserDirectory* directory
     }
 }
 
-FileBrowserItemList FileBrowserWindow::Search(const std::string& content, FileBrowserDirectory* directory)
+AssetBrowserItemList AssetBrowserWindow::Search(const std::string& content, AssetBrowserDirectory* directory)
 {
-    FileBrowserItemList results;
+    AssetBrowserItemList results;
     std::string contentLowerCase = ToLower(content);
 
     for (auto& [guid, subdir] : directory->subdirectories)
@@ -261,9 +262,9 @@ FileBrowserItemList FileBrowserWindow::Search(const std::string& content, FileBr
         std::string subdirName = ToLower(subdir->GetName());
         if (subdirName.find(contentLowerCase) != std::string::npos)
         {
-            results.Add(std::move(FileBrowserDirectory(subdir->path, directory, editor->directoryIcon)));
+            results.Add(std::move(AssetBrowserDirectory(subdir->path, directory, directoryIcon)));
         }
-        FileBrowserItemList list = Search(content, subdir);
+        AssetBrowserItemList list = Search(content, subdir);
         results.items.insert(results.items.end(), list.items.begin(), list.items.end());
     }
 
@@ -299,30 +300,30 @@ FileBrowserItemList FileBrowserWindow::Search(const std::string& content, FileBr
     return results;
 }
 
-void FileBrowserWindow::RenderTopBar()
+void AssetBrowserWindow::RenderTopBar()
 {
     ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0.0f);
 
     if (ImGui::BeginChild("##top_bar", ImVec2(0, topBarHeight)))
     {
-        if (UI::ImageButton("##back_button", editor->backwardButtonIcon.ToUnit64(), ImVec2(25, 25)) && previousDirectory->path != baseDirectory->path)
+        if (UI::ImageButton("##back_button", backwardButtonIcon.ToUnit64(), ImVec2(25, 25)) && previousDirectory->path != baseDirectory->path)
         {
             nextDirectory = currentDirectory;
             previousDirectory = currentDirectory->parent;
             ChangeDirectory(previousDirectory);
         }
         ImGui::SameLine();
-        if (UI::ImageButton("##forward_button", editor->forwardButtonIcon.ToUnit64(), ImVec2(25, 25)))
+        if (UI::ImageButton("##forward_button", forwardButtonIcon.ToUnit64(), ImVec2(25, 25)))
         {
             ChangeDirectory(nextDirectory);
         }
+        //ImGui::SameLine();
+        // if (UI::ImageButton("##parent_button", parentButtonIcon.ToUnit64(), ImVec2(25, 25)))
+        // {
+        //
+        // }
         ImGui::SameLine();
-        if (UI::ImageButton("##parent_button", editor->parentButtonIcon.ToUnit64(), ImVec2(25, 25)))
-        {
-
-        }
-        ImGui::SameLine();
-        if (UI::ImageButton("##refresh_button", editor->refreshButtonIcon.ToUnit64(), ImVec2(25, 25)))
+        if (UI::ImageButton("##refresh_button", refreshButtonIcon.ToUnit64(), ImVec2(25, 25)))
         {
             Refresh();
         }
@@ -330,7 +331,7 @@ void FileBrowserWindow::RenderTopBar()
         if (m_UpdateNavigationPath)
         {
             m_BreadCrumbData.clear();
-            FileBrowserDirectory* current = currentDirectory;
+            AssetBrowserDirectory* current = currentDirectory;
             while (current && current->parent != nullptr)
             {
                 m_BreadCrumbData.push_back(current);
@@ -383,7 +384,7 @@ void FileBrowserWindow::RenderTopBar()
     ImGui::PopStyleVar();
 }
 
-void FileBrowserWindow::RenderItems()
+void AssetBrowserWindow::RenderItems()
 {
     static float s_Padding = 2.0f;
     const float paddingForOutline = 2.0f;
@@ -404,7 +405,7 @@ void FileBrowserWindow::RenderItems()
     const ImVec2 padding = ImVec2(12.0f, 12.0f);
 
     int columnCount = std::max((int)std::floor((gridWidth - padding.x) / (cellSize.x + padding.x)), 1);
-    int rowCount = ComputeWorkGroupCount((uint32)currentItems.items.size(), columnCount);
+    int rowCount = Math::CeilDiv((uint32)currentItems.items.size(), columnCount);
 
     float gridHeight = (cellSize.y + padding.y) * rowCount + padding.y;
 
@@ -418,7 +419,7 @@ void FileBrowserWindow::RenderItems()
     float scrollY = ImGui::GetScrollY();
     uint32 rowStart = (uint32)std::floor(scrollY / (cellSize.y + padding.y));
     uint32 rowEnd = rowStart + (uint32)std::ceil(std::max(ImGui::GetContentRegionAvail().y, 0.0f) / (cellSize.y + padding.y));
-    printf("%f %f start: %u, end: %u\n", ImGui::GetContentRegionAvail().y, (cellSize.y + padding.y), rowStart, rowEnd);
+    //printf("%f %f start: %u, end: %u\n", ImGui::GetContentRegionAvail().y, (cellSize.y + padding.y), rowStart, rowEnd);
 
     ImGui::Dummy(ImVec2(gridWidth, gridHeight));
 
@@ -443,7 +444,7 @@ void FileBrowserWindow::RenderItems()
 
             auto& item = currentItems.items[itemIndex];
 
-            FileBrowserActionFlags result = FileBrowserActionFlags::None;
+            AssetBrowserActionFlags result = AssetBrowserActionFlags::None;
 
             ImGuiID itemID = ImGui::GetID(item.GetName().c_str());
             ImGui::PushID(itemID);
@@ -469,7 +470,7 @@ void FileBrowserWindow::RenderItems()
             ImGui::SetCursorScreenPos(topLeft);
             if (ImGui::Button("##ThumbnailButton", bottomRight - topLeft))
             {
-                result |= FileBrowserActionFlags::Selected;
+                result |= AssetBrowserActionFlags::Selected;
             }
 
             if (item.IsSelected())
@@ -480,7 +481,7 @@ void FileBrowserWindow::RenderItems()
             ImVec2 iconTopLeft = topLeft + ImVec2(marginHorizontal, marginTop);
             drawList->AddImage(item.GetIcon().ToUnit64(), iconTopLeft, iconTopLeft + ImVec2(thumbnailSize, thumbnailSize), ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f), IM_COL32(255, 255, 255, 255));
 
-            if (item.GetType() == FileBrowserItemType::Directory && !item.IsSelected())
+            if (item.GetType() == AssetBrowserItemType::Directory && !item.IsSelected())
             {
                 if (ImGui::BeginDragDropTarget())
                 {
@@ -513,14 +514,14 @@ void FileBrowserWindow::RenderItems()
                 item.isDragging = true;
                 if (!selectedItems.Contains(item.GetPath()))
                 {
-                    result |= FileBrowserActionFlags::ClearSelections;
+                    result |= AssetBrowserActionFlags::ClearSelections;
                 }
                 if (selectedItems.GetCount() > 0)
                 {
                     for (const auto& guid : selectedItems)
                     {
                         uint32 index = currentItems.Find(guid);
-                        if (index == FileBrowserItemList::InvalidIndex)
+                        if (index == AssetBrowserItemList::InvalidIndex)
                         {
                             continue;
                         }
@@ -530,9 +531,9 @@ void FileBrowserWindow::RenderItems()
                         const auto& name = item.GetName();
                         ImGui::TextUnformatted(name.c_str());
                     }
-                    ImGui::SetDragDropPayload("asset_payload", selectedItems.GetData(), sizeof(Guid) * selectedItems.GetCount());
+                    ImGui::SetDragDropPayload("asset_payload", selectedItems.GetData(), sizeof(UUID) * selectedItems.GetCount());
                 }
-                result |= FileBrowserActionFlags::Selected;
+                result |= AssetBrowserActionFlags::Selected;
                 ImGui::EndDragDropSource();
             }
 
@@ -564,7 +565,7 @@ void FileBrowserWindow::RenderItems()
 
             if (ImGui::BeginPopupContextItem("FileBrowserItemContextMenu"))
             {
-                result |= FileBrowserActionFlags::Selected;
+                result |= AssetBrowserActionFlags::Selected;
                 if (ImGui::MenuItem("Open", "Ctrl+Shift+O"))
                 {
 
@@ -597,16 +598,16 @@ void FileBrowserWindow::RenderItems()
                 }
                 if (ImGui::MenuItem("Delete", "Delete"))
                 {
-                    result |= FileBrowserActionFlags::DeleteSelectedItems;
+                    result |= AssetBrowserActionFlags::DeleteSelectedItems;
                 }
                 ImGui::Separator();
                 if (ImGui::MenuItem("Show In Explorer"))
                 {
-                    result |= FileBrowserActionFlags::ShowInExplorer;
+                    result |= AssetBrowserActionFlags::ShowInExplorer;
                 }
                 if (ImGui::MenuItem("Open Externally"))
                 {
-                    result |= FileBrowserActionFlags::OpenExternally;
+                    result |= AssetBrowserActionFlags::OpenExternally;
                 }
                 // item.RenderCustomContextItems();
                 ImGui::EndPopup();
@@ -647,7 +648,7 @@ void FileBrowserWindow::RenderItems()
                         item.isRenaming = false;
                         ProcessDirectory(baseDirectory->path, nullptr);
                         ChangeDirectory(currentDirectory);
-                        result |= FileBrowserActionFlags::Renamed;
+                        result |= AssetBrowserActionFlags::Renamed;
                     }
                 }
             }
@@ -655,7 +656,7 @@ void FileBrowserWindow::RenderItems()
 
             if (ImGui::IsItemHovered())
             {
-                result |= FileBrowserActionFlags::Hovered;
+                result |= AssetBrowserActionFlags::Hovered;
 
                 bool action = (selectedItems.GetCount() > 1) ? ImGui::IsMouseReleased(ImGuiMouseButton_Left) : ImGui::IsMouseClicked(ImGuiMouseButton_Left);
                 bool skipBecauseDragging = dragging;
@@ -664,41 +665,41 @@ void FileBrowserWindow::RenderItems()
                 {
                     if (Input::GetKeyDown(KeyCode::LeftControl))
                     {
-                        result |= FileBrowserActionFlags::Deselected;
+                        result |= AssetBrowserActionFlags::Deselected;
                     }
 
                     if (!item.IsSelected())
                     {
-                        result |= FileBrowserActionFlags::Selected;
+                        result |= AssetBrowserActionFlags::Selected;
                     }
 
                     if (!Input::GetKeyDown(KeyCode::LeftControl) && !Input::GetKeyDown(KeyCode::LeftShift))
                     {
-                        result |= FileBrowserActionFlags::ClearSelections;
+                        result |= AssetBrowserActionFlags::ClearSelections;
                     }
 
                     if (Input::GetKeyDown(KeyCode::LeftShift))
                     {
-                        result |= FileBrowserActionFlags::SelectToHere;
+                        result |= AssetBrowserActionFlags::SelectToHere;
                     }
                 }
             }
 
             //ImGui::EndGroup();
 
-            if (EnumClassHasFlags(result, FileBrowserActionFlags::ClearSelections))
+            if (EnumClassHasFlags(result, AssetBrowserActionFlags::ClearSelections))
             {
                 ClearSelections();
             }
-            if (EnumClassHasFlags(result, FileBrowserActionFlags::Selected) && !selectedItems.Contains(item.GetPath()))
+            if (EnumClassHasFlags(result, AssetBrowserActionFlags::Selected) && !selectedItems.Contains(item.GetPath()))
             {
                 SelectItem(&item);
             }
-            if (EnumClassHasFlags(result, FileBrowserActionFlags::Deselected) && selectedItems.Contains(item.GetPath()))
+            if (EnumClassHasFlags(result, AssetBrowserActionFlags::Deselected) && selectedItems.Contains(item.GetPath()))
             {
                 DeselectItem(&item);
             }
-            if (EnumClassHasFlags(result, FileBrowserActionFlags::SelectToHere) && selectedItems.GetCount() == 2)
+            if (EnumClassHasFlags(result, AssetBrowserActionFlags::SelectToHere) && selectedItems.GetCount() == 2)
             {
                 uint32 firstIndex = currentItems.Find(selectedItems[0]);
                 uint32 lastIndex = currentItems.Find(item.GetPath());
@@ -713,9 +714,9 @@ void FileBrowserWindow::RenderItems()
                     SelectItem(&currentItems[i]);
                 }
             }
-            if (EnumClassHasFlags(result, FileBrowserActionFlags::ShowInExplorer))
+            if (EnumClassHasFlags(result, AssetBrowserActionFlags::ShowInExplorer))
             {
-                if (item.GetType() == FileBrowserItemType::Directory)
+                if (item.GetType() == AssetBrowserItemType::Directory)
                 {
                     FileSystem::OpenDirectoryInExplorer(item.GetPath());
                 }
@@ -724,27 +725,27 @@ void FileBrowserWindow::RenderItems()
                     FileSystem::ShowFileInExplorer(item.GetPath());
                 }
             }
-            if (EnumClassHasFlags(result, FileBrowserActionFlags::Hovered))
+            if (EnumClassHasFlags(result, AssetBrowserActionFlags::Hovered))
             {
                 isAnyItemHovered = true;
             }
 
-            if (EnumClassHasFlags(result, FileBrowserActionFlags::DeleteSelectedItems))
+            if (EnumClassHasFlags(result, AssetBrowserActionFlags::DeleteSelectedItems))
             {
                 DeleteSelectedItems();
                 break;
             }
-            if (EnumClassHasFlags(result, FileBrowserActionFlags::Renamed))
+            if (EnumClassHasFlags(result, AssetBrowserActionFlags::Renamed))
             {
                 SortItemList();
                 break;
             }
-            if (EnumClassHasFlags(result, FileBrowserActionFlags::ChangeDirectory))
+            if (EnumClassHasFlags(result, AssetBrowserActionFlags::ChangeDirectory))
             {
-                ChangeDirectory((FileBrowserDirectory*)&item);
+                ChangeDirectory((AssetBrowserDirectory*)&item);
                 break;
             }
-            if (EnumClassHasFlags(result, FileBrowserActionFlags::Refresh))
+            if (EnumClassHasFlags(result, AssetBrowserActionFlags::Refresh))
             {
                 Refresh();
                 break;
@@ -777,7 +778,7 @@ void FileBrowserWindow::RenderItems()
     ImGui::PopStyleVar(4);
 }
 
-void FileBrowserWindow::RenderBottomBar()
+void AssetBrowserWindow::RenderBottomBar()
 {
     ImGui::BeginChild("##panel_controls", ImVec2(ImGui::GetColumnWidth() - 12, 30), false, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
     {
@@ -811,9 +812,9 @@ void FileBrowserWindow::RenderBottomBar()
     ImGui::EndChild();
 }
 
-void FileBrowserWindow::OnImGuiRender()
+void AssetBrowserWindow::OnImGuiRender()
 {
-    if (ImGui::Begin("File Browser", NULL, ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_NoScrollbar))
+    if (ImGui::Begin("Asset Browser", NULL, ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_NoScrollbar))
     {
         isHovered = ImGui::IsWindowHovered(ImGuiHoveredFlags_RootAndChildWindows);
         isFocused = ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows);
@@ -835,7 +836,7 @@ void FileBrowserWindow::OnImGuiRender()
 
             if (ImGui::BeginChild("##folders_common"))
             {
-                bool open = ImGui::CollapsingHeader("Content", nullptr, ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_OpenOnDoubleClick);
+                bool open = ImGui::CollapsingHeader("All Assets", nullptr, ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_OpenOnDoubleClick);
                 if (ImGui::IsItemClicked(ImGuiMouseButton_Left) && baseDirectory->path != currentDirectory->path)
                 {
                     if (!ImGui::IsMouseDragging(ImGuiMouseButton_Left, 0.01f))
@@ -875,7 +876,7 @@ void FileBrowserWindow::OnImGuiRender()
                                 bool created = FileSystem::CreateDirectory(path);
                                 if (created)
                                 {
-                                    const auto& directory = new FileBrowserDirectory(path, currentDirectory, editor->directoryIcon);
+                                    const auto& directory = new AssetBrowserDirectory(path, currentDirectory, directoryIcon);
                                     directories[directory->path.string()] = directory;
                                     auto& newFolder = currentItems.Add(*directory);
                                     StartRenamingItem(&newFolder);
@@ -939,12 +940,12 @@ void FileBrowserWindow::OnImGuiRender()
     ImGui::End();
 }
 
-void FileBrowserWindow::DeleteSelectedItems()
+void AssetBrowserWindow::DeleteSelectedItems()
 {
     for (std::filesystem::path guid : selectedItems)
     {
         uint32 index = currentItems.Find(guid);
-        if (index == FileBrowserItemList::InvalidIndex)
+        if (index == AssetBrowserItemList::InvalidIndex)
         {
             continue;
         }
@@ -957,9 +958,9 @@ void FileBrowserWindow::DeleteSelectedItems()
         }
         switch (item.GetType())
         {
-        case FileBrowserItemType::Directory:
+        case AssetBrowserItemType::Directory:
             break;
-        case FileBrowserItemType::File:
+        case AssetBrowserItemType::File:
             break;
         }
         currentItems.Remove(guid);
@@ -968,10 +969,10 @@ void FileBrowserWindow::DeleteSelectedItems()
     ChangeDirectory(currentDirectory);
 }
 
-void FileBrowserWindow::SortItemList()
+void AssetBrowserWindow::SortItemList()
 {
     std::sort(currentItems.begin(), currentItems.end(),
-        [](const FileBrowserItem& item1, const FileBrowserItem& item2)
+        [](const AssetBrowserItem& item1, const AssetBrowserItem& item2)
         {
             if (item1.GetType() == item2.GetType())
             {
@@ -981,7 +982,7 @@ void FileBrowserWindow::SortItemList()
         });
 }
 
-FileBrowserDirectory* FileBrowserWindow::GetDirectory(const std::filesystem::path& path) const
+AssetBrowserDirectory* AssetBrowserWindow::GetDirectory(const std::filesystem::path& path) const
 {
     for (const auto& [guid, directory] : directories)
     {
@@ -993,9 +994,9 @@ FileBrowserDirectory* FileBrowserWindow::GetDirectory(const std::filesystem::pat
     return nullptr;
 }
 
-const std::filesystem::path& FileBrowserWindow::ProcessDirectory(const std::filesystem::path& path, FileBrowserDirectory* parent)
+const std::filesystem::path& AssetBrowserWindow::ProcessDirectory(const std::filesystem::path& path, AssetBrowserDirectory* parent)
     {
-        FileBrowserDirectory* directory = GetDirectory(path);
+        AssetBrowserDirectory* directory = GetDirectory(path);
         if (directory)
         {
             directory->assets.clear();
@@ -1003,7 +1004,7 @@ const std::filesystem::path& FileBrowserWindow::ProcessDirectory(const std::file
         }
         else
         {
-            directory = new FileBrowserDirectory(path, parent, editor->directoryIcon);
+            directory = new AssetBrowserDirectory(path, parent, directoryIcon);
         }
         for (auto entry : std::filesystem::directory_iterator(path))
         {
@@ -1014,29 +1015,29 @@ const std::filesystem::path& FileBrowserWindow::ProcessDirectory(const std::file
             }
             else
             {
-                const auto& asset = AssetManager::GetAsset<Asset>(entry.path().string());
-                if (!asset)
-                {
-                    AssetManager::ImportAsset(entry.path());
-                    directory->assets.push_back(entry.path().string());
-                }
-                else
-                {
-                    directory->assets.push_back(entry.path().string());
-                }
+                // const auto& asset = AssetManager::GetAsset<Asset>(entry.path().string());
+                // if (!asset)
+                // {
+                //     AssetManager::ImportAsset(entry.path());
+                //     directory->assets.push_back(entry.path().string());
+                // }
+                // else
+                // {
+                //     directory->assets.push_back(entry.path().string());
+                // }
             }
         }
         directories[directory->path.string()] = directory;
         return directory->path;
     }
 
-    void FileBrowserWindow::Refresh()
+    void AssetBrowserWindow::Refresh()
     {
         ProcessDirectory(baseDirectory->path, nullptr);
         ChangeDirectory(currentDirectory);
     }
 
-    void FileBrowserWindow::UpdateInput()
+    void AssetBrowserWindow::UpdateInput()
     {
         if (!isHovered)
         {
@@ -1059,12 +1060,12 @@ const std::filesystem::path& FileBrowserWindow::ProcessDirectory(const std::file
         }
     }
 
-    void FileBrowserWindow::RenameSelectedItems()
+    void AssetBrowserWindow::RenameSelectedItems()
     {
 
     }
 
-    void FileBrowserWindow::StartRenamingItem(FileBrowserItem* item)
+    void AssetBrowserWindow::StartRenamingItem(AssetBrowserItem* item)
     {
         if (item->isRenaming)
         {
@@ -1075,18 +1076,26 @@ const std::filesystem::path& FileBrowserWindow::ProcessDirectory(const std::file
         item->isRenaming = true;
     }
 
-    FileBrowserWindow::FileBrowserWindow(HorizonEditor* editor, AssetManager* assetManager)
+    AssetBrowserWindow::AssetBrowserWindow(HorizonEditor* editor)
         : editor(editor)
-        , assetManager(assetManager)
     {
         std::filesystem::path path = ProcessDirectory("../../../Assets", nullptr);
         baseDirectory = directories[path.string()];
         ChangeDirectory(baseDirectory);
 
         memset(searchBuffer, 0, MAX_INPUT_BUFFER_LENGTH);
+
+        RenderSystem* renderSystem = HorizonEngine::GetInstance()->GetSubsystem<RenderSystem>();
+        RenderBackend* renderBackend = renderSystem->GetRenderBackend();
+        ShaderCollection* shaderLibrary = renderSystem->GetShaderLibrary();
+        fileIcon = LoadTextureFromFile(renderBackend, shaderLibrary, "../../../Assets/Icons/file-512.png", false, false, RenderBackendTextureFormat::R8G8B8A8Unorm);
+        directoryIcon = LoadTextureFromFile(renderBackend, shaderLibrary, "../../../Assets/Icons/folder-512.png", false, false, RenderBackendTextureFormat::R8G8B8A8Unorm);
+        backwardButtonIcon = LoadTextureFromFile(renderBackend, shaderLibrary, "../../../Assets/Icons/backward-button-32.png", false, false, RenderBackendTextureFormat::R8G8B8A8Unorm);
+        forwardButtonIcon = LoadTextureFromFile(renderBackend, shaderLibrary, "../../../Assets/Icons/forward-button-32.png", false, false, RenderBackendTextureFormat::R8G8B8A8Unorm);
+        refreshButtonIcon = LoadTextureFromFile(renderBackend, shaderLibrary, "../../../Assets/Icons/refresh-button-32.png", false, false, RenderBackendTextureFormat::R8G8B8A8Unorm);
     }
 
-    FileBrowserWindow::~FileBrowserWindow()
+    AssetBrowserWindow::~AssetBrowserWindow()
     {
 
     }

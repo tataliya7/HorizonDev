@@ -133,29 +133,29 @@ namespace Horizon
         swapChainWidth = window->GetWidth();
         swapChainHeight = window->GetHeight();
 
-        RenderBackendTextureFormat targetTextureFormat = RenderBackendTextureFormat::R10G10B10A2Unorm;
-        RenderGraphTextureDescription targetTextureDesc = RenderGraphTextureDescription::Create2D(
-            swapChainWidth,
-            swapChainHeight,
-            targetTextureFormat,
-            RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::UnorderedAccess | RenderBackendTextureCreateFlags::RenderTarget,
-            RenderBackendTextureClearValue::Black,
-            1,
-            1,
-            RenderBackendResourceState::ShaderResource); // TODO: handle transition
-        targetTexture = renderGraphResourcePool->AllocateTexture(targetTextureDesc, "SceneViewTexture");
+        // RenderBackendTextureFormat targetTextureFormat = RenderBackendTextureFormat::R10G10B10A2Unorm;
+        // RenderGraphTextureDescription targetTextureDesc = RenderGraphTextureDescription::Create2D(
+        //     swapChainWidth,
+        //     swapChainHeight,
+        //     targetTextureFormat,
+        //     RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::UnorderedAccess | RenderBackendTextureCreateFlags::RenderTarget,
+        //     RenderBackendTextureClearValue::Black,
+        //     1,
+        //     1,
+        //     RenderBackendResourceState::ShaderResource); // TODO: handle transition
+        // targetTexture = renderGraphResourcePool->AllocateTexture(targetTextureDesc, "SceneViewTexture");
+        // displayTexture = renderGraphResourcePool->AllocateTexture(targetTextureDesc, "DisplayTexture");
 
-        RenderGraphTextureDescription previewTextureDesc = RenderGraphTextureDescription::Create2D(
-            previewTextureWidth,
-            previewTextureHeight,
-            targetTextureFormat,
-            RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::UnorderedAccess | RenderBackendTextureCreateFlags::RenderTarget,
-            RenderBackendTextureClearValue::Black,
-            1,
-            1,
-            RenderBackendResourceState::ShaderResource); // TODO: handle transition
-        previewTexture = renderGraphResourcePool->AllocateTexture(previewTextureDesc, "SceneViewPreviewTexture");
-
+        // RenderGraphTextureDescription previewTextureDesc = RenderGraphTextureDescription::Create2D(
+        //     previewTextureWidth,
+        //     previewTextureHeight,
+        //     targetTextureFormat,
+        //     RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::UnorderedAccess | RenderBackendTextureCreateFlags::RenderTarget,
+        //     RenderBackendTextureClearValue::Black,
+        //     1,
+        //     1,
+        //     RenderBackendResourceState::ShaderResource); // TODO: handle transition
+        // previewTexture = renderGraphResourcePool->AllocateTexture(previewTextureDesc, "SceneViewPreviewTexture");
 
         renderer = renderSystem->CreateRenderer();
         previewRenderer = renderSystem->CreateRenderer();
@@ -250,10 +250,6 @@ namespace Horizon
         }
 
         timeOfDayScheduler = new TimeOfDayScheduler(scene);
-
-        //std::filesystem::path assetPath = "../../../Assets/UsdSkelExamples/HumanFemale/HumanFemale.walk.usd";
-        std::filesystem::path assetPath = "../../../Assets/Test/Sponza/sponza.usdc";
-        assetDatabase->ImportAsset(assetPath, scene);
 
         editorCamera.position = Vector3f(0.0f, 0.0f, 5.0f);
         editorCamera.rotation = Vector3f(0.0f, 0.0f, 0.0f);
@@ -386,6 +382,33 @@ namespace Horizon
             verticalFOV = HorizontalFOVToVerticalFOV(editorCamera.fieldOfView, editorCamera.aspectRatio);
         }
 
+        uint32 targetWidth = static_cast<uint32>(viewportSize.x);
+        uint32 targetHeight = static_cast<uint32>(viewportSize.y);
+
+        uint32 displayWidth = swapChainWidth;
+        uint32 displayHeight = swapChainHeight;
+
+        if  (targetTexture == nullptr || displayTexture == nullptr)
+        {
+            RenderSystem* renderSystem = engine->GetSubsystem<RenderSystem>();
+            RenderGraphResourcePool* renderGraphResourcePool = renderSystem->GetRenderGraphResourcePool();
+
+            RenderBackendTextureFormat targetTextureFormat = RenderBackendTextureFormat::R10G10B10A2Unorm;
+            RenderGraphTextureDescription displayTextureDescription = RenderGraphTextureDescription::Create2D(
+                displayWidth,
+                displayHeight,
+                targetTextureFormat,
+                RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::UnorderedAccess | RenderBackendTextureCreateFlags::RenderTarget,
+                RenderBackendTextureClearValue::Black,
+                1,
+                1,
+                RenderBackendResourceState::ShaderResource); // TODO: handle transition
+
+            displayTexture = renderGraphResourcePool->AllocateTexture(displayTextureDescription, "DisplayTexture");
+
+            //renderBackend->ResizeTexture();
+        }
+
         SceneViewDescription sceneViewDescription = {};
         sceneViewDescription.scene = renderScene;
         sceneViewDescription.frameIndex = frameIndex;
@@ -402,11 +425,12 @@ namespace Horizon
         sceneViewDescription.nearClippingPlane = std::max(editorCamera.nearClippingPlane, MinimumNearClippingPlane);
         sceneViewDescription.farClippingPlane = editorCamera.farClippingPlane;
         sceneViewDescription.backgroundColor = Vector3f(0.0f, 0.0f, 0.0f);
-        sceneViewDescription.targetWidth = swapChainWidth;
-        sceneViewDescription.targetHeight = swapChainHeight;
+        sceneViewDescription.targetWidth = targetWidth;
+        sceneViewDescription.targetHeight = targetHeight;
         sceneViewDescription.targetTexture = targetTexture;
-        sceneViewDescription.displayWidth = swapChainWidth;
-        sceneViewDescription.displayHeight = swapChainHeight;
+        sceneViewDescription.displayWidth = displayWidth;
+        sceneViewDescription.displayHeight = displayHeight;
+        sceneViewDescription.displayTexture = displayTexture;
 
         SceneView sceneView(sceneViewDescription);
 
@@ -425,31 +449,34 @@ namespace Horizon
 
         RenderBackendTextureHandle swapChainTexture = renderBackend->GetActiveSwapChainBuffer(swapChain);
 
+        if (true)
         {
-            RenderBackendBarrier transitions[] =
             {
-                RenderBackendBarrier(targetTexture->GetHandle(), RenderBackendTextureSubresourceRange(0, 1, 0, 1), RenderBackendResourceState::ShaderResource, RenderBackendResourceState::CopySrc),
-                RenderBackendBarrier(swapChainTexture, RenderBackendTextureSubresourceRange(0, 1, 0, 1), RenderBackendResourceState::Undefined, RenderBackendResourceState::CopyDst)
-            };
-            commandList->Barriers(transitions, 2);
-        }
+                RenderBackendBarrier transitions[] =
+                {
+                    RenderBackendBarrier(displayTexture->GetHandle(), RenderBackendTextureSubresourceRange(0, 1, 0, 1), RenderBackendResourceState::ShaderResource, RenderBackendResourceState::CopySrc),
+                    RenderBackendBarrier(swapChainTexture, RenderBackendTextureSubresourceRange(0, 1, 0, 1), RenderBackendResourceState::Undefined, RenderBackendResourceState::CopyDst)
+                };
+                commandList->Barriers(transitions, 2);
+            }
 
-        commandList->CopyTexture2D(
-            targetTexture->GetHandle(),
-            Offset2D(0, 0),
-            0,
-            swapChainTexture,
-            Offset2D(0, 0),
-            0,
-            Extent2D(swapChainWidth, swapChainHeight));
+            commandList->CopyTexture2D(
+                displayTexture->GetHandle(),
+                Offset2D(0, 0),
+                0,
+                swapChainTexture,
+                Offset2D(0, 0),
+                0,
+                Extent2D(swapChainWidth, swapChainHeight));
 
-        {
-            RenderBackendBarrier transitions[] =
             {
-                RenderBackendBarrier(targetTexture->GetHandle(), RenderBackendTextureSubresourceRange(0, 1, 0, 1), RenderBackendResourceState::CopySrc, RenderBackendResourceState::ShaderResource),
-                RenderBackendBarrier(swapChainTexture, RenderBackendTextureSubresourceRange(0, 1, 0, 1), RenderBackendResourceState::CopyDst, RenderBackendResourceState::Present)
-            };
-            commandList->Barriers(transitions, 2);
+                RenderBackendBarrier transitions[] =
+                {
+                    RenderBackendBarrier(displayTexture->GetHandle(), RenderBackendTextureSubresourceRange(0, 1, 0, 1), RenderBackendResourceState::CopySrc, RenderBackendResourceState::ShaderResource),
+                    RenderBackendBarrier(swapChainTexture, RenderBackendTextureSubresourceRange(0, 1, 0, 1), RenderBackendResourceState::CopyDst, RenderBackendResourceState::Present)
+                };
+                commandList->Barriers(transitions, 2);
+            }
         }
 
         renderBackend->SubmitCommandLists(&commandList, 1, swapChain);

@@ -4,7 +4,7 @@
 
 namespace Horizon
 {
-    enum class RenderBackendTextureFormat : uint32
+    enum class RenderBackendTextureFormat
     {
         Unknown,
 

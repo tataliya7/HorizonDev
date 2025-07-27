@@ -71,7 +71,7 @@ namespace Horizon
 
         bool usedAsAtmosphericLight = false;
 
-        bool enableLightShafts = false;
+        bool enableScreenSpaceLightShafts = false;
 
         float lightShaftsIntensity = 1.0f;
 

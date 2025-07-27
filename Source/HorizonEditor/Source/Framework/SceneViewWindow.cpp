@@ -1,14 +1,14 @@
 
-#include "SceneViewportWindow.h"
+#include "SceneViewWindow.h"
 
 #include <imgui.h>
 #include <imgui_internal.h>
 
-#include <ImGuizmo.h>
+#include "Gizmo.h"
 
 namespace Horizon
 {
-    SceneViewportWindow::SceneViewportWindow(const std::string& title, HorizonEditor* editor)
+    SceneViewWindow::SceneViewWindow(const std::string& title, HorizonEditor* editor)
         : title(title)
         , editor(editor)
         , viewportPos(0, 0)
@@ -23,8 +23,8 @@ namespace Horizon
     //    bool handled = false;
     //    if (e.GetMouseButtonID() == MouseButtonID::ButtonLeft && IsInViewport(e.GetScreenPos()))
     //    {
-    //        const Vector2& screenPos = e.GetScreenPos();
-    //        Vector2 windowPos = screenPos - mViewportPos;
+    //        const Vector2f& screenPos = e.GetScreenPos();
+    //        Vector2f windowPos = screenPos - mViewportPos;
     //        mEditor->OnSeleted(mEditor->mSceneContext.sceneRenderer->Pick(windowPos));
     //        // LOG_DEBUG("mouse pos in scene window: {}, {}. entity handle: {}.", (int32)windowPos.x, (int32)windowPos.y, pickingResult - 1);
     //    }
@@ -103,7 +103,7 @@ namespace Horizon
     //    return handled;
     //}
 
-    bool SceneViewportWindow::IsInViewport(const Vector2& pos)
+    bool SceneViewWindow::IsInViewport(const Vector2f& pos)
     {
         if ((pos.x > viewportPos.x) &&
             (pos.x < (viewportPos.x + viewportPos.x)) &&
@@ -115,7 +115,7 @@ namespace Horizon
         return false;
     }
 
-    float SceneViewportWindow::GetSnapValue()
+    float SceneViewWindow::GetSnapValue()
     {
         switch (gizmoOperationType)
         {
@@ -126,7 +126,7 @@ namespace Horizon
         return 0.0f;
     }
 
-    void SceneViewportWindow::OnImGuiRender(bool& isOpen)
+    void SceneViewWindow::OnImGuiRender(bool& isOpen)
     {
         ImGuiWindowFlags flags = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_MenuBar;
 
@@ -169,20 +169,20 @@ namespace Horizon
                 ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
                 ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.7255f, 0.8314f, 0.949f, 0.4f));
                 ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.7255f, 0.8314f, 0.949f, 1.0f));
-                if (ToolbarButton("##Play", editor->playButtonIcon))
-                {
-                    /*if (editor->sceneViewportState == HorizonEditor::SceneViewportState::Edit)
-                        OnScenePlay();
-                    else if (m_SceneState != SceneState::Simulate)
-                        OnSceneStop();*/
-                }
-                if (ToolbarButton("##Stop", editor->stopButtonIcon))
-                {
-                    printf("???");
-                }
-                if (ToolbarButton("##Pause", editor->pauseButtonIcon))
-                {
-                }
+                // if (ToolbarButton("##Play", editor->playButtonIcon))
+                // {
+                //     /*if (editor->sceneViewportState == HorizonEditor::SceneViewportState::Edit)
+                //         OnScenePlay();
+                //     else if (m_SceneState != SceneState::Simulate)
+                //         OnSceneStop();*/
+                // }
+                // if (ToolbarButton("##Stop", editor->stopButtonIcon))
+                // {
+                //     printf("???");
+                // }
+                // if (ToolbarButton("##Pause", editor->pauseButtonIcon))
+                // {
+                // }
                 ImGui::PopStyleColor(3);
 
                 ImGui::EndMenuBar();
@@ -233,7 +233,7 @@ namespace Horizon
     //        }
 
     //        auto viewportSize = ImGui::GetContentRegionAvail();
-    //        viewportSize = Vector2(viewportSize.x, viewportSize.y);
+    //        viewportSize = Vector2f(viewportSize.x, viewportSize.y);
 
     //        if (editor->mSceneContext.sceneImageHandle != nullptr)
     //        {
@@ -243,7 +243,7 @@ namespace Horizon
     //        float windowWidth = ImGui::GetWindowWidth();
     //        float windowHeight = ImGui::GetWindowHeight();
     //        float delta = windowHeight - viewportSize.y;
-    //        viewportPos = Vector2(ImGui::GetWindowPos().x, ImGui::GetWindowPos().y + delta);
+    //        viewportPos = Vector2f(ImGui::GetWindowPos().x, ImGui::GetWindowPos().y + delta);
 
     //        // Gizmos
     //        Entity* selectedEntity = editor->mSceneContext.selectedEntity;
@@ -304,6 +304,7 @@ namespace Horizon
     //            }
     //        }
         }
+
         ImGui::End();
     //    ImGui::PopStyleVar();
     }
@@ -385,8 +386,8 @@ namespace Horizon
 //        bool handled = false;
 //        if (e.GetMouseButtonID() == MouseButtonID::ButtonLeft && IsInViewport(e.GetScreenPos()))
 //        {
-//            const Vector2& screenPos = e.GetScreenPos();
-//            Vector2 windowPos = screenPos - mViewportPos;
+//            const Vector2f& screenPos = e.GetScreenPos();
+//            Vector2f windowPos = screenPos - mViewportPos;
 //            mEditor->OnSeleted(mEditor->mSceneContext.sceneRenderer->Pick(windowPos));
 //            // LOG_DEBUG("mouse pos in scene window: {}, {}. entity handle: {}.", (int32)windowPos.x, (int32)windowPos.y, pickingResult - 1);
 //        }
@@ -465,7 +466,7 @@ namespace Horizon
 //        return handled;
 //    }
 //
-//    bool SceneWindow::IsInViewport(const Vector2& pos)
+//    bool SceneWindow::IsInViewport(const Vector2f& pos)
 //    {
 //        if ((pos.x > mViewportPos.x) &&
 //            (pos.x < (mViewportPos.x + mViewportSize.x)) &&
@@ -557,7 +558,7 @@ namespace Horizon
 //        }
 //
 //        auto viewportSize = ImGui::GetContentRegionAvail();
-//        mViewportSize = Vector2(viewportSize.x, viewportSize.y);
+//        mViewportSize = Vector2f(viewportSize.x, viewportSize.y);
 //
 //        if (mEditor->mSceneContext.sceneImageHandle != nullptr)
 //        {
@@ -567,7 +568,7 @@ namespace Horizon
 //        float windowWidth = ImGui::GetWindowWidth();
 //        float windowHeight = ImGui::GetWindowHeight();
 //        float delta = windowHeight - viewportSize.y;
-//        mViewportPos = Vector2(ImGui::GetWindowPos().x, ImGui::GetWindowPos().y + delta);
+//        mViewportPos = Vector2f(ImGui::GetWindowPos().x, ImGui::GetWindowPos().y + delta);
 //
 //        // Gizmos
 //        Entity* selectedEntity = mEditor->mSceneContext.selectedEntity;

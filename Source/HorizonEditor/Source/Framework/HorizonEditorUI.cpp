@@ -1,5 +1,6 @@
 #include "HorizonEditor.h"
 #include "HorizonEditorUI.h"
+#include "AssetBrowserWindow.h"
 
 #include <imgui.h>
 #include <imgui_internal.h>
@@ -15,6 +16,11 @@
 #include "RenderDocPlugin.h"
 
 #include "InspectorUI_DEPRECATED.h"
+
+#include <Windows.h>
+#include <GLFW/glfw3.h>
+#define GLFW_EXPOSE_NATIVE_WIN32
+#include <GLFW/glfw3native.h>
 
 namespace Horizon
 {
@@ -590,40 +596,8 @@ namespace Horizon
 
     void BeginDockSpace()
     {
-        static bool dockSpaceOpen = true;
-
         // Imgui dock node flags.
-        static ImGuiDockNodeFlags dockNodeflags = ImGuiDockNodeFlags_PassthruCentralNode;
-
-        // Imgui window flags.
-        ImGuiWindowFlags windowFlags = ImGuiWindowFlags_NoDocking;
-
-        static bool isFullscreenPersistant = true;
-        bool isFullscreen = isFullscreenPersistant;
-        if (isFullscreen)
-        {
-            ImGuiViewport* viewport = ImGui::GetMainViewport();
-            ImGui::SetNextWindowPos(viewport->Pos);
-            ImGui::SetNextWindowSize(viewport->Size);
-            ImGui::SetNextWindowViewport(viewport->ID);
-            ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
-            ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
-            windowFlags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove;
-            windowFlags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
-        }
-
-        windowFlags |= ImGuiWindowFlags_NoBackground;
-
-        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-        // When using ImGuiDockNodeFlags_PassthruDockspace, DockSpace() will render our background and handle the pass-thru hole, so we ask Begin() to not render a background.
-        ImGui::Begin("Dockspace", &dockSpaceOpen, windowFlags);
-
-        ImGui::PopStyleVar();
-
-        if (isFullscreen)
-        {
-            ImGui::PopStyleVar(2);
-        }
+        static ImGuiDockNodeFlags dockNodeFlags = ImGuiDockNodeFlags_PassthruCentralNode | ImGuiDockNodeFlags_NoWindowMenuButton;
 
         // Set min width
         ImGuiIO& io = ImGui::GetIO();
@@ -633,7 +607,7 @@ namespace Horizon
         if (io.ConfigFlags & ImGuiConfigFlags_DockingEnable)
         {
             ImGuiID dockSpaceID = ImGui::GetID("MyDockSpace");
-            ImGui::DockSpace(dockSpaceID, ImVec2(0.0f, 0.0f), dockNodeflags);
+            ImGui::DockSpace(dockSpaceID, ImVec2(0.0f, 0.0f), dockNodeFlags);
         }
         style.WindowMinSize.x = minWinSizeX;
     }
@@ -845,8 +819,6 @@ namespace Horizon
 
     void HorizonEditor::DrawSceneViewWindow()
     {
-        static bool open = true;
-
         ImGuiIO& io = ImGui::GetIO();
 
         ImGui::SetNextWindowBgAlpha(0.0f);
@@ -854,13 +826,7 @@ namespace Horizon
 
         ImGuiWindowFlags flags = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse;
 
-        ImGui::Begin("SceneView", &open, flags);
-
-        static int currentViewModeIndex = 0;
-        ImGui::Combo("##ViewMode", &currentViewModeIndex, ViewModeName, IM_ARRAYSIZE(ViewModeName));
-        currentDebugVisualizationMode = (RasterizationRendererDebugVisualizationMode)currentViewModeIndex;
-
-        renderSettings.rasterRenderingSettings.debugVisualizationMode = currentDebugVisualizationMode;
+        ImGui::Begin("SceneView", nullptr, flags);
 
         static RenderBackendTextureHandle renderDocIconTexture = RenderBackendTextureHandle::Null;
         if (renderDocIconTexture == RenderBackendTextureHandle::Null)
@@ -873,9 +839,32 @@ namespace Horizon
         }
 
         ImVec2 contentRegionAvail = ImGui::GetContentRegionAvail();
+
+        if  (targetTexture == nullptr || displayTexture == nullptr || static_cast<uint32>(viewportSize.x) != static_cast<uint32>(contentRegionAvail.x) || static_cast<uint32>(viewportSize.y) != static_cast<uint32>(contentRegionAvail.y))
+        {
+            RenderSystem* renderSystem = engine->GetSubsystem<RenderSystem>();
+            RenderGraphResourcePool* renderGraphResourcePool = renderSystem->GetRenderGraphResourcePool();
+
+            uint32 targetWidth = static_cast<uint32>(contentRegionAvail.x);
+            uint32 targetHeight = static_cast<uint32>(contentRegionAvail.y);
+
+            RenderBackendTextureFormat targetTextureFormat = RenderBackendTextureFormat::R10G10B10A2Unorm;
+            RenderGraphTextureDescription targetTextureDescription = RenderGraphTextureDescription::Create2D(
+                targetWidth,
+                targetHeight,
+                targetTextureFormat,
+                RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::UnorderedAccess | RenderBackendTextureCreateFlags::RenderTarget,
+                RenderBackendTextureClearValue::Black,
+                1,
+                1,
+                RenderBackendResourceState::ShaderResource); // TODO: handle transition
+            targetTexture = renderGraphResourcePool->AllocateTexture(targetTextureDescription, "SceneViewTexture");
+            //renderBackend->ResizeTexture();
+        }
+
         viewportSize = Vector2f(contentRegionAvail.x, contentRegionAvail.y);
 
-        ImGui::Image(previewTexture->GetHandle().ToUnit64(), ImVec2(viewportSize.x, viewportSize.y), ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f));
+        ImGui::Image(targetTexture->GetHandle().ToUnit64(), ImVec2(viewportSize.x, viewportSize.y), ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f));
 
         ImGui::End();
 
@@ -884,6 +873,8 @@ namespace Horizon
 
    void HorizonEditor::DrawRenderSettingsWindow(bool* open)
     {
+        RasterizationRendererSettings& rasterizationRendererSettings = renderSettings.rasterRenderingSettings;
+
         if (ImGui::Begin("Render Settings", open))
         {
             ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(2, 2));
@@ -900,7 +891,21 @@ namespace Horizon
             ImGui::Combo("##Rendering Mode", &renderMode, renderModeNames, IM_ARRAYSIZE(renderModeNames));
             renderSettings.renderMode = (RenderMode)renderMode;
 
-            RasterizationRendererSettings& rasterizationRendererSettings = renderSettings.rasterRenderingSettings;
+            ImGui::PopItemWidth();
+            ImGui::NextColumn();
+
+            ImGui::AlignTextToFramePadding();
+            ImGui::TextUnformatted("Debug Visualization Mode");
+            ImGui::NextColumn();
+            ImGui::PushItemWidth(-1);
+
+            static int currentViewModeIndex = 0;
+            ImGui::Combo("##DebugVisualizationMode", &currentViewModeIndex, ViewModeName, IM_ARRAYSIZE(ViewModeName));
+            currentDebugVisualizationMode = (RasterizationRendererDebugVisualizationMode)currentViewModeIndex;
+            renderSettings.rasterRenderingSettings.debugVisualizationMode = currentDebugVisualizationMode;
+
+            ImGui::PopItemWidth();
+            ImGui::NextColumn();
 
             ImGui::Columns(1);
             ImGui::Separator();
@@ -1979,9 +1984,121 @@ namespace Horizon
         ImGui::End();
     }
 
+    bool OpenFileDialog(const char* filter, std::filesystem::path& outFilename)
+    {
+        CHAR szFile[260] = { 0 };
+
+        OPENFILENAMEA ofn;
+        ZeroMemory(&ofn, sizeof(OPENFILENAME));
+        ofn.lStructSize = sizeof(OPENFILENAME);
+        ofn.hwndOwner = glfwGetWin32Window(HorizonEditor::GetInstance()->window->GetGLFWwindow());
+        ofn.lpstrFile = szFile;
+        ofn.nMaxFile = sizeof(szFile);
+        ofn.lpstrFilter = filter;
+        ofn.nFilterIndex = 1;
+        ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST | OFN_NOCHANGEDIR;
+
+        if (GetOpenFileNameA(&ofn) == TRUE)
+        {
+            std::string fp = ofn.lpstrFile;
+            std::replace(fp.begin(), fp.end(), '\\', '/');
+            outFilename = std::filesystem::path(fp);
+            return true;
+        }
+
+        return false;
+    }
+
+    void HorizonEditor::DrawMenuBar()
+    {
+        if (ImGui::BeginMenuBar())
+        {
+            if (ImGui::BeginMenu("File"))
+            {
+                ImGui::Separator();
+
+                if (ImGui::BeginMenu("Import"))
+                {
+                    if (ImGui::MenuItem("Universal Scene Description (.usd*)"))
+                    {
+                        std::filesystem::path filename;
+                        bool result = OpenFileDialog("All Files (*.usd;*.usda;*.usdc;*.usdz)\0*.usd;*.usda;*.usdc;*.usdz\0\0", filename);
+                        if (result && editorSceneManager->GetActiveScene())
+                        {
+                            assetDatabase->ImportAsset(filename, editorSceneManager->GetActiveScene());
+                        }
+                    }
+                    ImGui::EndMenu();
+                }
+
+                if (ImGui::BeginMenu("Export"))
+                {
+                    if (ImGui::MenuItem("Universal Scene Description (.usd*)"))
+                    {
+
+                    }
+                    ImGui::EndMenu();
+                }
+
+                ImGui::EndMenu();
+            }
+
+            if (ImGui::BeginMenu("Edit"))
+            {
+                ImGui::EndMenu();
+            }
+
+            if (ImGui::BeginMenu("Window"))
+            {
+                ImGui::EndMenu();
+            }
+
+            if (ImGui::BeginMenu("Help"))
+            {
+                ImGui::EndMenu();
+            }
+
+            ImGui::EndMenuBar();
+        }
+    }
+
     void HorizonEditor::OnDrawUI()
     {
         OPTICK_EVENT();
+
+        static bool dockSpaceOpen = true;
+
+        // Imgui window flags.
+        ImGuiWindowFlags windowFlags = ImGuiWindowFlags_NoDocking;
+
+        static bool isFullscreenPersistant = true;
+        bool isFullscreen = isFullscreenPersistant;
+        if (isFullscreen)
+        {
+            ImGuiViewport* viewport = ImGui::GetMainViewport();
+            ImGui::SetNextWindowPos(viewport->Pos);
+            ImGui::SetNextWindowSize(viewport->Size);
+            ImGui::SetNextWindowViewport(viewport->ID);
+            ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+            ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+            windowFlags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove;
+            windowFlags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
+        }
+
+        windowFlags |= ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_MenuBar;
+
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+        // When using ImGuiDockNodeFlags_PassthruDockspace, DockSpace() will render our background and handle the pass-thru hole, so we ask Begin() to not render a background.
+        ImGui::Begin("Dockspace", &dockSpaceOpen, windowFlags);
+
+        ImGui::PopStyleVar();
+
+        if (isFullscreen)
+        {
+            ImGui::PopStyleVar(2);
+        }
+
+        DrawMenuBar();
 
         BeginDockSpace();
 
@@ -2034,14 +2151,14 @@ namespace Horizon
         //    sceneViewportWindow->OnImGuiRender(showSceneViewportWindow);
         //}
 
-        //if (true)
-        //{
-        //    if (!fileBrowserWindow)
-        //    {
-        //        fileBrowserWindow = new FileBrowserWindow(this, nullptr);
-        //    }
-        //    fileBrowserWindow->OnImGuiRender();
-        //}
+        if (true)
+        {
+            if (!fileBrowserWindow)
+            {
+                fileBrowserWindow = new AssetBrowserWindow(this);
+            }
+            fileBrowserWindow->OnImGuiRender();
+        }
 
         //if (true)
         //{
