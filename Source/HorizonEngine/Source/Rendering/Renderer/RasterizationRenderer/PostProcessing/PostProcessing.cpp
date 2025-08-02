@@ -49,7 +49,7 @@ namespace Horizon
 
         if (renderFeatures.enableMotionBlur)
         {
-            //colorTexture = DispatchMotionBlur(renderGraph, view, colorTexture, depthTexture, motionVectorTexture);
+            colorTexture = DispatchMotionBlur(renderGraph, view, colorTexture, depthTexture, motionVectorTexture);
         }
 
         // @todo Determine when to build a color pyramid and how many levels to build.

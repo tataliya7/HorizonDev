@@ -47,7 +47,6 @@ void ComputeMotionVectorsCS(uint3 dispatchThreadID : SV_DispatchThreadID)
         VisibleMeshletEntry visibleMeshletEntry = GetVisibleMeshletEntry(visibleMeshletEntryBuffer, visibileMeshletID);
         GPUSceneGeometryInstanceData geometryInstanceData = GetGPUSceneGeometryInstanceData(geometryInstanceDataBuffer, visibleMeshletEntry.geometryInstanceID);
 
-
         bool skinned = false;
 
         [branch]
