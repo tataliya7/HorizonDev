@@ -1,21 +1,12 @@
 #pragma once
 
-#include "Foundation/StdHeaders.h"
 #include "Foundation/Definitions.h"
+#include "Foundation/StdHeaders.h"
 #include "Foundation/FundamentalTypes.h"
 
 namespace Horizon
 {
-    enum
-    {
-        JOB_SYSTEM_MAX_WORKER_THREAD_COUNT = 128,
-        JOB_SYSTEM_MAX_FIBER_COUNT = 256,
-        JOB_SYSTEM_MAX_ATOMIC_COUNTER_COUNT = 4096,
-    };
-
-    using JobSystemCounterHandle = uint32;
-
-    enum class JobSystemPriority
+    enum class JobSystemJobPriority : uint8
     {
         Low,
         Normal,
@@ -27,23 +18,46 @@ namespace Horizon
 
     };
 
-    using JobSystemJobFunction = void(*)(void*);
-    struct JobSystemJobDecl
-    {
-        void* data;
-        JobSystemJobFunction func;
+    using JobSystemJobFunction = std::function<void(const JobSystemJobContext&)>;
 
-        JobSystemJobDecl() : data(nullptr), func(nullptr) {}
-        JobSystemJobDecl(void* data, JobSystemJobFunction func) : data(data), func(func) {}
+    class JobSystemJobCounterReference
+    {
+    public:
+
+        static JobSystemJobCounterReference Null;
+
+        ~JobSystemJobCounterReference();
+
+        JobSystemJobCounterReference(const JobSystemJobCounterReference& other);
+        JobSystemJobCounterReference& operator=(const JobSystemJobCounterReference& other);
+
+        JobSystemJobCounterReference(JobSystemJobCounterReference&& other) = delete;
+        JobSystemJobCounterReference& operator=(JobSystemJobCounterReference&& other) = delete;
+
+        uint32 GetHandle() const
+        {
+            return handle;
+        }
+
+    private:
+
+        friend JobSystemJobCounterReference JobSystemRunJob(const char* name, JobSystemJobPriority priority, const JobSystemJobCounterReference& dependency, const JobSystemJobFunction& function);
+
+        friend JobSystemJobCounterReference JobSystemCombineDependencies(const JobSystemJobCounterReference* dependencies, uint32 dependencyCount);
+
+        JobSystemJobCounterReference(uint32 handle);
+
+        uint32 handle;
     };
 
-    void JobSystemInit(uint32 workerThreadCount, uint32 fiberCount, uint32 fiberStackSize);
-    void JobSystemExit();
-    JobSystemCounterHandle JobSystemRunJobs(JobSystemJobDecl* jobs, uint32 jobCount);
-    JobSystemCounterHandle JobSystemRunJobs(JobSystemJobDecl* jobs, uint32 jobCount, JobSystemPriority priority);
-    void JobSystemWaitForCounter(JobSystemCounterHandle counter);
-    void JobSystemWaitForCounterAndFree(JobSystemCounterHandle counter);
-    void JobSystemWaitForCounterAndFreeWithoutFiber(JobSystemCounterHandle counter);
+    void JobSystemInit(uint32 workerThreadCount);
 
-    JobSystemCounterHandle JobSystemDispatchJob(const std::function<void(JobSystemJobContext)>& jobFunction);
+    void JobSystemExit();
+
+    JobSystemJobCounterReference JobSystemRunJob(const char* name, JobSystemJobPriority priority, const JobSystemJobCounterReference& dependency, const JobSystemJobFunction& function);
+
+    JobSystemJobCounterReference JobSystemCombineDependencies(const JobSystemJobCounterReference* dependencies, uint32 dependencyCount);
+
+    void JobSystemWaitForCounter(const JobSystemJobCounterReference& counter);
+
 }

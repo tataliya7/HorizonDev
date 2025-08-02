@@ -1,450 +1,498 @@
 #include "JobSystem.h"
+#include "../Logging/Logging.h"
+
+#include <thread>
+#include <semaphore>
+#include <condition_variable>
 
 #include <windows.h>
-#include <MPMCQueue.h>
 #include <optick.h>
+#include <MPMCQueue.h>
 
 namespace Horizon
 {
-    /**
-     * A bounded multi-producer multi-consumer concurrent queue written in C++11.
-     * Source code: https://github.com/rigtorp/MPMCQueue.
-     */
-    template <typename T>
-    using MPMCQueue = rigtorp::mpmc::Queue<T>;
-
-    struct JobSystemQueuedJob
-    {
-        JobSystemJobDecl workload;
-        JobSystemCounterHandle counter;
-    };
-
-    struct Semaphore
-    {
-        uint64 handle;
-    };
-
-    struct JobSystemFiber;
-    struct JobSystemWaitingJob
-    {
-        uint32 condition;
-        JobSystemCounterHandle counter;
-        JobSystemFiber* fiber;
-    };
-
-    struct JobSystemFiber
-    {
-        uint64 handle;
-        uint32 index;
-        JobSystemWaitingJob waitingJobToSchedule;
-    };
-
     struct JobSystemThread
     {
-        std::wstring name;
+        std::string name;
         uint32 index;
-        uint64 handle;
-        uint32 threadID;
+        std::thread thread;
     };
 
-    struct JobSystemAtomicCounter
+    struct JobSystemJobDeclaration
     {
-        uint32 index;
-        std::atomic<uint32> atomic;
+        const char* name;
+        JobSystemJobFunction function;
+        JobSystemJobPriority priority;
+        uint32 dependencyCounterIndex;
+        uint32 accumulateCounterIndex;
     };
 
-    std::atomic<bool> GJobSystemRequestQuit;
-    std::atomic<int> GJobSystemBootAtomicCounter;
-    std::atomic<uint32> GJobSystemNextWorkerThreadIndex;
-    std::map<uint32, uint32> GJobSystemSemaphoreLookupTable;
-    Semaphore GJobSystemSemaphores[JOB_SYSTEM_MAX_WORKER_THREAD_COUNT];
-    uint32 GJobSystemWorkerThreadCount;
-    uint32 GJobSystemFiberCount;
-    MPMCQueue<JobSystemQueuedJob> GJobSystemLowPriorityJobQueue(JOB_SYSTEM_MAX_ATOMIC_COUNTER_COUNT);
-    MPMCQueue<JobSystemQueuedJob> GJobSystemNormalPriorityJobQueue(JOB_SYSTEM_MAX_ATOMIC_COUNTER_COUNT);
-    MPMCQueue<JobSystemQueuedJob> GJobSystemHighPriorityJobQueue(JOB_SYSTEM_MAX_ATOMIC_COUNTER_COUNT);
-    MPMCQueue<JobSystemWaitingJob> GJobSystemWaitList(JOB_SYSTEM_MAX_FIBER_COUNT);
-    std::map<uint32, uint32> GJobSystemWorkerThreadLookupTable;
-    JobSystemThread GJobSystemWorkerThreads[JOB_SYSTEM_MAX_WORKER_THREAD_COUNT];
-    JobSystemFiber GJobSystemFibers[JOB_SYSTEM_MAX_FIBER_COUNT];
-    MPMCQueue<uint32> GJobSystemFreeFiberList(JOB_SYSTEM_MAX_FIBER_COUNT);
-    JobSystemAtomicCounter GJobSystemAtomicCounters[JOB_SYSTEM_MAX_ATOMIC_COUNTER_COUNT];
-    MPMCQueue<uint32> GJobSystemFreeCounterQueue(JOB_SYSTEM_MAX_ATOMIC_COUNTER_COUNT);
-
-    static bool IsJobSystemInitialized()
+    struct JobSystemJobCounter
     {
-        return GJobSystemBootAtomicCounter.load() < 0;
-    }
+        std::atomic_signed_lock_free counterValue;
+        std::atomic_signed_lock_free referenceCount;
+        std::list<uint32> waitingJobList;
+        std::mutex waitingJobMutex;
+    };
 
-    static uint32 GetNumberOfProcessors()
+    struct JobSystem
     {
-        SYSTEM_INFO si;
-        GetSystemInfo(&si);
-        return si.dwNumberOfProcessors;
-    }
+        static constexpr uint32 InvalidIndex = std::numeric_limits<uint32>::max();
+        static constexpr uint32 MaxWorkerThreadCount = 128;
+        static constexpr uint32 MaxJobCount = 8192;
 
-    static void SuspendCurrentThread(float seconds)
-    {
-        Sleep((DWORD)(seconds * 1000.0f + 0.5f));
-    }
+        /**
+         * A bounded multi-producer multi-consumer concurrent queue written in C++11.
+         * Source code: https://github.com/rigtorp/MPMCQueue.
+         */
+        template <typename T>
+        using JobQueue = rigtorp::mpmc::Queue<T>;
 
-    static void JobSystemYieldCPU()
-    {
-        YieldProcessor();
-    }
-
-    static uint32 JobSystemGetCurrentThreadID()
-    {
-        return GetCurrentThreadId();
-    }
-
-    static void JobSystemSwitchToFiber(uint64 handle)
-    {
-        SwitchToFiber((LPVOID)handle);
-    }
-
-    static uint64 CreateSemaphoreEXT(uint32 initialCount)
-    {
-        uint64 handle = (uint64)CreateSemaphoreW(NULL, initialCount, INT_MAX, NULL);
-        return handle;
-    }
-
-    static void SemaphoreAdd(uint64 semaphore, uint32 count)
-    {
-        ReleaseSemaphore((HANDLE)semaphore, count, NULL);
-    }
-
-    static void SemaphoreWait(uint64 semaphore)
-    {
-        WaitForSingleObject((HANDLE)semaphore, 0xFFFFFFFF);
-    }
-
-    static void JobSystemLockThreadToCPUCores(uint64 threadHandle, uint64 mask)
-    {
-        SetThreadAffinityMask((HANDLE)threadHandle, (DWORD_PTR)mask);
-    }
-
-    static JobSystemFiber* GetCurrentFiberData()
-    {
-        assert(IsThreadAFiber());
-        return (JobSystemFiber*)GetFiberData();
-    }
-
-    static uint64 JobSystemConvertCurrentThreadToFiber(void* fiber)
-    {
-        return (uint64)ConvertThreadToFiberEx(fiber, FIBER_FLAG_FLOAT_SWITCH);
-    }
-
-    static bool JobSystemConvertCurrentFiberToThread()
-    {
-        return ConvertFiberToThread();
-    }
-
-    static uint32 LoadCounter(JobSystemCounterHandle handle)
-    {
-        assert(handle);
-        uint32 index = handle - 1;
-        return GJobSystemAtomicCounters[index].atomic.load(std::memory_order_acquire);
-    }
-
-    static void StoreCounter(JobSystemCounterHandle handle, uint32 value)
-    {
-        assert(handle);
-        uint32 index = handle - 1;
-        GJobSystemAtomicCounters[index].atomic.store(value);
-    }
-
-    static void FetchSubCounter(JobSystemCounterHandle handle)
-    {
-        assert(handle);
-        uint32 index = handle - 1;
-        GJobSystemAtomicCounters[index].atomic.fetch_sub(1);
-
-    }
-
-    static void FreeCounter(JobSystemCounterHandle handle)
-    {
-        assert(handle);
-        uint32 index = handle - 1;
-        GJobSystemFreeCounterQueue.push(GJobSystemAtomicCounters[index].index);
-    }
-
-    static bool FindFreeCounter(uint32& outIndex)
-    {
-        return GJobSystemFreeCounterQueue.try_pop(outIndex);
-    }
-
-    static bool FindFreeFiber(uint32& outIndex)
-    {
-        return GJobSystemFreeFiberList.try_pop(outIndex);
-    }
-
-    static void JobSystemFreeFiber(uint32 fiberIndex)
-    {
-        GJobSystemFreeFiberList.push(fiberIndex);
-    }
-
-    static void JobSystemFiberEntry(JobSystemFiber* currentFiber)
-    {
-        while (!GJobSystemRequestQuit)
+        JobSystem()
+            : bootCounter(0)
+            , pendingJobCount(0)
+            , exitRequested(false)
+            , workerThreadCount(0)
+            , workerThreads()
+            , jobCounters()
+            , freeCounters(MaxJobCount)
+            , jobs()
+            , freeJobs(MaxJobCount)
+            , jobQueueLowPriority(MaxJobCount)
+            , jobQueueNormalPriority(MaxJobCount)
+            , jobQueueHighPriority(MaxJobCount)
         {
-            uint32 threadID = JobSystemGetCurrentThreadID();
-            uint32 workerThreadIndex = GJobSystemWorkerThreadLookupTable[threadID];
-            const JobSystemThread& thread = GJobSystemWorkerThreads[workerThreadIndex];
 
-            // std::wcout << std::format(L"Thread Name: {}, Fiber Index:{}", thread.name, currentFiber->index) << std::endl;
+        }
 
-            if (currentFiber->waitingJobToSchedule.fiber != nullptr)
+        ~JobSystem()
+        {
+
+        }
+
+        std::atomic<int> bootCounter;
+
+        std::atomic<int> pendingJobCount;
+
+        std::atomic<bool> exitRequested;
+
+        uint32 workerThreadCount;
+
+        JobSystemThread workerThreads[MaxWorkerThreadCount];
+
+        std::mutex waiterLock;
+        std::condition_variable waiterCondition;
+
+        JobSystemJobCounter jobCounters[MaxJobCount];
+        JobQueue<uint32> freeCounters;
+
+        JobSystemJobDeclaration jobs[MaxJobCount];
+        JobQueue<uint32> freeJobs;
+
+        JobQueue<uint32> jobQueueLowPriority;
+        JobQueue<uint32> jobQueueNormalPriority;
+        JobQueue<uint32> jobQueueHighPriority;
+
+        bool IsInitialized() const
+        {
+            return bootCounter.load() < 0;
+        }
+
+        bool IsExitRequested() const
+        {
+            return exitRequested.load(std::memory_order_relaxed);
+        }
+
+        bool HasAnyPendingJob() const
+        {
+            return pendingJobCount.load(std::memory_order_relaxed);
+        }
+
+        void RequestExit()
+        {
+            exitRequested.store(true);
+        }
+
+        uint32 AllocateJobCounter()
+        {
+            uint32 jobCounterIndex = InvalidIndex;
+            while (!freeCounters.try_pop(jobCounterIndex))
             {
-                GJobSystemWaitList.push(currentFiber->waitingJobToSchedule);
-                currentFiber->waitingJobToSchedule.fiber = nullptr;
+                // @todo Log warning
             }
+            return jobCounterIndex;
+        }
 
-            JobSystemWaitingJob waitingJob;
-            const bool wakeUpAnyWaitingJobs = GJobSystemWaitList.try_pop(waitingJob);
-            if (wakeUpAnyWaitingJobs)
+        void ReleaseJobCounter(uint32 jobCounterIndex)
+        {
+            assert(jobCounterIndex != InvalidIndex);
+            freeCounters.push(jobCounterIndex);
+        }
+
+        void IncrementJobCounterReference(uint32 jobCounterIndex)
+        {
+            if (jobCounterIndex != InvalidIndex)
             {
-                if (LoadCounter(waitingJob.counter) == waitingJob.condition)
-                {
-                    JobSystemFreeFiber(currentFiber->index);
-                    JobSystemSwitchToFiber(waitingJob.fiber->handle);
-                    continue;
-                }
-                else
-                {
-                    GJobSystemWaitList.push(waitingJob);
-                }
-            }
-
-            JobSystemQueuedJob queuedJob;
-            if (GJobSystemNormalPriorityJobQueue.try_pop(queuedJob))
-            {
-                assert(queuedJob.workload.func);
-                queuedJob.workload.func(queuedJob.workload.data);
-                FetchSubCounter(queuedJob.counter);
-                continue;
-                //std::wcout << std::format(L"Thread Name: {}, Fiber Index:{}", thread.name, currentFiber->index) << std::endl;
-
-                // When a job is resumed we first free the current fiber
-                //JobSystemFreeFiber(currentFiber->index);
-            }
-
-            if (!wakeUpAnyWaitingJobs)
-            {
-                SemaphoreWait(GJobSystemSemaphores[GJobSystemSemaphoreLookupTable[threadID]].handle);
+                jobCounters[jobCounterIndex].referenceCount.fetch_add(1);
             }
         }
 
-        uint32 threadID = JobSystemGetCurrentThreadID();
-        uint32 workerThreadIndex = GJobSystemWorkerThreadLookupTable.at(threadID);
-        if (currentFiber->handle != GJobSystemFibers[workerThreadIndex].handle)
+        void DecrementJobCounterReference(uint32 jobCounterIndex)
         {
-            JobSystemSwitchToFiber(GJobSystemFibers[workerThreadIndex].handle);
+            if (jobCounterIndex != InvalidIndex)
+            {
+                if (jobCounters[jobCounterIndex].referenceCount.fetch_sub(1) == 1)
+                {
+                    ReleaseJobCounter(jobCounterIndex);
+                }
+            }
         }
-        JobSystemConvertCurrentFiberToThread();
+
+        uint32 AllocateJob()
+        {
+            uint32 jobIndex = InvalidIndex;
+            while (!freeJobs.try_pop(jobIndex))
+            {
+                // @todo Log warning
+            }
+            return jobIndex;
+        }
+
+        void ReleaseJob(uint32 jobIndex)
+        {
+            assert(jobIndex != InvalidIndex);
+            jobs[jobIndex] = {};
+            freeJobs.push(jobIndex);
+        }
+
+        void EnqueueJob(uint32 jobIndex, JobSystemJobPriority priority)
+        {
+            assert(jobIndex != InvalidIndex);
+            if (priority == JobSystemJobPriority::High)
+            {
+                jobQueueHighPriority.push(jobIndex);
+            }
+            else if (priority == JobSystemJobPriority::Normal)
+            {
+                jobQueueNormalPriority.push(jobIndex);
+            }
+            else
+            {
+                jobQueueLowPriority.push(jobIndex);
+            }
+
+            pendingJobCount.fetch_add(1);
+
+            waiterCondition.notify_one();
+        }
+
+        uint32 DequeueJob()
+        {
+            uint32 jobIndex = InvalidIndex;
+
+            jobQueueHighPriority.try_pop(jobIndex);
+
+            if (jobIndex == InvalidIndex)
+            {
+                jobQueueNormalPriority.try_pop(jobIndex);
+            }
+
+            if (jobIndex == InvalidIndex)
+            {
+                jobQueueLowPriority.try_pop(jobIndex);
+            }
+
+            return jobIndex;
+        }
+
+        bool TryPushWaitingJobList(uint32 counterIndex, uint32 jobIndex)
+        {
+            bool succeed = false;
+            JobSystemJobCounter& jobCounter = jobCounters[counterIndex];
+            if (jobCounter.counterValue.load() != 0)
+            {
+                if (jobCounter.waitingJobMutex.try_lock())
+                {
+                    if (jobCounter.counterValue.load() != 0)
+                    {
+                        jobCounter.waitingJobList.emplace_back(jobIndex);
+                        succeed = true;
+                    }
+                    jobCounter.waitingJobMutex.unlock();
+                }
+            }
+            return succeed;
+        }
+
+        void FlushWaitingJobList(uint32 counterIndex, uint32 counterValueToSubtract)
+        {
+            assert(counterIndex != InvalidIndex);
+            JobSystemJobCounter& jobCounter = jobCounters[counterIndex];
+            if (jobCounter.counterValue.fetch_sub(counterValueToSubtract) == counterValueToSubtract)
+            {
+                jobCounter.waitingJobMutex.lock();
+                while (!jobCounter.waitingJobList.empty())
+                {
+                    uint32 waitingJobIndex = jobCounter.waitingJobList.front();
+                    jobCounter.waitingJobList.pop_front();
+
+                    JobSystemJobDeclaration& waitingJob = jobs[waitingJobIndex];
+
+                    EnqueueJob(waitingJobIndex, waitingJob.priority);
+                }
+                jobCounter.waitingJobMutex.unlock();
+            }
+        }
+    };
+
+    static JobSystem JobSystemInstance;
+
+    static void JobSystemSetThreadName(const char* name)
+    {
+        std::string_view utf8name(name);
+        int size = MultiByteToWideChar(CP_UTF8, 0, utf8name.data(), static_cast<int>(utf8name.size()), nullptr, 0);
+
+        std::wstring utf16name;
+        utf16name.resize(size);
+        MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, utf8name.data(), static_cast<int>(utf8name.size()), utf16name.data(), static_cast<int>(utf16name.size()));
+
+        SetThreadDescription(GetCurrentThread(), utf16name.data());
     }
 
     static void JobSystemWorkerThreadEntry(JobSystemThread* thread)
     {
         OPTICK_THREAD(thread->name.c_str());
+        JobSystemSetThreadName(thread->name.c_str());
 
-        uint32 threadID = thread->threadID;
-        uint32 workerThreadIndex = thread->index;
-
-        uint64 initialFiberHandle = JobSystemConvertCurrentThreadToFiber(&GJobSystemFibers[workerThreadIndex]);
-
-        GJobSystemFibers[workerThreadIndex].index = workerThreadIndex;
-        GJobSystemFibers[workerThreadIndex].handle = initialFiberHandle;
-        GJobSystemFibers[workerThreadIndex].waitingJobToSchedule.fiber = nullptr;
-
-        GJobSystemBootAtomicCounter.fetch_sub(1);
-
-        while (!IsJobSystemInitialized())
+        JobSystemInstance.bootCounter.fetch_sub(1);
+        while (!JobSystemInstance.IsInitialized())
         {
-            JobSystemYieldCPU();
+            std::this_thread::yield();
         }
 
-        JobSystemFiberEntry(&GJobSystemFibers[workerThreadIndex]);
-    }
-
-    static VOID WINAPI FiberProc(LPVOID lpFiberParameter)
-    {
-        JobSystemFiber* fiber = (JobSystemFiber*)lpFiberParameter;
-        JobSystemFiberEntry(fiber);
-    }
-
-    static DWORD WINAPI ThreadProc(LPVOID lpThreadParameter)
-    {
-        JobSystemThread* thread = (JobSystemThread*)lpThreadParameter;
-        JobSystemWorkerThreadEntry(thread);
-        return 0;
-    }
-
-    static uint64 CreateFiber(uint32 stackSize, JobSystemFiber* fiber)
-    {
-        uint64 handle = (uint64)CreateFiberEx(stackSize, stackSize, FIBER_FLAG_FLOAT_SWITCH, FiberProc, fiber);
-        return handle;
-    }
-
-    static void CreateWokerThread(uint32 stackSize, JobSystemThread* thread)
-    {
-        DWORD threadID;
-        HANDLE handle = CreateThread(NULL, stackSize, ThreadProc, thread, CREATE_SUSPENDED, &threadID);
-        assert(handle);
-
-        if (!thread->name.empty())
+        // Thread main loop
+        while (!JobSystemInstance.IsExitRequested())
         {
-            SetThreadDescription(handle, thread->name.c_str());
+            bool finishAnyJob = false;
+
+            uint32 jobIndex = JobSystemInstance.DequeueJob();
+
+            if (jobIndex != JobSystem::InvalidIndex)
+            {
+                JobSystemJobDeclaration& job = JobSystemInstance.jobs[jobIndex];
+
+                if (job.function)
+                {
+                    JobSystemJobContext context =
+                    {
+
+                    };
+
+                    job.function(context);
+                }
+
+                JobSystemInstance.FlushWaitingJobList(job.accumulateCounterIndex, 1);
+
+                JobSystemInstance.DecrementJobCounterReference(job.dependencyCounterIndex);
+                JobSystemInstance.DecrementJobCounterReference(job.accumulateCounterIndex);
+                JobSystemInstance.ReleaseJob(jobIndex);
+
+                finishAnyJob = true;
+            }
+
+            if (!finishAnyJob)
+            {
+                std::unique_lock lock(JobSystemInstance.waiterLock);
+                if (!JobSystemInstance.HasAnyPendingJob())
+                {
+                    JobSystemInstance.waiterCondition.wait(lock);
+                }
+            }
+        }
+    }
+
+    void JobSystemInit(uint32 workerThreadCount)
+    {
+        //assert(IsInMainThread());
+        assert(!JobSystemInstance.IsInitialized());
+
+        if (workerThreadCount == 0)
+        {
+            unsigned int hardwareConcurrentThreadCount = std::thread::hardware_concurrency();
+            workerThreadCount = (hardwareConcurrentThreadCount + 1) / 2;
         }
 
-        // Worker thread are locked to cores
-        // Avoid context swtitches and unwanted core switching
-        // Kernel threads can otherwise cause ripple effects across the cores
-        DWORD_PTR affinityMask = (1ull << thread->index) + 1; // Main thread affinitized to CPU 0, worker threas affinitized to CPU 1 through N
-        assert(SetThreadAffinityMask(handle, affinityMask) > 0);
+        workerThreadCount = std::clamp(workerThreadCount, 1u, JobSystem::MaxWorkerThreadCount);
+        JobSystemInstance.workerThreadCount = workerThreadCount;
 
-        assert(SetThreadPriority(handle, THREAD_PRIORITY_HIGHEST) != FALSE);
+        // Bind the main thread to CPU 0
+        //DWORD_PTR affinityMask = 1ull;
+        //assert(SetThreadAffinityMask(GetCurrentThread(), affinityMask) > 0);
 
-        ResumeThread(handle);
-
-        memcpy(&thread->handle, &handle, sizeof(handle));
-        thread->threadID = threadID;
-    }
-
-    void JobSystemInit(uint32 workerThreadCount, uint32 fiberCount, uint32 fiberStackSize)
-    {
-        assert(!IsJobSystemInitialized());
-        assert(workerThreadCount <= JOB_SYSTEM_MAX_WORKER_THREAD_COUNT);
-        assert((fiberCount <= JOB_SYSTEM_MAX_FIBER_COUNT) && (fiberCount >= workerThreadCount) && ((fiberCount & (fiberCount - 1)) == 0));
-
-        // Main thread affinitized to CPU 0
-        DWORD_PTR affinityMask = 1ull;
-        assert(SetThreadAffinityMask(GetCurrentThread(), affinityMask) > 0);
-
-        GJobSystemBootAtomicCounter.store(workerThreadCount);
-        GJobSystemRequestQuit.store(false);
+        JobSystemInstance.bootCounter.store(static_cast<int>(workerThreadCount));
+        JobSystemInstance.exitRequested.store(false);
 
         for (uint32 workerThreadIndex = 0; workerThreadIndex < workerThreadCount; workerThreadIndex++)
         {
-            GJobSystemWorkerThreads[workerThreadIndex].name = std::format(L"JobSystemWorkerThread {}", workerThreadIndex);
-            GJobSystemWorkerThreads[workerThreadIndex].index = workerThreadIndex;
-            CreateWokerThread(0, &GJobSystemWorkerThreads[workerThreadIndex]);
-            GJobSystemWorkerThreadLookupTable.emplace(GJobSystemWorkerThreads[workerThreadIndex].threadID, GJobSystemWorkerThreads[workerThreadIndex].index);
-
-            GJobSystemSemaphores[workerThreadIndex].handle = CreateSemaphoreEXT(0);
-
-            const uint32 key = GJobSystemWorkerThreads[workerThreadIndex].threadID;
-            GJobSystemSemaphoreLookupTable.emplace(key, workerThreadIndex);
+            JobSystemThread& workerThread = JobSystemInstance.workerThreads[workerThreadIndex];
+            workerThread.name = std::format("JobSystemWorkerThread {}", workerThreadIndex);
+            workerThread.index = workerThreadIndex;
+            workerThread.thread = std::thread(&JobSystemWorkerThreadEntry, &workerThread);
         }
 
         // Wait until all worker threads are initialized
-        while (GJobSystemBootAtomicCounter.load() != 0)
+        while (JobSystemInstance.bootCounter.load() != 0)
         {
-            SuspendCurrentThread(0.01f);
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
         }
 
-        // TODO: simplify this
-        while (!GJobSystemFreeCounterQueue.empty())
+        for (uint32 jobCounterIndex = 0; jobCounterIndex < JobSystem::MaxJobCount; jobCounterIndex++)
         {
-            uint32 temp;
-            GJobSystemFreeCounterQueue.pop(temp);
+            JobSystemInstance.freeCounters.push(jobCounterIndex);
         }
 
-        for (uint32 counterIndex = 0; counterIndex < JOB_SYSTEM_MAX_ATOMIC_COUNTER_COUNT; counterIndex++)
+        for (uint32 jobIndex = 0; jobIndex < JobSystem::MaxJobCount; jobIndex++)
         {
-            GJobSystemAtomicCounters[counterIndex].index = counterIndex;
-            GJobSystemFreeCounterQueue.push(counterIndex);
+            JobSystemInstance.freeJobs.push(jobIndex);
         }
 
-        for (uint32 fiberIndex = workerThreadCount; fiberIndex < fiberCount; fiberIndex++)
-        {
-            GJobSystemFibers[fiberIndex].handle = CreateFiber(fiberStackSize, &GJobSystemFibers[fiberIndex]);
-            GJobSystemFibers[fiberIndex].index = fiberIndex;
-
-            GJobSystemFreeFiberList.push(fiberIndex);
-        }
-
-        GJobSystemNextWorkerThreadIndex = 0;
-        GJobSystemWorkerThreadCount = workerThreadCount;
-        GJobSystemFiberCount = fiberCount;
-        assert(GJobSystemBootAtomicCounter.load() == 0);
-        GJobSystemBootAtomicCounter.store(-1);
+        JobSystemInstance.bootCounter.store(-1);
     }
 
     void JobSystemExit()
     {
-        assert(IsJobSystemInitialized());
-        // TODO
+        //assert(IsInMainThread());
+        assert(JobSystemInstance.IsInitialized());
 
-        GJobSystemRequestQuit.store(true);
+        JobSystemInstance.RequestExit();
 
-        // for ()
-        // {
-        //     DeleteFiber();
-        // }
-    }
-
-    JobSystemCounterHandle JobSystemRunJobs(JobSystemJobDecl* jobs, uint32 jobCount)
-    {
-        assert(IsJobSystemInitialized());
-
-        uint32 freeCounterIndex;
-        while (!FindFreeCounter(freeCounterIndex));
-
-        JobSystemCounterHandle freeCounter = freeCounterIndex + 1;
-        StoreCounter(freeCounter, jobCount);
-
-        JobSystemQueuedJob job = {};
-        job.counter = freeCounter;
-
-        for (uint32 jobIndex = 0; jobIndex < jobCount; jobIndex++)
+        for (JobSystemThread& workerThread : JobSystemInstance.workerThreads)
         {
-            job.workload = jobs[jobIndex];
-
-            GJobSystemNormalPriorityJobQueue.push(job);
-
-            uint32 workerThreadIndex = GJobSystemNextWorkerThreadIndex.fetch_add(1);
-            SemaphoreAdd(GJobSystemSemaphores[workerThreadIndex % GJobSystemWorkerThreadCount].handle, 1);
-        }
-
-        return freeCounter;
-    }
-
-    void JobSystemWaitForCounter(JobSystemCounterHandle counter)
-    {
-        assert(IsJobSystemInitialized());
-
-        if (LoadCounter(counter) != 0)
-        {
-            uint32 freeFiberIndex;
-            while (!FindFreeFiber(freeFiberIndex));
-
-            JobSystemFiber* currentFiber = GetCurrentFiberData();
-            JobSystemFiber* nextFiber = &GJobSystemFibers[freeFiberIndex];
-            nextFiber->waitingJobToSchedule = {
-                0,
-                counter,
-                currentFiber
-            };
-
-            JobSystemSwitchToFiber(nextFiber->handle);
+            if (workerThread.thread.joinable())
+            {
+                workerThread.thread.join();
+            }
         }
     }
 
-    void JobSystemWaitForCounterAndFree(JobSystemCounterHandle counter)
-    {
-        assert(IsJobSystemInitialized());
+    JobSystemJobCounterReference JobSystemJobCounterReference::Null = JobSystemJobCounterReference(JobSystem::InvalidIndex);
 
-        JobSystemWaitForCounter(counter);
-        FreeCounter(counter);
+    JobSystemJobCounterReference::JobSystemJobCounterReference(uint32 handle)
+        : handle(handle)
+    {
+
     }
 
-    void JobSystemWaitForCounterAndFreeWithoutFiber(JobSystemCounterHandle counter)
+    JobSystemJobCounterReference::~JobSystemJobCounterReference()
     {
-        assert(IsJobSystemInitialized());
-        // TODO: check main thread
+        JobSystemInstance.DecrementJobCounterReference(handle);
+    }
 
-        while (LoadCounter(counter) != 0);
-        FreeCounter(counter);
+    JobSystemJobCounterReference::JobSystemJobCounterReference(const JobSystemJobCounterReference& other)
+    {
+        handle = other.handle;
+        JobSystemInstance.IncrementJobCounterReference(handle);
+    }
+
+    JobSystemJobCounterReference& JobSystemJobCounterReference::operator=(const JobSystemJobCounterReference& other)
+    {
+        handle = other.handle;
+        JobSystemInstance.IncrementJobCounterReference(handle);
+        return *this;
+    }
+
+    JobSystemJobCounterReference JobSystemRunJob(const char* name, JobSystemJobPriority priority, const JobSystemJobCounterReference& dependency, const JobSystemJobFunction& function)
+    {
+        assert(JobSystemInstance.IsInitialized());
+
+        uint32 dependencyCounterIndex = dependency.GetHandle();
+        uint32 accumulateCounterIndex = JobSystemInstance.AllocateJobCounter();
+
+        JobSystemJobCounter& accumulateCounter = JobSystemInstance.jobCounters[accumulateCounterIndex];
+        accumulateCounter.counterValue.store(1);
+        accumulateCounter.referenceCount.store(1);
+
+        uint32 jobIndex = JobSystemInstance.AllocateJob();
+        JobSystemJobDeclaration& job = JobSystemInstance.jobs[jobIndex];
+        job.name = name;
+        job.function = function;
+        job.priority = priority;
+        job.dependencyCounterIndex = dependencyCounterIndex;
+        job.accumulateCounterIndex = accumulateCounterIndex;
+        JobSystemInstance.IncrementJobCounterReference(dependencyCounterIndex);
+        JobSystemInstance.IncrementJobCounterReference(accumulateCounterIndex);
+
+        bool shouldEnqueueJob = true;
+        if (dependencyCounterIndex != JobSystem::InvalidIndex)
+        {
+            if (JobSystemInstance.TryPushWaitingJobList(dependencyCounterIndex, jobIndex))
+            {
+                shouldEnqueueJob = false;
+            }
+        }
+
+        if (shouldEnqueueJob)
+        {
+            JobSystemInstance.EnqueueJob(jobIndex, priority);
+        }
+
+        return accumulateCounterIndex;
+    }
+
+    JobSystemJobCounterReference JobSystemCombineDependencies(const JobSystemJobCounterReference* dependencies, uint32 dependencyCount)
+    {
+        uint32 accumulateCounterIndex = JobSystemInstance.AllocateJobCounter();
+
+        JobSystemJobCounter& accumulateCounter = JobSystemInstance.jobCounters[accumulateCounterIndex];
+        accumulateCounter.counterValue.store(dependencyCount);
+        accumulateCounter.referenceCount.store(1);
+
+        uint32 waitingJobCount = 0;
+        for (uint32 i = 0; i < dependencyCount; i++)
+        {
+            const JobSystemJobCounterReference& dependency = dependencies[i];
+            uint32 dependencyCounterIndex = dependency.GetHandle();
+
+            uint32 jobIndex = JobSystemInstance.AllocateJob();
+            JobSystemJobDeclaration& job = JobSystemInstance.jobs[jobIndex];
+            job.name = "ResolveDependency";
+            job.function = {};
+            job.priority = JobSystemJobPriority::High;
+            job.dependencyCounterIndex = dependencyCounterIndex;
+            job.accumulateCounterIndex = accumulateCounterIndex;
+            JobSystemInstance.IncrementJobCounterReference(dependencyCounterIndex);
+            JobSystemInstance.IncrementJobCounterReference(accumulateCounterIndex);
+
+            if (dependencyCounterIndex != JobSystem::InvalidIndex)
+            {
+                if (JobSystemInstance.TryPushWaitingJobList(dependencyCounterIndex, jobIndex))
+                {
+                    waitingJobCount++;
+                }
+                else
+                {
+                    JobSystemInstance.DecrementJobCounterReference(dependencyCounterIndex);
+                    JobSystemInstance.DecrementJobCounterReference(accumulateCounterIndex);
+                    JobSystemInstance.ReleaseJob(jobIndex);
+                }
+            }
+        }
+
+        uint32 finishedDependencyCount = dependencyCount - waitingJobCount;
+        JobSystemInstance.FlushWaitingJobList(accumulateCounterIndex, finishedDependencyCount);
+
+        return accumulateCounterIndex;
+    }
+
+    void JobSystemWaitForCounter(const JobSystemJobCounterReference& counter)
+    {
+        assert(JobSystemInstance.IsInitialized());
+
+        uint32 jobCounterIndex = counter.GetHandle();
+        const JobSystemJobCounter& jobCounter = JobSystemInstance.jobCounters[jobCounterIndex];
+        while (jobCounter.counterValue.load() != 0)
+        {
+
+        }
     }
 }
