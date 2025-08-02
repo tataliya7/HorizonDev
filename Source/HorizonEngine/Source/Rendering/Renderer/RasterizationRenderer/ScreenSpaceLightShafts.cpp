@@ -68,10 +68,10 @@ namespace Horizon
                         pushConstantValues.BindTextureSRV(1, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(sceneColorTexture));
                         pushConstantValues.BindTextureSRV(2, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(sceneDepthTexture));
                         pushConstantValues.BindTextureUAV(3, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndex(lightShaftsDownsampleOutputTexture, 0));
-                        pushConstantValues.BindScalar(4, lightShaftsOrigin.x);
-                        pushConstantValues.BindScalar(5, lightShaftsOrigin.y);
-                        pushConstantValues.BindScalar(6, aspectRatio.x);
-                        pushConstantValues.BindScalar(7, aspectRatio.y);
+                        pushConstantValues.OverrideShaderConstantValue(4, lightShaftsOrigin.x);
+                        pushConstantValues.OverrideShaderConstantValue(5, lightShaftsOrigin.y);
+                        pushConstantValues.OverrideShaderConstantValue(6, aspectRatio.x);
+                        pushConstantValues.OverrideShaderConstantValue(7, aspectRatio.y);
 
                         RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::ScreenSpaceLightShaftsDownsample);
 
@@ -161,10 +161,10 @@ namespace Horizon
                             pushConstantValues.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
                             pushConstantValues.BindTextureSRV(1, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(radialBlurInputTexture));
                             pushConstantValues.BindTextureUAV(2, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndex(radialBlurOutputTexture, 0));
-                            pushConstantValues.BindScalar(3, lightShaftsOrigin.x);
-                            pushConstantValues.BindScalar(4, lightShaftsOrigin.y);
-                            pushConstantValues.BindScalar(5, blurPassIndex);
-                            pushConstantValues.BindScalar(6, ScreenSpaceLightShaftsRadialBlurSampleCount);
+                            pushConstantValues.OverrideShaderConstantValue(3, lightShaftsOrigin.x);
+                            pushConstantValues.OverrideShaderConstantValue(4, lightShaftsOrigin.y);
+                            pushConstantValues.OverrideShaderConstantValue(5, blurPassIndex);
+                            pushConstantValues.OverrideShaderConstantValue(6, ScreenSpaceLightShaftsRadialBlurSampleCount);
 
                             RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::ScreenSpaceLightShaftsRadialBlur);
 
@@ -200,10 +200,10 @@ namespace Horizon
                         RenderBackendPushConstantValues pushConstantValues = {};
                         pushConstantValues.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
                         pushConstantValues.BindTextureSRV(1, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(lightShaftsTexture));
-                        pushConstantValues.BindScalar(2, lightShaftsIntensity);
-                        pushConstantValues.BindScalar(3, lightShaftsColor.x);
-                        pushConstantValues.BindScalar(4, lightShaftsColor.y);
-                        pushConstantValues.BindScalar(5, lightShaftsColor.z);
+                        pushConstantValues.OverrideShaderConstantValue(2, lightShaftsIntensity);
+                        pushConstantValues.OverrideShaderConstantValue(3, lightShaftsColor.x);
+                        pushConstantValues.OverrideShaderConstantValue(4, lightShaftsColor.y);
+                        pushConstantValues.OverrideShaderConstantValue(5, lightShaftsColor.z);
 
                         RenderBackendShaderHandle vertexShader = shaderCollection->GetShader(ShaderID::DrawFullscreenQuadVS);
                         RenderBackendShaderHandle pixelShader = shaderCollection->GetShader(ShaderID::ScreenSpaceLightShaftsComposition);

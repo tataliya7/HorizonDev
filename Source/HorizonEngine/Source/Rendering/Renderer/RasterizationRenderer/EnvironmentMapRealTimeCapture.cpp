@@ -153,7 +153,7 @@ namespace Horizon
                         RenderBackendPushConstantValues pushConstantValues = {};
                         pushConstantValues.BindTextureSRV(0, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(capturedEnvironmentMapTexture));
                         pushConstantValues.BindTextureUAV(1, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndex(capturedEnvironmentMapTexture, mipLevel));
-                        pushConstantValues.BindScalar(2, mipLevel - 1);
+                        pushConstantValues.OverrideShaderConstantValue(2, mipLevel - 1);
 
                         commandList.Dispatch(
                             computeShader,
@@ -198,7 +198,7 @@ namespace Horizon
                     RenderBackendPushConstantValues pushConstantValues = {};
                     pushConstantValues.BindTextureSRV(0, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(capturedEnvironmentMapTexture));
                     pushConstantValues.BindBufferUAV(1, resourceRegistry.GetBufferUAVBindlessResourceDescriptorIndex(irradianceEnvironmentMapBuffer));
-                    pushConstantValues.BindScalar(2, sourceMipLevel);
+                    pushConstantValues.OverrideShaderConstantValue(2, sourceMipLevel);
 
                     RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::IrradianceEnvironmentMapSHOnePass);
 
@@ -236,7 +236,7 @@ namespace Horizon
                         RenderBackendPushConstantValues pushConstantValues = {};
                         pushConstantValues.BindTextureSRV(0, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(capturedEnvironmentMapTexture));
                         pushConstantValues.BindTextureUAV(1, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndex(convolvedEnvironmentMapTexture, targetMipLevel));
-                        pushConstantValues.BindScalar(2, roughness);
+                        pushConstantValues.OverrideShaderConstantValue(2, roughness);
 
                         commandList.Dispatch(
                             computeShader,

@@ -162,17 +162,17 @@ void GBufferCS(uint3 dispatchThreadID : SV_DispatchThreadID)
 
     uint packedPrimitiveID = vbuffer0[pixelCoord];
 
-    [branch]
-    if (packedPrimitiveID != INVALID_VISIBILIY_ID)
-    {
-        uint visibileMeshletID, triangleID;
-        UnpackVisiblePrimitiveID(visibileMeshletID, triangleID, packedPrimitiveID);
+    uint visibileMeshletID, triangleID;
+    UnpackVisiblePrimitiveID(visibileMeshletID, triangleID, packedPrimitiveID);
 
+    [branch]
+    if (visibileMeshletID != VIRTUAL_GEOMETRY_INVALID_VISIBLE_MESHLET_ID)
+    {
         float3 barycentrics = vbuffer1[pixelCoord];
 
         VisibleMeshletEntry visibleMeshletEntry = GetVisibleMeshletEntry(visibleMeshletEntryBuffer, visibileMeshletID);
-        GPUSceneGeometryInstanceData instanceData = GetGPUSceneGeometryInstanceData(geometryInstanceDataBuffer, visibleMeshletEntry.geometryInstanceID);
-        GPUSceneGeometryData geometryData = GetGPUSceneGeometryData(geometryDataBuffer, instanceData.geometryID);
+        GPUSceneGeometryInstanceData geometryInstanceData = GetGPUSceneGeometryInstanceData(geometryInstanceDataBuffer, visibleMeshletEntry.geometryInstanceID);
+        GPUSceneGeometryData geometryData = GetGPUSceneGeometryData(geometryDataBuffer, geometryInstanceData.geometryID);
         GPUSceneMeshletData meshletData = GetGPUSceneMeshletData(geometryData, visibleMeshletEntry.meshletID);
 
         ByteAddressBuffer materialIndexBuffer = GetByteAddressBufferNonUniform(geometryData.materialIndexBuffer);
@@ -182,7 +182,7 @@ void GBufferCS(uint3 dispatchThreadID : SV_DispatchThreadID)
         Material material = materialBuffer.Load<Material>(materialIndex * sizeof(Material));
 
         Surface surface;
-        SurfaceInit(surface, frameShaderParameters, uv, geometryData, instanceData, meshletData.triangleOffset + triangleID, barycentrics, material);
+        SurfaceInit(surface, frameShaderParameters, uv, geometryData, geometryInstanceData, meshletData.triangleOffset + triangleID, barycentrics, material);
 
         surface.specular = 0.5f;
 

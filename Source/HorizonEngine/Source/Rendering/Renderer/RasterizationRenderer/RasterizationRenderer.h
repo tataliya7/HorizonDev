@@ -509,6 +509,8 @@ namespace Horizon
             bool enableSuperSamplingAntiAliasing;
             bool enableSkyAtmosphereRendering;
             bool enableSubsurfaceScattering;
+            bool enableVolumetricFog;
+            bool enableLocalFogVolume;
             bool enableScreenSpaceShadows;
             bool enableScreenSpaceReflections;
             bool enableScreenSpaceAmbientOcclusion;

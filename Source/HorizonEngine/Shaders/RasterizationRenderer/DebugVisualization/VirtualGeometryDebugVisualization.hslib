@@ -38,14 +38,14 @@ void VirtualGeometryDebugVisualizationCS(uint3 dispatchThreadID : SV_DispatchThr
     uint2 vBufferTextureCoord = uint2(uv * frameShaderParameters.renderResolution.xy);
     uint packedPrimitiveID = vbuffer0[vBufferTextureCoord];
 
-    if (packedPrimitiveID == INVALID_VISIBILIY_ID)
+    uint visibileMeshletID, triangleID;
+    UnpackVisiblePrimitiveID(visibileMeshletID, triangleID, packedPrimitiveID);
+
+    if (visibileMeshletID == VIRTUAL_GEOMETRY_INVALID_VISIBLE_MESHLET_ID)
     {
         outputTexture[pixelCoord] = float4(0, 0, 0, 1);
         return;
     }
-
-    uint visibileMeshletID, triangleID;
-    UnpackVisiblePrimitiveID(visibileMeshletID, triangleID, packedPrimitiveID);
 
     VisibleMeshletEntry visibleMeshletEntry = GetVisibleMeshletEntry(visibleMeshletEntryBuffer, visibileMeshletID);
     GPUSceneGeometryInstanceData instanceData = GetGPUSceneGeometryInstanceData(geometryInstanceDataBuffer, visibleMeshletEntry.geometryInstanceID);

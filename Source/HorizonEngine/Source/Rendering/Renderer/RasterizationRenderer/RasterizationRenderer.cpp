@@ -70,6 +70,8 @@ namespace Horizon
 
     void RasterizationRenderer::InitializeSceneView(SceneView* v)
     {
+        OPTICK_EVENT();
+
         debugVisualizationCallback = {};
 
         sceneView = v;
@@ -190,6 +192,7 @@ namespace Horizon
             scene != nullptr &&
             scene->HasAtmosphericLight() &&
             scene->HasActiveSkyAtmosphere();
+        renderFeatures.enableVolumetricFog = false;
         renderFeatures.enableScreenSpaceShadows = true;
         renderFeatures.enableScreenSpaceAmbientOcclusion = rendererSettings.ambientOcclusionTechnique == RasterizationRendererAmbientOcclusionTechnique::GroundTruthAmbientOcclusion;
         renderFeatures.enableScreenSpaceLightShafts = true;
@@ -533,7 +536,7 @@ namespace Horizon
 
     RenderBackendTextureClearValue clearColor = RenderBackendTextureClearValue::Black;
     RenderBackendTextureClearValue clearDepth = RenderBackendTextureClearValue::CreateDepthValue(FAR_CLIPPING_PLANE_DEPTH_VALUE);
-    RenderBackendTextureClearValue clearVisibilityBufferColor = RenderBackendTextureClearValue::CreateColorValueUnit4(0x0FFFFFFF, 0x0FFFFFFF, 0x0FFFFFFF, 0x0FFFFFFF);
+    RenderBackendTextureClearValue clearVisibilityBufferColor = RenderBackendTextureClearValue::CreateColorValueUnit4(0, 0, 0, 0);
 
     void RasterizationRenderer::Render(RenderGraph& renderGraph)
     {
@@ -854,7 +857,11 @@ namespace Horizon
             RenderSkyAtmosphere(renderGraph, view);
         }
 
-        RenderVolumetricFog(renderGraph, view);
+        if (renderFeatures.enableVolumetricFog)
+        {
+            RenderVolumetricFog(renderGraph, view);
+        }
+
         //RenderLocalFogVolumes(renderGraph, view);
 
         if (renderFeatures.enableScreenSpaceLightShafts)

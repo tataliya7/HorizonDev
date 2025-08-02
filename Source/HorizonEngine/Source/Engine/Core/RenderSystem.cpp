@@ -101,6 +101,8 @@ namespace Horizon
 
     void RenderSystem::Tick(float deltaTimeInSeconds)
     {
+        OPTICK_EVENT();
+
         shaderLibrary->HotReload();
         renderGraphResourcePool->Tick();
         renderBackend->Tick();
@@ -113,6 +115,8 @@ namespace Horizon
 
     void RenderSystem::RenderSceneView(RasterizationRenderer* renderer, SceneView* sceneView)
     {
+        OPTICK_EVENT();
+
         RenderBackendCommandList* commandList = new RenderBackendCommandList(GArena);
 
         gpuProfiler->BeginFrame(commandList);
@@ -342,11 +346,11 @@ namespace Horizon
                 RenderBackendPushConstantValues pushConstantValues = {};
                 pushConstantValues.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(vertexBuffer[frameInFlightCounter]));
                 pushConstantValues.BindTextureSRV(1, renderBackend->GetTextureSRVBindlessResourceDescriptorIndex(RenderBackendTextureHandle(pcmd->TextureId)));
-                pushConstantValues.BindScalar(2, scale.x);
-                pushConstantValues.BindScalar(3, scale.y);
-                pushConstantValues.BindScalar(4, translate.x);
-                pushConstantValues.BindScalar(5, translate.y);
-                pushConstantValues.BindScalar(6, vertexOffset);
+                pushConstantValues.OverrideShaderConstantValue(2, scale.x);
+                pushConstantValues.OverrideShaderConstantValue(3, scale.y);
+                pushConstantValues.OverrideShaderConstantValue(4, translate.x);
+                pushConstantValues.OverrideShaderConstantValue(5, translate.y);
+                pushConstantValues.OverrideShaderConstantValue(6, vertexOffset);
 
                 commandList.DrawIndexed(
                     vertexShader,

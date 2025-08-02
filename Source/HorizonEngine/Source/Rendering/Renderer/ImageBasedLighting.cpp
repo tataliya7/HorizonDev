@@ -52,7 +52,7 @@ namespace Horizon
             RenderBackendPushConstantValues pushConstantValues = {};
             pushConstantValues.BindTextureSRV(0, renderBackend->GetTextureSRVBindlessResourceDescriptorIndex(cubemapTexture));
             pushConstantValues.BindTextureUAV(1, renderBackend->GetTextureUAVBindlessResourceDescriptorIndex(cubemapTexture, mipLevel));
-            pushConstantValues.BindScalar(2, mipLevel - 1u);
+            pushConstantValues.OverrideShaderConstantValue(2, mipLevel - 1u);
 
             commandList.Dispatch(
                 computeShader,
@@ -80,7 +80,7 @@ namespace Horizon
         RenderBackendPushConstantValues pushConstantValues = {};
         pushConstantValues.BindTextureSRV(0, renderBackend->GetTextureSRVBindlessResourceDescriptorIndex(environmentMap));
         pushConstantValues.BindTextureUAV(1, renderBackend->GetTextureUAVBindlessResourceDescriptorIndex(irradianceEnvironmentMap, 0));
-        pushConstantValues.BindScalar(2, mipLevel);
+        pushConstantValues.OverrideShaderConstantValue(2, mipLevel);
 
         commandList.Dispatch(
             computeShader,
@@ -141,7 +141,7 @@ namespace Horizon
         RenderBackendPushConstantValues pushConstantValues = {};
         pushConstantValues.BindTextureSRV(0, renderBackend->GetTextureSRVBindlessResourceDescriptorIndex(environmentMap));
         pushConstantValues.BindBufferUAV(1, renderBackend->GetBufferUAVBindlessResourceDescriptorIndex(irradianceEnvironmentMapBuffer));
-        pushConstantValues.BindScalar(2, sourceMipLevel);
+        pushConstantValues.OverrideShaderConstantValue(2, sourceMipLevel);
 
         commandList.Dispatch(
             computeShader,
@@ -169,7 +169,7 @@ namespace Horizon
             RenderBackendPushConstantValues pushConstantValues = {};
             pushConstantValues.BindTextureSRV(0, renderBackend->GetTextureSRVBindlessResourceDescriptorIndex(environmentMap));
             pushConstantValues.BindTextureUAV(1, renderBackend->GetTextureUAVBindlessResourceDescriptorIndex(convolvedEnvironmentMap, mipLevel));
-            pushConstantValues.BindScalar(2, roughness);
+            pushConstantValues.OverrideShaderConstantValue(2, roughness);
 
             commandList.Dispatch(
                 computeShader,

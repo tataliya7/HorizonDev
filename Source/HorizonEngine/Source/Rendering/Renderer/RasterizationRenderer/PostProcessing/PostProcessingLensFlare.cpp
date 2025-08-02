@@ -56,8 +56,8 @@ namespace Horizon
                     RenderBackendPushConstantValues pushConstantValues = {};
                     pushConstantValues.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
                     pushConstantValues.BindTextureSRV(1, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(bloomTexture));
-                    pushConstantValues.BindScalar(2, lensFlareTextureSize.z);
-                    pushConstantValues.BindScalar(3, lensFlareTextureSize.w);
+                    pushConstantValues.OverrideShaderConstantValue(2, lensFlareTextureSize.z);
+                    pushConstantValues.OverrideShaderConstantValue(3, lensFlareTextureSize.w);
 
                     RenderBackendGraphicsPipelineStateDescription graphicsPipelineState = {};
                     graphicsPipelineState.colorBlendState.targetBlends[0] = RenderBackendColorBlendAttachmentState::Additive;
@@ -184,8 +184,8 @@ namespace Horizon
                     pushConstantValues.BindTextureSRV(2, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(lensFlareGhostTexture));
                     pushConstantValues.BindTextureSRV(3, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(lensFlareGlareTexture));
                     pushConstantValues.BindTextureSRV(4, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(halfResolutionColorTexture));
-                    pushConstantValues.BindScalar(5, outputTextureSize.z);
-                    pushConstantValues.BindScalar(6, outputTextureSize.w);
+                    pushConstantValues.OverrideShaderConstantValue(5, outputTextureSize.z);
+                    pushConstantValues.OverrideShaderConstantValue(6, outputTextureSize.w);
 
                     RenderBackendGraphicsPipelineStateDescription graphicsPipelineState = {};
                     graphicsPipelineState.colorBlendState.targetBlends[0] = RenderBackendColorBlendAttachmentState::Additive;

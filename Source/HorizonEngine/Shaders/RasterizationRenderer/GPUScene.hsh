@@ -167,12 +167,12 @@ VisibleMeshletEntry GetVisibleMeshletEntry(ByteAddressBuffer buffer, uint visibl
 
 uint PackVisiblePrimitiveID(uint visibleMeshletID, uint triangleID)
 {
-    return (visibleMeshletID << 7) | triangleID;
+    return ((visibleMeshletID + 1) << 7) | triangleID;
 }
 
 void UnpackVisiblePrimitiveID(out uint visibleMeshletID, out uint triangleID, in uint packedPrimitiveID)
 {
-    visibleMeshletID = packedPrimitiveID >> 7;
+    visibleMeshletID = (packedPrimitiveID >> 7) - 1;
     triangleID = packedPrimitiveID & 0x7f;
 }
 

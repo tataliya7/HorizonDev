@@ -225,7 +225,7 @@ namespace Horizon
             pushConstantValues.BindBufferSRV(1, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(cascadeShadowMapDataBuffer));
             pushConstantValues.BindBufferSRV(2, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(gpuScene->geometryDataBuffer));
             pushConstantValues.BindBufferSRV(3, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(gpuScene->geometryInstanceDataBuffer));
-            pushConstantValues.BindScalar(4, cascadeIndex);
+            pushConstantValues.OverrideShaderConstantValue(4, cascadeIndex);
 
             commandList.DrawIndexed(
                 vertexShader,

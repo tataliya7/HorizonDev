@@ -1,5 +1,7 @@
 #include "RenderGraphResources.h"
 
+#include <optick.h>
+
 namespace Horizon
 {
     const RenderGraphTextureSubresourceRange RenderGraphTextureSubresourceRange::WholeRange = RenderGraphTextureSubresourceRange(0, RenderBackendTextureSubresourceRange::RemainingMipLevels, 0, RenderBackendTextureSubresourceRange::RemainingArrayLayers);
@@ -32,6 +34,8 @@ namespace Horizon
 
     void RenderGraphResourcePool::Tick()
     {
+        OPTICK_EVENT();
+
         for (RenderGraphPersistentTexture* texture : allocatedTextures)
         {
             texture->active = false;

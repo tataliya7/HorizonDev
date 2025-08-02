@@ -105,7 +105,7 @@ namespace Horizon
 
             for (uint32 shadowViewIndex = 0; shadowViewIndex < virtualShadowMapManager->GetVirtualShadowMapEntryCount(); shadowViewIndex++)
             {
-                pushConstantValues.BindScalar(7, shadowViewIndex);
+                pushConstantValues.OverrideShaderConstantValue(7, shadowViewIndex);
 
                 commandList.DrawIndexed(
                     vertexShader,
@@ -431,7 +431,7 @@ namespace Horizon
                     pushConstantValues.BindTextureSRV(2, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(sceneDepthTexture));
                     pushConstantValues.BindBufferUAV(3, resourceRegistry.GetBufferUAVBindlessResourceDescriptorIndex(virtualShadowMapPageRequestBuffer));
                     pushConstantValues.BindBufferSRV(4, resourceRegistry.GetBufferSRVBindlessResourceDescriptorIndex(virtualShadowMapEntryBuffer));
-                    pushConstantValues.BindScalar(5, distantLightVirtualShadowMapEntryCount);
+                    pushConstantValues.OverrideShaderConstantValue(5, distantLightVirtualShadowMapEntryCount);
 
                     RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::VirtualShadowMapPageRequest);
 
@@ -646,7 +646,7 @@ namespace Horizon
                     pushConstantValues.BindTextureSRV(5, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(virtualShadowMapDepthTexture));
                     pushConstantValues.BindTextureUAV(6, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndex(screenSpaceShadowMaskTexture, 0));
                     pushConstantValues.BindTextureUAV(7, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndex(debugVisualizationTexture, 0));
-                    pushConstantValues.BindScalar(8, virtualShadowMapDebugVisualizationMode);
+                    pushConstantValues.OverrideShaderConstantValue(8, virtualShadowMapDebugVisualizationMode);
 
                     RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::VirtualShadowMapProjection);
 

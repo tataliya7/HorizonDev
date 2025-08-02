@@ -144,7 +144,7 @@ namespace Horizon
                     pushConstantValues.BindBufferSRV(1, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(gpuScene->geometryDataBuffer));
                     pushConstantValues.BindBufferSRV(2, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(gpuScene->geometryInstanceDataBuffer));
                     pushConstantValues.BindBufferUAV(3, resourceRegistry.GetBufferUAVBindlessResourceDescriptorIndex(meshletCullingArgumentBuffer));
-                    pushConstantValues.BindScalar(4, gpuScene->geometryInstanceCount);
+                    pushConstantValues.OverrideShaderConstantValue(4, gpuScene->geometryInstanceCount);
 
                     RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::VirtualGeometryInstanceCulling);
 
@@ -401,31 +401,27 @@ namespace Horizon
         RasterizationRendererIntermediateResources& intermediateResources = renderGraph.blackboard.Get<RasterizationRendererIntermediateResources>();
 
         renderGraph.AddPass(
-            std::format("MotionVectors (Compute, {}x{})", renderResolution.width, renderResolution.height),
+            std::format("ComputeMotionVectors (Compute, {}x{})", renderResolution.width, renderResolution.height),
             RenderGraphPassFlags::Compute,
             [&](RenderGraphBuilder& builder)
             {
-                RenderGraphBufferHandle visibleMeshletBuffer = builder.ReadBuffer(intermediateResources.visibleMeshletBuffer, RenderBackendResourceState::ShaderResource);
-                RenderGraphTextureHandle sceneDepthTexture = builder.ReadTexture(intermediateResources.depthTexture, RenderBackendResourceState::ShaderResource);
-                RenderGraphTextureHandle vbuffer0 = builder.ReadTexture(intermediateResources.vbuffer0, RenderBackendResourceState::ShaderResource);
-                RenderGraphTextureHandle motionVectorTexture = intermediateResources.motionVectorTexture = builder.WriteTexture(intermediateResources.motionVectorTexture, RenderBackendResourceState::UnorderedAccess);
+                builder.SetBindlessResourceSRV(0, GetCurrentPerFrameConstantBuffer());
+                builder.SetBindlessResourceSRV(1, gpuScene->geometryDataBuffer);
+                builder.SetBindlessResourceSRV(2, gpuScene->geometryInstanceDataBuffer);
+                builder.SetBindlessResourceSRV(3, intermediateResources.visibleMeshletBuffer);
+                builder.SetBindlessResourceSRV(4, intermediateResources.depthTexture);
+                builder.SetBindlessResourceSRV(5, intermediateResources.vbuffer0);
+                builder.SetBindlessResourceUAV(6, intermediateResources.motionVectorTexture, 0);
+
+                RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::ComputeMotionVectors);
+
+                uint32 threadGroupCountX = ComputeShaderThreadGroupCount(renderResolution.width, 8);
+                uint32 threadGroupCountY = ComputeShaderThreadGroupCount(renderResolution.height, 8);
+                uint32 threadGroupCountZ = 1;
 
                 return [=](RenderBackendCommandList& commandList, const RenderGraphResourceRegistry& resourceRegistry)
                 {
-                    uint32 threadGroupCountX = ComputeShaderThreadGroupCount(renderResolution.width, 8);
-                    uint32 threadGroupCountY = ComputeShaderThreadGroupCount(renderResolution.height, 8);
-                    uint32 threadGroupCountZ = 1;
-
-                    RenderBackendPushConstantValues pushConstantValues = {};
-                    pushConstantValues.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
-                    pushConstantValues.BindBufferSRV(1, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(gpuScene->geometryDataBuffer));
-                    pushConstantValues.BindBufferSRV(2, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(gpuScene->geometryInstanceDataBuffer));
-                    pushConstantValues.BindBufferSRV(3, resourceRegistry.GetBufferSRVBindlessResourceDescriptorIndex(visibleMeshletBuffer));
-                    pushConstantValues.BindTextureSRV(4, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(sceneDepthTexture));
-                    pushConstantValues.BindTextureSRV(5, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(vbuffer0));
-                    pushConstantValues.BindTextureUAV(6, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndex(motionVectorTexture, 0));
-
-                    RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::MotionVectors);
+                    RenderBackendPushConstantValues pushConstantValues = resourceRegistry.GetPushConstantValues();
 
                     commandList.Dispatch(
                         computeShader,
@@ -508,9 +504,9 @@ namespace Horizon
                     pushConstantValues.BindBufferSRV(16, resourceRegistry.GetBufferSRVBindlessResourceDescriptorIndex(lightGridLightListBuffer));
 
                     // TODO
-                    pushConstantValues.BindScalar(17, lightGridData.lightGridInfo.lightGridSizeX);
-                    pushConstantValues.BindScalar(18, lightGridData.lightGridInfo.lightGridSizeY);
-                    pushConstantValues.BindScalar(19, lightGridData.lightGridInfo.lightGridSizeZ);
+                    pushConstantValues.OverrideShaderConstantValue(17, lightGridData.lightGridInfo.lightGridSizeX);
+                    pushConstantValues.OverrideShaderConstantValue(18, lightGridData.lightGridInfo.lightGridSizeY);
+                    pushConstantValues.OverrideShaderConstantValue(19, lightGridData.lightGridInfo.lightGridSizeZ);
 
                     RenderBackendGraphicsPipelineStateDescription graphicsPipelineState = {};
                     graphicsPipelineState.rasterizationState.cullMode = RenderBackendRasterizationCullMode::None;
@@ -712,7 +708,7 @@ namespace Horizon
                     pushConstantValues.BindBufferSRV(3, resourceRegistry.GetBufferSRVBindlessResourceDescriptorIndex(visibleMeshletBuffer));
                     pushConstantValues.BindTextureSRV(4, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(vbuffer0));
                     pushConstantValues.BindTextureUAV(5, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndex(outputTexture, 0));
-                    pushConstantValues.BindScalar(6, virtualGeometryDebugVisualizationMode);
+                    pushConstantValues.OverrideShaderConstantValue(6, virtualGeometryDebugVisualizationMode);
 
                     RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::VirtualGeometryDebugVisualization);
 

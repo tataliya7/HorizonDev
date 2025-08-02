@@ -104,9 +104,6 @@ filter "platforms:Win64"
     defines {
         "NOMINMAX",
         "_CRT_SECURE_NO_WARNINGS",
-        "_SILENCE_CXX23_ALIGNED_STORAGE_DEPRECATION_WARNING",
-        "_SILENCE_CXX20_CISO646_REMOVED_WARNING",
-        "_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING", --TODO: delete this
     }
     defines {
         "HORIZON_EXPERIMENTAL_STREAMLINE=0",
@@ -121,6 +118,8 @@ filter "platforms:Win64"
         --"/ignore:4006",
     }
     disablewarnings {
+        "4267", -- Conversion from 'size_t' to 'type', possible loss of data
+        "4996", -- Your code uses a function, class member, variable, or typedef that's marked deprecated
     }
 
 filter "kind:SharedLib"

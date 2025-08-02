@@ -139,7 +139,7 @@ namespace Horizon
                         pushConstantValues.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
                         pushConstantValues.BindTextureSRV(1, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(jumpFloodPassInputTexture));
                         pushConstantValues.BindTextureUAV(2, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndex(jumpFloodPassOutputTexture, 0));
-                        pushConstantValues.BindScalar(3, stepWidth);
+                        pushConstantValues.OverrideShaderConstantValue(3, stepWidth);
 
                         RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::SelectionOutlineJumpFlood);
 

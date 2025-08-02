@@ -140,10 +140,10 @@ namespace Horizon
                     pushConstantValues.BindTextureUAV(2, resourceRegistry.GetBufferUAVBindlessResourceDescriptorIndex(cellDataBuffer));
                     pushConstantValues.BindTextureUAV(3, resourceRegistry.GetBufferUAVBindlessResourceDescriptorIndex(lightListBuffer));
                     pushConstantValues.BindTextureUAV(4, resourceRegistry.GetBufferUAVBindlessResourceDescriptorIndex(lightListStartOffsetBuffer));
-                    pushConstantValues.BindScalar(5, localLightCount);
-                    pushConstantValues.BindScalar(6, lightGridSizeX);
-                    pushConstantValues.BindScalar(7, lightGridSizeY);
-                    pushConstantValues.BindScalar(8, lightGridSizeZ);
+                    pushConstantValues.OverrideShaderConstantValue(5, localLightCount);
+                    pushConstantValues.OverrideShaderConstantValue(6, lightGridSizeX);
+                    pushConstantValues.OverrideShaderConstantValue(7, lightGridSizeY);
+                    pushConstantValues.OverrideShaderConstantValue(8, lightGridSizeZ);
 
                     RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::LightGridLocalLightCulling);
 

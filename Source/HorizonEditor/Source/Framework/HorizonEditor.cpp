@@ -5,6 +5,7 @@
 #include "TimeOfDayPlugin.h"
 
 #include <optick.h>
+#include <thread>
 
 #include "../Plugins/Streamline/Source/StreamlineModule.h"
 
@@ -108,6 +109,8 @@ namespace Horizon
 
         InitializeEngine();
         streamlineContext = HorizonEngine::GetInstance()->streamlineContext;
+
+        JobSystemInit(16);
 
         engine = HorizonEngine::GetInstance();
         RenderSystem* renderSystem = engine->GetSubsystem<RenderSystem>();
@@ -292,6 +295,8 @@ namespace Horizon
         if (window) delete window;
 
         GLFWExit();
+
+        JobSystemExit();
     }
 
     float HorizonEditor::CalculateDeltaTime()

@@ -136,8 +136,8 @@ namespace Horizon
 
                     RenderBackendPushConstantValues pushConstantValues = {};
                     pushConstantValues.BindBufferUAV(0, resourceRegistry.GetBufferUAVBindlessResourceDescriptorIndex(gaussianDistributionBuffer));
-                    pushConstantValues.BindScalar(1, gaussianFilterKernelSize);
-                    pushConstantValues.BindScalar(2, gaussianFilterSigma);
+                    pushConstantValues.OverrideShaderConstantValue(1, gaussianFilterKernelSize);
+                    pushConstantValues.OverrideShaderConstantValue(2, gaussianFilterSigma);
 
                     RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::BilateralGridLocalToneMappingGaussianDistribution);
 
@@ -169,8 +169,8 @@ namespace Horizon
                     pushConstantValues.BindBufferSRV(0, resourceRegistry.GetBufferSRVBindlessResourceDescriptorIndex(gaussianDistributionBuffer));
                     pushConstantValues.BindTextureSRV(1, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(lowResolutionLogLuminanceTexture));
                     pushConstantValues.BindTextureUAV(2, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndex(intermediateGaussianFilteredLogLuminanceTexture, 0));
-                    pushConstantValues.BindScalar(3, 0u);
-                    pushConstantValues.BindScalar(4, gaussianFilterKernelSize);
+                    pushConstantValues.OverrideShaderConstantValue(3, 0u);
+                    pushConstantValues.OverrideShaderConstantValue(4, gaussianFilterKernelSize);
 
                     RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::BilateralGridLocalToneMappingGaussianFilter);
 
@@ -201,8 +201,8 @@ namespace Horizon
                     pushConstantValues.BindBufferSRV(0, resourceRegistry.GetBufferSRVBindlessResourceDescriptorIndex(gaussianDistributionBuffer));
                     pushConstantValues.BindTextureSRV(1, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(intermediateGaussianFilteredLogLuminanceTexture));
                     pushConstantValues.BindTextureUAV(2, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndex(gaussianFilteredLogLuminanceTexture, 0));
-                    pushConstantValues.BindScalar(3, 1u);
-                    pushConstantValues.BindScalar(4, gaussianFilterKernelSize);
+                    pushConstantValues.OverrideShaderConstantValue(3, 1u);
+                    pushConstantValues.OverrideShaderConstantValue(4, gaussianFilterKernelSize);
 
                     RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::BilateralGridLocalToneMappingGaussianFilter);
 
@@ -247,12 +247,12 @@ namespace Horizon
                     pushConstantValues.BindTextureSRV(3, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(gaussianFilteredLogLuminanceTexture));
                     pushConstantValues.BindBufferSRV(4, resourceRegistry.GetBufferSRVBindlessResourceDescriptorIndex(autoExposureBuffer));
                     pushConstantValues.BindTextureUAV(5, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndex(localToneMappingTexture, 0));
-                    pushConstantValues.BindScalar(6, postProcessingSettings.bilateralGridLocalToneMappingShadows);
-                    pushConstantValues.BindScalar(7, postProcessingSettings.bilateralGridLocalToneMappingHighlights);
-                    pushConstantValues.BindScalar(8, postProcessingSettings.bilateralGridLocalToneMappingDetailStrength);
-                    pushConstantValues.BindScalar(9, postProcessingSettings.bilateralGridLocalToneMappingGaussianFilterWeight);
-                    pushConstantValues.BindScalar(10, 1.0f / float(bilateralGridTextureWidth));
-                    pushConstantValues.BindScalar(11, 1.0f / float(bilateralGridTextureHeight));
+                    pushConstantValues.OverrideShaderConstantValue(6, postProcessingSettings.bilateralGridLocalToneMappingShadows);
+                    pushConstantValues.OverrideShaderConstantValue(7, postProcessingSettings.bilateralGridLocalToneMappingHighlights);
+                    pushConstantValues.OverrideShaderConstantValue(8, postProcessingSettings.bilateralGridLocalToneMappingDetailStrength);
+                    pushConstantValues.OverrideShaderConstantValue(9, postProcessingSettings.bilateralGridLocalToneMappingGaussianFilterWeight);
+                    pushConstantValues.OverrideShaderConstantValue(10, 1.0f / float(bilateralGridTextureWidth));
+                    pushConstantValues.OverrideShaderConstantValue(11, 1.0f / float(bilateralGridTextureHeight));
 
                     RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::BilateralGridLocalToneMappingUpsampling);
 

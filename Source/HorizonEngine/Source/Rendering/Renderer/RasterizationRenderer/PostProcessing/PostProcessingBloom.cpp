@@ -69,9 +69,9 @@ namespace Horizon
                             pushConstantValues.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
                             pushConstantValues.BindTextureSRV(1, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(inputTexture));
                             pushConstantValues.BindTextureUAV(2, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndex(outputTexture, 0));
-                            pushConstantValues.BindScalar(3, 1.0f / float(outputTextureWidth));
-                            pushConstantValues.BindScalar(4, 1.0f / float(outputTextureHeight));
-                            pushConstantValues.BindScalar(5, useKarisAverage ? 1 : 0);
+                            pushConstantValues.OverrideShaderConstantValue(3, 1.0f / float(outputTextureWidth));
+                            pushConstantValues.OverrideShaderConstantValue(4, 1.0f / float(outputTextureHeight));
+                            pushConstantValues.OverrideShaderConstantValue(5, useKarisAverage ? 1 : 0);
 
                             RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::GaussianBloomDownsample);
 

@@ -51,8 +51,8 @@ namespace Horizon
                         RenderBackendPushConstantValues pushConstantValues = {};
                         pushConstantValues.BindTextureSRV(0, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(sceneDepthTexture));
                         pushConstantValues.BindTextureUAV(1, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndex(minDepthPyramidTexture, targetMipLevel));
-                        pushConstantValues.BindScalar(3, inverseInputTextureSize.x);
-                        pushConstantValues.BindScalar(4, inverseInputTextureSize.y);
+                        pushConstantValues.OverrideShaderConstantValue(3, inverseInputTextureSize.x);
+                        pushConstantValues.OverrideShaderConstantValue(4, inverseInputTextureSize.y);
 
                         uint32 threadGroupCountX = ComputeShaderThreadGroupCount(outputTextureSize.x, 8);
                         uint32 threadGroupCountY = ComputeShaderThreadGroupCount(outputTextureSize.y, 8);
@@ -84,8 +84,8 @@ namespace Horizon
                         RenderBackendPushConstantValues pushConstantValues = {};
                         pushConstantValues.BindTextureSRV(0, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(minDepthPyramidTexture, sourceMipLevel));
                         pushConstantValues.BindTextureUAV(1, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndex(minDepthPyramidTexture, targetMipLevel));
-                        pushConstantValues.BindScalar(3, inverseInputTextureSize.x);
-                        pushConstantValues.BindScalar(4, inverseInputTextureSize.y);
+                        pushConstantValues.OverrideShaderConstantValue(3, inverseInputTextureSize.x);
+                        pushConstantValues.OverrideShaderConstantValue(4, inverseInputTextureSize.y);
 
                         uint32 threadGroupCountX = ComputeShaderThreadGroupCount(outputTextureSize.x, 8);
                         uint32 threadGroupCountY = ComputeShaderThreadGroupCount(outputTextureSize.y, 8);

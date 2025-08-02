@@ -74,9 +74,9 @@ namespace Horizon
                         pushConstantValues.BindTextureSRV(2, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(sceneDepthTexture));
                         pushConstantValues.BindTextureUAV(3, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndex(screenSpaceShadowMaskTexture, 0));
                         pushConstantValues.BindTextureUAV(4, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndex(rayDistanceTexture, 0));
-                        pushConstantValues.BindScalar(5, light.GetDirection().x);
-                        pushConstantValues.BindScalar(6, light.GetDirection().y);
-                        pushConstantValues.BindScalar(7, light.GetDirection().z);
+                        pushConstantValues.OverrideShaderConstantValue(5, light.GetDirection().x);
+                        pushConstantValues.OverrideShaderConstantValue(6, light.GetDirection().y);
+                        pushConstantValues.OverrideShaderConstantValue(7, light.GetDirection().z);
 
                         RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::RayTracingShadowsInlineRayTracing);
 
@@ -114,9 +114,9 @@ namespace Horizon
                         pushConstantValues.BindTextureSRV(2, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(sceneDepthTexture));
                         pushConstantValues.BindTextureUAV(3, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndex(screenSpaceShadowMaskTexture, 0));
                         pushConstantValues.BindTextureUAV(4, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndex(rayDistanceTexture, 0));
-                        pushConstantValues.BindScalar(5, light.GetDirection().x);
-                        pushConstantValues.BindScalar(6, light.GetDirection().y);
-                        pushConstantValues.BindScalar(7, light.GetDirection().z);
+                        pushConstantValues.OverrideShaderConstantValue(5, light.GetDirection().x);
+                        pushConstantValues.OverrideShaderConstantValue(6, light.GetDirection().y);
+                        pushConstantValues.OverrideShaderConstantValue(7, light.GetDirection().z);
 
                         commandList.DispatchRays(
                             rayTracingShadowsPipelineState,

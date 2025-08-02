@@ -380,7 +380,10 @@ void DirectLightingPS(in float4 position : SV_Position, out float4 outColor : SV
 
     float sceneDepth = sceneDepthTexture[pixelCoord].r;
 
-    if (packedPrimitiveID == INVALID_VISIBILIY_ID)
+    uint visibileMeshletID, triangleID;
+    UnpackVisiblePrimitiveID(visibileMeshletID, triangleID, packedPrimitiveID);
+
+    if (visibileMeshletID == VIRTUAL_GEOMETRY_INVALID_VISIBLE_MESHLET_ID)
     {
         return;
     }

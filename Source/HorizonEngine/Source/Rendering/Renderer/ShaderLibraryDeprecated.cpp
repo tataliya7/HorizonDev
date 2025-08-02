@@ -152,8 +152,8 @@ namespace Horizon
             //shaderLibrary->LoadShader(ShaderID::VisibilityBufferMeshShadingPS, shaderDesc);
         }
         {
-            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RasterizationRenderer/MotionVectors.hslib", "MotionVectorsCS");
-            shaderLibrary->LoadShader(ShaderID::MotionVectors, shaderDesc);
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RasterizationRenderer/ComputeMotionVectors.hslib", "ComputeMotionVectorsCS");
+            shaderLibrary->LoadShader(ShaderID::ComputeMotionVectors, shaderDesc);
         }
         {
             ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RasterizationRenderer/BuildDepthPyramid.hslib", "BuildDepthPyramidCS");

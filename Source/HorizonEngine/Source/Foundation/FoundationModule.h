@@ -11,3 +11,4 @@
 #include "Foundation/Logging/Logging.h"
 #include "Foundation/Misc/Misc.h"
 #include "Foundation/Platform/PlatformGenericAPI.h"
+#include "Foundation/JobSystem/JobSystem.h"

@@ -1,5 +1,7 @@
 #include "ShaderCollection.h"
 
+#include <optick.h>
+
 namespace Horizon
 {
     static bool LoadShaderSourceFromFile(const char* filename, std::vector<uint8>& outData)
@@ -34,6 +36,8 @@ namespace Horizon
 
     bool ShaderCollection::HotReload()
     {
+        OPTICK_EVENT();
+
         if (!hotReloadEnabled)
         {
             return false;

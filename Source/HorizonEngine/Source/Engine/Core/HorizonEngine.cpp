@@ -5,6 +5,8 @@
 // TODO
 #include "Streamline.h"
 
+#include <optick.h>
+
 namespace Horizon
 {
     HorizonEngine* HorizonEngine::Instance = nullptr;
@@ -29,6 +31,8 @@ namespace Horizon
 
     void HorizonEngine::Tick(float deltaTimeInSeconds)
     {
+        OPTICK_EVENT();
+
         GArena->Reset();
 
         RenderSystem* renderSystem = GetSubsystem<RenderSystem>();

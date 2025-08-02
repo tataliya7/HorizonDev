@@ -174,9 +174,9 @@ namespace Horizon
 
             RenderBackendPushConstantValues pushConstantValues = {};
             pushConstantValues.BindTextureSRV(0, renderBackend->GetTextureSRVBindlessResourceDescriptorIndex(textureHandle));
-            pushConstantValues.BindScalar(2, mipLevel - 1u);
-            pushConstantValues.BindScalar(3, float(width));
-            pushConstantValues.BindScalar(4, float(height));
+            pushConstantValues.OverrideShaderConstantValue(2, mipLevel - 1u);
+            pushConstantValues.OverrideShaderConstantValue(3, float(width));
+            pushConstantValues.OverrideShaderConstantValue(4, float(height));
 
             RenderBackendGraphicsPipelineStateDescription graphicsPipelineState = {};
 

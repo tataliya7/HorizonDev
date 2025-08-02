@@ -206,7 +206,7 @@ namespace rigtorp {
             template <typename P,
                 typename = typename std::enable_if<
                 std::is_nothrow_constructible<T, P&&>::value>::type>
-                void push(P&& v) noexcept {
+            void push(P&& v) noexcept {
                 emplace(std::forward<P>(v));
             }
 
@@ -219,7 +219,7 @@ namespace rigtorp {
             template <typename P,
                 typename = typename std::enable_if<
                 std::is_nothrow_constructible<T, P&&>::value>::type>
-                bool try_push(P&& v) noexcept {
+            bool try_push(P&& v) noexcept {
                 return try_emplace(std::forward<P>(v));
             }
 
@@ -292,6 +292,6 @@ namespace rigtorp {
 
     template <typename T,
         typename Allocator = mpmc::AlignedAllocator<mpmc::Slot<T>>>
-        using MPMCQueue = mpmc::Queue<T, Allocator>;
+    using MPMCQueue = mpmc::Queue<T, Allocator>;
 
 } // namespace rigtorp

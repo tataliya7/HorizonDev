@@ -1322,19 +1322,19 @@ namespace Horizon
             data[slot].descriptorIndex = descriptorIndex;
         }
 
-        void BindScalar(uint8 slot, int32 value)
+        void OverrideShaderConstantValue(uint8 slot, int32 value)
         {
             //types[slot] = int8(Type::Scalar);
             data[slot].scalarTypeInt = value;
         }
 
-        void BindScalar(uint8 slot, uint32 value)
+        void OverrideShaderConstantValue(uint8 slot, uint32 value)
         {
             //types[slot] = int8(Type::Scalar);
             data[slot].scalarTypeUint = value;
         }
 
-        void BindScalar(uint8 slot, float value)
+        void OverrideShaderConstantValue(uint8 slot, float value)
         {
             //types[slot] = int8(Type::Scalar);
             data[slot].scalarTypeFloat = value;

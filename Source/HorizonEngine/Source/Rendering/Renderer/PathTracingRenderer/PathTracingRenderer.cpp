@@ -112,8 +112,8 @@ namespace Horizon
                     pushConstantValues.BindTextureUAV(6, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndex(colorTexture, 0));
                     pushConstantValues.BindTextureUAV(7, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndex(depthTexture, 0));
                     //pushConstantValues.BindTextureUAV(8, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndex(normalTexture, 0));
-                    pushConstantValues.BindScalar(8, iteration);
-                    pushConstantValues.BindScalar(9, accumulationFactor);
+                    pushConstantValues.OverrideShaderConstantValue(8, iteration);
+                    pushConstantValues.OverrideShaderConstantValue(9, accumulationFactor);
 
                     commandList.DispatchRays(
                         pathTracingPipelineState,

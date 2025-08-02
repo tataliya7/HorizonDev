@@ -6,6 +6,8 @@
 // TODO
 #include "HorizonEngine.h"
 
+#include <optick.h>
+
 namespace Horizon
 {
     Scene::Scene(const std::string& name)
@@ -182,6 +184,7 @@ namespace Horizon
 
     void Scene::Tick(float deltaTimeInSeconds)
     {
+        OPTICK_EVENT();
         // if (ShouldUpdateScripts())
         // {
         //     // Update scripts
@@ -209,44 +212,72 @@ namespace Horizon
         //     physicsScene->Simulate(deltaTime);
         // }
 
+        std::array<uint32, 10000> a = {};
+
+        JobSystemJobCounterReference job1 = JobSystemRunJob(
+            "Job1",
+            JobSystemJobPriority::High,
+            JobSystemJobCounterReference::Null,
+            [&a](const JobSystemJobContext& jobContext)
+            {
+                OPTICK_EVENT("Job1");
+                for (uint32 i = 0; i < 10000 / 2; i++)
+                {
+                    a[i] = i;
+                }
+            });
+
+        JobSystemJobCounterReference job2 = JobSystemRunJob(
+            "Job2",
+            JobSystemJobPriority::High,
+            JobSystemJobCounterReference::Null,
+            [&a](const JobSystemJobContext& jobContext)
+            {
+                OPTICK_EVENT("Job2");
+                for (uint32 i = 10000 / 2; i < 10000; i++)
+                {
+                    a[i] = i;
+                }
+            });
+
+        std::array<JobSystemJobCounterReference, 2> joba = { job1, job2 };
+        JobSystemJobCounterReference job12 = JobSystemCombineDependencies(joba.data(), joba.size());
+
+        JobSystemJobCounterReference job3 = JobSystemRunJob(
+            "Job3",
+            JobSystemJobPriority::High,
+            job12,
+            [&a](const JobSystemJobContext& jobContext)
+            {
+                OPTICK_EVENT("Job3");
+                for (uint32 i = 0; i < 10000 / 2; i++)
+                {
+                    a[i] += a[i + 10000 / 2];
+                }
+            });
+
+        JobSystemWaitForCounter(job3);
+
         // Update transforms
-        {
-            entityManager->Get()->sort<TransformComponent>([&](EntityHandle lhs, EntityHandle rhs)
+        JobSystemJobCounterReference transformComponentUpdateJob = JobSystemRunJob(
+            "UpdateTransformComponents",
+            JobSystemJobPriority::High,
+            JobSystemJobCounterReference::Null,
+            [this](const JobSystemJobContext& jobContext)
             {
-                const SceneHierarchyComponent& lc = entityManager->GetComponent<SceneHierarchyComponent>(lhs);
-                const SceneHierarchyComponent& rc = entityManager->GetComponent<SceneHierarchyComponent>(rhs);
-                return lc.depth < rc.depth;
-            });
+                OPTICK_EVENT("UpdateTransformComponents");
+                entityManager->Get()->sort<TransformComponent>([&](EntityHandle lhs, EntityHandle rhs)
+                {
+                    const SceneHierarchyComponent& lc = entityManager->GetComponent<SceneHierarchyComponent>(lhs);
+                    const SceneHierarchyComponent& rc = entityManager->GetComponent<SceneHierarchyComponent>(rhs);
+                    return lc.depth < rc.depth;
+                });
 
-            entityManager->GetView<TransformComponent>().each([&](EntityHandle entity)
-            {
-                UpdateTransform_Deprecated(entityManager, entity);
+                entityManager->GetView<TransformComponent>().each([&](EntityHandle entity)
+                {
+                    UpdateTransform_Deprecated(entityManager, entity);
+                });
             });
-
-            // uint32 numTransformsToUpdate = 0;
-            // std::vector<JobSystemJobDecl> updateTransformJobs;
-            // std::vector<UpdateTransformJobData> updateTransformJobData;
-            //
-            // entityManager->GetView<TransformDirtyComponent>().each([&](EntityHandle entity)
-            // {
-            //     UpdateTransformJobData data = {
-            //       .manager = entityManager,
-            //       .entity = entity
-            //     };
-            //     updateTransformJobData.push_back(data);
-            //
-            //     JobSystemJobDecl jobDecl = {
-            //       .jobFunc = UpdateTransform,
-            //       .data = &updateTransformJobData[numTransformsToUpdate]
-            //     };
-            //     updateTransformJobs.push_back(jobDecl);
-            //
-            //     numTransformsToUpdate++;
-            // });
-            //
-            // JobSystemAtomicCounterHandle counter = JobSystemRunJobs(updateTransformJobs.data(), numTransformsToUpdate);
-            // JobSystemWaitForCounter(counter, 0);
-        }
 
         // Update armatures
         /*{
@@ -279,26 +310,38 @@ namespace Horizon
         //     });
         // }
 
-        // Update lights
-        {
-            entityManager->GetView<LightComponent>().each([&](EntityHandle entity, LightComponent& lightComponent)
-            {
-                const TransformComponent& transform = entityManager->GetComponent<TransformComponent>(entity);
-                lightComponent.position = transform.position;
-                lightComponent.direction = Math::Normalize(Vector3f(Math::QuaternionFromEulerAngles(Math::DegreesToRadians(transform.rotation)) * Vector4f(0.0f, 0.0f, -1.0f, 0.0f)));
-                lightComponent.UpdateRenderObject();
-            });
-        }
+        JobSystemWaitForCounter(transformComponentUpdateJob);
 
-        // Update meshes
-        {
-            entityManager->GetView<MeshComponent>().each([&](EntityHandle entity, MeshComponent& meshComponent)
+        JobSystemJobCounterReference lightComponentUpdateJob = JobSystemRunJob(
+            "UpdateLightComponents",
+            JobSystemJobPriority::High,
+            transformComponentUpdateJob,
+            [this](const JobSystemJobContext& jobContext)
             {
-                const TransformComponent& transform = entityManager->GetComponent<TransformComponent>(entity);
-                meshComponent.localToWorldMatrix = transform.localToWorldMatrix;
-                meshComponent.UpdateRenderObject();
+                OPTICK_EVENT("UpdateLightComponents");
+                entityManager->GetView<LightComponent>().each([&](EntityHandle entity, LightComponent& lightComponent)
+                {
+                    const TransformComponent& transform = entityManager->GetComponent<TransformComponent>(entity);
+                    lightComponent.position = transform.position;
+                    lightComponent.direction = Math::Normalize(Vector3f(Math::QuaternionFromEulerAngles(Math::DegreesToRadians(transform.rotation)) * Vector4f(0.0f, 0.0f, -1.0f, 0.0f)));
+                    lightComponent.UpdateRenderObject();
+                });
             });
-        }
+
+        JobSystemJobCounterReference meshComponentUpdateJob = JobSystemRunJob(
+            "UpdateMeshComponents",
+            JobSystemJobPriority::High,
+            transformComponentUpdateJob,
+            [this](const JobSystemJobContext& jobContext)
+            {
+                OPTICK_EVENT("UpdateMeshComponents");
+                entityManager->GetView<MeshComponent>().each([&](EntityHandle entity, MeshComponent& meshComponent)
+                {
+                    const TransformComponent& transform = entityManager->GetComponent<TransformComponent>(entity);
+                    meshComponent.localToWorldMatrix = transform.localToWorldMatrix;
+                    meshComponent.UpdateRenderObject();
+                });
+            });
 
         entityManager->GetView<SkyAtmosphereComponent>().each([&](EntityHandle entity)
         {
@@ -325,6 +368,8 @@ namespace Horizon
 
         }
 
+        JobSystemWaitForCounter(lightComponentUpdateJob);
+        JobSystemWaitForCounter(meshComponentUpdateJob);
         //renderScene->UpdateGPUScene();
     }
 }

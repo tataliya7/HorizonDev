@@ -2,12 +2,15 @@
 #include "../RasterizationRenderer.h"
 #include "../TemporalSuperSampling.h"
 
+#include <optick.h>
+
 namespace Horizon
 {
     void RasterizationRenderer::ExecutePostProcessingPipeline(
         RenderGraph& renderGraph,
         const SceneView& view)
     {
+        OPTICK_EVENT();
         RenderGraphDebugLabelRegion debugLabelRegion(renderGraph, "PostProcessingPipeline");
 
         RasterizationRendererIntermediateResources& intermediateResources = renderGraph.blackboard.Get<RasterizationRendererIntermediateResources>();
@@ -19,7 +22,7 @@ namespace Horizon
         RenderGraphTextureHandle whiteDummyTexture = defaultResources->ImportWhiteDummyTexture2D(renderGraph);
 
         RenderGraphTextureHandle exposureTexture = renderGraph.ImportExternalTexture(historyFrame.exposureTexture, "PreviousExposureTexture");
-        if (exposureTexture.IsNull())
+        if (!exposureTexture)
         {
             exposureTexture = whiteDummyTexture;
         }
@@ -46,7 +49,7 @@ namespace Horizon
 
         if (renderFeatures.enableMotionBlur)
         {
-            colorTexture = DispatchMotionBlur(renderGraph, view, colorTexture, depthTexture, motionVectorTexture);
+            //colorTexture = DispatchMotionBlur(renderGraph, view, colorTexture, depthTexture, motionVectorTexture);
         }
 
         // @todo Determine when to build a color pyramid and how many levels to build.
