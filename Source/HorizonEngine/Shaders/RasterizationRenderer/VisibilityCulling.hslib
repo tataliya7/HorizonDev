@@ -1,6 +1,7 @@
 #include "../ShaderCommon.hsh"
 #include "RasterizationRendererCommon.hsh"
 #include "GPUScene.hsh"
+#include "OcclusionCulling.hsh"
 
 #if INDIRECT_ARGUMENT_INITIALIZATION
 
@@ -75,9 +76,11 @@ SHADER_CONSTANTS_STRUCT_BEGIN();
 SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferSRV);
 SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_SRV(1, GeometryDataBufferSRV);
 SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_SRV(2, GeometryInstanceDataBufferSRV);
-SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_UAV(3, VisibileMeshletBufferUAV);
-SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_UAV(4, VisibileMeshletCounterBufferUAV);
-SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_UAV(5, DrawIndirectArgumentBufferUAV);
+SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(3, MinDepthPrymidTextureSRV);
+SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_UAV(4, VisibileMeshletBufferUAV);
+SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_UAV(5, VisibileMeshletCounterBufferUAV);
+SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_UAV(6, DrawIndirectArgumentBufferUAV);
+SHADER_CONSTANTS_SCALAR(7, int, SkipOcclusionCulling);
 SHADER_CONSTANTS_STRUCT_END();
 
 [shader("compute")]
@@ -88,6 +91,7 @@ void MeshletCullingCS(uint3 dispatchThreadID : SV_DispatchThreadID)
     PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
     ByteAddressBuffer geometryDataBuffer = ShaderConstants.GetGeometryDataBufferSRV();
     ByteAddressBuffer geometryInstanceDataBuffer = ShaderConstants.GetGeometryInstanceDataBufferSRV();
+    Texture2D minDepthPrymidTexture = ShaderConstants.GetMinDepthPrymidTextureSRV();
     RWByteAddressBuffer visibileMeshletBuffer = ShaderConstants.GetVisibileMeshletBufferUAV();
     RWByteAddressBuffer visibileMeshletCounterBuffer = ShaderConstants.GetVisibileMeshletCounterBufferUAV();
     RWByteAddressBuffer drawIndirectArgumentBuffer = ShaderConstants.GetDrawIndirectArgumentBufferUAV();
@@ -140,6 +144,26 @@ void MeshletCullingCS(uint3 dispatchThreadID : SV_DispatchThreadID)
             visibile = false;
             break;
         }
+    }
+
+    float3 minScreenSpacePosition = float3(1.0f, 1.0f, 1.0f);
+    float3 maxScreenSpacePosition = float3(0.0f, 0.0f, 0.0f);
+    for (uint i = 0; i < 8; i++)
+    {
+        float4 clipSpacePosition = mul(frameShaderParameters.worldToClipMatrix, float4(corners[i], 1.0f));
+        corners[i] = clipSpacePosition.xyz / clipSpacePosition.w;
+        corners[i].xy = NDCSpaceXYToScreenSpaceUV(corners[i].xy);
+
+        minScreenSpacePosition = min(minScreenSpacePosition, corners[i]);
+        maxScreenSpacePosition = max(maxScreenSpacePosition, corners[i]);
+    }
+
+    const int skipOcclusionCulling = ShaderConstants.GetSkipOcclusionCulling();
+    if (visibile && !skipOcclusionCulling)
+    {
+        int4 viewport = int4(0, 0, frameShaderParameters.renderWidth, frameShaderParameters.renderHeight);
+        HZBOcclusionCullingBounds occlusionCullingBounds = ComputeHZBOcclusionCullingBounds(viewport, minScreenSpacePosition, maxScreenSpacePosition);
+        //visibile = HZBOcclusionCulling(minDepthPrymidTexture, occlusionCullingBounds);
     }
 
     if (visibile)

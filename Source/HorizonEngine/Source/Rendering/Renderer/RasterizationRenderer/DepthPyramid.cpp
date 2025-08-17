@@ -35,10 +35,10 @@ namespace Horizon
                 RenderGraphTextureHandle minDepthPyramidTexture = intermediateResources.minDepthPyramidTexture = builder.WriteTexture(intermediateResources.minDepthPyramidTexture, RenderBackendResourceState::UnorderedAccess);
                 //RenderGraphTextureHandle maxDepthPyramidTexture = intermediateResources.maxDepthPyramidTexture = builder.WriteTexture(intermediateResources.maxDepthPyramidTexture, RenderBackendResourceState::UnorderedAccess);
 
+                RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::BuildDepthPyramid);
+
                 return [=](RenderBackendCommandList& commandList, const RenderGraphResourceRegistry& resourceRegistry)
                 {
-                    RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::BuildDepthPyramid);
-
                     // Build first mip
                     {
                         uint32 sourceMipLevel = 0;
@@ -106,5 +106,8 @@ namespace Horizon
                     commandList.Barriers(transitions.data(), (uint32)transitions.size());
                 };
             });
+
+        renderGraph.ExportTextureDeferred(intermediateResources.minDepthPyramidTexture, &historyFrame.minDepthPyramidTexture);
+        renderGraph.ExportTextureDeferred(intermediateResources.maxDepthPyramidTexture, &historyFrame.maxDepthPyramidTexture);
     }
 }

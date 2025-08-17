@@ -4113,7 +4113,8 @@ namespace Horizon
         VkViewport viewports[RenderBackendMaxViewportCount];
         for (uint32 i = 0; i < command.viewportCount; i++)
         {
-            viewports[i] = {
+            viewports[i] =
+            {
                 .x = command.viewports[i].x,
                 .y = command.viewports[i].y + command.viewports[i].height,
                 .width = command.viewports[i].width,

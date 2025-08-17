@@ -123,26 +123,32 @@ namespace Horizon
 
     void RenderGraphBuilder::SetBindlessResourceSRV(uint32 slot, RenderGraphTextureHandle texture)
     {
-        pass->textureStates.push_back(RenderGraphPass::TextureState{
+        if (texture)
+        {
+            pass->textureStates.push_back(RenderGraphPass::TextureState{
             .texture = renderGraph->textures[texture.GetIndex()],
             .initialState = RenderBackendResourceState::ShaderResource,
             .finalState = RenderBackendResourceState::ShaderResource });
-        pass->inputs.push_back(renderGraph->textures[texture.GetIndex()]);
-        renderGraph->textures[texture.GetIndex()]->referenceCount++;
+            pass->inputs.push_back(renderGraph->textures[texture.GetIndex()]);
+            renderGraph->textures[texture.GetIndex()]->referenceCount++;
 
-        pass->BindTextureSRV(slot, texture);
+            pass->BindTextureSRV(slot, texture);
+        }
     }
 
     void RenderGraphBuilder::SetBindlessResourceUAV(uint32 slot, RenderGraphTextureHandle texture, uint32 mipLevel)
     {
-        pass->textureStates.push_back(RenderGraphPass::TextureState{
+        if (texture)
+        {
+            pass->textureStates.push_back(RenderGraphPass::TextureState{
             .texture = renderGraph->textures[texture.GetIndex()],
             .initialState = RenderBackendResourceState::UnorderedAccess,
             .finalState = RenderBackendResourceState::UnorderedAccess });
-        pass->outputs.push_back(renderGraph->textures[texture.GetIndex()]);
-        pass->referenceCount++;
+            pass->outputs.push_back(renderGraph->textures[texture.GetIndex()]);
+            pass->referenceCount++;
 
-        pass->BindTextureUAV(slot, texture);
+            pass->BindTextureUAV(slot, texture);
+        }
     }
 
     void RenderGraphBuilder::SetShaderConstantValue(uint32 slot, int32 value)

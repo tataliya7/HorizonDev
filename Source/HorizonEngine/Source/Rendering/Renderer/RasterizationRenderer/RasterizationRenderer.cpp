@@ -204,6 +204,8 @@ namespace Horizon
         renderFeatures.enableConvolutionBloom = false;
         renderFeatures.enableEditorSelectionOutline = false;
         renderFeatures.enableSubsurfaceScattering = false;
+        renderFeatures.enableBilateralGridLocalToneMapping = (finalPostProcessingSettings.localToneMappingMethod == LocalToneMappingMethod::BilateralGrid);
+        renderFeatures.enableExposureFusionLocalToneMapping = (finalPostProcessingSettings.localToneMappingMethod == LocalToneMappingMethod::ExposureFusion);
 
         if (!renderFeatures.enableAutoExposure)
         {

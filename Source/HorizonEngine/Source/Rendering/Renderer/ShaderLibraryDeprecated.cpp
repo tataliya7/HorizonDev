@@ -157,6 +157,7 @@ namespace Horizon
         }
         {
             ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RasterizationRenderer/BuildDepthPyramid.hslib", "BuildDepthPyramidCS");
+            shaderDesc.AddDefine("BUILD_DEPTH_PYRAMID_MIN", 1);
             shaderLibrary->LoadShader(ShaderID::BuildDepthPyramid, shaderDesc);
         }
         {

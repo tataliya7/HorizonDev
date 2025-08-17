@@ -616,6 +616,8 @@ namespace Horizon
             Vector2f cameraJitterOffset;
             CameraTransformations transformations;
             float preExposure;
+            RenderGraphPersistentTexture* minDepthPyramidTexture = nullptr;
+            RenderGraphPersistentTexture* maxDepthPyramidTexture = nullptr;
             RenderGraphPersistentBuffer* autoExposureBuffer = nullptr;
             RenderGraphPersistentTexture* exposureTexture = nullptr;
             RenderGraphPersistentTexture* sceneDepthTexture = nullptr;

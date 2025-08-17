@@ -245,34 +245,40 @@ namespace Horizon
 
     void RenderGraph::ExportTextureDeferred(RenderGraphTextureHandle handle, RenderGraphPersistentTexture** persistentTexture)
     {
-        RenderGraphTexture* texture = textures[handle.GetIndex()];
-        texture->exported = true;
-        texture->NeverCull();
-
-        assert(!texture->IsImported());
-
-        RenderGraphExportedTexture exportedTexture =
+        if (handle && persistentTexture)
         {
-            .source = texture,
-            .target = persistentTexture,
-        };
-        exportedTextures.emplace_back(exportedTexture);
+            RenderGraphTexture* texture = textures[handle.GetIndex()];
+            texture->exported = true;
+            texture->NeverCull();
+
+            assert(!texture->IsImported());
+
+            RenderGraphExportedTexture exportedTexture =
+            {
+                .source = texture,
+                .target = persistentTexture,
+            };
+            exportedTextures.emplace_back(exportedTexture);
+        }
     }
 
     void RenderGraph::ExportBufferDeferred(RenderGraphBufferHandle handle, RenderGraphPersistentBuffer** persistentBuffer)
     {
-        RenderGraphBuffer* buffer = buffers[handle.GetIndex()];
-        buffer->exported = true;
-        buffer->NeverCull();
-
-        assert(!buffer->IsImported());
-
-        RenderGraphExportedBuffer exportedBuffer =
+        if (handle && persistentBuffer)
         {
-            .source = buffer,
-            .target = persistentBuffer,
-        };
-        exportedBuffers.emplace_back(exportedBuffer);
+            RenderGraphBuffer* buffer = buffers[handle.GetIndex()];
+            buffer->exported = true;
+            buffer->NeverCull();
+
+            assert(!buffer->IsImported());
+
+            RenderGraphExportedBuffer exportedBuffer =
+            {
+                .source = buffer,
+                .target = persistentBuffer,
+            };
+            exportedBuffers.emplace_back(exportedBuffer);
+        }
     }
 
     const RenderGraphTextureDescription& RenderGraph::GetTextureDesc(RenderGraphTextureHandle handle) const

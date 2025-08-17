@@ -1,0 +1,55 @@
+#pragma once
+
+struct HZBOcclusionCullingBounds
+{
+    int2 minPixelCoord;
+    int2 maxPixelCoord;
+    int4 hzbTextureRect;
+    int hzbTextureMipLevel;
+    float closestDepth;
+};
+
+HZBOcclusionCullingBounds ComputeHZBOcclusionCullingBounds(int4 viewport, float3 minScreenSpacePosition, float3 maxScreenSpacePosition)
+{
+    float2 viewportSize = float2(viewport.z, viewport.w);
+    int2 minPixelCoord = max(int2(floor(minScreenSpacePosition.xy * viewportSize + viewport.xy)), viewport.xy);
+    int2 maxPixelCoord = min(int2(ceil(maxScreenSpacePosition.xy * viewportSize + viewport.xy)), viewport.xy + viewport.zw - 1);
+
+	int4 hzbTextureRectFirstLevel = int4(minPixelCoord, maxPixelCoord) >> 1;
+
+    // floor(log2(n)) = firstbithigh(n)
+    int2 mipLevelHorizontalAndVertical = firstbithigh(hzbTextureRectFirstLevel.zw - hzbTextureRectFirstLevel.xy + 1);
+    int hzbTextureMipLevel = max(max(mipLevelHorizontalAndVertical.x, mipLevelHorizontalAndVertical.y), 0);
+
+    HZBOcclusionCullingBounds bounds;
+    bounds.minPixelCoord = minPixelCoord;
+    bounds.maxPixelCoord = maxPixelCoord;
+    bounds.hzbTextureRect = hzbTextureRectFirstLevel >> hzbTextureMipLevel;
+    bounds.hzbTextureMipLevel = hzbTextureMipLevel;
+    bounds.closestDepth = maxScreenSpacePosition.z;
+
+    return bounds;
+}
+
+bool HZBOcclusionCulling(Texture2D hzbTexture, HZBOcclusionCullingBounds bounds)
+{
+    uint2 hzbTextureSize;
+    hzbTexture.GetDimensions(hzbTextureSize.x, hzbTextureSize.y);
+
+    float2 hzbTextureTexelSize = (1.0f / hzbTextureSize) * exp2(bounds.hzbTextureMipLevel);
+    float4 hzbTextureCoordinates = (bounds.hzbTextureRect + 0.5f) * float4(hzbTextureTexelSize, hzbTextureTexelSize);
+
+    float4 depthValues;
+    depthValues.x = hzbTexture.SampleLevel(GlobalSamplerPointClamp, hzbTextureCoordinates.xy, bounds.hzbTextureMipLevel).r;
+    depthValues.y = hzbTexture.SampleLevel(GlobalSamplerPointClamp, hzbTextureCoordinates.xw, bounds.hzbTextureMipLevel).r;
+    depthValues.z = hzbTexture.SampleLevel(GlobalSamplerPointClamp, hzbTextureCoordinates.zy, bounds.hzbTextureMipLevel).r;
+    depthValues.w = hzbTexture.SampleLevel(GlobalSamplerPointClamp, hzbTextureCoordinates.zw, bounds.hzbTextureMipLevel).r;
+
+    depthValues.zw = (bounds.hzbTextureRect.x == bounds.hzbTextureRect.z) ? 1.0f : depthValues.zw;
+    depthValues.yw = (bounds.hzbTextureRect.y == bounds.hzbTextureRect.w) ? 1.0f : depthValues.yw;
+
+    float furthestOccluderDepth = min(min(min(depthValues.x, depthValues.y), depthValues.z), depthValues.w);
+
+    bool visible = bounds.closestDepth > furthestOccluderDepth;
+    return visible;
+}
