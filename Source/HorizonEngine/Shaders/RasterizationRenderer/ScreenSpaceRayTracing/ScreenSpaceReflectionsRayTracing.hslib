@@ -1,35 +1,55 @@
-#include "../ShaderCommon.hsh"
-#include "../Random.hsh"
-#include "RasterizationRendererCommon.hsh"
+#include "../../ShaderCommon.hsh"
+#include "../../Random.hsh"
+#include "../RasterizationRendererCommon.hsh"
 #include "ScreenSpaceReflectionsCommon.hsh"
-#include "ScreenSpaceRayTracing.hsh"
+#include "ScreenSpaceRayTracingCommon.hsh"
 
-BIND_BUFFER_CBV(0, PerFrameShaderParameters);
-BIND_TEXTURE_2D_SRV(1, GBuffer1);
-BIND_TEXTURE_2D_SRV(2, VelocityBuffer);
-BIND_TEXTURE_2D_SRV(3, SceneDepth);
-BIND_TEXTURE_2D_SRV(4, DepthPyramid);
-BIND_TEXTURE_2D_TYPED_SRV(5, uint, TilesBuffer);
-BIND_TEXTURE_2D_SRV(6, HistorySceneColor);
-BIND_TEXTURE_2D_UAV(7, float4, RayIndirectSpecular);
-BIND_TEXTURE_2D_UAV(8, float4, RayDirectionPDF);
-BIND_TEXTURE_2D_UAV(9, float, RayLength);
-BIND_TEXTURE_2D_SRV(10, BlueNoiseTexture);
-BIND_TEXTURE_2D_UAV(15, float4, DebugOutput);
+#if SSR_QUALITY == 0 // Low
+    #define SSR_RAY_TRACING_RAY_COUNT 1
+    #define SSR_RAY_TRACING_STEP_COUNT 8
+#elif SSR_QUALITY == 1 // Medium
+    #define SSR_RAY_TRACING_RAY_COUNT 2
+    #define SSR_RAY_TRACING_STEP_COUNT 8
+#elif SSR_QUALITY == 2 // High
+    #define SSR_RAY_TRACING_RAY_COUNT 4
+    #define SSR_RAY_TRACING_STEP_COUNT 4
+#elif SSR_QUALITY == 3 // Ultra
+    #define SSR_RAY_TRACING_RAY_COUNT 4
+    #define SSR_RAY_TRACING_STEP_COUNT 8
+#else
+    #error "Invalid SSR_QUALITY"
+#endif
 
-static const float DepthBufferThickness = 1.5;
-static const float SSRScreenEdgeVignetteFactor = 5.0f;
+static const float DepthBufferThickness = 1.5f;
+static const float SSRScreenEdgeVignettingFactor = 5.0f;
 
-float4 BlueNoise(uint2 coord, float phase)
+SHADER_CONSTANTS_STRUCT_BEGIN();
+SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferSRV);
+SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(1, DepthTextureSRV);
+SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(2, DepthPyramidTextureSRV);
+SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(3, GBuffer0SRV);
+SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(4, GBuffer1SRV);
+SHADER_CONSTANTS_TEXTURE_2D_UAV(5, float4, SSRRayHitTextureUAV);
+SHADER_CONSTANTS_TEXTURE_2D_UAV(6, float, SSRRayConfidenceTextureUAV);
+SHADER_CONSTANTS_STRUCT_END();
+
+// float4 BlueNoise(uint2 coord, float phase)
+// {
+//     Texture2D blueNoiseTexture = GetBlueNoiseTextureSRV();
+//     return frac(blueNoiseTexture[coord % 128].rgba + phase);
+// }
+
+// float4 BlueNoise(uint2 pixelCoord, float phase, float depth)
+// {
+//     Texture2D blueNoiseTexture = GetBlueNoiseTextureSRV();
+//     return frac(blueNoiseTexture[pixelCoord % 128].rgba + phase + depth);
+// }
+
+float CalculateScreenEdgeVignetting(float2 uv, float factor)
 {
-    Texture2D blueNoiseTexture = GetBlueNoiseTextureSRV();
-    return frac(blueNoiseTexture[coord % 128].rgba + phase);
-}
-
-float4 BlueNoise(uint2 pixelCoord, float phase, float depth)
-{
-    Texture2D blueNoiseTexture = GetBlueNoiseTextureSRV();
-    return frac(blueNoiseTexture[pixelCoord % 128].rgba + phase + depth);
+	float2 ndc = uv * 2.0f - 1.0f;
+	float2 x = saturate(abs(ndc) * factor - (factor - 1.0f));
+	return saturate(1.0f - dot(x, x));
 }
 
 float ValidateHit(float2 originUV, float3 worldSpaceRayDirection, float3 hit, float3 hitNormal, float surfaceDepth, float2 prevHitUV, float4 hzbSizeAndInvSize, float4x4 clipToViewMatrix)
@@ -79,229 +99,150 @@ uint2 GetReflectionIndirectDispatchCoord(uint3 groupID, uint3 groupThreadID, Tex
     return subtile_upperleft + unflatten2D(groupThreadID.x, SSR_THREAD_GROUP_SIZE);
 }
 
+float4 ImportanceSampleGGX(float2 E, float Roughness) {
+	float m = Roughness * Roughness;
+	float m2 = m * m;
+
+	float Phi = 2 * M_PI * E.x;
+	float CosTheta = sqrt( (1 - E.y) / ( 1 + (m2 - 1) * E.y) );
+	float SinTheta = sqrt(1 - CosTheta * CosTheta);
+
+	float3 H = float3( SinTheta * cos(Phi), SinTheta * sin(Phi), CosTheta );
+
+	float d = (CosTheta * m2 - CosTheta) * CosTheta + 1;
+	float D = m2 / (M_PI * d * d);
+
+	float PDF = D * CosTheta;
+	return float4(H, PDF);
+}
+
 [shader("compute")]
-[numthreads(SSR_THREAD_GROUP_SIZE * SSR_THREAD_GROUP_SIZE, 1, 1)]
-void ScreenSpaceReflectionsRayTracingCS(uint3 groupID : SV_GroupID, uint3 groupThreadID : SV_GroupThreadID)
+[numthreads(SSR_THREAD_GROUP_SIZE, SSR_THREAD_GROUP_SIZE, 1)]
+//[numthreads(SSR_THREAD_GROUP_SIZE * SSR_THREAD_GROUP_SIZE, 1, 1)]
+void ScreenSpaceReflectionsRayTracingCS(uint3 groupID : SV_GroupID, uint3 groupThreadID : SV_GroupThreadID, uint3 dispatchThreadID : SV_DispatchThreadID)
 {
     StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
     PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
-    Texture2D sceneDepth = GetSceneDepthSRV();
-    Texture2D gbuffer1 = GetGBuffer1SRV();
-    Texture2D velocityBuffer = GetVelocityBufferSRV();
-    Texture2D depthPyramid = GetDepthPyramidSRV();
-    Texture2D<uint> tilesBuffer = GetTilesBufferSRV();
-    Texture2D historySceneColor = GetHistorySceneColorSRV();
+    Texture2D depthTexture = ShaderConstants.GetDepthTextureSRV();
+    Texture2D depthPyramidTexture = ShaderConstants.GetDepthPyramidTextureSRV();
+    Texture2D gbuffer0 = ShaderConstants.GetGBuffer0SRV();
+    Texture2D gbuffer1 = ShaderConstants.GetGBuffer1SRV();
+    //Texture2D<uint> tilesBuffer = ShaderConstants.GetTilesBufferSRV();
+    RWTexture2D<float4> ssrRayHitTexture = ShaderConstants.GetSSRRayHitTextureUAV();
+    RWTexture2D<float> ssrRayConfidenceTexture = ShaderConstants.GetSSRRayConfidenceTextureUAV();
 
-    float2 resolution = float2((0), (1));
-    float4 screenSize = float4(resolution.x, resolution.y, 1.0 / resolution.x, 1.0 / resolution.y);
+    uint outputWidth, outputHeight;
+    ssrRayHitTexture.GetDimensions(outputWidth, outputHeight);
 
-    uint hzbWidth, hzbHeight;
-    depthPyramid.GetDimensions(hzbWidth, hzbHeight);
-    float4 hzbSizeAndInvSize = float4(float(hzbWidth), float(hzbHeight), 1.0 / float(hzbWidth), 1.0 / float(hzbHeight));
-    float4 hzbUVFactorAndInvFactor = float4((2), (3), (4), (5));
-
-    uint2 pixelCoord = GetReflectionIndirectDispatchCoord(groupID, groupThreadID, tilesBuffer);
-    float2 uv = (pixelCoord + 0.5) * float2(1.0 / resolution.x, 1.0 / resolution.y);
-
-    RWTexture2D<float4> rayIndirectSpecular = GetRayIndirectSpecularUAV();
-    RWTexture2D<float4> rayDirectionPDF = GetRayDirectionPDFUAV();
-    RWTexture2D<float> rayLength = GetRayLengthUAV();
-    RWTexture2D<float4> debugOutput = GetDebugOutputUAV();
+    uint2 pixelCoord = dispatchThreadID.xy;//GetReflectionIndirectDispatchCoord(groupID, groupThreadID, tilesBuffer);
+    float2 uv = (pixelCoord + 0.5f) * float2(1.0f / outputWidth, 1.0f / outputHeight);
 
 #ifdef SSR_EARLY_EXIT_RAYS
-    rayIndirectSpecular[pixelCoord] = 0.0;
-    rayDirectionPDF[pixelCoord] = 0.0;
-    rayLength[pixelCoord] = 0.0;
+    ssrRayHitTexture[pixelCoord] = 0.0f;
+    ssrRayConfidenceTexture[pixelCoord] = 0.0f;
 #else
-
-    // This is necessary for accurate upscaling. This is so we don't reuse the same half-res pixels
-    float2 jitterOffset = floor(BlueNoise(uint2(0, 0), frameShaderParameters.blueNoisePhase).xy);
-    jitterOffset = 0;
-    uint2 jitteredPixel = (jitterOffset + pixelCoord) * SSR_DOWNSAMPLE_FACTOR;
-    float2 jitteredUV = (jitteredPixel + 0.5) * float2(1.0 / frameShaderParameters.renderWidth, 1.0 / frameShaderParameters.renderHeight);// T
+    // This is necessary for accurate upscaling, because we don't reuse the same half-res pixel.
+    //float2 jitterOffset = 0;//floor(BlueNoise(uint2(0, 0), frameShaderParameters.blueNoisePhase).xy);
+    uint2 jitteredPixel = pixelCoord;//(jitterOffset + pixelCoord) * SSR_DOWNSAMPLE_FACTOR;
+    float2 jitteredUV = uv;//(jitteredPixel + 0.5) * float2(1.0 / frameShaderParameters.renderWidth, 1.0 / frameShaderParameters.renderHeight);// T
 
     // Due to HiZ tracing, the tracing and the pass components must match depth.
-    //float depth = sceneDepth[jitteredPixel].r;
-    float depth = depthPyramid.SampleLevel(GlobalSamplerPointClamp, jitteredUV, 0).r;
-    float roughness = gbuffer1[jitteredPixel].w;
+    //float depth = depthPyramidTexture.SampleLevel(GlobalSamplerPointClamp, jitteredUV, 0).r;
+    float depth = depthTexture.SampleLevel(GlobalSamplerPointClamp, jitteredUV, 0).r;
+    float4 gbuffer0Data = gbuffer0.SampleLevel(GlobalSamplerPointClamp, jitteredUV, 0);
+    float4 gbuffer1Data = gbuffer1.SampleLevel(GlobalSamplerPointClamp, jitteredUV, 0);
 
-    if (!NeedReflection(roughness, depth, SSR_ROUGHNESS_THRESHOLD_CHEAP_RAY_TRACING))
+    float roughness = gbuffer1Data.z;
+
+    if (!ShouldComputeReflections(depth, roughness, SSR_ROUGHNESS_THRESHOLD_CHEAP_RAY_TRACING))
     {
-        rayIndirectSpecular[pixelCoord] = 0.0;
-        rayDirectionPDF[pixelCoord] = 0.0;
-        rayLength[pixelCoord] = 0.0;
+        ssrRayHitTexture[pixelCoord] = 0.0f;
+        ssrRayConfidenceTexture[pixelCoord] = 0.0f;
         return;
     }
 
     float3 P = ReconstructWorldSpacePositionFromUVZ(jitteredUV, depth, frameShaderParameters.clipToWorldMatrix);
-    float3 N = gbuffer1[jitteredPixel].rgb;
+    float3 N = DecodeNormalFromGBuffer(gbuffer0Data.xyz);
     float3 V = normalize(frameShaderParameters.cameraPosition - P);
 
-    float4 H;
-    float3 L;
-    if (roughness > 0.05f)
-    {
-        float3x3 TBN = CreateTangentSpaceBasis(N);
+    float3 H = N;
+    float pdf = 1.0f;
+    // if (roughness > 0.05f)
+    // {
+    //     const float2 blueNoise = BlueNoise(pixelCoord, frameShaderParameters.blueNoisePhase).xy;
+    //     float2 Xi = blueNoise.xy;
+    //     Xi.y = lerp(Xi.y, 0.0f, GGX_IMPORTANCE_SAMPLE_BIAS);
 
-        // World to tangent
-        float3 tangentV = WorldToTangent(V, tangentToWorld);
+    //     float4 ggxSample = ImportanceSampleGGX(SampleDisk(Xi), roughness);
 
-        const float2 blueNoise = BlueNoise(pixelCoord, frameShaderParameters.blueNoisePhase).xy;
-        float2 Xi = blueNoise.xy;
-        Xi.y = lerp(Xi.y, 0.0f, GGX_IMPORTANCE_SAMPLE_BIAS);
-        H = ImportanceSampleVisibleGGX(SampleDisk(Xi), roughness, tangentV);
+    //     float3x3 TBN = CreateTangentSpaceBasis(N);
+    //     H = TangentToWorld(ggxSample.xyz, TBN);
+    //     pdf = ggxSample.w;
+    // }
 
-        // Tangent to world
-        H.xyz = TangentToWorld(tangentToWorld, H.xyz);
+    float3 L = reflect(-V, H);
 
-        L = reflect(-V, H.xyz);
-    }
-    else
-    {
-        H = float4(N.xyz, 1.0f);
-        L = reflect(-V, N);
-    }
+    const uint rayCount = SSR_RAY_TRACING_RAY_COUNT;
+    const uint stepCount = SSR_RAY_TRACING_STEP_COUNT;
+    const float noise = InterleavedGradientNoiseEX(pixelCoord, frameShaderParameters.frameIndexMod8);
 
-    float4 rayStartClip = mul(frameShaderParameters.worldToClipMatrix, float4(P, 1.0));
-    float4 rayEndClip = mul(frameShaderParameters.worldToClipMatrix, float4(P + L, 1.0));
+    float4 cameraSpacePosition = mul(frameShaderParameters.worldToViewMatrix, float4(P, 1.0f));
+    float cameraSpaceDepth = -cameraSpacePosition.z;
 
-    float3 rayStartScreen = rayStartClip.xyz / rayStartClip.w;
-    float3 rayEndScreen = rayEndClip.xyz / rayEndClip.w;
+    float3 rayOrigin = P;
+    float3 rayDirection = L;
+    float tMax = cameraSpaceDepth;
 
-    rayStartScreen.xy = rayStartScreen.xy * float2(0.5, -0.5) + float2(0.5, 0.5);
-    rayEndScreen.xy = rayEndScreen.xy * float2(0.5, -0.5) + float2(0.5, 0.5);
-
-#if SSR_QUALITY == 0
-    uint numSteps = 8;
-    uint numRays = 1;
-    bool bGlossy = false;
-#elif SSR_QUALITY == 1
-    uint numSteps = 16;
-    uint numRays = 1;
-    #if SSR_OUTPUT_FOR_DENOISER
-        bool bGlossy = true;
-    #else
-        bool bGlossy = false;
-    #endif
-#elif SSR_QUALITY == 2
-    uint numSteps = 8;
-    uint numRays = 4;
-    bool bGlossy = true;
-#elif SSR_QUALITY == 3
-    uint numSteps = 12;
-    uint numRays = 12;
-    bool bGlossy = true;
-#endif
+    ScreenSpaceRay ray = CreateScreenSpaceRay(
+        rayOrigin,
+        rayDirection,
+        tMax,
+        frameShaderParameters.worldToClipMatrix,
+        frameShaderParameters.viewToClipMatrix);
 
 #ifdef SSR_CHEAP_RAYS
 
-    float4 params = float4((2), (3), (4), (5));
-    rayStartScreen.xy *= params.xy; // Ratio factor between hierarchy and pass
-    rayEndScreen.xy *= params.xy;
-
-    float3 rayDirectionScreen = rayEndScreen - rayStartScreen;
-
-    bool debug = all(pixelCoord == uint2(frameShaderParameters.renderWidth, frameShaderParameters.renderHeight) / 2);
-    // The ray marching benefits from jittering to create a smoother transition between samples and LOD
-    float jitter = InterleavedGradientNoiseEX(pixelCoord, frameShaderParameters.frameIndex % 8); // Temporally stabilize
-
-    float3 hit;
     bool foundHit = false;
-    // CastScreenSpaceRayLinear(depthPyramid, rayStartScreen, rayDirectionScreen, jitter, roughness, hit, foundHit);
+    float3 hitPointUVZ = float3(0.0f, 0.0f, 0.0f);
 
-    // hit.xy *= params.zw; // Undo ratio
+    CastScreenSapceRay_LinearTracing(
+        depthTexture,
+        ray,
+        stepCount,
+        noise,
+        foundHit,
+        hitPointUVZ);
 
 #else // SSR_EXPENSIVE_RAYS
 
-    // if (numRays > 1)
-    // {
+    // @todo
+    uint depthPyramidTextureWidth, depthPyramidTextureHeight;
+    depthPyramidTexture.GetDimensions(depthPyramidTextureWidth, depthPyramidTextureHeight);
+    float4 depthPyramidTextureSize = float4(float(depthPyramidTextureWidth), float(depthPyramidTextureHeight), 1.0f / float(depthPyramidTextureWidth), 1.0f / float(depthPyramidTextureHeight));
 
-    // }
-    // else
-    // {
-
-    // }
-
-    float3 rayDirectionScreen = rayEndScreen - rayStartScreen;
-
-    bool debug = all(pixelCoord == uint2(frameShaderParameters.renderWidth, frameShaderParameters.renderHeight) / 2);
-
-    uint www; uint hhh; uint numMipLevels;
-    depthPyramid.GetDimensions(0, www, hhh, numMipLevels);
-
-    float3 hit;
-    float hitMipLevel;
-    bool foundHit = false;
-    bool uncertain;
-
-#if 0
-    CastScreenSpaceRayHZB(
-        depthPyramid,
-        HiZTraceStartMipLevel,
-        float(numMipLevels - 1),
-        rayStartScreen,
-        rayDirectionScreen,
-        HiZTraceMaxNumIterations,
-        screenSize,
-        hzbUVFactorAndInvFactor,
-        debug,
-        debugOutput,
-        hit,
-        hitMipLevel,
-        foundHit,
-        uncertain);
-#else
-    float rayStepOffset = InterleavedGradientNoiseEX(pixelCoord, frameShaderParameters.frameIndex % 8);
-    //rayStepOffset = 1;
-    CastScreenSpaceRayLinear(
-        sceneDepth,
-        rayStartScreen,
-        rayDirectionScreen,
-        rayStepOffset,
-        debug,
-        debugOutput,
-        hit,
-        foundHit);
 #endif
 
-    if (debug)
+    // float3 worldSpaceHitPoint = ReconstructWorldSpacePositionFromUVZ(hitPointUVZ.xy, hitPointUVZ.z, frameShaderParameters.clipToWorldMatrix);
+    // float3 worldSpaceRayDirection = normalize(worldSpaceHitPoint - P);
+    // float worldSpaceRayLength = length(worldSpaceHitPoint - P);
+
+    // float4 worldSpaceHitPointClip = mul(frameShaderParameters.worldToClipMatrix, float4(worldSpaceHitPoint, 1.0));
+    // float3 worldSpaceHitPointScreen = worldSpaceHitPointClip.xyz / worldSpaceHitPointClip.w;
+    // float2 worldSpaceHitPointUV = NDCSpaceXYToScreenSpaceUV(worldSpaceHitPointScreen.xy);
+
+    // float3 hitNormal = gbuffer1.SampleLevel(GlobalSamplerPointClamp, hit.xy, 0).xyz;
+    // float surfaceDepth = depthPyramidTexture.SampleLevel(GlobalSamplerPointClamp, hit.xy, 0).r;
+    // float2 motionVector = motionVectorTexture.SampleLevel(GlobalSamplerPointClamp, hit.xy, 0).xy;
+    // motionVector = 0;
+    // float2 prevHitUV = hit.xy + motionVector;
+
+    // float confidence = foundHit ? ValidateHit(jitteredUV, worldSpaceRayDirection, hit, hitNormal, surfaceDepth, prevHitUV, screenSize, frameShaderParameters.clipToViewMatrix) : 0;
+    float confidence = foundHit ? 1.0f : 0.0f;
+
+    if (foundHit)
     {
-        PrintSample(debugOutput, rayStartScreen.xy, float4(1, 1, 0, 1));
-        PrintSample(debugOutput, rayEndScreen.xy, float4(1, 1, 1, 1));
-    }
-
-#endif // SSR_CHEAP_RAYS
-
-    float3 worldSpaceHitPoint = ReconstructWorldSpacePositionFromUVZ(hit.xy, hit.z, frameShaderParameters.clipToWorldMatrix);
-    float3 worldSpaceRayDirection = normalize(worldSpaceHitPoint - P);
-    float worldSpaceRayLength = length(worldSpaceHitPoint - P);
-
-    float4 worldSpaceHitPointClip = mul(frameShaderParameters.worldToClipMatrix, float4(worldSpaceHitPoint, 1.0));
-    float3 worldSpaceHitPointScreen = worldSpaceHitPointClip.xyz / worldSpaceHitPointClip.w;
-    float2 worldSpaceHitPointUV = NDCSpaceXYToScreenSpaceUV(worldSpaceHitPointScreen.xy);
-
-    float3 hitNormal = gbuffer1.SampleLevel(GlobalSamplerPointClamp, hit.xy, 0).xyz;
-    float surfaceDepth = depthPyramid.SampleLevel(GlobalSamplerPointClamp, hit.xy, 0).r;
-    float2 motionVector = velocityBuffer.SampleLevel(GlobalSamplerPointClamp, hit.xy, 0).xy;
-    motionVector = 0;
-    float2 prevHitUV = hit.xy + motionVector;
-
-    float confidence = foundHit ? ValidateHit(jitteredUV, worldSpaceRayDirection, hit, hitNormal, surfaceDepth, prevHitUV, screenSize, frameShaderParameters.clipToViewMatrix) : 0;
-
-    if (debug)
-    {
-        PrintSample(debugOutput, worldSpaceHitPointUV.xy, float4(1, 0, 0, 1));
-    }
-
-    float4 radiance = 0;
-
-    // if (foundHit)
-    {
-        // Fade out hits near the screen borders
-        float vignetteHitCurr = CalculateScreenEdgeVignette(hit.xy, SSRScreenEdgeVignetteFactor);
-        float vignetteHitPrev = CalculateScreenEdgeVignette(prevHitUV.xy, SSRScreenEdgeVignetteFactor);
-        float vignette = min(vignetteHitCurr, vignetteHitPrev);
-        confidence *= vignette;
+        float vignetting = CalculateScreenEdgeVignetting(hitPointUVZ.xy, SSRScreenEdgeVignettingFactor);
+        confidence *= vignetting;
 
     #if 0
         float3 viewSpaceSurfacePosition = ReconstructViewSpacePositionFromUVZ(hit.xy, surfaceDepth, frameShaderParameters.clipToViewMatrix);
@@ -309,17 +250,17 @@ void ScreenSpaceReflectionsRayTracingCS(uint3 groupID : SV_GroupID, uint3 groupT
         float distance = length(viewSpaceSurfacePosition - viewSpaceHitPosition);
         // We accept all hits that are within a reasonable distance below the surface.
         confidence *= (1.0 - smoothstep(0.0, DepthBufferThickness, distance));
-        //confidence *= confidence;
+
     #endif
 
-        radiance.rgb = historySceneColor.SampleLevel(GlobalSamplerLinearClamp, prevHitUV, 0).rgb;
-        //radiance.rgb = historySceneColor.SampleLevel(GlobalSamplerLinearClamp, hit.xy, 0).rgb;
-    }
-    radiance.a = confidence;
-    radiance.a = 1.0;
+    #if 0
 
-    rayIndirectSpecular[pixelCoord] = radiance;
-    rayDirectionPDF[pixelCoord] = float4(L, H.w);
-    rayLength[pixelCoord] = worldSpaceRayLength;
+    #endif
+    }
+
+    confidence *= confidence;
+
+    ssrRayHitTexture[pixelCoord] = float4(hitPointUVZ, pdf);
+    ssrRayConfidenceTexture[pixelCoord] = confidence;
 #endif // SSR_EARLY_EXIT_RAYS
 }

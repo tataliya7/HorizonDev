@@ -1,6 +1,6 @@
 #pragma once
 
-#define PI               3.1415926535897932f
+#define M_PI             3.1415926535897932f
 #define INV_PI           0.3183098861837067f
 
 #define FLOAT_MIN        1.175494351e-38f

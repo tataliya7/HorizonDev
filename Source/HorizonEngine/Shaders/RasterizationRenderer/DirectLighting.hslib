@@ -41,7 +41,7 @@ SHADER_CONSTANTS_STRUCT_END();
 //     float FD90 = 0.5 + 2 * VoH * VoH * Roughness;
 //     float FdV = 1 + (FD90 - 1) * Pow5( 1 - NoV );
 //     float FdL = 1 + (FD90 - 1) * Pow5( 1 - NoL );
-//     return DiffuseColor * ( (1 / PI) * FdV * FdL );
+//     return DiffuseColor * ( (1 / M_PI) * FdV * FdL );
 // }
 
 // half3 DualSpecularGGX(half AverageRoughness, half Lobe0Roughness, half Lobe1Roughness, half LobeMix, half3 SpecularColor, BxDFContext Context, half NoL, FAreaLight AreaLight)
@@ -167,8 +167,8 @@ float3 ComputeDistantLightDirectLightingContribution(PerFrameShaderParameters fr
         // float G = SchlickGGX(NdotL, NdotV, roughness);
 
         // float3 Kd = (1.0 - F) * (1.0 - metallic);
-        // float3 diffuse = Kd * baseColor.rgb / PI;
-        // //float3 diffuse = Kd * baseColor.rgb / PI;
+        // float3 diffuse = Kd * baseColor.rgb / M_PI;
+        // //float3 diffuse = Kd * baseColor.rgb / M_PI;
         // float3 specular = (F * D * G) / (4.0 * max(0.001, NdotL * NdotV));
         // lightColor = lightColor * lightIntensity;
 
@@ -319,7 +319,7 @@ float3 ComputeLocalLightDirectLightingContribution(PerFrameShaderParameters fram
                     float G = SchlickGGX(NdotL, NdotV, roughness);
 
                     float3 Kd = (1.0 - F) * (1.0 - metallic);
-                    float3 diffuse = Kd * baseColor.rgb / PI * surface.ambientOcclusion;
+                    float3 diffuse = Kd * baseColor.rgb / M_PI * surface.ambientOcclusion;
                     float3 specular = (F * D * G) / (4.0 * max(0.001, NdotL * NdotV));
                     lightColor = lightColor * attenuation;
 

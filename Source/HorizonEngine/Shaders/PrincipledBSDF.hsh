@@ -9,22 +9,22 @@ float SchlickFresnel(float u)
 
 float GTR1(float NdotH, float a)
 {
-    if (a >= 1) return 1/PI;
+    if (a >= 1) return 1/M_PI;
     float a2 = a*a;
     float t = 1 + (a2-1)*NdotH*NdotH;
-    return (a2-1) / (PI*log(a2)*t);
+    return (a2-1) / (M_PI*log(a2)*t);
 }
 
 float GTR2(float NdotH, float a)
 {
     float a2 = a*a;
     float t = 1 + (a2-1)*NdotH*NdotH;
-    return a2 / (PI * t*t);
+    return a2 / (M_PI * t*t);
 }
 
 float GTR2_aniso(float NdotH, float HdotX, float HdotY, float ax, float ay)
 {
-    return 1 / (PI * ax*ay * sqr( sqr(HdotX/ax) + sqr(HdotY/ay) + NdotH*NdotH ));
+    return 1 / (M_PI * ax*ay * sqr( sqr(HdotX/ax) + sqr(HdotY/ay) + NdotH*NdotH ));
 }
 
 float smithG_GGX(float NdotV, float alphaG)

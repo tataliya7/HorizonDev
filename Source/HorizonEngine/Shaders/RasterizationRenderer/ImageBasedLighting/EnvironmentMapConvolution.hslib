@@ -39,7 +39,7 @@ float3 ConvolveEnvironmentMap(TextureCube environmentMapTexture, float3 N, float
 
             // Solid angle of current sample
             float omegaS = 1.0f / (float(numSamples) * pdf);
-            float omegaP = 4.0f * PI / (6.0f * cubemapSize * cubemapSize);
+            float omegaP = 4.0f * M_PI / (6.0f * cubemapSize * cubemapSize);
 
             float mipLevel = 0.5f * log2(omegaS / omegaP);
 

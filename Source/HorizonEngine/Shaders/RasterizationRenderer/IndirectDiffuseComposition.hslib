@@ -63,7 +63,7 @@ void IndirectDiffuseCompositionPS(in float4 position : SV_Position, out float4 o
     /* Use luminance. Because colored multibounce looks bad. */
     ambientOcclusion *= MultiBounceAmbientOcclusion(ambientOcclusion.r, RelativeLuminance(baseColor.rgb)).r;
 
-    float3 diffuseBRDF = baseColor.rgb * (1.0f / PI) * (1.0f - metallic);
+    float3 diffuseBRDF = baseColor.rgb * (1.0f / M_PI) * (1.0f - metallic);
 
 #if 1//USE_IRRADIANCE_ENVIRONMENT_MAP_APRROXIMATION
     SH3CoefficientsRGB irradianceEnvironmentMapSH = irradianceEnvironmentMapBuffer.Load<SH3CoefficientsRGB>(0);

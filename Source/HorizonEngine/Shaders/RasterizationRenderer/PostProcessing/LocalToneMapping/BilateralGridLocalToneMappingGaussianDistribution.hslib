@@ -30,7 +30,7 @@ void BilateralGridLocalToneMappingGaussianDistributionCS(uint3 dispatchThreadID 
 
     for (uint sampleIndex = 0; sampleIndex < kernelSize; sampleIndex++)
     {
-        // float constant = 1.0f / (2.0f * PI * sigma * sigma);
+        // float constant = 1.0f / (2.0f * M_PI * sigma * sigma);
         // float weight = constant * exp(-0.5f * float(sampleIndex * sampleIndex) / (sigma * sigma));
         float weight = exp(-0.5f * (offset * offset) / (sigma * sigma));
         weightSum += weight;

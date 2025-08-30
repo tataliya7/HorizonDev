@@ -47,7 +47,7 @@ float3 UvToSkyViewLutParams(in float4 skyViewLutSize, in float bottomRadius, in 
     float vhorizon = sqrt(viewHeight * viewHeight - bottomRadius * bottomRadius);
     float cosBeta = vhorizon / viewHeight;
     float beta = acos(cosBeta);
-    float zenithHorizonAngle = PI - beta;
+    float zenithHorizonAngle = M_PI - beta;
 
     float viewZenithAngle;
     if (uv.y < 0.5f)
@@ -69,11 +69,11 @@ float3 UvToSkyViewLutParams(in float4 skyViewLutSize, in float bottomRadius, in 
     //float sinViewZenithAngle = sin(viewZenithAngle);
     float sinViewZenithAngle = sqrt(1.0 - cosViewZenithAngle * cosViewZenithAngle) * (viewZenithAngle > 0.0f ? 1.0f : -1.0f); // Equivalent to sin(viewZenithAngle)
 
-    float longitudeViewAngle = uv.x * 2.0f * PI;
+    float longitudeViewAngle = uv.x * 2.0f * M_PI;
 
     float cosLongitudeViewAngle = cos(longitudeViewAngle);
     //float sinLongitudeViewAngle = sin(longitudeViewAngle);
-    float sinLongitudeViewAngle = sqrt(1.0 - cosLongitudeViewAngle * cosLongitudeViewAngle) * (longitudeViewAngle <= PI ? 1.0f : -1.0f); // Equivalent to sin(longitudeViewAngle)
+    float sinLongitudeViewAngle = sqrt(1.0 - cosLongitudeViewAngle * cosLongitudeViewAngle) * (longitudeViewAngle <= M_PI ? 1.0f : -1.0f); // Equivalent to sin(longitudeViewAngle)
     float3 viewDir = float3(
         sinViewZenithAngle * cosLongitudeViewAngle,
         sinViewZenithAngle * sinLongitudeViewAngle,

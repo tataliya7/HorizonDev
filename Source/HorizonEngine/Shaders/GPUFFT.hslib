@@ -59,7 +59,7 @@ int Expand(int idxL, int N1, int N2)
 //     StockhamRadix4FFTForward(v0, v2, v4, v6);
 //     StockhamRadix4FFTForward(v1, v3, v5, v7);
 
-//     float cos_pi_4 = 1.0 / sqrt(2.0); // cos(PI/4)
+//     float cos_pi_4 = 1.0 / sqrt(2.0); // cos(M_PI/4)
 //     Complex twiddleA = Complex(cos_pi_4, cos_pi_4);
 //     Complex twiddleB = Complex(-cos_pi_4, cos_pi_4);
 
@@ -94,7 +94,7 @@ int Expand(int idxL, int N1, int N2)
 
 Complex W_N_k(uint N, uint k)
 {
-    float theta = 2 * PI * float(k) / float(N);
+    float theta = 2 * M_PI * float(k) / float(N);
     return Complex(cos(theta), -sin(theta));
 }
 

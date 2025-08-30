@@ -141,7 +141,7 @@ float randf(inout uint seed)
 void sample_uniform_hemisphere(float3 N, float u, float v, out float3 wi, out float pdf)
 {
     float r = sqrt(max(0.0f, 1.0f - u * u));
-    float phi = 2.0f * PI * v;
+    float phi = 2.0f * M_PI * v;
     float x = r * cos(phi);
     float y = r * sin(phi);
     float z = u;
@@ -285,7 +285,7 @@ void PathTracingDefaultOpaqueClosestHit(inout PathTracingRayPayload payload : SV
 
         if (shadowRayPayload.visibility > 0.0f)
         {
-            weight = cos_theta * cos_phi / (PI * attenuation * light_sample.pdf);
+            weight = cos_theta * cos_phi / (M_PI * attenuation * light_sample.pdf);
         }
     }
 

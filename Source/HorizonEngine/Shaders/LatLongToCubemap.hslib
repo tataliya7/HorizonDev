@@ -28,7 +28,7 @@ void LatLongToCubemapCS(uint3 dispatchThreadID : SV_DispatchThreadID)
     // https://en.wikipedia.org/wiki/Spherical_coordinate_system#Cartesian_coordinates
     float theta = atan2(uvw.x, uvw.y);
     float phi = -atan2(uvw.z, sqrt(uvw.x * uvw.x + uvw.y * uvw.y));
-    float2 latLongTextureUV = float2(theta / (2.0f * PI) + 0.25f, phi / PI + 0.5f);
+    float2 latLongTextureUV = float2(theta / (2.0f * M_PI) + 0.25f, phi / M_PI + 0.5f);
 
     float4 color = latLongTexture.SampleLevel(GlobalSamplerLinearWarp, latLongTextureUV, 0);
 

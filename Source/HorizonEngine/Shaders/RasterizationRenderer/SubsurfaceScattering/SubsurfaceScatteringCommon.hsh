@@ -36,15 +36,15 @@ float3 ComputeBurleyDiffusionProfileShapeParamter(float3 A, float3 l)
 
 // r * R(r) = A * (e^(-r / d) + e^(-r / (3 * d))) / (8 * π * d)
 // The r parameter is the radial distance between entry point and exit point.
-// The d parameter shapes the height and width of the curve and can be set 
+// The d parameter shapes the height and width of the curve and can be set
 // based on artistic preference or determined based on physical parameters.
 float3 ComputeBurleyDiffusionProfile(float r, float3 d, float A)
 {
 #if 0
-    return A * (exp(-r / d) + exp(-r / (3.0f * d))) / (8.0f * PI * d);
+    return A * (exp(-r / d) + exp(-r / (3.0f * d))) / (8.0f * M_PI * d);
 #else
     float3 t = exp(-r / (3.0f * d));
-    return A * (((t * t) + 1.0f) * t) / (8.0f * PI * d);
+    return A * (((t * t) + 1.0f) * t) / (8.0f * M_PI * d);
 #endif
 }
 
@@ -86,7 +86,7 @@ void SampleBurleyDiffusionProfile(float u, float rcpS, out float r, out float rc
     float rcpExp = ((c * c) * c) * rcp((4 * u) * ((c * c) + (4 * u) * (4 * u)));
 
     r      = x * rcpS;
-    rcpPdf = (8 * PI * rcpS) * rcpExp; // (8 * Pi) / s / (Exp[-s * r / 3] + Exp[-s * r])
+    rcpPdf = (8 * M_PI * rcpS) * rcpExp; // (8 * Pi) / s / (Exp[-s * r / 3] + Exp[-s * r])
 }
 
 struct SubsurfaceScatteringDiffuseAndSpecluar

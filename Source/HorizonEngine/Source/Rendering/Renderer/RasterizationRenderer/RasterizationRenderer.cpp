@@ -194,6 +194,7 @@ namespace Horizon
             scene->HasActiveSkyAtmosphere();
         renderFeatures.enableVolumetricFog = false;
         renderFeatures.enableScreenSpaceShadows = true;
+        renderFeatures.enableScreenSpaceReflections = rendererSettings.reflectionsTechnique == RasterizationRendererReflectionsTechnique::ScreenSpaceReflections;
         renderFeatures.enableScreenSpaceAmbientOcclusion = rendererSettings.ambientOcclusionTechnique == RasterizationRendererAmbientOcclusionTechnique::GroundTruthAmbientOcclusion;
         renderFeatures.enableScreenSpaceLightShafts = true;
         renderFeatures.enableDepthOfField = false;// finalPostProcessingSettings.depthOfFieldScale > 0.0f;
@@ -728,6 +729,10 @@ namespace Horizon
         {
             intermediateResources.ambientOcclusionTexture = RenderScreenSpaceAmbientOcclusion(renderGraph, view);
         }
+        else if (renderFeatures.enableRayTracingAmbientOcclusion)
+        {
+            intermediateResources.ambientOcclusionTexture = RenderRayTracingAmbientOcclusion(renderGraph, view);
+        }
         else
         {
             intermediateResources.ambientOcclusionTexture = defaultResources->ImportWhiteDummyTexture2D(renderGraph);
@@ -737,11 +742,6 @@ namespace Horizon
         {
             debugVisualizationCallback = std::bind(&RasterizationRenderer::DispatchAmbientOcclusionDebugVisualization, this, std::placeholders::_1, std::placeholders::_2);
         }
-
-        // if (IsRayTracingAmbientOcclusionEnabled())
-        // {
-        //     intermediateResources.ambientOcclusionTexture = RenderRayTracingAmbientOcclusion(renderGraph, view);
-        // }
 
         RenderScreenSpaceIndirectDiffuse(renderGraph, view);
 
@@ -761,11 +761,10 @@ namespace Horizon
         //     RenderBackendTextureCreateFlags::UnorderedAccess | RenderBackendTextureCreateFlags::ShaderResource),
         //     "SSRDebugOutputTexture");
         //
-        if (rendererSettings.reflectionsTechnique == RasterizationRendererReflectionsTechnique::ScreenSpaceReflections)
+
+        if (renderFeatures.enableScreenSpaceReflections)
         {
-            RenderScreenSpaceReflections(
-               renderGraph,
-               view);
+            RenderScreenSpaceReflections(renderGraph, view);
         }
         // else if (settings.reflectionsTechnique == ReflectionsTechnique::RayTracingReflections)
         // {

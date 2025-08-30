@@ -21,9 +21,9 @@ static const uint SSR_RAY_ALLOCATION_BUFFER_SIZE                                
 // Bias used on GGX importance sample when denoising, to remove part of the tale that create a lot more noise.
 #define GGX_IMPORTANCE_SAMPLE_BIAS 0.1f
 
-bool NeedReflection(float roughness, float depth, float roughness_cutoff)
+bool ShouldComputeReflections(float depth, float roughness, float roughnessThreshold)
 {
-    return (roughness < roughness_cutoff) && (depth > 0.0);
+    return (depth > 0.0) && (roughness < roughnessThreshold);
 }
 
 // Brian Karis, Epic Games "Real Shading in Unreal Engine 4"
@@ -32,7 +32,7 @@ float4 SSRImportanceSampleGGX(float2 Xi, float Roughness)
     float m = Roughness * Roughness;
     float m2 = m * m;
 
-    float Phi = 2 * PI * Xi.x;
+    float Phi = 2 * M_PI * Xi.x;
 
     float CosTheta = sqrt((1.0 - Xi.y) / (1.0 + (m2 - 1.0) * Xi.y));
     float SinTheta = sqrt(max(1e-5, 1.0 - CosTheta * CosTheta));
@@ -43,7 +43,7 @@ float4 SSRImportanceSampleGGX(float2 Xi, float Roughness)
     H.z = CosTheta;
 
     float d = (CosTheta * m2 - CosTheta) * CosTheta + 1;
-    float D = m2 / (PI * d * d);
+    float D = m2 / (M_PI * d * d);
     float pdf = D * CosTheta;
 
     return float4(H, pdf);
@@ -65,75 +65,39 @@ float3x3 GetTangentBasis(float3 TangentZ)
 
 float2 SampleDisk(float2 Xi)
 {
-    float theta = 2 * PI * Xi.x;
+    float theta = 2 * M_PI * Xi.x;
     float radius = sqrt(Xi.y);
     return radius * float2(cos(theta), sin(theta));
 }
 
-// Adapted from: "Sampling the GGX Distribution of Visible Normals", by E. Heitz
-// http://jcgt.org/published/0007/04/01/paper.pdf
-float4 ImportanceSampleVisibleGGX(float2 diskXi, float roughness, float3 V)
-{
-    float alphaRoughness = roughness * roughness;
-    float alphaRoughnessSq = alphaRoughness * alphaRoughness;
+// // "Sampling Visible GGX Normals with Spherical Caps"
+// // "Bounded VNDF Sampling for Smith–GGX Reflections"
+// float4 SampleVndf_GGX(float2 u, float3 wi, float2 alpha)
+// {
+//     // Warp to the hemisphere configuration
+//     float3 wiStd = normalize(float3(wi.xy * alpha, wi.z));
 
-    // Transform the view direction to hemisphere configuration
-    float3 Vh = normalize(float3(alphaRoughness * V.xy, V.z));
+//     // Sample a spherical cap in (-wi.z, 1]
+//     float phi = 2.0f * M_PI * u.x;
+// #if 1
+//     float a = saturate(min(alpha.x, alpha.y));
+//     float s = 1.0f + length(float2(wi.x, wi.y));
+//     float a2 = a * a;
+//     float s2 = s * s;
+//     float k = (1.0f - a2) * s2 / (s2 + a2 * wi.z * wi.z);
+//     float b = wi.z > 0 ? k * wiStd.z : wiStd.z;
+// #else
+//     float b = wiStd.z;
+// #endif
+//     float z = mad((1.0f - u.y), (1.0f + b), -b);
+//     float sinTheta = sqrt(saturate(1.0f - z * z));
+//     float x = sinTheta * cos(phi);
+//     float y = sinTheta * sin(phi);
+//     float3 woStd = float3(x, y, z);
+//     float3 wmStd = wiStd + woStd;
 
-    // Orthonormal basis
-    // tangent0 is orthogonal to N.
-    float3 tangent0 = (Vh.z < 0.9999) ? normalize(cross(float3(0, 0, 1), Vh)) : float3(1, 0, 0);
-    float3 tangent1 = cross(Vh, tangent0);
+//     // Warp back to the ellipsoid configuration
+//     float3 wm = normalize(float3(wmStd.xy * alpha, wmStd.z));
 
-    float2 p = diskXi;
-    float s = 0.5 + 0.5 * Vh.z;
-    p.y = (1 - s) * sqrt(1 - p.x * p.x) + s * p.y;
-
-    // Reproject onto hemisphere
-    float3 H;
-    H = p.x * tangent0;
-    H += p.y * tangent1;
-    H += sqrt(saturate(1 - dot(p, p))) * Vh;
-
-    // Transform the normal back to the ellipsoid configuration
-    H = normalize(float3(alphaRoughness * H.xy, max(0.0, H.z)));
-
-    float NdotV = V.z;
-    float NdotH = H.z;
-    float VdotH = dot(V, H);
-
-    // Microfacet Distribution
-    float f = (NdotH * alphaRoughnessSq - NdotH) * NdotH + 1;
-    float D = alphaRoughnessSq / (PI * f * f);
-
-    // Smith Joint masking function
-    float SmithGGXMasking = 2.0 * NdotV / (sqrt(NdotV * (NdotV - NdotV * alphaRoughnessSq) + alphaRoughnessSq) + NdotV);
-
-    // D_Ve(Ne) = G1(Ve) * max(0, dot(Ve, Ne)) * D(Ne) / Ve.z
-    float PDF = SmithGGXMasking * VdotH * D / NdotV;
-
-    return float4(H, PDF);
-}
-
-float4 ReflectionDir_GGX(float3 V, float3 N, float roughness, float2 random2)
-{
-    float4 H;
-    float3 L;
-    if (roughness > 0.05f)
-    {
-        float3x3 tangentBasis = GetTangentBasis(N);
-        float3 tangentV = mul(tangentBasis, V);
-        float2 Xi = random2;
-        Xi.y = lerp(Xi.y, 0.0f, GGX_IMPORTANCE_SAMPLE_BIAS);
-        H = ImportanceSampleVisibleGGX(SampleDisk(Xi), roughness, tangentV);
-        H.xyz = mul(H.xyz, tangentBasis);
-        L = reflect(-V, H.xyz);
-    }
-    else
-    {
-        H = float4(N.xyz, 1.0f);
-        L = reflect(-V, H.xyz);
-    }
-    float PDF = H.w;
-    return float4(L, PDF);
-}
+//     return float4(wm, PDF);
+// }

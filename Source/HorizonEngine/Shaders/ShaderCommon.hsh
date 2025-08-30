@@ -260,13 +260,13 @@ float3 UniformSampleCone(float2 Xi, float cosThetaMax)
 {
     float cosTheta = (1.0 - Xi.x) + Xi.x * cosThetaMax;
     float sinTheta = sqrt(1.0 - cosTheta * cosTheta);
-    float phi = Xi.y * 2.0 * PI;
+    float phi = Xi.y * 2.0 * M_PI;
     return float3(cos(phi) * sinTheta, sin(phi) * sinTheta, cosTheta);
 }
 
 float3 UniformSampleSphere(float2 Xi)
 {
-    float phi = 2.0f * PI * Xi.y;
+    float phi = 2.0f * M_PI * Xi.y;
     float cosTheta = 1.0f - 2.0f * Xi.x;
     float sinTheta = sqrt(1.0f - cosTheta * cosTheta);
     return float3(cos(phi) * sinTheta, sin(phi) * sinTheta, cosTheta);
@@ -274,7 +274,7 @@ float3 UniformSampleSphere(float2 Xi)
 
 float3 UniformSampleHemisphere(float2 Xi)
 {
-    float phi = 2.0 * PI * Xi.y;
+    float phi = 2.0 * M_PI * Xi.y;
     float cosTheta = Xi.x;
     float sinTheta = sqrt(1.0f - cosTheta * cosTheta);
     return float3(cos(phi) * sinTheta, sin(phi) * sinTheta, cosTheta);
@@ -282,7 +282,7 @@ float3 UniformSampleHemisphere(float2 Xi)
 
 float3 CosineSampleHemisphere(float2 Xi)
 {
-    float phi = 2.0 * PI * Xi.y;
+    float phi = 2.0 * M_PI * Xi.y;
     float cosTheta = sqrt(Xi.x);
     float sinTheta = sqrt(1.0 - cosTheta * cosTheta);
     return float3(cos(phi) * sinTheta, sin(phi) * sinTheta, cosTheta);

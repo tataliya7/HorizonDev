@@ -106,10 +106,6 @@ namespace Horizon
 
                 RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::VisibilityCullingIndirectArgumentInitialization);
 
-                uint32 threadGroupCountX = 1;
-                uint32 threadGroupCountY = 1;
-                uint32 threadGroupCountZ = 1;
-
                 return [=](RenderBackendCommandList& commandList, const RenderGraphResourceRegistry& resourceRegistry)
                 {
                     RenderBackendPushConstantValues pushConstantValues = {};
@@ -119,14 +115,14 @@ namespace Horizon
                     commandList.Dispatch(
                         computeShader,
                         pushConstantValues,
-                        threadGroupCountX,
-                        threadGroupCountY,
-                        threadGroupCountZ);
+                        1,
+                        1,
+                        1);
                 };
             });
 
         renderGraph.AddPass(
-            std::format("Instance Culling (Compute)"),
+            std::format("InstanceCulling (Compute)"),
             RenderGraphPassFlags::Compute,
             [&](RenderGraphBuilder& builder)
             {
@@ -161,7 +157,7 @@ namespace Horizon
         const bool skipOcclusionCulling = previousMinDepthPyramidTexture.IsNull();
 
         renderGraph.AddPass(
-            std::format("Meshlet Culling (Compute, Indirect)"),
+            std::format("MeshletCulling (Compute, Indirect)"),
             RenderGraphPassFlags::Compute,
             [&](RenderGraphBuilder& builder)
             {

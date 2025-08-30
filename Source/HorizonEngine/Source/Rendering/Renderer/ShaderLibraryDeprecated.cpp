@@ -268,13 +268,16 @@ namespace Horizon
             ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RasterizationRenderer/ScreenSpaceRayTracing/ScreenSpaceReflectionsRayAllocation.hslib", "SSRRayAllocationCS");
             shaderLibrary->LoadShader(ShaderID::SSRRayAllocation, shaderDesc);
         }
-        //    {ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RasterizationRenderer/ScreenSpaceReflections.hslib", "ScreenSpaceReflectionsCS");
-        //    shaderDesc.AddDefine(HE_TEXT("SSR_EARLY_EXIT_RAYS"));
-        //    shaderLibrary->LoadShader(ShaderID::SSRRayTracingEarlyExit, shaderDesc);
-
-        //    {ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RasterizationRenderer/ScreenSpaceReflections.hslib", "ScreenSpaceReflectionsCS");
-        //    shaderDesc.AddDefine(HE_TEXT("SSR_CHEAP_RAYS"));
-        //    shaderLibrary->LoadShader(ShaderID::SSRRayTracingCheap, shaderDesc);
+        {
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RasterizationRenderer/ScreenSpaceRayTracing/ScreenSpaceReflectionsRayTracing.hslib", "ScreenSpaceReflectionsRayTracingCS");
+            shaderDesc.AddDefine("SSR_EARLY_EXIT_RAYS", 1);
+            shaderLibrary->LoadShader(ShaderID::SSRRayTracingEarlyExit, shaderDesc);
+        }
+        {
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RasterizationRenderer/ScreenSpaceRayTracing/ScreenSpaceReflectionsRayTracing.hslib", "ScreenSpaceReflectionsRayTracingCS");
+            shaderDesc.AddDefine("SSR_CHEAP_RAYS", 1);
+            shaderLibrary->LoadShader(ShaderID::SSRRayTracingCheap, shaderDesc);
+        }
 
         //    {ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RasterizationRenderer/ScreenSpaceReflections.hslib", "ScreenSpaceReflectionsCS");
         //    shaderLibrary->LoadShader(ShaderID::SSRRayTracingExpensive, shaderDesc);

@@ -31,7 +31,7 @@ void VisualizeMotionVectorsCS(uint3 dispatchThreadID : SV_DispatchThreadID)
     float2 motionVector = motionVectorTexture.SampleLevel(GlobalSamplerPointClamp, uv, 0).xy;
     motionVector *= float2(frameShaderParameters.renderWidth, frameShaderParameters.renderHeight);
 
-    float angle = atan2(motionVector.y, motionVector.x) * 180.0f / PI;
+    float angle = atan2(motionVector.y, motionVector.x) * 180.0f / M_PI;
     if (angle < 0)
     {
         angle += 360.0f;

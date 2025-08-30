@@ -162,7 +162,7 @@ void SSRTemporalFilteringCS(uint3 dispatchThreadID : SV_DispatchThreadID)
     const float depth = sceneDepth[dispatchThreadID.xy].r;
     const float roughness = gbuffer1[dispatchThreadID.xy].w;
 
-    if (!NeedReflection(roughness, depth, SSR_ROUGHNESS_THRESHOLD_CHEAP_RAY_TRACING))
+    if (!ShouldComputeReflections(roughness, depth, SSR_ROUGHNESS_THRESHOLD_CHEAP_RAY_TRACING))
     {
         outputTexture[dispatchThreadID.xy] = resolveTexture[dispatchThreadID.xy];
         temporalVariance[dispatchThreadID.xy] = 0.0;

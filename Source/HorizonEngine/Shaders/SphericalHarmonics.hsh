@@ -95,9 +95,9 @@ float3 EvaluateSHCosineWeighted(SH3CoefficientsRGB sh, float3 n)
     float y7 = -1.092548f * n.x * n.z;
     float y8 =  0.546274f * (n.x * n.x - n.y * n.y);
 
-    float L0ScalingFactor = PI;
-    float L1ScalingFactor = 2.0f * PI / 3.0f;
-    float L2ScalingFactor = PI / 4.0f;
+    float L0ScalingFactor = M_PI;
+    float L1ScalingFactor = 2.0f * M_PI / 3.0f;
+    float L2ScalingFactor = M_PI / 4.0f;
 
     float3 result;
     result.r =

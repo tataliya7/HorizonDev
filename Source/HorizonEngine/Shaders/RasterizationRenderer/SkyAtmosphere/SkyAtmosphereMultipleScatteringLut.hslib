@@ -75,7 +75,7 @@ void SkyAtmosphereMultipleScatteringLutCS(uint3 dispatchThreadID : SV_DispatchTh
     // This make the scattering factor independent of the light. It is now only linked to the atmosphere properties.
     const float3 oneIlluminance = float3(1.0f, 1.0f, 1.0f);
 
-    const float sphereSolidAngle = 4.0f * PI;
+    const float sphereSolidAngle = 4.0f * M_PI;
     const float isotropicPhase = 1.0f / sphereSolidAngle;
 
     // Reference. Since there are many samples, it requires MULTI_SCATTERING_POWER_SERIE to be true for accuracy and to avoid divergences (see declaration for explanations).
@@ -86,9 +86,9 @@ void SkyAtmosphereMultipleScatteringLutCS(uint3 dispatchThreadID : SV_DispatchTh
     {
         float randA = i / sqrtSample;
         float randB = j / sqrtSample;
-        float theta = 2.0f * PI * randA;
+        float theta = 2.0f * M_PI * randA;
         float phi = acos(1.0f - 2.0f * randB); // uniform distribution: https://mathworld.wolfram.com/SpherePointPicking.html
-        //phi = PI * randB;                    // bad non uniform
+        //phi = M_PI * randB;                    // bad non uniform
         float cosPhi = cos(phi);
         float sinPhi = sin(phi);
         float cosTheta = cos(theta);

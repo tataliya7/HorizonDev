@@ -142,7 +142,7 @@ void DepthOfFieldGatherCS(uint3 dispatchThreadID : SV_DispatchThreadID)
                 sampleCoC = abs(sampleCoC * 2 - 1);
                 if (sampleCoC > 0 && sampleCoC >= coc)
                 {
-                    float sampleAlpha = 1.0 / (PI * sampleCoC * sampleCoC);
+                    float sampleAlpha = 1.0 / (M_PI * sampleCoC * sampleCoC);
                     sampleAlpha = 1;
                     result += sampleAlpha * sceneColorTexture.SampleLevel(GlobalSamplerLinearClamp, uv + uvOffset, 0).rgb;
                     weightSum += sampleAlpha;
@@ -158,7 +158,7 @@ void DepthOfFieldGatherCS(uint3 dispatchThreadID : SV_DispatchThreadID)
                 sampleCoC = abs(sampleCoC * 2 - 1);
                 if (sampleCoC > 0 && sampleCoC >= coc)
                 {
-                    float sampleAlpha = 1.0 / (PI * sampleCoC * sampleCoC);
+                    float sampleAlpha = 1.0 / (M_PI * sampleCoC * sampleCoC);
                     sampleAlpha = 1;
                     result += sampleAlpha * sceneColorTexture.SampleLevel(GlobalSamplerLinearClamp, uv + uvOffset, 0).rgb;
                     weightSum += sampleAlpha;
@@ -175,7 +175,7 @@ void DepthOfFieldGatherCS(uint3 dispatchThreadID : SV_DispatchThreadID)
                 sampleCoC = abs(sampleCoC * 2 - 1);
                 if (sampleCoC > 0 && sampleCoC >= coc)
                 {
-                    float sampleAlpha = 1.0 / (PI * sampleCoC * sampleCoC);
+                    float sampleAlpha = 1.0 / (M_PI * sampleCoC * sampleCoC);
                     float3 sampleColor = sceneColorTexture.SampleLevel(GlobalSamplerLinearClamp, uv + uvOffset, 0).rgb;
                     sampleAlpha = 1.0 / (1.0 + (1.0 - sharpeness) * RelativeLuminance(sampleColor));
                     //sampleAlpha = 1;

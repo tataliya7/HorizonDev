@@ -310,7 +310,7 @@ MediumSampleRGB SampleAtmosphereMediumRGB(in SkyAtmosphereShaderParameters atmos
 
 float RayleighPhase(float cosTheta)
 {
-    float factor = 3.0f / (16.0f * PI);
+    float factor = 3.0f / (16.0f * M_PI);
     return factor * (1.0f + cosTheta * cosTheta);
 }
 
@@ -321,12 +321,12 @@ float HenyeyGreensteinPhase(float g, float cosTheta)
     // See http://www.pbr-book.org/3ed-2018/Volume_Scattering/Phase_Functions.html
     float numer = 1.0f - g * g;
     float denom = 1.0f + g * g + 2.0f * g * cosTheta;
-    return numer / (4.0f * PI * denom * sqrt(denom));
+    return numer / (4.0f * M_PI * denom * sqrt(denom));
 }
 
 float CornetteShanksMiePhaseFunction(float g, float cosTheta)
 {
-    float k = 3.0f / (8.0f * PI) * (1.0f - g * g) / (2.0f + g * g);
+    float k = 3.0f / (8.0f * M_PI) * (1.0f - g * g) / (2.0f + g * g);
     return k * (1.0f + cosTheta * cosTheta) / pow(1.0f + g * g - 2.0f * g * -cosTheta, 1.5f);
 }
 
@@ -502,7 +502,7 @@ SingleScatteringResult IntegrateSingleScatteredLuminance(
     float dt = tMax / SampleCount;
 
     // Phase functions
-    const float uniformPhase = 1.0f / (4.0f * PI);
+    const float uniformPhase = 1.0f / (4.0f * M_PI);
     const float3 wi = -LightDirection;
     const float3 wo = WorldDir;
     float cosTheta = dot(wi, wo);
@@ -646,7 +646,7 @@ SingleScatteringResult IntegrateSingleScatteredLuminance(
         float3 TransmittanceToLight = 1.0f;
 #endif
         const float NdotL = saturate(dot(UpVector, wi));
-        L += LightIlluminance * TransmittanceToLight * Throughput * NdotL * Atmosphere.groundAlbedo.rgb / PI;
+        L += LightIlluminance * TransmittanceToLight * Throughput * NdotL * Atmosphere.groundAlbedo.rgb / M_PI;
     }
 
     Result.L = L;

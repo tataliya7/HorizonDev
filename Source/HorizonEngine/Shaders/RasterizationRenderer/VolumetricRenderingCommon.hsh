@@ -7,5 +7,5 @@ float HenyeyGreensteinPhaseFunction(float g, float cosTheta)
     // See http://www.pbr-book.org/3ed-2018/Volume_Scattering/Phase_Functions.html
     float numer = 1.0f - g * g;
     float denom = 1.0f + g * g + 2.0f * g * cosTheta;
-    return numer / (4.0f * PI * denom * sqrt(denom));
+    return numer / (4.0f * M_PI * denom * sqrt(denom));
 }

@@ -82,7 +82,7 @@ void ScreenSpaceReflectionsColorResolveCS(uint3 dispatchThreadID : SV_DispatchTh
     const float depth = sceneDepth[coord].r;
     const float roughness = gbuffer1[coord].a;
 
-    if (!NeedReflection(roughness, depth, SSR_ROUGHNESS_THRESHOLD_CHEAP_RAY_TRACING))
+    if (!ShouldComputeReflections(depth, roughness, SSR_ROUGHNESS_THRESHOLD_CHEAP_RAY_TRACING))
     {
         resolveTexture[coord] = rayIndirectSpecular[tracingCoord];
         resolveVarianceTexture[coord] = 0.0;

@@ -45,8 +45,8 @@ void IrradianceEnvironmentMapReferenceCS(uint3 dispatchThreadID : SV_DispatchThr
         }
     }
 
-    // pdf = 1.0f / (2.0f * PI)
-    irradiance = irradiance * 2.0f * PI / float(SampleCount);
+    // pdf = 1.0f / (2.0f * M_PI)
+    irradiance = irradiance * 2.0f * M_PI / float(SampleCount);
 
     irradianceEnvironmentMapTexture[pixelCoord] = float4(irradiance, 1.0f);
 }

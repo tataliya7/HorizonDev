@@ -240,7 +240,7 @@ float rgb_2_hue(float3 rgb)
     }
     else
     {
-        hue = (180.0 / PI) * atan2(sqrt(3.0) * (rgb[1] - rgb[2]), 2.0 * rgb[0] - rgb[1] - rgb[2]);
+        hue = (180.0 / M_PI) * atan2(sqrt(3.0) * (rgb[1] - rgb[2]), 2.0 * rgb[0] - rgb[1] - rgb[2]);
     }
     if (hue < 0.0)
     {
