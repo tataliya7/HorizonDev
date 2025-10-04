@@ -61,6 +61,11 @@ namespace Horizon
 
         RenderGraphBlackboard blackboard;
 
+        RenderBackend* GetRenderBackend() const
+        {
+            return renderBackend;
+        }
+
         /**
          * Adds a pass to the render graph with a lamda functions.
          *

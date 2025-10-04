@@ -27,9 +27,9 @@ namespace Horizon
             return renderBackend;
         }
 
-        ShaderCollection* GetShaderLibrary() const
+        ShaderRepository* GetShaderRepository() const
         {
-            return shaderLibrary;
+            return shaderRepository;
         }
 
         RenderGraphResourcePool* GetRenderGraphResourcePool() const
@@ -87,9 +87,9 @@ namespace Horizon
         // void InitializeDefaultResources(RenderBackendCommandList* commandList);
         // void ReleaseDefaultResources();
         //
-        // ShaderLibrary* GetShaderLibrary()
+        // ShaderLibrary* GetShaderRepository()
         // {
-        //     return shaderLibrary;
+        //     return shaderRepository;
         // }
         //
         // Vector3f TransformPosition(const Matrix4x4f& Transform, const Vector3f& Position)
@@ -150,11 +150,11 @@ namespace Horizon
         bool enableDebugLayer = true;
         bool enableHardwareRayTracing = true;
 
+        RenderGraphResourcePool* renderGraphResourcePool;
     private:
 
         RenderBackend* renderBackend;
-        ShaderCollection* shaderLibrary;
-        RenderGraphResourcePool* renderGraphResourcePool;
+        ShaderRepository* shaderRepository;
 
         // TODO: rename
         RendererDefaultResources* rendererDefaultResources;
@@ -170,7 +170,7 @@ namespace Horizon
         // FrameAllocator* frameAllocator;
         // RenderBackend* renderBackend;
         // ShaderCompiler* shaderCompiler;
-        // ShaderLibrary* shaderLibrary;
+        // ShaderLibrary* shaderRepository;
         //
         // RenderBackendTimingQueryHeapHandle timingQueryHeap;
         //

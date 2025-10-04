@@ -1009,7 +1009,7 @@ namespace Horizon
                     ImGui::NextColumn();
                     ImGui::PushItemWidth(-1);
 
-                    const char* items2[] = { "Low", "Medium", "High", "    Epic" };
+                    const char* items2[] = { "Low", "Medium", "High", "Ultra" };
                     static int item2 = 0;
                     ImGui::Combo("##SSRQuality", &item2, items2, IM_ARRAYSIZE(items2));
                     rasterizationRendererSettings.screenSpaceReflectionsSettings.quality = (ScreenSpaceReflectionsQuality)item2;

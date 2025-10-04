@@ -442,51 +442,59 @@ namespace Horizon
         viewMatrix_deprecated = sceneView.GetWorldToViewMatrix();
         projectionMatrix_deprecated = sceneView.GetViewToClipMatrix();
 
-        RenderBackendCommandList* commandListUpload = new RenderBackendCommandList(GArena);
-        engine->GetSubsystem<RenderSystem>()->UpdateImGuiData(commandListUpload);
-        renderScene->UpdateGPUScene(commandListUpload);
-        renderBackend->SubmitCommandLists(&commandListUpload, 1, RenderBackendSwapChainHandle::Null);
-        delete commandListUpload;
-
-        engine->GetSubsystem<RenderSystem>()->RenderSceneView(renderer, &sceneView);
-
+        RenderSystem* renderSystem = engine->GetSubsystem<RenderSystem>();
         RenderBackendCommandList* commandList = new RenderBackendCommandList(GArena);
+        RenderGraph renderGraph(GArena, renderSystem->renderGraphResourcePool, nullptr);
 
-        RenderBackendTextureHandle swapChainTexture = renderBackend->GetActiveSwapChainBuffer(swapChain);
+        renderSystem->UpdateImGuiData(commandList);
+        renderScene->UpdateGPUScene(renderGraph, commandList);
 
-        if (true)
-        {
-            {
-                RenderBackendBarrier transitions[] =
-                {
-                    RenderBackendBarrier(displayTexture->GetHandle(), RenderBackendTextureSubresourceRange(0, 1, 0, 1), RenderBackendResourceState::ShaderResource, RenderBackendResourceState::CopySrc),
-                    RenderBackendBarrier(swapChainTexture, RenderBackendTextureSubresourceRange(0, 1, 0, 1), RenderBackendResourceState::Undefined, RenderBackendResourceState::CopyDst)
-                };
-                commandList->Barriers(transitions, 2);
-            }
+        renderGraph.Execute(*commandList);
 
-            commandList->CopyTexture2D(
-                displayTexture->GetHandle(),
-                Offset2D(0, 0),
-                0,
-                swapChainTexture,
-                Offset2D(0, 0),
-                0,
-                Extent2D(swapChainWidth, swapChainHeight));
-
-            {
-                RenderBackendBarrier transitions[] =
-                {
-                    RenderBackendBarrier(displayTexture->GetHandle(), RenderBackendTextureSubresourceRange(0, 1, 0, 1), RenderBackendResourceState::CopySrc, RenderBackendResourceState::ShaderResource),
-                    RenderBackendBarrier(swapChainTexture, RenderBackendTextureSubresourceRange(0, 1, 0, 1), RenderBackendResourceState::CopyDst, RenderBackendResourceState::Present)
-                };
-                commandList->Barriers(transitions, 2);
-            }
-        }
-
-        renderBackend->SubmitCommandLists(&commandList, 1, swapChain);
-
+        renderBackend->SubmitCommandLists(&commandList, 1, RenderBackendSwapChainHandle::Null);
         delete commandList;
+
+        renderSystem->RenderSceneView(renderer, &sceneView);
+
+        {
+            RenderBackendCommandList* commandList2 = new RenderBackendCommandList(GArena);
+
+            RenderBackendTextureHandle swapChainTexture = renderBackend->GetActiveSwapChainBuffer(swapChain);
+
+            if (true)
+            {
+                {
+                    RenderBackendBarrier transitions[] =
+                    {
+                        RenderBackendBarrier(displayTexture->GetHandle(), RenderBackendTextureSubresourceRange(0, 1, 0, 1), RenderBackendResourceState::ShaderResource, RenderBackendResourceState::CopySrc),
+                        RenderBackendBarrier(swapChainTexture, RenderBackendTextureSubresourceRange(0, 1, 0, 1), RenderBackendResourceState::Undefined, RenderBackendResourceState::CopyDst)
+                    };
+                    commandList2->Barriers(transitions, 2);
+                }
+
+                commandList2->CopyTexture2D(
+                    displayTexture->GetHandle(),
+                    Offset2D(0, 0),
+                    0,
+                    swapChainTexture,
+                    Offset2D(0, 0),
+                    0,
+                    Extent2D(swapChainWidth, swapChainHeight));
+
+                {
+                    RenderBackendBarrier transitions[] =
+                    {
+                        RenderBackendBarrier(displayTexture->GetHandle(), RenderBackendTextureSubresourceRange(0, 1, 0, 1), RenderBackendResourceState::CopySrc, RenderBackendResourceState::ShaderResource),
+                        RenderBackendBarrier(swapChainTexture, RenderBackendTextureSubresourceRange(0, 1, 0, 1), RenderBackendResourceState::CopyDst, RenderBackendResourceState::Present)
+                    };
+                    commandList2->Barriers(transitions, 2);
+                }
+            }
+
+            renderBackend->SubmitCommandLists(&commandList2, 1, swapChain);
+
+            delete commandList2;
+        }
 
 #if HORIZON_EXPERIMENTAL_STREAMLINE
         streamlineContext->ReflexSetMarkerRenderSubmitEnd(frameIndex);

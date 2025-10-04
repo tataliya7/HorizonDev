@@ -1,13 +1,13 @@
 #include "RenderUtility.h"
-#include "ShaderCollection.h"
+#include "ShaderRepository.h"
 #include "ImageBasedLighting.h"
 
 namespace Horizon
 {
-    RendererDefaultResources::RendererDefaultResources(RenderBackend* renderBackend, RenderGraphResourcePool* resourcePool, ShaderCollection* shaderLibrary)
+    RendererDefaultResources::RendererDefaultResources(RenderBackend* renderBackend, RenderGraphResourcePool* resourcePool, ShaderRepository* shaderRepository)
         : renderBackend(renderBackend)
         , renderGraphResourcePool(resourcePool)
-        , shaderLibrary(shaderLibrary)
+        , shaderRepository(shaderRepository)
         , initialized(false)
         , blackDummyTexture2D(nullptr)
         , whiteDummyTexture2D(nullptr)
@@ -78,7 +78,7 @@ namespace Horizon
             globalSamplerComparisonLessLinearClamp = renderBackend->CreateSampler(&globalSamplerComparisonLessLinearClampDesc, "GlobalSamplerComparisonLessLinearClamp");
         }
 
-        RenderEnvironmentBrdfLut(renderBackend, shaderLibrary, commandList, environmentBrdfLutTexture);
+        RenderEnvironmentBrdfLut(renderBackend, shaderRepository, commandList, environmentBrdfLutTexture);
 
         initialized = true;
     }
@@ -118,15 +118,15 @@ namespace Horizon
         return renderGraph.ImportExternalTexture(blackDummyTexture2D, "BlackDummyTexture2D");
     }
 
-    void Texture2DGenerateMips(RenderBackend* renderBackend, ShaderCollection* shaderLibrary, RenderBackendCommandList& commandList, RenderBackendTextureHandle textureHandle, uint32 width, uint32 height, uint32 numMipLevels)
+    void Texture2DGenerateMips(RenderBackend* renderBackend, ShaderRepository* shaderRepository, RenderBackendCommandList& commandList, RenderBackendTextureHandle textureHandle, uint32 width, uint32 height, uint32 numMipLevels)
     {
         if (numMipLevels < 2)
         {
             return;
         }
 
-        RenderBackendShaderHandle vertexShader = shaderLibrary->GetShader(ShaderID::DownsampleTexture2DVS);
-        RenderBackendShaderHandle pixelShader = shaderLibrary->GetShader(ShaderID::DownsampleTexture2DPS);
+        RenderBackendShaderHandle vertexShader = shaderRepository->GetShader(ShaderID::DownsampleTexture2DVS);
+        RenderBackendShaderHandle pixelShader = shaderRepository->GetShader(ShaderID::DownsampleTexture2DPS);
 
         for (uint32 mipLevel = 1; mipLevel < numMipLevels; mipLevel++)
         {

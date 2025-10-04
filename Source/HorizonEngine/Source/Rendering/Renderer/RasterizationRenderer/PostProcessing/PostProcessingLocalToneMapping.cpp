@@ -362,7 +362,7 @@ namespace Horizon
                     uint32 h = height;
                     RenderBackendTextureHandle textureHandle = resourceRegistry.GetRenderBackendTextureHandle(localToneMappingLuminance);
 
-                    RenderBackendShaderHandle downsampleTexture2DCS = shaderLibrary->GetShader(ShaderID::DownsampleTexture);
+                    RenderBackendShaderHandle downsampleTexture2DCS = shaderRepository->GetShader(ShaderID::DownsampleTexture);
 
                     for (uint32 mipLevel = 1; mipLevel < mipLevelCount; mipLevel++)
                     {
@@ -424,7 +424,7 @@ namespace Horizon
                     uint32 h = height;
                     RenderBackendTextureHandle textureHandle = resourceRegistry.GetRenderBackendTextureHandle(localToneMappingWeights);
 
-                    RenderBackendShaderHandle downsampleTexture2DCS = renderEngine->GetShaderLibrary()->GetShader((uint32)ShaderPipelineID::DownsampleTexture2D);
+                    RenderBackendShaderHandle downsampleTexture2DCS = renderEngine->GetShaderRepository()->GetShader((uint32)ShaderPipelineID::DownsampleTexture2D);
 
                     for (uint32 mipLevel = 1; mipLevel < mipLevelCount; mipLevel++)
                     {

@@ -3,7 +3,7 @@
 #include "RendererCommon.h"
 #include "RendererPrivate.h" // TODO
 #include "RenderStatistics.h"
-#include "ShaderCollection.h"
+#include "ShaderRepository.h"
 #include "RayTracing/RayTracingScene.h"
 
 namespace Horizon
@@ -122,6 +122,18 @@ namespace Horizon
         RenderBackendBufferHandle jointIndexBuffer;
         RenderBackendBufferHandle jointWeightBuffer;
         RenderBackendBufferHandle jointTransformBuffer;
+
+
+        RenderBackendBufferHandle instanceUploadBuffer;
+        RenderBackendBufferHandle transformUploadBuffer;
+
+        uint32 transformMatrixCount = 0;
+        uint64 transformBufferSize = 0;
+        std::vector<Matrix4x4f> rowMajorTransforms;
+        RenderBackendBufferHandle transformBufferRowMajor;
+        RenderBackendBufferHandle transformBufferRowMajorUpload;
+
+        RenderBackendRayTracingAccelerationStructureHandle bottomLevelAccelerationStructure;
 
         std::string name;
 
@@ -483,7 +495,7 @@ namespace Horizon
         Matrix4x4f localToWorldMatrix;
         std::vector<GPUSceneMeshletData> meshlets;
 
-        RenderScene(RenderBackend* renderBackend, ShaderCollection* shaderLibrary);
+        RenderScene(RenderBackend* renderBackend, ShaderRepository* shaderRepository);
 
         virtual ~RenderScene();
 
@@ -556,7 +568,7 @@ namespace Horizon
 
         void GetRenderStatistics(RenderStatistics& statistics) const;
 
-        void UpdateGPUScene(RenderBackendCommandList* commandList);
+        void UpdateGPUScene(RenderGraph& renderGraph, RenderBackendCommandList* commandList);
 
         bool ShouldUpdateRayTracingScene()
         {
@@ -578,7 +590,7 @@ namespace Horizon
 
         RenderBackend* renderBackend;
 
-        ShaderCollection* shaderLibrary;
+        ShaderRepository* shaderRepository;
 
         std::vector<MeshRenderObject*> meshes;
 

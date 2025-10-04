@@ -221,7 +221,7 @@ namespace Horizon
                     pushConstantValues.BindTextureSRV(0, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(bloomKernelTexture)));
                     pushConstantValues.BindTextureUAV(1, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndexresizedBloomKernelTexture), 0));
 
-                    RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::ConvolutionBloomResizeKernel);
+                    RenderBackendShaderHandle computeShader = shaderRepository->GetShader(ShaderID::ConvolutionBloomResizeKernel);
                     commandList.Dispatch(
                         computeShader,
                         pushConstantValues,

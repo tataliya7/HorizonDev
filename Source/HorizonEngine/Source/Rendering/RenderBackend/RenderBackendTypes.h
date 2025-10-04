@@ -1423,7 +1423,7 @@ namespace Horizon
     };
     HORIZON_OVERLOAD_ENUM_CLASS_OPERATORS(RenderBackendRayTracingGeometryFlags);
 
-    struct RenderBackendRayTracingGeometryTriangleDesc
+    struct RenderBackendRayTracingGeometryTriangleDescription
     {
         uint32 indexCount;
         uint32 vertexCount;
@@ -1436,31 +1436,31 @@ namespace Horizon
         uint32 transformOffset;
     };
 
-    struct RenderBackendRayTracingGeometryAABBDesc
+    struct RenderBackendRayTracingGeometryAABBDescription
     {
         RenderBackendBufferHandle buffer;
         uint32 offset;
     };
 
-    struct RenderBackendRayTracingGeometryDesc
+    struct RenderBackendRayTracingGeometryDescription
     {
         RenderBackendRayTracingGeometryType type;
         RenderBackendRayTracingGeometryFlags flags;
         //union
         //{
-        RenderBackendRayTracingGeometryTriangleDesc triangleDesc;
-        RenderBackendRayTracingGeometryAABBDesc aabbDesc;
+        RenderBackendRayTracingGeometryTriangleDescription triangleDescription;
+        RenderBackendRayTracingGeometryAABBDescription aabbDescription;
         //};
     };
 
-    struct RenderBackendRayTracingBottomLevelAccelerationStructureDesc
+    struct RenderBackendRayTracingBottomLevelAccelerationStructureDescription
     {
         RenderBackendRayTracingAccelerationStructureBuildFlags buildFlags;
         uint32 geometryCount;
-        RenderBackendRayTracingGeometryDesc* geometryDescs;
+        RenderBackendRayTracingGeometryDescription* geometryDescriptions;
     };
 
-    struct RenderBackendRayTracingTopLevelAccelerationStructureDesc
+    struct RenderBackendRayTracingTopLevelAccelerationStructureDescription
     {
         RenderBackendRayTracingAccelerationStructureBuildFlags buildFlags;
         RenderBackendRayTracingGeometryFlags geometryFlags;

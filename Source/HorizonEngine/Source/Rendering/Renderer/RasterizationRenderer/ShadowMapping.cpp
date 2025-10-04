@@ -229,7 +229,7 @@ namespace Horizon
         //                 pushConstantValues.BindBuffer(2, renderEngine->materialBuffer, 0);
         //                 pushConstantValues.BindBuffer(3, renderEngine->cubeShadowMapBuffer, sizeof(CubeShadowMapShaderParameters));
         //
-        //                 RenderBackendShaderHandle graphicsShader = shaderLibrary->GetShader(ShaderID::LocalLightShadows);
+        //                 RenderBackendShaderHandle graphicsShader = shaderRepository->GetShader(ShaderID::LocalLightShadows);
         //
         //                 commandList.DrawIndexed(
         //                     graphicsShader,
@@ -296,7 +296,7 @@ namespace Horizon
         //             pushConstantValues.BindTextureSRV(1, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(screenSpaceShadowMaskTexture));
         //             pushConstantValues.BindTextureUAV(2, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndex(outputTexture, 0));
         //
-        //             RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::VisualizeScreenSpaceShadowMask);
+        //             RenderBackendShaderHandle computeShader = shaderRepository->GetShader(ShaderID::VisualizeScreenSpaceShadowMask);
         //
         //             commandList.Dispatch(
         //                 computeShader,

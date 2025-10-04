@@ -6,7 +6,7 @@ namespace Horizon
 {
     void DispatchScreenSpaceShadowsBend(
         RenderGraph& renderGraph,
-        const ShaderCollection* shaderLibrary,
+        const ShaderRepository* shaderRepository,
         const SceneView& view,
         const LightRenderObject& light,
         const Extent2D& renderResolution,
@@ -79,7 +79,7 @@ namespace Horizon
                         pushConstantValues.OverrideShaderConstantValue(10, 1.0f / float(renderResolution.width));
                         pushConstantValues.OverrideShaderConstantValue(11, 1.0f / float(renderResolution.height));
 
-                        RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::ScreenSpaceShadowsBend);
+                        RenderBackendShaderHandle computeShader = shaderRepository->GetShader(ShaderID::ScreenSpaceShadowsBend);
 
                         commandList.Dispatch(
                             computeShader,
@@ -120,8 +120,8 @@ namespace Horizon
                     pushConstantValues.OverrideShaderConstantValue(1, 1.0f / float(renderResolution.width));
                     pushConstantValues.OverrideShaderConstantValue(2, 1.0f/ float(renderResolution.height));
 
-                    RenderBackendShaderHandle vertexShader = shaderLibrary->GetShader(ShaderID::DrawFullscreenQuadVS);
-                    RenderBackendShaderHandle pixelShader = shaderLibrary->GetShader(ShaderID::ScreenSpaceShadowsComposition);
+                    RenderBackendShaderHandle vertexShader = shaderRepository->GetShader(ShaderID::DrawFullscreenQuadVS);
+                    RenderBackendShaderHandle pixelShader = shaderRepository->GetShader(ShaderID::ScreenSpaceShadowsComposition);
 
                     commandList.Draw(
                         vertexShader,

@@ -222,17 +222,18 @@ namespace Horizon
         bool compiled;
     };
 
-    class ShaderCollection
+    class ShaderRepository
     {
     public:
-        ShaderCollection(RenderBackend* renderBackend, const std::string& rootDirectory);
-        virtual ~ShaderCollection();
+        ShaderRepository(RenderBackend* renderBackend, const std::string& rootDirectory);
+        virtual ~ShaderRepository();
         bool HotReload();
         bool LoadShader(ShaderID id, ShaderDesc& desc);
         RenderBackendShaderHandle GetShader(ShaderID id) const;
         RenderBackend* renderBackend;
 
     private:
+
         std::string rootDirectory;
         ShadingLanguage shadingLanguage;
         std::vector<Shader> loadedShaders;
@@ -241,5 +242,7 @@ namespace Horizon
         bool hotReloadEnabled;
     };
 
-    extern void LoadAllShaders_Deprecated(ShaderCollection* shaderLibrary);
+    extern void LoadAllShaders_Deprecated(ShaderRepository* shaderRepository);
+
+    extern ShaderRepository* GetGlobalShaderRepository();
 }

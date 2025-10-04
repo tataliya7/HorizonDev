@@ -252,7 +252,7 @@ namespace Horizon
         RenderSettings renderSettings;
         // RenderBackendType renderBackendType = RenderBackendType::Vulkan;
         RenderBackend* renderBackend = nullptr;
-        // ShaderLibrary* shaderLibrary = nullptr;
+        // ShaderLibrary* shaderRepository = nullptr;
         // RenderGraphResourcePool* renderGraphResourcePool;
         // RenderBackendGPUProfiler* gpuProfiler;
         // RendererDefaultResources* rendererDefaultResources;

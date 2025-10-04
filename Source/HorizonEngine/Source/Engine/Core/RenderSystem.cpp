@@ -53,15 +53,15 @@ namespace Horizon
         uint32 physicalDeviceID = 0;
         renderBackend->CreateRenderDevices(&physicalDeviceID, 1, &primaryDeviceMask);
 
-        shaderLibrary = new ShaderCollection(renderBackend, "../../../Source/HorizonEngine/Shaders");
-        LoadAllShaders_Deprecated(shaderLibrary);
+        shaderRepository = new ShaderRepository(renderBackend, "../../../Source/HorizonEngine/Shaders");
+        LoadAllShaders_Deprecated(shaderRepository);
 
         renderGraphResourcePool = new RenderGraphResourcePool(renderBackend);
 
         gpuProfiler = new RenderBackendGPUProfiler(renderBackend);
 
         RenderBackendCommandList* commandList = new RenderBackendCommandList(GArena);
-        rendererDefaultResources = new RendererDefaultResources(renderBackend, renderGraphResourcePool, shaderLibrary);
+        rendererDefaultResources = new RendererDefaultResources(renderBackend, renderGraphResourcePool, shaderRepository);
         rendererDefaultResources->Initialize(*commandList);
         renderBackend->SubmitCommandLists(&commandList, 1, RenderBackendSwapChainHandle::Null);
 
@@ -103,14 +103,14 @@ namespace Horizon
     {
         OPTICK_EVENT();
 
-        shaderLibrary->HotReload();
+        shaderRepository->HotReload();
         renderGraphResourcePool->Tick();
         renderBackend->Tick();
     }
 
     RasterizationRenderer* RenderSystem::CreateRenderer()
     {
-        return new RasterizationRenderer(renderBackend, renderGraphResourcePool, shaderLibrary, rendererDefaultResources);
+        return new RasterizationRenderer(renderBackend, renderGraphResourcePool, shaderRepository, rendererDefaultResources);
     }
 
     void RenderSystem::RenderSceneView(RasterizationRenderer* renderer, SceneView* sceneView)
@@ -295,8 +295,8 @@ namespace Horizon
         ImVec2 clipOffset = drawData->DisplayPos;         // (0,0) unless using multi-viewports
         ImVec2 clipScale = drawData->FramebufferScale;    // (1,1) unless using retina display which are often (2,2)
 
-        RenderBackendShaderHandle vertexShader = shaderLibrary->GetShader(ShaderID::ImGuiVS);
-        RenderBackendShaderHandle pixelShader = shaderLibrary->GetShader(ShaderID::ImGuiPS);
+        RenderBackendShaderHandle vertexShader = shaderRepository->GetShader(ShaderID::ImGuiVS);
+        RenderBackendShaderHandle pixelShader = shaderRepository->GetShader(ShaderID::ImGuiPS);
 
         RenderBackendGraphicsPipelineStateDescription graphicsPipelineState = {};
         graphicsPipelineState.rasterizationState.cullMode = RenderBackendRasterizationCullMode::None;
@@ -408,8 +408,8 @@ namespace Horizon
 
                 builder.SetRenderTargetBinding(0, displayTexture, offscreen ? RenderBackendRenderPassLoadOperation::Clear : RenderBackendRenderPassLoadOperation::Load, RenderBackendRenderPassStoreOperation::Store);
 
-                RenderBackendShaderHandle vertexShader = shaderLibrary->GetShader(ShaderID::DrawFullscreenQuadVS);
-                RenderBackendShaderHandle pixelShader = shaderLibrary->GetShader(ShaderID::GUICompositionPS);
+                RenderBackendShaderHandle vertexShader = shaderRepository->GetShader(ShaderID::DrawFullscreenQuadVS);
+                RenderBackendShaderHandle pixelShader = shaderRepository->GetShader(ShaderID::GUICompositionPS);
 
                 return [=](RenderBackendCommandList& commandList, const RenderGraphResourceRegistry& resourceRegistry)
                 {

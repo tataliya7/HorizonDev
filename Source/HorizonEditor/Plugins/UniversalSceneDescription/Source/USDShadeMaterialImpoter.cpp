@@ -18,7 +18,7 @@ namespace Horizon::USDImporter
 
         RenderSystem* renderSystem = HorizonEngine::GetInstance()->GetSubsystem<RenderSystem>();
         RenderBackend* renderBackend = renderSystem->GetRenderBackend();
-        ShaderCollection* shaderLibrary = renderSystem->GetShaderLibrary();
+        ShaderRepository* shaderRepository = renderSystem->GetShaderRepository();
 
         std::string materialName = usdShadeMaterial.GetPrim().GetName().GetString();
 
@@ -77,7 +77,7 @@ namespace Horizon::USDImporter
                                                 }
                                                 else
                                                 {
-                                                    gpuTexture = LoadTextureFromFile(renderBackend, shaderLibrary, path.c_str(), true, true, RenderBackendTextureFormat::R8G8B8A8UnormSrgb);
+                                                    gpuTexture = LoadTextureFromFile(renderBackend, shaderRepository, path.c_str(), true, true, RenderBackendTextureFormat::R8G8B8A8UnormSrgb);
                                                     context->textureMap.emplace(path, gpuTexture);
                                                 }
 
@@ -144,7 +144,7 @@ namespace Horizon::USDImporter
                                                 }
                                                 else
                                                 {
-                                                    gpuTexture = LoadTextureFromFile(renderBackend, shaderLibrary, path.c_str(), true, true, RenderBackendTextureFormat::R8G8B8A8Unorm);
+                                                    gpuTexture = LoadTextureFromFile(renderBackend, shaderRepository, path.c_str(), true, true, RenderBackendTextureFormat::R8G8B8A8Unorm);
                                                     context->textureMap.emplace(path, gpuTexture);
                                                 }
 
@@ -200,7 +200,7 @@ namespace Horizon::USDImporter
                                                 }
                                                 else
                                                 {
-                                                    gpuTexture = LoadTextureFromFile(renderBackend, shaderLibrary, path.c_str());
+                                                    gpuTexture = LoadTextureFromFile(renderBackend, shaderRepository, path.c_str());
                                                     context->textureMap.emplace(path, gpuTexture);
                                                 }
 
@@ -266,7 +266,7 @@ namespace Horizon::USDImporter
                                                 }
                                                 else
                                                 {
-                                                    gpuTexture = LoadTextureFromFile(renderBackend, shaderLibrary, path.c_str());
+                                                    gpuTexture = LoadTextureFromFile(renderBackend, shaderRepository, path.c_str());
                                                     context->textureMap.emplace(path, gpuTexture);
                                                 }
 

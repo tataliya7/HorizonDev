@@ -25,12 +25,13 @@ static const float SSRScreenEdgeVignettingFactor = 5.0f;
 
 SHADER_CONSTANTS_STRUCT_BEGIN();
 SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferSRV);
-SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(1, DepthTextureSRV);
-SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(2, DepthPyramidTextureSRV);
-SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(3, GBuffer0SRV);
-SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(4, GBuffer1SRV);
-SHADER_CONSTANTS_TEXTURE_2D_UAV(5, float4, SSRRayHitTextureUAV);
-SHADER_CONSTANTS_TEXTURE_2D_UAV(6, float, SSRRayConfidenceTextureUAV);
+SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(1, ColorTextureSRV);
+SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(2, DepthTextureSRV);
+SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(3, DepthPyramidTextureSRV);
+SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(4, GBuffer0SRV);
+SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(5, GBuffer1SRV);
+SHADER_CONSTANTS_TEXTURE_2D_UAV(6, float4, SSRRayHitTextureUAV);
+SHADER_CONSTANTS_TEXTURE_2D_UAV(7, float4, SSRRayColorTextureUAV);
 SHADER_CONSTANTS_STRUCT_END();
 
 // float4 BlueNoise(uint2 coord, float phase)
@@ -123,23 +124,24 @@ void ScreenSpaceReflectionsRayTracingCS(uint3 groupID : SV_GroupID, uint3 groupT
 {
     StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
     PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
+    Texture2D colorTexture = ShaderConstants.GetColorTextureSRV();
     Texture2D depthTexture = ShaderConstants.GetDepthTextureSRV();
     Texture2D depthPyramidTexture = ShaderConstants.GetDepthPyramidTextureSRV();
     Texture2D gbuffer0 = ShaderConstants.GetGBuffer0SRV();
     Texture2D gbuffer1 = ShaderConstants.GetGBuffer1SRV();
     //Texture2D<uint> tilesBuffer = ShaderConstants.GetTilesBufferSRV();
-    RWTexture2D<float4> ssrRayHitTexture = ShaderConstants.GetSSRRayHitTextureUAV();
-    RWTexture2D<float> ssrRayConfidenceTexture = ShaderConstants.GetSSRRayConfidenceTextureUAV();
+    RWTexture2D<float4> rayHitTexture = ShaderConstants.GetSSRRayHitTextureUAV();
+    RWTexture2D<float4> rayColorTexture = ShaderConstants.GetSSRRayColorTextureUAV();
 
     uint outputWidth, outputHeight;
-    ssrRayHitTexture.GetDimensions(outputWidth, outputHeight);
+    rayHitTexture.GetDimensions(outputWidth, outputHeight);
 
     uint2 pixelCoord = dispatchThreadID.xy;//GetReflectionIndirectDispatchCoord(groupID, groupThreadID, tilesBuffer);
     float2 uv = (pixelCoord + 0.5f) * float2(1.0f / outputWidth, 1.0f / outputHeight);
 
 #ifdef SSR_EARLY_EXIT_RAYS
-    ssrRayHitTexture[pixelCoord] = 0.0f;
-    ssrRayConfidenceTexture[pixelCoord] = 0.0f;
+    rayHitTexture[pixelCoord] = float4(0.0f, 0.0f, 0.0f, 0.0f);
+    rayColorTexture[pixelCoord] = float4(0.0f, 0.0f, 0.0f, 0.0f);
 #else
     // This is necessary for accurate upscaling, because we don't reuse the same half-res pixel.
     //float2 jitterOffset = 0;//floor(BlueNoise(uint2(0, 0), frameShaderParameters.blueNoisePhase).xy);
@@ -156,8 +158,8 @@ void ScreenSpaceReflectionsRayTracingCS(uint3 groupID : SV_GroupID, uint3 groupT
 
     if (!ShouldComputeReflections(depth, roughness, SSR_ROUGHNESS_THRESHOLD_CHEAP_RAY_TRACING))
     {
-        ssrRayHitTexture[pixelCoord] = 0.0f;
-        ssrRayConfidenceTexture[pixelCoord] = 0.0f;
+        rayHitTexture[pixelCoord] = float4(0.0f, 0.0f, 0.0f, 0.0f);
+        rayColorTexture[pixelCoord] = float4(0.0f, 0.0f, 0.0f, 0.0f);
         return;
     }
 
@@ -237,10 +239,14 @@ void ScreenSpaceReflectionsRayTracingCS(uint3 groupID : SV_GroupID, uint3 groupT
     // float2 prevHitUV = hit.xy + motionVector;
 
     // float confidence = foundHit ? ValidateHit(jitteredUV, worldSpaceRayDirection, hit, hitNormal, surfaceDepth, prevHitUV, screenSize, frameShaderParameters.clipToViewMatrix) : 0;
+
+    float3 radiance = float3(0.0f, 0.0f, 0.0f);
     float confidence = foundHit ? 1.0f : 0.0f;
 
     if (foundHit)
     {
+        radiance = colorTexture.SampleLevel(GlobalSamplerLinearClamp, hitPointUVZ.xy, 0).rgb;
+
         float vignetting = CalculateScreenEdgeVignetting(hitPointUVZ.xy, SSRScreenEdgeVignettingFactor);
         confidence *= vignetting;
 
@@ -254,13 +260,12 @@ void ScreenSpaceReflectionsRayTracingCS(uint3 groupID : SV_GroupID, uint3 groupT
     #endif
 
     #if 0
-
     #endif
     }
 
     confidence *= confidence;
 
-    ssrRayHitTexture[pixelCoord] = float4(hitPointUVZ, pdf);
-    ssrRayConfidenceTexture[pixelCoord] = confidence;
+    rayHitTexture[pixelCoord] = float4(hitPointUVZ, pdf);
+    rayColorTexture[pixelCoord] = float4(radiance, confidence);
 #endif // SSR_EARLY_EXIT_RAYS
 }

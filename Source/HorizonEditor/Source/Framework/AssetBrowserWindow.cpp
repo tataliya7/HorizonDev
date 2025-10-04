@@ -1087,12 +1087,12 @@ const std::filesystem::path& AssetBrowserWindow::ProcessDirectory(const std::fil
 
         RenderSystem* renderSystem = HorizonEngine::GetInstance()->GetSubsystem<RenderSystem>();
         RenderBackend* renderBackend = renderSystem->GetRenderBackend();
-        ShaderCollection* shaderLibrary = renderSystem->GetShaderLibrary();
-        fileIcon = LoadTextureFromFile(renderBackend, shaderLibrary, "../../../Assets/Icons/file-512.png", false, false, RenderBackendTextureFormat::R8G8B8A8Unorm);
-        directoryIcon = LoadTextureFromFile(renderBackend, shaderLibrary, "../../../Assets/Icons/folder-512.png", false, false, RenderBackendTextureFormat::R8G8B8A8Unorm);
-        backwardButtonIcon = LoadTextureFromFile(renderBackend, shaderLibrary, "../../../Assets/Icons/backward-button-32.png", false, false, RenderBackendTextureFormat::R8G8B8A8Unorm);
-        forwardButtonIcon = LoadTextureFromFile(renderBackend, shaderLibrary, "../../../Assets/Icons/forward-button-32.png", false, false, RenderBackendTextureFormat::R8G8B8A8Unorm);
-        refreshButtonIcon = LoadTextureFromFile(renderBackend, shaderLibrary, "../../../Assets/Icons/refresh-button-32.png", false, false, RenderBackendTextureFormat::R8G8B8A8Unorm);
+        ShaderRepository* shaderRepository = renderSystem->GetShaderRepository();
+        fileIcon = LoadTextureFromFile(renderBackend, shaderRepository, "../../../Assets/Icons/file-512.png", false, false, RenderBackendTextureFormat::R8G8B8A8Unorm);
+        directoryIcon = LoadTextureFromFile(renderBackend, shaderRepository, "../../../Assets/Icons/folder-512.png", false, false, RenderBackendTextureFormat::R8G8B8A8Unorm);
+        backwardButtonIcon = LoadTextureFromFile(renderBackend, shaderRepository, "../../../Assets/Icons/backward-button-32.png", false, false, RenderBackendTextureFormat::R8G8B8A8Unorm);
+        forwardButtonIcon = LoadTextureFromFile(renderBackend, shaderRepository, "../../../Assets/Icons/forward-button-32.png", false, false, RenderBackendTextureFormat::R8G8B8A8Unorm);
+        refreshButtonIcon = LoadTextureFromFile(renderBackend, shaderRepository, "../../../Assets/Icons/refresh-button-32.png", false, false, RenderBackendTextureFormat::R8G8B8A8Unorm);
     }
 
     AssetBrowserWindow::~AssetBrowserWindow()

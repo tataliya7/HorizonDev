@@ -1708,7 +1708,7 @@ namespace Horizon
             (*ppResource)->Unmap(0, nullptr);
         }
 
-        uint32 CreateD3D12RayTracingBottomLevelAccelerationStructure(const RenderBackendRayTracingBottomLevelAccelerationStructureDesc* desc, const char* name)
+        uint32 CreateD3D12RayTracingBottomLevelAccelerationStructure(const RenderBackendRayTracingBottomLevelAccelerationStructureDescription* desc, const char* name)
         {
             uint32 index = AllocateRayTracingAccelerationStructure();
             D3D12RayTracingAccelerationStructure* accelerationStructure = accelerationStructures[index];
@@ -1718,20 +1718,20 @@ namespace Horizon
                 accelerationStructure->geometries.resize(desc->geometryCount);
                 for (uint32 i = 0; i < desc->geometryCount; i++)
                 {
-                    const RenderBackendRayTracingGeometryDesc& geometryDesc = desc->geometryDescs[i];
+                    const RenderBackendRayTracingGeometryDescription& geometryDesc = desc->geometryDescriptions[i];
                     D3D12_RAYTRACING_GEOMETRY_DESC& geometry = accelerationStructure->geometries[i];
                     geometry.Type = ConvertToD3D12RayTracingGeometryType(geometryDesc.type);
                     geometry.Flags = ConvertToD3D12RayTracingGeometryFlags(geometryDesc.flags);
                     if (geometry.Type == D3D12_RAYTRACING_GEOMETRY_TYPE_TRIANGLES)
                     {
-                        geometry.Triangles.Transform3x4 = GetBuffer(geometryDesc.triangleDesc.transformBuffer)->GetID3D12Resource()->GetGPUVirtualAddress() + geometryDesc.triangleDesc.transformOffset;
+                        geometry.Triangles.Transform3x4 = GetBuffer(geometryDesc.triangleDescription.transformBuffer)->GetID3D12Resource()->GetGPUVirtualAddress() + geometryDesc.triangleDescription.transformOffset;
                         geometry.Triangles.IndexFormat = DXGI_FORMAT_R32_UINT;
                         geometry.Triangles.VertexFormat = DXGI_FORMAT_R32G32B32_FLOAT;
-                        geometry.Triangles.IndexCount = geometryDesc.triangleDesc.indexCount;
-                        geometry.Triangles.VertexCount = geometryDesc.triangleDesc.vertexCount;
-                        geometry.Triangles.IndexBuffer = GetBuffer(geometryDesc.triangleDesc.indexBuffer)->GetID3D12Resource()->GetGPUVirtualAddress() + geometryDesc.triangleDesc.indexOffset;
-                        geometry.Triangles.VertexBuffer.StartAddress = GetBuffer(geometryDesc.triangleDesc.vertexBuffer)->GetID3D12Resource()->GetGPUVirtualAddress() + geometryDesc.triangleDesc.vertexOffset;
-                        geometry.Triangles.VertexBuffer.StrideInBytes = geometryDesc.triangleDesc.vertexStride;
+                        geometry.Triangles.IndexCount = geometryDesc.triangleDescription.indexCount;
+                        geometry.Triangles.VertexCount = geometryDesc.triangleDescription.vertexCount;
+                        geometry.Triangles.IndexBuffer = GetBuffer(geometryDesc.triangleDescription.indexBuffer)->GetID3D12Resource()->GetGPUVirtualAddress() + geometryDesc.triangleDescription.indexOffset;
+                        geometry.Triangles.VertexBuffer.StartAddress = GetBuffer(geometryDesc.triangleDescription.vertexBuffer)->GetID3D12Resource()->GetGPUVirtualAddress() + geometryDesc.triangleDescription.vertexOffset;
+                        geometry.Triangles.VertexBuffer.StrideInBytes = geometryDesc.triangleDescription.vertexStride;
                     }
                     else if (geometry.Type == D3D12_RAYTRACING_GEOMETRY_TYPE_PROCEDURAL_PRIMITIVE_AABBS)
                     {
@@ -1759,7 +1759,7 @@ namespace Horizon
             return index;
         }
 
-        uint32 CreateD3D12RayTracingTopLevelAccelerationStructure(const RenderBackendRayTracingTopLevelAccelerationStructureDesc* desc, const char* name)
+        uint32 CreateD3D12RayTracingTopLevelAccelerationStructure(const RenderBackendRayTracingTopLevelAccelerationStructureDescription* desc, const char* name)
         {
             uint32 index = AllocateRayTracingAccelerationStructure();
             D3D12RayTracingAccelerationStructure* accelerationStructure = accelerationStructures[index];
@@ -2659,8 +2659,8 @@ namespace Horizon
         RenderBackendTimingQueryHeapHandle CreateTimingQueryHeap(const RenderBackendTimingQueryHeapDesc* desc, const char* name) override;
         void DestroyTimingQueryHeap(RenderBackendTimingQueryHeapHandle timingQueryHeap) override;
         void SubmitCommandLists(RenderBackendCommandList** commandLists, uint32 numCommandLists, RenderBackendSwapChainHandle swapChain) override;
-        RenderBackendRayTracingAccelerationStructureHandle CreateRayTracingBottomLevelAccelerationStructure(const RenderBackendRayTracingBottomLevelAccelerationStructureDesc* desc, const char* name) override;
-        RenderBackendRayTracingAccelerationStructureHandle CreateRayTracingTopLevelAccelerationStructure(const RenderBackendRayTracingTopLevelAccelerationStructureDesc* desc, const char* name) override;
+        RenderBackendRayTracingAccelerationStructureHandle CreateRayTracingBottomLevelAccelerationStructure(const RenderBackendRayTracingBottomLevelAccelerationStructureDescription* desc, const char* name) override;
+        RenderBackendRayTracingAccelerationStructureHandle CreateRayTracingTopLevelAccelerationStructure(const RenderBackendRayTracingTopLevelAccelerationStructureDescription* desc, const char* name) override;
         RenderBackendRayTracingPipelineStateHandle CreateRayTracingPipelineState(const RenderBackendRayTracingPipelineStateDesc* desc, const char* name) override;
         RenderBackendBufferHandle CreateRayTracingShaderBindingTable(const RenderBackendRayTracingShaderBindingTableDesc* desc, const char* name) override;
         void SetObjectName(RenderBackendTextureHandle handle, const char* name) override

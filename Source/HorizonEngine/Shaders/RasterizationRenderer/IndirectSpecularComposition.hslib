@@ -10,8 +10,8 @@ SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, PerFrameShaderParameters, PerFrameShad
 SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(1, GBuffer0SRV);
 SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(2, GBuffer1SRV);
 SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(3, GBuffer2SRV);
-SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(4, SceneDepthTextureSRV);
-SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(5, ScreenSpaceReflectionTextureSRV);
+SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(4, DepthTextureSRV);
+SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(5, IndirectSpecularTextureSRV);
 SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(6, AmbientOcclusionTextureSRV);
 SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(7, EnvironmentBrdfLutTextureSRV);
 SHADER_CONSTANTS_TEXTURE_CUBE_DEFAULT_SRV(8, ConvolvedEnvironmentMapTextureSRV);
@@ -65,8 +65,8 @@ void IndirectSpecularCompositionPS(in float4 position : SV_Position, out float4 
     Texture2D gbuffer0 = ShaderConstants.GetGBuffer0SRV();
     Texture2D gbuffer1 = ShaderConstants.GetGBuffer1SRV();
     Texture2D gbuffer2 = ShaderConstants.GetGBuffer2SRV();
-    Texture2D sceneDepthTexture = ShaderConstants.GetSceneDepthTextureSRV();
-    Texture2D screenSpaceReflectionTexture = ShaderConstants.GetScreenSpaceReflectionTextureSRV();
+    Texture2D depthTexture = ShaderConstants.GetDepthTextureSRV();
+    Texture2D indirectSpecularTexture = ShaderConstants.GetIndirectSpecularTextureSRV();
     Texture2D ambientOcclusionTexture = ShaderConstants.GetAmbientOcclusionTextureSRV();
 
     const uint2 pixelCoord = uint2(position.xy);
@@ -75,11 +75,11 @@ void IndirectSpecularCompositionPS(in float4 position : SV_Position, out float4 
     float4 gbuffer0Data = gbuffer0[pixelCoord];
     float4 gbuffer1Data = gbuffer1[pixelCoord];
     float4 gbuffer2Data = gbuffer2[pixelCoord];
-    float sceneDepth = sceneDepthTexture[pixelCoord].r;
-    //float4 indirectSpecular = screenSpaceReflectionTexture[pixelCoord];
+    float depth = depthTexture[pixelCoord].r;
+    float4 indirectSpecular = indirectSpecularTexture[pixelCoord];
     float ambientOcclusion = ambientOcclusionTexture[pixelCoord].r;
 
-    float3 worldPosition = ReconstructWorldSpacePositionFromUVZ(uv, sceneDepth, frameShaderParameters.clipToWorldMatrix);
+    float3 worldPosition = ReconstructWorldSpacePositionFromUVZ(uv, depth, frameShaderParameters.clipToWorldMatrix);
     float3 normal = DecodeNormalFromGBuffer(gbuffer0Data.xyz);
     float metallic = gbuffer1Data.x;
     float specular = gbuffer1Data.y;
@@ -108,12 +108,19 @@ void IndirectSpecularCompositionPS(in float4 position : SV_Position, out float4 
     surface.ambientOcclusion = ambientOcclusion;
     surface.specularOcclusion = 1.0;
 
-    float3 indirectSpecular = ComputeImageBasedLightingSpecular(surface);
-    indirectSpecular *= frameShaderParameters.indirectLightingMultiplier;
-    indirectSpecular *= frameShaderParameters.preExposure;
+    float specularOcclusion = surface.specularOcclusion;
+
+    float3 iblSpecular = ComputeImageBasedLightingSpecular(surface);
+
+    indirectSpecular.rgb += iblSpecular * frameShaderParameters.preExposure;
+    indirectSpecular.rgb *= frameShaderParameters.indirectLightingMultiplier;
 
     // Multiply by FG after temporal filtering
+    float3 ssrColor = indirectSpecular.rgb * 1;
+    float ssrConfidence = indirectSpecular.a;
+
+    float3 indirectSpecularColor = lerp(iblSpecular, ssrColor, ssrConfidence) * specularOcclusion;
 
     outColor = 0;
-    outColor.rgb += indirectSpecular;
+    outColor.rgb += indirectSpecularColor;
 }

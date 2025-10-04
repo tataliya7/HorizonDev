@@ -54,7 +54,7 @@ namespace Horizon
                             pushConstantValues.BindBuffer(1, renderEngine->geometryBuffer, drawCallInfo.geometryIndex * sizeof(GeometryShaderParameters));
                             pushConstantValues.BindBuffer(2, drawCallInfo.vertexBuffers[0], 0);
 
-                            RenderBackendShaderHandle graphicsShader = shaderLibrary->GetShader(ShaderID::SelectionOutlineMaskGen);
+                            RenderBackendShaderHandle graphicsShader = shaderRepository->GetShader(ShaderID::SelectionOutlineMaskGen);
                             commandList.DrawIndexed(
                                 graphicsShader,
                                 graphicsPipelineState,

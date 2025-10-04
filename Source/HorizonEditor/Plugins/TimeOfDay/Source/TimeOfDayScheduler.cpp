@@ -52,8 +52,8 @@ namespace Horizon
             // };
             // commandList->Barriers(barriers, 1);
 
-            ConvertLatLongToCubemap(renderBackend, renderSystem->GetShaderLibrary(), *commandList, environmentMapTextureLatLong, environmentMapTexture, environmentMapTextureSize);
-            GenerateCubemapMips(renderBackend, renderSystem->GetShaderLibrary(), *commandList, environmentMapTexture, environmentMapTextureMipLevelCount);
+            ConvertLatLongToCubemap(renderBackend, renderSystem->GetShaderRepository(), *commandList, environmentMapTextureLatLong, environmentMapTexture, environmentMapTextureSize);
+            GenerateCubemapMips(renderBackend, renderSystem->GetShaderRepository(), *commandList, environmentMapTexture, environmentMapTextureMipLevelCount);
 
             renderBackend->SubmitCommandLists(&commandList, 1, RenderBackendSwapChainHandle::Null);
 

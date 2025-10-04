@@ -1,9 +1,17 @@
-#include "ShaderCollection.h"
+#include "ShaderRepository.h"
 
 #include <optick.h>
 
 namespace Horizon
 {
+    static ShaderRepository* GlobalShaderRepository = nullptr;
+
+    ShaderRepository* GetGlobalShaderRepository()
+    {
+        assert(GlobalShaderRepository != nullptr);
+        return GlobalShaderRepository;
+    }
+
     static bool LoadShaderSourceFromFile(const char* filename, std::vector<uint8>& outData)
     {
         std::ifstream file(filename, std::ios::ate | std::ios::binary);
@@ -19,7 +27,7 @@ namespace Horizon
         return true;
     }
 
-    ShaderCollection::ShaderCollection(RenderBackend* renderBackend, const std::string& rootDirectory)
+    ShaderRepository::ShaderRepository(RenderBackend* renderBackend, const std::string& rootDirectory)
     {
         this->renderBackend = renderBackend;
         this->rootDirectory = rootDirectory;
@@ -29,12 +37,12 @@ namespace Horizon
         loadedShaders.resize((size_t)ShaderID::Count);
     }
 
-    ShaderCollection::~ShaderCollection()
+    ShaderRepository::~ShaderRepository()
     {
 
     }
 
-    bool ShaderCollection::HotReload()
+    bool ShaderRepository::HotReload()
     {
         OPTICK_EVENT();
 
@@ -72,13 +80,13 @@ namespace Horizon
         return true;
     }
 
-    RenderBackendShaderHandle ShaderCollection::GetShader(ShaderID id) const
+    RenderBackendShaderHandle ShaderRepository::GetShader(ShaderID id) const
     {
         const uint32 shaderIndex = uint32(id);
         return loadedShaders[shaderIndex].handle;
     }
 
-    bool ShaderCollection::LoadShader(ShaderID id, ShaderDesc& desc)
+    bool ShaderRepository::LoadShader(ShaderID id, ShaderDesc& desc)
     {
         std::filesystem::path path = std::filesystem::absolute(std::filesystem::path("../../../Source/HorizonEngine").append(desc.filename));
         std::string filename = path.generic_string();

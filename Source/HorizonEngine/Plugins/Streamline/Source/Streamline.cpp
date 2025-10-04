@@ -32,7 +32,7 @@ namespace Horizon
      {
          //STREAMLINE_CHECK(slGetNewFrameToken(currentFrameToken, &frameIndex));
      }
-    
+
      //bool StreamlineContext::ReflexSetOptions(const sl::ReflexOptions& options)
      //{
      //    if (!IsInitialized() || !CheckReflexSupport())
@@ -42,7 +42,7 @@ namespace Horizon
      //    STREAMLINE_CHECK(slReflexSetOptions(options));
      //    return true;
      //}
-    
+
      void StreamlineContext::ReflexSleep(uint32 frameIndex)
      {
          if (CheckReflexSupport())
@@ -52,7 +52,7 @@ namespace Horizon
              STREAMLINE_CHECK(slReflexSleep(*currentFrameToken));
          }
      }
-    
+
      void StreamlineContext::ReflexSetMarkerControllerInputSample(uint32 frameIndex)
      {
          if (CheckReflexSupport())
@@ -62,7 +62,7 @@ namespace Horizon
              STREAMLINE_CHECK(slPCLSetMarker(sl::PCLMarker::eControllerInputSample, *currentFrameToken));
          }
      }
-    
+
      void StreamlineContext::ReflexSetMarkerSimulationStart(uint32 frameIndex)
      {
          if (CheckReflexSupport())
@@ -72,7 +72,7 @@ namespace Horizon
              STREAMLINE_CHECK(slPCLSetMarker(sl::PCLMarker::eSimulationStart, *currentFrameToken));
          }
      }
-    
+
      void StreamlineContext::ReflexSetMarkerSimulationEnd(uint32 frameIndex)
      {
          if (CheckReflexSupport())
@@ -82,7 +82,7 @@ namespace Horizon
              STREAMLINE_CHECK(slPCLSetMarker(sl::PCLMarker::eSimulationEnd, *currentFrameToken));
          }
      }
-    
+
      void StreamlineContext::ReflexSetMarkerRenderSubmitStart(uint32 frameIndex)
      {
          if (CheckReflexSupport())
@@ -92,7 +92,7 @@ namespace Horizon
              STREAMLINE_CHECK(slPCLSetMarker(sl::PCLMarker::eRenderSubmitStart, *currentFrameToken));
          }
      }
-    
+
      void StreamlineContext::ReflexSetMarkerRenderSubmitEnd(uint32 frameIndex)
      {
          if (CheckReflexSupport())
@@ -102,7 +102,7 @@ namespace Horizon
              STREAMLINE_CHECK(slPCLSetMarker(sl::PCLMarker::eRenderSubmitEnd, *currentFrameToken));
          }
      }
-    
+
      void StreamlineContext::ReflexSetMarkerPresentStart(uint32 frameIndex)
      {
          if (CheckReflexSupport())
@@ -112,7 +112,7 @@ namespace Horizon
              STREAMLINE_CHECK(slPCLSetMarker(sl::PCLMarker::ePresentStart, *currentFrameToken));
          }
      }
-    
+
      void StreamlineContext::ReflexSetMarkerPresentEnd(uint32 frameIndex)
      {
          if (CheckReflexSupport())
@@ -122,7 +122,7 @@ namespace Horizon
              STREAMLINE_CHECK(slPCLSetMarker(sl::PCLMarker::ePresentEnd, *currentFrameToken));
          }
      }
-    
+
      void StreamlineContext::ReflexSetMarkerPCLatencyPing(uint32 frameIndex)
      {
          if (CheckReflexSupport())

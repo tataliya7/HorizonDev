@@ -396,7 +396,10 @@ namespace Horizon
             if (!EnumClassHasFlags(passFlags, RenderGraphPassFlags::DebugLabelRegion_DEPRECATED))
             {
                 commandList.BeginDebugLabel(pass->GetName(), Vector4f(1.0f, 1.0f, 1.0f, 1.0f));
-                currentPassTimingQueryRegion = gpuProfiler->BeginRegion(&commandList, pass->GetName());
+                if (gpuProfiler)
+                {
+                    currentPassTimingQueryRegion = gpuProfiler->BeginRegion(&commandList, pass->GetName());
+                }
             }
 
             for (RenderGraphPass::TextureState& state : pass->textureStates)
@@ -522,7 +525,10 @@ namespace Horizon
 
             if (!EnumClassHasFlags(passFlags, RenderGraphPassFlags::DebugLabelRegion_DEPRECATED))
             {
-                gpuProfiler->EndRegion(currentPassTimingQueryRegion);
+                if (gpuProfiler)
+                {
+                    gpuProfiler->EndRegion(currentPassTimingQueryRegion);
+                }
                 commandList.EndDebugLabel();
             }
         }
@@ -572,7 +578,7 @@ namespace Horizon
     {
         this->renderGraph->AddPass(
             std::format("DebugLabelRegionBegin"),
-            RenderGraphPassFlags::DebugLabelRegion_DEPRECATED | RenderGraphPassFlags::NeverGetCulled,
+            RenderGraphPassFlags::DebugLabelRegion_DEPRECATED | RenderGraphPassFlags::NoCulling,
             [&](RenderGraphBuilder& builder)
             {
                 return [=](RenderBackendCommandList& commandList, const RenderGraphResourceRegistry& resourceRegistry)
@@ -586,7 +592,7 @@ namespace Horizon
     {
         this->renderGraph->AddPass(
             std::format("DebugLabelRegionEnd"),
-            RenderGraphPassFlags::DebugLabelRegion_DEPRECATED | RenderGraphPassFlags::NeverGetCulled,
+            RenderGraphPassFlags::DebugLabelRegion_DEPRECATED | RenderGraphPassFlags::NoCulling,
             [&](RenderGraphBuilder& builder)
             {
                 return [=](RenderBackendCommandList& commandList, const RenderGraphResourceRegistry& resourceRegistry)

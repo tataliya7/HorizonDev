@@ -113,7 +113,7 @@ namespace Horizon
         RenderGraphTextureHandle motionVectorTexture;
         RenderGraphTextureHandle ambientOcclusionTexture;
         RenderGraphTextureHandle indirectDiffuseTexture;
-        RenderGraphTextureHandle screenSpaceReflectionTexture;
+        RenderGraphTextureHandle indirectSpecularTexture;
         RenderGraphTextureHandle hudLessColorTexture;
         RenderGraphTextureHandle environmentMapTexture;
         RenderGraphBufferHandle irradianceEnvironmentMapBuffer;
@@ -164,7 +164,7 @@ namespace Horizon
         RasterizationRenderer(
             RenderBackend* renderBackend,
             RenderGraphResourcePool* resourcePool,
-            ShaderCollection* shaderLibrary,
+            ShaderRepository* shaderRepository,
             RendererDefaultResources* defaultResources);
 
         virtual ~RasterizationRenderer();
@@ -291,7 +291,7 @@ namespace Horizon
             RenderGraph& renderGraph,
             const SceneView& view);
 
-        void RenderScreenSpaceReflections(
+        RenderGraphTextureHandle RenderScreenSpaceReflections(
             RenderGraph& renderGraph,
             const SceneView& view);
 
@@ -494,7 +494,7 @@ namespace Horizon
 
         RenderBackend* renderBackend;
         RenderGraphResourcePool* resourcePool;
-        ShaderCollection* shaderCollection;
+        ShaderRepository* shaderCollection;
         RendererDefaultResources* defaultResources;
         SceneView* sceneView;
         TemporalSuperSamplingInterface* temporalSuperSamplingInterface;

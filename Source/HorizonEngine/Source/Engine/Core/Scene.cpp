@@ -17,10 +17,10 @@ namespace Horizon
 
         // entityManager->OnConstruct<TransformComponent>().connect<&entt::registry::emplace_or_replace<TransformDirtyComponent>>();
         // entityManager->OnUpdate<TransformComponent>().connect<&entt::registry::emplace_or_replace<TransformDirtyComponent>>();
-        //
+
         // entityManager->OnConstruct<SkyLightComponent>().connect<&Scene::OnSkyLightComponentConstruct>(this);
         // entityManager->OnDestroy<SkyLightComponent>().connect<&Scene::OnSkyLightComponentDestroy>(this);
-        //
+
         // entityManager->OnConstruct<RigidBodyComponent>().connect<&Scene::OnRigidBodyComponentConstruct>(this);
         // entityManager->OnDestroy<RigidBodyComponent>().connect<&Scene::OnRigidBodyComponentDestroy>(this);
 
@@ -28,9 +28,9 @@ namespace Horizon
 
         RenderSystem* renderSystem = HorizonEngine::GetInstance()->GetSubsystem<RenderSystem>();
         RenderBackend* renderBackend = renderSystem->GetRenderBackend();
-        ShaderCollection* shaderLibrary = renderSystem->GetShaderLibrary();
+        ShaderRepository* shaderRepository = renderSystem->GetShaderRepository();
 
-        renderScene = new RenderScene(renderBackend, shaderLibrary);
+        renderScene = new RenderScene(renderBackend, shaderRepository);
 
         if (renderSystem->enableHardwareRayTracing)
         {

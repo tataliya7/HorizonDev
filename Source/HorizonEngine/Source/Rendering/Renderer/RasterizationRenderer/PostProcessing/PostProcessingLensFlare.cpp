@@ -102,7 +102,7 @@ namespace Horizon
         //            pushConstantValues.BindTextureSRV(0, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(halfResolutionSceneColorTexture)));
         //            pushConstantValues.BindTextureUAV(1, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndextileCullingTexture), 0));
 
-        //            RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::LensFlareTileCulling);
+        //            RenderBackendShaderHandle computeShader = shaderRepository->GetShader(ShaderID::LensFlareTileCulling);
         //            commandList.Dispatch2D(
         //                computeShader,
         //                pushConstantValues,
@@ -146,7 +146,7 @@ namespace Horizon
         //            RenderBackendGraphicsPipelineStateDescription graphicsPipelineState = {};
         //            graphicsPipelineState.colorBlendState.targetBlends[0] = additiveColorBlendAttachmentStateRGB;
 
-        //            RenderBackendShaderHandle graphicsShader = shaderLibrary->GetShader(ShaderID::LensFlareGlare);
+        //            RenderBackendShaderHandle graphicsShader = shaderRepository->GetShader(ShaderID::LensFlareGlare);
 
         //            commandList.Draw(
         //                graphicsShader,

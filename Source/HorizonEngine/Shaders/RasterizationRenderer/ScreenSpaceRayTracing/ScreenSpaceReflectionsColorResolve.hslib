@@ -1,20 +1,20 @@
-#include "../ShaderCommon.hsh"
-#include "../BRDFCommon.hsh"
-#include "RasterizationRendererCommon.hsh"
+#include "../../ShaderCommon.hsh"
+#include "../../BRDFCommon.hsh"
+#include "../RasterizationRendererCommon.hsh"
 #include "ScreenSpaceReflectionsCommon.hsh"
 
-BIND_BUFFER_CBV(0, PerFrameShaderParameters);
-BIND_TEXTURE_2D_SRV(1, SceneDepth);
-BIND_TEXTURE_2D_SRV(2, GBuffer1);
-BIND_TEXTURE_2D_SRV(3, RayIndirectSpecular);
-BIND_TEXTURE_2D_SRV(4, RayDirectionPDF);
-BIND_TEXTURE_2D_SRV(5, RayLength);
-BIND_TEXTURE_2D_UAV(6, float4, ResolveTexture);
-BIND_TEXTURE_2D_UAV(7, float, ResolveVariance);
-BIND_TEXTURE_2D_UAV(8, float, ReprojectionDepth);
+SHADER_CONSTANTS_STRUCT_BEGIN();
+SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferSRV);
+SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(1, DepthTextureSRV);
+SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(2, GBuffer0SRV);
+SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(3, GBuffer1SRV);
+SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(4, SSRRayHitTextureSRV);
+SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(5, SSRRayColorTextureSRV);
+SHADER_CONSTANTS_TEXTURE_2D_UAV(6, float4, SSRColorResolveTextureUAV);
+SHADER_CONSTANTS_STRUCT_END();
 
 static const float2 ResolveSpatialSizeMinMax = float2(2.0, 8.0); // Good to have a min size as downsample scale (2x in this case)
-static const uint ResolveSpatialReconstructionCount = 4.0f;
+static const uint SSRResolveSpatialReconstructionSampleCount = 4.0f;
 
 uint baseHash(uint3 p)
 {
@@ -65,71 +65,67 @@ void ScreenSpaceReflectionsColorResolveCS(uint3 dispatchThreadID : SV_DispatchTh
 {
     StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
     PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
-    Texture2D sceneDepth = GetSceneDepthSRV();
-    Texture2D gbuffer1 = GetGBuffer1SRV();
-    Texture2D rayIndirectSpecular = GetRayIndirectSpecularSRV();
-    Texture2D rayDirectionPDF = GetRayDirectionPDFSRV();
-    Texture2D rayLength = GetRayLengthSRV();
+    Texture2D depthTexture = ShaderConstants.GetDepthTextureSRV();
+    Texture2D gbuffer0 = ShaderConstants.GetGBuffer0SRV();
+    Texture2D gbuffer1 = ShaderConstants.GetGBuffer1SRV();
+    Texture2D rayHitTexture = ShaderConstants.GetSSRRayHitTextureSRV();
+    Texture2D rayColorTexture = ShaderConstants.GetSSRRayColorTextureSRV();
+    RWTexture2D<float4> colorResolveTexture = ShaderConstants.GetSSRColorResolveTextureUAV();
 
-    RWTexture2D<float4> resolveTexture = GetResolveTextureUAV();
-    RWTexture2D<float> resolveVarianceTexture = GetResolveVarianceUAV();
-    RWTexture2D<float> reprojectionDepthTexture = GetReprojectionDepthUAV();
+    const uint2 pixelCoord = dispatchThreadID.xy;
+    const float2 uv = (pixelCoord + 0.5f) * float2(1.0f / frameShaderParameters.renderWidth, 1.0f / frameShaderParameters.renderHeight); // Full resolution
+    const uint2 tracingCoord = pixelCoord / SSR_DOWNSAMPLE_FACTOR;
 
-    const uint2 coord = dispatchThreadID.xy;
-    const float2 uv = (coord + 0.5f) * (1.0 / frameShaderParameters.renderWidth, 1.0 / frameShaderParameters.renderHeight); // Full resolution
-    const uint2 tracingCoord = coord / SSR_DOWNSAMPLE_FACTOR;
-
-    const float depth = sceneDepth[coord].r;
-    const float roughness = gbuffer1[coord].a;
+    const float4 gbuffer0Data = gbuffer0[pixelCoord];
+    const float4 gbuffer1Data = gbuffer1[pixelCoord];
+    const float depth = depthTexture[pixelCoord].r;
+    const float roughness = gbuffer1Data.b;
 
     if (!ShouldComputeReflections(depth, roughness, SSR_ROUGHNESS_THRESHOLD_CHEAP_RAY_TRACING))
     {
-        resolveTexture[coord] = rayIndirectSpecular[tracingCoord];
-        resolveVarianceTexture[coord] = 0.0;
-        reprojectionDepthTexture[coord] = 0.0;
+        colorResolveTexture[pixelCoord] = float4(0.0f, 0.0f, 0.0f, 0.0f);
         return;
     }
 
     const float3 P = ReconstructWorldSpacePositionFromUVZ(uv, depth, frameShaderParameters.clipToWorldMatrix);
-    const float3 N = gbuffer1[coord].rgb;
+    const float3 N = DecodeNormalFromGBuffer(gbuffer0Data.xyz);
     const float3 V = normalize(frameShaderParameters.cameraPosition - P);
     const float NdotV = saturate(dot(N, V));
 
-    const float resolveSpatialScale = saturate(roughness * 5.0); // roughness 0.2 is destination
-    const float2 resolveSpatialSize = lerp(ResolveSpatialSizeMinMax.x, ResolveSpatialSizeMinMax.y, resolveSpatialScale);
+    // const float resolveSpatialScale = saturate(roughness * 5.0); // roughness 0.2 is destination
+    // const float2 resolveSpatialSize = lerp(ResolveSpatialSizeMinMax.x, ResolveSpatialSizeMinMax.y, resolveSpatialScale);
 
-    float closestRayLength = 0.0;
+    // float closestRayLength = 0.0;
 
-    const uint sampleCount = ResolveSpatialReconstructionCount;
-    const uint2 random = hash33(uint3(coord, frameShaderParameters.frameIndex)).xy;
+    const uint sampleCount = SSRResolveSpatialReconstructionSampleCount;
+    const uint2 random = hash33(uint3(pixelCoord, frameShaderParameters.frameIndex)).xy;
 
-    float mean = 0.0;
-    float S = 0.0;
-    float4 result = 0.0;
-    float weightSum = 0.0;
+    float mean = 0.0f;
+    float S = 0.0f;
+
+    float4 result = float4(0.0f, 0.0f, 0.0f, 0.0f);
+    float weight = 0.0f;
 
     // Ray reuse
-    // We assume that the visibility of rays from neighboring pixels is the same.
     // We pretend the neighboring rays were shot from the local pixel, and use their intersection points.
+    // We assume that the visibility of rays from neighboring pixels is the same.
     for (int i = 0; i < sampleCount; i++)
     {
-        float2 offset = (Hammersley2D_Random(i, sampleCount, random) - 0.5) * resolveSpatialSize;
+        float2 offset = 0;//(Hammersley2D_Random(i, sampleCount, random) - 0.5f) * resolveSpatialSize;
 
         int2 neighborTracingCoord = tracingCoord + offset;
-        int2 neighborCoord = coord + offset;
+        int2 neighborCoord = pixelCoord + offset;
 
-        float neighborDepth = sceneDepth[neighborCoord].r;
-        if (neighborDepth > 0.0)
+        // Sample local pixel information
+        float4 sampleHitUVZAndPDF = rayHitTexture[neighborTracingCoord];
+        float4 sampleColor = rayColorTexture[neighborTracingCoord];
+
+        if (sampleColor.a > 0.0f)
         {
-            // Sample local pixel information
-            float4 directionPDF = rayDirectionPDF[neighborTracingCoord];
-            float4 sampleColor = rayIndirectSpecular[neighborTracingCoord];
-            float neighborRayLength = rayLength[neighborTracingCoord].r;
+            float samplePDF = sampleHitUVZAndPDF.w;
 
-            float3 rayDirection = directionPDF.xyz;
-            float pdf = directionPDF.w;
-
-            float3 sampleL = normalize(rayDirection);
+            float3 sampleP = ReconstructWorldSpacePositionFromUVZ(sampleHitUVZAndPDF.xy, sampleHitUVZAndPDF.z, frameShaderParameters.clipToWorldMatrix);
+            float3 sampleL = normalize(sampleP - P);
             float3 sampleH = normalize(sampleL + V);
 
             float sampleNdotH = saturate(dot(N, sampleH));
@@ -141,38 +137,36 @@ void ScreenSpaceReflectionsColorResolveCS(uint3 dispatchThreadID : SV_DispatchTh
             float D = D_GGX(roughness, sampleNdotH);
             float localBRDF = Vis * D * sampleNdotL;
 
-            float weight = localBRDF / max(pdf, 0.00001f);
-
+            float sampleWeight = localBRDF / max(samplePDF, 0.00001f);
             sampleColor.rgb *= rcp(1 + RelativeLuminance(sampleColor.rgb));
 
-            result += sampleColor * weight;
-            weightSum += weight;
+            result += sampleColor * sampleWeight;
+            weight += sampleWeight;
 
-            // Weighted incremental variance
-            // https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance
-            float luminance = RelativeLuminance(sampleColor.rgb);
-            float oldMean = mean;
-            mean += weight / weightSum * (luminance - oldMean);
-            S += weight * (luminance - oldMean) * (luminance - mean);
+            // // Weighted incremental variance
+            // // https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance
+            // float luminance = RelativeLuminance(sampleColor.rgb);
+            // float oldMean = mean;
+            // mean += weight / totalWeight * (luminance - oldMean);
+            // S += weight * (luminance - oldMean) * (luminance - mean);
 
-            if (weight > 0.001)
-            {
-                closestRayLength = max(closestRayLength, neighborRayLength);
-            }
+            // if (weight > 0.001)
+            // {
+            //     closestRayLength = max(closestRayLength, neighborRayLength);
+            // }
         }
     }
 
-    result /= weightSum;
+    result /= weight;
     result.rgb *= rcp(1 - RelativeLuminance(result.rgb));
+    result = max(0.00001f, result);
 
-    // Population variance
-    float resolveVariance = S / weightSum;
+    // // Population variance
+    // float resolveVariance = S / totalWeight;
 
-    // Convert to post-projection depth so we can construct dual source reprojection buffers later
-    float linearDepth = ComputeCameraSpaceDepth(depth, frameShaderParameters.nearClippingPlane, frameShaderParameters.farClippingPlane);
-    float reprojectionDepth = ComputeDepthFromCameraSpaceDepth(linearDepth + closestRayLength, frameShaderParameters.nearClippingPlane, frameShaderParameters.farClippingPlane);
+    // // Convert to post-projection depth so we can construct dual source reprojection buffers later
+    // float linearDepth = ComputeCameraSpaceDepth(depth, frameShaderParameters.nearClippingPlane, frameShaderParameters.farClippingPlane);
+    // float reprojectionDepth = ComputeDepthFromCameraSpaceDepth(linearDepth + closestRayLength, frameShaderParameters.nearClippingPlane, frameShaderParameters.farClippingPlane);
 
-    resolveTexture[coord] = max(result, 0.00001f);
-    resolveVarianceTexture[coord] = resolveVariance;
-    reprojectionDepthTexture[coord] = reprojectionDepth;
+    colorResolveTexture[pixelCoord] = result;
 }

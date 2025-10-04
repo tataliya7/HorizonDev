@@ -164,6 +164,40 @@ namespace Horizon
                 renderObject->jointTransformBuffer = renderBackend->CreateBuffer(&jointTransformBufferDesc, jointTransforms.data(), "jointTransformBuffer");
             }
 
+            if (visible)
+            {
+                Matrix4x4f transformData = IdentityMatrix4x4f;
+                RenderBackendBufferDescription transformBufferRowMajorDescription = RenderBackendBufferDescription::CreateByteAddress(sizeof(Matrix4x4f));
+                renderObject->transformBufferRowMajor = renderBackend->CreateBuffer(&transformBufferRowMajorDescription, &transformData, "RowMajorTransformBuffer");
+
+                RenderBackendRayTracingGeometryDescription geometryDescription = {};
+                geometryDescription.type = RenderBackendRayTracingGeometryType::Triangles;
+                geometryDescription.flags = RenderBackendRayTracingGeometryFlags::Opaque;
+                geometryDescription.triangleDescription.indexCount = indexCount;
+                geometryDescription.triangleDescription.vertexCount = vertexCount;
+                geometryDescription.triangleDescription.vertexStride = 3 * sizeof(float);
+                geometryDescription.triangleDescription.vertexBuffer = renderObject->vertexBuffers[0];
+                geometryDescription.triangleDescription.vertexOffset = 0;
+                geometryDescription.triangleDescription.indexBuffer = renderObject->indexBuffer;
+                geometryDescription.triangleDescription.indexOffset = 0;//mesh->baseIndex * sizeof(uint32);
+                geometryDescription.triangleDescription.transformBuffer = renderObject->transformBufferRowMajor;
+                geometryDescription.triangleDescription.transformOffset = 0 * static_cast<uint32>(sizeof(float)) * 16;
+
+                std::vector<RenderBackendRayTracingGeometryDescription> geometryDescriptions;
+                geometryDescriptions.push_back(geometryDescription);
+
+                RenderBackendRayTracingBottomLevelAccelerationStructureDescription blasDesc =
+                {
+                    .buildFlags = RenderBackendRayTracingAccelerationStructureBuildFlags::PreferFastTrace,
+                    .geometryCount = static_cast<uint32>(geometryDescriptions.size()),
+                    .geometryDescriptions = geometryDescriptions.data()
+                };
+
+                renderObject->bottomLevelAccelerationStructure = renderBackend->CreateRayTracingBottomLevelAccelerationStructure(&blasDesc, "BLAS");
+
+                scene->GetRayTracingScene()->RequestBuildRayTracingBLAS(renderObject->bottomLevelAccelerationStructure);
+            }
+
             scene->AddMesh(renderObject);
         }
     }

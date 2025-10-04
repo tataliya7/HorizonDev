@@ -51,7 +51,7 @@ namespace Horizon
         file.close();
     }
 
-    RenderBackendTextureHandle LoadTextureFromFile(RenderBackend* renderBackend, ShaderCollection* shaderLibrary, const char* filename, bool autoMipmaps, bool filpY, RenderBackendTextureFormat format)
+    RenderBackendTextureHandle LoadTextureFromFile(RenderBackend* renderBackend, ShaderRepository* shaderRepository, const char* filename, bool autoMipmaps, bool filpY, RenderBackendTextureFormat format)
     {
         RenderBackendTextureHandle texture = RenderBackendTextureHandle::Null;
 
@@ -188,7 +188,7 @@ namespace Horizon
                 uint32 deviceMask = ~0u;
 
                 RenderBackendCommandList* commandList = new RenderBackendCommandList(GArena);
-                Texture2DGenerateMips(renderBackend, shaderLibrary, *commandList, texture, iw, ih, mipLeveles);
+                Texture2DGenerateMips(renderBackend, shaderRepository, *commandList, texture, iw, ih, mipLeveles);
                 renderBackend->SubmitCommandLists(&commandList, 1, RenderBackendSwapChainHandle::Null);
                 renderBackend->FlushRenderDevices();
 

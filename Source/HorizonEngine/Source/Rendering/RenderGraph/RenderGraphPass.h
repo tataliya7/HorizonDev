@@ -26,10 +26,10 @@ namespace Horizon
         Graphics       = (1 << 3),
         MeshShading    = (1 << 4),
         RayTracing     = (1 << 5),
-        NeverGetCulled = (1 << 6),
+        NoCulling = (1 << 6),
         SkipRenderPass = (1 << 7),
         DebugLabelRegion_DEPRECATED = (1 << 8),
-        Readback       = Copy | NeverGetCulled,
+        Readback       = Copy | NoCulling,
     };
     HORIZON_OVERLOAD_ENUM_CLASS_OPERATORS(RenderGraphPassFlags);
 

@@ -123,7 +123,7 @@ namespace Horizon
                     pushConstantValues.PushConstants(2, settings.postProcessingSettings.dofNearTransitionRegion);
                     pushConstantValues.PushConstants(3, settings.postProcessingSettings.dofFarTransitionRegion);
 
-                    RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::DepthOfFieldSetup);
+                    RenderBackendShaderHandle computeShader = shaderRepository->GetShader(ShaderID::DepthOfFieldSetup);
                     commandList.Dispatch2D(
                         computeShader,
                         pushConstantValues,
@@ -153,7 +153,7 @@ namespace Horizon
 
                     pushConstantValues.PushConstants(0, settings.postProcessingSettings.dofFarRegionBlurSize);
 
-                    RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::DepthOfFieldGather);
+                    RenderBackendShaderHandle computeShader = shaderRepository->GetShader(ShaderID::DepthOfFieldGather);
                     commandList.Dispatch2D(
                         computeShader,
                         pushConstantValues,
@@ -183,7 +183,7 @@ namespace Horizon
 
                     pushConstantValues.PushConstants(0, settings.postProcessingSettings.dofFarRegionBlurSize);
 
-                    RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::DepthOfFieldPostfilter);
+                    RenderBackendShaderHandle computeShader = shaderRepository->GetShader(ShaderID::DepthOfFieldPostfilter);
                     commandList.Dispatch2D(
                         computeShader,
                         pushConstantValues,
@@ -213,7 +213,7 @@ namespace Horizon
                     pushConstantValues.BindTextureSRV(3, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(depthOfFieldCoCTexture)));
                     pushConstantValues.BindTextureUAV(4, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndexdepthOfFieldOutputTexture), 0));
 
-                    RenderBackendShaderHandle computeShader = shaderLibrary->GetShader(ShaderID::DepthOfFieldRecombine);
+                    RenderBackendShaderHandle computeShader = shaderRepository->GetShader(ShaderID::DepthOfFieldRecombine);
                     commandList.Dispatch2D(
                         computeShader,
                         pushConstantValues,

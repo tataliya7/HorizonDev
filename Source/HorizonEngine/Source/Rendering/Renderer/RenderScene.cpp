@@ -4,7 +4,7 @@
 
 
 #include "ImageBasedLighting.h"
-#include "ShaderCollection.h"
+#include "ShaderRepository.h"
 #include "Engine/Core/RenderSystem.h"
 
 namespace Horizon
@@ -80,9 +80,9 @@ namespace Horizon
     {
     }
 
-    RenderScene::RenderScene(RenderBackend* renderBackend, ShaderCollection* shaderLibrary)
+    RenderScene::RenderScene(RenderBackend* renderBackend, ShaderRepository* shaderRepository)
         : renderBackend(renderBackend)
-        , shaderLibrary(shaderLibrary)
+        , shaderRepository(shaderRepository)
         , atmosphericLight(nullptr)
         , activeSkyAtmosphere(nullptr)
         , activeGlobalFog(nullptr)
@@ -261,7 +261,7 @@ namespace Horizon
         return rayTracingScene;
     }
 
-    void RenderScene::UpdateGPUScene(RenderBackendCommandList* commandList)
+    void RenderScene::UpdateGPUScene(RenderGraph& renderGraph, RenderBackendCommandList* commandList)
     {
         gpuScene->geometryData.clear();
         gpuScene->geometryInstanceData.clear();
@@ -434,7 +434,7 @@ namespace Horizon
 
             PrecomputeEnvironmentMaps(
                 renderBackend,
-                shaderLibrary,
+                shaderRepository,
                 *commandList,
                 skyLight->cubemapSize,
                 skyLight->environmentMapTexture->GetHandle(),
@@ -444,140 +444,16 @@ namespace Horizon
                 irradianceEnvironmentMapBufferFast);
         }
 
-        static int first11 = 0;
         if (ShouldUpdateRayTracingScene())
         {
-            static std::vector<RenderBackendRayTracingGeometryDesc> geometryDescs;
-            if (first11 == 0)
-            {
-                rayTracingScene->transformMatrixCount = uint32(meshes.size());
-                RenderBackendBufferDescription transformBufferRowMajorUploadDesc = RenderBackendBufferDescription::CreateUpload(rayTracingScene->transformMatrixCount * uint32(sizeof(float)) * 16);
-                rayTracingScene->transformBufferRowMajorUpload = renderBackend->CreateBuffer(&transformBufferRowMajorUploadDesc, nullptr, "RowMajorTransformUploadBuffer");
-                RenderBackendBufferDescription transformBufferRowMajorDesc = RenderBackendBufferDescription::Create(uint32(sizeof(float)) * 16, rayTracingScene->transformMatrixCount, RenderBackendBufferCreateFlags::ShaderResource);
-                rayTracingScene->transformBufferRowMajor = renderBackend->CreateBuffer(&transformBufferRowMajorDesc, nullptr, "RowMajorTransformBuffer");
+            RayTracing::GatherRayTracingInstances(this);
 
-                for (const MeshRenderObject* mesh : meshes)
-                {
-                    RenderBackendRayTracingGeometryDesc geometryDesc = {};
-                    geometryDesc.type = RenderBackendRayTracingGeometryType::Triangles;
-                    geometryDesc.flags = RenderBackendRayTracingGeometryFlags::Opaque;
-                    geometryDesc.triangleDesc.indexCount = mesh->indexCount;
-                    geometryDesc.triangleDesc.vertexCount = mesh->vertexCount;
-                    geometryDesc.triangleDesc.vertexStride = 3 * sizeof(float);
-                    geometryDesc.triangleDesc.vertexBuffer = mesh->vertexBuffers[0];
-                    geometryDesc.triangleDesc.vertexOffset = 0;
-                    geometryDesc.triangleDesc.indexBuffer = mesh->indexBuffer;
-                    geometryDesc.triangleDesc.indexOffset = 0;//mesh->baseIndex * sizeof(uint32);
-                    geometryDesc.triangleDesc.transformBuffer = rayTracingScene->transformBufferRowMajor;
-                    geometryDesc.triangleDesc.transformOffset = uint32(geometryDescs.size()) * uint32(sizeof(float)) * 16;
-                    geometryDescs.push_back(geometryDesc);
+            rayTracingScene->BuildRayTracingBLASes(renderGraph);
 
-                    rayTracingScene->rowMajorTransforms.push_back(Math::Transpose(mesh->localToWorldMatrix));
-                }
+            rayTracingScene->CreateRayTracingTLAS(renderGraph);
 
-                if (rayTracingScene->transformMatrixCount > 0)
-                {
-                    renderBackend->UpdateBuffer(rayTracingScene->transformBufferRowMajorUpload, 0, rayTracingScene->rowMajorTransforms.data(), transformBufferRowMajorDesc.size);
-
-                    RenderBackendBarrier barrier1[] =
-                    {
-                        RenderBackendBarrier(rayTracingScene->transformBufferRowMajor, RenderBackendBufferSubresourceRange::Whole, RenderBackendResourceState::Undefined, RenderBackendResourceState::CopyDst)
-                    };
-                    commandList->Barriers(barrier1, 1);
-
-                    commandList->CopyBuffer(
-                        rayTracingScene->transformBufferRowMajorUpload,
-                        0,
-                        rayTracingScene->transformBufferRowMajor,
-                        0,
-                        transformBufferRowMajorDesc.size);
-
-                    RenderBackendBarrier barrier2[] =
-                    {
-                        RenderBackendBarrier(rayTracingScene->transformBufferRowMajor, RenderBackendBufferSubresourceRange::Whole, RenderBackendResourceState::CopyDst, RenderBackendResourceState::ShaderResource)
-                    };
-                    commandList->Barriers(barrier2, 1);
-                }
-            }
-
-            if (first11 == 100)
-            {
-                RenderBackendRayTracingBottomLevelAccelerationStructureDesc blasDesc =
-                {
-                    .buildFlags = RenderBackendRayTracingAccelerationStructureBuildFlags::PreferFastTrace,
-                    .geometryCount = uint32(geometryDescs.size()),
-                    .geometryDescs = geometryDescs.data()
-                };
-                rayTracingScene->bottomLevelAccelerationStructure = renderBackend->CreateRayTracingBottomLevelAccelerationStructure(&blasDesc, "BLAS");
-
-                RenderBackendRayTracingInstance geometryInstance =
-                {
-                    .transformMatrix = Matrix4x4f(1.0f),
-                    .instanceID = 0,
-                    .instanceMask = 0xff,
-                    .instanceContributionToHitGroupIndex = 0,
-                    .flags = RenderBackendRayTracingInstanceFlags::TriangleFacingCullDisable,
-                    .blas = rayTracingScene->bottomLevelAccelerationStructure
-                };
-
-                RenderBackendRayTracingTopLevelAccelerationStructureDesc tlasDesc =
-                {
-                    .buildFlags = RenderBackendRayTracingAccelerationStructureBuildFlags::PreferFastTrace,
-                    .geometryFlags = RenderBackendRayTracingGeometryFlags::Opaque,
-                    .instanceCount = 1,
-                    .instances = &geometryInstance
-                };
-                rayTracingScene->topLevelAccelerationStructure = renderBackend->CreateRayTracingTopLevelAccelerationStructure(&tlasDesc, "RayTracingSceneTLAS");
-            }
-
-            if (first11 == 200)
-            {
-                commandList->BuildRayTracingBottomLevelAccelerationStructure(rayTracingScene->bottomLevelAccelerationStructure);
-            }
-
-            if (first11 == 500)
-            {
-                commandList->BuildRayTracingTopLevelAccelerationStructure(rayTracingScene->topLevelAccelerationStructure);
-            }
-
-            first11++;
+            // Rebuilding the TLAS every frame.
+            rayTracingScene->BuildRayTracingTLAS(renderGraph);
         }
     }
-
-#if 0
-    void RenderScene::UpdateRayTracingAccelerationStructures(SceneView* view, RenderBackendCommandList* commandList)
-    {
-        return;
-        /* commandList->CopyBuffer(
-             instanceUploadBuffer,
-             0,
-             instanceBuffer,
-             0,
-             instanceBufferDesc.size);*/
-
-        Scene* scene = view->scene;
-        EntityManager* entityManager = scene->GetEntityManager();
-
-        entityManager->GetView<MeshComponent>().each([&](EntityHandle entity, MeshComponent& mesh)
-            {
-                RayTracingGeometry& rayTracingGeometry = mesh.rayTracingGeometry;
-                switch (rayTracingGeometry.state)
-                {
-                case RayTracingGeometryState::BuildRequired:
-                    commandList->BuildRayTracingBottomLevelAccelerationStructure(rayTracingGeometry.blas);
-                    break;
-                case RayTracingGeometryState::UpdateRequired:
-                    commandList->UpdateRayTracingBottomLevelAccelerationStructure(rayTracingGeometry.blas, rayTracingGeometry.blas);
-                    break;
-                default:
-                    break;
-                }
-                rayTracingGeometry.state = RayTracingGeometryState::UpToDate;
-            });
-
-        commandList->BuildRayTracingTopLevelAccelerationStructure(rayTracingScene);
-
-        SetShouldUpdateRayTracingScene(false);
-    }
-#endif
 }

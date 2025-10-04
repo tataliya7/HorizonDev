@@ -2022,7 +2022,7 @@ namespace Horizon
         }
     }
 
-    uint32 VulkanDevice::CreateRayTracingBottomLevelAccelerationStructure(const RenderBackendRayTracingBottomLevelAccelerationStructureDesc* desc, const char* name)
+    uint32 VulkanDevice::CreateRayTracingBottomLevelAccelerationStructure(const RenderBackendRayTracingBottomLevelAccelerationStructureDescription* desc, const char* name)
     {
         VulkanRayTracingAccelerationStructure accelerationStructure;
         accelerationStructure.buildFlags = ConvertToVkBuildAccelerationStructureFlagsKHR(desc->buildFlags);
@@ -2032,7 +2032,7 @@ namespace Horizon
         std::vector<uint32> primitiveCounts(desc->geometryCount);
         for (uint32 geometryIndex = 0; geometryIndex < desc->geometryCount; geometryIndex++)
         {
-            const RenderBackendRayTracingGeometryDesc& geometryDesc = desc->geometryDescs[geometryIndex];
+            const RenderBackendRayTracingGeometryDescription& geometryDesc = desc->geometryDescriptions[geometryIndex];
 
             VkAccelerationStructureGeometryKHR geometry =
             {
@@ -2042,29 +2042,29 @@ namespace Horizon
             };
             if (geometry.geometryType == VK_GEOMETRY_TYPE_TRIANGLES_KHR)
             {
-                uint32 maxVertex = geometryDesc.triangleDesc.vertexCount;
+                uint32 maxVertex = geometryDesc.triangleDescription.vertexCount;
                 geometry.geometry.triangles =
                 {
                     .sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR,
                     .vertexFormat = VK_FORMAT_R32G32B32_SFLOAT,
-                    .vertexData = GetBufferDeviceAddress(geometryDesc.triangleDesc.vertexBuffer) + geometryDesc.triangleDesc.vertexOffset,
-                    .vertexStride = geometryDesc.triangleDesc.vertexStride,
+                    .vertexData = GetBufferDeviceAddress(geometryDesc.triangleDescription.vertexBuffer) + geometryDesc.triangleDescription.vertexOffset,
+                    .vertexStride = geometryDesc.triangleDescription.vertexStride,
                     .maxVertex = maxVertex,
                     .indexType = VK_INDEX_TYPE_UINT32,
-                    .indexData = GetBufferDeviceAddress(geometryDesc.triangleDesc.indexBuffer) + geometryDesc.triangleDesc.indexOffset,
-                    .transformData = GetBufferDeviceAddress(geometryDesc.triangleDesc.transformBuffer) + geometryDesc.triangleDesc.transformOffset
+                    .indexData = GetBufferDeviceAddress(geometryDesc.triangleDescription.indexBuffer) + geometryDesc.triangleDescription.indexOffset,
+                    .transformData = GetBufferDeviceAddress(geometryDesc.triangleDescription.transformBuffer) + geometryDesc.triangleDescription.transformOffset
                 };
-                primitiveCounts[geometryIndex] = geometryDesc.triangleDesc.indexCount / 3;
+                primitiveCounts[geometryIndex] = geometryDesc.triangleDescription.indexCount / 3;
             }
             else if (geometry.geometryType == VK_GEOMETRY_TYPE_AABBS_KHR)
             {
                 geometry.geometry.aabbs =
                 {
                    .sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_AABBS_DATA_KHR,
-                   .data = GetBufferDeviceAddress(geometryDesc.aabbDesc.buffer) + geometryDesc.aabbDesc.offset,
+                   .data = GetBufferDeviceAddress(geometryDesc.aabbDescription.buffer) + geometryDesc.aabbDescription.offset,
                    .stride = sizeof(VkAabbPositionsKHR)
                 };
-                VulkanBuffer* buffer = GetBuffer(geometryDesc.aabbDesc.buffer);
+                VulkanBuffer* buffer = GetBuffer(geometryDesc.aabbDescription.buffer);
                 primitiveCounts[geometryIndex] = (uint32)(buffer->size / sizeof(VkAabbPositionsKHR));
             }
             accelerationStructure.geometries.push_back(geometry);
@@ -2074,7 +2074,7 @@ namespace Horizon
         return index;
     }
 
-    uint32 VulkanDevice::CreateRayTracingTopLevelAccelerationStructure(const RenderBackendRayTracingTopLevelAccelerationStructureDesc* desc, const char* name)
+    uint32 VulkanDevice::CreateRayTracingTopLevelAccelerationStructure(const RenderBackendRayTracingTopLevelAccelerationStructureDescription* desc, const char* name)
     {
         VulkanRayTracingAccelerationStructure accelerationStructure = {};
         accelerationStructure.buildFlags = ConvertToVkBuildAccelerationStructureFlagsKHR(desc->buildFlags);
@@ -4829,7 +4829,7 @@ namespace Horizon
 
     }
 
-    RenderBackendRayTracingAccelerationStructureHandle VulkanRenderBackend::CreateRayTracingTopLevelAccelerationStructure(const RenderBackendRayTracingTopLevelAccelerationStructureDesc* desc, const char* name)
+    RenderBackendRayTracingAccelerationStructureHandle VulkanRenderBackend::CreateRayTracingTopLevelAccelerationStructure(const RenderBackendRayTracingTopLevelAccelerationStructureDescription* desc, const char* name)
     {
         RenderBackendRayTracingAccelerationStructureHandle handle = handleManager.Allocate<RenderBackendRayTracingAccelerationStructureHandle>();
         uint32 index = device.CreateRayTracingTopLevelAccelerationStructure(desc, name);
@@ -4837,7 +4837,7 @@ namespace Horizon
         return handle;
     }
 
-    RenderBackendRayTracingAccelerationStructureHandle VulkanRenderBackend::CreateRayTracingBottomLevelAccelerationStructure(const RenderBackendRayTracingBottomLevelAccelerationStructureDesc* desc, const char* name)
+    RenderBackendRayTracingAccelerationStructureHandle VulkanRenderBackend::CreateRayTracingBottomLevelAccelerationStructure(const RenderBackendRayTracingBottomLevelAccelerationStructureDescription* desc, const char* name)
     {
         RenderBackendRayTracingAccelerationStructureHandle handle = handleManager.Allocate<RenderBackendRayTracingAccelerationStructureHandle>();
         uint32 index = device.CreateRayTracingBottomLevelAccelerationStructure(desc, name);

@@ -1,14 +1,12 @@
 #include "RasterizationRenderer.h"
 
-#define SSR_THREAD_GROUP_SIZE 8
-
 namespace Horizon
 {
     static constexpr uint32 GScreenSpaceReflectionsThreadGroupSizeX = 8;
     static constexpr uint32 GScreenSpaceReflectionsThreadGroupSizeY = 8;
     static constexpr uint32 GScreenSpaceReflectionsTileSize = 32;
 
-    void RasterizationRenderer::RenderScreenSpaceReflections(
+    RenderGraphTextureHandle RasterizationRenderer::RenderScreenSpaceReflections(
         RenderGraph& renderGraph,
         const SceneView& view)
     {
@@ -88,7 +86,7 @@ namespace Horizon
             RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::SSRTileClassificationHorizontal);
 
             uint32 threadGroupCountX = ComputeShaderThreadGroupCount(tileCountX, GScreenSpaceReflectionsThreadGroupSizeX);
-            uint32 threadGroupCountY = ComputeShaderThreadGroupCount(view.targetHeight, SSR_THREAD_GROUP_SIZE);
+            uint32 threadGroupCountY = ComputeShaderThreadGroupCount(view.targetHeight, GScreenSpaceReflectionsThreadGroupSizeY);
             uint32 threadGroupCountZ = 1;
 
             return [=](RenderBackendCommandList& commandList, const RenderGraphResourceRegistry& resourceRegistry)
@@ -119,7 +117,7 @@ namespace Horizon
             RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::SSRTileClassificationVertical);
 
             uint32 threadGroupCountX = ComputeShaderThreadGroupCount(tileCountX, GScreenSpaceReflectionsThreadGroupSizeX);
-            uint32 threadGroupCountY = ComputeShaderThreadGroupCount(tileCountY, SSR_THREAD_GROUP_SIZE);
+            uint32 threadGroupCountY = ComputeShaderThreadGroupCount(tileCountY, GScreenSpaceReflectionsThreadGroupSizeY);
             uint32 threadGroupCountZ = 1;
 
             return [=](RenderBackendCommandList& commandList, const RenderGraphResourceRegistry& resourceRegistry)
@@ -165,13 +163,13 @@ namespace Horizon
                 RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::UnorderedAccess),
             "SSRRayHitTexture");
 
-        RenderGraphTextureHandle rayConfidenceTexture = renderGraph.CreateTexture(
+        RenderGraphTextureHandle rayColorTexture = renderGraph.CreateTexture(
             RenderGraphTextureDescription::Create2D(
                 renderResolution.width,
                 renderResolution.height,
-                RenderBackendTextureFormat::R16Float,
+                RenderBackendTextureFormat::R16G16B16A16Float,
                 RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::UnorderedAccess),
-            "SSRRayConfidenceTexture");
+            "SSRRayColorTexture");
 //
 //         RenderGraphTextureDesc rayLengthTextureDesc = RenderGraphTextureDesc::Create2D(
 //             rayCastingResolutionX,
@@ -221,18 +219,25 @@ namespace Horizon
             });
 #endif
 
+        RenderGraphTextureHandle inputColorTexture = defaultResources->ImportBlackDummyTexture2D(renderGraph);
+        if (historyFrame.temporalSuperSamplingOutputTexture)
+        {
+            inputColorTexture = renderGraph.ImportExternalTexture(historyFrame.temporalSuperSamplingOutputTexture, "SSRInputColorTexture");
+        }
+
         renderGraph.AddPass(
             "SSRRayTracingPass-Cheap (Compute, Indirect)",
             RenderGraphPassFlags::Compute,
             [&](RenderGraphBuilder& builder)
             {
                 builder.SetBindlessResourceSRV(0, GetCurrentPerFrameConstantBuffer());
-                builder.SetBindlessResourceSRV(1, intermediateResources.depthTexture);
-                builder.SetBindlessResourceSRV(2, intermediateResources.minDepthPyramidTexture);
-                builder.SetBindlessResourceSRV(3, intermediateResources.gbuffer0);
-                builder.SetBindlessResourceSRV(4, intermediateResources.gbuffer1);
-                builder.SetBindlessResourceUAV(5, rayHitTexture, 0);
-                builder.SetBindlessResourceUAV(6, rayConfidenceTexture, 0);
+                builder.SetBindlessResourceSRV(1, inputColorTexture);
+                builder.SetBindlessResourceSRV(2, intermediateResources.depthTexture);
+                builder.SetBindlessResourceSRV(3, intermediateResources.minDepthPyramidTexture);
+                builder.SetBindlessResourceSRV(4, intermediateResources.gbuffer0);
+                builder.SetBindlessResourceSRV(5, intermediateResources.gbuffer1);
+                builder.SetBindlessResourceUAV(6, rayHitTexture, 0);
+                builder.SetBindlessResourceUAV(7, rayColorTexture, 0);
 
                 RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::SSRRayTracingCheap);
 
@@ -254,13 +259,13 @@ namespace Horizon
                 };
             });
 
-//         RenderGraphTextureHandle resolveTexture = renderGraph.CreateTexture(
-//             RenderGraphTextureDesc::Create2D(
-//                 view.targetWidth,
-//                 view.targetHeight,
-//                 RenderBackendTextureFormat::RGBA16Float,
-//                 RenderBackendTextureCreateFlags::UnorderedAccess | RenderBackendTextureCreateFlags::ShaderResource),
-//             "SSRResolveTexture");
+        RenderGraphTextureHandle colorResolveTexture = renderGraph.CreateTexture(
+            RenderGraphTextureDescription::Create2D(
+                renderResolution.width,
+                renderResolution.height,
+                RenderBackendTextureFormat::R16G16B16A16Float,
+                RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::UnorderedAccess),
+            "SSRColorResolveTexture");
 //
 //         RenderGraphTextureHandle resolveVariance = renderGraph.CreateTexture(
 //             RenderGraphTextureDesc::Create2D(
@@ -278,51 +283,39 @@ namespace Horizon
 //                 RenderBackendTextureCreateFlags::UnorderedAccess | RenderBackendTextureCreateFlags::ShaderResource),
 //             "SSRReprojectionDepth");
 
-        RenderGraphTextureHandle previousColorTexture = defaultResources->ImportBlackDummyTexture2D(renderGraph);
-        if (historyFrame.temporalSuperSamplingOutputTexture)
-        {
-            previousColorTexture = renderGraph.ImportExternalTexture(historyFrame.temporalSuperSamplingOutputTexture, "SSRInputColorTexture");
-        }
-//         renderGraph.AddPass("SSRColorResolvePass", RenderGraphPassFlags::Compute,
-//             [&](RenderGraphBuilder& builder)
-//             {
-//                 const auto& sceneDepthData = blackboard.Get<RasterizationRendererHistoryInfo>();
-//                 const auto& gbufferData = blackboard.Get<RenderGraphGBuffer>();
-//
-//                 auto sceneDepth = builder.ReadTexture(sceneDepthData.sceneDepth, RenderBackendResourceState::ShaderResource);
-//                 auto gbuffer1 = builder.ReadTexture(gbufferData.gbuffer1, RenderBackendResourceState::ShaderResource);
-//                 rayIndirectSpecular = builder.ReadTexture(rayIndirectSpecular, RenderBackendResourceState::ShaderResource);
-//                 rayDirectionPDF = builder.ReadTexture(rayDirectionPDF, RenderBackendResourceState::ShaderResource);
-//                 rayLength = builder.ReadTexture(rayLength, RenderBackendResourceState::ShaderResource);
-//
-//                 resolveTexture = builder.WriteTexture(resolveTexture, RenderBackendResourceState::UnorderedAccess);
-//                 resolveVariance = builder.WriteTexture(resolveVariance, RenderBackendResourceState::UnorderedAccess);
-//                 reprojectionDepth = builder.WriteTexture(reprojectionDepth, RenderBackendResourceState::UnorderedAccess);
-//
-//
-//                 {
-//                     uint32 threadGroupCountX = ComputeWorkGroupCount(view.targetWidth, SSR_THREAD_GROUP_SIZE);
-//                     uint32 threadGroupCountY = ComputeWorkGroupCount(view.targetHeight, SSR_THREAD_GROUP_SIZE);
-//
-//                     RenderBackendPushConstantValues pushConstantValues = {};
-//                     pushConstantValues.BindBuffer(0, perFrameData.buffer, 0);
-//                     pushConstantValues.BindTextureSRV(1, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(sceneDepth)));
-//                     pushConstantValues.BindTextureSRV(2, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(gbuffer1)));
-//                     pushConstantValues.BindTextureSRV(3, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(rayIndirectSpecular)));
-//                     pushConstantValues.BindTextureSRV(4, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(rayDirectionPDF)));
-//                     pushConstantValues.BindTextureSRV(5, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(rayLength)));
-//                     pushConstantValues.BindTextureUAV(6, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndexresolveTexture), 0));
-//                     pushConstantValues.BindTextureUAV(7, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndexresolveVariance), 0));
-//                     pushConstantValues.BindTextureUAV(8, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndexreprojectionDepth), 0));
-//
-//                     auto resolveCS = shaderLibrary->GetShader(ShaderID::SSRColorResolve);
-//                     commandList.Dispatch2D(
-//                         resolveCS,
-//                         pushConstantValues,
-//                         threadGroupCountX,
-//                         groupCountY);
-//                 };
-//             });
+        renderGraph.AddPass(
+            "SSRColorResolvePass",
+            RenderGraphPassFlags::Compute,
+            [&](RenderGraphBuilder& builder)
+            {
+                builder.SetBindlessResourceSRV(0, GetCurrentPerFrameConstantBuffer());
+                builder.SetBindlessResourceSRV(1, intermediateResources.depthTexture);
+                builder.SetBindlessResourceSRV(2, intermediateResources.gbuffer0);
+                builder.SetBindlessResourceSRV(3, intermediateResources.gbuffer1);
+                builder.SetBindlessResourceSRV(4, rayHitTexture);
+                builder.SetBindlessResourceSRV(5, rayColorTexture);
+                builder.SetBindlessResourceUAV(6, colorResolveTexture, 0);
+
+                RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::SSRColorResolve);
+
+                uint32 threadGroupCountX = ComputeShaderThreadGroupCount(renderResolution.width, GScreenSpaceReflectionsThreadGroupSizeX);
+                uint32 threadGroupCountY = ComputeShaderThreadGroupCount(renderResolution.height, GScreenSpaceReflectionsThreadGroupSizeY);
+                uint32 threadGroupCountZ = 1;
+
+                return [=](RenderBackendCommandList& commandList, const RenderGraphResourceRegistry& resourceRegistry)
+                {
+                    RenderBackendPushConstantValues pushConstantValues = resourceRegistry.GetPushConstantValues();
+
+                    commandList.Dispatch(
+                        computeShader,
+                        pushConstantValues,
+                        threadGroupCountX,
+                        threadGroupCountY,
+                        threadGroupCountZ);
+                };
+            });
+
+        RenderGraphTextureHandle screenSpaceReflectionTexture = colorResolveTexture;
 //
 //         if (settings.denosingEnabled)
 //         {
@@ -401,7 +394,7 @@ namespace Horizon
 //                         pushConstantValues.BindTextureUAV(10, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndextemporalFilteringOutputTexture), 0));
 //                         pushConstantValues.BindTextureUAV(11, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndextemporalVarianceTexture), 0));
 //
-//                         auto temporalFilteringCS = shaderLibrary->GetShader(ShaderID::SSRTemporalFiltering);
+//                         auto temporalFilteringCS = shaderRepository->GetShader(ShaderID::SSRTemporalFiltering);
 //                         commandList.Dispatch2D(
 //                             temporalFilteringCS,
 //                             pushConstantValues,
@@ -449,7 +442,7 @@ namespace Horizon
 //                         pushConstantValues.PushConstants(0, 1.0f);
 //                         pushConstantValues.PushConstants(1, 0.0f);
 //
-//                         auto spatialFilteringCS = shaderLibrary->GetShader(ShaderID::SSRSpatialFiltering);
+//                         auto spatialFilteringCS = shaderRepository->GetShader(ShaderID::SSRSpatialFiltering);
 //                         commandList.Dispatch2D(
 //                             spatialFilteringCS,
 //                             pushConstantValues,
@@ -486,7 +479,7 @@ namespace Horizon
 //                         pushConstantValues.PushConstants(0, 0.0f);
 //                         pushConstantValues.PushConstants(1, 1.0f);
 //
-//                         auto spatialFilteringCS = shaderLibrary->GetShader(ShaderID::SSRSpatialFiltering);
+//                         auto spatialFilteringCS = shaderRepository->GetShader(ShaderID::SSRSpatialFiltering);
 //                         commandList.Dispatch2D(
 //                             spatialFilteringCS,
 //                             pushConstantValues,
@@ -495,9 +488,7 @@ namespace Horizon
 //                     };
 //                 });
 //         }
-//         else
-//         {
-//             ssrTexture = resolveTexture;
-//         }
+
+        return screenSpaceReflectionTexture;
     }
 }

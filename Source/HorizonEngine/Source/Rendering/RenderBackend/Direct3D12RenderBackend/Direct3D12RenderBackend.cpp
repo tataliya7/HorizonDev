@@ -658,7 +658,7 @@ namespace Horizon
         D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC buildDesc = {};
         buildDesc.DestAccelerationStructureData = dstTLAS->accelerationStructureBuffer->GetGPUVirtualAddress();
         buildDesc.Inputs = buildInputs;
-        buildDesc.SourceAccelerationStructureData = srcTLAS ? srcTLAS->accelerationStructureBuffer->GetGPUVirtualAddress() : D3D12_GPU_VIRTUAL_ADDRESS(0);
+        buildDesc.SourceAccelerationStructureData = srcTLAS ? srcTLAS->accelerationStructureBuffer->GetGPUVirtualAddress() : 0;
         buildDesc.ScratchAccelerationStructureData = dstTLAS->scratchBuffer->GetGPUVirtualAddress();
 
         commandList->GetID3D12GraphicsCommandList4()->BuildRaytracingAccelerationStructure(&buildDesc, 0, nullptr);
@@ -1920,7 +1920,7 @@ namespace Horizon
         device->workloads.push_back(workload);
     }
 
-    RenderBackendRayTracingAccelerationStructureHandle D3D12RenderBackend::CreateRayTracingBottomLevelAccelerationStructure(const RenderBackendRayTracingBottomLevelAccelerationStructureDesc* desc, const char* name)
+    RenderBackendRayTracingAccelerationStructureHandle D3D12RenderBackend::CreateRayTracingBottomLevelAccelerationStructure(const RenderBackendRayTracingBottomLevelAccelerationStructureDescription* desc, const char* name)
     {
         RenderBackendRayTracingAccelerationStructureHandle handle = handleManager.Allocate<RenderBackendRayTracingAccelerationStructureHandle>();
         D3D12Device* device = devices[0];
@@ -1929,7 +1929,7 @@ namespace Horizon
         return handle;
     }
 
-    RenderBackendRayTracingAccelerationStructureHandle D3D12RenderBackend::CreateRayTracingTopLevelAccelerationStructure(const RenderBackendRayTracingTopLevelAccelerationStructureDesc* desc, const char* name)
+    RenderBackendRayTracingAccelerationStructureHandle D3D12RenderBackend::CreateRayTracingTopLevelAccelerationStructure(const RenderBackendRayTracingTopLevelAccelerationStructureDescription* desc, const char* name)
     {
         RenderBackendRayTracingAccelerationStructureHandle handle = handleManager.Allocate<RenderBackendRayTracingAccelerationStructureHandle>();
         D3D12Device* device = devices[0];

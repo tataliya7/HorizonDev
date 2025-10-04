@@ -55,6 +55,8 @@ namespace Horizon
         //std::vector<Matrix4x4f> transformDataTranspose;
         Matrix4x4f localToWorldMatrix;
 
+        bool visible = true;
+
         std::vector<Material> materials;
         std::vector<uint32> materialIndices;
 

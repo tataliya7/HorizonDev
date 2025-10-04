@@ -4,6 +4,8 @@
 
 namespace Horizon
 {
+    class RenderScene;
+
     enum class RayTracingGeometryState
     {
         Invalid = 0,
@@ -23,6 +25,11 @@ namespace Horizon
         }
     };
 
+    struct RayTracingInstance
+    {
+        RenderBackendRayTracingInstance instance;
+    };
+
     class RayTracingScene
     {
     public:
@@ -30,35 +37,39 @@ namespace Horizon
         RayTracingScene();
         ~RayTracingScene();
 
-        RenderBackendRayTracingAccelerationStructureHandle GetTLAS()
+        uint32 AddRayTracingInstance(const RayTracingInstance& instance);
+
+        void RequestBuildRayTracingBLAS(RenderBackendRayTracingAccelerationStructureHandle blas);
+
+        void ClearRayTracingBLASBuildRequests();
+
+        void BuildRayTracingBLASes(RenderGraph& renderGraph);
+
+        void CreateRayTracingTLAS(RenderGraph& renderGraph);
+
+        void BuildRayTracingTLAS(RenderGraph& renderGraph);
+
+        RenderBackendRayTracingAccelerationStructureHandle GetRayTracingTLAS() const
         {
-            return topLevelAccelerationStructure;
+            return rayTracingTLAS;
         }
-        std::vector<RayTracingGeometry*> geometriesToBuild;
 
         // TODO
         RenderBackendRayTracingAccelerationStructureHandle bottomLevelAccelerationStructure;
 
     //private:
 
-        RenderBackendRayTracingAccelerationStructureHandle topLevelAccelerationStructure;
+        std::vector<RayTracingInstance> rayTracingInstances;
 
-        RenderBackendBufferHandle instanceUploadBuffer;
-        RenderBackendBufferHandle transformUploadBuffer;
+        std::vector<RayTracingGeometry> rayTracingGeometriesToBuild;
 
-        uint32 transformMatrixCount = 0;
-        uint64 transformBufferSize = 0;
-        std::vector<Matrix4x4f> rowMajorTransforms;
-        RenderBackendBufferHandle transformBufferRowMajor;
-        RenderBackendBufferHandle transformBufferRowMajorUpload;
+        RenderBackendRayTracingAccelerationStructureHandle rayTracingTLAS;
+
         //std::vector<RayTracingInstance> instances;
     };
 
-    // bool GatherRayTracingInstances(
-    //     RenderGraph& renderGraph,
-    //     SceneView& view,
-    //     RayTracingScene& rayTracingScene)
-    // {
-    //     return false;
-    // }
+    namespace RayTracing
+    {
+        void GatherRayTracingInstances(RenderScene* scene);
+    }
 }

@@ -13,11 +13,11 @@ namespace Horizon
     RasterizationRenderer::RasterizationRenderer(
         RenderBackend* renderBackend,
         RenderGraphResourcePool* resourcePool,
-        ShaderCollection* shaderLibrary,
+        ShaderRepository* shaderRepository,
         RendererDefaultResources* defaultResources)
         : renderBackend(renderBackend)
         , resourcePool(resourcePool)
-        , shaderCollection(shaderLibrary)
+        , shaderCollection(shaderRepository)
         , defaultResources(defaultResources)
         , temporalSuperSamplingInterface(nullptr)
     {
@@ -547,6 +547,8 @@ namespace Horizon
 
         RenderGraphDebugLabelRegion debugLabelRegion(renderGraph, "RasterizationRenderer");
 
+        // GatherRayTracingInstances();
+
         if (!perFrameConstantBuffers[currentPerFrameDataBufferIndex])
         {
             RenderBackendBufferDescription perFrameConstantUploadBufferDesc = RenderBackendBufferDescription::CreateUpload(sizeof(PerFrameShaderParameters));
@@ -747,25 +749,16 @@ namespace Horizon
 
         AddIndirectLightingDiffusePass(renderGraph, view);
 
-        // RenderGraphTextureDesc reflectionsTextureDesc = RenderGraphTextureDesc::Create2D(
-        //     renderResolution.width,
-        //     renderResolution.height,
-        //     RenderBackendTextureFormat::RGBA16Float,
-        //     RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::UnorderedAccess);
-        // RenderGraphTextureHandle reflectionsTexture = renderGraph.CreateTexture(reflectionsTextureDesc, "ReflectionsTexture");
-        //
-        // RenderGraphTextureHandle ssrDebugOutputTexture = renderGraph.CreateTexture(RenderGraphTextureDesc::Create2D(
-        //     renderResolution.width,
-        //     renderResolution.height,
-        //     RenderBackendTextureFormat::RGBA16Float,
-        //     RenderBackendTextureCreateFlags::UnorderedAccess | RenderBackendTextureCreateFlags::ShaderResource),
-        //     "SSRDebugOutputTexture");
-        //
 
         if (renderFeatures.enableScreenSpaceReflections)
         {
-            RenderScreenSpaceReflections(renderGraph, view);
+            intermediateResources.indirectSpecularTexture = RenderScreenSpaceReflections(renderGraph, view);
         }
+        else
+        {
+            intermediateResources.indirectSpecularTexture = defaultResources->ImportBlackDummyTexture2D(renderGraph);
+        }
+
         // else if (settings.reflectionsTechnique == ReflectionsTechnique::RayTracingReflections)
         // {
         //     //RenderRayTracingReflections();
