@@ -108,10 +108,46 @@ namespace Horizon
         renderBackend->Tick();
     }
 
-    SceneRenderer* RenderSystem::CreateRenderer()
+    SceneRenderer* RenderSystem::CreateSceneRenderer(SceneView* sceneView)
     {
-        return new RasterizationRenderer(renderBackend, renderGraphResourcePool, shaderRepository, rendererDefaultResources);
+        assert(sceneView);
+
+        SceneRenderer* sceneRenderer = nullptr;
+
+        RenderMode renderMode = sceneView->GetRenderSettings().renderMode;
+
+        if ((renderMode == RenderMode::RasterRendering) || (renderMode == RenderMode::HybridRendering))
+        {
+            sceneRenderer = new RasterizationRenderer(renderBackend, renderGraphResourcePool, shaderRepository, rendererDefaultResources);
+        }
+        else if ((renderMode == RenderMode::RealTimePathTracing) || (renderMode == RenderMode::ReferencePathTracing))
+        {
+            sceneRenderer = new PathTracingRenderer(renderBackend, renderGraphResourcePool, shaderRepository, rendererDefaultResources);
+        }
+        else
+        {
+            std::unreachable();
+        }
+
+        return sceneRenderer;
     }
+
+    // void DestroySceneRenderer(SceneRenderer* sceneRenderer)
+    // {
+    //     assert(sceneRenderer != nullptr);
+    //
+    //     RenderBackend* renderBackend = sceneRenderer->GetRenderBackend();
+    //
+    //     renderBackend->FlushRenderDevices();
+    //
+    //     delete sceneRenderer;
+    // }
+
+    // SceneRenderer* RenderSystem::CreateRenderer()
+    // {
+    //
+    //     return new RasterizationRenderer(renderBackend, renderGraphResourcePool, shaderRepository, rendererDefaultResources);
+    // }
 
     void RenderSystem::RenderSceneView(SceneRenderer* renderer, SceneView* sceneView)
     {

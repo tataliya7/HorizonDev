@@ -1,8 +1,8 @@
 #include "../../ShaderCommon.hsh"
 #include "../../SphericalHarmonics.hsh"
+#include "../../GPUScene.hsh"
 #include "../RasterizationRendererCommon.hsh"
 #include "../ShadowMapCommon.hsh"
-#include "../GPUScene.hsh"
 #include "../ManyLightRendering/LightGrid/LightGridCommon.hsh"
 #include "VolumetricFogCommon.hsh"
 

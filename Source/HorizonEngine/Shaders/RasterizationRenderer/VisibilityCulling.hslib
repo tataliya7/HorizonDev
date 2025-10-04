@@ -1,6 +1,6 @@
 #include "../ShaderCommon.hsh"
+#include "../GPUScene.hsh"
 #include "RasterizationRendererCommon.hsh"
-#include "GPUScene.hsh"
 #include "OcclusionCulling.hsh"
 
 #if INDIRECT_ARGUMENT_INITIALIZATION

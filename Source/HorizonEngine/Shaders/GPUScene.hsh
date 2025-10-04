@@ -1,5 +1,7 @@
 #pragma once
 
+#include "BindlessResources.hsh"
+
 // It must match the values on the C++ side
 //#define GPU_SCENE_MAXIMUM_TRIANGLE_COUNT_PER_MESHLET 128
 

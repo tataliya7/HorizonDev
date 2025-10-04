@@ -8,6 +8,9 @@
 #define MIN_WAVE_SIZE_SUPPORTED 32
 #endif
 
+#define NEAR_CLIPPING_PLANE_DEPTH_VALUE 1.0f
+#define FAR_CLIPPING_PLANE_DEPTH_VALUE 0.0f
+
 // @see https://en.wikipedia.org/wiki/Middle_gray for more infomation.
 static const float MiddleGray = 0.18f;
 

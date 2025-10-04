@@ -3,16 +3,6 @@
 
 namespace Horizon
 {
-    bool RasterizationRenderer::IsGaussianBloomEnabled() const
-    {
-        return renderFeatures.enableGaussianBloom;
-    }
-
-    bool RasterizationRenderer::IsConvolutionBloomEnabled() const
-    {
-        return renderFeatures.enableConvolutionBloom;
-    }
-
     RenderGraphTextureHandle RasterizationRenderer::DispatchGaussianBloom(
         RenderGraph& renderGraph,
         const SceneView& view,

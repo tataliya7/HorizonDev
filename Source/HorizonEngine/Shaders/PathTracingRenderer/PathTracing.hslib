@@ -1,10 +1,10 @@
 #include "../ShaderCommon.hsh"
 #include "../Random.hsh"
-#include "../RasterizationRenderer/RasterizationRendererCommon.hsh"
-#include "../RasterizationRenderer/GPUScene.hsh"
+#include "../GPUScene.hsh"
+#include "PathTracingRendererCommon.hsh"
 
 SHADER_CONSTANTS_STRUCT_BEGIN();
-SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, RasterizationRendererUniformVariables, PerFrameShaderParameterBufferSRV);
+SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, PathTracingRendererUniformVariables, PerFrameShaderParameterBufferSRV);
 SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_SRV(1, GeometryDataBufferSRV);
 SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_SRV(2, GeometryInstanceDataBufferSRV);
 SHADER_CONSTANTS_ACCELERATION_STRUCTURE_SRV(3, TopLevelAccelerationStructureSRV);
@@ -161,8 +161,8 @@ void PathTracingDefaultOpaqueClosestHit(inout PathTracingRayPayload payload : SV
     const float t = RayTCurrent();
     const int primitive_index = PrimitiveIndex();
 
-    StructuredBuffer<RasterizationRendererUniformVariables> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
-    RasterizationRendererUniformVariables frameShaderParameters = frameShaderParameterBuffer[0];
+    StructuredBuffer<PathTracingRendererUniformVariables> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
+    PathTracingRendererUniformVariables frameShaderParameters = frameShaderParameterBuffer[0];
     RaytracingAccelerationStructure topLevelAccelerationStructure = ShaderConstants.GetTopLevelAccelerationStructureSRV();
     ByteAddressBuffer geometryDataBuffer = ShaderConstants.GetGeometryDataBufferSRV();
     ByteAddressBuffer geometryInstanceDataBuffer = ShaderConstants.GetGeometryInstanceDataBufferSRV();
@@ -319,8 +319,8 @@ void PathTracingRayGen()
     const uint3 dispatchRaysIndex = DispatchRaysIndex();
     const uint3 dispatchRaysDimensions = DispatchRaysDimensions();
 
-    StructuredBuffer<RasterizationRendererUniformVariables> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
-    RasterizationRendererUniformVariables frameShaderParameters = frameShaderParameterBuffer[0];
+    StructuredBuffer<PathTracingRendererUniformVariables> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
+    PathTracingRendererUniformVariables frameShaderParameters = frameShaderParameterBuffer[0];
     RaytracingAccelerationStructure topLevelAccelerationStructure = ShaderConstants.GetTopLevelAccelerationStructureSRV();
     RWTexture2D<float4> colorTexture = ShaderConstants.GetColorTextureUAV();
     RWTexture2D<float> depthTexture = ShaderConstants.GetDepthTextureUAV();

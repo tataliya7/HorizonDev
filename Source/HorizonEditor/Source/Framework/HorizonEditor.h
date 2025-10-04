@@ -266,8 +266,11 @@ namespace Horizon
         RasterizationRendererDebugVisualizationMode currentDebugVisualizationMode;
         EditorCamera editorCamera;
         Point2D currentMousePosition;
-        RasterizationRenderer* renderer;
-        RasterizationRenderer* previewRenderer;
+
+        SceneRenderer* renderer;
+        SceneRenderer* previewRenderer;
+        RenderMode currentRenderMode = RenderMode::RasterRendering;
+
         RenderGraphPersistentTexture* targetTexture = nullptr;
         RenderGraphPersistentTexture* displayTexture = nullptr;
 

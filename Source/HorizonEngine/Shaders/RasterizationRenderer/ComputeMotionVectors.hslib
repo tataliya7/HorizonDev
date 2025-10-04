@@ -1,6 +1,6 @@
 #include "../ShaderCommon.hsh"
+#include "../GPUScene.hsh"
 #include "RasterizationRendererCommon.hsh"
-#include "GPUScene.hsh"
 
 SHADER_CONSTANTS_STRUCT_BEGIN();
 SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, RasterizationRendererUniformVariables, PerFrameShaderParameterBufferSRV);

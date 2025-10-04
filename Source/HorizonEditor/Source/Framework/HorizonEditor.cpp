@@ -160,9 +160,6 @@ namespace Horizon
         //     RenderBackendResourceState::ShaderResource); // TODO: handle transition
         // previewTexture = renderGraphResourcePool->AllocateTexture(previewTextureDesc, "SceneViewPreviewTexture");
 
-        renderer = renderSystem->CreateRenderer();
-        previewRenderer = renderSystem->CreateRenderer();
-
         editorSceneManager = new EditorSceneManager();
         Scene* scene = editorSceneManager->CreateScene("DefaultScene");
         {
@@ -269,6 +266,8 @@ namespace Horizon
         editorCamera.cameraSpeed = 1.0f;
         editorCamera.overrideAspectRatio = false;
 
+        renderer = new RasterizationRenderer(renderBackend, renderGraphResourcePool, renderSystem->shaderRepository, renderSystem->rendererDefaultResources);
+        previewRenderer = new RasterizationRenderer(renderBackend, renderGraphResourcePool, renderSystem->shaderRepository, renderSystem->rendererDefaultResources);
         renderSettings.renderMode = RenderMode::RasterRendering;
         renderSettings.rasterRenderingSettings.debugVisualizationMode = RasterizationRendererDebugVisualizationMode::Lighting;
         renderSettings.rasterRenderingSettings.globalIlluminationSettings.indirectLightingIntensity = 1.0f;
@@ -371,8 +370,6 @@ namespace Horizon
         timeOfDayScheduler->Tick(deltaTimeInSeconds); // TODO
         editorSceneManager->GetActiveScene()->Tick(deltaTimeInSeconds);
 
-        renderer->debugDrawLinesVertices.clear();
-
         Quaternion cameraOrientation = Math::QuaternionFromEulerAngles(Math::DegreesToRadians(editorCamera.GetRotation()));
 
         Vector3f cameraRightVector   = Math::Normalize(cameraOrientation * Vector3f(1.0f, 0.0f, 0.0f));
@@ -438,6 +435,16 @@ namespace Horizon
         sceneViewDescription.displayTexture = displayTexture;
 
         SceneView sceneView(sceneViewDescription);
+
+        if (currentRenderMode != renderSettings.renderMode)
+        {
+            RenderSystem* renderSystem = engine->GetSubsystem<RenderSystem>();
+            renderer = renderSystem->CreateSceneRenderer(&sceneView);
+            previewRenderer = renderSystem->CreateSceneRenderer(&sceneView);
+            currentRenderMode = renderSettings.renderMode;
+        }
+
+        renderer->Tick(deltaTimeInSeconds);
 
         viewMatrix_deprecated = sceneView.GetWorldToViewMatrix();
         projectionMatrix_deprecated = sceneView.GetViewToClipMatrix();

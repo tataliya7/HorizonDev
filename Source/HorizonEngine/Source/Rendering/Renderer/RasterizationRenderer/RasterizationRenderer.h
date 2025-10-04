@@ -193,10 +193,6 @@ namespace Horizon
 
         bool IsDepthOfFieldEnabled() const;
 
-        bool IsGaussianBloomEnabled() const;
-
-        bool IsConvolutionBloomEnabled() const;
-
         bool IsLensFlareEnabled() const;
 
     private:
@@ -226,8 +222,6 @@ namespace Horizon
         // }
 
         bool LoadShaders();
-
-        void DispatchPathTracing(RenderGraph& renderGraph, const SceneView& view);
 
         void AddSurfleGIPasses(
             RenderGraph& renderGraph,

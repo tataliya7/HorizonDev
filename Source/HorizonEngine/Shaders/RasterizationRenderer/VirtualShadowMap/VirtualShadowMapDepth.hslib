@@ -1,7 +1,7 @@
 #include "../../ShaderCommon.hsh"
+#include "../../GPUScene.hsh"
 #include "../RasterizationRendererCommon.hsh"
 #include "../ShadowMapCommon.hsh"
-#include "../GPUScene.hsh"
 #include "VirtualShadowMapCommon.hsh"
 
 SHADER_CONSTANTS_STRUCT_BEGIN();

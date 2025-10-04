@@ -37,7 +37,7 @@ namespace Horizon
             return renderGraphResourcePool;
         }
 
-        SceneRenderer* CreateRenderer();
+        SceneRenderer* CreateSceneRenderer(SceneView* sceneView);
 
         void RenderSceneView(SceneRenderer* renderer, SceneView* sceneView);
 
@@ -151,7 +151,7 @@ namespace Horizon
         bool enableHardwareRayTracing = true;
 
         RenderGraphResourcePool* renderGraphResourcePool;
-    private:
+    //private:
 
         RenderBackend* renderBackend;
         ShaderRepository* shaderRepository;

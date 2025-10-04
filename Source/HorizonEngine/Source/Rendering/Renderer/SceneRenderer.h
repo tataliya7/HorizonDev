@@ -21,4 +21,8 @@ namespace Horizon
 
         virtual void Render(RenderGraph& renderGraph) = 0;
     };
+
+    extern SceneRenderer* CreateSceneRenderer(SceneView* sceneView);
+
+    extern void DestroySceneRenderer(SceneRenderer* sceneRenderer);
 }

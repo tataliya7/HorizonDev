@@ -334,7 +334,7 @@ namespace Horizon
         const RenderSettings& renderSettings = view.GetRenderSettings();
         const RenderScene* scene = view.GetRenderScene();
 
-        // Setup RasterizationRendererUniformVariables
+        // Setup uniform variables
         {
             perFrameShaderParameters.frameIndex = view.frameIndex;
             perFrameShaderParameters.frameIndexMod8 = view.frameIndex % 8;
@@ -840,11 +840,6 @@ namespace Horizon
         RenderGraphTextureHandle localLightShadowMapAtlas = RenderLocalLightShadows(renderGraph, view);
 
         AddDirectLightingPass(renderGraph, view, localLightShadowMapAtlas);
-
-        if (renderSettings.renderMode == RenderMode::ReferencePathTracing)
-        {
-            DispatchPathTracing(renderGraph, view);
-        }
 
         if (renderFeatures.enableSubsurfaceScattering)
         {

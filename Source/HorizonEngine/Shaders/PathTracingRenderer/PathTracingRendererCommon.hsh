@@ -1,7 +1,304 @@
 #pragma once
 
-struct PathTracingRendererSceneViewShaderParameters
+#include "PathTracingRendererUniformVariables.h"
+
+struct DrawIndexedIndirectCommand
 {
-    uint maxBounces;
-    uint maxSamplesPerPixel;
+    uint indexCount;
+    uint instanceCount;
+    uint firstIndex;
+    int vertexOffset;
+    uint firstInstance;
 };
+
+struct TextureSlot
+{
+    int bindlessTexture2DIndex;
+};
+
+#define ENABLE_BARYCENTRICS_SEMANTIC_SYSTEM_VALUE_SUPPORT 1
+
+#define MAX_MATERIAL_TEXTURE_SLOT_COUNT 16
+#define DEFAULT_MATERIAL_TEXTURE_SLOT_BASE_COLOR_MAP 0
+#define DEFAULT_MATERIAL_TEXTURE_SLOT_METALLIC_ROUGHNESS_MAP 1
+#define DEFAULT_MATERIAL_TEXTURE_SLOT_SPECULAR_GLOSSINESS_MAP 2
+#define DEFAULT_MATERIAL_TEXTURE_SLOT_NORMAL_MAP 3
+#define DEFAULT_MATERIAL_TEXTURE_SLOT_EMISSIVE_MAP 4
+
+#define MATERIAL_FLAGS_BIT_USE_METALLIC_ROUGHNESS_WORKFLOW (1 << 0)
+
+#define VIRTUAL_GEOMETRY_INVALID_VISIBLE_MESHLET_ID 0xFFFFFFFF
+
+struct Material
+{
+    float4 baseColor;
+    float metallic;
+    float roughness;
+    float specular;
+    float specularTint;
+    float4 emission;
+    float emissionStrength;
+    float4 sssSurfaceAlbedo;
+    float4 sssMFP;
+    float secondRoughness;
+    float lobeMix;
+    uint flags;
+    TextureSlot textures[MAX_MATERIAL_TEXTURE_SLOT_COUNT];
+
+    bool UseMetallicRoughnessWorkflow() { return (flags & MATERIAL_FLAGS_BIT_USE_METALLIC_ROUGHNESS_WORKFLOW); }
+    int GetBaseColorMapIndex() { return textures[DEFAULT_MATERIAL_TEXTURE_SLOT_BASE_COLOR_MAP].bindlessTexture2DIndex; }
+    int GetMetallicRoughnessMapIndex() { return textures[DEFAULT_MATERIAL_TEXTURE_SLOT_METALLIC_ROUGHNESS_MAP].bindlessTexture2DIndex; }
+    int GetSpecularGlossinessMapIndex() { return textures[DEFAULT_MATERIAL_TEXTURE_SLOT_SPECULAR_GLOSSINESS_MAP].bindlessTexture2DIndex; }
+    int GetNormalMapIndex() { return textures[DEFAULT_MATERIAL_TEXTURE_SLOT_NORMAL_MAP].bindlessTexture2DIndex; }
+    int GetEmissiveMapIndex() { return textures[DEFAULT_MATERIAL_TEXTURE_SLOT_EMISSIVE_MAP].bindlessTexture2DIndex; }
+};
+
+struct Geometry
+{
+    int vertexBuffer0;
+    int vertexBuffer1;
+    int vertexBuffer2;
+    int vertexBuffer3;
+    int prevVertexBuffer0;
+    int indexBuffer;
+    int transformBuffer;
+    int previousTransformBuffer;
+    int transformIndex;
+    int previousTransformIndex;
+    int materialIndexBuffer;
+    int materialBufferOffset;
+    uint baseVertex;
+    uint vertexCount;
+    uint baseIndex;
+    uint indexCount;
+    float3 boundsMin;
+    float3 boundsMax;
+};
+
+// @see https://media.contentapi.ea.com/content/dam/ea/seed/presentations/2019-ray-tracing-gems-chapter-20-akenine-moller-et-al.pdf
+float ComputeTextureLODRayCones(float baseTriangleLOD, uint textureWidth, uint textureHeight, float rayConeWidth, float3 rayDirection, float3 surfaceNormal)
+{
+    float lambda = baseTriangleLOD;
+    lambda += log2(abs(rayConeWidth));
+    lambda += 0.5 * log2(textureWidth * textureHeight);
+    lambda -= log2(abs(dot(rayDirection, surfaceNormal)));
+    return lambda;
+}
+
+struct Surface
+{
+    float2 uv;
+
+    float3 P; // World space position
+    float3 N; // World space normal
+    float3 V; // World space view vector
+    float3 R; // World space reflection vector
+    float distance; // World space distance to first hit
+
+    float NdotV;
+
+    // Principled BRDF
+    float4 baseColor;
+    float subsurface;
+    float metallic;
+    float specular;
+    float roughness;
+    float specularTint;
+    float anisotropic;
+    float anisotropicRotation;
+    float sheen;
+    float sheenTint;
+    float clearcoat;
+    float clearcoatGloss;
+
+    float3 emission;
+    float emissionStrength;
+    float ambientOcclusion;
+    float specularOcclusion;
+
+    float3 F0;
+    float3 F;
+};
+
+float3 GetPerpendicularVector(float3 u)
+{
+    float3 a = abs(u);
+    uint xm = ((a.x - a.y) < 0 && (a.x - a.z) < 0) ? 1 : 0;
+    uint ym = (a.y - a.z) < 0 ? (1 ^ xm) : 0;
+    uint zm = 1 ^ (xm | ym);
+    return cross(u, float3(xm, ym, zm));
+}
+
+float LinearDepth01(float depth, float near, float far)
+{
+    // Standard z
+    // float x = 1.0 - far / near;
+    // float y = far / near;
+
+    // Reversed-z
+    float x = -1.0 + far / near;
+    float y = 1.0;
+    return 1.0 / (x * depth + y);
+}
+
+float ComputeCameraSpaceDepth(float depth, float near, float far)
+{
+    return LinearDepth01(depth, near, far) * far;
+}
+
+float ComputeDepthFromCameraSpaceDepth(float linearDepth, float near, float far)
+{
+    float x = -1.0 + far / near;
+    float y = 1.0;
+    return (far / linearDepth - y) / x;
+}
+
+float4 ComputeClipSpacePosition(float2 uv, float depth)
+{
+    return float4(uv.x * 2.0 - 1.0, (1.0 - uv.y) * 2.0 - 1.0, depth, 1.0);
+}
+
+float ConvertViewSpaceDepthToNDCSpaceDepth(float viewSpaceDepth, float2 transform)
+{
+    return -(transform.x + transform.y / viewSpaceDepth);
+}
+
+float3 ReconstructWorldSpacePositionFromUVZ(float2 uv, float depth, float4x4 clipToWorldMatrix)
+{
+    float2 xy = float2(uv.x * 2.0 - 1.0, (1.0 - uv.y) * 2.0 - 1.0);
+    float4 clipSpacePosition = float4(xy, depth, 1.0);
+    float4 position = mul(clipToWorldMatrix, clipSpacePosition);
+    return position.xyz / position.w;
+}
+
+float3 ReconstructViewSpacePositionFromUVZ(float2 uv, float depth, float4x4 clipToViewMatrix)
+{
+    float2 xy = float2(uv.x * 2.0 - 1.0, (1.0 - uv.y) * 2.0 - 1.0);
+    float4 clipSpacePosition = float4(xy, depth, 1.0);
+    float4 position = mul(clipToViewMatrix, clipSpacePosition);
+    return position.xyz / position.w;
+}
+
+float CalculateScreenEdgeVignette(float2 uv, float fadeFactor)
+{
+    float2 ndc = ScreenSpaceUVToNDCSpaceXY(uv);
+    float2 attenuation = saturate(abs(ndc) * fadeFactor - (fadeFactor - 1.0f));
+    float vignette = saturate(1.0 - dot(attenuation, attenuation));
+    return vignette;
+}
+
+// Octahedral Normal Vectors (ONV)
+// https://jcgt.org/published/0003/02/01/
+// TODO: Test the difference between encoded normals and ground truth.
+
+float2 SignNotZero(float2 v)
+{
+    return float2((v.x >= 0.0) ? +1.0 : -1.0, (v.y >= 0.0) ? +1.0 : -1.0);
+}
+
+// Encode normal to ONV
+float2 EncodeNormalToONV(float3 v)
+{
+    float2 p = v.xy * (1.0 / (abs(v.x) + abs(v.y) + abs(v.z)));
+    return (v.z <= 0.0) ? ((1.0 - abs(p.yx)) * SignNotZero(p)) : p;
+}
+
+// Decode normal fropm ONV
+float3 DecodeNormalFromONV(float2 p)
+{
+    float3 v = float3(p.xy, 1.0 - abs(p.x) - abs(p.y));
+    if (v.z < 0) v.xy = (1.0 - abs(v.yx)) * SignNotZero(v.xy);
+    return normalize(v);
+}
+
+float3 EncodeNormalToGBuffer(float3 n)
+{
+    return n * 0.5f + 0.5f;
+}
+
+float3 DecodeNormalFromGBuffer(float3 n)
+{
+    return n * 2.0f - 1.0f;
+}
+
+// struct GBufferData
+// {
+//     float3 baseColor;
+//     float metallic;
+//     float roughness;
+//     float specular;
+//     float3 normal;
+// };
+
+// void EncodeGBufferData(
+//     in GBufferData gbufferData,
+//     out float4 gbuffer0Data,
+//     out float4 gbuffer1Data,
+//     out float4 gbuffer2Data)
+// {
+//     gbuffer0Data = float4(EncodeNormalToGBuffer(gbufferData.normal), 0/* unsued */);
+//     gbuffer1Data = float4(gbufferData.metallic, gbufferData.specular, gbufferData.roughness, 0/* unsued */);
+//     gbuffer2Data = float4(gbufferData.baseColor.rgb, 1/* unsued */);
+// }
+
+// void DecodeGBufferData(
+//     out GBufferData gbufferData,
+//     in float4 gbuffer0Data,
+//     in float4 gbuffer1Data,
+//     in float4 gbuffer2Data)
+// {
+//     gbufferData.normal = DecodeNormalFromGBuffer(gbuffer0Data.xyz);
+//     gbufferData.metallic = gbuffer1Data.x;
+//     gbufferData.specular = gbuffer1Data.y;
+//     gbufferData.roughness = gbuffer1Data.z;
+//     gbufferData.baseColor = gbuffer2Data.xyz;
+// }
+
+float3 CalculatePerspectiveCorrectBarycentrics(float4 clip0, float4 clip1, float4 clip2, float2 pixelNDC)
+{
+    float3 invW = 1.0f / (float3(clip0.w, clip1.w, clip2.w));
+
+    float2 ndc0 = clip0.xy * invW.x;
+    float2 ndc1 = clip1.xy * invW.y;
+    float2 ndc2 = clip2.xy * invW.z;
+
+    float invDet = rcp(determinant(float2x2(ndc2 - ndc1, ndc0 - ndc1)));
+    float3 ddx = float3(ndc1.y - ndc2.y, ndc2.y - ndc0.y, ndc0.y - ndc1.y) * invDet * invW;
+    float3 ddy = float3(ndc2.x - ndc1.x, ndc0.x - ndc2.x, ndc1.x - ndc0.x) * invDet * invW;
+
+    float2 deltaVec = pixelNDC - ndc0;
+    float interpolatedInvW = invW.x + deltaVec.x * dot(ddx, float3(1.0f, 1.0f, 1.0f)) + deltaVec.y * dot(ddy, float3(1.0f, 1.0f, 1.0f));
+    float interpolatedW = rcp(interpolatedInvW);
+
+    float3 bary;
+    bary.x = interpolatedW * (invW.x + deltaVec.x * ddx.x + deltaVec.y * ddy.x);
+    bary.y = interpolatedW * (0.0f   + deltaVec.x * ddx.y + deltaVec.y * ddy.y);
+    bary.z = interpolatedW * (0.0f   + deltaVec.x * ddx.z + deltaVec.y * ddy.z);
+    return bary;
+}
+
+uint MurmurHash_fmix32(uint hash)
+{
+    hash ^= hash >> 16;
+    hash *= 0x85ebca6b;
+    hash ^= hash >> 13;
+    hash *= 0xc2b2ae35;
+    hash ^= hash >> 16;
+    return hash;
+}
+
+float3 UintToColor(uint index)
+{
+    uint hash = MurmurHash_fmix32(index);
+    float3 color = float3(
+        ((hash >>  0) & 0xFF) / 255.0f,
+        ((hash >>  8) & 0xFF) / 255.0f,
+        ((hash >> 16) & 0xFF) / 255.0f);
+    return color;
+}
+
+float Vignette(float2 ndcPos)
+{
+    float x = saturate(1.0f - dot(ndcPos, ndcPos));
+    return x * x;
+}
