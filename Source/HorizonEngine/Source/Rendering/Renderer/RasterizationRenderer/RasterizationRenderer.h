@@ -157,7 +157,7 @@ namespace Horizon
     // };
     // static const RenderGraphBlackboardRegistry<RenderGraphOutputTexture> RasterizationRendererSceneTexturesRegistry;
 
-    class RasterizationRenderer// : public SceneRenderer
+    class RasterizationRenderer : public SceneRenderer
     {
     public:
 
@@ -169,7 +169,11 @@ namespace Horizon
 
         virtual ~RasterizationRenderer();
 
-        void Render(RenderGraph& renderGraph);
+        void Tick(float deltaTimeInSeconds) override;
+
+        void InitializeSceneView(SceneView* sceneView) override;
+
+        void Render(RenderGraph& renderGraph) override;
 
         bool IsSuperResolutionEnabled() const;
 
@@ -194,8 +198,6 @@ namespace Horizon
         bool IsConvolutionBloomEnabled() const;
 
         bool IsLensFlareEnabled() const;
-
-        void InitializeSceneView(SceneView* sceneView);
 
     private:
 

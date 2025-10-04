@@ -37,9 +37,9 @@ namespace Horizon
             return renderGraphResourcePool;
         }
 
-        RasterizationRenderer* CreateRenderer();
+        SceneRenderer* CreateRenderer();
 
-        void RenderSceneView(RasterizationRenderer* renderer, SceneView* sceneView);
+        void RenderSceneView(SceneRenderer* renderer, SceneView* sceneView);
 
         void BeginDrawUI(ImGuiContext* context);
 

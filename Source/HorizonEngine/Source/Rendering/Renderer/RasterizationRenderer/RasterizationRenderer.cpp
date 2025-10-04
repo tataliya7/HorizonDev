@@ -47,6 +47,11 @@ namespace Horizon
 
     }
 
+    void RasterizationRenderer::Tick(float deltaTimeInSeconds)
+    {
+        debugDrawLinesVertices.clear();
+    }
+
     RenderBackendBufferHandle RasterizationRenderer::GetCurrentPerFrameConstantBuffer() const
     {
         return currentPerFrameConstantBuffer;

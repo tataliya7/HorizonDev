@@ -108,12 +108,12 @@ namespace Horizon
         renderBackend->Tick();
     }
 
-    RasterizationRenderer* RenderSystem::CreateRenderer()
+    SceneRenderer* RenderSystem::CreateRenderer()
     {
         return new RasterizationRenderer(renderBackend, renderGraphResourcePool, shaderRepository, rendererDefaultResources);
     }
 
-    void RenderSystem::RenderSceneView(RasterizationRenderer* renderer, SceneView* sceneView)
+    void RenderSystem::RenderSceneView(SceneRenderer* renderer, SceneView* sceneView)
     {
         OPTICK_EVENT();
 
