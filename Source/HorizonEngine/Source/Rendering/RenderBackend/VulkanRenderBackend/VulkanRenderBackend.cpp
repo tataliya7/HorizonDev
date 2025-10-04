@@ -3270,6 +3270,7 @@ namespace Horizon
         };
 
         VkResult result = deviceFunctions.vkCreateDescriptorPool(handle, &descriptorPoolInfo, VULKAN_ALLOCATION_CALLBACKS, &bindlessDescriptorManager.pool);
+
         if (result != VK_SUCCESS)
         {
             LogError(GLogger, std::format("InitBindlessContext(): Failed to create descriptor pool."));
@@ -3293,7 +3294,9 @@ namespace Horizon
             .bindingCount = numBindings,
             .pBindings = bindlessDescriptorSetLayoutBindings.data()
         };
+
         result = deviceFunctions.vkCreateDescriptorSetLayout(handle, &descriptorSetLayoutInfo, VULKAN_ALLOCATION_CALLBACKS, &bindlessDescriptorManager.layout);
+
         if (result != VK_SUCCESS)
         {
             LogError(GLogger, std::format("InitBindlessContext(): Failed to create descriptor set layout."));
@@ -3307,7 +3310,9 @@ namespace Horizon
             .descriptorSetCount = 1,
             .pSetLayouts = &bindlessDescriptorManager.layout
         };
+
         result = deviceFunctions.vkAllocateDescriptorSets(handle, &descriptorSetAllocateInfo, &bindlessDescriptorManager.set);
+
         if (result != VK_SUCCESS)
         {
             LogError(GLogger, std::format("InitBindlessContext(): Failed to allocate descriptor set."));
@@ -3324,7 +3329,8 @@ namespace Horizon
             bindlessDescriptorManager.compatibleRayTracingPipelineLayout = FindOrCreatePipelineLayout(bindlessDescriptorManager.pushConstantsSize, RenderBackendPipelineType::RayTracing);
         }
 
-        bindlessDescriptorManager.config = {
+        bindlessDescriptorManager.config =
+        {
             .numSamplers = numSamplers,
             .numSampledImages = numSampledImages,
             .numStorageImages = numStorageImages,
