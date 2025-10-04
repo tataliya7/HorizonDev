@@ -385,7 +385,7 @@ struct SingleScatteringResult
 };
 
 SingleScatteringResult IntegrateSingleScatteredLuminance(
-    in PerFrameShaderParameters frameShaderParameters,
+    in RasterizationRendererUniformVariables frameShaderParameters,
     in SkyAtmosphereShaderParameters Atmosphere,
 #if SAMPLE_TRANSMITTANCE_LUT
     in Texture2D TransmittanceLutTexture,
@@ -730,7 +730,7 @@ float4 GetAerialPerspectiveLuminanceTransmittance(
     return AP;
 }
 
-SkyAtmosphereShaderParameters GetSkyAtmosphereShaderParameters(in PerFrameShaderParameters frameShaderParameters)
+SkyAtmosphereShaderParameters GetSkyAtmosphereShaderParameters(in RasterizationRendererUniformVariables frameShaderParameters)
 {
     SkyAtmosphereShaderParameters parameters = (SkyAtmosphereShaderParameters)0;
 

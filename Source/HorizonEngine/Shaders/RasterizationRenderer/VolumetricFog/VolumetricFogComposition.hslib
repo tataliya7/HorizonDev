@@ -3,7 +3,7 @@
 #include "VolumetricFogCommon.hsh"
 
 SHADER_CONSTANTS_STRUCT_BEGIN();
-SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferSRV);
+SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, RasterizationRendererUniformVariables, PerFrameShaderParameterBufferSRV);
 SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(1, VolumetricFogShaderParameters, VolumetricFogShaderParameterBufferSRV);
 SHADER_CONSTANTS_TEXTURE_3D_SRV(2, float4, VolumetricFogFinalIntegrationTextureSRV);
 SHADER_CONSTANTS_TEXTURE_2D_SRV(3, float, DepthTextureSRV);
@@ -12,12 +12,12 @@ SHADER_CONSTANTS_STRUCT_END();
 [shader("pixel")]
 void VolumetricFogCompositionPS(float4 position : SV_Position, out float4 result : SV_Target0)
 {
-    StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
+    StructuredBuffer<RasterizationRendererUniformVariables> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
     StructuredBuffer<VolumetricFogShaderParameters> volumetricFogShaderParameterBuffer = ShaderConstants.GetVolumetricFogShaderParameterBufferSRV();
     Texture3D<float4> volumetricFogFinalIntegrationTexture = ShaderConstants.GetVolumetricFogFinalIntegrationTextureSRV();
     Texture2D<float> depthTexture = ShaderConstants.GetDepthTextureSRV();
 
-    PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
+    RasterizationRendererUniformVariables frameShaderParameters = frameShaderParameterBuffer[0];
     VolumetricFogShaderParameters volumetricFogShaderParameters = volumetricFogShaderParameterBuffer[0];
 
     float2 uv = position.xy * frameShaderParameters.renderResolution.zw;

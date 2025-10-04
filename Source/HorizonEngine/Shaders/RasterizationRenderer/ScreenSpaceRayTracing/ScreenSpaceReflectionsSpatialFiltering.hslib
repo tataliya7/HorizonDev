@@ -2,7 +2,7 @@
 #include "RasterizationRendererCommon.hsh"
 #include "ScreenSpaceReflectionsCommon.hsh"
 
-BIND_BUFFER_CBV(0, PerFrameShaderParameters);
+BIND_BUFFER_CBV(0, RasterizationRendererUniformVariables);
 BIND_TEXTURE_2D_SRV(1, SceneDepth);
 BIND_TEXTURE_2D_SRV(2, GBuffer1);
 BIND_TEXTURE_2D_SRV(3, ResolveVarianceTexture);
@@ -20,8 +20,8 @@ static const uint2 bilateralMinMaxRadius = uint2(0, 2); // Chosen by variance
 [numthreads(SSR_THREAD_GROUP_SIZE, SSR_THREAD_GROUP_SIZE, 1)]
 void SSRSpatialFilteringCS(uint3 dispatchThreadID : SV_DispatchThreadID)
 {
-    StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
-    PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
+    StructuredBuffer<RasterizationRendererUniformVariables> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
+    RasterizationRendererUniformVariables frameShaderParameters = frameShaderParameterBuffer[0];
     Texture2D sceneDepth = GetSceneDepthSRV();
     Texture2D gbuffer1 = GetGBuffer1SRV();
     Texture2D inputTexture = GetInputTextureSRV();

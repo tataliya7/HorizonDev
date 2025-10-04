@@ -19,7 +19,7 @@
 #endif
 
 SHADER_CONSTANTS_STRUCT_BEGIN();
-SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferSRV);
+SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, RasterizationRendererUniformVariables, PerFrameShaderParameterBufferSRV);
 SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(1, DepthTextureSRV);
 SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(2, VelocityTextureSRV);
 SHADER_CONSTANTS_TEXTURE_2D_UAV(3, float4, VelocityRangeTextureUAV);
@@ -41,8 +41,8 @@ groupshared float4 SharedTileData[MOTION_BLUR_TILE_CLASSIFICATION_PASS_THREAD_CO
 [numthreads(MOTION_BLUR_TILE_SIZE, MOTION_BLUR_TILE_SIZE, 1)]
 void MotionBlurTileClassificationCS(uint3 dispatchThreadID : SV_DispatchThreadID, uint3 groupID : SV_GroupID, uint groupIndex : SV_GroupIndex)
 {
-    StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
-    PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
+    StructuredBuffer<RasterizationRendererUniformVariables> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
+    RasterizationRendererUniformVariables frameShaderParameters = frameShaderParameterBuffer[0];
     Texture2D depthTexture = ShaderConstants.GetDepthTextureSRV();
     Texture2D velocityTexture = ShaderConstants.GetVelocityTextureSRV();
     RWTexture2D<float4> velocityRangeTexture = ShaderConstants.GetVelocityRangeTextureUAV();

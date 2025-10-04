@@ -3,7 +3,7 @@
 #include "PostProcessingCommon.hsh"
 #include "SelectionOutlineCommon.hsh"
 
-BIND_BUFFER_CBV(0, PerFrameShaderParameters);
+BIND_BUFFER_CBV(0, RasterizationRendererUniformVariables);
 // BIND_BYTE_ADDRESS_BUFFER_SRV(1, Geometry, Geometry);
 BIND_BYTE_ADDRESS_BUFFER_SRV(2, VertexBuffer0);
 
@@ -17,7 +17,7 @@ float3 GetVertexPosition(uint vertexIndex)
 void SelectionOutlineMaskVS(uint vertexIndex : SV_VertexID, out float4 svPosition : SV_Position)
 {
     // ByteAddressBuffer perFrameDataBuffer = GetPerFrameDataBufferSRV();
-    // PerFrameShaderParameters frameShaderParameters = perFrameDataBuffer.Load<PerFrameShaderParameters>(0);
+    // RasterizationRendererUniformVariables frameShaderParameters = perFrameDataBuffer.Load<RasterizationRendererUniformVariables>(0);
     // Geometry geometry = GetGeometry();
     // float3 vertexPosition = GetVertexPosition(vertexIndex);
     // float4x4 worldMatrix = GetRWByteAddressBuffer(geometry.transformBuffer).Load<float4x4>(geometry.transformIndex * sizeof(float4x4));

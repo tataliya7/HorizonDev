@@ -18,7 +18,7 @@
 #endif
 
 SHADER_CONSTANTS_STRUCT_BEGIN();
-SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferSRV);
+SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, RasterizationRendererUniformVariables, PerFrameShaderParameterBufferSRV);
 SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(1, ColorTextureSRV);
 SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(2, DilatedVelocityRangeTextureSRV);
 SHADER_CONSTANTS_TEXTURE_2D_SRV(3, float2, VelocityAndDepthTextureSRV);
@@ -56,8 +56,8 @@ float SampleWeight(
 [numthreads(MOTION_BLUR_TILE_SIZE, MOTION_BLUR_TILE_SIZE, 1)]
 void MotionBlurReconstructionFilterCS(uint3 dispatchThreadID : SV_DispatchThreadID, uint3 groupID : SV_GroupID, uint groupIndex : SV_GroupIndex)
 {
-    StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
-    PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
+    StructuredBuffer<RasterizationRendererUniformVariables> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
+    RasterizationRendererUniformVariables frameShaderParameters = frameShaderParameterBuffer[0];
     Texture2D colorTexture = ShaderConstants.GetColorTextureSRV();
     Texture2D dilatedVelocityRangeTexture = ShaderConstants.GetDilatedVelocityRangeTextureSRV();
     Texture2D<float2> velocityAndDepthTexture = ShaderConstants.GetVelocityAndDepthTextureSRV();

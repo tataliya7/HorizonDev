@@ -3,7 +3,7 @@
 #include "../RasterizationRendererCommon.hsh"
 #include "SubsurfaceScatteringCommon.hsh"
 
-BIND_BUFFER_CBV(0, PerFrameShaderParameters);
+BIND_BUFFER_CBV(0, RasterizationRendererUniformVariables);
 BIND_TEXTURE_2D_SRV(1, SceneColorTexture);
 BIND_TEXTURE_2D_SRV(2, SceneDepthTexture);
 BIND_BYTE_ADDRESS_BUFFER_UAV(3, SubsurfaceScatteringTileCountBuffer);
@@ -15,7 +15,7 @@ BIND_TEXTURE_2D_UAV(5, float4, OutputTexture);
 void SubsurfaceScatteringComputeVarianceCS(uint3 groupID : SV_GroupID, uint groupIndex : SV_GroupIndex)
 {
     // ByteAddressBuffer perFrameDataBuffer = GetPerFrameDataBufferSRV();
-    // PerFrameShaderParameters frameShaderParameters = perFrameDataBuffer.Load<PerFrameShaderParameters>(0);
+    // RasterizationRendererUniformVariables frameShaderParameters = perFrameDataBuffer.Load<RasterizationRendererUniformVariables>(0);
     // Texture2D sceneColorTexture = GetSceneColorTextureSRV();
     // Texture2D sceneDepthTexture = GetSceneDepthTextureSRV();
     // RWByteAddressBuffer tileCountBuffer = GetSubsurfaceScatteringTileCountBufferUAV();

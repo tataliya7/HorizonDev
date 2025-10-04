@@ -7,7 +7,7 @@
 #include "VolumetricFogCommon.hsh"
 
 SHADER_CONSTANTS_STRUCT_BEGIN();
-SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferSRV);
+SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, RasterizationRendererUniformVariables, PerFrameShaderParameterBufferSRV);
 SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(1, VolumetricFogShaderParameters, VolumetricFogShaderParameterBufferSRV);
 SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(2, DistantLightData, DistantLightDataBufferSRV);
 SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(3, CascadedShadowMapShaderParameters, CascadedShadowMapShaderParameterBufferSRV);
@@ -28,7 +28,7 @@ SHADER_CONSTANTS_STRUCT_END();
 #define SAMPLE_COUNT_PER_VOXEL 1
 
 float ComputeDistantLightShadowFactorCSM(
-    in PerFrameShaderParameters frameShaderParameters,
+    in RasterizationRendererUniformVariables frameShaderParameters,
     in CascadedShadowMapShaderParameters cascadedShadowMapParameters,
     in Texture2DArray shadowMapTexture,
     in float3 worldSpacePosition)
@@ -61,7 +61,7 @@ float ComputeDistantLightShadowFactorCSM(
 [numthreads(4, 4, 4)]
 void VolumetricFogLightScatteringCS(uint3 groupID : SV_GroupID, uint3 groupThreadID : SV_GroupThreadID, uint3 dispatchThreadID : SV_DispatchThreadID)
 {
-    StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
+    StructuredBuffer<RasterizationRendererUniformVariables> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
     StructuredBuffer<VolumetricFogShaderParameters> volumetricFogShaderParameterBuffer = ShaderConstants.GetVolumetricFogShaderParameterBufferSRV();
     StructuredBuffer<DistantLightData> distantLightDataBuffer = ShaderConstants.GetDistantLightDataBufferSRV();
     StructuredBuffer<CascadedShadowMapShaderParameters> cascadedShadowMapShaderParameterBuffer = ShaderConstants.GetCascadedShadowMapShaderParameterBufferSRV();
@@ -75,7 +75,7 @@ void VolumetricFogLightScatteringCS(uint3 groupID : SV_GroupID, uint3 groupThrea
     Texture3D<float4> participatingMediaPropertiesDataBTexture = ShaderConstants.GetVolumetricFogParticipatingMediaPropertiesDataBTextureSRV();
     RWTexture3D<float4> lightScatteringTexture = ShaderConstants.GetVolumetricFogLightScatteringTextureUAV();
 
-    PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
+    RasterizationRendererUniformVariables frameShaderParameters = frameShaderParameterBuffer[0];
     VolumetricFogShaderParameters volumetricFogShaderParameters = volumetricFogShaderParameterBuffer[0];
     DistantLightData distantLightData = distantLightDataBuffer[0];
     CascadedShadowMapShaderParameters cascadedShadowMapParameters = cascadedShadowMapShaderParameterBuffer[0];

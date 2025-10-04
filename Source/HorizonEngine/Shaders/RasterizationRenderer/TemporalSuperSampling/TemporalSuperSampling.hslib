@@ -1,7 +1,7 @@
 #include "../../ShaderCommon.hsh"
 #include "../RasterizationRendererCommon.hsh"
 
-BIND_BUFFER_CBV(0, PerFrameShaderParameters);
+BIND_BUFFER_CBV(0, RasterizationRendererUniformVariables);
 BIND_TEXTURE_2D_SRV(1, SceneColor);
 BIND_TEXTURE_2D_SRV(2, SceneDepth);
 BIND_TEXTURE_2D_SRV(3, VelocityBuffer);
@@ -279,8 +279,8 @@ float3 InverseTonemap(float3 color)
 [numthreads(8, 8, 1)]
 void TemporalSuperSamplingCS(uint3 dispatchThreadID : SV_DispatchThreadID)
 {
-    StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
-    PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
+    StructuredBuffer<RasterizationRendererUniformVariables> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
+    RasterizationRendererUniformVariables frameShaderParameters = frameShaderParameterBuffer[0];
     Texture2D sceneDepth = GetSceneDepthSRV();
     Texture2D sceneColor = GetSceneColorSRV();
     Texture2D velocityBuffer = GetVelocityBufferSRV();

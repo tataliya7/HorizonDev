@@ -3,7 +3,7 @@
 #include "../RasterizationRendererCommon.hsh"
 
 SHADER_CONSTANTS_STRUCT_BEGIN();
-SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferSRV);
+SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, RasterizationRendererUniformVariables, PerFrameShaderParameterBufferSRV);
 SHADER_CONSTANTS_ACCELERATION_STRUCTURE_SRV(1, TopLevelAccelerationStructureSRV);
 SHADER_CONSTANTS_TEXTURE_2D_SRV(2, float, DepthTextureSRV);
 SHADER_CONSTANTS_TEXTURE_2D_UAV(3, float, ShadowMaskTextureUAV);
@@ -23,12 +23,12 @@ struct ShadowRayPayload
 [shader("raygeneration")]
 void RayTracingShadowsRayGen()
 {
-    StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
+    StructuredBuffer<RasterizationRendererUniformVariables> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
     RaytracingAccelerationStructure topLevelAccelerationStructure = ShaderConstants.GetTopLevelAccelerationStructureSRV();
     Texture2D<float> depthTexture = ShaderConstants.GetDepthTextureSRV();
     RWTexture2D<float> shadowMaskTexture = ShaderConstants.GetShadowMaskTextureUAV();
     RWTexture2D<float> rayDistanceTexture = ShaderConstants.GetRayDistanceTextureUAV();
-    PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
+    RasterizationRendererUniformVariables frameShaderParameters = frameShaderParameterBuffer[0];
 
     uint3 launchIndex = DispatchRaysIndex();
     uint3 launchDimensions = DispatchRaysDimensions();
@@ -98,12 +98,12 @@ void RayTracingShadowsMiss(inout ShadowRayPayload payload : SV_RayPayload)
 [numthreads(8, 4, 1)]
 void RayTracingShadowsInlineRayTracingCS(uint3 dispatchThreadID : SV_DispatchThreadID)
 {
-    StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
+    StructuredBuffer<RasterizationRendererUniformVariables> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
     RaytracingAccelerationStructure topLevelAccelerationStructure = ShaderConstants.GetTopLevelAccelerationStructureSRV();
     Texture2D<float> depthTexture = ShaderConstants.GetDepthTextureSRV();
     RWTexture2D<float> shadowMaskTexture = ShaderConstants.GetShadowMaskTextureUAV();
     RWTexture2D<float> rayDistanceTexture = ShaderConstants.GetRayDistanceTextureUAV();
-    PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
+    RasterizationRendererUniformVariables frameShaderParameters = frameShaderParameterBuffer[0];
 
     const uint2 pixelCoord = dispatchThreadID.xy;
     const float depth = depthTexture[pixelCoord].r;

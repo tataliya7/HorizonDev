@@ -11,7 +11,7 @@ namespace Horizon {
 #define float4x4 Horizon::Matrix4x4f
 #endif // __cplusplus
 
-struct PerFrameShaderParameters
+struct RasterizationRendererUniformVariables
 {
     uint frameIndex;
     uint frameIndexMod8;
@@ -197,12 +197,12 @@ struct PerFrameShaderParameters
 };
 
 #ifndef __cplusplus
-//DECLARE_ALIASED_ARRAY_CONSTANT_BUFFER_CBV(PerFrameShaderParameters);
-DECLARE_ALIASED_ARRAY_STRUCTURED_BUFFER_SRV(PerFrameShaderParameters);
+//DECLARE_ALIASED_ARRAY_CONSTANT_BUFFER_CBV(RasterizationRendererUniformVariables);
+DECLARE_ALIASED_ARRAY_STRUCTURED_BUFFER_SRV(RasterizationRendererUniformVariables);
 #endif
 
 #ifdef __cplusplus
-static_assert(sizeof(PerFrameShaderParameters) % 16 == 0);
+static_assert(sizeof(RasterizationRendererUniformVariables) % 16 == 0);
 #endif
 
 #ifdef __cplusplus

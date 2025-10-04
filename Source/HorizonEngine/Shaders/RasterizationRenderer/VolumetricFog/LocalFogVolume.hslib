@@ -3,7 +3,7 @@
 #include "LocalFogVolumeCommon.hsh"
 
 SHADER_CONSTANTS_STRUCT_BEGIN();
-SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferSRV);
+SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, RasterizationRendererUniformVariables, PerFrameShaderParameterBufferSRV);
 SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(1, LocalFogVolumeInstanceData, LocalFogVolumeInstanceDataBufferSRV);
 SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(2, DepthTextureSRV);
 SHADER_CONSTANTS_STRUCT_END();
@@ -42,8 +42,8 @@ void LocalFogVolumeVS(
     out LocalFogVolumeVSOutput output,
     out float4 position : SV_Position)
 {
-    StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
-    PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
+    StructuredBuffer<RasterizationRendererUniformVariables> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
+    RasterizationRendererUniformVariables frameShaderParameters = frameShaderParameterBuffer[0];
 
     StructuredBuffer<LocalFogVolumeInstanceData> localFogVolumeInstanceDataBuffer = ShaderConstants.GetLocalFogVolumeInstanceDataBufferSRV();
     LocalFogVolumeInstanceData instanceData = localFogVolumeInstanceDataBuffer.Load(instanceID);
@@ -65,8 +65,8 @@ void LocalFogVolumePS(
     out float4 outColor : SV_Target0)
 {
     uint instanceID = input.instanceID;
-    StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
-    PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
+    StructuredBuffer<RasterizationRendererUniformVariables> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
+    RasterizationRendererUniformVariables frameShaderParameters = frameShaderParameterBuffer[0];
 
     StructuredBuffer<LocalFogVolumeInstanceData> localFogVolumeInstanceDataBuffer = ShaderConstants.GetLocalFogVolumeInstanceDataBufferSRV();
     LocalFogVolumeInstanceData instanceData = localFogVolumeInstanceDataBuffer.Load(instanceID);

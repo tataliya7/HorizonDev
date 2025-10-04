@@ -3,7 +3,7 @@
 #include "../RasterizationRendererCommon.hsh"
 
 SHADER_CONSTANTS_STRUCT_BEGIN();
-SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferSRV);
+SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, RasterizationRendererUniformVariables, PerFrameShaderParameterBufferSRV);
 SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(1, InputColorTextureSRV);
 SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(2, InputDepthTextureSRV);
 SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(3, HistoryColorTextureSRV);
@@ -111,8 +111,8 @@ float4 ClampHistoryColor(float4 historyColor, float4 neighborhoodBoundingBoxMini
 [numthreads(8, 8, 1)]
 void ScreenSpaceLightShaftsTemporalFilteringCS(uint3 dispatchThreadID : SV_DispatchThreadID)
 {
-    StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
-    PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
+    StructuredBuffer<RasterizationRendererUniformVariables> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
+    RasterizationRendererUniformVariables frameShaderParameters = frameShaderParameterBuffer[0];
     Texture2D inputColorTexture = ShaderConstants.GetInputColorTextureSRV();
     Texture2D inputDepthTexture = ShaderConstants.GetInputColorTextureSRV();
     Texture2D historyColorTexture = ShaderConstants.GetHistoryColorTextureSRV();

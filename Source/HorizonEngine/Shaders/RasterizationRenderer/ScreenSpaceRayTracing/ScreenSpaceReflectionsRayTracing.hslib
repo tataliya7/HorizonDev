@@ -24,7 +24,7 @@ static const float DepthBufferThickness = 1.5f;
 static const float SSRScreenEdgeVignettingFactor = 5.0f;
 
 SHADER_CONSTANTS_STRUCT_BEGIN();
-SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferSRV);
+SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, RasterizationRendererUniformVariables, PerFrameShaderParameterBufferSRV);
 SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(1, ColorTextureSRV);
 SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(2, DepthTextureSRV);
 SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(3, DepthPyramidTextureSRV);
@@ -122,8 +122,8 @@ float4 ImportanceSampleGGX(float2 E, float Roughness) {
 //[numthreads(SSR_THREAD_GROUP_SIZE * SSR_THREAD_GROUP_SIZE, 1, 1)]
 void ScreenSpaceReflectionsRayTracingCS(uint3 groupID : SV_GroupID, uint3 groupThreadID : SV_GroupThreadID, uint3 dispatchThreadID : SV_DispatchThreadID)
 {
-    StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
-    PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
+    StructuredBuffer<RasterizationRendererUniformVariables> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
+    RasterizationRendererUniformVariables frameShaderParameters = frameShaderParameterBuffer[0];
     Texture2D colorTexture = ShaderConstants.GetColorTextureSRV();
     Texture2D depthTexture = ShaderConstants.GetDepthTextureSRV();
     Texture2D depthPyramidTexture = ShaderConstants.GetDepthPyramidTextureSRV();

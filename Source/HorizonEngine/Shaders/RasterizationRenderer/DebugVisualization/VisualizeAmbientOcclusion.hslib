@@ -2,7 +2,7 @@
 #include "../RasterizationRendererCommon.hsh"
 
 SHADER_CONSTANTS_STRUCT_BEGIN();
-SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferSRV);
+SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, RasterizationRendererUniformVariables, PerFrameShaderParameterBufferSRV);
 SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(1, AmbientOcclusionTextureSRV);
 SHADER_CONSTANTS_TEXTURE_2D_UAV(2, float4, OutputTextureUAV);
 SHADER_CONSTANTS_STRUCT_END();
@@ -11,8 +11,8 @@ SHADER_CONSTANTS_STRUCT_END();
 [numthreads(8, 8, 1)]
 void VisualizeAmbientOcclusionCS(uint3 dispatchThreadID : SV_DispatchThreadID)
 {
-    StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
-    PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
+    StructuredBuffer<RasterizationRendererUniformVariables> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
+    RasterizationRendererUniformVariables frameShaderParameters = frameShaderParameterBuffer[0];
     Texture2D ambientOcclusionTexture = ShaderConstants.GetAmbientOcclusionTextureSRV();
     RWTexture2D<float4> outputTexture = ShaderConstants.GetOutputTextureUAV();
 

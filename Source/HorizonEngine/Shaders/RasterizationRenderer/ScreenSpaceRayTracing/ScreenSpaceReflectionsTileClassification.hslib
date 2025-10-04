@@ -4,7 +4,7 @@
 
 #if SSR_TILE_CLASSIFICATION_HORIZONTAL_PASS
 SHADER_CONSTANTS_STRUCT_BEGIN();
-SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferSRV);
+SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, RasterizationRendererUniformVariables, PerFrameShaderParameterBufferSRV);
 SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(1, DepthTextureSRV);
 SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(2, GBuffer1SRV);
 SHADER_CONSTANTS_TEXTURE_2D_UAV(3, float2, SSRTileClassificationHorizontalTextureUAV);
@@ -14,12 +14,12 @@ SHADER_CONSTANTS_STRUCT_END();
 [numthreads(SSR_THREAD_GROUP_SIZE, SSR_THREAD_GROUP_SIZE, 1)]
 void SSRTileClassificationHorizontalCS(uint3 dispatchThreadID : SV_DispatchThreadID)
 {
-    StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
+    StructuredBuffer<RasterizationRendererUniformVariables> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
     Texture2D depthTexture = ShaderConstants.GetDepthTextureSRV();
     Texture2D gbuffer1 = ShaderConstants.GetGBuffer1SRV();
     RWTexture2D<float2> tileClassificationHorizontalTexture = ShaderConstants.GetSSRTileClassificationHorizontalTextureUAV();
 
-    PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
+    RasterizationRendererUniformVariables frameShaderParameters = frameShaderParameterBuffer[0];
 
     uint width, height;
     tileClassificationHorizontalTexture.GetDimensions(width, height);
@@ -61,7 +61,7 @@ void SSRTileClassificationHorizontalCS(uint3 dispatchThreadID : SV_DispatchThrea
 
 #if SSR_TILE_CLASSIFICATION_VERTICAL_PASS
 SHADER_CONSTANTS_STRUCT_BEGIN();
-SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferSRV);
+SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, RasterizationRendererUniformVariables, PerFrameShaderParameterBufferSRV);
 SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(1, DepthTextureSRV);
 SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(2, GBuffer1SRV);
 SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(3, SSRTileClassificationHorizontalTextureSRV);
@@ -73,14 +73,14 @@ SHADER_CONSTANTS_STRUCT_END();
 [numthreads(SSR_THREAD_GROUP_SIZE, SSR_THREAD_GROUP_SIZE, 1)]
 void SSRTileClassificationVerticalCS(uint3 dispatchThreadID : SV_DispatchThreadID)
 {
-    StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
+    StructuredBuffer<RasterizationRendererUniformVariables> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
     Texture2D depthTexture = ShaderConstants.GetDepthTextureSRV();
     Texture2D gbuffer1 = ShaderConstants.GetGBuffer1SRV();
     Texture2D tileClassificationHorizontalTexture = ShaderConstants.GetSSRTileClassificationHorizontalTextureSRV();
     RWTexture2D<float2> tileClassificationTexture = ShaderConstants.GetSSRTileClassificationTextureUAV();
     RWByteAddressBuffer rayAllocationBuffer = ShaderConstants.GetSSRRayAllocationBufferUAV();
 
-    PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
+    RasterizationRendererUniformVariables frameShaderParameters = frameShaderParameterBuffer[0];
 
     uint width, height;
     tileClassificationTexture.GetDimensions(width, height);

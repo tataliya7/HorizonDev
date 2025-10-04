@@ -6,7 +6,7 @@
 //#include "LightingCommon.hsh"
 
 SHADER_CONSTANTS_STRUCT_BEGIN();
-SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferSRV);
+SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, RasterizationRendererUniformVariables, PerFrameShaderParameterBufferSRV);
 SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(1, GBuffer0SRV);
 SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(2, GBuffer1SRV);
 SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(3, GBuffer2SRV);
@@ -31,8 +31,8 @@ float3 MultiBounceAmbientOcclusion(float visibility, float3 albedo)
 [shader("pixel")]
 void IndirectDiffuseCompositionPS(in float4 position : SV_Position, out float4 outColor : SV_Target0)
 {
-    StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
-    PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
+    StructuredBuffer<RasterizationRendererUniformVariables> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
+    RasterizationRendererUniformVariables frameShaderParameters = frameShaderParameterBuffer[0];
     Texture2D gbuffer0 = ShaderConstants.GetGBuffer0SRV();
     Texture2D gbuffer1 = ShaderConstants.GetGBuffer1SRV();
     Texture2D gbuffer2 = ShaderConstants.GetGBuffer2SRV();

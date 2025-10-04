@@ -4,7 +4,7 @@
 #include "AutoExposureCommon.hsh"
 
 SHADER_CONSTANTS_STRUCT_BEGIN();
-SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferSRV);
+SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, RasterizationRendererUniformVariables, PerFrameShaderParameterBufferSRV);
 SHADER_CONSTANTS_TEXTURE_2D_SRV(1, uint, AutoExposureHistogramTextureSRV);
 SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_SRV(2, PreviousAutoExposureBufferSRV);
 SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_UAV(3, CurrentAutoExposureBufferUAV);
@@ -68,8 +68,8 @@ float InterpolateExposure(float srcExposure, float dstExposure, float deltaTimeI
 [numthreads(1, 1, 1)]
 void AutoExposureComputeExposureCS(uint3 dispatchThreadID : SV_DispatchThreadID)
 {
-    StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
-    PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
+    StructuredBuffer<RasterizationRendererUniformVariables> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
+    RasterizationRendererUniformVariables frameShaderParameters = frameShaderParameterBuffer[0];
 
     float deltaTimeInSeconds = frameShaderParameters.deltaTimeInSeconds;
     float exposureCompensation = frameShaderParameters.autoExposureExposureCompensation;

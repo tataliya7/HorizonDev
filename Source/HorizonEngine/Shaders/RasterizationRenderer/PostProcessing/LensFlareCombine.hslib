@@ -3,7 +3,7 @@
 #include "PostProcessingCommon.hsh"
 
 SHADER_CONSTANTS_STRUCT_BEGIN();
-SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferSRV);
+SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, RasterizationRendererUniformVariables, PerFrameShaderParameterBufferSRV);
 SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(1, LensFlareGradientTextureSRV);
 SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(2, LensFlareGhostTextureSRV);
 SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(3, LensFlareGlareTextureSRV);
@@ -28,8 +28,8 @@ float2 ComputeFisheyeUV(float2 uv, float f, float zoom)
 [shader("pixel")]
 void LensFlareCombinePS(float4 position : SV_Position, out float3 result : SV_Target)
 {
-    StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
-    PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
+    StructuredBuffer<RasterizationRendererUniformVariables> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
+    RasterizationRendererUniformVariables frameShaderParameters = frameShaderParameterBuffer[0];
     Texture2D ghostTexture = ShaderConstants.GetLensFlareGhostTextureSRV();
     Texture2D glareTexture = ShaderConstants.GetLensFlareGlareTextureSRV();
     Texture2D gradientTexture = ShaderConstants.GetLensFlareGradientTextureSRV();

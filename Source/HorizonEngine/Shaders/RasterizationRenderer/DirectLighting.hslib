@@ -9,7 +9,7 @@
 #include "SkyAtmosphere/SkyAtmosphereCommon.hsh"
 
 SHADER_CONSTANTS_STRUCT_BEGIN();
-SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferSRV);
+SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, RasterizationRendererUniformVariables, PerFrameShaderParameterBufferSRV);
 SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_SRV(1, GeometryDataBufferSRV);
 SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_SRV(2, GeometryInstanceDataBufferSRV);
 SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(3, SceneDepthTextureSRV);
@@ -118,7 +118,7 @@ float3 WorldSpaceDirectionToCubemapUvAndFaceIndex(float3 d)
     return float3(uv, faceIndex);
 }
 
-float3 ComputeDistantLightDirectLightingContribution(PerFrameShaderParameters frameShaderParameters, Surface surface)
+float3 ComputeDistantLightDirectLightingContribution(RasterizationRendererUniformVariables frameShaderParameters, Surface surface)
 {
     StructuredBuffer<DistantLightData> distantLightDataBuffer = ShaderConstants.GetDistantLightDataBufferSRV();
     DistantLightData distantLightData = distantLightDataBuffer[0];
@@ -190,7 +190,7 @@ float3 ComputeDistantLightDirectLightingContribution(PerFrameShaderParameters fr
     return result;
 }
 
-float3 ComputeLocalLightDirectLightingContribution(PerFrameShaderParameters frameShaderParameters, Surface surface)
+float3 ComputeLocalLightDirectLightingContribution(RasterizationRendererUniformVariables frameShaderParameters, Surface surface)
 {
     StructuredBuffer<LocalLightData> localLightDataBuffer = ShaderConstants.GetLocalLightDataBufferSRV();
     StructuredBuffer<uint2> lightGridCellDataBuffer = ShaderConstants.GetLightGridCellDataBufferSRV();
@@ -359,8 +359,8 @@ float3 F_Schlick(float3 f0, float f90, float VoH)
 [shader("pixel")]
 void DirectLightingPS(in float4 position : SV_Position, out float4 outColor : SV_Target0)
 {
-    StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
-    PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
+    StructuredBuffer<RasterizationRendererUniformVariables> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
+    RasterizationRendererUniformVariables frameShaderParameters = frameShaderParameterBuffer[0];
     Texture2D<uint> vbuffer0 = ShaderConstants.GetVBuffer0SRV();
     Texture2D vbuffer1 = ShaderConstants.GetVBuffer1SRV();
     Texture2D gbuffer0 = ShaderConstants.GetGBuffer0SRV();

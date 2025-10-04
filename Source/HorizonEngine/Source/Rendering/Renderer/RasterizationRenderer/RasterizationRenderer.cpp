@@ -21,8 +21,8 @@ namespace Horizon
         , defaultResources(defaultResources)
         , temporalSuperSamplingInterface(nullptr)
     {
-        //RenderBackendBufferDesc perFrameConstantBufferDesc = RenderBackendBufferDesc::CreateStructured(sizeof(PerFrameShaderParameters), 1);
-        //RenderBackendBufferDesc perFrameConstantUploadBufferDesc = RenderBackendBufferDesc::CreateUpload(sizeof(PerFrameShaderParameters));
+        //RenderBackendBufferDesc perFrameConstantBufferDesc = RenderBackendBufferDesc::CreateStructured(sizeof(RasterizationRendererUniformVariables), 1);
+        //RenderBackendBufferDesc perFrameConstantUploadBufferDesc = RenderBackendBufferDesc::CreateUpload(sizeof(RasterizationRendererUniformVariables));
         //for (uint32 index = 0; index < MaxNumFramesInFlight; index++)
         //{
         //    perFrameConstantBuffers[index] = renderBackend->CreateBuffer(&perFrameConstantBufferDesc, nullptr, "PerFrameConstantBuffer");
@@ -334,7 +334,7 @@ namespace Horizon
         const RenderSettings& renderSettings = view.GetRenderSettings();
         const RenderScene* scene = view.GetRenderScene();
 
-        // Setup PerFrameShaderParameters
+        // Setup RasterizationRendererUniformVariables
         {
             perFrameShaderParameters.frameIndex = view.frameIndex;
             perFrameShaderParameters.frameIndexMod8 = view.frameIndex % 8;
@@ -481,7 +481,7 @@ namespace Horizon
                 }
             }
 
-            // TODO: Move post processing settings form PerFrameShaderParameters to other place
+            // TODO: Move post processing settings form RasterizationRendererUniformVariables to other place
             {
                 perFrameShaderParameters.motionBlurIntensity = finalPostProcessingSettings.motionBlurIntensity;
                 perFrameShaderParameters.motionBlurMaxVelocityLengthInPixels = finalPostProcessingSettings.motionBlurMaxVelocityLength / 100.0f * std::max(targetResolution.width, targetResolution.height);
@@ -556,12 +556,12 @@ namespace Horizon
 
         if (!perFrameConstantBuffers[currentPerFrameDataBufferIndex])
         {
-            RenderBackendBufferDescription perFrameConstantUploadBufferDesc = RenderBackendBufferDescription::CreateUpload(sizeof(PerFrameShaderParameters));
+            RenderBackendBufferDescription perFrameConstantUploadBufferDesc = RenderBackendBufferDescription::CreateUpload(sizeof(RasterizationRendererUniformVariables));
             perFrameConstantUploadBuffers[currentPerFrameDataBufferIndex] = renderBackend->CreateBuffer(&perFrameConstantUploadBufferDesc, nullptr, "PerFrameConstantUploadBuffer");
-            RenderBackendBufferDescription perFrameConstantBufferDesc = RenderBackendBufferDescription::CreateStructured(sizeof(PerFrameShaderParameters), 1);
+            RenderBackendBufferDescription perFrameConstantBufferDesc = RenderBackendBufferDescription::CreateStructured(sizeof(RasterizationRendererUniformVariables), 1);
             perFrameConstantBuffers[currentPerFrameDataBufferIndex] = renderBackend->CreateBuffer(&perFrameConstantBufferDesc, nullptr, "PerFrameConstantBuffer");
         }
-        renderBackend->UpdateBuffer(perFrameConstantUploadBuffers[currentPerFrameDataBufferIndex], 0, &perFrameShaderParameters, sizeof(PerFrameShaderParameters));
+        renderBackend->UpdateBuffer(perFrameConstantUploadBuffers[currentPerFrameDataBufferIndex], 0, &perFrameShaderParameters, sizeof(RasterizationRendererUniformVariables));
 
         RenderBackendBufferHandle perFrameConstantUploadBuffer = perFrameConstantUploadBuffers[currentPerFrameDataBufferIndex];
         RenderBackendBufferHandle perFrameConstantBuffer = perFrameConstantBuffers[currentPerFrameDataBufferIndex];
@@ -583,7 +583,7 @@ namespace Horizon
                         0,
                         perFrameConstantBuffer,
                         0,
-                        sizeof(PerFrameShaderParameters));
+                        sizeof(RasterizationRendererUniformVariables));
 
                     RenderBackendBarrier transitionAfter = RenderBackendBarrier(perFrameConstantBuffer, RenderBackendBufferSubresourceRange::Whole, RenderBackendResourceState::CopyDst, RenderBackendResourceState::ShaderResource);
                     commandList.Barriers(&transitionAfter, 1);

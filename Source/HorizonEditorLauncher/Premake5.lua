@@ -71,7 +71,8 @@ project "HorizonEditorLauncher"
     }
 
     postbuildcommands {
-        "{COPYFILE} %{wks.location}/Source/HorizonEngine/Source/Rendering/Renderer/RasterizationRenderer/PerFrameShaderParameters.h %{wks.location}/Source/HorizonEngine/Shaders/RasterizationRenderer",
+        "{COPYFILE} %{wks.location}/Source/HorizonEngine/Source/Rendering/Renderer/RasterizationRenderer/RasterizationRendererUniformVariables.h %{wks.location}/Source/HorizonEngine/Shaders/RasterizationRenderer",
+        "{COPYFILE} %{wks.location}/Source/HorizonEngine/Source/Rendering/Renderer/PathTracingRenderer/PathTracingRendererUniformVariables.h %{wks.location}/Source/HorizonEngine/Shaders/PathTracingRenderer",
     }
 
     filter "configurations:Debug"

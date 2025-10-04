@@ -3,7 +3,7 @@
 #include "LightGridCommon.hsh"
 
 SHADER_CONSTANTS_STRUCT_BEGIN();
-SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferSRV);
+SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, RasterizationRendererUniformVariables, PerFrameShaderParameterBufferSRV);
 SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(1, LocalLightData, LocalLightDataBufferSRV);
 SHADER_CONSTANTS_STRUCTURED_BUFFER_UAV(2, uint2, LightGridCellDataBufferUAV);
 SHADER_CONSTANTS_STRUCTURED_BUFFER_UAV(3, uint, LightGridLightListBufferUAV);

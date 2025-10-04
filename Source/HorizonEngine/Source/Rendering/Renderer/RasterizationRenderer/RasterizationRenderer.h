@@ -4,7 +4,7 @@
 #include "GeometryRendering.h"
 #include "ManyLightRendering.h"
 #include "PostProcessing/PostProcessing.h"
-#include "PerFrameShaderParameters.h"
+#include "RasterizationRendererUniformVariables.h"
 #include "ShadowMapping.h"
 #include "VirtualShadowMaps.h"
 
@@ -545,7 +545,7 @@ namespace Horizon
 
         RasterizationRendererPostProcessingSettings finalPostProcessingSettings;
 
-        PerFrameShaderParameters perFrameShaderParameters = {};
+        RasterizationRendererUniformVariables perFrameShaderParameters = {};
 
         static const int32 MaxNumFramesInFlight = 3;
 

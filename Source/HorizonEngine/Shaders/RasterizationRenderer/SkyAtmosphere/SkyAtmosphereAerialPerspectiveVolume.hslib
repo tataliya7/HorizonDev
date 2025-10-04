@@ -33,7 +33,7 @@
 #include "SkyAtmosphereCommon.hsh"
 
 SHADER_CONSTANTS_STRUCT_BEGIN();
-SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferSRV);
+SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, RasterizationRendererUniformVariables, PerFrameShaderParameterBufferSRV);
 SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(1, TransmittanceLutTextureSRV);
 SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(2, MultipleScatteringLutTextureSRV);
 SHADER_CONSTANTS_TEXTURE_3D_UAV(3, float4, AerialPerspectiveVolumeTextureUAV);
@@ -43,8 +43,8 @@ SHADER_CONSTANTS_STRUCT_END();
 [numthreads(4, 4, 4)]
 void SkyAtmosphereAerialPerspectiveVolumeCS(uint3 dispatchThreadID : SV_DispatchThreadID)
 {
-    StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
-    PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
+    StructuredBuffer<RasterizationRendererUniformVariables> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
+    RasterizationRendererUniformVariables frameShaderParameters = frameShaderParameterBuffer[0];
     Texture2D transmittanceLutTexture = ShaderConstants.GetTransmittanceLutTextureSRV();
     Texture2D multipleScatteringLutTexture = ShaderConstants.GetMultipleScatteringLutTextureSRV();
     RWTexture3D<float4> aerialPerspectiveVolumeTexture = ShaderConstants.GetAerialPerspectiveVolumeTextureUAV();

@@ -2,7 +2,7 @@
 #include "../RasterizationRendererCommon.hsh"
 #include "SurfelGICommon.hsh"
 
-BIND_BUFFER_CBV(0, PerFrameShaderParameters);
+BIND_BUFFER_CBV(0, RasterizationRendererUniformVariables);
 BIND_TEXTURE_2D_SRV(1, VisibilityBuffer0);
 BIND_TEXTURE_2D_SRV(2, VisibilityBuffer1);
 BIND_TEXTURE_2D_SRV(3, SceneDepth);
@@ -37,8 +37,8 @@ void SurfelGISurfelApplicationCS(
 
     GroupMemoryBarrierWithGroupSync();
 
-    StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
-    PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
+    StructuredBuffer<RasterizationRendererUniformVariables> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
+    RasterizationRendererUniformVariables frameShaderParameters = frameShaderParameterBuffer[0];
 
     Texture2D visibilityBuffer0 = GetVisibilityBuffer0RV();
     Texture2D visibilityBuffer1 = GetVisibilityBuffer1RV();

@@ -3,7 +3,7 @@
 #include "GPUScene.hsh"
 
 SHADER_CONSTANTS_STRUCT_BEGIN();
-SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferSRV);
+SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, RasterizationRendererUniformVariables, PerFrameShaderParameterBufferSRV);
 SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_SRV(1, GeometryDataBufferSRV);
 SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_SRV(2, GeometryInstanceDataBufferSRV);
 SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_SRV(3, VisibleMeshletEntryBufferSRV);
@@ -14,7 +14,7 @@ SHADER_CONSTANTS_TEXTURE_2D_UAV(7, float4, GBuffer1UAV);
 SHADER_CONSTANTS_TEXTURE_2D_UAV(8, float4, GBuffer2UAV);
 SHADER_CONSTANTS_STRUCT_END();
 
-void SurfaceInit(inout Surface surface, PerFrameShaderParameters frameShaderParameters, float2 uv, GPUSceneGeometryData geometryData, GPUSceneGeometryInstanceData geometryInstanceData, uint primitiveID, float3 barycentrics, Material material)
+void SurfaceInit(inout Surface surface, RasterizationRendererUniformVariables frameShaderParameters, float2 uv, GPUSceneGeometryData geometryData, GPUSceneGeometryInstanceData geometryInstanceData, uint primitiveID, float3 barycentrics, Material material)
 {
     ByteAddressBuffer indexBuffer = GetByteAddressBufferNonUniform(geometryData.indexBuffer);
     uint index0 = indexBuffer.Load<uint>((/*geometry.baseIndex + */primitiveID * 3 + 0) * sizeof(uint));
@@ -146,8 +146,8 @@ void SurfaceInit(inout Surface surface, PerFrameShaderParameters frameShaderPara
 [numthreads(8, 8, 1)]
 void GBufferCS(uint3 dispatchThreadID : SV_DispatchThreadID)
 {
-    StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
-    PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
+    StructuredBuffer<RasterizationRendererUniformVariables> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
+    RasterizationRendererUniformVariables frameShaderParameters = frameShaderParameterBuffer[0];
     ByteAddressBuffer geometryDataBuffer = ShaderConstants.GetGeometryDataBufferSRV();
     ByteAddressBuffer geometryInstanceDataBuffer = ShaderConstants.GetGeometryInstanceDataBufferSRV();
     ByteAddressBuffer visibleMeshletEntryBuffer = ShaderConstants.GetVisibleMeshletEntryBufferSRV();

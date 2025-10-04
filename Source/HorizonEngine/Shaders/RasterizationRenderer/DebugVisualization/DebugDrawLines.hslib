@@ -2,15 +2,15 @@
 #include "../RasterizationRendererCommon.hsh"
 
 SHADER_CONSTANTS_STRUCT_BEGIN();
-SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferSRV);
+SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, RasterizationRendererUniformVariables, PerFrameShaderParameterBufferSRV);
 SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_SRV(1, LineVertexBufferSRV);
 SHADER_CONSTANTS_STRUCT_END();
 
 [shader("vertex")]
 void DebugDrawLinesVS(uint vertexIndex : SV_VertexID, out float4 color : COLOR, out float4 position : SV_Position)
 {
-    StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
-    PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
+    StructuredBuffer<RasterizationRendererUniformVariables> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
+    RasterizationRendererUniformVariables frameShaderParameters = frameShaderParameterBuffer[0];
 
     ByteAddressBuffer vertexBuffer = ShaderConstants.GetLineVertexBufferSRV();
     float3 vertexPosition = vertexBuffer.Load<float3>(vertexIndex * sizeof(float3));

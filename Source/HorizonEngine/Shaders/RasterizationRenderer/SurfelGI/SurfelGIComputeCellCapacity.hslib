@@ -2,7 +2,7 @@
 #include "../RasterizationRendererCommon.hsh"
 #include "SurfelGICommon.hsh"
 
-BIND_BUFFER_CBV(0, PerFrameShaderParameters);
+BIND_BUFFER_CBV(0, RasterizationRendererUniformVariables);
 BIND_BYTE_ADDRESS_BUFFER_UAV(1, SurfelGIInfoBuffer);
 BIND_BYTE_ADDRESS_BUFFER_UAV(2, SurfelGIAliveSurfelIndirectionBuffer);
 BIND_BYTE_ADDRESS_BUFFER_UAV(3, SurfelGISurfelHotDataBuffer);
@@ -19,8 +19,8 @@ void SurfelGIComputeCellCapacityCS(uint3 dispatchThreadID : SV_DispatchThreadID)
         return;
     }
 
-    StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
-    PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
+    StructuredBuffer<RasterizationRendererUniformVariables> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
+    RasterizationRendererUniformVariables frameShaderParameters = frameShaderParameterBuffer[0];
     RWByteAddressBuffer aliveSurfelIndirectionBuffer = GetSurfelGIAliveSurfelIndirectionBufferUAV();
     RWByteAddressBuffer surfelBuffer = GetSurfelGISurfelHotDataBufferUAV();
     RWByteAddressBuffer cellHeaderBuffer = GetSurfelGICellHeaderBufferUAV();

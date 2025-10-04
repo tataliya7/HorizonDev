@@ -5,7 +5,7 @@
 #if 1
 
 SHADER_CONSTANTS_STRUCT_BEGIN();
-SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferSRV);
+SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, RasterizationRendererUniformVariables, PerFrameShaderParameterBufferSRV);
 SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_SRV(1, GeometryDataBufferSRV);
 SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_SRV(2, GeometryInstanceDataBufferSRV);
 SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_SRV(3, VisibleMeshletEntryBufferSRV);
@@ -26,8 +26,8 @@ void VisibilityBufferVS(
     in uint visibleMeshletIndex : SV_InstanceID,
     out VisibilityBufferVSOutput output)
 {
-    StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
-    PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
+    StructuredBuffer<RasterizationRendererUniformVariables> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
+    RasterizationRendererUniformVariables frameShaderParameters = frameShaderParameterBuffer[0];
     ByteAddressBuffer geometryDataBuffer = ShaderConstants.GetGeometryDataBufferSRV();
     ByteAddressBuffer geometryInstanceDataBuffer = ShaderConstants.GetGeometryInstanceDataBufferSRV();
     ByteAddressBuffer visibleMeshletEntryBuffer = ShaderConstants.GetVisibleMeshletEntryBufferSRV();
@@ -125,7 +125,7 @@ MeshletDesc GetMeshletDesc(ByteAddressBuffer meshletDescBuffer, uint meshletInde
     return meshletDesc;
 }
 
-VertexAttributes GetVertexAttributes(PerFrameShaderParameters frameShaderParameters, MeshletDesc meshletDesc, uint vertexIndex)
+VertexAttributes GetVertexAttributes(RasterizationRendererUniformVariables frameShaderParameters, MeshletDesc meshletDesc, uint vertexIndex)
 {
 #if 0
     ByteAddressBuffer geometryBuffer = GetGeometryBufferSRV();
@@ -201,8 +201,8 @@ void VisibilityBufferMS(
         return;
     }
 
-    StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
-    PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
+    StructuredBuffer<RasterizationRendererUniformVariables> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
+    RasterizationRendererUniformVariables frameShaderParameters = frameShaderParameterBuffer[0];
     //ByteAddressBuffer meshletDescBuffer = GetMeshletDescBufferSRV();
 
     MeshletDesc meshletDesc;// = GetMeshletDesc(meshletDescBuffer, meshletIndex);

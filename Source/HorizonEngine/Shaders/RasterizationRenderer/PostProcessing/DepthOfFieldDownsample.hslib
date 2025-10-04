@@ -2,7 +2,7 @@
 #include "../RasterizationRendererCommon.hsh"
 #include "PostProcessingCommon.hsh"
 
-BIND_BUFFER_CBV(0, PerFrameShaderParameters);
+BIND_BUFFER_CBV(0, RasterizationRendererUniformVariables);
 BIND_TEXTURE_2D_SRV(1, SceneColor);
 BIND_TEXTURE_2D_SRV(2, SceneDepth);
 BIND_TEXTURE_2D_UAV(3, float, DOFCoCTexture);
@@ -33,8 +33,8 @@ float ComputeCoC(float linearDepth, float focalDistance, float focalRegion)
 [numthreads(POST_PROCESSING_THREAD_GROUP_SIZE_X, POST_PROCESSING_THREAD_GROUP_SIZE_Y, 1)]
 void DepthOfFieldSetupCS(uint3 dispatchThreadID : SV_DispatchThreadID)
 {
-    StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
-    PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
+    StructuredBuffer<RasterizationRendererUniformVariables> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
+    RasterizationRendererUniformVariables frameShaderParameters = frameShaderParameterBuffer[0];
     uint width = frameShaderParameters.targetWidth / 2;
     uint height = frameShaderParameters.targetHeight / 2;
     if (dispatchThreadID.x >= width || dispatchThreadID.y >= height)

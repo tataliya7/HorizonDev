@@ -3,7 +3,7 @@
 #include "VirtualShadowMapCommon.hsh"
 
 SHADER_CONSTANTS_STRUCT_BEGIN();
-SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferSRV);
+SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, RasterizationRendererUniformVariables, PerFrameShaderParameterBufferSRV);
 SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(1, VirtualShadowMapShaderParameters, VirtualShadowMapShaderParameterBufferSRV);
 SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(2, SceneDepthTextureSRV);
 SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_UAV(3, VirtualShadowMapPageRequestBufferUAV);
@@ -40,12 +40,12 @@ void RequestPage(VirtualShadowMapEntryShaderParameters virtualShadowMapEntry, fl
 [numthreads(8, 8, 1)]
 void VirtualShadowMapPageRequestCS(uint3 dispatchThreadID : SV_DispatchThreadID)
 {
-    StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
+    StructuredBuffer<RasterizationRendererUniformVariables> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
     StructuredBuffer<VirtualShadowMapShaderParameters> virtualShadowMapShaderParameterBuffer = ShaderConstants.GetVirtualShadowMapShaderParameterBufferSRV();
     Texture2D sceneDepthTexture = ShaderConstants.GetSceneDepthTextureSRV();
     ByteAddressBuffer virtualShadowMapEntryBuffer = ShaderConstants.GetVirtualShadowMapEntryBufferSRV();
     RWByteAddressBuffer virtualShadowMapPageRequestBuffer = ShaderConstants.GetVirtualShadowMapPageRequestBufferUAV();
-    PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
+    RasterizationRendererUniformVariables frameShaderParameters = frameShaderParameterBuffer[0];
     VirtualShadowMapShaderParameters virtualShadowMapShaderParameters = virtualShadowMapShaderParameterBuffer[0];
 
     uint distantLightVirtualShadowMapEntryCount = ShaderConstants.GetDistantLightVirtualShadowMapEntryCount();

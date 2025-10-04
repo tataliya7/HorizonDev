@@ -13,7 +13,7 @@
 #include "MotionBlurCommon.hsh"
 
 SHADER_CONSTANTS_STRUCT_BEGIN();
-SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferSRV);
+SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, RasterizationRendererUniformVariables, PerFrameShaderParameterBufferSRV);
 SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(1, VelocityRangeTextureSRV);
 SHADER_CONSTANTS_SCALAR(2, uint, ScatterPassIndex);
 SHADER_CONSTANTS_STRUCT_END();
@@ -46,8 +46,8 @@ void MotionBlurVelocityDilationScatterVS(
     out nointerpolation float4 velocity : TEXCOORD0,
     out float4 position : SV_Position)
 {
-    StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
-    PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
+    StructuredBuffer<RasterizationRendererUniformVariables> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
+    RasterizationRendererUniformVariables frameShaderParameters = frameShaderParameterBuffer[0];
     Texture2D velocityRangeTexture = ShaderConstants.GetVelocityRangeTextureSRV();
     uint scatterPassIndex = ShaderConstants.GetScatterPassIndex();
 

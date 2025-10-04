@@ -3,7 +3,7 @@
 #include "VolumetricFogCommon.hsh"
 
 SHADER_CONSTANTS_STRUCT_BEGIN();
-SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferSRV);
+SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, RasterizationRendererUniformVariables, PerFrameShaderParameterBufferSRV);
 SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(1, VolumetricFogShaderParameters, VolumetricFogShaderParameterBufferSRV);
 SHADER_CONSTANTS_TEXTURE_3D_SRV(2, float4, VolumetricFogLightScatteringTextureSRV);
 SHADER_CONSTANTS_TEXTURE_3D_UAV(3, float4, VolumetricFogFinalIntegrationTextureUAV);
@@ -13,12 +13,12 @@ SHADER_CONSTANTS_STRUCT_END();
 [numthreads(8, 8, 1)]
 void VolumetricFogFinalIntegrationCS(uint3 groupID : SV_GroupID, uint3 groupThreadID : SV_GroupThreadID, uint3 dispatchThreadID : SV_DispatchThreadID)
 {
-    StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
+    StructuredBuffer<RasterizationRendererUniformVariables> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
     StructuredBuffer<VolumetricFogShaderParameters> volumetricFogShaderParameterBuffer = ShaderConstants.GetVolumetricFogShaderParameterBufferSRV();
     Texture3D<float4> lightScatteringTexture = ShaderConstants.GetVolumetricFogLightScatteringTextureSRV();
     RWTexture3D<float4> finalIntegrationTexture = ShaderConstants.GetVolumetricFogFinalIntegrationTextureUAV();
 
-    PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
+    RasterizationRendererUniformVariables frameShaderParameters = frameShaderParameterBuffer[0];
     VolumetricFogShaderParameters volumetricFogShaderParameters = volumetricFogShaderParameterBuffer[0];
 
     if (any(dispatchThreadID.xy >= volumetricFogShaderParameters.volumeResolution.xy))

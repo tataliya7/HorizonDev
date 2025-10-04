@@ -2,7 +2,7 @@
 #include "../RasterizationRendererCommon.hsh"
 
 SHADER_CONSTANTS_STRUCT_BEGIN();
-SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferSRV);
+SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, RasterizationRendererUniformVariables, PerFrameShaderParameterBufferSRV);
 SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(1, ColorTextureSRV);
 SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(2, DepthTextureSRV);
 SHADER_CONSTANTS_TEXTURE_2D_UAV(3, float3, OutputTextureUAV);
@@ -16,8 +16,8 @@ SHADER_CONSTANTS_STRUCT_END();
 [numthreads(8, 8, 1)]
 void ScreenSpaceLightShaftsDownsampleCS(uint3 dispatchThreadID : SV_DispatchThreadID)
 {
-    StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
-    PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
+    StructuredBuffer<RasterizationRendererUniformVariables> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
+    RasterizationRendererUniformVariables frameShaderParameters = frameShaderParameterBuffer[0];
     Texture2D colorTexture = ShaderConstants.GetColorTextureSRV();
     Texture2D depthTexture = ShaderConstants.GetDepthTextureSRV();
     RWTexture2D<float3> outputTexture = ShaderConstants.GetOutputTextureUAV();

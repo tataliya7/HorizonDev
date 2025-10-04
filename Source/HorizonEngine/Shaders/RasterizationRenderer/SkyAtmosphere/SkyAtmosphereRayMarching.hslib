@@ -33,7 +33,7 @@
 #include "SkyAtmosphereCommon.hsh"
 
 SHADER_CONSTANTS_STRUCT_BEGIN();
-SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferSRV);
+SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, RasterizationRendererUniformVariables, PerFrameShaderParameterBufferSRV);
 SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(1, TransmittanceLutTextureSRV);
 SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(2, SkyViewLutTextureSRV);
 SHADER_CONSTANTS_TEXTURE_3D_DEFAULT_SRV(3, AerialPerspectiveVolumeTextureSRV);
@@ -74,7 +74,7 @@ void SkyViewLutParamsToUv(in bool intersectGround, in float viewZenithCosAngle, 
 }
 
 float3 GetLightDiskLuminance(
-    PerFrameShaderParameters frameShaderParameters,
+    RasterizationRendererUniformVariables frameShaderParameters,
     Texture2D transmittanceLutTexture,
     float3 planetCenterToCamera,
     float3 worldDir,
@@ -118,8 +118,8 @@ float3 GetLightDiskLuminance(
 [shader("pixel")]
 void SkyAtmosphereRayMarchingPS(float4 position : SV_Position, out float4 outLuminance : SV_Target0)
 {
-    StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
-    PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
+    StructuredBuffer<RasterizationRendererUniformVariables> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
+    RasterizationRendererUniformVariables frameShaderParameters = frameShaderParameterBuffer[0];
     Texture2D transmittanceLutTexture = ShaderConstants.GetTransmittanceLutTextureSRV();
     Texture2D skyViewLutTexture = ShaderConstants.GetSkyViewLutTextureSRV();
     Texture3D aerialPerspectiveVolumeTexture = ShaderConstants.GetAerialPerspectiveVolumeTextureSRV();

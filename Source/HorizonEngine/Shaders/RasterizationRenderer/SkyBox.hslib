@@ -1,7 +1,7 @@
 #include "../ShaderCommon.hsh"
 #include "RasterizationRendererCommon.hsh"
 
-BIND_BUFFER_CBV(0, PerFrameShaderParameters);
+BIND_BUFFER_CBV(0, RasterizationRendererUniformVariables);
 BIND_TEXTURE_CUBE_SRV(1, EnvironmentMap);
 
 struct SkyBoxVSToPS
@@ -13,8 +13,8 @@ struct SkyBoxVSToPS
 [shader("vertex")]
 void SkyBoxVS(uint vertexIndex : SV_VertexID, out SkyBoxVSToPS output)
 {
-    StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
-    PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
+    StructuredBuffer<RasterizationRendererUniformVariables> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
+    RasterizationRendererUniformVariables frameShaderParameters = frameShaderParameterBuffer[0];
 
     // @see https://www.saschawillems.de/blog/2016/08/13/vulkan-tutorial-on-rendering-a-fullscreen-quad-without-buffers/
     float2 uv = float2((vertexIndex << 1) & 2, vertexIndex & 2);

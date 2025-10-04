@@ -4,7 +4,7 @@
 #include "ScreenSpaceRayTracingCommon.hsh"
 
 SHADER_CONSTANTS_STRUCT_BEGIN();
-SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, PerFrameShaderParameters, PerFrameShaderParameterBufferSRV);
+SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, RasterizationRendererUniformVariables, PerFrameShaderParameterBufferSRV);
 SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(1, GBuffer0SRV);
 SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(2, GBuffer1SRV);
 SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(3, SceneDepthTextureSRV);
@@ -18,7 +18,7 @@ SHADER_CONSTANTS_STRUCT_END();
 [numthreads(8, 8, 1)]
 void ScreenSpaceIndirectDiffuseCS(uint3 groupID : SV_GroupID, uint3 groupThreadID : SV_GroupThreadID, uint3 dispatchThreadID : SV_DispatchThreadID)
 {
-    StructuredBuffer<PerFrameShaderParameters> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
+    StructuredBuffer<RasterizationRendererUniformVariables> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
     Texture2D gbuffer0 = ShaderConstants.GetGBuffer0SRV();
     Texture2D gbuffer1 = ShaderConstants.GetGBuffer1SRV();
     Texture2D sceneDepthTexture = ShaderConstants.GetSceneDepthTextureSRV();
@@ -27,7 +27,7 @@ void ScreenSpaceIndirectDiffuseCS(uint3 groupID : SV_GroupID, uint3 groupThreadI
     Texture2D previousSceneColorTexture = ShaderConstants.GetPreviousSceneColorTextureSRV();
     RWTexture2D<float4> indirectDiffuseTexture = ShaderConstants.GetSreenSpaceIndirectDiffuseTextureUAV();
 
-    PerFrameShaderParameters frameShaderParameters = frameShaderParameterBuffer[0];
+    RasterizationRendererUniformVariables frameShaderParameters = frameShaderParameterBuffer[0];
 
     uint width = frameShaderParameters.renderWidth;
     uint height = frameShaderParameters.renderHeight;

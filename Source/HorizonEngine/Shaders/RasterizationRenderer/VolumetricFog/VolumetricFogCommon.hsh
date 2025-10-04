@@ -40,7 +40,7 @@ float ComputeNormalizedSliceIndex(float z, float near, float far)
     return saturate(slice);
 }
 
-float3 ComputeVoxelWorldPosition(PerFrameShaderParameters frameShaderParameters, VolumetricFogShaderParameters volumetricFogShaderParameters, uint3 voxelCoordinate, float3 offset)
+float3 ComputeVoxelWorldPosition(RasterizationRendererUniformVariables frameShaderParameters, VolumetricFogShaderParameters volumetricFogShaderParameters, uint3 voxelCoordinate, float3 offset)
 {
     float viewSpaceDepth = ComputeViewSpaceDepth(voxelCoordinate.z + offset.z, volumetricFogShaderParameters.sliceCountAndInverseSliceCount.x, volumetricFogShaderParameters.startingDistance, volumetricFogShaderParameters.endingDistance);
     float ndcSpaceDepth = ConvertViewSpaceDepthToNDCSpaceDepth(-viewSpaceDepth, frameShaderParameters.viewSpaceDepthToNDCSpaceDepthTransform);
