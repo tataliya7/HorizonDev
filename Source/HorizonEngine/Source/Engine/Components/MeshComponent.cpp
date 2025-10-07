@@ -164,7 +164,7 @@ namespace Horizon
                 renderObject->jointTransformBuffer = renderBackend->CreateBuffer(&jointTransformBufferDesc, jointTransforms.data(), "jointTransformBuffer");
             }
 
-            if (visible)
+            if (visible && false)
             {
                 Matrix4x4f transformData = IdentityMatrix4x4f;
                 RenderBackendBufferDescription transformBufferRowMajorDescription = RenderBackendBufferDescription::CreateByteAddress(sizeof(Matrix4x4f));

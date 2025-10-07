@@ -121,37 +121,40 @@ namespace Horizon
                 };
             });
 
-        renderGraph.AddPass(
-            std::format("InstanceCulling (Compute)"),
-            RenderGraphPassFlags::Compute,
-            [&](RenderGraphBuilder& builder)
-            {
-                meshletCullingArgumentBuffer = builder.WriteBuffer(meshletCullingArgumentBuffer, RenderBackendResourceState::UnorderedAccess);
-                visibleMeshletBuffer = builder.WriteBuffer(visibleMeshletBuffer, RenderBackendResourceState::UnorderedAccess);
-
-                RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::VirtualGeometryInstanceCulling);
-
-                uint32 threadGroupCountX = ComputeShaderThreadGroupCount(gpuScene->geometryInstanceCount, 64);
-                uint32 threadGroupCountY = 1;
-                uint32 threadGroupCountZ = 1;
-
-                return [=](RenderBackendCommandList& commandList, const RenderGraphResourceRegistry& resourceRegistry)
+        if (gpuScene->geometryInstanceCount > 0)
+        {
+            renderGraph.AddPass(
+                std::format("InstanceCulling (Compute)"),
+                RenderGraphPassFlags::Compute,
+                [&](RenderGraphBuilder& builder)
                 {
-                    RenderBackendPushConstantValues pushConstantValues = {};
-                    pushConstantValues.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
-                    pushConstantValues.BindBufferSRV(1, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(gpuScene->geometryDataBuffer));
-                    pushConstantValues.BindBufferSRV(2, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(gpuScene->geometryInstanceDataBuffer));
-                    pushConstantValues.BindBufferUAV(3, resourceRegistry.GetBufferUAVBindlessResourceDescriptorIndex(meshletCullingArgumentBuffer));
-                    pushConstantValues.OverrideShaderConstantValue(4, gpuScene->geometryInstanceCount);
+                    meshletCullingArgumentBuffer = builder.WriteBuffer(meshletCullingArgumentBuffer, RenderBackendResourceState::UnorderedAccess);
+                    visibleMeshletBuffer = builder.WriteBuffer(visibleMeshletBuffer, RenderBackendResourceState::UnorderedAccess);
 
-                    commandList.Dispatch(
-                        computeShader,
-                        pushConstantValues,
-                        threadGroupCountX,
-                        threadGroupCountY,
-                        threadGroupCountZ);
-                };
-            });
+                    RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::VirtualGeometryInstanceCulling);
+
+                    uint32 threadGroupCountX = ComputeShaderThreadGroupCount(gpuScene->geometryInstanceCount, 64);
+                    uint32 threadGroupCountY = 1;
+                    uint32 threadGroupCountZ = 1;
+
+                    return [=](RenderBackendCommandList& commandList, const RenderGraphResourceRegistry& resourceRegistry)
+                    {
+                        RenderBackendPushConstantValues pushConstantValues = {};
+                        pushConstantValues.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
+                        pushConstantValues.BindBufferSRV(1, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(gpuScene->geometryDataBuffer));
+                        pushConstantValues.BindBufferSRV(2, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(gpuScene->geometryInstanceDataBuffer));
+                        pushConstantValues.BindBufferUAV(3, resourceRegistry.GetBufferUAVBindlessResourceDescriptorIndex(meshletCullingArgumentBuffer));
+                        pushConstantValues.OverrideShaderConstantValue(4, gpuScene->geometryInstanceCount);
+
+                        commandList.Dispatch(
+                            computeShader,
+                            pushConstantValues,
+                            threadGroupCountX,
+                            threadGroupCountY,
+                            threadGroupCountZ);
+                    };
+                });
+        }
 
         RenderGraphTextureHandle previousMinDepthPyramidTexture = renderGraph.ImportExternalTexture(historyFrame.minDepthPyramidTexture, "PreviousMinDepthPyramidTexture");
         const bool skipOcclusionCulling = previousMinDepthPyramidTexture.IsNull();
