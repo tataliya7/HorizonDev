@@ -17,8 +17,8 @@ namespace Horizon
 		: mFrameCounter(0)
 		, mSpeed(1.0f)
 		, mCurrentTime(0)
-		, mTimeLengthInSeconds(0)
-		, mTargetSkeleton(nullptr)
+		, duration(0)
+		, targetSkeleton(nullptr)
 	{
 
 	}
@@ -40,14 +40,14 @@ namespace Horizon
 
 			mCurrentTime = time;
 
-			if (mCurrentTime >= mTimeLengthInSeconds)
+			if (mCurrentTime >= duration)
 			{
 				mCurrentTime = 0;
 				startTime = currentTime;
 			}
 		}
 
-		const uint32 boneCount = (uint32)mTargetSkeleton->joints.size();
+		const uint32 boneCount = (uint32)targetSkeleton->joints.size();
 		assert(boneCount == (uint32)mBoneMotions.size());
 
 		outPose.transformData.resize(boneCount);
@@ -56,7 +56,7 @@ namespace Horizon
 		{
 			auto& transformData = outPose.transformData[boneIndex];
 
-			const Joint& joint = mTargetSkeleton->joints[boneIndex];
+			const Joint& joint = targetSkeleton->joints[boneIndex];
 			assert(joint.parentIndex < (int)boneIndex);
 
 			Sample_Internal(boneIndex, mCurrentTime, transformData.translation, transformData.rotation, transformData.scale);

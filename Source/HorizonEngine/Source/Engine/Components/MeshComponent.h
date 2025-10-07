@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Engine/AssetManagement/Skeleton.h"
 #include "Foundation/FoundationModule.h"
 #include "Rendering/RenderingModule.h"
 #include "Engine/Serialization/Archive.h"
@@ -95,6 +96,8 @@ namespace Horizon
         //}
 
         Skeleton* skeleton = nullptr;
+
+        SkeletonAnimation* skeletonAnimation = nullptr;
 
     private:
 

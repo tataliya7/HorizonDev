@@ -11,7 +11,11 @@
 #include <pxr/usd/usdGeom/subset.h>
 #include <pxr/usd/usdGeom/primvarsAPI.h>
 #include <pxr/usd/usdShade/materialBindingAPI.h>
+#include <pxr/usd/usdSkel/skeletonQuery.h>
 #include <pxr/usd/usdSkel/bindingAPI.h>
+#include <pxr/usd/usdSkel/animQuery.h>
+#include <pxr/usd/usdSkel/cache.h>
+#include <pxr/usd/usdSkel/utils.h>
 #include "USDIncludeEnd.h"
 
 namespace Horizon::USDImporter
@@ -35,8 +39,8 @@ namespace Horizon::USDImporter
         //     return;
         // }
 
-        pxr::UsdSkelSkeleton skelSkeleton = skelBindingApi.GetInheritedSkeleton();
-        if (!skelSkeleton)
+        pxr::UsdSkelSkeleton usdSkelSkeleton = skelBindingApi.GetInheritedSkeleton();
+        if (!usdSkelSkeleton)
         {
             return;
         }
@@ -46,9 +50,9 @@ namespace Horizon::USDImporter
         {
             skelBindingApi.GetJointsAttr().Get(&joints);
         }
-        else if (skelSkeleton.GetJointsAttr().HasAuthoredValue())
+        else if (usdSkelSkeleton.GetJointsAttr().HasAuthoredValue())
         {
-            skelSkeleton.GetJointsAttr().Get(&joints);
+            usdSkelSkeleton.GetJointsAttr().Get(&joints);
         }
 
         if (joints.empty())
@@ -98,10 +102,11 @@ namespace Horizon::USDImporter
         //
         // }
 
-        std::string skeletonPath = skelSkeleton.GetPath().GetAsString();
+        std::string skeletonPath = usdSkelSkeleton.GetPath().GetAsString();
         mesh.skeleton = context->skeletons.find(skeletonPath)->second;
 
-        mesh.jointTransforms.resize(mesh.skeleton->joints.size());
+        const uint32 jointCount = mesh.skeleton->joints.size();
+        mesh.jointTransforms.resize(jointCount);
         for (uint32 jointIndex = 0; jointIndex < mesh.jointTransforms.size(); jointIndex++)
         {
             mesh.jointTransforms[jointIndex] = mesh.skeleton->joints[jointIndex].bindTransform;
@@ -126,6 +131,71 @@ namespace Horizon::USDImporter
                 mesh.jointWeights[vertexIndex * jointIndicesElementSize + j] = jointWeight;
             }
         }
+
+        pxr::UsdSkelCache usdSkelCache;
+        const pxr::UsdSkelSkeletonQuery& usdSkelSkeletonQuery = usdSkelCache.GetSkelQuery(usdSkelSkeleton);
+        if (!usdSkelSkeletonQuery.IsValid())
+        {
+            return;
+        }
+
+        const pxr::UsdSkelAnimQuery& usdSkelAnimQuery = usdSkelSkeletonQuery.GetAnimQuery();
+
+        if (!usdSkelAnimQuery)
+        {
+            return;
+        }
+
+        std::vector<double> jointTransformTimeSamples;
+        usdSkelAnimQuery.GetJointTransformTimeSamples(&jointTransformTimeSamples);
+
+        if (jointTransformTimeSamples.empty())
+        {
+            return;
+        }
+
+        const size_t numJointTransformTimeSamples = jointTransformTimeSamples.size();
+
+        //pxr::VtTokenArray jointOrder = usdSkelAnimQuery.GetJointOrder();
+
+        SkeletonAnimation* skeletonAnimation = new SkeletonAnimation();
+
+        skeletonAnimation->mTranslationTracks.resize(jointCount);
+        skeletonAnimation->mRotationTracks.resize(jointCount);
+        skeletonAnimation->mScaleTracks.resize(jointCount);
+
+        pxr::VtMatrix4dArray usdJointLocalTransforms;
+        for (double time : jointTransformTimeSamples)
+        {
+            if (!usdSkelAnimQuery.ComputeJointLocalTransforms(&usdJointLocalTransforms, time))
+            {
+                continue;
+            }
+
+            for (size_t jointIndex = 0; jointIndex < usdJointLocalTransforms.size(); jointIndex++)
+            {
+                pxr::GfMatrix4d localTransform = usdJointLocalTransforms[jointIndex];
+
+                pxr::GfVec3f translation; pxr::GfQuatf rotation; pxr::GfVec3h scale;
+                if (!pxr::UsdSkelDecomposeTransform(localTransform, &translation, &rotation, &scale))
+                {
+                    continue;
+                }
+
+                skeletonAnimation->mTranslationTracks[jointIndex].times.push_back(static_cast<float>(time));
+                skeletonAnimation->mTranslationTracks[jointIndex].translations.push_back(Vector3f(translation[0], translation[1], translation[2]));
+
+                skeletonAnimation->mRotationTracks[jointIndex].times.push_back(static_cast<float>(time));
+                skeletonAnimation->mRotationTracks[jointIndex].rotations.push_back(Quaternion(rotation.GetReal(), rotation.GetImaginary()[0], rotation.GetImaginary()[1], rotation.GetImaginary()[2]));
+
+                skeletonAnimation->mScaleTracks[jointIndex].times.push_back(static_cast<float>(time));
+                skeletonAnimation->mScaleTracks[jointIndex].scales.push_back(Vector3f(scale[0], scale[1], scale[2]));
+            }
+        }
+
+        skeletonAnimation->targetSkeleton = mesh.skeleton;
+
+        mesh.skeletonAnimation = skeletonAnimation;
     }
 
     static pxr::UsdShadeMaterial ComputeBoundMaterial(const pxr::UsdPrim& prim)

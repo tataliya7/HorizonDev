@@ -46,6 +46,40 @@ namespace Horizon
         std::vector<Joint> joints;
     };
 
+    struct SkeletonAnimationTranslationTrack
+    {
+        std::vector<float> times;
+        std::vector<Vector3f> translations;
+        //InterpolationType interpolation;
+    };
+
+    struct SkeletonAnimationRotationTrack
+    {
+        std::vector<float> times;
+        std::vector<Quaternion> rotations;
+        //InterpolationType interpolation;
+    };
+
+    struct SkeletonAnimationScaleTrack
+    {
+        std::vector<float> times;
+        std::vector<Vector3f> scales;
+        //InterpolationType interpolation;
+    };
+
+    struct SkeletonAnimationTrack
+    {
+        std::string name;
+
+        uint32 jointIndex;
+
+        SkeletonAnimationTranslationTrack translationTrack;
+
+        SkeletonAnimationRotationTrack rotationTrack;
+
+        SkeletonAnimationScaleTrack scaleTrack;
+    };
+
     class SkeletonAnimation
     {
     public:
@@ -72,27 +106,6 @@ namespace Horizon
             CubicSpline,
         };
 
-        struct TranslationTrack
-        {
-            std::vector<float> times;
-            std::vector<Vector3f> translations;
-            InterpolationType interpolation;
-        };
-
-        struct RotationTrack
-        {
-            std::vector<float> times;
-            std::vector<Quaternion> rotations;
-            InterpolationType interpolation;
-        };
-
-        struct ScaleTrack
-        {
-            std::vector<float> times;
-            std::vector<Vector3f> scales;
-            InterpolationType interpolation;
-        };
-
         struct BoneMotion
         {
             int32 translationTrackIndex = -1;
@@ -103,34 +116,57 @@ namespace Horizon
     public:
 
         SkeletonAnimation();
+
         ~SkeletonAnimation();
 
-        std::vector<TranslationTrack> mTranslationTracks;
-        std::vector<RotationTrack> mRotationTracks;
-        std::vector<ScaleTrack> mScaleTracks;
+        /**
+         * Whether to loop this animation by default.
+         */
+        bool loop;
+
+    public:
+
 
         std::vector<BoneMotion> mBoneMotions;
 
         uint32 mFrameCounter;
 
-        float mTimeLengthInSeconds;
         float mSpeed;
-        float mCurrentTime;
+
 
         void SamplePose(Pose& outPose);
 
-        Skeleton* GetTargetSkeleton() const { return mTargetSkeleton; }
+        Skeleton* GetTargetSkeleton() const
+        {
+            return targetSkeleton;
+        }
 
-        /**
-         * Each skeleton animation clip targets a specific skeleton and can only be played on that skeleton.
-         * This means, in order to share animations between multiple skinned meshes, each of the meshes must use the same skeleton.
-         */
-        Skeleton* mTargetSkeleton;
+        float GetDuration() const
+        {
+            return duration;
+        }
 
     private:
+
+        /**
+         * Each skeleton animation targets a specific skeleton and can only be played on that skeleton.
+         * This means, to share animations between multiple skinned meshes, each of the meshes must use the same skeleton.
+         */
+        Skeleton* targetSkeleton;
+
+        /*
+         * The length of time (in seconds) that an animation takes to complete one cycle.
+         */
+        float duration;
+
+        std::vector<SkeletonAnimationTrack> skeletonAnimationTracks;
+
         void Sample_Internal(uint32 boneIndex, float time, Vector3f& outTranslation, Quaternion& outRotation, Vector3f& outScale);
+
         void SampleTranslation_Internal(uint32 translationTrackIndex, float time, Vector3f& outTranslation);
+
         void SampleRotation_Internal(uint32 rotationTrackIndex, float time, Quaternion& outRotation);
+
         void SampleScale_Internal(uint32 scaleTrackIndex, float time, Vector3f& outScale);
     };
 }

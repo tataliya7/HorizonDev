@@ -79,47 +79,6 @@ namespace Horizon::USDImporter
             joint.bindTransform = UsdToHorizon::ConvertMatrix(bindTransform);
         }
 
-        const pxr::UsdSkelAnimQuery& usdSkelAnimQuery = usdSkelSkeletonQuery.GetAnimQuery();
-
-        if (!usdSkelAnimQuery)
-        {
-            return nullptr;
-        }
-
-        std::vector<double> jointTransformTimeSamples;
-        usdSkelAnimQuery.GetJointTransformTimeSamples(&jointTransformTimeSamples);
-
-        if (jointTransformTimeSamples.empty())
-        {
-            return nullptr;
-        }
-
-        const size_t numJointTransformTimeSamples = jointTransformTimeSamples.size();
-
-        //pxr::VtTokenArray jointOrder = usdSkelAnimQuery.GetJointOrder();
-
-        pxr::VtMatrix4dArray usdJointLocalTransforms;
-        for (double time : jointTransformTimeSamples)
-        {
-            if (!usdSkelAnimQuery.ComputeJointLocalTransforms(&usdJointLocalTransforms, time))
-            {
-                continue;
-            }
-
-            for (size_t jointIndex = 0; jointIndex < usdJointLocalTransforms.size(); jointIndex++)
-            {
-                pxr::GfMatrix4d localTransform = usdJointLocalTransforms[jointIndex];
-
-                pxr::GfVec3f translation; pxr::GfQuatf rotation; pxr::GfVec3h scale;
-                if (!pxr::UsdSkelDecomposeTransform(localTransform, &translation, &rotation, &scale))
-                {
-                    continue;
-                }
-
-
-            }
-        }
-
         return skeleton;
     }
 }
