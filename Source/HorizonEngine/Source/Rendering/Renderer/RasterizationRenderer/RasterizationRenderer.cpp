@@ -719,7 +719,7 @@ namespace Horizon
             RenderGraphPassFlags::Compute,
             [&](RenderGraphBuilder& builder)
             {
-                RenderGraphTextureHandle sceneColorTexture = intermediateResources.colorTexture;
+                RenderGraphTextureHandle sceneColorTexture = intermediateResources.colorTexture = builder.WriteTexture(intermediateResources.colorTexture, RenderBackendResourceState::RenderTarget);
 
                 return [=](RenderBackendCommandList& commandList, const RenderGraphResourceRegistry& resourceRegistry)
                 {
