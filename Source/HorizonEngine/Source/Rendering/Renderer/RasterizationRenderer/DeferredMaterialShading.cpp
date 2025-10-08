@@ -198,11 +198,11 @@ namespace Horizon
                 visibleMeshletBuffer = builder.ReadBuffer(visibleMeshletBuffer, RenderBackendResourceState::ShaderResource);
                 RenderGraphTextureHandle vbuffer0 = intermediateResources.vbuffer0;
                 RenderGraphTextureHandle vbuffer1 = intermediateResources.vbuffer1;
-                RenderGraphTextureHandle sceneDepthTexture = intermediateResources.depthTexture;
+                RenderGraphTextureHandle depthTexture = intermediateResources.depthTexture;
 
                 builder.SetRenderTargetBinding(0, vbuffer0, RenderBackendRenderPassLoadOperation::Clear, RenderBackendRenderPassStoreOperation::Store);
                 builder.SetRenderTargetBinding(1, vbuffer1, RenderBackendRenderPassLoadOperation::Clear, RenderBackendRenderPassStoreOperation::Store);
-                builder.SetDepthStencilBinding(sceneDepthTexture,
+                builder.SetDepthStencilBinding(depthTexture,
                     RenderBackendRenderPassLoadOperation::Clear,
                     RenderBackendRenderPassStoreOperation::Store,
                     RenderBackendRenderPassLoadOperation::None,

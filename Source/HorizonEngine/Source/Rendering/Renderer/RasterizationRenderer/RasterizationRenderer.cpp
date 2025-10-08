@@ -754,7 +754,6 @@ namespace Horizon
 
         AddIndirectLightingDiffusePass(renderGraph, view);
 
-
         if (renderFeatures.enableScreenSpaceReflections)
         {
             intermediateResources.indirectSpecularTexture = RenderScreenSpaceReflections(renderGraph, view);
