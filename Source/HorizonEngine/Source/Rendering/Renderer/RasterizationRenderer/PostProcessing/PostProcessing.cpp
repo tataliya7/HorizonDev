@@ -26,7 +26,7 @@ namespace Horizon
         {
             exposureTexture = whiteDummyTexture;
         }
-        else
+        else if (renderBackend->GetType() == RenderBackendType::Direct3D12)
         {
             // @todo Fix me!
             renderGraph.AddPass(
