@@ -2,8 +2,12 @@
 
 #include "BindlessResources.hsh"
 
+#define MAX_RELEVANT_JOINT_COUNT_PER_VERTEX 4
+
 // It must match the values on the C++ side
 //#define GPU_SCENE_MAXIMUM_TRIANGLE_COUNT_PER_MESHLET 128
+
+#define GPU_SCENE_GEOMETRY_DATA_FLAG_USE_GPU_SKINNING 1
 
 struct GPUSceneGeometryData
 {
@@ -25,6 +29,7 @@ struct GPUSceneGeometryData
     uint vertexCount;
     uint indexCount;
     uint meshletCount;
+    uint flags;
 };
 
 GPUSceneGeometryData GetGPUSceneGeometryData(ByteAddressBuffer geometryDataBuffer, uint geometryID)
@@ -97,34 +102,39 @@ GPUSceneGeometryVertexAttributes GetGPUSceneGeometryVertexAttributes(GPUSceneGeo
     GPUSceneGeometryVertexAttributes vertexAttributes = (GPUSceneGeometryVertexAttributes)0;
     vertexAttributes = vertexBuffer.Load<GPUSceneGeometryVertexAttributes>(vertexIndex * sizeof(GPUSceneGeometryVertexAttributes));
 
+    #if 1 // Linear blending skinning
+    bool useGPUSkinning = geometryData.flags & GPU_SCENE_GEOMETRY_DATA_FLAG_USE_GPU_SKINNING;
+    
     [branch]
-    if (geometryData.jointIndexBuffer >= 0)
+    if (useGPUSkinning)
     {
         ByteAddressBuffer jointIndexBuffer = GetByteAddressBufferNonUniform(geometryData.jointIndexBuffer);
         ByteAddressBuffer jointWeightBuffer = GetByteAddressBufferNonUniform(geometryData.jointWeightBuffer);
         ByteAddressBuffer jointTransformBuffer = GetByteAddressBufferNonUniform(geometryData.jointTransformBuffer);
+        uint jointTransformBufferOffset = 0;
 
         float3 skinnedPosition = float3(0.0f, 0.0f, 0.0f);
         float3 skinnedNormal = float3(0.0f, 0.0f, 0.0f);
         float3 skinnedTangent = float3(0.0f, 0.0f, 0.0f);
 
-        for (uint i = 0; i < 6; i++)
+        for (uint relevantJointIndex = 0; relevantJointIndex < MAX_RELEVANT_JOINT_COUNT_PER_VERTEX; relevantJointIndex++)
         {
-            int jointIndex = jointIndexBuffer.Load<int>((vertexIndex * 6 + i) * sizeof(int));
-            if (jointIndex >= 0)
-            {
-                float jointWeight = jointWeightBuffer.Load<float>((vertexIndex * 6 + i) * sizeof(float));
-                float4x4 jointTransform = jointTransformBuffer.Load<float4x4>(jointIndex * sizeof(float4x4));
-                skinnedPosition += mul(jointTransform, float4(vertexAttributes.position, 1.0f)).xyz * jointWeight;
-                skinnedNormal += mul((float3x3)jointTransform, vertexAttributes.normal) * jointWeight;
-                skinnedTangent += mul((float3x3)jointTransform, vertexAttributes.tangent.xyz) * jointWeight;
-            }
+            uint jointIndex = jointIndexBuffer.Load<uint>((vertexIndex * MAX_RELEVANT_JOINT_COUNT_PER_VERTEX + relevantJointIndex) * sizeof(uint));
+            float jointWeight = jointWeightBuffer.Load<float>((vertexIndex * MAX_RELEVANT_JOINT_COUNT_PER_VERTEX + relevantJointIndex) * sizeof(uint));
+
+            // @todo Use float4x3 instead?
+            const float4x4 jointTransform = jointTransformBuffer.Load<float4x4>(jointTransformBufferOffset + jointIndex * sizeof(float4x4));
+                
+            skinnedPosition += mul(jointTransform, float4(vertexAttributes.position, 1.0f)).xyz * jointWeight;
+            skinnedNormal += mul((float3x3)jointTransform, vertexAttributes.normal.xyz) * jointWeight;
+            skinnedTangent += mul((float3x3)jointTransform, vertexAttributes.tangent.xyz) * jointWeight;
         }
 
         vertexAttributes.position = skinnedPosition;
-        vertexAttributes.normal = skinnedNormal;
-        vertexAttributes.tangent.xyz = skinnedTangent;
+        vertexAttributes.normal = normalize(skinnedNormal);
+        vertexAttributes.tangent.xyz = normalize(skinnedTangent);
     }
+    #endif
 
     return vertexAttributes;
 }

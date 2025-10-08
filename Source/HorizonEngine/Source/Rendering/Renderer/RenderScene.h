@@ -101,7 +101,14 @@ namespace Horizon
     {
     public:
 
-        bool castDynamicShadow : 1;
+        bool UseGPUSkinning() const
+        {
+            return useGPUSkinning;
+        }
+
+        bool castDynamicShadows : 1;
+
+        bool useGPUSkinning = false;
 
         Matrix4x4f localToWorldMatrix;
         Matrix4x4f worldToLocalMatrix;
@@ -122,7 +129,6 @@ namespace Horizon
         RenderBackendBufferHandle jointIndexBuffer;
         RenderBackendBufferHandle jointWeightBuffer;
         RenderBackendBufferHandle jointTransformBuffer;
-
 
         RenderBackendBufferHandle instanceUploadBuffer;
         RenderBackendBufferHandle transformUploadBuffer;
@@ -402,6 +408,8 @@ namespace Horizon
     private:
     };
 
+#define GPU_SCENE_GEOMETRY_DATA_FLAG_USE_GPU_SKINNING 1
+
     struct GPUSceneGeometryData
     {
         int vertexBuffer0;
@@ -422,6 +430,7 @@ namespace Horizon
         uint32 vertexCount;
         uint32 indexCount;
         uint32 meshletCount;
+        uint32 flags;
     };
 
     struct GPUSceneGeometryInstanceData

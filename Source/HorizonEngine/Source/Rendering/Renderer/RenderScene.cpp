@@ -293,6 +293,11 @@ namespace Horizon
             //geometry.boundsMin = mesh.boundsMin;
             //geometry.boundsMax = mesh.boundsMax;
             geometry.meshletCount = mesh->meshletCount;
+            geometry.flags = 0;
+            if (mesh->UseGPUSkinning())
+            {
+                geometry.flags = GPU_SCENE_GEOMETRY_DATA_FLAG_USE_GPU_SKINNING;
+            }
             gpuScene->geometryData.emplace_back(geometry);
 
             // TODO

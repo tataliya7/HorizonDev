@@ -52,8 +52,9 @@ void VisibilityBufferVS(
         uint vertexIndex = indexBuffer.Load<uint>((triangleID * 3 + vertexIndexInCurrentTriangle) * sizeof(uint));
 
         GPUSceneGeometryVertexAttributes vertexAttributes = GetGPUSceneGeometryVertexAttributes(geometryData, vertexIndex);
-
-        float3 worldSpaceVertexPosition = mul(geometryInstanceData.localToWorldMatrix, float4(vertexAttributes.position, 1.0f)).xyz;
+        
+        float3 localSpaceVertexPosition = vertexAttributes.position;
+        float3 worldSpaceVertexPosition = mul(geometryInstanceData.localToWorldMatrix, float4(localSpaceVertexPosition, 1.0f)).xyz;
         float4 clipSpaceVertexPosition = mul(frameShaderParameters.worldToClipMatrix, float4(worldSpaceVertexPosition, 1.0f));
 
         output.packedPrimitiveID = PackVisiblePrimitiveID(visibleMeshletIndex, triangleIndexInCurrentMeshlet);

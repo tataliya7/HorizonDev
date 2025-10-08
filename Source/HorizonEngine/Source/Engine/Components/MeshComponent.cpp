@@ -155,13 +155,15 @@ namespace Horizon
             if (skeleton)
             {
                 RenderBackendBufferDescription jointIndexBufferDesc = RenderBackendBufferDescription::CreateByteAddress(jointIndices.size() * sizeof(int32));
-                renderObject->jointIndexBuffer = renderBackend->CreateBuffer(&jointIndexBufferDesc, jointIndices.data(), "jointIndexBuffer");
+                renderObject->jointIndexBuffer = renderBackend->CreateBuffer(&jointIndexBufferDesc, jointIndices.data(), "JointIndexBuffer");
 
                 RenderBackendBufferDescription jointWeightBufferDesc = RenderBackendBufferDescription::CreateByteAddress(jointWeights.size() * sizeof(float));
-                renderObject->jointWeightBuffer = renderBackend->CreateBuffer(&jointWeightBufferDesc, jointWeights.data(), "jointWeightBuffer");
+                renderObject->jointWeightBuffer = renderBackend->CreateBuffer(&jointWeightBufferDesc, jointWeights.data(), "JointWeightBuffer");
 
                 RenderBackendBufferDescription jointTransformBufferDesc = RenderBackendBufferDescription::CreateByteAddress(jointTransforms.size() * sizeof(Matrix4x4f));
-                renderObject->jointTransformBuffer = renderBackend->CreateBuffer(&jointTransformBufferDesc, jointTransforms.data(), "jointTransformBuffer");
+                renderObject->jointTransformBuffer = renderBackend->CreateBuffer(&jointTransformBufferDesc, jointTransforms.data(), "JointTransformBuffer");
+
+                renderObject->useGPUSkinning = true;
             }
 
             if (visible && false)
