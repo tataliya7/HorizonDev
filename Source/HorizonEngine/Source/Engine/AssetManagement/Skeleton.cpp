@@ -48,7 +48,7 @@ namespace Horizon
 		}
 
 		const uint32 boneCount = (uint32)targetSkeleton->joints.size();
-		assert(boneCount == (uint32)mBoneMotions.size());
+		assert(boneCount == (uint32)skeletonAnimationTracks.size());
 
 		outPose.transformData.resize(boneCount);
 
