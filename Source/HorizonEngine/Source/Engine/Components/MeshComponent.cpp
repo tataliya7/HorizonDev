@@ -163,6 +163,8 @@ namespace Horizon
                 RenderBackendBufferDescription jointTransformBufferDesc = RenderBackendBufferDescription::CreateByteAddress(jointTransforms.size() * sizeof(Matrix4x4f));
                 renderObject->jointTransformBuffer = renderBackend->CreateBuffer(&jointTransformBufferDesc, jointTransforms.data(), "JointTransformBuffer");
 
+                renderObject->relevantJointCountPerVertex = relevantJointCountPerVertex;
+
                 renderObject->useGPUSkinning = true;
             }
 

@@ -126,6 +126,7 @@ namespace Horizon
         RenderBackendBufferHandle materialBuffer;
         RenderBackendBufferHandle materialIndexBuffer;
 
+        uint32 relevantJointCountPerVertex;
         RenderBackendBufferHandle jointIndexBuffer;
         RenderBackendBufferHandle jointWeightBuffer;
         RenderBackendBufferHandle jointTransformBuffer;

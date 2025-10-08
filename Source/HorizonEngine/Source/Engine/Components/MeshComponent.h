@@ -99,6 +99,8 @@ namespace Horizon
 
         SkeletonAnimation* skeletonAnimation = nullptr;
 
+        uint32 relevantJointCountPerVertex = 0;
+
     private:
 
         //TriangleMesh* mesh;

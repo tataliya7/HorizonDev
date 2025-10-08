@@ -72,13 +72,15 @@ namespace Horizon::USDImporter
             return;
         }
 
-        int jointIndicesElementSize = jointIndicesPrimvar.GetElementSize();
-        int jointWeightsElementSize = jointWeightsPrimvar.GetElementSize();
+        int jointIndicesPrimvarElementSize = jointIndicesPrimvar.GetElementSize();
+        int jointWeightsPrimvarElementSize = jointWeightsPrimvar.GetElementSize();
 
-        if (jointIndicesElementSize != jointWeightsElementSize)
+        if (jointIndicesPrimvarElementSize != jointWeightsPrimvarElementSize)
         {
             return;
         }
+
+        mesh.relevantJointCountPerVertex = jointIndicesPrimvarElementSize;
 
         pxr::VtIntArray jointIndices;
         jointIndicesPrimvar.ComputeFlattened(&jointIndices);
@@ -112,8 +114,8 @@ namespace Horizon::USDImporter
             mesh.jointTransforms[jointIndex] = mesh.skeleton->joints[jointIndex].bindTransform;
         }
 
-        mesh.jointIndices.resize(mesh.vertexCount * jointIndicesElementSize);
-        mesh.jointWeights.resize(mesh.vertexCount * jointIndicesElementSize);
+        mesh.jointIndices.resize(mesh.vertexCount * jointIndicesPrimvarElementSize);
+        mesh.jointWeights.resize(mesh.vertexCount * jointIndicesPrimvarElementSize);
 
         for (uint32 i = 0; i < mesh.jointIndices.size(); i++)
         {
@@ -122,13 +124,13 @@ namespace Horizon::USDImporter
 
         for (uint32 vertexIndex = 0; vertexIndex < mesh.vertexCount; vertexIndex++)
         {
-            for (uint32 j = 0; j < uint32(jointIndicesElementSize); j++)
+            for (uint32 j = 0; j < uint32(jointIndicesPrimvarElementSize); j++)
             {
                 const int32 jointIndex = jointIndices[j];
                 const float jointWeight = jointWeights[j];
 
-                mesh.jointIndices[vertexIndex * jointIndicesElementSize + j] = jointIndex;
-                mesh.jointWeights[vertexIndex * jointIndicesElementSize + j] = jointWeight;
+                mesh.jointIndices[vertexIndex * jointIndicesPrimvarElementSize + j] = jointIndex;
+                mesh.jointWeights[vertexIndex * jointIndicesPrimvarElementSize + j] = jointWeight;
             }
         }
 
@@ -153,8 +155,6 @@ namespace Horizon::USDImporter
         {
             return;
         }
-
-        const size_t numJointTransformTimeSamples = jointTransformTimeSamples.size();
 
         //pxr::VtTokenArray jointOrder = usdSkelAnimQuery.GetJointOrder();
 
@@ -187,7 +187,7 @@ namespace Horizon::USDImporter
 
                 skeletonAnimationTracks.rotationTrack.times.push_back(static_cast<float>(time));
                 skeletonAnimationTracks.rotationTrack.rotations.push_back(Quaternion(rotation.GetReal(), rotation.GetImaginary()[0], rotation.GetImaginary()[1], rotation.GetImaginary()[2]));
-                 
+
                 skeletonAnimationTracks.scaleTrack.times.push_back(static_cast<float>(time));
                 skeletonAnimationTracks.scaleTrack.scales.push_back(Vector3f(scale[0], scale[1], scale[2]));
             }
