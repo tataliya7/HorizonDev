@@ -118,14 +118,7 @@ namespace Horizon
             L"FSR2_InputMotionVectors",
             FFX_RESOURCE_STATE_PIXEL_COMPUTE_READ);
 
-        if (false)
-        {
-            fsr2DispatchDescription.exposure = ffxGetResourceDX12(
-                nullptr,
-                ffxGetResourceDescriptionDX12(nullptr),
-                L"FSR2_InputExposure");
-        }
-        else
+        if (exposure.texture)
         {
             ID3D12Resource* exposureTextureDX12 = static_cast<ID3D12Resource*>(exposure.texture);
             FfxResourceDescription exposureTextureDescription = ffxGetResourceDescriptionDX12(exposureTextureDX12);
@@ -134,6 +127,13 @@ namespace Horizon
                 exposureTextureDescription,
                 L"FSR2_InputExposure",
                 FFX_RESOURCE_STATE_PIXEL_COMPUTE_READ);
+        }
+        else
+        {
+            fsr2DispatchDescription.exposure = ffxGetResourceDX12(
+                nullptr,
+                ffxGetResourceDescriptionDX12(nullptr),
+                L"FSR2_InputExposure");
         }
 
         if (true)

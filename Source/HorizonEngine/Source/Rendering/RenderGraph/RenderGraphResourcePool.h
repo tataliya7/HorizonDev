@@ -29,14 +29,17 @@ namespace Horizon
         {
             return handle.IsValid();
         }
+
         const char* GetName() const
         {
             return name.c_str();
         }
+
         RenderBackendTextureHandle GetHandle() const
         {
             return handle;
         }
+
         const RenderBackendTextureDesc& GetDesc() const
         {
             return desc;
@@ -53,19 +56,21 @@ namespace Horizon
         }
 
     private:
+
         friend class RenderGraphResourcePool;
+
         bool active;
         std::string name;
         RenderBackend* backend;
         RenderBackendTextureDesc desc;
         RenderBackendTextureHandle handle;
-
         std::vector<RenderBackendTextureViewHandle> renderTargetViews;
     };
 
     class RenderGraphPersistentBuffer
     {
     public:
+
         RenderGraphPersistentBuffer(const char* name, const RenderBackendBufferDescription& desc, RenderBackendBufferHandle handle)
             : active(false)
             , name(name)
@@ -74,24 +79,31 @@ namespace Horizon
         {
 
         }
+
         bool IsValid() const
         {
             return handle.IsValid();
         }
+
         const char* GetName() const
         {
             return name.c_str();
         }
+
         RenderBackendBufferHandle GetHandle() const
         {
             return handle;
         }
+
         const RenderBackendBufferDescription& GetDesc() const
         {
             return desc;
         }
+
     private:
+
         friend class RenderGraphResourcePool;
+
         bool active;
         std::string name;
         RenderBackendBufferDescription desc;

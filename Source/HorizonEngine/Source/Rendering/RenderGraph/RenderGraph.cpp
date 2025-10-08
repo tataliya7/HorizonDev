@@ -281,7 +281,7 @@ namespace Horizon
         }
     }
 
-    const RenderGraphTextureDescription& RenderGraph::GetTextureDesc(RenderGraphTextureHandle handle) const
+    const RenderGraphTextureDescription& RenderGraph::GetTextureDescription(RenderGraphTextureHandle handle) const
     {
         return textures[handle.GetIndex()]->GetDesc();
     }

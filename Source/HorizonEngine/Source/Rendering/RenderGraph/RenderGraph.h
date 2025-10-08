@@ -130,7 +130,7 @@ namespace Horizon
 
         void ExportBufferDeferred(RenderGraphBufferHandle handle, RenderGraphPersistentBuffer** persistentBuffer);
 
-        const RenderGraphTextureDescription& GetTextureDesc(RenderGraphTextureHandle handle) const;
+        const RenderGraphTextureDescription& GetTextureDescription(RenderGraphTextureHandle handle) const;
 
         const RenderGraphBufferDescription& GetBufferDesc(RenderGraphBufferHandle handle) const;
 

@@ -26,6 +26,28 @@ namespace Horizon
         {
             exposureTexture = whiteDummyTexture;
         }
+        else
+        {
+            // @todo Fix me!
+            renderGraph.AddPass(
+                std::format("TTT (Compute, {}x{})", 1, 1),
+                RenderGraphPassFlags::Compute,
+                [&](RenderGraphBuilder& builder)
+                {
+                    return [=](RenderBackendCommandList& commandList, const RenderGraphResourceRegistry& resourceRegistry)
+                    {
+                        RenderBackendBarrier transitions[1] =
+                        {
+                            RenderBackendBarrier(
+                                resourceRegistry.GetRenderBackendTextureHandle(exposureTexture),
+                                RenderBackendTextureSubresourceRange(0, 1, 0, 1),
+                                RenderBackendResourceState::Undefined,
+                                RenderBackendResourceState::ShaderResource)
+                        };
+                        commandList.Barriers(transitions, 1);
+                    };
+                });
+        }
 
         RenderGraphBufferHandle previousAutoExposureBuffer = renderGraph.ImportExternalBuffer(historyFrame.autoExposureBuffer, "PreviousAutoExposureBuffer");
         RenderGraphBufferHandle autoExposureBuffer = previousAutoExposureBuffer;

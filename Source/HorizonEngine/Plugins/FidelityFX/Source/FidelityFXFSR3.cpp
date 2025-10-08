@@ -171,7 +171,7 @@ namespace Horizon
         RenderGraphTextureHandle outputTexture = renderGraph.CreateTexture(outputTextureDesc, "FSR3OutputTexture");
 
         renderGraph.AddPass(
-            std::format("FidelityFXFSR3Dispatch (Compute, {}x{} -> {}x{})", renderGraph.GetTextureDesc(dispatchDescription.colorTexture).width, renderGraph.GetTextureDesc(dispatchDescription.colorTexture).height, outputTextureDesc.width, outputTextureDesc.height),
+            std::format("FidelityFXFSR3Dispatch (Compute, {}x{} -> {}x{})", renderGraph.GetTextureDescription(dispatchDescription.colorTexture).width, renderGraph.GetTextureDescription(dispatchDescription.colorTexture).height, outputTextureDesc.width, outputTextureDesc.height),
             RenderGraphPassFlags::Compute,
             [&](RenderGraphBuilder& builder)
             {

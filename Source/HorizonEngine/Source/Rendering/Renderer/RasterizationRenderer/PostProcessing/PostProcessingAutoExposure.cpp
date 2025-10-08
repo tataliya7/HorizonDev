@@ -34,7 +34,7 @@ namespace Horizon
         RenderGraphDebugLabelRegion debugLabelRegion(renderGraph, "AutoExposure");
 
         RenderGraphTextureHandle inputColorTexture = colorPyramid.textures[0];
-        const RenderGraphTextureDescription& inputColorTextureDescription = renderGraph.GetTextureDesc(inputColorTexture);
+        const RenderGraphTextureDescription& inputColorTextureDescription = renderGraph.GetTextureDescription(inputColorTexture);
 
         RenderGraphTextureDescription autoExposureHistogramTextureDescription = RenderGraphTextureDescription::Create1D(
             AutoExposureHistogramBinCount,
@@ -133,12 +133,12 @@ namespace Horizon
         const SceneView& view,
         RenderGraphBufferHandle autoExposureBuffer)
     {
-        RenderGraphTextureDescription exposureTextureDesc = RenderGraphTextureDescription::Create2D(
+        RenderGraphTextureDescription exposureTextureDescription = RenderGraphTextureDescription::Create2D(
             1,
             1,
             RenderBackendTextureFormat::R32Float,
             RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::UnorderedAccess);
-        RenderGraphTextureHandle exposureTexture = renderGraph.CreateTexture(exposureTextureDesc, "ExposureTexture");
+        RenderGraphTextureHandle exposureTexture = renderGraph.CreateTexture(exposureTextureDescription, "ExposureTexture");
 
         renderGraph.AddPass(
             std::format("CopyExposure (Compute, {}x{})", 1, 1),

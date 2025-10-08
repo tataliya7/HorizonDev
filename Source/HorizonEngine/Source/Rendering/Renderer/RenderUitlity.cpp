@@ -27,7 +27,11 @@ namespace Horizon
             1,
             1,
             RenderBackendTextureFormat::B8G8R8A8Unorm,
-            RenderBackendTextureCreateFlags::ShaderResource);
+            RenderBackendTextureCreateFlags::ShaderResource,
+            {},
+            1,
+            1,
+            RenderBackendResourceState::ShaderResource);
 
         // @todo refactor name 'dummy'
         const uint8 blackColor[4] = { 0, 0, 0, 0 };

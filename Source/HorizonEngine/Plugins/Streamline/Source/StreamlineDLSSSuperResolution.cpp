@@ -176,7 +176,7 @@ namespace Horizon
         RenderGraphTextureHandle outputTexture = renderGraph.CreateTexture(outputTextureDesc, "DLSSOutputTexture");
 
         renderGraph.AddPass(
-            std::format("Evaluate DLSS ({}x{} -> {}x{})", renderGraph.GetTextureDesc(dispatchDescription.colorTexture).width, renderGraph.GetTextureDesc(dispatchDescription.colorTexture).height, outputTextureDesc.width, outputTextureDesc.height),
+            std::format("Evaluate DLSS ({}x{} -> {}x{})", renderGraph.GetTextureDescription(dispatchDescription.colorTexture).width, renderGraph.GetTextureDescription(dispatchDescription.colorTexture).height, outputTextureDesc.width, outputTextureDesc.height),
             RenderGraphPassFlags::Compute,
             [&](RenderGraphBuilder& builder)
             {

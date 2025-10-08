@@ -66,7 +66,7 @@ namespace Horizon
         bilaterallyFilteredGridTexture = gridTexture;
 
         RenderGraphTextureHandle gaussianFilterInputColorTexture = colorPyramid.textures[4];
-        const RenderGraphTextureDescription gaussianFilterInputColorTextureDesc = renderGraph.GetTextureDesc(gaussianFilterInputColorTexture);
+        const RenderGraphTextureDescription gaussianFilterInputColorTextureDesc = renderGraph.GetTextureDescription(gaussianFilterInputColorTexture);
 
         RenderGraphTextureDescription gaussianFilteredLogLuminanceTextureDesc = RenderGraphTextureDescription::Create2D(
             gaussianFilterInputColorTextureDesc.width,

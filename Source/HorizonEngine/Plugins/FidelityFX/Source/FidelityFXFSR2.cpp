@@ -163,15 +163,17 @@ namespace Horizon
 
         void* fsrContext = this;
 
-        RenderGraphTextureDescription outputTextureDesc = RenderGraphTextureDescription::Create2D(
+        const RenderGraphTextureDescription& colorTextureDescription = renderGraph.GetTextureDescription(dispatchDescription.colorTexture);
+
+        RenderGraphTextureDescription outputTextureDescription = RenderGraphTextureDescription::Create2D(
                 view.targetWidth,
                 view.targetHeight,
                 RenderBackendTextureFormat::R16G16B16A16Float,
                 RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::UnorderedAccess);
-        RenderGraphTextureHandle outputTexture = renderGraph.CreateTexture(outputTextureDesc, "FSR2OutputTexture");
+        RenderGraphTextureHandle outputTexture = renderGraph.CreateTexture(outputTextureDescription, "FSR2OutputTexture");
 
         renderGraph.AddPass(
-            std::format("FidelityFXSuperResolution2Dispatch (Compute, {}x{} -> {}x{})", renderGraph.GetTextureDesc(dispatchDescription.colorTexture).width, renderGraph.GetTextureDesc(dispatchDescription.colorTexture).height, outputTextureDesc.width, outputTextureDesc.height),
+            std::format("FidelityFXSuperResolution2Dispatch (Compute, {}x{} -> {}x{})", colorTextureDescription.width, colorTextureDescription.height, outputTextureDescription.width, outputTextureDescription.height),
             RenderGraphPassFlags::Compute,
             [&](RenderGraphBuilder& builder)
             {

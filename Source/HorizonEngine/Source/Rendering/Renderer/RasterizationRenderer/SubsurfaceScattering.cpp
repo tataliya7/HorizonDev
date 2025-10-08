@@ -11,7 +11,7 @@ namespace Horizon
         RenderGraphDebugLabelRegion debugLabelRegion(renderGraph, "SubsurfaceScattering");
 
         const RasterizationRendererIntermediateResources& intermediateResources = renderGraph.blackboard.Get<RasterizationRendererIntermediateResources>();
-        const RenderGraphTextureDescription& colorTextureDescription = renderGraph.GetTextureDesc(intermediateResources.colorTexture);
+        const RenderGraphTextureDescription& colorTextureDescription = renderGraph.GetTextureDescription(intermediateResources.colorTexture);
 
         assert((renderResolution.width == colorTextureDescription.width) && (renderResolution.height == colorTextureDescription.height));
 
