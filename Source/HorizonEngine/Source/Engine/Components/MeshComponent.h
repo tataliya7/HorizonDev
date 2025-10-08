@@ -78,8 +78,6 @@ namespace Horizon
         Vector3f boundsMin;
         Vector3f boundsMax;
 
-        //EntityHandle armature = EntityHandle::Null;
-
         int previousTransformIndex = -1;
 
         int materialBufferOffset = 0;
@@ -90,16 +88,13 @@ namespace Horizon
 
         bool doubleSided = true;
 
-        //bool IsSkinnedMesh() const
-        //{
-        //    return armature != EntityHandle::Null;
-        //}
-
         Skeleton* skeleton = nullptr;
 
         SkeletonAnimation* skeletonAnimation = nullptr;
 
         uint32 relevantJointCountPerVertex = 0;
+
+        void UpdatePose(float deltaTimeInSeconds);
 
     private:
 

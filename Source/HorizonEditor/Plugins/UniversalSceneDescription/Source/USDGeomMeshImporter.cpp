@@ -111,23 +111,27 @@ namespace Horizon::USDImporter
         mesh.jointTransforms.resize(jointCount);
         for (uint32 jointIndex = 0; jointIndex < mesh.jointTransforms.size(); jointIndex++)
         {
-            mesh.jointTransforms[jointIndex] = mesh.skeleton->joints[jointIndex].bindTransform;
+            mesh.jointTransforms[jointIndex] = mesh.skeleton->joints[jointIndex].localBindTransform;
         }
 
         mesh.jointIndices.resize(mesh.vertexCount * jointIndicesPrimvarElementSize);
         mesh.jointWeights.resize(mesh.vertexCount * jointIndicesPrimvarElementSize);
 
+        assert(jointIndices.size() == mesh.vertexCount * jointIndicesPrimvarElementSize);
+        assert(jointWeights.size() == mesh.vertexCount * jointIndicesPrimvarElementSize);
+
         for (uint32 i = 0; i < mesh.jointIndices.size(); i++)
         {
             mesh.jointIndices[i] = -1;
+            mesh.jointWeights[i] = 0.0f;
         }
 
         for (uint32 vertexIndex = 0; vertexIndex < mesh.vertexCount; vertexIndex++)
         {
-            for (uint32 j = 0; j < uint32(jointIndicesPrimvarElementSize); j++)
+            for (uint32 j = 0; j < static_cast<uint32>(jointIndicesPrimvarElementSize); j++)
             {
-                const int32 jointIndex = jointIndices[j];
-                const float jointWeight = jointWeights[j];
+                const int32 jointIndex = jointIndices[vertexIndex * jointIndicesPrimvarElementSize + j];
+                const float jointWeight = jointWeights[vertexIndex * jointIndicesPrimvarElementSize + j];
 
                 mesh.jointIndices[vertexIndex * jointIndicesPrimvarElementSize + j] = jointIndex;
                 mesh.jointWeights[vertexIndex * jointIndicesPrimvarElementSize + j] = jointWeight;
@@ -162,9 +166,9 @@ namespace Horizon::USDImporter
 
         skeletonAnimation->skeletonAnimationTracks.resize(jointCount);
 
-        pxr::VtMatrix4dArray usdJointLocalTransforms;
         for (double time : jointTransformTimeSamples)
         {
+            pxr::VtMatrix4dArray usdJointLocalTransforms;
             if (!usdSkelAnimQuery.ComputeJointLocalTransforms(&usdJointLocalTransforms, time))
             {
                 continue;

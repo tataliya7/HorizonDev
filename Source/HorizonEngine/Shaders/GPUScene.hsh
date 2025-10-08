@@ -2,8 +2,6 @@
 
 #include "BindlessResources.hsh"
 
-#define MAX_RELEVANT_JOINT_COUNT_PER_VERTEX 16
-
 // It must match the values on the C++ side
 //#define GPU_SCENE_MAXIMUM_TRIANGLE_COUNT_PER_MESHLET 128
 
@@ -123,13 +121,8 @@ GPUSceneGeometryVertexAttributes GetGPUSceneGeometryVertexAttributes(GPUSceneGeo
         {
             int jointIndex = jointIndexBuffer.Load<int>((vertexIndex * relevantJointCount + relevantJointIndex) * sizeof(int));
             float jointWeight = jointWeightBuffer.Load<float>((vertexIndex * relevantJointCount + relevantJointIndex) * sizeof(float));
-
             // @todo Use float4x3 instead?
             float4x4 jointTransform = jointTransformBuffer.Load<float4x4>(jointTransformBufferOffset + jointIndex * sizeof(float4x4));
-            jointTransform = float4x4(1.0f, 0.0f, 0.0f, 0.0f,
-                                      0.0f, 1.0f, 0.0f, 0.0f,
-                                      0.0f, 0.0f, 1.0f, 0.0f,
-                                      0.0f, 0.0f, 0.0f, 1.0f);
             skinnedPosition += mul(jointTransform, float4(vertexAttributes.position, 1.0f)).xyz * jointWeight;
             skinnedNormal += mul((float3x3)jointTransform, vertexAttributes.normal.xyz) * jointWeight;
             skinnedTangent += mul((float3x3)jointTransform, vertexAttributes.tangent.xyz) * jointWeight;

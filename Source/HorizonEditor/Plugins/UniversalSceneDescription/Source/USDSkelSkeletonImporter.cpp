@@ -67,16 +67,22 @@ namespace Horizon::USDImporter
             return nullptr;
         }
 
+        pxr::VtMatrix4dArray jointLocalBindTransforms;
+        if (!pxr::UsdSkelComputeJointLocalTransforms(skelTopology, jointWorldBindTransforms, &jointLocalBindTransforms))
+        {
+            return nullptr;
+        }
+
         for (size_t i = 0; i < numJoints; i++)
         {
 		    pxr::SdfPath jointPath(jointOrder[i]);
-            pxr::GfMatrix4f bindTransform(jointWorldBindTransforms[i]);
+            pxr::GfMatrix4f bindTransform(jointLocalBindTransforms[i]);
             const int parentIndex = skelTopology.GetParent(i);
 
             Joint& joint = skeleton->joints[i];
             joint.name = jointPath.GetName();
             joint.parentIndex = parentIndex;
-            joint.bindTransform = UsdToHorizon::ConvertMatrix(bindTransform);
+            joint.localBindTransform = UsdToHorizon::ConvertMatrix(bindTransform);
         }
 
         return skeleton;

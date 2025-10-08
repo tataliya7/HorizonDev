@@ -13,7 +13,7 @@ namespace Horizon
     public:
         std::string name;
         int parentIndex;
-        Matrix4x4f bindTransform;
+        Matrix4x4f localBindTransform;
         Matrix4x4f restTransform;
     };
 
@@ -99,9 +99,9 @@ namespace Horizon
                 Vector3f translation;
                 Quaternion rotation;
                 Vector3f scale;
-                Matrix4x4f localToWorldMatrix;
                 Matrix4x4f localTransform;
-                Matrix4x4f derivedLocalTransform;
+                Matrix4x4f derivedLocalTransform = IdentityMatrix4x4f;
+                Matrix4x4f jointTransform;
             };
             std::vector<JointTransformData> transformData;
         };

@@ -431,6 +431,7 @@ namespace Horizon
         uint32 vertexCount;
         uint32 indexCount;
         uint32 meshletCount;
+        uint32 relevantJointCountPerVertex;
         uint32 flags;
     };
 

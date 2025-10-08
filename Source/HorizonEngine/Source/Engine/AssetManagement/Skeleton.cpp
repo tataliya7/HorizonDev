@@ -60,7 +60,7 @@ namespace Horizon
 			assert(joint.parentIndex < (int)boneIndex);
 
 			Sample_Internal(boneIndex, mCurrentTime, transformData.translation, transformData.rotation, transformData.scale);
-			transformData.localTransform = glm::translate(glm::mat4(1), transformData.translation) * glm::mat4(transformData.rotation) * glm::scale(glm::mat4(1.0f), transformData.scale);
+			transformData.localTransform = Math::ComposeTransformationMatrix(transformData.translation, transformData.rotation, transformData.scale);
 
 			if (joint.parentIndex != -1)
 			{
@@ -72,7 +72,7 @@ namespace Horizon
 				transformData.derivedLocalTransform = transformData.localTransform;
 			}
 
-			transformData.localToWorldMatrix = transformData.derivedLocalTransform * joint.bindTransform;
+			transformData.jointTransform = transformData.derivedLocalTransform * joint.localBindTransform;
 		}
 	}
 

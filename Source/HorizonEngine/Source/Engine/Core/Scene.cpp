@@ -332,7 +332,7 @@ namespace Horizon
             "UpdateMeshComponents",
             JobSystemJobPriority::High,
             transformComponentUpdateJob,
-            [this](const JobSystemJobContext& jobContext)
+            [this, deltaTimeInSeconds](const JobSystemJobContext& jobContext)
             {
                 OPTICK_EVENT("UpdateMeshComponents");
                 entityManager->GetView<MeshComponent>().each([&](EntityHandle entity, MeshComponent& meshComponent)
@@ -340,6 +340,11 @@ namespace Horizon
                     const TransformComponent& transform = entityManager->GetComponent<TransformComponent>(entity);
                     meshComponent.localToWorldMatrix = transform.localToWorldMatrix;
                     meshComponent.UpdateRenderObject();
+
+                    if (meshComponent.skeleton)
+                    {
+                        meshComponent.UpdatePose(deltaTimeInSeconds);
+                    }
                 });
             });
 

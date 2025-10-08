@@ -160,7 +160,7 @@ namespace Horizon
                 RenderBackendBufferDescription jointWeightBufferDesc = RenderBackendBufferDescription::CreateByteAddress(jointWeights.size() * sizeof(float));
                 renderObject->jointWeightBuffer = renderBackend->CreateBuffer(&jointWeightBufferDesc, jointWeights.data(), "JointWeightBuffer");
 
-                RenderBackendBufferDescription jointTransformBufferDesc = RenderBackendBufferDescription::CreateByteAddress(jointTransforms.size() * sizeof(Matrix4x4f));
+                RenderBackendBufferDescription jointTransformBufferDesc = RenderBackendBufferDescription::CreateByteAddress(jointTransforms.size() * sizeof(Matrix4x4f), true);
                 renderObject->jointTransformBuffer = renderBackend->CreateBuffer(&jointTransformBufferDesc, jointTransforms.data(), "JointTransformBuffer");
 
                 renderObject->relevantJointCountPerVertex = relevantJointCountPerVertex;
@@ -227,5 +227,24 @@ namespace Horizon
             return (uint32)materials.size();
         }
         return 0;
+    }
+
+    void MeshComponent::UpdatePose(float deltaTimeInSeconds)
+    {
+        if (true)
+        {
+            SkeletonAnimation::Pose pose;
+            skeletonAnimation->SamplePose(pose);
+
+            jointTransforms.resize(pose.transformData.size());
+            for (uint32 i = 0; i < uint32(pose.transformData.size()); i++)
+            {
+                jointTransforms[i] = pose.transformData[i].jointTransform;
+            }
+
+            RenderSystem* renderSystem = HorizonEngine::GetInstance()->GetSubsystem<RenderSystem>();
+            RenderBackend* renderBackend = renderSystem->GetRenderBackend();
+            renderBackend->UpdateBuffer(renderObject->jointTransformBuffer, 0, jointTransforms.data(), jointTransforms.size() * sizeof(Matrix4x4f));
+        }
     }
 }
