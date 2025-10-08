@@ -13,10 +13,9 @@ namespace Horizon
 
     }
 
-	SkeletonAnimation::SkeletonAnimation()
-		: mFrameCounter(0)
-		, mSpeed(1.0f)
-		, mCurrentTime(0)
+    SkeletonAnimation::SkeletonAnimation()
+        : loop(false)
+        , speed(1.0f)
 		, duration(0)
 		, targetSkeleton(nullptr)
 	{
@@ -31,6 +30,7 @@ namespace Horizon
 	void SkeletonAnimation::SamplePose(Pose& outPose)
 	{
 		// TODO
+        float mCurrentTime = 0;
 		{
 			static auto startTime = std::chrono::high_resolution_clock::now();
 
@@ -78,20 +78,21 @@ namespace Horizon
 
 	void SkeletonAnimation::Sample_Internal(uint32 boneIndex, float time, Vector3f& outTranslation, Quaternion& outRotaion, Vector3f& outScale)
 	{
-		SampleTranslation_Internal(mBoneMotions[boneIndex].translationTrackIndex, time, outTranslation);
-		SampleRotation_Internal(mBoneMotions[boneIndex].rotationTrackIndex, time, outRotaion);
-		SampleScale_Internal(mBoneMotions[boneIndex].scaleTrackIndex, time, outScale);
+		SampleTranslation_Internal(boneIndex, time, outTranslation);
+		SampleRotation_Internal(boneIndex, time, outRotaion);
+		SampleScale_Internal(boneIndex, time, outScale);
 	}
 
 	void SkeletonAnimation::SampleTranslation_Internal(uint32 translationTrackIndex, float time, Vector3f& outTranslation)
 	{
-		auto& translationTrack = mTranslationTracks[translationTrackIndex];
+		auto& translationTrack = skeletonAnimationTracks[translationTrackIndex].translationTrack;
 		if (time > translationTrack.times.back())
 		{
 			//outTranslation = translationTrack.translations.back();
 			//outTranslation = Vector3(0, 0, 0);
 			return;
 		}
+
 		for (uint64 i = 0; i < translationTrack.times.size(); i++)
 		{
 			if (time >= translationTrack.times[i] && time <= translationTrack.times[i+1])
@@ -105,7 +106,7 @@ namespace Horizon
 
 	void SkeletonAnimation::SampleRotation_Internal(uint32 rotationTrackIndex, float time, Quaternion& outRotaion)
 	{
-		auto& rotationTrack = mRotationTracks[rotationTrackIndex];
+        auto& rotationTrack = skeletonAnimationTracks[rotationTrackIndex].rotationTrack;
 		if (time > rotationTrack.times.back())
 		{
 			//outRotaion = rotationTrack.rotations.back();
@@ -125,13 +126,14 @@ namespace Horizon
 
 	void SkeletonAnimation::SampleScale_Internal(uint32 scaleTrackIndex, float time, Vector3f& outScale)
 	{
-		auto& scaleTrack = mScaleTracks[scaleTrackIndex];
+		auto& scaleTrack = skeletonAnimationTracks[scaleTrackIndex].scaleTrack;
 		if (time > scaleTrack.times.back())
 		{
 			//outScale = scaleTrack.scales.back();
 			//outScale = Vector3(1, 1, 1);
 			return;
 		}
+
 		for (uint64 i = 0; i < scaleTrack.times.size(); i++)
 		{
 			if (time >= scaleTrack.times[i] && time <= scaleTrack.times[i + 1])

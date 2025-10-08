@@ -160,9 +160,7 @@ namespace Horizon::USDImporter
 
         SkeletonAnimation* skeletonAnimation = new SkeletonAnimation();
 
-        skeletonAnimation->mTranslationTracks.resize(jointCount);
-        skeletonAnimation->mRotationTracks.resize(jointCount);
-        skeletonAnimation->mScaleTracks.resize(jointCount);
+        skeletonAnimation->skeletonAnimationTracks.resize(jointCount);
 
         pxr::VtMatrix4dArray usdJointLocalTransforms;
         for (double time : jointTransformTimeSamples)
@@ -182,14 +180,16 @@ namespace Horizon::USDImporter
                     continue;
                 }
 
-                skeletonAnimation->mTranslationTracks[jointIndex].times.push_back(static_cast<float>(time));
-                skeletonAnimation->mTranslationTracks[jointIndex].translations.push_back(Vector3f(translation[0], translation[1], translation[2]));
+                auto& skeletonAnimationTracks = skeletonAnimation->skeletonAnimationTracks[jointIndex];
 
-                skeletonAnimation->mRotationTracks[jointIndex].times.push_back(static_cast<float>(time));
-                skeletonAnimation->mRotationTracks[jointIndex].rotations.push_back(Quaternion(rotation.GetReal(), rotation.GetImaginary()[0], rotation.GetImaginary()[1], rotation.GetImaginary()[2]));
+                skeletonAnimationTracks.translationTrack.times.push_back(static_cast<float>(time));
+                skeletonAnimationTracks.translationTrack.translations.push_back(Vector3f(translation[0], translation[1], translation[2]));
 
-                skeletonAnimation->mScaleTracks[jointIndex].times.push_back(static_cast<float>(time));
-                skeletonAnimation->mScaleTracks[jointIndex].scales.push_back(Vector3f(scale[0], scale[1], scale[2]));
+                skeletonAnimationTracks.rotationTrack.times.push_back(static_cast<float>(time));
+                skeletonAnimationTracks.rotationTrack.rotations.push_back(Quaternion(rotation.GetReal(), rotation.GetImaginary()[0], rotation.GetImaginary()[1], rotation.GetImaginary()[2]));
+                 
+                skeletonAnimationTracks.scaleTrack.times.push_back(static_cast<float>(time));
+                skeletonAnimationTracks.scaleTrack.scales.push_back(Vector3f(scale[0], scale[1], scale[2]));
             }
         }
 

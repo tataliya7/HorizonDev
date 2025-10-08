@@ -646,9 +646,9 @@ namespace Horizon
             1,
             1,
             RenderBackendResourceState::UnorderedAccess);
-        intermediateResources.colorTexture = renderGraph.CreateTexture(colorTextureDescription, "SceneColorTexture");
+        intermediateResources.colorTexture = renderGraph.CreateTexture(colorTextureDescription, "ColorTexture");
 
-        RenderGraphTextureDescription sceneDepthTextureDesc = RenderGraphTextureDescription::Create2D(
+        RenderGraphTextureDescription sceneDepthTextureDescription = RenderGraphTextureDescription::Create2D(
             renderResolution.width,
             renderResolution.height,
             RenderBackendTextureFormat::D32FloatS8Uint,
@@ -657,14 +657,14 @@ namespace Horizon
             1,
             1,
             RenderBackendResourceState::DepthStencil);
-        intermediateResources.depthTexture = renderGraph.CreateTexture(sceneDepthTextureDesc, "SceneDepthTexture");
+        intermediateResources.depthTexture = renderGraph.CreateTexture(sceneDepthTextureDescription, "DepthTexture");
 
-        RenderGraphTextureDescription motionVectorTextureDesc = RenderGraphTextureDescription::Create2D(
+        RenderGraphTextureDescription motionVectorTextureDescription = RenderGraphTextureDescription::Create2D(
             renderResolution.width,
             renderResolution.height,
             RenderBackendTextureFormat::R16G16Float,
             RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::UnorderedAccess);
-        intermediateResources.motionVectorTexture = renderGraph.CreateTexture(motionVectorTextureDesc, "MotionVectorTexture");
+        intermediateResources.motionVectorTexture = renderGraph.CreateTexture(motionVectorTextureDescription, "MotionVectorTexture");
 
         if (renderFeatures.enableSkyAtmosphereRendering)
         {

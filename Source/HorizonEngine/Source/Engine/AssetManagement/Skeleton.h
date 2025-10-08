@@ -46,6 +46,14 @@ namespace Horizon
         std::vector<Joint> joints;
     };
 
+    enum class SkeletonAnimationInterpolationType
+    {
+        Linear,
+        Step,
+        CatmullRomSpline,
+        CubicSpline,
+    };
+
     struct SkeletonAnimationTranslationTrack
     {
         std::vector<float> times;
@@ -98,21 +106,6 @@ namespace Horizon
             std::vector<JointTransformData> transformData;
         };
 
-        enum class InterpolationType
-        {
-            Linear,
-            Step,
-            CatmullRomSpline,
-            CubicSpline,
-        };
-
-        struct BoneMotion
-        {
-            int32 translationTrackIndex = -1;
-            int32 rotationTrackIndex = -1;
-            int32 scaleTrackIndex = -1;
-        };
-
     public:
 
         SkeletonAnimation();
@@ -126,13 +119,7 @@ namespace Horizon
 
     public:
 
-
-        std::vector<BoneMotion> mBoneMotions;
-
-        uint32 mFrameCounter;
-
-        float mSpeed;
-
+        float speed;
 
         void SamplePose(Pose& outPose);
 
@@ -146,7 +133,9 @@ namespace Horizon
             return duration;
         }
 
-    private:
+        std::vector<SkeletonAnimationTrack> skeletonAnimationTracks;
+
+    //private:
 
         /**
          * Each skeleton animation targets a specific skeleton and can only be played on that skeleton.
@@ -158,8 +147,6 @@ namespace Horizon
          * The length of time (in seconds) that an animation takes to complete one cycle.
          */
         float duration;
-
-        std::vector<SkeletonAnimationTrack> skeletonAnimationTracks;
 
         void Sample_Internal(uint32 boneIndex, float time, Vector3f& outTranslation, Quaternion& outRotation, Vector3f& outScale);
 
