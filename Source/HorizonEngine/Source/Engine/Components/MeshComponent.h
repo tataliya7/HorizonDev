@@ -39,6 +39,9 @@ namespace Horizon
         std::vector<Matrix4x4f> jointTransforms;
         std::vector<GPUSceneMeshletData> meshlets;
 
+        // @todo Remove this
+        std::vector<Matrix4x4f> jointBindTransform;
+
         struct MeshSubset
         {
             std::string name;

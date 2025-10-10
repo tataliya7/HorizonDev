@@ -72,7 +72,8 @@ namespace Horizon
 				transformData.derivedLocalTransform = transformData.localTransform;
 			}
 
-			transformData.jointTransform = transformData.derivedLocalTransform * joint.localBindTransform;
+			transformData.bindTransform = joint.localBindTransform;
+			transformData.jointTransform = transformData.derivedLocalTransform * glm::inverse(joint.localBindTransform);
 		}
 	}
 
@@ -86,10 +87,11 @@ namespace Horizon
 	void SkeletonAnimation::SampleTranslation_Internal(uint32 translationTrackIndex, float time, Vector3f& outTranslation)
 	{
 		auto& translationTrack = skeletonAnimationTracks[translationTrackIndex].translationTrack;
+
+    	outTranslation = translationTrack.translations.front();
 		if (time > translationTrack.times.back())
 		{
-			//outTranslation = translationTrack.translations.back();
-			//outTranslation = Vector3(0, 0, 0);
+			outTranslation = translationTrack.translations.back();
 			return;
 		}
 
@@ -107,10 +109,11 @@ namespace Horizon
 	void SkeletonAnimation::SampleRotation_Internal(uint32 rotationTrackIndex, float time, Quaternion& outRotaion)
 	{
         auto& rotationTrack = skeletonAnimationTracks[rotationTrackIndex].rotationTrack;
+
+		outRotaion = rotationTrack.rotations.front();
 		if (time > rotationTrack.times.back())
 		{
-			//outRotaion = rotationTrack.rotations.back();
-			//outRotaion = Quaternion(1, 0, 0, 0);
+			outRotaion = rotationTrack.rotations.back();
 			return;
 		}
 		for (uint64 i = 0; i < rotationTrack.times.size(); i++)
@@ -127,10 +130,11 @@ namespace Horizon
 	void SkeletonAnimation::SampleScale_Internal(uint32 scaleTrackIndex, float time, Vector3f& outScale)
 	{
 		auto& scaleTrack = skeletonAnimationTracks[scaleTrackIndex].scaleTrack;
+
+    	outScale = scaleTrack.scales.front();
 		if (time > scaleTrack.times.back())
 		{
-			//outScale = scaleTrack.scales.back();
-			//outScale = Vector3(1, 1, 1);
+			outScale = scaleTrack.scales.back();
 			return;
 		}
 

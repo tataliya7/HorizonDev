@@ -34,8 +34,7 @@ void CascadedShadowMapVS(
 
     GPUSceneGeometryInstanceData instanceData = GetGPUSceneGeometryInstanceData(geometryInstanceDataBuffer, instanceID);
     GPUSceneGeometryData geometryData = GetGPUSceneGeometryData(geometryDataBuffer, instanceData.geometryID);
-
-    VertexAttributes vertexAttributes = GetVertexAttributes(geometryData, vertexID);
+    GPUSceneGeometryVertexAttributes vertexAttributes = GetGPUSceneGeometryVertexAttributes(geometryData, vertexID);
 
     CascadedShadowMapShaderParameters cascadedShadowMapShaderParameters = cascadedShadowMapDataBuffer[0];
     float4x4 worldToClipMatrix = cascadedShadowMapShaderParameters.worldToClipMatrix[cascadeIndex];

@@ -24,6 +24,7 @@ struct GPUSceneGeometryData
     int jointIndexBuffer;
     int jointWeightBuffer;
     int jointTransformBuffer;
+    int previousJointTransformBuffer;
     uint vertexCount;
     uint indexCount;
     uint meshletCount;
@@ -112,9 +113,11 @@ GPUSceneGeometryVertexAttributes GetGPUSceneGeometryVertexAttributes(GPUSceneGeo
         ByteAddressBuffer jointTransformBuffer = GetByteAddressBufferNonUniform(geometryData.jointTransformBuffer);
         uint jointTransformBufferOffset = 0;
 
-        float3 skinnedPosition = float3(0.0f, 0.0f, 0.0f);
-        float3 skinnedNormal = float3(0.0f, 0.0f, 0.0f);
-        float3 skinnedTangent = float3(0.0f, 0.0f, 0.0f);
+        float4x4 linearBlendSkinningTransform = float4x4(
+            0.0f, 0.0f, 0.0f, 0.0f,
+            0.0f, 0.0f, 0.0f, 0.0f,
+            0.0f, 0.0f, 0.0f, 0.0f,
+            0.0f, 0.0f, 0.0f, 0.0f);
 
         const uint relevantJointCount = geometryData.relevantJointCountPerVertex;
         for (uint relevantJointIndex = 0; relevantJointIndex < relevantJointCount; relevantJointIndex++)
@@ -123,10 +126,12 @@ GPUSceneGeometryVertexAttributes GetGPUSceneGeometryVertexAttributes(GPUSceneGeo
             float jointWeight = jointWeightBuffer.Load<float>((vertexIndex * relevantJointCount + relevantJointIndex) * sizeof(float));
             // @todo Use float4x3 instead?
             float4x4 jointTransform = jointTransformBuffer.Load<float4x4>(jointTransformBufferOffset + jointIndex * sizeof(float4x4));
-            skinnedPosition += mul(jointTransform, float4(vertexAttributes.position, 1.0f)).xyz * jointWeight;
-            skinnedNormal += mul((float3x3)jointTransform, vertexAttributes.normal.xyz) * jointWeight;
-            skinnedTangent += mul((float3x3)jointTransform, vertexAttributes.tangent.xyz) * jointWeight;
+            linearBlendSkinningTransform += jointTransform * jointWeight;
         }
+
+        float3 skinnedPosition = mul(linearBlendSkinningTransform, float4(vertexAttributes.position, 1.0f)).xyz;
+        float3 skinnedNormal = mul((float3x3)linearBlendSkinningTransform, vertexAttributes.normal.xyz);
+        float3 skinnedTangent = mul((float3x3)linearBlendSkinningTransform, vertexAttributes.tangent.xyz);
 
         vertexAttributes.position = skinnedPosition;
         vertexAttributes.normal = normalize(skinnedNormal);

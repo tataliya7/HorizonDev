@@ -409,7 +409,8 @@ namespace Horizon
                 builder.SetBindlessResourceSRV(3, intermediateResources.visibleMeshletBuffer);
                 builder.SetBindlessResourceSRV(4, intermediateResources.depthTexture);
                 builder.SetBindlessResourceSRV(5, intermediateResources.vbuffer0);
-                builder.SetBindlessResourceUAV(6, intermediateResources.motionVectorTexture, 0);
+                builder.SetBindlessResourceSRV(6, intermediateResources.vbuffer1);
+                builder.SetBindlessResourceUAV(7, intermediateResources.motionVectorTexture, 0);
 
                 RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::ComputeMotionVectors);
 

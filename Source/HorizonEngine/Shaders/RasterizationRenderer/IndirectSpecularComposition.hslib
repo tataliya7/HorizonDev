@@ -120,6 +120,7 @@ void IndirectSpecularCompositionPS(in float4 position : SV_Position, out float4 
     float ssrConfidence = indirectSpecular.a;
 
     float3 indirectSpecularColor = lerp(iblSpecular, ssrColor, ssrConfidence) * specularOcclusion;
+    indirectSpecularColor = 0;
 
     outColor = 0;
     outColor.rgb += indirectSpecularColor;

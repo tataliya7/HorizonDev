@@ -35,8 +35,7 @@ void VirtualShadowMapDepthVS(
 
     GPUSceneGeometryInstanceData instanceData = GetGPUSceneGeometryInstanceData(geometryInstanceDataBuffer, instanceID);
     GPUSceneGeometryData geometryData = GetGPUSceneGeometryData(geometryDataBuffer, instanceData.geometryID);
-
-    VertexAttributes vertexAttributes = GetVertexAttributes(geometryData, vertexID);
+    GPUSceneGeometryVertexAttributes vertexAttributes = GetGPUSceneGeometryVertexAttributes(geometryData, vertexID);
 
     float3 worldSpaceVertexPosition = mul(instanceData.localToWorldMatrix, float4(vertexAttributes.position, 1.0f)).xyz;
     float4 clipSpaceVertexPosition = mul(virtualShadowMapEntry.worldToClipMatrix, float4(worldSpaceVertexPosition, 1.0f));

@@ -166,6 +166,8 @@ namespace Horizon::USDImporter
 
         skeletonAnimation->skeletonAnimationTracks.resize(jointCount);
 
+        float duration = 0.0f;
+
         for (double time : jointTransformTimeSamples)
         {
             pxr::VtMatrix4dArray usdJointLocalTransforms;
@@ -186,17 +188,20 @@ namespace Horizon::USDImporter
 
                 auto& skeletonAnimationTracks = skeletonAnimation->skeletonAnimationTracks[jointIndex];
 
-                skeletonAnimationTracks.translationTrack.times.push_back(static_cast<float>(time));
+                skeletonAnimationTracks.translationTrack.times.push_back(static_cast<float>(time) / 30.0f);
                 skeletonAnimationTracks.translationTrack.translations.push_back(Vector3f(translation[0], translation[1], translation[2]));
 
-                skeletonAnimationTracks.rotationTrack.times.push_back(static_cast<float>(time));
+                skeletonAnimationTracks.rotationTrack.times.push_back(static_cast<float>(time) / 30.0f);
                 skeletonAnimationTracks.rotationTrack.rotations.push_back(Quaternion(rotation.GetReal(), rotation.GetImaginary()[0], rotation.GetImaginary()[1], rotation.GetImaginary()[2]));
 
-                skeletonAnimationTracks.scaleTrack.times.push_back(static_cast<float>(time));
+                skeletonAnimationTracks.scaleTrack.times.push_back(static_cast<float>(time) / 30.0f);
                 skeletonAnimationTracks.scaleTrack.scales.push_back(Vector3f(scale[0], scale[1], scale[2]));
+
+                duration = std::max(duration, static_cast<float>(time) / 30.0f);
             }
         }
 
+        skeletonAnimation->duration = duration;
         skeletonAnimation->targetSkeleton = mesh.skeleton;
 
         mesh.skeletonAnimation = skeletonAnimation;

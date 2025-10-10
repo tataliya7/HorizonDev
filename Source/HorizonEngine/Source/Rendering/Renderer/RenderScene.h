@@ -117,6 +117,8 @@ namespace Horizon
         uint32 indexCount;
         uint32 meshletCount;
 
+        std::vector<Matrix4x4f> jointBindTransforms;
+        std::vector<Matrix4x4f> jointTransforms;
         RenderBackendBufferHandle vertexBuffers[4];
         RenderBackendBufferHandle indexBuffer;
         RenderBackendBufferHandle vertexBuffer;
@@ -130,6 +132,7 @@ namespace Horizon
         RenderBackendBufferHandle jointIndexBuffer;
         RenderBackendBufferHandle jointWeightBuffer;
         RenderBackendBufferHandle jointTransformBuffer;
+        RenderBackendBufferHandle previousJointTransformBuffer;
 
         RenderBackendBufferHandle instanceUploadBuffer;
         RenderBackendBufferHandle transformUploadBuffer;
@@ -428,6 +431,7 @@ namespace Horizon
         int jointIndexBuffer;
         int jointWeightBuffer;
         int jointTransformBuffer;
+        int previousJointTransformBuffer;
         uint32 vertexCount;
         uint32 indexCount;
         uint32 meshletCount;

@@ -162,6 +162,7 @@ namespace Horizon
 
                 RenderBackendBufferDescription jointTransformBufferDesc = RenderBackendBufferDescription::CreateByteAddress(jointTransforms.size() * sizeof(Matrix4x4f), true);
                 renderObject->jointTransformBuffer = renderBackend->CreateBuffer(&jointTransformBufferDesc, jointTransforms.data(), "JointTransformBuffer");
+                renderObject->previousJointTransformBuffer = renderBackend->CreateBuffer(&jointTransformBufferDesc, jointTransforms.data(), "JointTransformBuffer");
 
                 renderObject->relevantJointCountPerVertex = relevantJointCountPerVertex;
 
@@ -217,6 +218,11 @@ namespace Horizon
         {
             renderObject->localToWorldMatrix = localToWorldMatrix;
             renderObject->worldToLocalMatrix = Math::InverseMatrix(localToWorldMatrix);
+
+            renderObject->jointBindTransforms = jointBindTransform;
+            renderObject->jointTransforms = jointTransforms;
+
+            std::swap(renderObject->jointTransformBuffer, renderObject->previousJointTransformBuffer);
         }
     }
 
@@ -237,14 +243,23 @@ namespace Horizon
             skeletonAnimation->SamplePose(pose);
 
             jointTransforms.resize(pose.transformData.size());
+            jointBindTransform.resize(pose.transformData.size());
             for (uint32 i = 0; i < uint32(pose.transformData.size()); i++)
             {
                 jointTransforms[i] = pose.transformData[i].jointTransform;
+                jointBindTransform[i] = pose.transformData[i].bindTransform;
             }
 
             RenderSystem* renderSystem = HorizonEngine::GetInstance()->GetSubsystem<RenderSystem>();
             RenderBackend* renderBackend = renderSystem->GetRenderBackend();
             renderBackend->UpdateBuffer(renderObject->jointTransformBuffer, 0, jointTransforms.data(), jointTransforms.size() * sizeof(Matrix4x4f));
+
+            static bool first = true;
+            if (first)
+            {
+                first = false;
+                renderBackend->UpdateBuffer(renderObject->previousJointTransformBuffer, 0, jointTransforms.data(), jointTransforms.size() * sizeof(Matrix4x4f));
+            }
         }
     }
 }

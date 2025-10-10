@@ -288,6 +288,7 @@ namespace Horizon
             geometry.jointIndexBuffer = mesh->jointIndexBuffer ? renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(mesh->jointIndexBuffer) : -1;
             geometry.jointWeightBuffer = mesh->jointWeightBuffer ? renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(mesh->jointWeightBuffer) : -1;
             geometry.jointTransformBuffer = mesh->jointTransformBuffer ? renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(mesh->jointTransformBuffer) : -1;
+            geometry.previousJointTransformBuffer = mesh->previousJointTransformBuffer ? renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(mesh->previousJointTransformBuffer) : -1;
             geometry.vertexCount = mesh->vertexCount;
             geometry.indexCount = mesh->indexCount;
             //geometry.boundsMin = mesh.boundsMin;

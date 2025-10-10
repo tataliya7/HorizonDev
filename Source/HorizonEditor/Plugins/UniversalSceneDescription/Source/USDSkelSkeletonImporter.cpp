@@ -76,7 +76,7 @@ namespace Horizon::USDImporter
         for (size_t i = 0; i < numJoints; i++)
         {
 		    pxr::SdfPath jointPath(jointOrder[i]);
-            pxr::GfMatrix4f bindTransform(jointLocalBindTransforms[i]);
+            pxr::GfMatrix4f bindTransform(jointWorldBindTransforms[i]);
             const int parentIndex = skelTopology.GetParent(i);
 
             Joint& joint = skeleton->joints[i];

@@ -9,7 +9,8 @@ SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_SRV(2, GeometryInstanceDataBufferSRV);
 SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_SRV(3, VisibleMeshletEntryBufferSRV);
 SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(4, DepthTextureSRV);
 SHADER_CONSTANTS_TEXTURE_2D_SRV(5, uint, VBuffer0SRV);
-SHADER_CONSTANTS_TEXTURE_2D_UAV(6, float2, MotionVectorTextureUAV);
+SHADER_CONSTANTS_TEXTURE_2D_SRV(6, float3, VBuffer1SRV);
+SHADER_CONSTANTS_TEXTURE_2D_UAV(7, float2, MotionVectorTextureUAV);
 SHADER_CONSTANTS_STRUCT_END();
 
 [shader("compute")]
@@ -23,6 +24,7 @@ void ComputeMotionVectorsCS(uint3 dispatchThreadID : SV_DispatchThreadID)
     ByteAddressBuffer visibleMeshletEntryBuffer = ShaderConstants.GetVisibleMeshletEntryBufferSRV();
     Texture2D depthTexture = ShaderConstants.GetDepthTextureSRV();
     Texture2D<uint> vbuffer0 = ShaderConstants.GetVBuffer0SRV();
+    Texture2D<float3> vbuffer1 = ShaderConstants.GetVBuffer1SRV();
     RWTexture2D<float2> motionVectorTexture = ShaderConstants.GetMotionVectorTextureUAV();
 
     uint2 pixelCoord = dispatchThreadID.xy;
@@ -34,6 +36,7 @@ void ComputeMotionVectorsCS(uint3 dispatchThreadID : SV_DispatchThreadID)
     float2 uv = float2(pixelCoord.x + 0.5f, pixelCoord.y + 0.5f) * frameShaderParameters.renderResolution.zw;
     float depth = depthTexture[pixelCoord].r;
     uint packedPrimitiveID = vbuffer0[pixelCoord];
+    float3 barycentrics = vbuffer1[pixelCoord];
 
     uint visibileMeshletID, triangleID;
     UnpackVisiblePrimitiveID(visibileMeshletID, triangleID, packedPrimitiveID);
@@ -46,13 +49,58 @@ void ComputeMotionVectorsCS(uint3 dispatchThreadID : SV_DispatchThreadID)
     {
         VisibleMeshletEntry visibleMeshletEntry = GetVisibleMeshletEntry(visibleMeshletEntryBuffer, visibileMeshletID);
         GPUSceneGeometryInstanceData geometryInstanceData = GetGPUSceneGeometryInstanceData(geometryInstanceDataBuffer, visibleMeshletEntry.geometryInstanceID);
+        GPUSceneGeometryData geometryData = GetGPUSceneGeometryData(geometryDataBuffer, geometryInstanceData.geometryID);
 
-        bool skinned = false;
+        bool useGPUSkinning = geometryData.flags & GPU_SCENE_GEOMETRY_DATA_FLAG_USE_GPU_SKINNING;
 
         [branch]
-        if (skinned)
+        if (useGPUSkinning)
         {
+            ByteAddressBuffer indexBuffer = GetByteAddressBufferNonUniform(geometryData.indexBuffer);
+            ByteAddressBuffer jointIndexBuffer = GetByteAddressBufferNonUniform(geometryData.jointIndexBuffer);
+            ByteAddressBuffer jointWeightBuffer = GetByteAddressBufferNonUniform(geometryData.jointWeightBuffer);
+            ByteAddressBuffer previousJointTransformBuffer = GetByteAddressBufferNonUniform(geometryData.previousJointTransformBuffer);
 
+            uint vertexIndex0 = indexBuffer.Load<uint>((/*geometry.baseIndex + */triangleID * 3 + 0) * sizeof(uint));
+            uint vertexIndex1 = indexBuffer.Load<uint>((/*geometry.baseIndex + */triangleID * 3 + 1) * sizeof(uint));
+            uint vertexIndex2 = indexBuffer.Load<uint>((/*geometry.baseIndex + */triangleID * 3 + 2) * sizeof(uint));
+
+            GPUSceneGeometryVertexAttributes vertexAttributes0 = GetGPUSceneGeometryVertexAttributes(geometryData, vertexIndex0);
+            GPUSceneGeometryVertexAttributes vertexAttributes1 = GetGPUSceneGeometryVertexAttributes(geometryData, vertexIndex1);
+            GPUSceneGeometryVertexAttributes vertexAttributes2 = GetGPUSceneGeometryVertexAttributes(geometryData, vertexIndex2);
+
+            uint jointTransformBufferOffset = 0;
+
+            float3 previousSkinnedLocalSpacePosition0 = float3(0.0f, 0.0f, 0.0f);
+            float3 previousSkinnedLocalSpacePosition1 = float3(0.0f, 0.0f, 0.0f);
+            float3 previousSkinnedLocalSpacePosition2 = float3(0.0f, 0.0f, 0.0f);
+
+            const uint relevantJointCount = geometryData.relevantJointCountPerVertex;
+            for (uint relevantJointIndex = 0; relevantJointIndex < relevantJointCount; relevantJointIndex++)
+            {
+                int jointIndex0 = jointIndexBuffer.Load<int>((vertexIndex0 * relevantJointCount + relevantJointIndex) * sizeof(int));
+                int jointIndex1 = jointIndexBuffer.Load<int>((vertexIndex1 * relevantJointCount + relevantJointIndex) * sizeof(int));
+                int jointIndex2 = jointIndexBuffer.Load<int>((vertexIndex2 * relevantJointCount + relevantJointIndex) * sizeof(int));
+
+                float jointWeight0 = jointWeightBuffer.Load<float>((vertexIndex0 * relevantJointCount + relevantJointIndex) * sizeof(float));
+                float jointWeight1 = jointWeightBuffer.Load<float>((vertexIndex1 * relevantJointCount + relevantJointIndex) * sizeof(float));
+                float jointWeight2 = jointWeightBuffer.Load<float>((vertexIndex2 * relevantJointCount + relevantJointIndex) * sizeof(float));
+
+                // @todo Use float4x3 instead?
+                float4x4 previousJointTransform0 = previousJointTransformBuffer.Load<float4x4>(jointTransformBufferOffset + jointIndex0 * sizeof(float4x4));
+                float4x4 previousJointTransform1 = previousJointTransformBuffer.Load<float4x4>(jointTransformBufferOffset + jointIndex1 * sizeof(float4x4));
+                float4x4 previousJointTransform2 = previousJointTransformBuffer.Load<float4x4>(jointTransformBufferOffset + jointIndex2 * sizeof(float4x4));
+
+                previousSkinnedLocalSpacePosition0 += mul(previousJointTransform0, float4(vertexAttributes0.position, 1.0f)).xyz * jointWeight0;
+                previousSkinnedLocalSpacePosition1 += mul(previousJointTransform1, float4(vertexAttributes1.position, 1.0f)).xyz * jointWeight1;
+                previousSkinnedLocalSpacePosition2 += mul(previousJointTransform2, float4(vertexAttributes2.position, 1.0f)).xyz * jointWeight2;
+            }
+
+            float3 previousSkinnedLocalSpacePosition = barycentrics.x * previousSkinnedLocalSpacePosition0 + barycentrics.y * previousSkinnedLocalSpacePosition1 + barycentrics.z * previousSkinnedLocalSpacePosition2;
+            float3 previousWorldSpacePosition = mul(geometryInstanceData.previousLocalToWorldMatrix, float4(previousSkinnedLocalSpacePosition, 1.0f)).xyz;
+            float4 previousClipSpacePosition = mul(frameShaderParameters.previousWorldToClipMatrix, float4(previousWorldSpacePosition, 1.0f));
+            float4 previousNDCSpacePosition = float4(previousClipSpacePosition.xyz / previousClipSpacePosition.w, 1.0f);
+            previousScreenSpacePosition = float4(NDCSpaceXYToScreenSpaceUV(previousNDCSpacePosition.xy), previousNDCSpacePosition.z, 1.0f);
         }
         else
         {

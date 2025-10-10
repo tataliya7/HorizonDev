@@ -334,6 +334,18 @@ namespace Horizon
         const RenderSettings& renderSettings = view.GetRenderSettings();
         const RenderScene* scene = view.GetRenderScene();
 
+#if 0
+        for (auto& mesh : scene->meshes)
+        {
+            for (auto t : mesh->jointBindTransforms)
+            {
+                t = mesh->localToWorldMatrix * t;
+                Vector3f translation; Quaternion rotation; Vector3f scale;
+                Math::DecomposeTransformationMatrix(t, translation, rotation, scale);
+                DrawSphere(translation, 0.1f, Vector4f(1, 0, 0, 1));
+            }
+        }
+#endif
         // Setup uniform variables
         {
             perFrameShaderParameters.frameIndex = view.frameIndex;

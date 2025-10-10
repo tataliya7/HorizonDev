@@ -101,6 +101,7 @@ namespace Horizon
                 Vector3f scale;
                 Matrix4x4f localTransform;
                 Matrix4x4f derivedLocalTransform = IdentityMatrix4x4f;
+                Matrix4x4f bindTransform;
                 Matrix4x4f jointTransform;
             };
             std::vector<JointTransformData> transformData;
