@@ -118,7 +118,7 @@ namespace Horizon
 			if (time >= rotationTrack.times[i] && time <= rotationTrack.times[i + 1])
 			{
 				float ratio = (time - rotationTrack.times[i]) / (rotationTrack.times[i + 1] -  rotationTrack.times[i]);
-				outRotaion = glm::normalize(glm::lerp(rotationTrack.rotations[i], rotationTrack.rotations[i + 1], ratio));
+				outRotaion = glm::normalize(glm::slerp(rotationTrack.rotations[i], rotationTrack.rotations[i + 1], ratio));
 				return;
 			}
 		}
