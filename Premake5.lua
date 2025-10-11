@@ -139,6 +139,7 @@ group ""
 group "ThirdParty"
     include "ThirdParty/imgui"
     include "ThirdParty/googletest"
+    include "ThirdParty/meshoptimizer"
 group ""
 
 -- group "Tests"

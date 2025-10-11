@@ -90,6 +90,7 @@
 
 /ThirdParty/imgui/imgui-1.89.9-docking
 /ThirdParty/googletest/googletest-1.14.0
+/ThirdParty/meshoptimizer/meshoptimizer-0.24
 
 # TODO: remove this
 !/Assets/Fonts
