@@ -209,7 +209,7 @@ namespace Horizon
         renderFeatures.enableLensFlare = finalPostProcessingSettings.lensFlareIntensity > 0.0f;
         renderFeatures.enableConvolutionBloom = false;
         renderFeatures.enableEditorSelectionOutline = false;
-        renderFeatures.enableSubsurfaceScattering = false;
+        renderFeatures.enableSubsurfaceScattering = true;
         renderFeatures.enableBilateralGridLocalToneMapping = (finalPostProcessingSettings.localToneMappingMethod == LocalToneMappingMethod::BilateralGrid);
         renderFeatures.enableExposureFusionLocalToneMapping = (finalPostProcessingSettings.localToneMappingMethod == LocalToneMappingMethod::ExposureFusion);
 
