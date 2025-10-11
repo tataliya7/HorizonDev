@@ -15,4 +15,3 @@ project "meshoptimizer"
     includedirs {
         thirdpartypath("meshoptimizer/meshoptimizer-0.24"),
     }
-
