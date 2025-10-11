@@ -1,6 +1,5 @@
 #include "VirtualGeometry.h"
-
-#include <metis.h>
+#include "GraphPartitioning.h"
 
 namespace Horizon
 {
@@ -34,14 +33,14 @@ namespace Horizon
             trilist[indices[i]].push_back(int(i / 3));
         }
 
-        std::vector<idx_t> xadj(indices.size() / 3 + 1);
-        std::vector<idx_t> adjncy;
-        std::vector<idx_t> adjwgt;
-        std::vector<idx_t> part(indices.size() / 3);
+        GraphPartitioning::AdjacencyList graph;
+        graph.nodeCount = triangleCount;
+        graph.adjacencyOffsets.resize(triangleCount + 1);
+        std::vector<int32> part;
 
         std::vector<int> scratch;
 
-        for (size_t i = 0; i < indices.size() / 3; i++)
+        for (size_t i = 0; i < triangleCount; i++)
         {
             uint32 a = indices[i * 3 + 0];
             uint32 b = indices[i * 3 + 1];
@@ -60,52 +59,31 @@ namespace Horizon
 
                 if (j == 0 || scratch[j] != scratch[j - 1])
                 {
-                    adjncy.push_back(scratch[j]);
-                    adjwgt.push_back(1);
+                    graph.adjacencyIndices.push_back(scratch[j]);
+                    graph.adjacencyWeights.push_back(1);
                 }
                 else if (j != 0)
                 {
                     assert(scratch[j] == scratch[j - 1]);
-                    adjwgt.back()++;
+                    graph.adjacencyWeights.back()++;
                 }
             }
 
-            xadj[i + 1] = int(adjncy.size());
+            graph.adjacencyOffsets[i + 1] = int(graph.adjacencyIndices.size());
         }
 
-        idx_t nvtxs = idx_t(indices.size() / 3);
-        idx_t ncon = 1;
-        idx_t nparts = idx_t(indices.size() / 3 + (kClusterSize - kMetisSlop) - 1) / (kClusterSize - kMetisSlop);
-        idx_t objval = 0;
+        bool result = GraphPartitioning::PartGraph(graph, kClusterSize, kClusterSize, part);
 
-        idx_t metisOptions[METIS_NOPTIONS];
-        METIS_SetDefaultOptions(metisOptions);
-        metisOptions[METIS_OPTION_UFACTOR] = 1;
+        uint32 nparts = static_cast<uint32>(part.size());
 
-        int result = METIS_PartGraphRecursive(
-            &nvtxs,           // The number of vertices in the graph.
-            &ncon,            // The number of balancing constraints.
-            xadj.data(),      // The adjacency structure of the graph.
-            adjncy.data(),    // The adjacency structure of the graph.
-            NULL,             // The weights of the vertices.
-            NULL,             // The size of the vertices for computing the total communication volume.
-            adjwgt.data(),    // The weights of the edges.
-            &nparts,          // The number of parts to partition the graph.
-            NULL,             // This is an array of size nparts*ncon that specifies the desired weight for each partition and constraint.
-            NULL,             // This is an array of size ncon that specifies the allowed load imbalance tolerance for each constraint.
-            metisOptions,     // This is an array of options.
-            &objval,          // Upon successful completion, this variable stores the edge-cut or the total communication volume of the partitioning solution.
-            part.data());     // This is a vector of size nvtxs that upon successful completion stores the partition vector of the graph.
-
-        if (result != METIS_OK)
+        if (!result)
         {
-            // @todo log
-            //return false;
+
         }
 
         std::vector<ClusterIndices> meshlets(nparts);
 
-        for (uint32 i = 0; i < uint32(nvtxs); ++i)
+        for (uint32 i = 0; i < uint32(graph.nodeCount); ++i)
         {
             meshlets[part[i]].indices.push_back(indices[i * 3 + 0]);
             meshlets[part[i]].indices.push_back(indices[i * 3 + 1]);
@@ -113,7 +91,7 @@ namespace Horizon
             meshlets[part[i]].materialIndices.push_back(materialIndices[i]);
         }
 
-        for (int i = 0; i < nparts; ++i)
+        for (uint32 i = 0; i < nparts; ++i)
         {
             //meshlets[i].parent.error = FLT_MAX;
 
