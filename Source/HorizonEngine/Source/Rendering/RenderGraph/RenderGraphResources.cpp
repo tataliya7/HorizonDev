@@ -1,7 +1,5 @@
 #include "RenderGraphResources.h"
 
-#include <optick.h>
-
 namespace Horizon
 {
     const RenderGraphTextureSubresourceRange RenderGraphTextureSubresourceRange::WholeRange = RenderGraphTextureSubresourceRange(0, RenderBackendTextureSubresourceRange::RemainingMipLevels, 0, RenderBackendTextureSubresourceRange::RemainingArrayLayers);

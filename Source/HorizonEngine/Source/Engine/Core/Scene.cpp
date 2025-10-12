@@ -6,8 +6,6 @@
 // TODO
 #include "HorizonEngine.h"
 
-#include <optick.h>
-
 namespace Horizon
 {
     Scene::Scene(const std::string& name)

@@ -1,8 +1,4 @@
 #include "RenderScene.h"
-
-#include <optick.h>
-
-
 #include "ImageBasedLighting.h"
 #include "ShaderRepository.h"
 #include "Engine/Core/RenderSystem.h"

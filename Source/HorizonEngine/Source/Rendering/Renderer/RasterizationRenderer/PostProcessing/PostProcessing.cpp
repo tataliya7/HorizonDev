@@ -2,8 +2,6 @@
 #include "../RasterizationRenderer.h"
 #include "../TemporalSuperSampling.h"
 
-#include <optick.h>
-
 namespace Horizon
 {
     void RasterizationRenderer::ExecutePostProcessingPipeline(

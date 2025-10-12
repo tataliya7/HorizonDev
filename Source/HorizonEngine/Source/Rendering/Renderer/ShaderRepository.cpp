@@ -1,7 +1,5 @@
 #include "ShaderRepository.h"
 
-#include <optick.h>
-
 namespace Horizon
 {
     static ShaderRepository* GlobalShaderRepository = nullptr;

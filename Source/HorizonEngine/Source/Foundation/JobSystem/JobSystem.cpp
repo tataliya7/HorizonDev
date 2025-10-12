@@ -6,8 +6,10 @@
 #include <condition_variable>
 
 #include <windows.h>
-#include <optick.h>
+
 #include <MPMCQueue.h>
+
+#include "Foundation/Profiling/CPUProfiler.h"
 
 namespace Horizon
 {
@@ -262,6 +264,7 @@ namespace Horizon
     static void JobSystemWorkerThreadEntry(JobSystemThread* thread)
     {
         OPTICK_THREAD(thread->name.c_str());
+
         JobSystemSetThreadName(thread->name.c_str());
 
         JobSystemInstance.bootCounter.fetch_sub(1);

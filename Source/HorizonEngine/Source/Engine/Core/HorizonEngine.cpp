@@ -5,8 +5,6 @@
 // TODO
 #include "Streamline.h"
 
-#include <optick.h>
-
 namespace Horizon
 {
     HorizonEngine* HorizonEngine::Instance = nullptr;

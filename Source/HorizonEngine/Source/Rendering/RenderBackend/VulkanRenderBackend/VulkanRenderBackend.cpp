@@ -4,8 +4,6 @@
 #include "VulkanRenderBackendUtility.h"
 #include "VulkanRenderBackendPrivate.h"
 
-#include <optick.h>
-
 namespace Horizon
 {
     namespace VulkanLoader
@@ -4007,7 +4005,6 @@ namespace Horizon
 
     bool VulkanRenderBackendCommandListContext::TranslateRenderBackendCommand(const RenderBackendCommandDraw& command)
     {
-        OPTICK_EVENT();
 
         if (!PrepareForDraw(command.vertexShader, command.pixelShader, command.pipelineState, command.topology, command.indexBuffer, command.pushConstantValues))
         {
@@ -4227,7 +4224,7 @@ namespace Horizon
 
 //      void ParallelBuildCommandBuffers()
  //   {
- //       OPTICK_EVENT();
+ //       CPUProfilingScope cpuProfilingScope;
 
  //       BuildCommandBufferJobData* jobData = new BuildCommandBufferJobData[numCommandBuffers];
  //       for (uint32 i = 0; i < numCommandBuffers; i++)

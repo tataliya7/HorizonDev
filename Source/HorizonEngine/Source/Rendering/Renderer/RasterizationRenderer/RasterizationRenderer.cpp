@@ -3,8 +3,6 @@
 #include "TemporalSuperSampling.h"
 #include "StreamlineModule.h"
 
-#include <optick.h>
-
 import FidelityFX.FSR2;
 import FidelityFX.FSR3;
 

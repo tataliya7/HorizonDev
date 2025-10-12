@@ -1,7 +1,5 @@
 #include "RenderGraph.h"
 
-#include <optick.h>
-
 namespace Horizon
 {
     RenderGraph::RenderGraph(MemoryArena* arena, RenderGraphResourcePool* pool, RenderBackendGPUProfiler* gpuProfiler)

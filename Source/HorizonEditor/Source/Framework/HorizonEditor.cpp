@@ -4,7 +4,6 @@
 #include "RenderDocPlugin.h"
 #include "TimeOfDayPlugin.h"
 
-#include <optick.h>
 #include <thread>
 
 #include "../Plugins/Streamline/Source/StreamlineModule.h"

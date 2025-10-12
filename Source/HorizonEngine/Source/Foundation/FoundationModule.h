@@ -12,3 +12,4 @@
 #include "Foundation/Misc/Misc.h"
 #include "Foundation/Platform/PlatformGenericAPI.h"
 #include "Foundation/JobSystem/JobSystem.h"
+#include "Foundation/Profiling/CPUProfiler.h"

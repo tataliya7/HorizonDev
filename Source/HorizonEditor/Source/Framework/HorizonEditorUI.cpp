@@ -11,8 +11,6 @@
 #include "imnodes.h"
 #include "imnodes_internal.h"
 
-#include <optick.h>
-
 #include "RenderDocPlugin.h"
 
 #include "InspectorUI_DEPRECATED.h"

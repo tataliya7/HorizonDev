@@ -3,7 +3,6 @@
 #include "Direct3D12RenderBackendUtility.h"
 #include "Direct3D12RenderBackendPrivate.h"
 
-#include <optick.h>
 #include <pix.h>
 
 #pragma comment(lib, "d3d12.lib")
@@ -580,8 +579,6 @@ namespace Horizon
 
     bool D3D12RenderBackendCommandListContext::TranslateRenderBackendCommand(const RenderBackendCommandDispatch& command)
     {
-        OPTICK_EVENT();
-
         if (!PrepareForDispatch(command.computeShader, command.pushConstantValues))
         {
             return false;
@@ -592,8 +589,6 @@ namespace Horizon
 
     bool D3D12RenderBackendCommandListContext::TranslateRenderBackendCommand(const RenderBackendCommandDispatchIndirect& command)
     {
-        OPTICK_EVENT();
-
         if (!PrepareForDispatch(command.computeShader, command.pushConstantValues))
         {
             return false;
@@ -604,8 +599,6 @@ namespace Horizon
 
     bool D3D12RenderBackendCommandListContext::TranslateRenderBackendCommand(const RenderBackendCommandBuildRayTracingBottomLevelAccelerationStructure& command)
     {
-        OPTICK_EVENT();
-
         const D3D12RayTracingAccelerationStructure* srcBLAS = command.srcBLAS ? device->GetRayTracingAccelerationStructure(command.srcBLAS) : nullptr;
         const D3D12RayTracingAccelerationStructure* dstBLAS = device->GetRayTracingAccelerationStructure(command.dstBLAS);
 
@@ -636,8 +629,6 @@ namespace Horizon
 
     bool D3D12RenderBackendCommandListContext::TranslateRenderBackendCommand(const RenderBackendCommandBuildRayTracingTopLevelAccelerationStructure& command)
     {
-        OPTICK_EVENT();
-
         const D3D12RayTracingAccelerationStructure* srcTLAS = command.srcTLAS ? device->GetRayTracingAccelerationStructure(command.srcTLAS) : nullptr;
         const D3D12RayTracingAccelerationStructure* dstTLAS = device->GetRayTracingAccelerationStructure(command.dstTLAS);
 
@@ -668,8 +659,6 @@ namespace Horizon
 
     bool D3D12RenderBackendCommandListContext::TranslateRenderBackendCommand(const RenderBackendCommandDispatchRays& command)
     {
-        OPTICK_EVENT();
-
         D3D12RayTracingPipelineStateObject* rayTracingPipelineStateObject = device->GetRayTracingPipelineStateObject(command.pipelineStateObject);
         if (activeRayTracingPipeline != rayTracingPipelineStateObject->GetID3D12StateObject())
         {
@@ -958,8 +947,6 @@ namespace Horizon
 
     bool D3D12RenderBackendCommandListContext::TranslateRenderBackendCommand(const RenderBackendCommandDraw& command)
     {
-        OPTICK_EVENT();
-
         if (!PrepareForDraw(command.vertexShader, command.pixelShader, command.pipelineState, command.topology, command.indexBuffer, command.pushConstantValues))
         {
             return false;
@@ -1056,8 +1043,6 @@ namespace Horizon
 
     bool D3D12RenderBackendCommandListContext::TranslateRenderBackendCommand(const RenderBackendCommandDispatchSuperSampling& command)
     {
-        OPTICK_EVENT();
-
         D3D12Texture* outputTexture = device->GetTexture(command.output);
         D3D12Texture* colorTexture = device->GetTexture(command.color);
         D3D12Texture* depthTexture = device->GetTexture(command.depth);

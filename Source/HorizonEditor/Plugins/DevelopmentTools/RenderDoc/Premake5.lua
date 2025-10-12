@@ -21,6 +21,7 @@ project "RenderDoc"
         thirdpartypath("entt/include"),
         thirdpartypath("imgui/imgui-1.89.9-docking"),
         thirdpartypath("python/310/include"),
+        thirdpartypath("optick/Optick_1.4.0/include"), -- @todo Remove this
     }
 
     links {
