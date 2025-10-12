@@ -59,6 +59,12 @@ namespace Horizon
 
             {
                 VirtualGeometryBuildSettings settings;
+                settings.maxLODCount = 1;
+                settings.minMeshletSize = 128;
+                settings.maxMeshletSize = 128;
+                settings.minMeshletGroupSize = 16;
+                settings.maxMeshletGroupSize = 16;
+
                 VirtualGeometryBuildInput input;
                 input.vertices.position = positions;
                 input.vertices.normals = normals;
@@ -67,27 +73,34 @@ namespace Horizon
                 input.indices = indices;
                 input.materialIndices = materialIndices;
                 VirtualGeometryBuildOutput output;
-                bool result = BuildVirtualGeometry(settings, input, output);
+                bool result = VirtualGeometryBuildMesh(settings, input, output);
 
-                RenderBackendBufferDescription meshletBufferDesc = RenderBackendBufferDescription::CreateByteAddress(sizeof(GPUSceneMeshletData) * output.meshlets.size());
-                renderObject->meshletBuffer = renderBackend->CreateBuffer(&meshletBufferDesc, output.meshlets.data(), "MeshletBuffer");
+                materialIndices = output.materialIndices;
+
+                for (uint32 meshletIndex = 0; meshletIndex < output.meshlets.size(); meshletIndex++)
+                {
+                    auto& meshlet = scene->meshlets.emplace_back();
+                    meshlet.vertexOffset = output.meshlets[meshletIndex].vertexOffset;
+                    meshlet.triangleOffset = output.meshlets[meshletIndex].triangleOffset;
+                    meshlet.vertexCount = output.meshlets[meshletIndex].vertexCount;
+                    meshlet.triangleCount = output.meshlets[meshletIndex].triangleCount;
+                    meshlet.boundingBoxCenter = output.meshlets[meshletIndex].boundingBoxCenter;
+                    meshlet.padding0 = 0; // @todo Fix me!
+                    meshlet.boundingBoxExtent = output.meshlets[meshletIndex].boundingBoxExtent;
+                    meshlet.isSkinned = 0;
+                    if (skeleton)
+                    {
+                        meshlet.isSkinned = 1;
+                    }
+                }
+
+                RenderBackendBufferDescription meshletBufferDesc = RenderBackendBufferDescription::CreateByteAddress(sizeof(GPUSceneMeshletData) * scene->meshlets.size());
+                renderObject->meshletBuffer = renderBackend->CreateBuffer(&meshletBufferDesc, scene->meshlets.data(), "MeshletBuffer");
 
                 assert(indexCount == output.indices.size());
                 RenderBackendBufferDescription meshletVertexBufferDesc = RenderBackendBufferDescription::CreateIndex(sizeof(uint32), static_cast<uint32>(output.indices.size()));
                 renderObject->meshletVertexBuffer = renderBackend->CreateBuffer(&meshletVertexBufferDesc, output.indices.data(), "MeshletVertexBuffer");
                 renderObject->meshletCount = static_cast<uint32>(output.meshlets.size());
-
-                materialIndices = output.materialIndices;
-
-                scene->meshlets = output.meshlets;
-
-                for (auto m : scene->meshlets)
-                {
-                    if (skeleton)
-                    {
-                        m.isSkinned = 1;
-                    }
-                }
             }
 
             // @todo Refactor this.

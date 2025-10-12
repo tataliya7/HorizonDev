@@ -13,9 +13,33 @@ namespace Horizon
         std::vector<Vector2f> textureCoordinates[1];
     };
 
+    struct VirtualGeometryMeshlet
+    {
+        uint32 vertexOffset;
+        uint32 triangleOffset;
+        uint32 vertexCount;
+        uint32 triangleCount;
+        Vector3f boundingBoxCenter;
+        Vector3f boundingBoxExtent;
+    };
+
+    struct VirtualGeometryMeshletGroup
+    {
+        std::vector<uint32> meshletIndices;
+    };
+
+    struct VirtualGeometryHierarchyNode
+    {
+        // Not implemented.
+    };
+
     struct VirtualGeometryBuildSettings
     {
-
+        uint32 maxLODCount;
+        uint32 minMeshletSize;
+        uint32 maxMeshletSize;
+        uint32 minMeshletGroupSize;
+        uint32 maxMeshletGroupSize;
     };
 
     struct VirtualGeometryBuildInput
@@ -30,8 +54,10 @@ namespace Horizon
         VirtualGeometryVertexArray vertices;
         std::vector<uint32> indices;
         std::vector<uint32> materialIndices;
-        std::vector<GPUSceneMeshletData> meshlets;
+        std::vector<VirtualGeometryMeshlet> meshlets;
+        std::vector<VirtualGeometryMeshletGroup> meshletGroups;
+        std::vector<uint32> meshletGroupIndices;
     };
 
-    bool BuildVirtualGeometry(const VirtualGeometryBuildSettings& settings, const VirtualGeometryBuildInput& input, VirtualGeometryBuildOutput& output);
+    bool VirtualGeometryBuildMesh(const VirtualGeometryBuildSettings& settings, const VirtualGeometryBuildInput& input, VirtualGeometryBuildOutput& output);
 }
