@@ -28,7 +28,7 @@ project "HorizonEditorLauncher"
         "HorizonEngine",
         "HorizonEditor",
         "imgui",
-        --"USD",
+        "meshoptimizer",
         "RenderDoc",
         thirdpartypath("glfw/glfw-3.3.9.bin.WIN64/lib-vc2022/glfw3.lib"),
         thirdpartypath("dxc/dxc_2024_07_31/lib/x64/dxcompiler.lib"),
