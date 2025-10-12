@@ -29,8 +29,8 @@
 # Configuration files
 !*.ini
 !*.xml
-!*.toml
 !*.yml
+!*.toml
 !*.json
 
 # Shader files

@@ -5,6 +5,10 @@
 
 #include <optick.h>
 
+#include <toml++/toml.hpp>
+
+using namespace std::string_view_literals;
+
 namespace Horizon
 {
     RenderSystem::RenderSystem()
@@ -19,8 +23,22 @@ namespace Horizon
 
     void RenderSystem::Init()
     {
-        enableHardwareRayTracing = false;
-        renderBackendType = RenderBackendType::Direct3D12;
+        // @todo Move to other place
+        {
+            toml::table table = toml::parse_file("../../../Source/HorizonEngine/Config/DefaultEngineSettings.toml");
+
+            std::string_view renderBackendTypeString = table["HorizonEngine"]["Rendering"]["RenderBackend"]["RenderBackendType"].value_or(""sv);
+            enableHardwareRayTracing = table["HorizonEngine"]["Rendering"]["RenderBackend"]["EnableHardwareRayTracing"].value_or(false);
+
+            if (renderBackendTypeString == "Vulkan")
+            {
+                renderBackendType = RenderBackendType::Vulkan;
+            }
+            else
+            {
+                renderBackendType = RenderBackendType::Direct3D12;
+            }
+        }
 
 #if HORIZON_CONFIGURATION_RELEASE
         enableDebugLayer = false;

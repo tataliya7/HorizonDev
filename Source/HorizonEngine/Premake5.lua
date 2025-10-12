@@ -14,7 +14,8 @@ project "HorizonEngine"
 
     files {
         "**.lua",
-        "**.ini",
+        "**.toml",
+
         "Shaders/**.h",
         "Shaders/**.hsh",
         "Shaders/**.hslib",
@@ -85,6 +86,7 @@ project "HorizonEngine"
         thirdpartypath("metis/metis-5.1.0/include"),
         thirdpartypath("meshoptimizer/meshoptimizer-0.24/src"),
         thirdpartypath("FidelityFX/sdk/include"),
+        thirdpartypath("toml/tomlplusplus-3.4.0/include"),
     }
 
     links {
