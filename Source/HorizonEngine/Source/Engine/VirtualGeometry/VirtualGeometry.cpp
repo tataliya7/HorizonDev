@@ -105,8 +105,6 @@ namespace Horizon
 
             for (uint32 meshletIndex = 0; meshletIndex < meshletCount; meshletIndex++)
             {
-                //meshlets[i].parent.error = FLT_MAX;
-
                 // Need to split the cluster further...
                 if ((3 * trianglesPerMeshlet) < static_cast<uint32>(meshlets[meshletIndex].indices.size()))
                 {
