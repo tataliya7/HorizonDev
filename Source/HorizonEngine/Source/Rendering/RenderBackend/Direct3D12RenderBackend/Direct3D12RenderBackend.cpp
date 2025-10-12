@@ -40,78 +40,78 @@ static void D3D12MessageCallback(
 
 namespace Horizon
 {
-#define COMPILE_RENDER_COMMAND(command, RenderBackendCommandStruct)                                     \
-    case RenderBackendCommandStruct::Type:                                                              \
-    if (!CompileRenderBackendCommand(*reinterpret_cast<const RenderBackendCommandStruct*>(command)))    \
-    {                                                                                                   \
-        return false;                                                                                   \
-    }                                                                                                   \
+#define TRANSLATE_RENDER_COMMAND(command, RenderBackendCommandStruct)                                     \
+    case RenderBackendCommandStruct::Type:                                                                \
+    if (!TranslateRenderBackendCommand(*reinterpret_cast<const RenderBackendCommandStruct*>(command)))    \
+    {                                                                                                     \
+        return false;                                                                                     \
+    }                                                                                                     \
     break
 
-    bool D3D12RenderBackendCommandListContext::CompileRenderBackendCommands(const RenderBackendCommandContainer& container)
+    bool D3D12RenderBackendCommandListContext::TranslateRenderBackendCommands(const RenderBackendCommandContainer& container)
     {
         for (uint32 i = 0; i < container.numCommands; i++)
         {
             switch (container.types[i])
             {
-                COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandCopyBuffer);
-                COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandCopyTexture);
-                COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandUpdateBuffer);
-                COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandUpdateTexture);
-                COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandClearBufferUAV);
-                COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandClearTextureUAV);
-                COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandBarriers);
-                COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandBeginTimingQuery);
-                COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandEndTimingQuery);
-                COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandResolveTimingQueryResults);
-                COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandDispatch);
-                COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandDispatchIndirect);
-                COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandSetViewport);
-                COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandSetScissor);
-                COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandSetStencilReference);
-                COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandBeginRenderPass);
-                COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandEndRenderPass);
-                COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandDraw);
-                COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandDrawIndirect);
-                COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandDispatchMesh);
-                COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandDispatchMeshIndirect);
-                COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandBeginDebugLabel);
-                COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandEndDebugLabel);
-                COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandBuildRayTracingBottomLevelAccelerationStructure);
-                COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandBuildRayTracingTopLevelAccelerationStructure);
-                COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandDispatchRays);
-                COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandDispatchSuperSampling);
+                TRANSLATE_RENDER_COMMAND(container.commands[i], RenderBackendCommandCopyBuffer);
+                TRANSLATE_RENDER_COMMAND(container.commands[i], RenderBackendCommandCopyTexture);
+                TRANSLATE_RENDER_COMMAND(container.commands[i], RenderBackendCommandUpdateBuffer);
+                TRANSLATE_RENDER_COMMAND(container.commands[i], RenderBackendCommandUpdateTexture);
+                TRANSLATE_RENDER_COMMAND(container.commands[i], RenderBackendCommandClearBufferUAV);
+                TRANSLATE_RENDER_COMMAND(container.commands[i], RenderBackendCommandClearTextureUAV);
+                TRANSLATE_RENDER_COMMAND(container.commands[i], RenderBackendCommandBarriers);
+                TRANSLATE_RENDER_COMMAND(container.commands[i], RenderBackendCommandBeginTimingQuery);
+                TRANSLATE_RENDER_COMMAND(container.commands[i], RenderBackendCommandEndTimingQuery);
+                TRANSLATE_RENDER_COMMAND(container.commands[i], RenderBackendCommandResolveTimingQueryResults);
+                TRANSLATE_RENDER_COMMAND(container.commands[i], RenderBackendCommandDispatch);
+                TRANSLATE_RENDER_COMMAND(container.commands[i], RenderBackendCommandDispatchIndirect);
+                TRANSLATE_RENDER_COMMAND(container.commands[i], RenderBackendCommandSetViewport);
+                TRANSLATE_RENDER_COMMAND(container.commands[i], RenderBackendCommandSetScissor);
+                TRANSLATE_RENDER_COMMAND(container.commands[i], RenderBackendCommandSetStencilReference);
+                TRANSLATE_RENDER_COMMAND(container.commands[i], RenderBackendCommandBeginRenderPass);
+                TRANSLATE_RENDER_COMMAND(container.commands[i], RenderBackendCommandEndRenderPass);
+                TRANSLATE_RENDER_COMMAND(container.commands[i], RenderBackendCommandDraw);
+                TRANSLATE_RENDER_COMMAND(container.commands[i], RenderBackendCommandDrawIndirect);
+                TRANSLATE_RENDER_COMMAND(container.commands[i], RenderBackendCommandDispatchMesh);
+                TRANSLATE_RENDER_COMMAND(container.commands[i], RenderBackendCommandDispatchMeshIndirect);
+                TRANSLATE_RENDER_COMMAND(container.commands[i], RenderBackendCommandBeginDebugLabel);
+                TRANSLATE_RENDER_COMMAND(container.commands[i], RenderBackendCommandEndDebugLabel);
+                TRANSLATE_RENDER_COMMAND(container.commands[i], RenderBackendCommandBuildRayTracingBottomLevelAccelerationStructure);
+                TRANSLATE_RENDER_COMMAND(container.commands[i], RenderBackendCommandBuildRayTracingTopLevelAccelerationStructure);
+                TRANSLATE_RENDER_COMMAND(container.commands[i], RenderBackendCommandDispatchRays);
+                TRANSLATE_RENDER_COMMAND(container.commands[i], RenderBackendCommandDispatchSuperSampling);
                 default: std::unreachable();
             }
         }
         return true;
     }
 
-    bool D3D12RenderBackendCommandListContext::CompileRenderBackendCommandsAsynchronous(const RenderBackendCommandContainer& container)
+    bool D3D12RenderBackendCommandListContext::TranslateRenderBackendCommandsAsynchronous(const RenderBackendCommandContainer& container)
     {
         for (uint32 i = 0; i < container.numCommands; i++)
         {
             switch (container.types[i])
             {
-                COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandClearBufferUAV);
-                COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandClearTextureUAV);
-                COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandBarriers);
+                TRANSLATE_RENDER_COMMAND(container.commands[i], RenderBackendCommandClearBufferUAV);
+                TRANSLATE_RENDER_COMMAND(container.commands[i], RenderBackendCommandClearTextureUAV);
+                TRANSLATE_RENDER_COMMAND(container.commands[i], RenderBackendCommandBarriers);
                 //COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandBeginTimingQuery);
                 //COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandEndTimingQuery);
                 //COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandResolveTimingQueryResults);
-                COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandDispatch);
-                COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandDispatchIndirect);
-                COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandBeginDebugLabel);
-                COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandEndDebugLabel);
-                COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandBuildRayTracingBottomLevelAccelerationStructure);
-                COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandBuildRayTracingTopLevelAccelerationStructure);
+                TRANSLATE_RENDER_COMMAND(container.commands[i], RenderBackendCommandDispatch);
+                TRANSLATE_RENDER_COMMAND(container.commands[i], RenderBackendCommandDispatchIndirect);
+                TRANSLATE_RENDER_COMMAND(container.commands[i], RenderBackendCommandBeginDebugLabel);
+                TRANSLATE_RENDER_COMMAND(container.commands[i], RenderBackendCommandEndDebugLabel);
+                TRANSLATE_RENDER_COMMAND(container.commands[i], RenderBackendCommandBuildRayTracingBottomLevelAccelerationStructure);
+                TRANSLATE_RENDER_COMMAND(container.commands[i], RenderBackendCommandBuildRayTracingTopLevelAccelerationStructure);
                 default: std::unreachable();
             }
         }
         return true;
     }
 
-    bool D3D12RenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandCopyBuffer& command)
+    bool D3D12RenderBackendCommandListContext::TranslateRenderBackendCommand(const RenderBackendCommandCopyBuffer& command)
     {
         D3D12Buffer* srcBuffer = device->GetBuffer(command.srcBuffer);
         D3D12Buffer* dstBuffer = device->GetBuffer(command.dstBuffer);
@@ -120,7 +120,7 @@ namespace Horizon
         return true;
     }
 
-    bool D3D12RenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandCopyTexture& command)
+    bool D3D12RenderBackendCommandListContext::TranslateRenderBackendCommand(const RenderBackendCommandCopyTexture& command)
     {
         D3D12Texture* srcTexture = device->GetTexture(command.srcTexture);
         D3D12Texture* dstTexture = device->GetTexture(command.dstTexture);
@@ -150,17 +150,17 @@ namespace Horizon
         return true;
     }
 
-    bool D3D12RenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandUpdateBuffer& command)
+    bool D3D12RenderBackendCommandListContext::TranslateRenderBackendCommand(const RenderBackendCommandUpdateBuffer& command)
     {
         return true;
     }
 
-    bool D3D12RenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandUpdateTexture& command)
+    bool D3D12RenderBackendCommandListContext::TranslateRenderBackendCommand(const RenderBackendCommandUpdateTexture& command)
     {
         return true;
     }
 
-    bool D3D12RenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandClearBufferUAV& command)
+    bool D3D12RenderBackendCommandListContext::TranslateRenderBackendCommand(const RenderBackendCommandClearBufferUAV& command)
     {
         D3D12Buffer* buffer = device->GetBuffer(command.buffer);
 
@@ -181,7 +181,7 @@ namespace Horizon
         return true;
     }
 
-    bool D3D12RenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandClearTextureUAV& command)
+    bool D3D12RenderBackendCommandListContext::TranslateRenderBackendCommand(const RenderBackendCommandClearTextureUAV& command)
     {
         D3D12Texture* texture = device->GetTexture(command.uav.texture);
 
@@ -228,7 +228,7 @@ namespace Horizon
         return true;
     }
 
-    bool D3D12RenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandBarriers& command)
+    bool D3D12RenderBackendCommandListContext::TranslateRenderBackendCommand(const RenderBackendCommandBarriers& command)
     {
 #if 0
         struct D3D12DiscardResourceDesc
@@ -510,7 +510,7 @@ namespace Horizon
         return true;
     }
 
-    bool D3D12RenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandBeginTimingQuery& command)
+    bool D3D12RenderBackendCommandListContext::TranslateRenderBackendCommand(const RenderBackendCommandBeginTimingQuery& command)
     {
         const auto& timingQueryHeap = device->GetTimingQueryHeap(command.timingQueryHeap);
 
@@ -521,7 +521,7 @@ namespace Horizon
         return true;
     }
 
-    bool D3D12RenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandEndTimingQuery& command)
+    bool D3D12RenderBackendCommandListContext::TranslateRenderBackendCommand(const RenderBackendCommandEndTimingQuery& command)
     {
         const auto& timingQueryHeap = device->GetTimingQueryHeap(command.timingQueryHeap);
 
@@ -532,7 +532,7 @@ namespace Horizon
         return true;
     }
 
-    bool D3D12RenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandResolveTimingQueryResults& command)
+    bool D3D12RenderBackendCommandListContext::TranslateRenderBackendCommand(const RenderBackendCommandResolveTimingQueryResults& command)
     {
         OPTICK_EVENT();
 
@@ -578,7 +578,7 @@ namespace Horizon
         return true;
     }
 
-    bool D3D12RenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandDispatch& command)
+    bool D3D12RenderBackendCommandListContext::TranslateRenderBackendCommand(const RenderBackendCommandDispatch& command)
     {
         OPTICK_EVENT();
 
@@ -590,7 +590,7 @@ namespace Horizon
         return true;
     }
 
-    bool D3D12RenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandDispatchIndirect& command)
+    bool D3D12RenderBackendCommandListContext::TranslateRenderBackendCommand(const RenderBackendCommandDispatchIndirect& command)
     {
         OPTICK_EVENT();
 
@@ -602,7 +602,7 @@ namespace Horizon
         return true;
     }
 
-    bool D3D12RenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandBuildRayTracingBottomLevelAccelerationStructure& command)
+    bool D3D12RenderBackendCommandListContext::TranslateRenderBackendCommand(const RenderBackendCommandBuildRayTracingBottomLevelAccelerationStructure& command)
     {
         OPTICK_EVENT();
 
@@ -634,7 +634,7 @@ namespace Horizon
         return true;
     }
 
-    bool D3D12RenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandBuildRayTracingTopLevelAccelerationStructure& command)
+    bool D3D12RenderBackendCommandListContext::TranslateRenderBackendCommand(const RenderBackendCommandBuildRayTracingTopLevelAccelerationStructure& command)
     {
         OPTICK_EVENT();
 
@@ -666,7 +666,7 @@ namespace Horizon
         return true;
     }
 
-    bool D3D12RenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandDispatchRays& command)
+    bool D3D12RenderBackendCommandListContext::TranslateRenderBackendCommand(const RenderBackendCommandDispatchRays& command)
     {
         OPTICK_EVENT();
 
@@ -702,7 +702,7 @@ namespace Horizon
         return true;
     }
 
-    bool D3D12RenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandSetViewport& command)
+    bool D3D12RenderBackendCommandListContext::TranslateRenderBackendCommand(const RenderBackendCommandSetViewport& command)
     {
         D3D12_VIEWPORT viewports[RenderBackendMaxViewportCount];
         for (uint32 i = 0; i < command.viewportCount; i++)
@@ -722,7 +722,7 @@ namespace Horizon
         return true;
     }
 
-    bool D3D12RenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandSetScissor& command)
+    bool D3D12RenderBackendCommandListContext::TranslateRenderBackendCommand(const RenderBackendCommandSetScissor& command)
     {
         D3D12_RECT scissors[RenderBackendMaxViewportCount];
         for (uint32 i = 0; i < command.scissorCount; i++)
@@ -740,13 +740,13 @@ namespace Horizon
         return true;
     }
 
-    bool D3D12RenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandSetStencilReference& command)
+    bool D3D12RenderBackendCommandListContext::TranslateRenderBackendCommand(const RenderBackendCommandSetStencilReference& command)
     {
         commandList->GetID3D12GraphicsCommandList6()->OMSetStencilRef(command.stencilReference);
         return true;
     }
 
-    bool D3D12RenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandBeginRenderPass& command)
+    bool D3D12RenderBackendCommandListContext::TranslateRenderBackendCommand(const RenderBackendCommandBeginRenderPass& command)
     {
 #if D3D12_RENDER_BACKEND_USE_RENDER_PASS
 
@@ -906,7 +906,7 @@ namespace Horizon
         return true;
     }
 
-    bool D3D12RenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandEndRenderPass& command)
+    bool D3D12RenderBackendCommandListContext::TranslateRenderBackendCommand(const RenderBackendCommandEndRenderPass& command)
     {
 #if D3D12_RENDER_BACKEND_USE_RENDER_PASS
         commandList->GetID3D12GraphicsCommandList6()->EndRenderPass();
@@ -956,7 +956,7 @@ namespace Horizon
         return true;
     }
 
-    bool D3D12RenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandDraw& command)
+    bool D3D12RenderBackendCommandListContext::TranslateRenderBackendCommand(const RenderBackendCommandDraw& command)
     {
         OPTICK_EVENT();
 
@@ -984,7 +984,7 @@ namespace Horizon
         return true;
     }
 
-    bool D3D12RenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandDrawIndirect& command)
+    bool D3D12RenderBackendCommandListContext::TranslateRenderBackendCommand(const RenderBackendCommandDrawIndirect& command)
     {
         if (!PrepareForDraw(command.vertexShader, command.pixelShader, command.pipelineState, command.topology, command.indexBuffer, command.pushConstantValues))
         {
@@ -1013,7 +1013,7 @@ namespace Horizon
         return true;
     }
 
-    bool D3D12RenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandDispatchMesh& command)
+    bool D3D12RenderBackendCommandListContext::TranslateRenderBackendCommand(const RenderBackendCommandDispatchMesh& command)
     {
         // if (!PrepareForMeshShading(command.amplificationShader, command.meshShader, command.pixelShader, command.pipelineStateObject, command.topology, command.pushConstantValues))
         // {
@@ -1026,7 +1026,7 @@ namespace Horizon
         return true;
     }
 
-    bool D3D12RenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandDispatchMeshIndirect& command)
+    bool D3D12RenderBackendCommandListContext::TranslateRenderBackendCommand(const RenderBackendCommandDispatchMeshIndirect& command)
     {
         // if (!PrepareForMeshShading(command.amplificationShader, command.meshShader, command.pixelShader, command.pipelineStateObject, command.topology, command.pushConstantValues))
         // {
@@ -1042,19 +1042,19 @@ namespace Horizon
         return true;
     }
 
-    bool D3D12RenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandBeginDebugLabel& command)
+    bool D3D12RenderBackendCommandListContext::TranslateRenderBackendCommand(const RenderBackendCommandBeginDebugLabel& command)
     {
         PIXBeginEvent(commandList->GetID3D12GraphicsCommandList6(), 0xFF000000, UTF8ToUTF16(command.labelName).c_str());
         return true;
     }
 
-    bool D3D12RenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandEndDebugLabel& command)
+    bool D3D12RenderBackendCommandListContext::TranslateRenderBackendCommand(const RenderBackendCommandEndDebugLabel& command)
     {
         PIXEndEvent(commandList->GetID3D12GraphicsCommandList6());
         return true;
     }
 
-    bool D3D12RenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandDispatchSuperSampling& command)
+    bool D3D12RenderBackendCommandListContext::TranslateRenderBackendCommand(const RenderBackendCommandDispatchSuperSampling& command)
     {
         OPTICK_EVENT();
 
@@ -1860,7 +1860,7 @@ namespace Horizon
         for (uint32 i = 0; i < numCommandLists; i++)
         {
             D3D12RenderBackendCommandListContext context(device, queueType, commandList);
-            if (!context.CompileRenderBackendCommands(*commandLists[i]->GetCommandContainer()))
+            if (!context.TranslateRenderBackendCommands(*commandLists[i]->GetCommandContainer()))
             {
                 // TODO
             }

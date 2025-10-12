@@ -3466,7 +3466,7 @@ namespace Horizon
         VK_CHECK(deviceFunctions.vkDeviceWaitIdle(handle));
     }
 
-    bool VulkanRenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandCopyBuffer& command)
+    bool VulkanRenderBackendCommandListContext::TranslateRenderBackendCommand(const RenderBackendCommandCopyBuffer& command)
     {
         const auto& srcBuffer = device->GetBuffer(command.srcBuffer);
         const auto& dstBuffer = device->GetBuffer(command.dstBuffer);
@@ -3479,7 +3479,7 @@ namespace Horizon
         return true;
     }
 
-    bool VulkanRenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandCopyTexture& command)
+    bool VulkanRenderBackendCommandListContext::TranslateRenderBackendCommand(const RenderBackendCommandCopyTexture& command)
     {
         const auto& srcTexture = device->GetTexture(command.srcTexture);
         const auto& dstTexture = device->GetTexture(command.dstTexture);
@@ -3544,7 +3544,7 @@ namespace Horizon
         return true;
     }
 
-    bool VulkanRenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandUpdateBuffer& command)
+    bool VulkanRenderBackendCommandListContext::TranslateRenderBackendCommand(const RenderBackendCommandUpdateBuffer& command)
     {
         const VulkanBuffer* buffer = device->GetBuffer(command.buffer);
 
@@ -3553,12 +3553,12 @@ namespace Horizon
         return true;
     }
 
-    bool VulkanRenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandUpdateTexture& command)
+    bool VulkanRenderBackendCommandListContext::TranslateRenderBackendCommand(const RenderBackendCommandUpdateTexture& command)
     {
         return true;
     }
 
-    bool VulkanRenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandClearBufferUAV& command)
+    bool VulkanRenderBackendCommandListContext::TranslateRenderBackendCommand(const RenderBackendCommandClearBufferUAV& command)
     {
         const VulkanBuffer* buffer = device->GetBuffer(command.buffer);
 
@@ -3572,7 +3572,7 @@ namespace Horizon
         return true;
     }
 
-    bool VulkanRenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandClearTextureUAV& command)
+    bool VulkanRenderBackendCommandListContext::TranslateRenderBackendCommand(const RenderBackendCommandClearTextureUAV& command)
     {
         const VulkanTexture* texture = device->GetTexture(command.uav.texture);
 
@@ -3604,7 +3604,7 @@ namespace Horizon
         return true;
     }
 
-    bool VulkanRenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandBarriers& command)
+    bool VulkanRenderBackendCommandListContext::TranslateRenderBackendCommand(const RenderBackendCommandBarriers& command)
     {
         for (uint32 i = 0; i < command.barrierCount; i++)
         {
@@ -3745,7 +3745,7 @@ namespace Horizon
         return true;
     }
 
-    bool VulkanRenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandBeginTimingQuery& command)
+    bool VulkanRenderBackendCommandListContext::TranslateRenderBackendCommand(const RenderBackendCommandBeginTimingQuery& command)
     {
         const auto& timingQueryHeap = device->GetTimingQueryHeap(command.timingQueryHeap);
         uint32 queryIndex = command.region * 2 + 0;
@@ -3754,7 +3754,7 @@ namespace Horizon
         return true;
     }
 
-    bool VulkanRenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandEndTimingQuery& command)
+    bool VulkanRenderBackendCommandListContext::TranslateRenderBackendCommand(const RenderBackendCommandEndTimingQuery& command)
     {
         const auto& timingQueryHeap = device->GetTimingQueryHeap(command.timingQueryHeap);
         uint32 queryIndex = command.region * 2 + 1;
@@ -3763,7 +3763,7 @@ namespace Horizon
         return true;
     }
 
-    bool VulkanRenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandResolveTimingQueryResults& command)
+    bool VulkanRenderBackendCommandListContext::TranslateRenderBackendCommand(const RenderBackendCommandResolveTimingQueryResults& command)
     {
         const auto& timingQueryHeap = device->GetTimingQueryHeap(command.timingQueryHeap);
         const auto& buffer = device->GetBuffer(command.buffer);
@@ -3823,7 +3823,7 @@ namespace Horizon
         return true;
     }
 
-    bool VulkanRenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandDispatch& command)
+    bool VulkanRenderBackendCommandListContext::TranslateRenderBackendCommand(const RenderBackendCommandDispatch& command)
     {
         if (!PrepareForDispatch(command.computeShader, command.pushConstantValues))
         {
@@ -3833,7 +3833,7 @@ namespace Horizon
         return true;
     }
 
-    bool VulkanRenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandDispatchIndirect& command)
+    bool VulkanRenderBackendCommandListContext::TranslateRenderBackendCommand(const RenderBackendCommandDispatchIndirect& command)
     {
         if (!PrepareForDispatch(command.computeShader, command.pushConstantValues))
         {
@@ -3844,7 +3844,7 @@ namespace Horizon
         return true;
     }
 
-    bool VulkanRenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandBuildRayTracingBottomLevelAccelerationStructure& command)
+    bool VulkanRenderBackendCommandListContext::TranslateRenderBackendCommand(const RenderBackendCommandBuildRayTracingBottomLevelAccelerationStructure& command)
     {
         const VulkanRayTracingAccelerationStructure* srcBLAS = command.srcBLAS ? device->GetRayTracingAccelerationStructure(command.srcBLAS) : nullptr;
         const VulkanRayTracingAccelerationStructure* dstBLAS = device->GetRayTracingAccelerationStructure(command.dstBLAS);
@@ -3878,7 +3878,7 @@ namespace Horizon
         return true;
     }
 
-    bool VulkanRenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandBuildRayTracingTopLevelAccelerationStructure& command)
+    bool VulkanRenderBackendCommandListContext::TranslateRenderBackendCommand(const RenderBackendCommandBuildRayTracingTopLevelAccelerationStructure& command)
     {
         const VulkanRayTracingAccelerationStructure* srcTLAS = command.srcTLAS ? device->GetRayTracingAccelerationStructure(command.srcTLAS) : nullptr;
         const VulkanRayTracingAccelerationStructure* dstTLAS = device->GetRayTracingAccelerationStructure(command.dstTLAS);
@@ -3919,7 +3919,7 @@ namespace Horizon
         return true;
     }
 
-    bool VulkanRenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandDispatchRays& command)
+    bool VulkanRenderBackendCommandListContext::TranslateRenderBackendCommand(const RenderBackendCommandDispatchRays& command)
     {
         uint32 pushConstantsSize = device->bindlessDescriptorManager.pushConstantsSize;
         VulkanRayTracingPipelineState* pipelineState = device->GetRayTracingPipelineState(command.pipelineStateObject);
@@ -3952,7 +3952,7 @@ namespace Horizon
         return true;
     }
 
-    bool VulkanRenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandBeginRenderPass& command)
+    bool VulkanRenderBackendCommandListContext::TranslateRenderBackendCommand(const RenderBackendCommandBeginRenderPass& command)
     {
         GetRenderingInfo(device, command.renderPassInfo, &renderingInfo);
         device->deviceFunctions.vkCmdBeginRendering(commandBuffer, &renderingInfo.renderingInfo);
@@ -3960,7 +3960,7 @@ namespace Horizon
         return true;
     }
 
-    bool VulkanRenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandEndRenderPass& command)
+    bool VulkanRenderBackendCommandListContext::TranslateRenderBackendCommand(const RenderBackendCommandEndRenderPass& command)
     {
         device->deviceFunctions.vkCmdEndRendering(commandBuffer);
         insideRenderPass = false;
@@ -4005,7 +4005,7 @@ namespace Horizon
         return true;
     }
 
-    bool VulkanRenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandDraw& command)
+    bool VulkanRenderBackendCommandListContext::TranslateRenderBackendCommand(const RenderBackendCommandDraw& command)
     {
         OPTICK_EVENT();
 
@@ -4035,7 +4035,7 @@ namespace Horizon
         return true;
     }
 
-    bool VulkanRenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandDrawIndirect& command)
+    bool VulkanRenderBackendCommandListContext::TranslateRenderBackendCommand(const RenderBackendCommandDrawIndirect& command)
     {
         if (!PrepareForDraw(command.vertexShader, command.pixelShader, command.pipelineState, command.topology, command.indexBuffer, command.pushConstantValues))
         {
@@ -4062,7 +4062,7 @@ namespace Horizon
         return true;
     }
 
-    bool VulkanRenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandDispatchMesh& command)
+    bool VulkanRenderBackendCommandListContext::TranslateRenderBackendCommand(const RenderBackendCommandDispatchMesh& command)
     {
         // if (!PrepareForDraw(nullptr, command.pixelShader, command.pipelineStateObject, command.topology, RenderBackendBufferHandle::Null, command.pushConstantValues))
         // {
@@ -4076,7 +4076,7 @@ namespace Horizon
         return true;
     }
 
-    bool VulkanRenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandDispatchMeshIndirect& command)
+    bool VulkanRenderBackendCommandListContext::TranslateRenderBackendCommand(const RenderBackendCommandDispatchMeshIndirect& command)
     {
         // if (!PrepareForDraw(nullptr, command.pixelShader, command.pipelineStateObject, command.topology, RenderBackendBufferHandle::Null, command.pushConstantValues))
         // {
@@ -4093,13 +4093,13 @@ namespace Horizon
         return true;
     }
 
-    bool VulkanRenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandSetStencilReference& command)
+    bool VulkanRenderBackendCommandListContext::TranslateRenderBackendCommand(const RenderBackendCommandSetStencilReference& command)
     {
         device->deviceFunctions.vkCmdSetStencilReference(commandBuffer, VK_STENCIL_FRONT_AND_BACK, command.stencilReference);
         return true;
     }
 
-    bool VulkanRenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandSetScissor& command)
+    bool VulkanRenderBackendCommandListContext::TranslateRenderBackendCommand(const RenderBackendCommandSetScissor& command)
     {
         VkRect2D scissors[RenderBackendMaxViewportCount];
         for (uint32 i = 0; i < command.scissorCount; i++)
@@ -4114,7 +4114,7 @@ namespace Horizon
         return true;
     }
 
-    bool VulkanRenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandSetViewport& command)
+    bool VulkanRenderBackendCommandListContext::TranslateRenderBackendCommand(const RenderBackendCommandSetViewport& command)
     {
         VkViewport viewports[RenderBackendMaxViewportCount];
         for (uint32 i = 0; i < command.viewportCount; i++)
@@ -4133,7 +4133,7 @@ namespace Horizon
         return true;
     }
 
-    bool VulkanRenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandBeginDebugLabel& command)
+    bool VulkanRenderBackendCommandListContext::TranslateRenderBackendCommand(const RenderBackendCommandBeginDebugLabel& command)
     {
 #if !HE_ENBALE_STREAMLINE_SUPPORT
         if (device->backend->enableValidationLayers)
@@ -4150,7 +4150,7 @@ namespace Horizon
         return true;
     }
 
-    bool VulkanRenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandEndDebugLabel& command)
+    bool VulkanRenderBackendCommandListContext::TranslateRenderBackendCommand(const RenderBackendCommandEndDebugLabel& command)
     {
 #if !HE_ENBALE_STREAMLINE_SUPPORT
         if (device->backend->enableValidationLayers)
@@ -4161,7 +4161,7 @@ namespace Horizon
         return true;
     }
 
-    bool VulkanRenderBackendCommandListContext::CompileRenderBackendCommand(const RenderBackendCommandDispatchSuperSampling& command)
+    bool VulkanRenderBackendCommandListContext::TranslateRenderBackendCommand(const RenderBackendCommandDispatchSuperSampling& command)
     {
         VulkanTexture* outputTexture = device->GetTexture(command.output);
         VulkanTexture* colorTexture = device->GetTexture(command.color);
@@ -4215,7 +4215,7 @@ namespace Horizon
         OPTICK_EVENT();
 
         VulkanRenderBackendCommandListContext context(data->device, data->queueFamily, data->commandBuffer);
-        if (context.CompileRenderBackendCommands(*data->commandContainer))
+        if (context.TranslateRenderBackendCommands(*data->commandContainer))
         {
 
         }
@@ -4252,51 +4252,51 @@ namespace Horizon
  //       delete[] jobData;
  //   }
 
-    bool VulkanRenderBackendCommandListContext::CompileRenderBackendCommands(const RenderBackendCommandContainer& container)
+    bool VulkanRenderBackendCommandListContext::TranslateRenderBackendCommands(const RenderBackendCommandContainer& container)
     {
-#define COMPILE_RENDER_COMMAND(command, RenderBackendCommandStruct)                                    \
-    case RenderBackendCommandStruct::Type:                                                             \
-    if (!CompileRenderBackendCommand(*reinterpret_cast<const RenderBackendCommandStruct*>(command)))   \
-    {                                                                                                  \
-        return false;                                                                                  \
-    }                                                                                                  \
+#define TRANSLATE_RENDER_COMMAND(command, RenderBackendCommandStruct)                                    \
+    case RenderBackendCommandStruct::Type:                                                               \
+    if (!TranslateRenderBackendCommand(*reinterpret_cast<const RenderBackendCommandStruct*>(command)))   \
+    {                                                                                                    \
+        return false;                                                                                    \
+    }                                                                                                    \
     break
 
         for (uint32 i = 0; i < container.numCommands; i++)
         {
             switch (container.types[i])
             {
-            COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandCopyBuffer);
-            COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandCopyTexture);
-            COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandUpdateBuffer);
-            COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandUpdateTexture);
-            COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandClearBufferUAV);
-            COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandClearTextureUAV);
-            COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandBarriers);
-            COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandBeginTimingQuery);
-            COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandEndTimingQuery);
-            COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandResolveTimingQueryResults);
-            COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandDispatch);
-            COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandDispatchIndirect);
-            COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandSetViewport);
-            COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandSetScissor);
-            COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandSetStencilReference);
-            COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandBeginRenderPass);
-            COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandEndRenderPass);
-            COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandDraw);
-            COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandDrawIndirect);
-            COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandDispatchMesh);
-            COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandDispatchMeshIndirect);
-            COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandBeginDebugLabel);
-            COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandEndDebugLabel);
-            COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandBuildRayTracingBottomLevelAccelerationStructure);
-            COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandBuildRayTracingTopLevelAccelerationStructure);
-            COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandDispatchRays);
-            COMPILE_RENDER_COMMAND(container.commands[i], RenderBackendCommandDispatchSuperSampling);
+            TRANSLATE_RENDER_COMMAND(container.commands[i], RenderBackendCommandCopyBuffer);
+            TRANSLATE_RENDER_COMMAND(container.commands[i], RenderBackendCommandCopyTexture);
+            TRANSLATE_RENDER_COMMAND(container.commands[i], RenderBackendCommandUpdateBuffer);
+            TRANSLATE_RENDER_COMMAND(container.commands[i], RenderBackendCommandUpdateTexture);
+            TRANSLATE_RENDER_COMMAND(container.commands[i], RenderBackendCommandClearBufferUAV);
+            TRANSLATE_RENDER_COMMAND(container.commands[i], RenderBackendCommandClearTextureUAV);
+            TRANSLATE_RENDER_COMMAND(container.commands[i], RenderBackendCommandBarriers);
+            TRANSLATE_RENDER_COMMAND(container.commands[i], RenderBackendCommandBeginTimingQuery);
+            TRANSLATE_RENDER_COMMAND(container.commands[i], RenderBackendCommandEndTimingQuery);
+            TRANSLATE_RENDER_COMMAND(container.commands[i], RenderBackendCommandResolveTimingQueryResults);
+            TRANSLATE_RENDER_COMMAND(container.commands[i], RenderBackendCommandDispatch);
+            TRANSLATE_RENDER_COMMAND(container.commands[i], RenderBackendCommandDispatchIndirect);
+            TRANSLATE_RENDER_COMMAND(container.commands[i], RenderBackendCommandSetViewport);
+            TRANSLATE_RENDER_COMMAND(container.commands[i], RenderBackendCommandSetScissor);
+            TRANSLATE_RENDER_COMMAND(container.commands[i], RenderBackendCommandSetStencilReference);
+            TRANSLATE_RENDER_COMMAND(container.commands[i], RenderBackendCommandBeginRenderPass);
+            TRANSLATE_RENDER_COMMAND(container.commands[i], RenderBackendCommandEndRenderPass);
+            TRANSLATE_RENDER_COMMAND(container.commands[i], RenderBackendCommandDraw);
+            TRANSLATE_RENDER_COMMAND(container.commands[i], RenderBackendCommandDrawIndirect);
+            TRANSLATE_RENDER_COMMAND(container.commands[i], RenderBackendCommandDispatchMesh);
+            TRANSLATE_RENDER_COMMAND(container.commands[i], RenderBackendCommandDispatchMeshIndirect);
+            TRANSLATE_RENDER_COMMAND(container.commands[i], RenderBackendCommandBeginDebugLabel);
+            TRANSLATE_RENDER_COMMAND(container.commands[i], RenderBackendCommandEndDebugLabel);
+            TRANSLATE_RENDER_COMMAND(container.commands[i], RenderBackendCommandBuildRayTracingBottomLevelAccelerationStructure);
+            TRANSLATE_RENDER_COMMAND(container.commands[i], RenderBackendCommandBuildRayTracingTopLevelAccelerationStructure);
+            TRANSLATE_RENDER_COMMAND(container.commands[i], RenderBackendCommandDispatchRays);
+            TRANSLATE_RENDER_COMMAND(container.commands[i], RenderBackendCommandDispatchSuperSampling);
             default: std::unreachable();
             }
         }
-#undef COMPILE_RENDER_COMMAND
+#undef TRANSLATE_RENDER_COMMAND
         return true;
     }
 
