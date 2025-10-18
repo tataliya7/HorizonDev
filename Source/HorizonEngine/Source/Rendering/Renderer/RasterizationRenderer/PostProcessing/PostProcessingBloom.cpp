@@ -63,7 +63,7 @@ namespace Horizon
                             pushConstantValues.OverrideShaderConstantValue(4, 1.0f / float(outputTextureHeight));
                             pushConstantValues.OverrideShaderConstantValue(5, useKarisAverage ? 1 : 0);
 
-                            RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::GaussianBloomDownsample);
+                            RenderBackendShaderHandle computeShader = shaderRepository->GetShader(ShaderID::GaussianBloomDownsample);
 
                             commandList.Dispatch(
                                 computeShader,
@@ -109,7 +109,7 @@ namespace Horizon
                         builder.SetShaderConstantValue(4, 1.0f / static_cast<float>(outputTextureWidth));
                         builder.SetShaderConstantValue(5, 1.0f / static_cast<float>(outputTextureHeight));
 
-                        RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::GaussianBloomUpsample);
+                        RenderBackendShaderHandle computeShader = shaderRepository->GetShader(ShaderID::GaussianBloomUpsample);
 
                         uint32 threadGroupCountX = ComputeShaderThreadGroupCount(outputTextureWidth, PostProcessingThreadGroupSizeX);
                         uint32 threadGroupCountY = ComputeShaderThreadGroupCount(outputTextureHeight, PostProcessingThreadGroupSizeY);

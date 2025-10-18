@@ -51,7 +51,7 @@ namespace Horizon
                 builder.SetBindlessResourceSRV(1, inputColorTexture);
                 builder.SetBindlessResourceUAV(2, autoExposureHistogramTexture, 0);
 
-                RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::AutoExposureBuildHistogram);
+                RenderBackendShaderHandle computeShader = shaderRepository->GetShader(ShaderID::AutoExposureBuildHistogram);
 
                 uint32 threadGroupCountX = ComputeShaderThreadGroupCount(inputColorTextureDescription.width, 16);
                 uint32 threadGroupCountY = ComputeShaderThreadGroupCount(inputColorTextureDescription.height, 16);
@@ -85,7 +85,7 @@ namespace Horizon
                 builder.SetBindlessResourceSRV(2, previousAutoExposureBuffer);
                 builder.SetBindlessResourceUAV(3, autoExposureBuffer);
 
-                RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::AutoExposureComputeExposure);
+                RenderBackendShaderHandle computeShader = shaderRepository->GetShader(ShaderID::AutoExposureComputeExposure);
 
                 return [=](RenderBackendCommandList& commandList, const RenderGraphResourceRegistry& resourceRegistry)
                 {
@@ -148,7 +148,7 @@ namespace Horizon
                 builder.SetBindlessResourceSRV(0, autoExposureBuffer);
                 builder.SetBindlessResourceUAV(1, exposureTexture, 0);
 
-                RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::CopyExposure);
+                RenderBackendShaderHandle computeShader = shaderRepository->GetShader(ShaderID::CopyExposure);
 
                 return [=](RenderBackendCommandList& commandList, const RenderGraphResourceRegistry& resourceRegistry)
                 {

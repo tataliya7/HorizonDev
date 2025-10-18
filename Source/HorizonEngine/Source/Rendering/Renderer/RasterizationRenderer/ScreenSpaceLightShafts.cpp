@@ -73,7 +73,7 @@ namespace Horizon
                         pushConstantValues.OverrideShaderConstantValue(6, aspectRatio.x);
                         pushConstantValues.OverrideShaderConstantValue(7, aspectRatio.y);
 
-                        RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::ScreenSpaceLightShaftsDownsample);
+                        RenderBackendShaderHandle computeShader = shaderRepository->GetShader(ShaderID::ScreenSpaceLightShaftsDownsample);
 
                         commandList.Dispatch(
                             computeShader,
@@ -120,7 +120,7 @@ namespace Horizon
                             pushConstantValues.BindTextureSRV(3, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(historyColorTexture));
                             pushConstantValues.BindTextureUAV(4, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndex(outputColorTexture, 0));
 
-                            RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::ScreenSpaceLightShaftsTemporalFiltering);
+                            RenderBackendShaderHandle computeShader = shaderRepository->GetShader(ShaderID::ScreenSpaceLightShaftsTemporalFiltering);
 
                             commandList.Dispatch(
                                 computeShader,
@@ -166,7 +166,7 @@ namespace Horizon
                             pushConstantValues.OverrideShaderConstantValue(5, blurPassIndex);
                             pushConstantValues.OverrideShaderConstantValue(6, ScreenSpaceLightShaftsRadialBlurSampleCount);
 
-                            RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::ScreenSpaceLightShaftsRadialBlur);
+                            RenderBackendShaderHandle computeShader = shaderRepository->GetShader(ShaderID::ScreenSpaceLightShaftsRadialBlur);
 
                             commandList.Dispatch(
                                 computeShader,
@@ -205,8 +205,8 @@ namespace Horizon
                         pushConstantValues.OverrideShaderConstantValue(4, lightShaftsColor.y);
                         pushConstantValues.OverrideShaderConstantValue(5, lightShaftsColor.z);
 
-                        RenderBackendShaderHandle vertexShader = shaderCollection->GetShader(ShaderID::DrawFullscreenQuadVS);
-                        RenderBackendShaderHandle pixelShader = shaderCollection->GetShader(ShaderID::ScreenSpaceLightShaftsComposition);
+                        RenderBackendShaderHandle vertexShader = shaderRepository->GetShader(ShaderID::DrawFullscreenQuadVS);
+                        RenderBackendShaderHandle pixelShader = shaderRepository->GetShader(ShaderID::ScreenSpaceLightShaftsComposition);
 
                         commandList.Draw(
                             vertexShader,

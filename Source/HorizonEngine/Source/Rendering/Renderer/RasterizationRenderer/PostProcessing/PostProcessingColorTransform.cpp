@@ -66,7 +66,7 @@ namespace Horizon
                     pushConstantValues.BindTextureUAV(1, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndex(colorTransformLUTTexture, 0));
                     //pushConstantValues.PushConstants(0, (float)toneMappingOperator);
 
-                    RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::ColorTransformLUT);
+                    RenderBackendShaderHandle computeShader = shaderRepository->GetShader(ShaderID::ColorTransformLUT);
 
                     commandList.Dispatch(
                         computeShader,

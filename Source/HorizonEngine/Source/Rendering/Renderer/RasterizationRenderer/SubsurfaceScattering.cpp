@@ -32,7 +32,7 @@ namespace Horizon
             {
                 builder.SetBindlessResourceUAV(0, tileCountBuffer);
 
-                RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::SubsurfaceScatteringInitialization);
+                RenderBackendShaderHandle computeShader = shaderRepository->GetShader(ShaderID::SubsurfaceScatteringInitialization);
 
                 return [=](RenderBackendCommandList& commandList, const RenderGraphResourceRegistry& resourceRegistry)
                 {
@@ -61,7 +61,7 @@ namespace Horizon
                 builder.SetBindlessResourceUAV(4, tileDataBuffer);
                 builder.SetBindlessResourceUAV(5, tileClassificationOutputTexture, 0);
 
-                RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::SubsurfaceScatteringTileClassification);
+                RenderBackendShaderHandle computeShader = shaderRepository->GetShader(ShaderID::SubsurfaceScatteringTileClassification);
 
                 uint32 threadGroupCountX = ComputeShaderThreadGroupCount(colorTextureDescription.width, SubsurfaceScatteringTileSize);
                 uint32 threadGroupCountY = ComputeShaderThreadGroupCount(colorTextureDescription.height, SubsurfaceScatteringTileSize);
@@ -89,7 +89,7 @@ namespace Horizon
                 builder.SetBindlessResourceUAV(1, drawIndirectArgumentBuffer);
                 builder.SetBindlessResourceUAV(2, dispatchIndirectArgumentBuffer);
 
-                RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::SubsurfaceScatteringBuildIndirectArguments);
+                RenderBackendShaderHandle computeShader = shaderRepository->GetShader(ShaderID::SubsurfaceScatteringBuildIndirectArguments);
 
                 return [=](RenderBackendCommandList& commandList, const RenderGraphResourceRegistry& resourceRegistry)
                 {
@@ -117,7 +117,7 @@ namespace Horizon
                 builder.SetBindlessResourceSRV(3, tileDataBuffer);
                 builder.SetBindlessResourceUAV(4, convolutionOutputTexture, 0);
 
-                RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::SubsurfaceScatteringConvolution);
+                RenderBackendShaderHandle computeShader = shaderRepository->GetShader(ShaderID::SubsurfaceScatteringConvolution);
 
                 return [=](RenderBackendCommandList& commandList, const RenderGraphResourceRegistry& resourceRegistry)
                 {
@@ -149,8 +149,8 @@ namespace Horizon
 
                 builder.SetRenderTargetBinding(0, lightingCompositionOutputTexture, RenderBackendRenderPassLoadOperation::Discard, RenderBackendRenderPassStoreOperation::Store);
 
-                RenderBackendShaderHandle vertexShader = shaderCollection->GetShader(ShaderID::SubsurfaceScatteringLightingCompositionVS);
-                RenderBackendShaderHandle pixelShader = shaderCollection->GetShader(ShaderID::SubsurfaceScatteringLightingCompositionPS);
+                RenderBackendShaderHandle vertexShader = shaderRepository->GetShader(ShaderID::SubsurfaceScatteringLightingCompositionVS);
+                RenderBackendShaderHandle pixelShader = shaderRepository->GetShader(ShaderID::SubsurfaceScatteringLightingCompositionPS);
 
                 return [=](RenderBackendCommandList& commandList, const RenderGraphResourceRegistry& resourceRegistry)
                 {
@@ -194,8 +194,8 @@ namespace Horizon
 
                 builder.SetRenderTargetBinding(0, intermediateResources.colorTexture, RenderBackendRenderPassLoadOperation::Load, RenderBackendRenderPassStoreOperation::Store);
 
-                RenderBackendShaderHandle vertexShader = shaderCollection->GetShader(ShaderID::SubsurfaceScatteringCopyResultsVS);
-                RenderBackendShaderHandle pixelShader = shaderCollection->GetShader(ShaderID::SubsurfaceScatteringCopyResultsPS);
+                RenderBackendShaderHandle vertexShader = shaderRepository->GetShader(ShaderID::SubsurfaceScatteringCopyResultsVS);
+                RenderBackendShaderHandle pixelShader = shaderRepository->GetShader(ShaderID::SubsurfaceScatteringCopyResultsPS);
 
                 return [=](RenderBackendCommandList& commandList, const RenderGraphResourceRegistry& resourceRegistry)
                 {

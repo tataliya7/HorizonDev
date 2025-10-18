@@ -97,7 +97,7 @@ namespace Horizon
                     pushConstantValues.BindTextureSRV(1, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(maskTexture));
                     pushConstantValues.BindTextureUAV(2, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndex(jumpFloodTexture0, 0));
 
-                    RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::SelectionOutlineSetup);
+                    RenderBackendShaderHandle computeShader = shaderRepository->GetShader(ShaderID::SelectionOutlineSetup);
 
                     commandList.Dispatch(
                         computeShader,
@@ -141,7 +141,7 @@ namespace Horizon
                         pushConstantValues.BindTextureUAV(2, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndex(jumpFloodPassOutputTexture, 0));
                         pushConstantValues.OverrideShaderConstantValue(3, stepWidth);
 
-                        RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::SelectionOutlineJumpFlood);
+                        RenderBackendShaderHandle computeShader = shaderRepository->GetShader(ShaderID::SelectionOutlineJumpFlood);
 
                         commandList.Dispatch(
                             computeShader,
@@ -177,7 +177,7 @@ namespace Horizon
                     pushConstantValues.BindTextureSRV(1, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(jumpFloodTexture));
                     pushConstantValues.BindTextureUAV(2, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndex(outputTexture, 0));
 
-                    RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::SelectionOutlineComposite);
+                    RenderBackendShaderHandle computeShader = shaderRepository->GetShader(ShaderID::SelectionOutlineComposite);
 
                     commandList.Dispatch(
                         computeShader,

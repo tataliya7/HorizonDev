@@ -31,7 +31,7 @@ namespace Horizon
                     pushConstantValues.BindTextureSRV(0, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(inputTexture));
                     pushConstantValues.BindTextureUAV(1, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndex(outputTexture, 0));
 
-                    RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::BuildColorPyramid);
+                    RenderBackendShaderHandle computeShader = shaderRepository->GetShader(ShaderID::BuildColorPyramid);
 
                     commandList.Dispatch(
                         computeShader,

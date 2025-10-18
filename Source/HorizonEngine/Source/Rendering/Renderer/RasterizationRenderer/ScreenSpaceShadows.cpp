@@ -158,7 +158,7 @@ namespace Horizon
         //}
         //else
         {
-            DispatchScreenSpaceShadowsBend(renderGraph, shaderCollection, view, light, renderResolution, screenSpaceShadowMaskTexture);
+            DispatchScreenSpaceShadowsBend(renderGraph, shaderRepository, view, light, renderResolution, screenSpaceShadowMaskTexture);
 
             intermediateResources.shadowMaskTexture = screenSpaceShadowMaskTexture;
         }

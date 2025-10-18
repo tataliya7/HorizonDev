@@ -31,8 +31,8 @@ namespace Horizon
                 .maxRayRecursionDepth = 1,
             };
 
-            rayTracingShadowsPipelineStateDesc.shaders.push_back(shaderCollection->GetShader(ShaderID::RayTracingShadowsRayGen));
-            rayTracingShadowsPipelineStateDesc.shaders.push_back(shaderCollection->GetShader(ShaderID::RayTracingShadowsMiss));
+            rayTracingShadowsPipelineStateDesc.shaders.push_back(shaderRepository->GetShader(ShaderID::RayTracingShadowsRayGen));
+            rayTracingShadowsPipelineStateDesc.shaders.push_back(shaderRepository->GetShader(ShaderID::RayTracingShadowsMiss));
 
             rayTracingShadowsPipelineStateDesc.shaderGroupDescs.resize(2);
             rayTracingShadowsPipelineStateDesc.shaderGroupDescs[0] = RenderBackendRayTracingShaderGroupDesc::CreateRayGen(0);
@@ -78,7 +78,7 @@ namespace Horizon
                         pushConstantValues.OverrideShaderConstantValue(6, light.GetDirection().y);
                         pushConstantValues.OverrideShaderConstantValue(7, light.GetDirection().z);
 
-                        RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::RayTracingShadowsInlineRayTracing);
+                        RenderBackendShaderHandle computeShader = shaderRepository->GetShader(ShaderID::RayTracingShadowsInlineRayTracing);
 
                         commandList.Dispatch(
                             computeShader,

@@ -106,7 +106,7 @@ namespace Horizon
                     RenderBackendPushConstantValues pushConstantValues = {};
                     pushConstantValues.BindTextureUAV(0, resourceRegistry.GetBufferUAVBindlessResourceDescriptorIndex(lightListStartOffsetBuffer));
 
-                    RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::LightGridBufferInitialization);
+                    RenderBackendShaderHandle computeShader = shaderRepository->GetShader(ShaderID::LightGridBufferInitialization);
 
                     commandList.Dispatch(
                         computeShader,
@@ -145,7 +145,7 @@ namespace Horizon
                     pushConstantValues.OverrideShaderConstantValue(7, lightGridSizeY);
                     pushConstantValues.OverrideShaderConstantValue(8, lightGridSizeZ);
 
-                    RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::LightGridLocalLightCulling);
+                    RenderBackendShaderHandle computeShader = shaderRepository->GetShader(ShaderID::LightGridLocalLightCulling);
 
                     commandList.Dispatch(
                         computeShader,

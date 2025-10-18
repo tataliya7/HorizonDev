@@ -50,7 +50,7 @@ namespace Horizon
                     pushConstantValues.BindTextureSRV(6, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(previousSceneColorTexture));
                     pushConstantValues.BindTextureUAV(7, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndex(indirectDiffuseTexture, 0));
 
-                    RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::ScreenSpaceIndirectDiffuse);
+                    RenderBackendShaderHandle computeShader = shaderRepository->GetShader(ShaderID::ScreenSpaceIndirectDiffuse);
 
                     commandList.Dispatch(
                         computeShader,

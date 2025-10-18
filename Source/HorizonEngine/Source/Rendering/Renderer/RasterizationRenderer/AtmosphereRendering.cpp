@@ -148,7 +148,7 @@ namespace Horizon
                     pushConstantValues.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
                     pushConstantValues.BindTextureUAV(1, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndex(transmittanceLut, 0));
 
-                    RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::SkyAtmosphereTransmittanceLut);
+                    RenderBackendShaderHandle computeShader = shaderRepository->GetShader(ShaderID::SkyAtmosphereTransmittanceLut);
 
                     commandList.Dispatch(
                         computeShader,
@@ -178,7 +178,7 @@ namespace Horizon
                     pushConstantValues.BindTextureSRV(1, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(transmittanceLut));
                     pushConstantValues.BindTextureUAV(2, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndex(multipleScatteringLut, 0));
 
-                    RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::SkyAtmosphereMultipleScatteringLut);
+                    RenderBackendShaderHandle computeShader = shaderRepository->GetShader(ShaderID::SkyAtmosphereMultipleScatteringLut);
 
                     commandList.Dispatch(
                         computeShader,
@@ -210,7 +210,7 @@ namespace Horizon
                     pushConstantValues.BindTextureSRV(2, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(multipleScatteringLut));
                     pushConstantValues.BindTextureUAV(3, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndex(skyViewLut, 0));
 
-                    RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::SkyAtmosphereSkyViewLut);
+                    RenderBackendShaderHandle computeShader = shaderRepository->GetShader(ShaderID::SkyAtmosphereSkyViewLut);
 
                     commandList.Dispatch(
                         computeShader,
@@ -244,7 +244,7 @@ namespace Horizon
                     pushConstantValues.BindTextureSRV(2, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(multipleScatteringLut));
                     pushConstantValues.BindTextureUAV(3, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndex(aerialPerspectiveVolume, 0));
 
-                    RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::SkyAtmosphereAerialPerspectiveVolume);
+                    RenderBackendShaderHandle computeShader = shaderRepository->GetShader(ShaderID::SkyAtmosphereAerialPerspectiveVolume);
 
                     commandList.Dispatch(
                         computeShader,
@@ -308,8 +308,8 @@ namespace Horizon
                     pushConstantValues.BindTextureSRV(3, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(aerialPerspectiveVolume));
                     pushConstantValues.BindTextureSRV(4, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(sceneDepthTexture));
 
-                    RenderBackendShaderHandle vertexShader = shaderCollection->GetShader(ShaderID::DrawFullscreenQuadVS);
-                    RenderBackendShaderHandle pixelShader = shaderCollection->GetShader(ShaderID::SkyAtmosphereRayMarching);
+                    RenderBackendShaderHandle vertexShader = shaderRepository->GetShader(ShaderID::DrawFullscreenQuadVS);
+                    RenderBackendShaderHandle pixelShader = shaderRepository->GetShader(ShaderID::SkyAtmosphereRayMarching);
 
                     commandList.Draw(
                         vertexShader,

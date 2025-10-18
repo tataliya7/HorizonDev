@@ -5,6 +5,15 @@
 
 namespace Horizon
 {
+    struct VirtualGeometryVertexLayoutDescription
+    {
+        bool useNormals;
+        bool useTangents;
+        bool useColors;
+        uint32 textureCoordinateCount;
+        uint32 relevantJointCount;
+    };
+
     struct VirtualGeometryVertexArray
     {
         std::vector<Vector3f> position;
@@ -21,6 +30,7 @@ namespace Horizon
         uint32 triangleCount;
         Vector3f boundingBoxCenter;
         Vector3f boundingBoxExtent;
+        uint32 meshletGroupIndex;
     };
 
     struct VirtualGeometryMeshletGroup
@@ -56,7 +66,6 @@ namespace Horizon
         std::vector<uint32> materialIndices;
         std::vector<VirtualGeometryMeshlet> meshlets;
         std::vector<VirtualGeometryMeshletGroup> meshletGroups;
-        std::vector<uint32> meshletGroupIndices;
     };
 
     bool VirtualGeometryBuildMesh(const VirtualGeometryBuildSettings& settings, const VirtualGeometryBuildInput& input, VirtualGeometryBuildOutput& output);

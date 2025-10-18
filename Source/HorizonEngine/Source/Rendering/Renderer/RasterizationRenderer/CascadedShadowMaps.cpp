@@ -203,8 +203,8 @@ namespace Horizon
         const GeometryPassDrawCommandList& drawCommandList = geometryPassDrawCommandLists[uint32(GeometryPassType::CascadedShadowMap)];
         const GPUScene* gpuScene = sceneView->scene->GetGPUScene();//drawCommandList.setupJobData.scene->GetGPUScene();
 
-        RenderBackendShaderHandle vertexShader = shaderCollection->GetShader(ShaderID::CascadedShadowMapVS);
-        RenderBackendShaderHandle pixelShader = shaderCollection->GetShader(ShaderID::CascadedShadowMapPS);
+        RenderBackendShaderHandle vertexShader = shaderRepository->GetShader(ShaderID::CascadedShadowMapVS);
+        RenderBackendShaderHandle pixelShader = shaderRepository->GetShader(ShaderID::CascadedShadowMapPS);
 
         for (uint32 drawCommandIndex = 0; drawCommandIndex < drawCommandList.drawCommandCount; drawCommandIndex++)
         {
@@ -272,7 +272,7 @@ namespace Horizon
                     pushConstantValues.BindTextureSRV(1, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(debugVisualizationTexture));
                     pushConstantValues.BindTextureUAV(2, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndex(outputTexture, 0));
 
-                    RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::VisualizeCascadedShadowMap);
+                    RenderBackendShaderHandle computeShader = shaderRepository->GetShader(ShaderID::VisualizeCascadedShadowMap);
 
                     commandList.Dispatch(
                         computeShader,

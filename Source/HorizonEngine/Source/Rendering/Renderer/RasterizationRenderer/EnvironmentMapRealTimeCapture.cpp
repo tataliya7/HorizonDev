@@ -135,7 +135,7 @@ namespace Horizon
 
                 return [=](RenderBackendCommandList& commandList, const RenderGraphResourceRegistry& resourceRegistry)
                 {
-                    RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::DownsampleCubemap);
+                    RenderBackendShaderHandle computeShader = shaderRepository->GetShader(ShaderID::DownsampleCubemap);
 
                     for (uint32 mipLevel = 1; mipLevel < environmentMapTextureMipLevelCount; mipLevel++)
                     {
@@ -200,7 +200,7 @@ namespace Horizon
                     pushConstantValues.BindBufferUAV(1, resourceRegistry.GetBufferUAVBindlessResourceDescriptorIndex(irradianceEnvironmentMapBuffer));
                     pushConstantValues.OverrideShaderConstantValue(2, sourceMipLevel);
 
-                    RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::IrradianceEnvironmentMapSHOnePass);
+                    RenderBackendShaderHandle computeShader = shaderRepository->GetShader(ShaderID::IrradianceEnvironmentMapSHOnePass);
 
                     commandList.Dispatch(
                         computeShader,
@@ -223,7 +223,7 @@ namespace Horizon
 
                 return [=](RenderBackendCommandList& commandList, const RenderGraphResourceRegistry& resourceRegistry)
                 {
-                    RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::EnvironmentMapConvolution);
+                    RenderBackendShaderHandle computeShader = shaderRepository->GetShader(ShaderID::EnvironmentMapConvolution);
 
                     for (uint32 targetMipLevel = 0; targetMipLevel < environmentMapTextureMipLevelCount; targetMipLevel++)
                     {

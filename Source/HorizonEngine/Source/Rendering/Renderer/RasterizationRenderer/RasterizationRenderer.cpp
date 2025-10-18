@@ -15,7 +15,7 @@ namespace Horizon
         RendererDefaultResources* defaultResources)
         : renderBackend(renderBackend)
         , resourcePool(resourcePool)
-        , shaderCollection(shaderRepository)
+        , shaderRepository(shaderRepository)
         , defaultResources(defaultResources)
         , temporalSuperSamplingInterface(nullptr)
     {

@@ -50,6 +50,7 @@ namespace Horizon
         VirtualShadowMapClearIndirectArgumentBuffer,
         VirtualShadowMapPhysicalMemoryAllocation,
         VirtualShadowMapClearPhysicalMemory,
+        VirtualShadowMapInstanceCulling,
         VirtualShadowMapDepthVS,
         VirtualShadowMapDepthPS,
         VirtualShadowMapProjection,

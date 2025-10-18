@@ -83,7 +83,7 @@ namespace Horizon
             builder.SetBindlessResourceSRV(2, intermediateResources.gbuffer1);
             builder.SetBindlessResourceUAV(3, tileClassificationHorizontalTexture, 0);
 
-            RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::SSRTileClassificationHorizontal);
+            RenderBackendShaderHandle computeShader = shaderRepository->GetShader(ShaderID::SSRTileClassificationHorizontal);
 
             uint32 threadGroupCountX = ComputeShaderThreadGroupCount(tileCountX, GScreenSpaceReflectionsThreadGroupSizeX);
             uint32 threadGroupCountY = ComputeShaderThreadGroupCount(view.targetHeight, GScreenSpaceReflectionsThreadGroupSizeY);
@@ -114,7 +114,7 @@ namespace Horizon
             builder.SetBindlessResourceUAV(4, tileClassificationTexture, 0);
             builder.SetBindlessResourceUAV(5, rayAllocationBuffer);
 
-            RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::SSRTileClassificationVertical);
+            RenderBackendShaderHandle computeShader = shaderRepository->GetShader(ShaderID::SSRTileClassificationVertical);
 
             uint32 threadGroupCountX = ComputeShaderThreadGroupCount(tileCountX, GScreenSpaceReflectionsThreadGroupSizeX);
             uint32 threadGroupCountY = ComputeShaderThreadGroupCount(tileCountY, GScreenSpaceReflectionsThreadGroupSizeY);
@@ -140,7 +140,7 @@ namespace Horizon
         {
             builder.SetBindlessResourceUAV(0, rayAllocationBuffer);
 
-            RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::SSRRayAllocation);
+            RenderBackendShaderHandle computeShader = shaderRepository->GetShader(ShaderID::SSRRayAllocation);
 
             return [=](RenderBackendCommandList& commandList, const RenderGraphResourceRegistry& resourceRegistry)
             {
@@ -239,7 +239,7 @@ namespace Horizon
                 builder.SetBindlessResourceUAV(6, rayHitTexture, 0);
                 builder.SetBindlessResourceUAV(7, rayColorTexture, 0);
 
-                RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::SSRRayTracingCheap);
+                RenderBackendShaderHandle computeShader = shaderRepository->GetShader(ShaderID::SSRRayTracingCheap);
 
                 return [=](RenderBackendCommandList& commandList, const RenderGraphResourceRegistry& resourceRegistry)
                 {
@@ -296,7 +296,7 @@ namespace Horizon
                 builder.SetBindlessResourceSRV(5, rayColorTexture);
                 builder.SetBindlessResourceUAV(6, colorResolveTexture, 0);
 
-                RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::SSRColorResolve);
+                RenderBackendShaderHandle computeShader = shaderRepository->GetShader(ShaderID::SSRColorResolve);
 
                 uint32 threadGroupCountX = ComputeShaderThreadGroupCount(renderResolution.width, GScreenSpaceReflectionsThreadGroupSizeX);
                 uint32 threadGroupCountY = ComputeShaderThreadGroupCount(renderResolution.height, GScreenSpaceReflectionsThreadGroupSizeY);

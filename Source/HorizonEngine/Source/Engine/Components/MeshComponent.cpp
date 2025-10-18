@@ -85,7 +85,7 @@ namespace Horizon
                     meshlet.vertexCount = output.meshlets[meshletIndex].vertexCount;
                     meshlet.triangleCount = output.meshlets[meshletIndex].triangleCount;
                     meshlet.boundingBoxCenter = output.meshlets[meshletIndex].boundingBoxCenter;
-                    meshlet.padding0 = 0; // @todo Fix me!
+                    meshlet.meshletGroupIndex = output.meshlets[meshletIndex].meshletGroupIndex;
                     meshlet.boundingBoxExtent = output.meshlets[meshletIndex].boundingBoxExtent;
                     meshlet.isSkinned = 0;
                     if (skeleton)

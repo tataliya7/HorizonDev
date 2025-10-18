@@ -490,7 +490,7 @@ namespace Horizon
 
         RenderBackend* renderBackend;
         RenderGraphResourcePool* resourcePool;
-        ShaderRepository* shaderCollection;
+        ShaderRepository* shaderRepository;
         RendererDefaultResources* defaultResources;
         SceneView* sceneView;
         TemporalSuperSamplingInterface* temporalSuperSamplingInterface;
@@ -565,8 +565,11 @@ namespace Horizon
         float preExposure = 1.0f;
 
         std::array<GeometryPassDrawCommandList, uint32(GeometryPassType::Count)> geometryPassDrawCommandLists;
+
         void DispatchVisibilityCulling(RenderGraph& renderGraph, const SceneView& view);
+
         void DispatchOpaqueGeometryPassDrawCommands(RenderBackendCommandList& commandList);
+
         void DispatchVirtualShadowMapPassDrawCommands(
             RenderBackendCommandList& commandList,
             const LightRenderObject& light,
@@ -574,6 +577,7 @@ namespace Horizon
             RenderBackendBufferHandle virtualShadowMapPageTableBuffer,
             RenderBackendBufferHandle virtualShadowMapEntryBuffer,
             RenderBackendTextureHandle virtualShadowMapDepthTexture);
+
         void DispatchCascadedShadowMapPassDrawCommands(RenderBackendCommandList& commandList, const LightRenderObject& light, uint32 cascadeIndex, RenderBackendBufferHandle cascadeShadowMapDataBuffer);
 
         struct AutoExposureData

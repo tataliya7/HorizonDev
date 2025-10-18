@@ -35,7 +35,7 @@ namespace Horizon
                 RenderGraphTextureHandle minDepthPyramidTexture = intermediateResources.minDepthPyramidTexture = builder.WriteTexture(intermediateResources.minDepthPyramidTexture, RenderBackendResourceState::UnorderedAccess);
                 //RenderGraphTextureHandle maxDepthPyramidTexture = intermediateResources.maxDepthPyramidTexture = builder.WriteTexture(intermediateResources.maxDepthPyramidTexture, RenderBackendResourceState::UnorderedAccess);
 
-                RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::BuildDepthPyramid);
+                RenderBackendShaderHandle computeShader = shaderRepository->GetShader(ShaderID::BuildDepthPyramid);
 
                 return [=](RenderBackendCommandList& commandList, const RenderGraphResourceRegistry& resourceRegistry)
                 {

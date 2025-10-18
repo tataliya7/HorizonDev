@@ -180,7 +180,7 @@ namespace Horizon
                  builder.SetBindlessResourceUAV(3, volumetricFogParticipatingMediaPropertiesDataATexture, 0);
                  builder.SetBindlessResourceUAV(4, volumetricFogParticipatingMediaPropertiesDataBTexture, 0);
 
-                 RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::VolumetricFogVoxelization);
+                 RenderBackendShaderHandle computeShader = shaderRepository->GetShader(ShaderID::VolumetricFogVoxelization);
 
                  uint32 threadGroupCountX = ComputeShaderThreadGroupCount(volumetricFogTileCountX, 4);
                  uint32 threadGroupCountY = ComputeShaderThreadGroupCount(volumetricFogTileCountY, 4);
@@ -232,7 +232,7 @@ namespace Horizon
                 builder.SetShaderConstantValue(14, lightGridData.lightGridInfo.lightGridSizeY);
                 builder.SetShaderConstantValue(15, lightGridData.lightGridInfo.lightGridSizeZ);
 
-                RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::VolumetricFogLightScattering);
+                RenderBackendShaderHandle computeShader = shaderRepository->GetShader(ShaderID::VolumetricFogLightScattering);
 
                 uint32 threadGroupCountX = ComputeShaderThreadGroupCount(volumetricFogTileCountX, 4);
                 uint32 threadGroupCountY = ComputeShaderThreadGroupCount(volumetricFogTileCountY, 4);
@@ -265,7 +265,7 @@ namespace Horizon
                 builder.SetBindlessResourceSRV(2, volumetricFogLightScatteringTexture);
                 builder.SetBindlessResourceUAV(3, volumetricFogFinalIntegrationTexture, 0);
 
-                RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::VolumetricFogFinalIntegration);
+                RenderBackendShaderHandle computeShader = shaderRepository->GetShader(ShaderID::VolumetricFogFinalIntegration);
 
                 uint32 threadGroupCountX = ComputeShaderThreadGroupCount(volumetricFogTileCountX, 8);
                 uint32 threadGroupCountY = ComputeShaderThreadGroupCount(volumetricFogTileCountY, 8);
@@ -295,8 +295,8 @@ namespace Horizon
                 builder.SetBindlessResourceSRV(3, intermediateResources.depthTexture);
                 builder.SetRenderTargetBinding(0, intermediateResources.colorTexture, RenderBackendRenderPassLoadOperation::Load, RenderBackendRenderPassStoreOperation::Store);
 
-                RenderBackendShaderHandle vertexShader = shaderCollection->GetShader(ShaderID::DrawFullscreenQuadVS);
-                RenderBackendShaderHandle pixelShader = shaderCollection->GetShader(ShaderID::VolumetricFogComposition);
+                RenderBackendShaderHandle vertexShader = shaderRepository->GetShader(ShaderID::DrawFullscreenQuadVS);
+                RenderBackendShaderHandle pixelShader = shaderRepository->GetShader(ShaderID::VolumetricFogComposition);
 
                 return [=](RenderBackendCommandList& commandList, const RenderGraphResourceRegistry& resourceRegistry)
                 {
@@ -424,8 +424,8 @@ namespace Horizon
                     pushConstantValues.BindBufferSRV(1, resourceRegistry.GetBufferSRVBindlessResourceDescriptorIndex(localFogVolumeInstanceDataBuffer));
                     pushConstantValues.BindTextureSRV(2, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(sceneDepthTexture));
 
-                    RenderBackendShaderHandle vertexShader = shaderCollection->GetShader(ShaderID::LocalFogVolumeVS);
-                    RenderBackendShaderHandle pixelShader = shaderCollection->GetShader(ShaderID::LocalFogVolumePS);
+                    RenderBackendShaderHandle vertexShader = shaderRepository->GetShader(ShaderID::LocalFogVolumeVS);
+                    RenderBackendShaderHandle pixelShader = shaderRepository->GetShader(ShaderID::LocalFogVolumePS);
 
                     commandList.Draw(
                         vertexShader,

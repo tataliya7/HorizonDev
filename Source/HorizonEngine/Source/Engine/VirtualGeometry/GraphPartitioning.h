@@ -15,5 +15,5 @@ namespace Horizon::GraphPartitioning
 
     bool PartitionGraph(AdjacencyList& graph, uint32 partitionCount, int32* partitionIndices);
 
-    //bool PartitionGraphRecursiveBisection(AdjacencyList& graph, uint32 partitionCount, int32* partitionIndices);
+    bool PartitionGraphRecursive(AdjacencyList& graph, uint32 partitionCount, int32* partitionIndices);
 }

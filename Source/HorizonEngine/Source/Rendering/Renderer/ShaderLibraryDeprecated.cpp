@@ -197,8 +197,12 @@ namespace Horizon
             shaderRepository->LoadShader(ShaderID::VirtualShadowMapPhysicalMemoryAllocation, shaderDesc);
         }
         {
-            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RasterizationRenderer/VirtualShadowMap/VirtualShadowMapClearPhysicalMemory.hslib", "VirtualShadowMapClearPhysicalMemoryCS");
-            shaderRepository->LoadShader(ShaderID::VirtualShadowMapClearPhysicalMemory, shaderDesc);
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RasterizationRenderer/VirtualShadowMap/VirtualShadowMapInstanceCulling.hslib", "VirtualShadowMapInstanceCullingCS");
+            shaderRepository->LoadShader(ShaderID::VirtualShadowMapInstanceCulling, shaderDesc);
+        }
+        {
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Vertex, "Shaders/RasterizationRenderer/VirtualShadowMap/VirtualShadowMapDepth.hslib", "VirtualShadowMapDepthVS");
+            shaderRepository->LoadShader(ShaderID::VirtualShadowMapDepthVS, shaderDesc);
         }
         {
             ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Vertex, "Shaders/RasterizationRenderer/VirtualShadowMap/VirtualShadowMapDepth.hslib", "VirtualShadowMapDepthVS");

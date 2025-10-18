@@ -455,10 +455,19 @@ namespace Horizon
         uint32 vertexCount;
         uint32 triangleCount;
         Vector3f boundingBoxCenter;
-        float padding0;
+        uint32 meshletGroupIndex;
         Vector3f boundingBoxExtent;
         int isSkinned;
     };
+
+    struct VisibleMeshletEntry
+    {
+        uint32 geometryInstanceID;
+        uint32 meshletID;
+    };
+
+    static constexpr uint32 MaximumVisibleMeshletCount = 1048576;
+    static constexpr uint32 MaximumCandidateVisibleMeshletCount = 4 * 1048576;
 
     static constexpr uint32 VirtualGeometryVertexMaximumTextureCoordinateCount = 2;
 

@@ -52,7 +52,7 @@ namespace Horizon
                     pushConstantValues.BindTextureSRV(1, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(colorTexture));
                     pushConstantValues.BindTextureUAV(2, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndex(gridTexture, 0));
 
-                    RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::BilateralGridLocalToneMappingBuildGrid);
+                    RenderBackendShaderHandle computeShader = shaderRepository->GetShader(ShaderID::BilateralGridLocalToneMappingBuildGrid);
 
                     commandList.Dispatch(
                         computeShader,
@@ -97,7 +97,7 @@ namespace Horizon
                     pushConstantValues.BindTextureSRV(1, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(gaussianFilterInputColorTexture));
                     pushConstantValues.BindTextureUAV(2, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndex(lowResolutionLogLuminanceTexture, 0));
 
-                    RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::BilateralGridLocalToneMappingComputeLogLuminance);
+                    RenderBackendShaderHandle computeShader = shaderRepository->GetShader(ShaderID::BilateralGridLocalToneMappingComputeLogLuminance);
 
                     commandList.Dispatch(
                         computeShader,
@@ -139,7 +139,7 @@ namespace Horizon
                     pushConstantValues.OverrideShaderConstantValue(1, gaussianFilterKernelSize);
                     pushConstantValues.OverrideShaderConstantValue(2, gaussianFilterSigma);
 
-                    RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::BilateralGridLocalToneMappingGaussianDistribution);
+                    RenderBackendShaderHandle computeShader = shaderRepository->GetShader(ShaderID::BilateralGridLocalToneMappingGaussianDistribution);
 
                     commandList.Dispatch(
                         computeShader,
@@ -172,7 +172,7 @@ namespace Horizon
                     pushConstantValues.OverrideShaderConstantValue(3, 0u);
                     pushConstantValues.OverrideShaderConstantValue(4, gaussianFilterKernelSize);
 
-                    RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::BilateralGridLocalToneMappingGaussianFilter);
+                    RenderBackendShaderHandle computeShader = shaderRepository->GetShader(ShaderID::BilateralGridLocalToneMappingGaussianFilter);
 
                     commandList.Dispatch(
                         computeShader,
@@ -204,7 +204,7 @@ namespace Horizon
                     pushConstantValues.OverrideShaderConstantValue(3, 1u);
                     pushConstantValues.OverrideShaderConstantValue(4, gaussianFilterKernelSize);
 
-                    RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::BilateralGridLocalToneMappingGaussianFilter);
+                    RenderBackendShaderHandle computeShader = shaderRepository->GetShader(ShaderID::BilateralGridLocalToneMappingGaussianFilter);
 
                     commandList.Dispatch(
                         computeShader,
@@ -254,7 +254,7 @@ namespace Horizon
                     pushConstantValues.OverrideShaderConstantValue(10, 1.0f / float(bilateralGridTextureWidth));
                     pushConstantValues.OverrideShaderConstantValue(11, 1.0f / float(bilateralGridTextureHeight));
 
-                    RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::BilateralGridLocalToneMappingUpsampling);
+                    RenderBackendShaderHandle computeShader = shaderRepository->GetShader(ShaderID::BilateralGridLocalToneMappingUpsampling);
 
                     commandList.Dispatch(
                         computeShader,
@@ -337,7 +337,7 @@ namespace Horizon
                     pushConstantValues.BindTextureUAV(3, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndex(exposureFusionLuminanceTexture, 0));
                     pushConstantValues.BindTextureUAV(4, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndex(exposureFusionWeightTexture, 0));
 
-                    RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::ExposureFusionComputeLuminanceAndWeight);
+                    RenderBackendShaderHandle computeShader = shaderRepository->GetShader(ShaderID::ExposureFusionComputeLuminanceAndWeight);
 
                     commandList.Dispatch(
                         computeShader,
@@ -497,7 +497,7 @@ namespace Horizon
                     pushConstantValues.BindTextureUAV(3, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndex(localToneMappingAssemble, coarsestMipLevel));
                     //pushConstantValues.PushConstants(0, (float)coarsestMipLevel);
 
-                    RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::LocalToneMappingBlendExposures);
+                    RenderBackendShaderHandle computeShader = shaderRepository->GetShader(ShaderID::LocalToneMappingBlendExposures);
 
                     commandList.Dispatch(
                         computeShader,
@@ -546,7 +546,7 @@ namespace Horizon
                         pushConstantValues.BindTextureUAV(4, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndex(localToneMappingAssemble, mipLevel - 1));
                         //pushConstantValues.PushConstants(0, (float)mipLevel);
 
-                        RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::LocalToneMappingBlendLaplacian);
+                        RenderBackendShaderHandle computeShader = shaderRepository->GetShader(ShaderID::LocalToneMappingBlendLaplacian);
 
                         commandList.Dispatch(
                             computeShader,
@@ -600,7 +600,7 @@ namespace Horizon
                     ///pushConstantValues.PushConstants(3, 1.0f / (float)displayMipLevelWidth);
                     ///pushConstantValues.PushConstants(4, 1.0f / (float)displayMipLevelHeight);
 
-                    RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::ExposureFusionGuidedUpsampling);
+                    RenderBackendShaderHandle computeShader = shaderRepository->GetShader(ShaderID::ExposureFusionGuidedUpsampling);
 
                     commandList.Dispatch(
                         computeShader,

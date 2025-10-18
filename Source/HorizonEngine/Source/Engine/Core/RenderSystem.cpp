@@ -22,8 +22,12 @@ namespace Horizon
             ConfigurationParser configuration = ConfigurationParser::ParseFile("../../../Source/HorizonEngine/Config/DefaultEngineSettings.toml");
 
             std::string renderBackendTypeString = configuration.Get("HorizonEngine.Rendering.RenderBackend.RenderBackendType").AsStringOr("");
-
+            enableDebugLayer = configuration.Get("HorizonEngine.Rendering.RenderBackend.EnableValidationLayers").AsBooleanOr(false);
             enableHardwareRayTracing = configuration.Get("HorizonEngine.Rendering.RenderBackend.EnableHardwareRayTracing").AsBooleanOr(false);
+
+#if HORIZON_CONFIGURATION_RELEASE
+            enableDebugLayer = false;
+#endif
 
             if (renderBackendTypeString == "Vulkan")
             {
@@ -34,10 +38,6 @@ namespace Horizon
                 renderBackendType = RenderBackendType::Direct3D12;
             }
         }
-
-#if HORIZON_CONFIGURATION_RELEASE
-        enableDebugLayer = false;
-#endif
 
         std::vector<RenderBackendFeature> renderBackendFeatures = {};
 

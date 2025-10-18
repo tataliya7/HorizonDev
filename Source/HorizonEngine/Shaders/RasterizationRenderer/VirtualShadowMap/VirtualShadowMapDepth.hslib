@@ -10,40 +10,61 @@ SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(1, VirtualShadowMapShaderParameters, Virt
 SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_SRV(2, VirtualShadowMapPageTableBufferSRV);
 SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_SRV(3, GeometryDataBufferSRV);
 SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_SRV(4, GeometryInstanceDataBufferSRV);
-SHADER_CONSTANTS_TEXTURE_2D_ARRAY_UAV(5, uint, VirtualShadowMapDepthTextureUAV);
+SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_SRV(5, VisibleMeshletEntryBufferSRV);
 SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_SRV(6, VirtualShadowMapEntryBufferSRV);
-SHADER_CONSTANTS_SCALAR(7, uint, ShadowViewIndex);
+SHADER_CONSTANTS_TEXTURE_2D_ARRAY_UAV(7, uint, VirtualShadowMapDepthTextureUAV);
+SHADER_CONSTANTS_SCALAR(8, uint, ShadowViewIndex);
 SHADER_CONSTANTS_STRUCT_END();
 
 [shader("vertex")]
 void VirtualShadowMapDepthVS(
-    in uint vertexID : SV_VertexID,
-    in uint instanceID : SV_InstanceID,
+    in uint vertexIndexInCurrentMeshlet : SV_VertexID,
+    in uint visibleMeshletIndex : SV_InstanceID,
     out float4 position : SV_Position)
 {
     StructuredBuffer<RasterizationRendererUniformVariables> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
+    RasterizationRendererUniformVariables frameShaderParameters = frameShaderParameterBuffer[0];
     StructuredBuffer<VirtualShadowMapShaderParameters> virtualShadowMapShaderParameterBuffer = ShaderConstants.GetVirtualShadowMapShaderParameterBufferSRV();
     ByteAddressBuffer geometryDataBuffer = ShaderConstants.GetGeometryDataBufferSRV();
     ByteAddressBuffer geometryInstanceDataBuffer = ShaderConstants.GetGeometryInstanceDataBufferSRV();
+    ByteAddressBuffer visibleMeshletEntryBuffer = ShaderConstants.GetVisibleMeshletEntryBufferSRV();
+    ByteAddressBuffer virtualShadowMapEntryBuffer = ShaderConstants.GetVirtualShadowMapEntryBufferSRV();
 
-    RasterizationRendererUniformVariables frameShaderParameters = frameShaderParameterBuffer[0];
+    uint shadowViewIndex = ShaderConstants.GetShadowViewIndex();
+
+    uint triangleIndexInCurrentMeshlet = vertexIndexInCurrentMeshlet / 3;
+    uint vertexIndexInCurrentTriangle = vertexIndexInCurrentMeshlet - triangleIndexInCurrentMeshlet * 3;
+
+    VirtualShadowMapEntryShaderParameters virtualShadowMapEntry = virtualShadowMapEntryBuffer.Load<VirtualShadowMapEntryShaderParameters>(shadowViewIndex * sizeof(VirtualShadowMapEntryShaderParameters));
     VirtualShadowMapShaderParameters virtualShadowMapShaderParameter = virtualShadowMapShaderParameterBuffer[0];
 
-    ByteAddressBuffer virtualShadowMapEntryBuffer = ShaderConstants.GetVirtualShadowMapEntryBufferSRV();
-    uint shadowViewIndex = ShaderConstants.GetShadowViewIndex();
-    VirtualShadowMapEntryShaderParameters virtualShadowMapEntry = virtualShadowMapEntryBuffer.Load<VirtualShadowMapEntryShaderParameters>(shadowViewIndex * sizeof(VirtualShadowMapEntryShaderParameters));
+    VisibleMeshletEntry visibleMeshletEntry = GetVisibleMeshletEntry(visibleMeshletEntryBuffer, visibleMeshletIndex);
 
-    GPUSceneGeometryInstanceData instanceData = GetGPUSceneGeometryInstanceData(geometryInstanceDataBuffer, instanceID);
-    GPUSceneGeometryData geometryData = GetGPUSceneGeometryData(geometryDataBuffer, instanceData.geometryID);
-    GPUSceneGeometryVertexAttributes vertexAttributes = GetGPUSceneGeometryVertexAttributes(geometryData, vertexID);
+    uint geometryInstanceID = visibleMeshletEntry.geometryInstanceID;
 
-    float3 worldSpaceVertexPosition = mul(instanceData.localToWorldMatrix, float4(vertexAttributes.position, 1.0f)).xyz;
-    float4 clipSpaceVertexPosition = mul(virtualShadowMapEntry.worldToClipMatrix, float4(worldSpaceVertexPosition, 1.0f));
+    GPUSceneGeometryInstanceData geometryInstanceData = GetGPUSceneGeometryInstanceData(geometryInstanceDataBuffer, geometryInstanceID);
+    GPUSceneGeometryData geometryData = GetGPUSceneGeometryData(geometryDataBuffer, geometryInstanceData.geometryID);
+    GPUSceneMeshletData meshletData = GetGPUSceneMeshletData(geometryData, visibleMeshletEntry.meshletID);
 
-    position = clipSpaceVertexPosition;
+    position = float4(0.0f, 0.0f, 0.0f, 1.0f);
+
+    if (triangleIndexInCurrentMeshlet < meshletData.triangleCount)
+    {
+        uint triangleID = meshletData.triangleOffset + triangleIndexInCurrentMeshlet;
+        ByteAddressBuffer indexBuffer = GetByteAddressBufferNonUniform(geometryData.indexBuffer);
+        uint vertexIndex = indexBuffer.Load<uint>((triangleID * 3 + vertexIndexInCurrentTriangle) * sizeof(uint));
+
+        GPUSceneGeometryVertexAttributes vertexAttributes = GetGPUSceneGeometryVertexAttributes(geometryData, vertexIndex);
+
+        float3 localSpaceVertexPosition = vertexAttributes.position;
+        float3 worldSpaceVertexPosition = mul(geometryInstanceData.localToWorldMatrix, float4(localSpaceVertexPosition, 1.0f)).xyz;
+        float4 clipSpaceVertexPosition = mul(virtualShadowMapEntry.worldToClipMatrix, float4(worldSpaceVertexPosition, 1.0f));
+
+        position = clipSpaceVertexPosition;
+    }
 
     // Clamp to near plane
-    position.z = min(position.z, 1);
+    position.z = min(position.z, 1.0f);
 }
 
 [shader("pixel")]

@@ -101,7 +101,7 @@ namespace Horizon
                     //pushConstantValues.BindScalar(1, chromaticAberrationScale.x);
                     //pushConstantValues.BindScalar(2, chromaticAberrationScale.y);
 
-                    RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::FinalComposition);
+                    RenderBackendShaderHandle computeShader = shaderRepository->GetShader(ShaderID::FinalComposition);
 
                     commandList.Dispatch(
                         computeShader,

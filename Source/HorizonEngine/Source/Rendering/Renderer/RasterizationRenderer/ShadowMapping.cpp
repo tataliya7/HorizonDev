@@ -148,7 +148,9 @@ namespace Horizon
                     pushConstantValues.BindTextureUAV(5, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndex(screenSpaceShadowMaskTexture, 0));
                     pushConstantValues.BindTextureUAV(6, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndex(cascadedShadowMapDebugVisualizationTexture, 0));
 
-                    RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::ShadowMapProjectionForDistantLight);
+                    RenderBackendShaderHandle computeShader = shaderRepository->GetShader(ShaderID::ShadowMapProjectionForDistantLight);
+
+                    //commandList.ClearTextureUAV(RenderBackendTextureUAVDesc(resourceRegistry.GetRenderBackendTextureHandle(screenSpaceShadowMaskTexture), 0), RenderBackendTextureClearValue::White);
 
                     commandList.Dispatch(
                         computeShader,

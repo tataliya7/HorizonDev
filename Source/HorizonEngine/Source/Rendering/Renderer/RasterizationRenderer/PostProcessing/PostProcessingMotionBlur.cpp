@@ -54,7 +54,7 @@ namespace Horizon
                 builder.SetShaderConstantValue(5, renderResolution.width - 1);
                 builder.SetShaderConstantValue(6, renderResolution.height - 1);
 
-                RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::MotionBlurTileClassificationCS);
+                RenderBackendShaderHandle computeShader = shaderRepository->GetShader(ShaderID::MotionBlurTileClassificationCS);
 
                 uint32 threadGroupCountX = tileCountX;
                 uint32 threadGroupCountY = tileCountY;
@@ -97,8 +97,8 @@ namespace Horizon
                     RenderBackendRenderPassStoreOperation::None,
                     RenderBackendDepthStencilAccessType::DepthWrite_StencilNoAccess);
 
-                RenderBackendShaderHandle vertexShader = shaderCollection->GetShader(ShaderID::MotionBlurVelocityDilationScatterVS);
-                RenderBackendShaderHandle pixelShader = shaderCollection->GetShader(ShaderID::MotionBlurVelocityDilationScatterPS);
+                RenderBackendShaderHandle vertexShader = shaderRepository->GetShader(ShaderID::MotionBlurVelocityDilationScatterVS);
+                RenderBackendShaderHandle pixelShader = shaderRepository->GetShader(ShaderID::MotionBlurVelocityDilationScatterPS);
 
                 uint32 vertexCount = 6 * MotionBlurQuadCountPerTile;
                 uint32 instanceCount = Math::CeilDiv(tileCount, MotionBlurQuadCountPerTile);
@@ -164,7 +164,7 @@ namespace Horizon
                 builder.SetBindlessResourceSRV(3, velocityAndDepthTexture);
                 builder.SetBindlessResourceUAV(4, motionBlurColorTexture, 0);
 
-                RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::MotionBlurReconstructionFilterCS);
+                RenderBackendShaderHandle computeShader = shaderRepository->GetShader(ShaderID::MotionBlurReconstructionFilterCS);
 
                 uint32 threadGroupCountX = ComputeShaderThreadGroupCount(motionBlurColorTextureDescription.width, MotionBlurTileSize);
                 uint32 threadGroupCountY = ComputeShaderThreadGroupCount(motionBlurColorTextureDescription.height, MotionBlurTileSize);

@@ -4,7 +4,6 @@
 namespace Horizon
 {
     uint32 VirtualShadowMapPageSize = 128;
-
     uint32 VirtualShadowMapClipmapFirstLevel = 1;
     uint32 VirtualShadowMapClipmapLevelCount = 8;
 
@@ -79,8 +78,8 @@ namespace Horizon
         const GeometryPassDrawCommandList& drawCommandList = geometryPassDrawCommandLists[uint32(GeometryPassType::VirtualShadowMap)];
         const GPUScene* gpuScene = sceneView->scene->GetGPUScene();//drawCommandList.setupJobData.scene->GetGPUScene();
 
-        RenderBackendShaderHandle vertexShader = shaderCollection->GetShader(ShaderID::VirtualShadowMapDepthVS);
-        RenderBackendShaderHandle pixelShader = shaderCollection->GetShader(ShaderID::VirtualShadowMapDepthPS);
+        RenderBackendShaderHandle vertexShader = shaderRepository->GetShader(ShaderID::VirtualShadowMapDepthVS);
+        RenderBackendShaderHandle pixelShader = shaderRepository->GetShader(ShaderID::VirtualShadowMapDepthPS);
 
         for (uint32 drawCommandIndex = 0; drawCommandIndex < drawCommandList.drawCommandCount; drawCommandIndex++)
         {
@@ -89,8 +88,7 @@ namespace Horizon
             RenderBackendGraphicsPipelineStateDescription graphicsPipelineState = {};
             graphicsPipelineState.rasterizationState.cullMode = RenderBackendRasterizationCullMode::Back;
             graphicsPipelineState.rasterizationState.fillMode = RenderBackendRasterizationFillMode::Solid;
-            // Disable hardware depth testing
-            graphicsPipelineState.depthStencilState.depthTestEnable = false;
+            graphicsPipelineState.depthStencilState.depthTestEnable = false; // Disable hardware depth testing
             graphicsPipelineState.depthStencilState.depthWriteEnable = false;
             graphicsPipelineState.depthStencilState.stencilTestEnable = false;
 
@@ -371,7 +369,7 @@ namespace Horizon
                     pushConstantValues.BindBufferUAV(0, resourceRegistry.GetBufferUAVBindlessResourceDescriptorIndex(virtualShadowMapIndirectArgumentBuffer));
                     pushConstantValues.BindBufferUAV(1, resourceRegistry.GetBufferUAVBindlessResourceDescriptorIndex(virtualShadowMapPhysicalPageListBuffer));
 
-                    RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::VirtualShadowMapClearIndirectArgumentBuffer);
+                    RenderBackendShaderHandle computeShader = shaderRepository->GetShader(ShaderID::VirtualShadowMapClearIndirectArgumentBuffer);
 
                     commandList.Dispatch(
                         computeShader,
@@ -399,7 +397,7 @@ namespace Horizon
                     pushConstantValues.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(virtualShadowMapShaderParameterBuffer));
                     pushConstantValues.BindBufferUAV(1, resourceRegistry.GetBufferUAVBindlessResourceDescriptorIndex(virtualShadowMapPageTableBuffer));
 
-                    RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::VirtualShadowMapClearPageTable);
+                    RenderBackendShaderHandle computeShader = shaderRepository->GetShader(ShaderID::VirtualShadowMapClearPageTable);
 
                     commandList.Dispatch(
                         computeShader,
@@ -433,7 +431,7 @@ namespace Horizon
                     pushConstantValues.BindBufferSRV(4, resourceRegistry.GetBufferSRVBindlessResourceDescriptorIndex(virtualShadowMapEntryBuffer));
                     pushConstantValues.OverrideShaderConstantValue(5, distantLightVirtualShadowMapEntryCount);
 
-                    RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::VirtualShadowMapPageRequest);
+                    RenderBackendShaderHandle computeShader = shaderRepository->GetShader(ShaderID::VirtualShadowMapPageRequest);
 
                     commandList.Dispatch(
                         computeShader,
@@ -467,7 +465,7 @@ namespace Horizon
                     pushConstantValues.BindBufferUAV(3, resourceRegistry.GetBufferUAVBindlessResourceDescriptorIndex(virtualShadowMapPageTableBuffer));
                     pushConstantValues.BindBufferUAV(4, resourceRegistry.GetBufferUAVBindlessResourceDescriptorIndex(virtualShadowMapPhysicalPageDataBuffer));
 
-                    RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::VirtualShadowMapPhysicalPageAllocation);
+                    RenderBackendShaderHandle computeShader = shaderRepository->GetShader(ShaderID::VirtualShadowMapPhysicalPageAllocation);
 
                     commandList.Dispatch(
                         computeShader,
@@ -499,7 +497,7 @@ namespace Horizon
                     pushConstantValues.BindBufferUAV(2, resourceRegistry.GetBufferUAVBindlessResourceDescriptorIndex(virtualShadowMapIndirectArgumentBuffer));
                     pushConstantValues.BindBufferUAV(3, resourceRegistry.GetBufferUAVBindlessResourceDescriptorIndex(virtualShadowMapActivePhysicalPageIndexBuffer));
 
-                    RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::VirtualShadowMapPhysicalMemoryAllocation);
+                    RenderBackendShaderHandle computeShader = shaderRepository->GetShader(ShaderID::VirtualShadowMapPhysicalMemoryAllocation);
 
                     commandList.Dispatch(
                         computeShader,
@@ -526,7 +524,7 @@ namespace Horizon
                     pushConstantValues.BindBufferSRV(1, resourceRegistry.GetBufferSRVBindlessResourceDescriptorIndex(virtualShadowMapActivePhysicalPageIndexBuffer));
                     pushConstantValues.BindTextureUAV(2, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndex(virtualShadowMapDepthTexture, 0));
 
-                    RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::VirtualShadowMapClearPhysicalMemory);
+                    RenderBackendShaderHandle computeShader = shaderRepository->GetShader(ShaderID::VirtualShadowMapClearPhysicalMemory);
 
                     commandList.DispatchIndirect(
                         computeShader,
@@ -552,43 +550,195 @@ namespace Horizon
             });
 #endif
 
+        RenderGraphBufferDescription meshletCullingArgumentBufferDesc = RenderGraphBufferDescription::CreateIndirectArguments(sizeof(RenderBackendDispatchIndirectArguments), 1);
+        RenderGraphBufferHandle meshletCullingArgumentBuffer = renderGraph.CreateBuffer(meshletCullingArgumentBufferDesc, "VirtualGeometryIndirectArgumentBuffer");
+
+        RenderGraphBufferDescription drawIndirectArgumentBufferDesc = RenderGraphBufferDescription::CreateIndirectArguments(sizeof(RenderBackendDrawIndirectArguments), 1);
+        RenderGraphBufferHandle drawIndirectArgumentBuffer = renderGraph.CreateBuffer(drawIndirectArgumentBufferDesc, "VirtualGeometryDrawIndirectArgumentBuffer");
+
+        RenderGraphBufferDescription candidateVisibleMeshletBufferDesc = RenderGraphBufferDescription::CreateByteAddress(sizeof(VisibleMeshletEntry) * MaximumCandidateVisibleMeshletCount);
+        RenderGraphBufferHandle candidateVisibleMeshletBuffer = renderGraph.CreateBuffer(candidateVisibleMeshletBufferDesc, "CandidateVisibleMeshletBuffer");
+
+        RenderGraphBufferDescription visibleMeshletBufferDesc = RenderGraphBufferDescription::CreateByteAddress(sizeof(VisibleMeshletEntry) * MaximumVisibleMeshletCount);
+        RenderGraphBufferHandle visibleMeshletBuffer = renderGraph.CreateBuffer(visibleMeshletBufferDesc, "VisibleMeshletBuffer");
+
+        RenderGraphBufferDescription visibleMeshletCounterBufferDesc = RenderGraphBufferDescription::CreateByteAddress(sizeof(uint32));
+        RenderGraphBufferHandle visibleMeshletCounterBuffer = renderGraph.CreateBuffer(visibleMeshletCounterBufferDesc, "VisibleMeshletCounterBuffer");
+
+        const GPUScene* gpuScene = sceneView->scene->GetGPUScene();
+
         renderGraph.AddPass(
-           std::format("VirtualShadowMapDepth (Graphics, {}x{})", virtualShadowMapSize, virtualShadowMapSize),
-           RenderGraphPassFlags::Graphics,
-           [&](RenderGraphBuilder& builder)
-           {
-               virtualShadowMapPageTableBuffer = builder.ReadBuffer(virtualShadowMapPageTableBuffer, RenderBackendResourceState::ShaderResource);
-               virtualShadowMapEntryBuffer = builder.ReadBuffer(virtualShadowMapEntryBuffer, RenderBackendResourceState::ShaderResource);
-               virtualShadowMapDepthTexture = builder.WriteTexture(virtualShadowMapDepthTexture, RenderBackendResourceState::UnorderedAccess);
+            std::format("ClearVisibleMeshletCounterBuffer ({} bytes)", visibleMeshletCounterBufferDesc.size),
+            RenderGraphPassFlags::Compute,
+            [&](RenderGraphBuilder& builder)
+            {
+                visibleMeshletCounterBuffer = builder.WriteBuffer(visibleMeshletCounterBuffer, RenderBackendResourceState::UnorderedAccess);
 
-               builder.SetRenderArea(0, 0, virtualShadowMapSize, virtualShadowMapSize);
-               builder.SetAllowUAVWrites(true);
+                return [=](RenderBackendCommandList& commandList, const RenderGraphResourceRegistry& resourceRegistry)
+                {
+                    commandList.ClearBufferUAV(resourceRegistry.GetRenderBackendBufferHandle(visibleMeshletCounterBuffer), 0);
+                };
+            });
 
-               return [=](RenderBackendCommandList& commandList, const RenderGraphResourceRegistry& resourceRegistry)
-               {
-                   RenderBackendViewport viewport(0.0f, 0.0f, float(virtualShadowMapSize), float(virtualShadowMapSize));
-                   commandList.SetViewports(&viewport, 1);
+        renderGraph.AddPass(
+            std::format("VisibilityCullingIndirectArgumentInitialization (Compute, 1x1x1)"),
+            RenderGraphPassFlags::Compute,
+            [&](RenderGraphBuilder& builder)
+            {
+                meshletCullingArgumentBuffer = builder.WriteBuffer(meshletCullingArgumentBuffer, RenderBackendResourceState::UnorderedAccess);
+                drawIndirectArgumentBuffer = builder.WriteBuffer(drawIndirectArgumentBuffer, RenderBackendResourceState::UnorderedAccess);
 
-                   RenderBackendScissor scissor(0, 0, virtualShadowMapSize, virtualShadowMapSize);
-                   commandList.SetScissors(&scissor, 1);
+                RenderBackendShaderHandle computeShader = shaderRepository->GetShader(ShaderID::VisibilityCullingIndirectArgumentInitialization);
 
-                   DispatchVirtualShadowMapPassDrawCommands(
-                       commandList,
-                       *light,
-                       virtualShadowMapShaderParameterBuffer,
-                       resourceRegistry.GetRenderBackendBufferHandle(virtualShadowMapPageTableBuffer),
-                       resourceRegistry.GetRenderBackendBufferHandle(virtualShadowMapEntryBuffer),
-                       resourceRegistry.GetRenderBackendTextureHandle(virtualShadowMapDepthTexture));
+                return [=](RenderBackendCommandList& commandList, const RenderGraphResourceRegistry& resourceRegistry)
+                {
+                    RenderBackendPushConstantValues pushConstantValues = {};
+                    pushConstantValues.BindBufferUAV(0, resourceRegistry.GetBufferUAVBindlessResourceDescriptorIndex(meshletCullingArgumentBuffer));
+                    pushConstantValues.BindBufferUAV(1, resourceRegistry.GetBufferUAVBindlessResourceDescriptorIndex(drawIndirectArgumentBuffer));
 
-                   {
-                       RenderBackendViewport viewport(0.0f, 0.0f, float(renderResolution.width), float(renderResolution.height));
-                       commandList.SetViewports(&viewport, 1);
+                    commandList.Dispatch(
+                        computeShader,
+                        pushConstantValues,
+                        1,
+                        1,
+                        1);
+                };
+            });
 
-                       RenderBackendScissor scissor(0, 0, renderResolution.width, renderResolution.height);
-                       commandList.SetScissors(&scissor, 1);
-                   }
-               };
-           });
+        if (gpuScene->geometryInstanceCount > 0)
+        {
+            renderGraph.AddPass(
+                std::format("VirtualShadowMapInstanceCulling (Compute)"),
+                RenderGraphPassFlags::Compute,
+                [&](RenderGraphBuilder& builder)
+                {
+                    meshletCullingArgumentBuffer = builder.WriteBuffer(meshletCullingArgumentBuffer, RenderBackendResourceState::UnorderedAccess);
+
+                    RenderBackendShaderHandle computeShader = shaderRepository->GetShader(ShaderID::VirtualShadowMapInstanceCulling);
+
+                    uint32 threadGroupCountX = ComputeShaderThreadGroupCount(gpuScene->geometryInstanceCount, 64);
+                    uint32 threadGroupCountY = 1;
+                    uint32 threadGroupCountZ = 1;
+
+                    return [=](RenderBackendCommandList& commandList, const RenderGraphResourceRegistry& resourceRegistry)
+                    {
+                        RenderBackendPushConstantValues pushConstantValues = {};
+                        pushConstantValues.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
+                        pushConstantValues.BindBufferSRV(1, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(gpuScene->geometryDataBuffer));
+                        pushConstantValues.BindBufferSRV(2, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(gpuScene->geometryInstanceDataBuffer));
+                        pushConstantValues.BindBufferUAV(3, resourceRegistry.GetBufferUAVBindlessResourceDescriptorIndex(meshletCullingArgumentBuffer));
+                        pushConstantValues.OverrideShaderConstantValue(4, gpuScene->geometryInstanceCount);
+
+                        commandList.Dispatch(
+                            computeShader,
+                            pushConstantValues,
+                            threadGroupCountX,
+                            threadGroupCountY,
+                            threadGroupCountZ);
+                    };
+                });
+        }
+
+        RenderGraphTextureHandle previousMinDepthPyramidTexture = renderGraph.ImportExternalTexture(historyFrame.minDepthPyramidTexture, "PreviousMinDepthPyramidTexture");
+        const bool skipOcclusionCulling = previousMinDepthPyramidTexture.IsNull();
+
+        renderGraph.AddPass(
+            std::format("MeshletCulling (Compute, Indirect)"),
+            RenderGraphPassFlags::Compute,
+            [&](RenderGraphBuilder& builder)
+            {
+                meshletCullingArgumentBuffer = builder.ReadBuffer(meshletCullingArgumentBuffer, RenderBackendResourceState::IndirectArgument);
+
+                builder.SetBindlessResourceSRV(0, GetCurrentPerFrameConstantBuffer());
+                builder.SetBindlessResourceSRV(1, gpuScene->geometryDataBuffer);
+                builder.SetBindlessResourceSRV(2, gpuScene->geometryInstanceDataBuffer);
+                builder.SetBindlessResourceSRV(3, previousMinDepthPyramidTexture);
+                builder.SetBindlessResourceUAV(4, visibleMeshletBuffer);
+                builder.SetBindlessResourceUAV(5, visibleMeshletCounterBuffer);
+                builder.SetBindlessResourceUAV(6, drawIndirectArgumentBuffer);
+                builder.SetShaderConstantValue(7, skipOcclusionCulling);
+
+                RenderBackendShaderHandle computeShader = shaderRepository->GetShader(ShaderID::VirtualGeometryMeshletCulling);
+
+                return [=](RenderBackendCommandList& commandList, const RenderGraphResourceRegistry& resourceRegistry)
+                {
+                    RenderBackendPushConstantValues pushConstantValues = resourceRegistry.GetPushConstantValues();
+
+                    commandList.DispatchIndirect(
+                        computeShader,
+                        pushConstantValues,
+                        resourceRegistry.GetRenderBackendBufferHandle(meshletCullingArgumentBuffer),
+                        0);
+                };
+            });
+
+        renderGraph.AddPass(
+            std::format("VirtualShadowMapDepth (Graphics, {}x{})", virtualShadowMapSize, virtualShadowMapSize),
+            RenderGraphPassFlags::Graphics,
+            [&](RenderGraphBuilder& builder)
+            {
+                virtualShadowMapPageTableBuffer = builder.ReadBuffer(virtualShadowMapPageTableBuffer, RenderBackendResourceState::ShaderResource);
+                virtualShadowMapEntryBuffer = builder.ReadBuffer(virtualShadowMapEntryBuffer, RenderBackendResourceState::ShaderResource);
+                virtualShadowMapDepthTexture = builder.WriteTexture(virtualShadowMapDepthTexture, RenderBackendResourceState::UnorderedAccess);
+
+                builder.SetRenderArea(0, 0, virtualShadowMapSize, virtualShadowMapSize);
+                builder.SetAllowUAVWrites(true);
+
+                RenderBackendShaderHandle vertexShader = shaderRepository->GetShader(ShaderID::VirtualShadowMapDepthVS);
+                RenderBackendShaderHandle pixelShader = shaderRepository->GetShader(ShaderID::VirtualShadowMapDepthPS);
+
+                return [=](RenderBackendCommandList& commandList, const RenderGraphResourceRegistry& resourceRegistry)
+                {
+                    RenderBackendViewport viewport(0.0f, 0.0f, float(virtualShadowMapSize), float(virtualShadowMapSize));
+                    commandList.SetViewports(&viewport, 1);
+
+                    RenderBackendScissor scissor(0, 0, virtualShadowMapSize, virtualShadowMapSize);
+                    commandList.SetScissors(&scissor, 1);
+
+                    {
+                        RenderBackendGraphicsPipelineStateDescription graphicsPipelineState = {};
+                        graphicsPipelineState.rasterizationState.cullMode = RenderBackendRasterizationCullMode::Back;
+                        graphicsPipelineState.rasterizationState.fillMode = RenderBackendRasterizationFillMode::Solid;
+                        graphicsPipelineState.depthStencilState.depthTestEnable = false; // Disable hardware depth testing
+                        graphicsPipelineState.depthStencilState.depthWriteEnable = false;
+                        graphicsPipelineState.depthStencilState.stencilTestEnable = false;
+
+                        RenderBackendPushConstantValues pushConstantValues = {};
+                        pushConstantValues.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
+                        pushConstantValues.BindBufferSRV(1, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(virtualShadowMapShaderParameterBuffer));
+                        pushConstantValues.BindBufferSRV(2, resourceRegistry.GetBufferSRVBindlessResourceDescriptorIndex(virtualShadowMapPageTableBuffer));
+                        pushConstantValues.BindBufferSRV(3, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(gpuScene->geometryDataBuffer));
+                        pushConstantValues.BindBufferSRV(4, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(gpuScene->geometryInstanceDataBuffer));
+                        pushConstantValues.BindBufferSRV(5, resourceRegistry.GetBufferSRVBindlessResourceDescriptorIndex(visibleMeshletBuffer));
+                        pushConstantValues.BindTextureSRV(6, resourceRegistry.GetBufferSRVBindlessResourceDescriptorIndex(virtualShadowMapEntryBuffer));
+                        pushConstantValues.BindTextureUAV(7, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndex(virtualShadowMapDepthTexture, 0));
+
+                        for (uint32 shadowViewIndex = 0; shadowViewIndex < virtualShadowMapManager->GetVirtualShadowMapEntryCount(); shadowViewIndex++)
+                        {
+                            pushConstantValues.OverrideShaderConstantValue(8, shadowViewIndex);
+
+                            commandList.DrawIndirect(
+                                vertexShader,
+                                pixelShader,
+                                graphicsPipelineState,
+                                pushConstantValues,
+                                resourceRegistry.GetRenderBackendBufferHandle(drawIndirectArgumentBuffer),
+                                0,
+                                1,
+                                RenderBackendPrimitiveTopology::TriangleList);
+                        }
+                    }
+
+                    // @todo Remove this
+                    {
+                        RenderBackendViewport viewport(0.0f, 0.0f, float(renderResolution.width), float(renderResolution.height));
+                        commandList.SetViewports(&viewport, 1);
+
+                        RenderBackendScissor scissor(0, 0, renderResolution.width, renderResolution.height);
+                        commandList.SetScissors(&scissor, 1);
+                    }
+                };
+            });
 
         intermediateResources.virtualShadowMapPageTableBuffer = virtualShadowMapPageTableBuffer;
         intermediateResources.virtualShadowMapEntryBuffer = virtualShadowMapEntryBuffer;
@@ -648,7 +798,7 @@ namespace Horizon
                     pushConstantValues.BindTextureUAV(7, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndex(debugVisualizationTexture, 0));
                     pushConstantValues.OverrideShaderConstantValue(8, virtualShadowMapDebugVisualizationMode);
 
-                    RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::VirtualShadowMapProjection);
+                    RenderBackendShaderHandle computeShader = shaderRepository->GetShader(ShaderID::VirtualShadowMapProjection);
 
                     commandList.Dispatch(
                         computeShader,
@@ -701,7 +851,7 @@ namespace Horizon
                     pushConstantValues.BindTextureSRV(1, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(debugVisualizationTexture));
                     pushConstantValues.BindTextureUAV(2, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndex(outputTexture, 0));
 
-                    RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::VisualizeVirtualShadowMap);
+                    RenderBackendShaderHandle computeShader = shaderRepository->GetShader(ShaderID::VisualizeVirtualShadowMap);
 
                     commandList.Dispatch(
                         computeShader,

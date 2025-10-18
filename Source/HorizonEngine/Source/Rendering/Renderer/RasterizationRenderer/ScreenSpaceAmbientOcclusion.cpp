@@ -48,7 +48,7 @@ namespace Horizon
                 builder.SetShaderConstantValue(5, radius);
                 builder.SetShaderConstantValue(6, thickness);
 
-                RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::GTAOHorizonSearchIntegral);
+                RenderBackendShaderHandle computeShader = shaderRepository->GetShader(ShaderID::GTAOHorizonSearchIntegral);
 
                 uint32 threadGroupCountX = Math::CeilDiv(horizonSearchIntegralOutputTextureDescription.width, 8);
                 uint32 threadGroupCountY = Math::CeilDiv(horizonSearchIntegralOutputTextureDescription.height, 8);
@@ -77,7 +77,7 @@ namespace Horizon
                 builder.SetBindlessResourceSRV(2, horizonSearchIntegralOutputTexture);
                 builder.SetBindlessResourceUAV(3, spatialFilteringOutputTexture, 0);
 
-                RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::GTAOSpatialFiltering);
+                RenderBackendShaderHandle computeShader = shaderRepository->GetShader(ShaderID::GTAOSpatialFiltering);
 
                 uint32 threadGroupCountX = Math::CeilDiv(spatialFilteringOutputTextureDescription.width, 8);
                 uint32 threadGroupCountY = Math::CeilDiv(spatialFilteringOutputTextureDescription.height, 8);
@@ -125,7 +125,7 @@ namespace Horizon
                     builder.SetBindlessResourceSRV(4, intermediateResources.motionVectorTexture);
                     builder.SetBindlessResourceUAV(5, temporalFilteringOutputTexture, 0);
 
-                    RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::GTAOTemporalFiltering);
+                    RenderBackendShaderHandle computeShader = shaderRepository->GetShader(ShaderID::GTAOTemporalFiltering);
 
                     uint32 threadGroupCountX = Math::CeilDiv(temporalFilteringOutputTextureDescription.width, 8);
                     uint32 threadGroupCountY = Math::CeilDiv(temporalFilteringOutputTextureDescription.height, 8);
@@ -171,7 +171,7 @@ namespace Horizon
                     builder.SetBindlessResourceSRV(2, depthTexture);
                     builder.SetBindlessResourceUAV(3, upsamplingOutputTexture, 0);
 
-                    RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::GTAOUpsampling);
+                    RenderBackendShaderHandle computeShader = shaderRepository->GetShader(ShaderID::GTAOUpsampling);
 
                     uint32 threadGroupCountX = Math::CeilDiv(upsamplingOutputTextureDescription.width, 8);
                     uint32 threadGroupCountY = Math::CeilDiv(upsamplingOutputTextureDescription.height, 8);
@@ -226,7 +226,7 @@ namespace Horizon
                     pushConstantValues.BindTextureSRV(1, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(ambientOcclusionTexture));
                     pushConstantValues.BindTextureUAV(2, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndex(outputTexture, 0));
 
-                    RenderBackendShaderHandle computeShader = shaderCollection->GetShader(ShaderID::VisualizeAmbientOcclusion);
+                    RenderBackendShaderHandle computeShader = shaderRepository->GetShader(ShaderID::VisualizeAmbientOcclusion);
 
                     commandList.Dispatch(
                         computeShader,

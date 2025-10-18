@@ -149,7 +149,7 @@ struct GPUSceneMeshletData
     uint vertexCount;
     uint triangleCount;
     float3 boundingBoxCenter;
-    float padding0;
+    uint meshletGroupIndex; // @todo Debug only
     float3 boundingBoxExtent;
     int isSkinned;
 };

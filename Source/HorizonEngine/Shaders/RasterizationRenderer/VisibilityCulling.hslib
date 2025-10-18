@@ -166,6 +166,7 @@ void MeshletCullingCS(uint3 dispatchThreadID : SV_DispatchThreadID)
         //visibile = HZBOcclusionCulling(minDepthPrymidTexture, occlusionCullingBounds);
     }
 
+    visibile = true;
     if (visibile)
     {
         uint visibleMeshletIndex;
