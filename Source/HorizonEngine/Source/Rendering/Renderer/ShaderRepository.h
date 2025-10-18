@@ -32,6 +32,7 @@ namespace Horizon
         VisibilityCullingIndirectArgumentInitialization,
         VirtualGeometryInstanceCulling,
         VirtualGeometryMeshletCulling,
+        VirtualGeometryMeshletGroupCulling,
         // Begin: Real Time Renderer
         VisibilityBufferVS,
         VisibilityBufferPS,

@@ -131,6 +131,12 @@ namespace Horizon
             shaderRepository->LoadShader(ShaderID::VirtualGeometryMeshletCulling, shaderDesc);
         }
         {
+            ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RasterizationRenderer/VisibilityCulling.hslib", "MeshletGroupCullingCS");
+            shaderDesc.AddDefine("GPU_SCENE_MAXIMUM_TRIANGLE_COUNT_PER_MESHLET", IndexCountPerMeshlet);
+            shaderDesc.AddDefine("MESHLET_GROUP_CULLING", 1);
+            shaderRepository->LoadShader(ShaderID::VirtualGeometryMeshletGroupCulling, shaderDesc);
+        }
+        {
             ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Vertex, "Shaders/RasterizationRenderer/VisibilityBuffer.hslib", "VisibilityBufferVS");
             shaderDesc.AddDefine("GPU_SCENE_MAXIMUM_TRIANGLE_COUNT_PER_MESHLET", IndexCountPerMeshlet);
             shaderRepository->LoadShader(ShaderID::VisibilityBufferVS, shaderDesc);

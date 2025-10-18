@@ -17,6 +17,7 @@ struct GPUSceneGeometryData
     int previousVertexBuffer0;
     int indexBuffer;
     int meshletBuffer;
+    int meshletGroupBuffer;
     int meshletVertexBuffer;
     int meshletTriangleBuffer;
     int materialBuffer;
@@ -28,6 +29,7 @@ struct GPUSceneGeometryData
     uint vertexCount;
     uint indexCount;
     uint meshletCount;
+    uint meshletGroupCount;
     uint relevantJointCountPerVertex;
     uint flags;
 };
@@ -59,30 +61,6 @@ GPUSceneGeometryInstanceData GetGPUSceneGeometryInstanceData(ByteAddressBuffer g
     instanceData = geometryInstanceDataBuffer.Load<GPUSceneGeometryInstanceData>(offset);
 
     return instanceData;
-}
-
-struct VertexAttributes
-{
-    float3 position;
-    float3 normal;
-    float4 tangent;
-    float2 textureCoord0;
-};
-
-VertexAttributes GetVertexAttributes(GPUSceneGeometryData geometryData, uint vertexIndex)
-{
-    //ByteAddressBuffer indexBuffer = GetByteAddressBufferNonUniform(geometryData.indexBuffer);
-    ByteAddressBuffer vertexBuffer0 = GetByteAddressBufferNonUniform(geometryData.vertexBuffer0);
-    ByteAddressBuffer vertexBuffer1 = GetByteAddressBufferNonUniform(geometryData.vertexBuffer1);
-    ByteAddressBuffer vertexBuffer2 = GetByteAddressBufferNonUniform(geometryData.vertexBuffer2);
-    ByteAddressBuffer vertexBuffer3 = GetByteAddressBufferNonUniform(geometryData.vertexBuffer3);
-
-    VertexAttributes vertexAttributes = (VertexAttributes)0;
-    vertexAttributes.position = vertexBuffer0.Load<float3>(vertexIndex * sizeof(float3));
-    vertexAttributes.normal = vertexBuffer1.Load<float3>(vertexIndex * sizeof(float3));
-    vertexAttributes.tangent = vertexBuffer2.Load<float4>(vertexIndex * sizeof(float4));
-    vertexAttributes.textureCoord0 = vertexBuffer3.Load<float2>(vertexIndex * sizeof(float2));
-    return vertexAttributes;
 }
 
 struct GPUSceneGeometryVertexAttributes
@@ -164,6 +142,26 @@ GPUSceneMeshletData GetGPUSceneMeshletData(GPUSceneGeometryData geometryData, ui
     meshletData = meshletDataBuffer.Load<GPUSceneMeshletData>(offset);
 
     return meshletData;
+}
+
+struct GPUSceneMeshletGroupData
+{
+    uint meshletOffset;
+    uint meshletCount;
+    float error;
+    float parentError;
+};
+
+GPUSceneMeshletGroupData GetGPUSceneMeshletGroupData(GPUSceneGeometryData geometryData, uint meshletGroupID)
+{
+    ByteAddressBuffer meshletGroupDataBuffer = GetByteAddressBufferNonUniform(geometryData.meshletGroupBuffer);
+
+    uint offset = meshletGroupID * sizeof(GPUSceneMeshletGroupData);
+
+    GPUSceneMeshletGroupData meshletGroupData = (GPUSceneMeshletGroupData)0;
+    meshletGroupData = meshletGroupDataBuffer.Load<GPUSceneMeshletGroupData>(offset);
+
+    return meshletGroupData;
 }
 
 // @todo Move to other place

@@ -36,6 +36,6 @@ void VirtualShadowMapInstanceCullingCS(uint3 dispatchThreadID : SV_DispatchThrea
         RWByteAddressBuffer argumentBuffer = ShaderConstants.GetMeshletCullingArgumentBufferUAV();
 
         uint unused;
-        argumentBuffer.InterlockedAdd(0, (geometryData.meshletCount + 64 - 1) / 64, unused);
+        argumentBuffer.InterlockedAdd(0, (geometryData.meshletGroupCount + 64 - 1) / 64, unused);
     }
 }

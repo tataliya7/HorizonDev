@@ -658,7 +658,7 @@ namespace Horizon
                 builder.SetBindlessResourceUAV(6, drawIndirectArgumentBuffer);
                 builder.SetShaderConstantValue(7, skipOcclusionCulling);
 
-                RenderBackendShaderHandle computeShader = shaderRepository->GetShader(ShaderID::VirtualGeometryMeshletCulling);
+                RenderBackendShaderHandle computeShader = shaderRepository->GetShader(ShaderID::VirtualGeometryMeshletGroupCulling);
 
                 return [=](RenderBackendCommandList& commandList, const RenderGraphResourceRegistry& resourceRegistry)
                 {

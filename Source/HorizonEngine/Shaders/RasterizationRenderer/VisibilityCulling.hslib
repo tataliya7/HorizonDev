@@ -64,7 +64,7 @@ void InstanceCullingCS(uint3 dispatchThreadID : SV_DispatchThreadID)
         RWByteAddressBuffer argumentBuffer = ShaderConstants.GetMeshletCullingArgumentBufferUAV();
 
         uint unused;
-        argumentBuffer.InterlockedAdd(0, (geometryData.meshletCount + 64 - 1) / 64, unused);
+        argumentBuffer.InterlockedAdd(0, (geometryData.meshletGroupCount + 64 - 1) / 64, unused);
     }
 }
 
@@ -179,6 +179,68 @@ void MeshletCullingCS(uint3 dispatchThreadID : SV_DispatchThreadID)
 
         uint originVisibleMeshletCount;
         drawIndirectArgumentBuffer.InterlockedAdd(sizeof(uint), 1, originVisibleMeshletCount);
+    }
+}
+
+#endif
+
+#if MESHLET_GROUP_CULLING
+
+SHADER_CONSTANTS_STRUCT_BEGIN();
+SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, RasterizationRendererUniformVariables, PerFrameShaderParameterBufferSRV);
+SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_SRV(1, GeometryDataBufferSRV);
+SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_SRV(2, GeometryInstanceDataBufferSRV);
+SHADER_CONSTANTS_TEXTURE_2D_DEFAULT_SRV(3, MinDepthPrymidTextureSRV);
+SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_UAV(4, VisibileMeshletBufferUAV);
+SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_UAV(5, VisibileMeshletCounterBufferUAV);
+SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_UAV(6, DrawIndirectArgumentBufferUAV);
+SHADER_CONSTANTS_SCALAR(7, int, SkipOcclusionCulling);
+SHADER_CONSTANTS_STRUCT_END();
+
+[shader("compute")]
+[numthreads(64, 1, 1)]
+void MeshletGroupCullingCS(uint3 dispatchThreadID : SV_DispatchThreadID)
+{
+    StructuredBuffer<RasterizationRendererUniformVariables> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
+    RasterizationRendererUniformVariables frameShaderParameters = frameShaderParameterBuffer[0];
+    ByteAddressBuffer geometryDataBuffer = ShaderConstants.GetGeometryDataBufferSRV();
+    ByteAddressBuffer geometryInstanceDataBuffer = ShaderConstants.GetGeometryInstanceDataBufferSRV();
+    Texture2D minDepthPrymidTexture = ShaderConstants.GetMinDepthPrymidTextureSRV();
+    RWByteAddressBuffer visibileMeshletBuffer = ShaderConstants.GetVisibileMeshletBufferUAV();
+    RWByteAddressBuffer visibileMeshletCounterBuffer = ShaderConstants.GetVisibileMeshletCounterBufferUAV();
+    RWByteAddressBuffer drawIndirectArgumentBuffer = ShaderConstants.GetDrawIndirectArgumentBufferUAV();
+
+    const uint candidateVisibleMeshletGroupID = dispatchThreadID.x;
+    const uint geometryInstanceID = 0;
+
+    GPUSceneGeometryInstanceData geometryInstanceData = GetGPUSceneGeometryInstanceData(geometryInstanceDataBuffer, geometryInstanceID);
+    GPUSceneGeometryData geometryData = GetGPUSceneGeometryData(geometryDataBuffer, geometryInstanceData.geometryID);
+    GPUSceneMeshletGroupData meshletGroupData = GetGPUSceneMeshletGroupData(geometryData, candidateVisibleMeshletGroupID);
+
+    if (candidateVisibleMeshletGroupID >= geometryData.meshletGroupCount)
+    {
+        return;
+    }
+
+    for (uint i = 0; i < meshletGroupData.meshletCount; i++)
+    {
+        uint candidateVisibleMeshletID = meshletGroupData.meshletOffset + i;
+        GPUSceneMeshletData meshletData = GetGPUSceneMeshletData(geometryData, candidateVisibleMeshletID);
+
+        bool visibile = true;
+        if (visibile)
+        {
+            uint visibleMeshletIndex;
+            visibileMeshletCounterBuffer.InterlockedAdd(0, 1, visibleMeshletIndex);
+
+            VisibleMeshletEntry visibleMeshlet;
+            visibleMeshlet.geometryInstanceID = geometryInstanceID;
+            visibleMeshlet.meshletID = candidateVisibleMeshletID;
+            visibileMeshletBuffer.Store<VisibleMeshletEntry>(visibleMeshletIndex * sizeof(VisibleMeshletEntry), visibleMeshlet);
+
+            uint originVisibleMeshletCount;
+            drawIndirectArgumentBuffer.InterlockedAdd(sizeof(uint), 1, originVisibleMeshletCount);
+        }
     }
 }
 

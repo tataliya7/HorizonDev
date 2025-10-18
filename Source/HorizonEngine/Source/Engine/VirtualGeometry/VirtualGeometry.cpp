@@ -179,7 +179,7 @@ namespace Horizon
             settings.minMeshletSize,
             settings.maxMeshletSize);
 
-        uint32 totalTriangleCount = 0;
+        uint32 triangleOffset = 0;
 
         std::vector<VirtualGeometryMeshlet> meshlets;
         for (uint32 meshletIndex = 0; meshletIndex < triangleClusters.size(); meshletIndex++)
@@ -189,19 +189,16 @@ namespace Horizon
 
             Bounds3D meshletBounds = VirtualGeometryComputeMeshletBounds(input.vertices.position, triangleClusters[meshletIndex].indices);
 
-            VirtualGeometryMeshlet meshlet =
-            {
-                .vertexOffset = 0,
-                .triangleOffset = totalTriangleCount,
-                .vertexCount = 0,
-                .triangleCount = meshletTriangleCount,
-                .boundingBoxCenter = meshletBounds.GetCenter(),
-                .boundingBoxExtent = meshletBounds.GetExtent(),
-                .meshletGroupIndex = std::numeric_limits<uint32>::max(),
-            };
-            meshlets.push_back(meshlet);
+            VirtualGeometryMeshlet& meshlet = meshlets.emplace_back();
+            meshlet.vertexOffset = 0;
+            meshlet.triangleOffset = triangleOffset;
+            meshlet.vertexCount = 0;
+            meshlet.triangleCount = meshletTriangleCount;
+            meshlet.boundingBoxCenter = meshletBounds.GetCenter();
+            meshlet.boundingBoxExtent = meshletBounds.GetExtent();
+            meshlet.meshletGroupIndex = std::numeric_limits<uint32>::max();
 
-            totalTriangleCount += meshletTriangleCount;
+            triangleOffset += meshletTriangleCount;
         }
 
         {
@@ -209,21 +206,25 @@ namespace Horizon
             output.materialIndices.clear();
             output.meshlets.clear();
 
-            for (uint32 meshletIndex = 0; meshletIndex < triangleClusters.size(); meshletIndex++)
+            for (uint32 i = 0; i < triangleClusters.size(); i++)
             {
-                for (uint32 k = 0; k < triangleClusters[meshletIndex].indices.size(); k++)
+                for (uint32 j = 0; j < triangleClusters[i].indices.size(); j++)
                 {
-                    output.indices.push_back(triangleClusters[meshletIndex].indices[k]);
+                    output.indices.push_back(triangleClusters[i].indices[j]);
                 }
-                for (uint32 k = 0; k < triangleClusters[meshletIndex].materialIndices.size(); k++)
+                for (uint32 j = 0; j < triangleClusters[i].materialIndices.size(); j++)
                 {
-                    output.materialIndices.push_back(triangleClusters[meshletIndex].materialIndices[k]);
+                    output.materialIndices.push_back(triangleClusters[i].materialIndices[j]);
                 }
                 assert(output.indices.size() == output.materialIndices.size() * 3);
 
-                output.meshlets.push_back(meshlets[meshletIndex]);
+                output.meshlets.push_back(meshlets[i]);
             }
         }
+
+        std::vector<uint32> indicesLOD;
+        std::vector<uint32> materialIndicesLOD;
+        std::vector<VirtualGeometryMeshlet> meshletsLOD;
 
         for (uint32 lodIndex = 0; lodIndex < settings.maxLODCount; lodIndex++)
         {
@@ -235,6 +236,10 @@ namespace Horizon
                 auto GroupMeshlets = [](std::vector<VirtualGeometryMeshlet>& meshletsToGroup, uint32 meshletGroupIndex)
                 {
                     VirtualGeometryMeshletGroup meshletGroup;
+                    meshletGroup.meshletOffset = 0; // @todo
+                    meshletGroup.meshletCount = meshletsToGroup.size(); // @todo
+                    meshletGroup.error = 0.0f; // @todo
+                    meshletGroup.parentError = 0.0f; // @todo
                     for (uint32 i = 0; i < meshletsToGroup.size(); ++i)
                     {
                         meshletGroup.meshletIndices.push_back(i);
@@ -260,8 +265,8 @@ namespace Horizon
                         {
                             for (uint32 i = 0; i < 3; i++)
                             {
-                                uint32 vertexIndex0 = input.indices[meshlet.triangleOffset + triangleIndex * 3 + i];
-                                uint32 vertexIndex1 = input.indices[meshlet.triangleOffset + triangleIndex * 3 + (i + 1) % 3];
+                                uint32 vertexIndex0 = output.indices[(meshlet.triangleOffset + triangleIndex) * 3 + i];
+                                uint32 vertexIndex1 = output.indices[(meshlet.triangleOffset + triangleIndex) * 3 + (i + 1) % 3];
                                 MeshletEdge edge(vertexIndex0, vertexIndex1);
                                 if (edge.first != edge.second)
                                 {
@@ -289,6 +294,7 @@ namespace Horizon
                         for (uint32 meshletIndex = 0; meshletIndex < meshlets.size(); meshletIndex++)
                         {
                             int32 adjacencyOffset = static_cast<int32>(graph.adjacencyIndices.size());
+                            graph.adjacencyOffsets.push_back(adjacencyOffset);
 
                             for (const auto& edge : meshlets2Edges[meshletIndex])
                             {
@@ -320,8 +326,6 @@ namespace Horizon
                                     }
                                 }
                             }
-
-                            graph.adjacencyOffsets.push_back(adjacencyOffset);
                         }
 
                         graph.adjacencyOffsets.push_back(static_cast<int32>(graph.adjacencyIndices.size()));
@@ -336,13 +340,35 @@ namespace Horizon
                         meshletGroups.resize(meshletGroupCount);
                         for(uint32 meshletIndex = 0; meshletIndex < meshlets.size(); meshletIndex++)
                         {
-                            int32 meshletGroupIndex = partitionIndices[meshletIndex];
+                            uint32 meshletGroupIndex = partitionIndices[meshletIndex];
                             meshlets[meshletIndex].meshletGroupIndex = meshletGroupIndex;
+                        }
+
+                        std::ranges::sort(meshlets.begin(), meshlets.end(), [](const VirtualGeometryMeshlet& a, const VirtualGeometryMeshlet& b)
+                        {
+                            return a.meshletGroupIndex < b.meshletGroupIndex;
+                        });
+
+                        for(uint32 meshletIndex = 0; meshletIndex < meshlets.size(); meshletIndex++)
+                        {
+                            uint32 meshletGroupIndex = meshlets[meshletIndex].meshletGroupIndex;
                             meshletGroups[meshletGroupIndex].meshletIndices.push_back(meshletIndex);
+                            meshletGroups[meshletGroupIndex].meshletCount++;
+                        }
+
+                        uint32 meshletOffset = 0;
+                        for(uint32 meshletGroupIndex = 0; meshletGroupIndex < meshletGroups.size(); meshletGroupIndex++)
+                        {
+                            meshletGroups[meshletGroupIndex].meshletOffset = meshletOffset;
+                            meshletGroups[meshletGroupIndex].error = 0.0f; // @todo
+                            meshletGroups[meshletGroupIndex].parentError = 0.0f; // @todo
+                            meshletOffset += meshletGroups[meshletGroupIndex].meshletCount;
                         }
                     }
                 }
             }
+
+            output.meshletGroups = std::move(meshletGroups);
 
             // @todo Parallel for
             for (const VirtualGeometryMeshletGroup& meshletGroup : meshletGroups)
@@ -357,7 +383,7 @@ namespace Horizon
                         {
                             for (uint32 i = 0; i < 3; i++)
                             {
-                                uint32 vertexIndex = input.indices[meshlet.triangleOffset + triangleIndex * 3 + i];
+                                uint32 vertexIndex = output.indices[(meshlet.triangleOffset + triangleIndex) * 3 + i];
                                 mergedVertexIndices.push_back(vertexIndex);
                             }
                         }
@@ -366,10 +392,10 @@ namespace Horizon
 
                 // Step 3: Simplify
                 std::vector<uint32> simplifiedVertexIndices(mergedVertexIndices.size());
-                std::vector<uint32> simplifiedMaterialIndices(input.materialIndices.size());
+                std::vector<uint32> simplifiedMaterialIndices(mergedVertexIndices.size() / 3);
                 {
-                    float targetError = 0.0f;
                     float simplificationError = 0.0f;
+                    float targetError = 1.0f;
                     uint32 targetIndexCount = static_cast<uint32>(mergedVertexIndices.size()) / 2;
                     uint32 options = meshopt_SimplifyLockBorder | meshopt_SimplifySparse | meshopt_SimplifyErrorAbsolute;
 
@@ -415,7 +441,7 @@ namespace Horizon
                         attributeWeights[attributeIndex + 1] = 0.05f;
                         attributeIndex += 2;
                     }
-
+#if 1
                     // https://github.com/zeux/meshoptimizer/issues/149
                     uint64 simplifiedVertexIndexCount = meshopt_simplify(
                         simplifiedVertexIndices.data(),
@@ -428,7 +454,10 @@ namespace Horizon
                         targetError,
                         options,
                         &simplificationError);
-
+#else
+                    uint64 simplifiedVertexIndexCount = mergedVertexIndices.size();
+                    simplifiedVertexIndices = mergedVertexIndices;
+#endif
                     simplifiedVertexIndices.resize(simplifiedVertexIndexCount);
                     simplifiedMaterialIndices.resize(simplifiedVertexIndexCount / 3);
                 }
@@ -442,9 +471,6 @@ namespace Horizon
                         settings.minMeshletSize,
                         settings.maxMeshletSize);
 
-                    uint32 simplifiedTriangleCount = 0;
-
-                    std::vector<VirtualGeometryMeshlet> simplifiedMeshlets;
                     for (uint32 meshletIndex = 0; meshletIndex < simplifiedTriangleClusters.size(); meshletIndex++)
                     {
                         assert(simplifiedTriangleClusters[meshletIndex].indices.size() % 3 == 0);
@@ -452,42 +478,38 @@ namespace Horizon
 
                         Bounds3D meshletBounds = VirtualGeometryComputeMeshletBounds(input.vertices.position, simplifiedTriangleClusters[meshletIndex].indices);
 
-                        VirtualGeometryMeshlet meshlet =
-                        {
-                            .vertexOffset = 0,
-                            .triangleOffset = simplifiedTriangleCount,
-                            .vertexCount = 0,
-                            .triangleCount = simplifiedMeshletTriangleCount,
-                            .boundingBoxCenter = meshletBounds.GetCenter(),
-                            .boundingBoxExtent = meshletBounds.GetExtent(),
-                            .meshletGroupIndex = std::numeric_limits<uint32>::max(),
-                        };
-                        simplifiedMeshlets.push_back(meshlet);
+                        VirtualGeometryMeshlet& meshlet = meshletsLOD.emplace_back();
+                        meshlet.vertexOffset = 0;
+                        meshlet.triangleOffset = triangleOffset - input.indices.size() / 3;
+                        meshlet.vertexCount = 0;
+                        meshlet.triangleCount = simplifiedMeshletTriangleCount;
+                        meshlet.boundingBoxCenter = meshletBounds.GetCenter();
+                        meshlet.boundingBoxExtent = meshletBounds.GetExtent();
+                        meshlet.meshletGroupIndex = std::numeric_limits<uint32>::max();
 
-                        simplifiedTriangleCount += simplifiedMeshletTriangleCount;
+                        triangleOffset += simplifiedMeshletTriangleCount;
                     }
-                    //
-                    // output.indices.clear();
-                    // output.materialIndices.clear();
-                    // output.meshlets.clear();
-                    //
-                    // for (uint32 meshletIndex = 0; meshletIndex < simplifiedTriangleClusters.size(); meshletIndex++)
-                    // {
-                    //     for (uint32 k = 0; k < simplifiedTriangleClusters[meshletIndex].indices.size(); k++)
-                    //     {
-                    //         output.indices.push_back(simplifiedTriangleClusters[meshletIndex].indices[k]);
-                    //     }
-                    //     for (uint32 k = 0; k < simplifiedTriangleClusters[meshletIndex].materialIndices.size(); k++)
-                    //     {
-                    //         output.materialIndices.push_back(simplifiedTriangleClusters[meshletIndex].materialIndices[k]);
-                    //     }
-                    //     assert(output.indices.size() == output.materialIndices.size() * 3);
-                    //
-                    //     output.meshlets.push_back(simplifiedMeshlets[meshletIndex]);
-                    // }
+
+                    for (uint32 i = 0; i < simplifiedTriangleClusters.size(); i++)
+                    {
+                        for (uint32 j = 0; j < simplifiedTriangleClusters[i].indices.size(); j++)
+                        {
+                            indicesLOD.push_back(simplifiedTriangleClusters[i].indices[j]);
+                        }
+                        for (uint32 j = 0; j < simplifiedTriangleClusters[i].materialIndices.size(); j++)
+                        {
+                            materialIndicesLOD.push_back(simplifiedTriangleClusters[i].materialIndices[j]);
+                        }
+                        assert(indicesLOD.size() == materialIndicesLOD.size() * 3);
+                    }
                 }
             }
         }
+
+        // output.indices = std::move(indicesLOD);
+        // output.materialIndices = std::move(materialIndicesLOD);
+        // output.meshlets = std::move(meshletsLOD);
+        // output.meshletGroups = ;
 
         return true;
     }

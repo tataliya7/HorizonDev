@@ -36,6 +36,10 @@ namespace Horizon
     struct VirtualGeometryMeshletGroup
     {
         std::vector<uint32> meshletIndices;
+        uint32 meshletOffset;
+        uint32 meshletCount;
+        float error;
+        float parentError;
     };
 
     struct VirtualGeometryHierarchyNode

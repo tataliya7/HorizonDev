@@ -277,6 +277,7 @@ namespace Horizon
             geometry.previousVertexBuffer0 = -1;
             geometry.indexBuffer = renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(mesh->indexBuffer);
             geometry.meshletBuffer = renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(mesh->meshletBuffer);
+            geometry.meshletGroupBuffer = renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(mesh->meshletGroupBuffer);
             geometry.meshletVertexBuffer = renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(mesh->meshletVertexBuffer);
             geometry.meshletTriangleBuffer = renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(mesh->meshletTriangleBuffer);
             geometry.materialBuffer = renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(mesh->materialBuffer);
@@ -290,6 +291,7 @@ namespace Horizon
             //geometry.boundsMin = mesh.boundsMin;
             //geometry.boundsMax = mesh.boundsMax;
             geometry.meshletCount = mesh->meshletCount;
+            geometry.meshletGroupCount = mesh->meshletGroupCount;
             geometry.relevantJointCountPerVertex = mesh->relevantJointCountPerVertex;
             geometry.flags = 0;
             if (mesh->UseGPUSkinning())

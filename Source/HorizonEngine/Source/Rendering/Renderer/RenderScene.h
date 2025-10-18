@@ -116,6 +116,7 @@ namespace Horizon
         uint32 vertexCount;
         uint32 indexCount;
         uint32 meshletCount;
+        uint32 meshletGroupCount;
 
         std::vector<Matrix4x4f> jointBindTransforms;
         std::vector<Matrix4x4f> jointTransforms;
@@ -123,6 +124,7 @@ namespace Horizon
         RenderBackendBufferHandle indexBuffer;
         RenderBackendBufferHandle vertexBuffer;
         RenderBackendBufferHandle meshletBuffer;
+        RenderBackendBufferHandle meshletGroupBuffer;
         RenderBackendBufferHandle meshletVertexBuffer;
         RenderBackendBufferHandle meshletTriangleBuffer;
         RenderBackendBufferHandle materialBuffer;
@@ -424,6 +426,7 @@ namespace Horizon
         int previousVertexBuffer0;
         int indexBuffer;
         int meshletBuffer;
+        int meshletGroupBuffer;
         int meshletVertexBuffer;
         int meshletTriangleBuffer;
         int materialBuffer;
@@ -435,6 +438,7 @@ namespace Horizon
         uint32 vertexCount;
         uint32 indexCount;
         uint32 meshletCount;
+        uint32 meshletGroupCount;
         uint32 relevantJointCountPerVertex;
         uint32 flags;
     };
@@ -458,6 +462,14 @@ namespace Horizon
         uint32 meshletGroupIndex;
         Vector3f boundingBoxExtent;
         int isSkinned;
+    };
+
+    struct GPUSceneMeshletGroupData
+    {
+        uint32 meshletOffset;
+        uint32 meshletCount;
+        float error;
+        float parentError;
     };
 
     struct VisibleMeshletEntry
