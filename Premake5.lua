@@ -129,6 +129,9 @@ filter "kind:SharedLib"
 
 group "Editor"
     include "Source/HorizonEditor"
+group ""
+
+group "Editor"
     include "Source/HorizonEditorLauncher"
 group ""
 

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Core/CoreModule.h"
+#include "Foundation/FoundationModule.h"
 
 #include <PxPhysicsAPI.h>
 

@@ -7,11 +7,14 @@ project "RenderDoc"
     targetdir "%{wks.location}/Build/Bin/%{cfg.buildcfg}"
 
     files {
+        "**.lua",
+        "**.toml",
         "**.h",
+        "**.c",
+        "**.hpp",
         "**.cpp",
         "**.cppm",
-        "**.lua",
-        "**.ini",
+        "**.inl",
     }
 
     includedirs {

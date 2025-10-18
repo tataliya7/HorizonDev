@@ -8,9 +8,11 @@ namespace Horizon
 
     void RenderDocPluginInit()
     {
-        const char* filename = "C:\\Program Files\\RenderDoc\\renderdoc.dll";
+        ConfigurationParser configuration = ConfigurationParser::ParseFile("../../../Source/HorizonEditor/Plugins/DevelopmentTools/RenderDoc/Config/RenderDocPluginSettings.toml");
 
-        OSLibraryHandle renderdocLibrary = OSLoadLibrary(filename);
+        std::string renderDocPath = configuration.Get("RenderDocPluginSettings.RenderBackendType").AsStringOr("");
+
+        OSLibraryHandle renderdocLibrary = OSLoadLibrary(renderDocPath.c_str());
         if (renderdocLibrary == NULL)
         {
             LogWarning(GLogger, std::format("Failed to load rendedoc library."));
@@ -20,7 +22,7 @@ namespace Horizon
         pRENDERDOC_GetAPI RENDERDOC_GetAPI = reinterpret_cast<pRENDERDOC_GetAPI>(OSGetSymbolAddressFromLibrary(renderdocLibrary, "RENDERDOC_GetAPI"));
         if (RENDERDOC_GetAPI == nullptr)
         {
-            LogWarning(GLogger, std::format("Failed to obtain address of RENDERDOC_GetAPI from library: {}.", filename));
+            LogWarning(GLogger, std::format("Failed to obtain address of RENDERDOC_GetAPI from library: {}.", renderDocPath));
             OSFreeLibrary(renderdocLibrary);
             return;
         }
@@ -38,7 +40,7 @@ namespace Horizon
         int patch = 0;
         renderdocAPI->GetAPIVersion(&major, &minor, &patch);
 
-        // Disable the overlay. 
+        // Disable the overlay.
         renderdocAPI->MaskOverlayBits(eRENDERDOC_Overlay_None, eRENDERDOC_Overlay_None);
 
         renderdocAPI->SetCaptureFilePathTemplate("RenderDocCaptures/capture");

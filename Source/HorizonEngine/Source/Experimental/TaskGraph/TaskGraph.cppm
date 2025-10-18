@@ -1,9 +1,10 @@
 module;
 
-#include "Core/CoreModule.h"
+#include "Foundation/FoundationModule.h"
 
 export module HorizonEngine.Core.TaskGraph;
 
+#if 0
 export namespace Horizon
 {
     class TaskGraphSystemEvent;
@@ -181,3 +182,4 @@ export namespace Horizon
 
     using TaskGraphSystemLamdaTask = TaskGraphSystemTaskNode<TaskGraphSystemLamdaTaskImpl>;
 }
+#endif

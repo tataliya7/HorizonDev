@@ -20,11 +20,11 @@ extern "C"
         bool exportMaterials;
     };
 
-    int USDGetVersion();
+    extern int USDGetVersion();
 
     // [[deprecated]]
-    void USDInit(const std::string& path);
+    extern void USDInit(const std::string& path);
 
-    bool USDImport(Horizon::Scene* scene, const char* filename, const struct USDImportSettings* settings, bool asyncTask);
-    bool USDExport(Horizon::Scene* scene, const char* filename, const struct USDImportSettings* settings, bool asyncTask);
+    extern bool USDImport(Horizon::Scene* scene, const char* filename, const struct USDImportSettings* settings, bool asyncTask);
+    extern bool USDExport(Horizon::Scene* scene, const char* filename, const struct USDImportSettings* settings, bool asyncTask);
 }

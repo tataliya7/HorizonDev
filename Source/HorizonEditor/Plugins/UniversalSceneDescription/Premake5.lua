@@ -1,4 +1,4 @@
-project "USD"
+project "UniversalSceneDescription"
     kind "StaticLib"
     language "C++"
     cppdialect "C++latest"
@@ -7,13 +7,14 @@ project "USD"
     targetdir "%{wks.location}/Build/Bin/%{cfg.buildcfg}"
 
     files {
+        "**.lua",
+        "**.toml",
         "**.h",
         "**.c",
         "**.hpp",
         "**.cpp",
         "**.cppm",
         "**.inl",
-        "**.lua",
     }
 
     includedirs {
@@ -23,6 +24,7 @@ project "USD"
         thirdpartypath("imgui/imgui-1.89.9-docking"),
         thirdpartypath("python/310/include"),
         thirdpartypath("OpenUSD/OpenUSD-25.05.01/include"),
+        thirdpartypath("optick/Optick_1.4.0/include"), -- @todo Remove this
     }
 
     defines {

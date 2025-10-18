@@ -3,11 +3,6 @@
 #include <imgui.h>
 #include <backends/imgui_impl_glfw.h>
 
-// @todo
-#include <toml++/toml.hpp>
-
-using namespace std::string_view_literals;
-
 namespace Horizon
 {
     RenderSystem::RenderSystem()
@@ -24,10 +19,11 @@ namespace Horizon
     {
         // @todo Move to other place
         {
-            toml::table table = toml::parse_file("../../../Source/HorizonEngine/Config/DefaultEngineSettings.toml");
+            ConfigurationParser configuration = ConfigurationParser::ParseFile("../../../Source/HorizonEngine/Config/DefaultEngineSettings.toml");
 
-            std::string_view renderBackendTypeString = table["HorizonEngine"]["Rendering"]["RenderBackend"]["RenderBackendType"].value_or(""sv);
-            enableHardwareRayTracing = table["HorizonEngine"]["Rendering"]["RenderBackend"]["EnableHardwareRayTracing"].value_or(false);
+            std::string renderBackendTypeString = configuration.Get("HorizonEngine.Rendering.RenderBackend.RenderBackendType").AsStringOr("");
+
+            enableHardwareRayTracing = configuration.Get("HorizonEngine.Rendering.RenderBackend.EnableHardwareRayTracing").AsBooleanOr(false);
 
             if (renderBackendTypeString == "Vulkan")
             {

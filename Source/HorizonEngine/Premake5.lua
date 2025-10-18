@@ -13,12 +13,20 @@ project "HorizonEngine"
     }
 
     files {
-        "**.lua",
-        "**.toml",
+        "Premake5.lua",
+
+        "Config/**.toml",
 
         "Shaders/**.h",
         "Shaders/**.hsh",
         "Shaders/**.hslib",
+
+        "Source/**.h",
+        "Source/**.c",
+        "Source/**.hpp",
+        "Source/**.cpp",
+        "Source/**.cppm",
+        "Source/**.inl",
 
         "Source/Foundation/**.h",
         "Source/Foundation/**.c",
@@ -93,6 +101,8 @@ project "HorizonEngine"
         --thirdpartypath("glfw/glfw-3.3.9.bin.WIN64/lib-vc2022/glfw3.lib"),
     }
 
--- group "EnginePlugins"
+-- group "Engine/Plugins"
 --     include "Plugins/FidelityFX"
+--     include "Plugins/OpenImageDenoise"
+--     include "Plugins/Streamline"
 -- group ""

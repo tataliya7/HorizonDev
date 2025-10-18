@@ -13,3 +13,4 @@
 #include "Foundation/Platform/PlatformGenericAPI.h"
 #include "Foundation/JobSystem/JobSystem.h"
 #include "Foundation/Profiling/CPUProfiler.h"
+#include "Foundation/ConfigurationParser/ConfigurationParser.h"

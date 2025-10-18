@@ -1,9 +1,10 @@
 #pragma once
 
-#include "Core/CoreModule.h"
+#include "Foundation/FoundationModule.h"
 
 namespace Horizon
 {
+#if 0
     class AssetHandle
     {
     public:
@@ -78,4 +79,5 @@ namespace Horizon
         std::string author;
         std::string description;
     };
+#endif
 }

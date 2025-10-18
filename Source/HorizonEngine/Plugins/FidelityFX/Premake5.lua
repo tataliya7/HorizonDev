@@ -5,8 +5,11 @@ project "FidelityFX"
     staticruntime "Off"
     location "%{wks.location}/Build/%{prj.name}"
     targetdir "%{wks.location}/Build/Bin/%{cfg.buildcfg}"
+    scanformoduledependencies "true"
 
     files {
+        "**.lua",
+        "**.toml",
         "**.h",
         "**.c",
         "**.hpp",

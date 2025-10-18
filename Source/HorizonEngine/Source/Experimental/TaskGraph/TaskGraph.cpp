@@ -1,9 +1,10 @@
 module;
 
-#include "Core/CoreModule.h"
+#include "Foundation/FoundationModule.h"
 
 module HorizonEngine.Core.TaskGraph;
 
+#if 0
 namespace Horizon
 {
     class TaskGraphSystemTaskGraph;
@@ -331,3 +332,4 @@ namespace Horizon
         OSDestroyEvent(event);
     }
 }
+#endif

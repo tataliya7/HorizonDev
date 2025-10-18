@@ -8,6 +8,10 @@ project "HorizonEditor"
     scanformoduledependencies "true"
 
     files {
+        "Premake5.lua",
+
+        "Config/**.toml",
+
         --"Source/Framework/EditorSubsystem.h",
         "Source/Framework/WindowSystem.h",
         "Source/Framework/WindowSystem.cpp",
@@ -30,6 +34,7 @@ project "HorizonEditor"
         "Source/Framework/AssetDatabase.cpp",
         "Source/Framework/Gizmo.h",
         "Source/Framework/Gizmo.cpp",
+        "Source/Framework/**.lua",
 
         "Source/Editor/**.h",
         "Source/Editor/**.c",
@@ -38,27 +43,14 @@ project "HorizonEditor"
         "Source/Editor/**.cppm",
         "Source/Editor/**.inl",
 
-        "Plugins/UniversalSceneDescription/**.h",
-        "Plugins/UniversalSceneDescription/**.c",
-        "Plugins/UniversalSceneDescription/**.hpp",
-        "Plugins/UniversalSceneDescription/**.cpp",
-        "Plugins/UniversalSceneDescription/**.cppm",
-        "Plugins/UniversalSceneDescription/**.inl",
-
-        "Plugins/TimeOfDay/**.h",
-        "Plugins/TimeOfDay/**.c",
-        "Plugins/TimeOfDay/**.hpp",
-        "Plugins/TimeOfDay/**.cpp",
-        "Plugins/TimeOfDay/**.cppm",
-        "Plugins/TimeOfDay/**.inl",
-
         -- "MaterialGraph/**.h",
         -- "MaterialGraph/**.c",
         -- "MaterialGraph/**.hpp",
         -- "MaterialGraph/**.cpp",
         -- "MaterialGraph/**.cppm",
         -- "MaterialGraph/**.inl",
-        "**.lua",
+
+        -- "**.lua",
     }
 
     links {
@@ -106,9 +98,11 @@ project "HorizonEditor"
     filter "configurations:Release"
         defines { "USE_OPTICK=0" }
 
-group "EditorPlugins"
-    -- include "Plugins/USD"
-    -- include "Plugins/TimeOfDay"
-    -- include "Plugins/LookDevStudio"
+group "Editor/Plugins"
+    include "Plugins/TimeOfDay"
+    include "Plugins/UniversalSceneDescription"
+group ""
+
+group "Editor/Plugins/DevelopmentTools"
     include "Plugins/DevelopmentTools/RenderDoc"
 group ""

@@ -4,6 +4,7 @@
 
 namespace Horizon
 {
+#if 0
     class AssetRegistry
     {
     public:
@@ -30,4 +31,5 @@ namespace Horizon
     {
 
     };
+#endif
 }
