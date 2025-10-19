@@ -1,6 +1,6 @@
 [HorizonEngine.Rendering.RenderBackend]
-EnableValidationLayers = false
 RenderBackendType = "D3D12"
+EnableValidationLayers = false
 EnableHardwareRayTracing = false
 
 [HorizonEngine.Rendering.Renderer]

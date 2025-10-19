@@ -1481,6 +1481,8 @@ namespace Horizon
             texture->height = swapChain->height;
             D3D12_CHECK(swapChain->dxgiSwapChain4->GetBuffer(i, IID_PPV_ARGS(&texture->resource)));
             D3D12_CHECK(texture->resource->SetName(L"SwapChainBuffer"));
+
+            swapChain->frameFences[i]->Signal(1);
         }
     }
 

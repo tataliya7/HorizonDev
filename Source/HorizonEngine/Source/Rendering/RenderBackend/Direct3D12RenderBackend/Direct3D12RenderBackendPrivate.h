@@ -1908,7 +1908,7 @@ namespace Horizon
             Microsoft::WRL::ComPtr<ID3D12Fence> fence;
             D3D12_CHECK(device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&fence)));
             D3D12_CHECK(fence->Signal(0));
-            for (const auto& commandQueue : commandQueues)
+            for (D3D12CommandQueue* commandQueue : commandQueues)
             {
                 if (commandQueue)
                 {
