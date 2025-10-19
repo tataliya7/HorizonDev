@@ -172,6 +172,12 @@ namespace Horizon
             return false;
         }
 
+        VirtualGeometryVertexLayoutDescription vertexLayoutDescription;
+        vertexLayoutDescription.useNormals = true;
+        vertexLayoutDescription.useTangents = true;
+        vertexLayoutDescription.useColors = false;
+        vertexLayoutDescription.textureCoordinateCount = 1;
+
         std::vector<TriangleCluster> triangleClusters = BuildTriangleClusters(
             input.vertices,
             input.indices,
@@ -226,6 +232,7 @@ namespace Horizon
         std::vector<uint32> materialIndicesLOD;
         std::vector<VirtualGeometryMeshlet> meshletsLOD;
 
+        // Group-Merge-Simplify-Split scheme
         for (uint32 lodIndex = 0; lodIndex < settings.maxLODCount; lodIndex++)
         {
             meshlets = output.meshlets; // @todo
@@ -338,7 +345,7 @@ namespace Horizon
                         assert(result == true);
 
                         meshletGroups.resize(meshletGroupCount);
-                        for(uint32 meshletIndex = 0; meshletIndex < meshlets.size(); meshletIndex++)
+                        for (uint32 meshletIndex = 0; meshletIndex < meshlets.size(); meshletIndex++)
                         {
                             uint32 meshletGroupIndex = partitionIndices[meshletIndex];
                             meshlets[meshletIndex].meshletGroupIndex = meshletGroupIndex;
@@ -349,7 +356,7 @@ namespace Horizon
                             return a.meshletGroupIndex < b.meshletGroupIndex;
                         });
 
-                        for(uint32 meshletIndex = 0; meshletIndex < meshlets.size(); meshletIndex++)
+                        for (uint32 meshletIndex = 0; meshletIndex < meshlets.size(); meshletIndex++)
                         {
                             uint32 meshletGroupIndex = meshlets[meshletIndex].meshletGroupIndex;
                             meshletGroups[meshletGroupIndex].meshletIndices.push_back(meshletIndex);
@@ -357,7 +364,7 @@ namespace Horizon
                         }
 
                         uint32 meshletOffset = 0;
-                        for(uint32 meshletGroupIndex = 0; meshletGroupIndex < meshletGroups.size(); meshletGroupIndex++)
+                        for (uint32 meshletGroupIndex = 0; meshletGroupIndex < meshletGroups.size(); meshletGroupIndex++)
                         {
                             meshletGroups[meshletGroupIndex].meshletOffset = meshletOffset;
                             meshletGroups[meshletGroupIndex].error = 0.0f; // @todo
@@ -368,11 +375,15 @@ namespace Horizon
                 }
             }
 
-            output.meshletGroups = std::move(meshletGroups);
+            output.meshletGroups = meshletGroups;
 
             // @todo Parallel for
-            for (const VirtualGeometryMeshletGroup& meshletGroup : meshletGroups)
+            for (uint32 partitionIndex = 0; partitionIndex < meshletGroups.size(); partitionIndex++)
             {
+                uint32 meshletGroupIndex = partitionIndex;
+
+                const VirtualGeometryMeshletGroup& meshletGroup = meshletGroups[meshletGroupIndex];
+
                 // Step 2: Merge
                 std::vector<uint32> mergedVertexIndices;
                 {
@@ -399,11 +410,6 @@ namespace Horizon
                     uint32 targetIndexCount = static_cast<uint32>(mergedVertexIndices.size()) / 2;
                     uint32 options = meshopt_SimplifyLockBorder | meshopt_SimplifySparse | meshopt_SimplifyErrorAbsolute;
 
-                    VirtualGeometryVertexLayoutDescription vertexLayoutDescription;
-                    vertexLayoutDescription.useNormals = true;
-                    vertexLayoutDescription.useTangents = true;
-                    vertexLayoutDescription.useColors = false;
-                    vertexLayoutDescription.textureCoordinateCount = 1;
                     uint32 vertexAttributeCount = 9;
 
                     std::vector<float> attributeWeights(vertexAttributeCount);

@@ -689,7 +689,7 @@ namespace Horizon
 
                 return [=](RenderBackendCommandList& commandList, const RenderGraphResourceRegistry& resourceRegistry)
                 {
-                    RenderBackendViewport viewport(0.0f, 0.0f, float(virtualShadowMapSize), float(virtualShadowMapSize));
+                    RenderBackendViewport viewport(0.0f, 0.0f, static_cast<float>(virtualShadowMapSize), static_cast<float>(virtualShadowMapSize));
                     commandList.SetViewports(&viewport, 1);
 
                     RenderBackendScissor scissor(0, 0, virtualShadowMapSize, virtualShadowMapSize);

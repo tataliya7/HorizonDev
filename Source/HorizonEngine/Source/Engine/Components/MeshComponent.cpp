@@ -60,10 +60,10 @@ namespace Horizon
             {
                 VirtualGeometryBuildSettings settings;
                 settings.maxLODCount = 1;
-                settings.minMeshletSize = 128;
+                settings.minMeshletSize = 128 - 4;
                 settings.maxMeshletSize = 128;
-                settings.minMeshletGroupSize = 16;
-                settings.maxMeshletGroupSize = 16;
+                settings.minMeshletGroupSize = 8;
+                settings.maxMeshletGroupSize = 32;
 
                 VirtualGeometryBuildInput input;
                 input.vertices.position = positions;
