@@ -48,7 +48,6 @@
 !*.bat
 !*.sh
 !*.command
-
 !*.lua
 !*.py*
 !*.js
@@ -66,6 +65,8 @@
 !*.tga
 !*.tex
 !*.hdr
+!*.ico
+!*.rc
 !*.horizon
 
 # USD files

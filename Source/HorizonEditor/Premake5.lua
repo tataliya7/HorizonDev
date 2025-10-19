@@ -12,27 +12,12 @@ project "HorizonEditor"
 
         "Config/**.toml",
 
-        --"Source/Framework/EditorSubsystem.h",
-        "Source/Framework/HorizonEditor.h",
-        "Source/Framework/HorizonEditor.cpp",
-        "Source/Framework/HorizonEditorUI.h",
-        "Source/Framework/HorizonEditorUI.cpp",
-        "Source/Framework/StbImage.cpp",
-        "Source/Framework/EditorCamera.h",
-        "Source/Framework/EditorCamera.cpp",
-        "Source/Framework/EditorSceneManager.h",
-        "Source/Framework/EditorSceneManager.cpp",
-        "Source/Framework/InspectorUI_DEPRECATED.h",
-        "Source/Framework/InspectorUI_DEPRECATED.cpp",
-        "Source/Framework/AssetBrowserWindow.h",
-        "Source/Framework/AssetBrowserWindow.cpp",
-        "Source/Framework/SceneViewWindow.h",
-        "Source/Framework/SceneViewWindow.cpp",
-        "Source/Framework/AssetDatabase.h",
-        "Source/Framework/AssetDatabase.cpp",
-        "Source/Framework/Gizmo.h",
-        "Source/Framework/Gizmo.cpp",
-        "Source/Framework/**.lua",
+        "Source/Framework/**.h",
+        "Source/Framework/**.c",
+        "Source/Framework/**.hpp",
+        "Source/Framework/**.cpp",
+        "Source/Framework/**.cppm",
+        "Source/Framework/**.inl",
 
         "Source/Editor/**.h",
         "Source/Editor/**.c",
@@ -47,8 +32,6 @@ project "HorizonEditor"
         -- "MaterialGraph/**.cpp",
         -- "MaterialGraph/**.cppm",
         -- "MaterialGraph/**.inl",
-
-        -- "**.lua",
     }
 
     links {

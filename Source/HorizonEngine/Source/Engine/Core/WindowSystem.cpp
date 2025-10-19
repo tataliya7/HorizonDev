@@ -92,18 +92,7 @@ namespace Horizon
 
         if (info->icon)
         {
-            int iw = 0, ih = 0, c = 0;
-            stbi_set_flip_vertically_on_load(false);
-            unsigned char* data = stbi_load(info->icon, &iw, &ih, &c, STBI_rgb_alpha);
-
-            GLFWimage glfwImage = {
-                .width = iw,
-                .height = ih,
-                .pixels = data
-            };
-            glfwSetWindowIcon(glfwWindow, 1, &glfwImage);
-
-            stbi_image_free(data);
+            SetClassLongPtr(glfwGetWin32Window(glfwWindow), GCLP_HICON, (LONG_PTR)LoadIcon(GetModuleHandle(NULL), MAKEINTRESOURCE(101)));
         }
 
         glfwSetWindowUserPointer(glfwWindow, this);

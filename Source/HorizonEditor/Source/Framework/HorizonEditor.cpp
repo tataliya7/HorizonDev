@@ -51,7 +51,7 @@ namespace Horizon
 
         WindowCreateFlags windowFlags = HORIZON_WINDOW_CREATE_FLAG_BIT_RESIZABLE | HORIZON_WINDOW_CREATE_FLAG_BIT_MAXIMIZED;
 
-        // Create main window
+        // Create the main window
         WindowCreateInfo windowInfo =
         {
             .width = initialWidth,

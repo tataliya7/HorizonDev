@@ -19,6 +19,11 @@ project "HorizonEditorLauncher"
         "**.lua",
     }
 
+    filter "system:windows"
+        files {
+            "**.ico", "**.rc"
+        }
+
     includedirs {
         enginepath("Source"),
         editorpath("Source"),
