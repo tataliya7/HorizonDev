@@ -161,7 +161,7 @@ namespace Horizon
         RenderBackendDispatchSuperSamplingCallback dispatchCallback = nullptr;
         switch (renderBackend->GetType())
         {
-        case RenderBackendType::Direct3D12: dispatchCallback = StreamlineDLSSSuperResolutionDispatchD3D12; break;
+        case RenderBackendType::D3D12: dispatchCallback = StreamlineDLSSSuperResolutionDispatchD3D12; break;
         case RenderBackendType::Vulkan: dispatchCallback = StreamlineDLSSSuperResolutionDispatchVulkan; break;
         default: std::unreachable(); break;
         }

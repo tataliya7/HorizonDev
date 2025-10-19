@@ -146,7 +146,7 @@ namespace Horizon
         // TODO: refactor
         RenderBackendGPUProfiler* gpuProfiler;
 
-        RenderBackendType renderBackendType = RenderBackendType::Direct3D12;
+        RenderBackendType renderBackendType = RenderBackendType::D3D12;
         bool enableDebugLayer = true;
         bool enableHardwareRayTracing = true;
 

@@ -35,7 +35,7 @@ namespace Horizon
             }
             else
             {
-                renderBackendType = RenderBackendType::Direct3D12;
+                renderBackendType = RenderBackendType::D3D12;
             }
         }
 
@@ -106,7 +106,7 @@ namespace Horizon
         {
             RenderBackendDestroyVulkan(renderBackend);
         }
-        else if (renderBackendType == RenderBackendType::Direct3D12)
+        else if (renderBackendType == RenderBackendType::D3D12)
         {
             RenderBackendDestroyDirect3D12(renderBackend);
         }

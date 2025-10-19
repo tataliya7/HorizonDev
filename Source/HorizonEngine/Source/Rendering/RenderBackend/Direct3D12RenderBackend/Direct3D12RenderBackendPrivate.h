@@ -2618,7 +2618,7 @@ namespace Horizon
 
         RenderBackendType GetType() const override
         {
-            return RenderBackendType::Direct3D12;
+            return RenderBackendType::D3D12;
         }
 
         bool Init(const RenderBackendDesc* desc);

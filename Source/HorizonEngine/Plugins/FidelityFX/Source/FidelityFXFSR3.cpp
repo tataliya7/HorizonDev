@@ -44,7 +44,7 @@ namespace Horizon
     {
         switch (renderBackendType)
         {
-        case RenderBackendType::Direct3D12:
+        case RenderBackendType::D3D12:
             return FidelityFXFSR3API::D3D12;
         case RenderBackendType::Vulkan:
             return FidelityFXFSR3API::Vulkan;

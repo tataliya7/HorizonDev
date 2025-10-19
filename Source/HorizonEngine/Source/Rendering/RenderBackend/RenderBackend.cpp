@@ -46,7 +46,7 @@ namespace Horizon
         {
             backend = RenderBackendCreateVulkan(desc);
         }
-        else if (desc->type == RenderBackendType::Direct3D12)
+        else if (desc->type == RenderBackendType::D3D12)
         {
             backend = RenderBackendCreateDirect3D12(desc);
         }
