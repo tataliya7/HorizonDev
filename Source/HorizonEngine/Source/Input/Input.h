@@ -154,9 +154,11 @@ namespace Horizon
         Menu = 348,
     };
 
+    class Window;
+
     namespace Input
     {
-        void SetCurrentContext(void* window);
+        void SetCurrentContext(Window* window);
         bool GetKeyDown(KeyCode key);
         bool GetKeyUp(KeyCode key);
         bool GetMouseButtonDown(MouseButtonID button);

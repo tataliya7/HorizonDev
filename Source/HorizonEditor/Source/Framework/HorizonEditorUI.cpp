@@ -16,9 +16,6 @@
 #include "InspectorUI_DEPRECATED.h"
 
 #include <Windows.h>
-#include <GLFW/glfw3.h>
-#define GLFW_EXPOSE_NATIVE_WIN32
-#include <GLFW/glfw3native.h>
 
 namespace Horizon
 {
@@ -169,7 +166,7 @@ namespace Horizon
         SetColorTheme(colorTheme);
 
         assert(window);
-        ImGui_ImplGlfw_InitForOther(window->GetGLFWwindow(), true);
+        window->InitForImGui();
 
         gizmoOperationType = ImGuizmo::OPERATION::TRANSLATE;
     }
@@ -1989,7 +1986,7 @@ namespace Horizon
         OPENFILENAMEA ofn;
         ZeroMemory(&ofn, sizeof(OPENFILENAME));
         ofn.lStructSize = sizeof(OPENFILENAME);
-        ofn.hwndOwner = glfwGetWin32Window(HorizonEditor::GetInstance()->window->GetGLFWwindow());
+        ofn.hwndOwner = HWND(HorizonEditor::GetInstance()->window->GetNativeHandle());
         ofn.lpstrFile = szFile;
         ofn.nMaxFile = sizeof(szFile);
         ofn.lpstrFilter = filter;

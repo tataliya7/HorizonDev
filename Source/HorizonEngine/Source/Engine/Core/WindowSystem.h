@@ -2,17 +2,15 @@
 
 #include "Engine/HorizonEngineModule.h"
 
-struct GLFWwindow;
-
 namespace Horizon
 {
     enum WindowCreateFlagBits : uint32
     {
-        HORIZON_WINDOW_CREATE_FLAG_BIT_NONE = 0,
-        HORIZON_WINDOW_CREATE_FLAG_BIT_RESIZABLE = 1 << 0,
-        HORIZON_WINDOW_CREATE_FLAG_BIT_BORDERLESS = 1 << 1,
-        HORIZON_WINDOW_CREATE_FLAG_BIT_MAXIMIZED = 1 << 2,
-        HORIZON_WINDOW_CREATE_FLAG_BIT_FULLSCREEN = 1 << 3,
+        HORIZON_WINDOW_CREATE_FLAG_BIT_NONE          = 0,
+        HORIZON_WINDOW_CREATE_FLAG_BIT_RESIZABLE     = 1 << 0,
+        HORIZON_WINDOW_CREATE_FLAG_BIT_BORDERLESS    = 1 << 1,
+        HORIZON_WINDOW_CREATE_FLAG_BIT_MAXIMIZED     = 1 << 2,
+        HORIZON_WINDOW_CREATE_FLAG_BIT_FULLSCREEN    = 1 << 3,
     };
     using WindowCreateFlags = uint32;
 
@@ -25,7 +23,7 @@ namespace Horizon
         WindowCreateFlags flags;
     };
 
-    enum class WindowState
+    enum class WindowState : uint8
     {
         Unknown,
         Normal,
@@ -39,6 +37,7 @@ namespace Horizon
     public:
 
         Window(WindowCreateInfo* info);
+
         virtual ~Window();
 
         uint32 GetWidth() const
@@ -57,11 +56,6 @@ namespace Horizon
         }
 
         uint64 GetNativeHandle();
-
-        GLFWwindow* GetGLFWwindow() const
-        {
-            return handle;
-        }
 
         void ProcessEvents();
 
@@ -88,11 +82,12 @@ namespace Horizon
         MouseButtonPressEventCallback mouseButtonPressEventCallback;
         MouseButtonReleaseEventCallback mouseButtonReleaseEventCallback;
 
-    private:
+        void InitForImGui();
+
+    //private:
 
         void UpdateWindowState();
-
-        GLFWwindow* handle;
+        void* handle;
         uint32 width;
         uint32 height;
         const char* title;
@@ -100,6 +95,6 @@ namespace Horizon
         WindowState state;
     };
 
-    extern bool GLFWInit();
-    extern void GLFWExit();
+    extern bool WindowSystemInit();
+    extern void WindowSystemExit();
 }

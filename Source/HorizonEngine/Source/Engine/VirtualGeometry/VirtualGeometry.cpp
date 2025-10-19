@@ -421,7 +421,8 @@ namespace Horizon
                 std::vector<uint32> simplifiedVertexIndices(mergedVertexIndices.size());
                 std::vector<uint32> simplifiedMaterialIndices(mergedVertexIndices.size() / 3);
                 {
-                    float targetError = 1.0f;
+                    // Disable the error limit.
+                    float targetError = std::numeric_limits<float>::max();
                     uint32 targetIndexCount = static_cast<uint32>(mergedVertexIndices.size()) / 2;
                     uint32 options = meshopt_SimplifyLockBorder | meshopt_SimplifySparse;
 

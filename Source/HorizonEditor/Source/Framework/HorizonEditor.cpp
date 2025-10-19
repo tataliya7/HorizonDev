@@ -42,7 +42,7 @@ namespace Horizon
 //
 //        JobSystemInit(HE::GetNumberOfProcessors(), HE_JOB_SYSTEM_NUM_FIBIERS, HE_JOB_SYSTEM_FIBER_STACK_SIZE);
 //
-        GLFWInit();
+        WindowSystemInit();
 
         // Hard coded initial window size.
         // TODO: Figure out best practice for first-time boot up of editor.
@@ -62,7 +62,7 @@ namespace Horizon
         };
         window = new Window(&windowInfo);
 
-        Input::SetCurrentContext(window->GetGLFWwindow());
+        Input::SetCurrentContext(window);
 
         //window->keyPressEventCallback = BIND_FUNCTION(HorizonEditor::OnKeyPressedEvent);
         //window->keyReleaseEventCallback = BIND_FUNCTION(HorizonEditor::OnKeyReleasedEvent);
@@ -292,7 +292,7 @@ namespace Horizon
     {
         if (window) delete window;
 
-        GLFWExit();
+        WindowSystemExit();
 
         JobSystemExit();
     }

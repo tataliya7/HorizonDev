@@ -3,10 +3,9 @@
 #define GLFW_EXPOSE_NATIVE_WIN32
 #include <GLFW/glfw3.h>
 #include <GLFW/glfw3native.h>
+#include <backends/imgui_impl_glfw.h>
 
 #include <stb/stb_image.h>
-
-#include <Windows.h>
 
 namespace Horizon
 {
@@ -15,7 +14,7 @@ namespace Horizon
         LogError(GLogger, std::format("GLFW error occurs. [error code]: {}, [desctiption]: {}.", errorCode, description));
     }
 
-    bool GLFWInit()
+    bool WindowSystemInit()
     {
         glfwSetErrorCallback(ErrorCallback);
         if (glfwInit() != GLFW_TRUE)
@@ -26,7 +25,7 @@ namespace Horizon
         return true;
     }
 
-    void GLFWExit()
+    void WindowSystemExit()
     {
         glfwTerminate();
     }
@@ -70,22 +69,23 @@ namespace Horizon
             primaryMonitor = glfwGetPrimaryMonitor();
         }
 
-        handle = glfwCreateWindow(std::max(1u, info->width), std::max(1u, info->height), info->title, primaryMonitor, nullptr);
-        if (!handle)
+        GLFWwindow* glfwWindow = glfwCreateWindow(std::max(1u, info->width), std::max(1u, info->height), info->title, primaryMonitor, nullptr);
+        if (!glfwWindow)
         {
             LogFatal(GLogger, std::format("Failed to create main window"));
             return;
         }
 
+        handle = glfwWindow;
         title = info->title;
 
         int32 w, h;
-        glfwGetWindowSize(handle, &w, &h);
+        glfwGetWindowSize(glfwWindow, &w, &h);
         width = w;
         height = h;
 
-        glfwShowWindow(handle);
-        glfwFocusWindow(handle);
+        glfwShowWindow(glfwWindow);
+        glfwFocusWindow(glfwWindow);
         focused = true;
 
         UpdateWindowState();
@@ -101,18 +101,18 @@ namespace Horizon
                 .height = ih,
                 .pixels = data
             };
-            glfwSetWindowIcon(handle, 1, &glfwImage);
+            glfwSetWindowIcon(glfwWindow, 1, &glfwImage);
 
             stbi_image_free(data);
         }
 
-        glfwSetWindowUserPointer(handle, this);
-        glfwSetWindowFocusCallback(handle, [](GLFWwindow* glfwWindow, int focused)
+        glfwSetWindowUserPointer(glfwWindow, this);
+        glfwSetWindowFocusCallback(glfwWindow, [](GLFWwindow* glfwWindow, int focused)
         {
             Window* window = (Window*)glfwGetWindowUserPointer(glfwWindow);
             window->focused = (focused == GLFW_TRUE) ? true : false;
         });
-        glfwSetWindowSizeCallback(handle, [](GLFWwindow* glfwWindow, int width, int height)
+        glfwSetWindowSizeCallback(glfwWindow, [](GLFWwindow* glfwWindow, int width, int height)
         {
             Window* window = (Window*)glfwGetWindowUserPointer(glfwWindow);
             glfwSetWindowSize(glfwWindow, width, height);
@@ -123,7 +123,7 @@ namespace Horizon
 
             window->UpdateWindowState();
         });
-        glfwSetWindowMaximizeCallback(handle, [](GLFWwindow* glfwWindow, int maximized)
+        glfwSetWindowMaximizeCallback(glfwWindow, [](GLFWwindow* glfwWindow, int maximized)
         {
             Window* window = (Window*)glfwGetWindowUserPointer(glfwWindow);
             if (maximized == GLFW_TRUE)
@@ -131,11 +131,11 @@ namespace Horizon
                 window->state = WindowState::Maximized;
             }
         });
-        glfwSetWindowCloseCallback(handle, [](GLFWwindow* glfwWindow)
+        glfwSetWindowCloseCallback(glfwWindow, [](GLFWwindow* glfwWindow)
         {
             glfwSetWindowShouldClose(glfwWindow, true);
         });
-        glfwSetKeyCallback(handle, [](GLFWwindow* glfwWindow, int key, int scancode, int action, int modifiers)
+        glfwSetKeyCallback(glfwWindow, [](GLFWwindow* glfwWindow, int key, int scancode, int action, int modifiers)
         {
             Window* window = (Window*)glfwGetWindowUserPointer(glfwWindow);
             switch (action)
@@ -166,7 +166,7 @@ namespace Horizon
             }
             }
         });
-        glfwSetMouseButtonCallback(handle, [](GLFWwindow* glfwWindow, int button, int action, int mods)
+        glfwSetMouseButtonCallback(glfwWindow, [](GLFWwindow* glfwWindow, int button, int action, int mods)
         {
             Window* window = (Window*)glfwGetWindowUserPointer(glfwWindow);
             switch (action)
@@ -193,15 +193,17 @@ namespace Horizon
 
     Window::~Window()
     {
-        if (handle)
+        GLFWwindow* glfwWindow = static_cast<GLFWwindow*>(handle);
+        if (glfwWindow)
         {
-            glfwDestroyWindow(handle);
+            glfwDestroyWindow(glfwWindow);
         }
     }
 
     uint64 Window::GetNativeHandle()
     {
-        return (uint64)glfwGetWin32Window(handle);
+        GLFWwindow* glfwWindow = static_cast<GLFWwindow*>(handle);
+        return (uint64)glfwGetWin32Window(glfwWindow);
     }
 
     void Window::ProcessEvents()
@@ -211,41 +213,47 @@ namespace Horizon
 
     bool Window::ShouldClose() const
     {
-        return glfwWindowShouldClose(handle);
+        GLFWwindow* glfwWindow = static_cast<GLFWwindow*>(handle);
+        return glfwWindowShouldClose(glfwWindow);
     }
 
     void Window::SetFullscreen(bool fullscreen)
     {
+        GLFWwindow* glfwWindow = static_cast<GLFWwindow*>(handle);
         if (fullscreen)
         {
             GLFWmonitor* monitor = glfwGetPrimaryMonitor();
             const GLFWvidmode* mode = glfwGetVideoMode(monitor);
-            glfwSetWindowMonitor(handle, monitor, 0, 0, mode->width, mode->height, mode->refreshRate);
+            glfwSetWindowMonitor(glfwWindow, monitor, 0, 0, mode->width, mode->height, mode->refreshRate);
         }
         else
         {
-            glfwSetWindowMonitor(handle, nullptr, 0, 0, width, height, GLFW_DONT_CARE);
+            glfwSetWindowMonitor(glfwWindow, nullptr, 0, 0, width, height, GLFW_DONT_CARE);
         }
     }
 
     void Window::SetWindowSize(uint32 width, uint32 height)
     {
-        glfwSetWindowSize(handle, width, height);
+        GLFWwindow* glfwWindow = static_cast<GLFWwindow*>(handle);
+
+        glfwSetWindowSize(glfwWindow, width, height);
 
         int32 w, h;
-        glfwGetWindowSize(handle, &w, &h);
+        glfwGetWindowSize(glfwWindow, &w, &h);
         this->width = w;
         this->height = h;
     }
 
     void Window::MaximizeWindow()
     {
-        glfwMaximizeWindow(handle);
+        GLFWwindow* glfwWindow = static_cast<GLFWwindow*>(handle);
+        glfwMaximizeWindow(glfwWindow);
     }
 
     void Window::UpdateWindowState()
     {
-        GLFWmonitor* monitor = glfwGetWindowMonitor(handle);
+        GLFWwindow* glfwWindow = static_cast<GLFWwindow*>(handle);
+        GLFWmonitor* monitor = glfwGetWindowMonitor(glfwWindow);
         if (width == 0 || height == 0)
         {
             state = WindowState::Minimized;
@@ -256,7 +264,7 @@ namespace Horizon
         }
         else
         {
-            int maximized = glfwGetWindowAttrib(handle, GLFW_MAXIMIZED);
+            int maximized = glfwGetWindowAttrib(glfwWindow, GLFW_MAXIMIZED);
             if (maximized)
             {
                 state = WindowState::Maximized;
@@ -266,5 +274,11 @@ namespace Horizon
                 state = WindowState::Normal;
             }
         }
+    }
+
+    void Window::InitForImGui()
+    {
+        GLFWwindow* glfwWindow = static_cast<GLFWwindow*>(handle);
+        ImGui_ImplGlfw_InitForOther(glfwWindow, true);
     }
 }

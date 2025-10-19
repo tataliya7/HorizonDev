@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Engine/HorizonEngineModule.h"
-#include "WindowSystem.h"
 #include "HorizonEditorUI.h"
 #include "EditorCamera.h"
 #include "EditorSceneManager.h"
