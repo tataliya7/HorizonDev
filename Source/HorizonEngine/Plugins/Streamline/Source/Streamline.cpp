@@ -33,6 +33,41 @@ namespace Horizon
          //STREAMLINE_CHECK(slGetNewFrameToken(currentFrameToken, &frameIndex));
      }
 
+     void StreamlineContext::OnControllerInputSample(uint32 frameIndex)
+     {
+         ReflexSetMarkerControllerInputSample(frameIndex);
+     }
+
+     void StreamlineContext::OnSimulationBegin(uint32 frameIndex)
+     {
+         ReflexSetMarkerSimulationStart(frameIndex);
+     }
+
+     void StreamlineContext::OnSimulationEnd(uint32 frameIndex)
+     {
+         ReflexSetMarkerSimulationEnd(frameIndex);
+     }
+
+     void StreamlineContext::OnRenderSubmitBegin(uint32 frameIndex)
+     {
+         ReflexSetMarkerRenderSubmitStart(frameIndex);
+     }
+
+     void StreamlineContext::OnRenderSubmitEnd(uint32 frameIndex)
+     {
+         ReflexSetMarkerRenderSubmitEnd(frameIndex);
+     }
+
+     void StreamlineContext::OnPresentBegin(uint32 frameIndex)
+     {
+         ReflexSetMarkerPresentStart(frameIndex);
+     }
+
+     void StreamlineContext::OnPresentEnd(uint32 frameIndex)
+     {
+         ReflexSetMarkerPresentEnd(frameIndex);
+     }
+
      //bool StreamlineContext::ReflexSetOptions(const sl::ReflexOptions& options)
      //{
      //    if (!IsInitialized() || !CheckReflexSupport())

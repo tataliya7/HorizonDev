@@ -5,4 +5,5 @@
 #include "Engine/Core/RenderSystem.h"
 #include "Engine/Core/WindowSystem.h"
 #include "Engine/Core/TextureImporter.h"
+#include "Engine/Core/FrameListener.h"
 #include "Engine/Core/HorizonEngine.h"

@@ -51,7 +51,7 @@ namespace Horizon
 
         WindowCreateFlags windowFlags = HORIZON_WINDOW_CREATE_FLAG_BIT_RESIZABLE | HORIZON_WINDOW_CREATE_FLAG_BIT_MAXIMIZED;
 
-        // Create the main window
+        // Create main window
         WindowCreateInfo windowInfo =
         {
             .width = initialWidth,
@@ -322,10 +322,6 @@ namespace Horizon
             return;
         }
 
-#if HORIZON_EXPERIMENTAL_STREAMLINE
-        streamlineContext->ReflexSetMarkerRenderSubmitStart(frameIndex);
-#endif
-
         deltaTimeInSeconds = CalculateDeltaTime();
 
         //
@@ -356,15 +352,7 @@ namespace Horizon
 
         editorCamera.Update(deltaTimeInSeconds);
 
-#if HORIZON_EXPERIMENTAL_STREAMLINE
-        streamlineContext->ReflexSetMarkerSimulationStart(frameIndex);
-#endif
-
         engine->Tick(deltaTimeInSeconds);
-
-#if HORIZON_EXPERIMENTAL_STREAMLINE
-        streamlineContext->ReflexSetMarkerSimulationEnd(frameIndex);
-#endif
 
         timeOfDayScheduler->Tick(deltaTimeInSeconds); // TODO
         editorSceneManager->GetActiveScene()->Tick(deltaTimeInSeconds);
@@ -502,19 +490,7 @@ namespace Horizon
             delete commandList2;
         }
 
-#if HORIZON_EXPERIMENTAL_STREAMLINE
-        streamlineContext->ReflexSetMarkerRenderSubmitEnd(frameIndex);
-#endif
-
-#if HORIZON_EXPERIMENTAL_STREAMLINE
-        streamlineContext->ReflexSetMarkerPresentStart(frameIndex);
-#endif
-
         renderBackend->PresentSwapChain(swapChain);
-
-#if HORIZON_EXPERIMENTAL_STREAMLINE
-        streamlineContext->ReflexSetMarkerPresentEnd(frameIndex);
-#endif
 
         frameIndex++;
     }
@@ -524,11 +500,6 @@ namespace Horizon
         while (!IsExitRequested())
         {
             OPTICK_FRAME("MainThread");
-
-#if HORIZON_EXPERIMENTAL_STREAMLINE
-            //streamlineContext->ReflexSleep(frameIndex);
-            streamlineContext->ReflexSetMarkerControllerInputSample(frameIndex);
-#endif
 
             window->ProcessEvents();
 

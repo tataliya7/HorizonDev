@@ -2,10 +2,11 @@
 
 #include "Foundation/FoundationModule.h"
 #include "Rendering/RenderingModule.h"
+#include "Engine/Core/CoreModule.h"
 
 namespace Horizon
 {
-    class StreamlineContext
+    class StreamlineContext : public FrameListener
     {
     public:
 
@@ -25,6 +26,14 @@ namespace Horizon
         }
 
         void GetFrameToken(uint32 frameIndex);
+
+        void OnControllerInputSample(uint32 frameIndex) override;
+        void OnSimulationBegin(uint32 frameIndex) override;
+        void OnSimulationEnd(uint32 frameIndex) override;
+        void OnRenderSubmitBegin(uint32 frameIndex) override;
+        void OnRenderSubmitEnd(uint32 frameIndex) override;
+        void OnPresentBegin(uint32 frameIndex) override;
+        void OnPresentEnd(uint32 frameIndex) override;
 
         //bool ReflexSetOptions(const sl::ReflexOptions& options);
         void ReflexSleep(uint32 frameIndex);

@@ -39,20 +39,10 @@ namespace Horizon
 
     void HorizonEngine::RegisterAndInitializeSubsystems()
     {
-        #if HORIZON_EXPERIMENTAL_STREAMLINE
-        // TODO:
-        streamlineContext = new StreamlineContext();
-        streamlineContext->Init();
-        #endif
-
         AssetSystem* assetSystem = subsystemRegistry.RegisterSubsystem<AssetSystem>();
         assetSystem->Init();
 
         RenderSystem* renderSystem = subsystemRegistry.RegisterSubsystem<RenderSystem>();
         renderSystem->Init();
-
-        #if HORIZON_EXPERIMENTAL_STREAMLINE
-        streamlineContext->Test(renderSystem->GetRenderBackend());
-        #endif
     }
 }
