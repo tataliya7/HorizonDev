@@ -146,6 +146,7 @@ GPUSceneMeshletData GetGPUSceneMeshletData(GPUSceneGeometryData geometryData, ui
 
 struct GPUSceneMeshletGroupData
 {
+    uint levelIndex;
     uint meshletOffset;
     uint meshletCount;
     float error;

@@ -186,6 +186,8 @@ void MeshletCullingCS(uint3 dispatchThreadID : SV_DispatchThreadID)
 
 #if MESHLET_GROUP_CULLING
 
+#define PixelErrorThreshold 1.0f
+
 SHADER_CONSTANTS_STRUCT_BEGIN();
 SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, RasterizationRendererUniformVariables, PerFrameShaderParameterBufferSRV);
 SHADER_CONSTANTS_BYTE_ADDRESS_BUFFER_SRV(1, GeometryDataBufferSRV);
@@ -228,7 +230,7 @@ void MeshletGroupCullingCS(uint3 dispatchThreadID : SV_DispatchThreadID)
         GPUSceneMeshletData meshletData = GetGPUSceneMeshletData(geometryData, candidateVisibleMeshletID);
 
         bool visibile = true;
-        if (visibile)
+        if (visibile && meshletGroupData.levelIndex == 0)
         {
             uint visibleMeshletIndex;
             visibileMeshletCounterBuffer.InterlockedAdd(0, 1, visibleMeshletIndex);

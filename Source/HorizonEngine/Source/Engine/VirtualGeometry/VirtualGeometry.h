@@ -31,15 +31,17 @@ namespace Horizon
         Vector3f boundingBoxCenter;
         Vector3f boundingBoxExtent;
         uint32 meshletGroupIndex;
+        float error;
     };
 
     struct VirtualGeometryMeshletGroup
     {
-        std::vector<uint32> meshletIndices;
+        uint32 levelIndex;
         uint32 meshletOffset;
         uint32 meshletCount;
         float error;
         float parentError;
+        std::vector<uint32> meshletIndices;
     };
 
     struct VirtualGeometryHierarchyNode
@@ -49,7 +51,7 @@ namespace Horizon
 
     struct VirtualGeometryBuildSettings
     {
-        uint32 maxLODCount;
+        uint32 maxLevelCount;
         uint32 minMeshletSize;
         uint32 maxMeshletSize;
         uint32 minMeshletGroupSize;

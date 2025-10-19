@@ -100,6 +100,7 @@ namespace Horizon
                 std::vector<GPUSceneMeshletGroupData> meshletGroups(output.meshletGroups.size());
                 for (uint32 i = 0; i < meshletGroups.size(); i++)
                 {
+                    meshletGroups[i].levelIndex = output.meshletGroups[i].levelIndex;
                     meshletGroups[i].meshletOffset = output.meshletGroups[i].meshletOffset;
                     meshletGroups[i].meshletCount = output.meshletGroups[i].meshletCount;
                     meshletGroups[i].error = output.meshletGroups[i].error;
@@ -108,7 +109,7 @@ namespace Horizon
                 RenderBackendBufferDescription meshletGroupBufferDesc = RenderBackendBufferDescription::CreateIndex(sizeof(GPUSceneMeshletGroupData), static_cast<uint32>(meshletGroups.size()));
                 renderObject->meshletGroupBuffer = renderBackend->CreateBuffer(&meshletGroupBufferDesc, meshletGroups.data(), "MeshletGroupBuffer");
 
-                assert(indexCount == output.indices.size());
+                //assert(indexCount == output.indices.size());
                 RenderBackendBufferDescription meshletVertexBufferDesc = RenderBackendBufferDescription::CreateIndex(sizeof(uint32), static_cast<uint32>(output.indices.size()));
                 renderObject->meshletVertexBuffer = renderBackend->CreateBuffer(&meshletVertexBufferDesc, output.indices.data(), "MeshletVertexBuffer");
 

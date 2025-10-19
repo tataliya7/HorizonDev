@@ -28,7 +28,7 @@ namespace Horizon
         {
             // @todo Fix me!
             renderGraph.AddPass(
-                std::format("TTT (Compute, {}x{})", 1, 1),
+                std::format("FixMe! (Compute, {}x{})", 1, 1),
                 RenderGraphPassFlags::Compute,
                 [&](RenderGraphBuilder& builder)
                 {

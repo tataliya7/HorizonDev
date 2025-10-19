@@ -466,6 +466,7 @@ namespace Horizon
 
     struct GPUSceneMeshletGroupData
     {
+        uint32 levelIndex;
         uint32 meshletOffset;
         uint32 meshletCount;
         float error;
