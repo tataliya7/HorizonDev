@@ -106,7 +106,6 @@ filter "platforms:Win64"
         "_CRT_SECURE_NO_WARNINGS",
     }
     defines {
-        "HORIZON_EXPERIMENTAL_STREAMLINE=0",
         "HORIZON_EXPERIMENTAL_INFINITE_PERSPECTIVE=0",
     }
     staticruntime "Off"
