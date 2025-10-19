@@ -234,14 +234,14 @@ namespace Horizon
         RenderBackendShaderHandle GetShader(ShaderID id) const;
         RenderBackend* renderBackend;
 
+        /** Experimental */
+        bool shouldRecompileShaders = false;
+
     private:
 
         std::string rootDirectory;
         ShadingLanguage shadingLanguage;
         std::vector<Shader> loadedShaders;
-
-        /** Experimental */
-        bool hotReloadEnabled;
     };
 
     extern void LoadAllShaders_Deprecated(ShaderRepository* shaderRepository);

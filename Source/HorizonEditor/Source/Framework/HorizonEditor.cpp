@@ -440,6 +440,16 @@ namespace Horizon
         RenderBackendCommandList* commandList = new RenderBackendCommandList(GArena);
         RenderGraph renderGraph(GArena, renderSystem->renderGraphResourcePool, nullptr);
 
+        // @todo
+        if (Input::GetKeyDown(KeyCode::F8))
+        {
+            renderSystem->shaderRepository->shouldRecompileShaders = true;
+        }
+        else
+        {
+            renderSystem->shaderRepository->shouldRecompileShaders = false;
+        }
+
         renderSystem->UpdateImGuiData(commandList);
         renderScene->UpdateGPUScene(renderGraph, commandList);
 

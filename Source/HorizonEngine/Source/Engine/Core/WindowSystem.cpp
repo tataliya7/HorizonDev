@@ -197,6 +197,9 @@ namespace Horizon
 
     void Window::ProcessEvents()
     {
+        OPTICK_EVENT();
+
+        // @todo glfwPollEvents() is so slow, move it to another thread.
         glfwPollEvents();
     }
 

@@ -30,7 +30,6 @@ namespace Horizon
         this->renderBackend = renderBackend;
         this->rootDirectory = rootDirectory;
         this->shadingLanguage = (renderBackend->GetType() == RenderBackendType::Vulkan) ? ShadingLanguage::SPIRV : ShadingLanguage::DXIL;
-        this->hotReloadEnabled = true;
 
         loadedShaders.resize((size_t)ShaderID::Count);
     }
@@ -44,7 +43,7 @@ namespace Horizon
     {
         OPTICK_EVENT();
 
-        if (!hotReloadEnabled)
+        if (!shouldRecompileShaders)
         {
             return false;
         }

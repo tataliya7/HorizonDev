@@ -144,6 +144,8 @@ namespace Horizon
 
     void EditorCamera::Update(float deltaTimeInSeconds)
     {
+        OPTICK_EVENT();
+
         // TODO: make it configurable
         float impulse = 0.1f;
         const float translationMultiplier = controller.settings.translationMultiplier;
