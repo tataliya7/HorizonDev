@@ -59,7 +59,7 @@ namespace Horizon
 
             {
                 VirtualGeometryBuildSettings settings;
-                settings.maxLODCount = 1;
+                settings.maxLevelCount = 1;
                 settings.minMeshletSize = 128 - 4;
                 settings.maxMeshletSize = 128;
                 settings.minMeshletGroupSize = 8;

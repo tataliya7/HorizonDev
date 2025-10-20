@@ -249,6 +249,11 @@ namespace Horizon
             }
         }
 
+        if (!light)
+        {
+            return;
+        }
+
         RenderGraphDebugLabelRegion debugLabelRegion(renderGraph, "VirtualShadowMaps");
 
         const uint32 virtualShadowMapSize = 128 * 128;

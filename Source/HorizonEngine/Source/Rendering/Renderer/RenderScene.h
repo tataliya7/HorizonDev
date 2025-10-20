@@ -529,19 +529,20 @@ namespace Horizon
     {
     public:
 
-        Matrix4x4f localToWorldMatrix;
-        std::vector<GPUSceneMeshletData> meshlets;
-
+        /**
+         * Constructor.
+         */
         RenderScene(RenderBackend* renderBackend, ShaderRepository* shaderRepository);
 
+        /**
+         * Deconstructor.
+         */
         virtual ~RenderScene();
 
         /**
          * Release this scene.
          */
         virtual void Release();
-
-        void Render();
 
         /**
          * Adds a mesh to the scene.
@@ -562,6 +563,8 @@ namespace Horizon
          * Removes a light from the scene.
          */
         virtual void RemoveLight(LightRenderObject* light);
+
+        virtual SkyLightRenderObject* GetActiveSkyLight() const;
 
         /**
          * Adds a new sky light to the scene.
@@ -664,6 +667,9 @@ namespace Horizon
             uint32 firstIndex;
             uint32 geometryIndex;
         };
+
+        Matrix4x4f localToWorldMatrix;
+        std::vector<GPUSceneMeshletData> meshlets;
 
         std::vector<DrawCallInfo> drawList;
 

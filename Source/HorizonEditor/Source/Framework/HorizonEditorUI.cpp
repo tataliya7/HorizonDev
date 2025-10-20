@@ -597,14 +597,14 @@ namespace Horizon
         // Set min width
         ImGuiIO& io = ImGui::GetIO();
         ImGuiStyle& style = ImGui::GetStyle();
-        float minWinSizeX = style.WindowMinSize.x;
-        style.WindowMinSize.x = 300.0f;
+        style.WindowMinSize.x = 200.0f;
+        style.WindowMinSize.y = 200.0f;
+
         if (io.ConfigFlags & ImGuiConfigFlags_DockingEnable)
         {
             ImGuiID dockSpaceID = ImGui::GetID("MyDockSpace");
             ImGui::DockSpace(dockSpaceID, ImVec2(0.0f, 0.0f), dockNodeFlags);
         }
-        style.WindowMinSize.x = minWinSizeX;
     }
 
     void EndDockSpace()
@@ -817,50 +817,60 @@ namespace Horizon
         ImGuiIO& io = ImGui::GetIO();
 
         ImGui::SetNextWindowBgAlpha(0.0f);
+        //ImGui::SetNextWindowSizeConstraints(ImVec2(1.0f, 1.0f), ImVec2(FLT_MAX, FLT_MAX));
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{ 0, 0 });
 
         ImGuiWindowFlags flags = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse;
 
-        ImGui::Begin("SceneView", nullptr, flags);
-
-        static RenderBackendTextureHandle renderDocIconTexture = RenderBackendTextureHandle::Null;
-        if (renderDocIconTexture == RenderBackendTextureHandle::Null)
+        if (ImGui::Begin("SceneView", nullptr, flags))
         {
-            renderDocIconTexture = LoadTextureFromFile(renderBackend, nullptr, "../../../Source/HorizonEditor/Plugins/DevelopmentTools/RenderDoc/Resources/renderdoc_icon_256x256.png", false, false);
+            static RenderBackendTextureHandle renderDocIconTexture = RenderBackendTextureHandle::Null;
+            if (renderDocIconTexture == RenderBackendTextureHandle::Null)
+            {
+                renderDocIconTexture = LoadTextureFromFile(renderBackend, nullptr, "../../../Source/HorizonEditor/Plugins/DevelopmentTools/RenderDoc/Resources/renderdoc_icon_256x256.png", false, false);
+            }
+            if (ImGui::ImageButtonEx(ImGui::GetID("##RenderDocCapture"), renderDocIconTexture.ToUnit64(), ImVec2(25, 25), ImVec2(0, 0), ImVec2(1, 1), ImVec4(0, 0, 0, 0), ImVec4(1, 1, 1, 1)))
+            {
+                RenderDocPluginTriggerCapture();
+            }
+
+            ImVec2 contentRegionAvail = ImGui::GetContentRegionAvail();
+
+            if (contentRegionAvail.x >= 1 && contentRegionAvail.y >= 1)
+            {
+                if (!ImGui::IsMouseDragging(0))
+                {
+                    if (targetTexture == nullptr ||
+                        displayTexture == nullptr ||
+                        static_cast<uint32>(viewportSize.x) != static_cast<uint32>(contentRegionAvail.x) ||
+                        static_cast<uint32>(viewportSize.y) != static_cast<uint32>(contentRegionAvail.y))
+                    {
+                        RenderSystem* renderSystem = engine->GetSubsystem<RenderSystem>();
+                        RenderGraphResourcePool* renderGraphResourcePool = renderSystem->GetRenderGraphResourcePool();
+
+                        uint32 targetWidth = std::max(static_cast<uint32>(contentRegionAvail.x), 1u);
+                        uint32 targetHeight = std::max(static_cast<uint32>(contentRegionAvail.y), 1u);
+
+                        RenderBackendTextureFormat targetTextureFormat = RenderBackendTextureFormat::R10G10B10A2Unorm;
+                        RenderGraphTextureDescription targetTextureDescription = RenderGraphTextureDescription::Create2D(
+                            targetWidth,
+                            targetHeight,
+                            targetTextureFormat,
+                            RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::UnorderedAccess | RenderBackendTextureCreateFlags::RenderTarget,
+                            RenderBackendTextureClearValue::Black,
+                            1,
+                            1,
+                            RenderBackendResourceState::ShaderResource); // TODO: handle transition
+                        targetTexture = renderGraphResourcePool->AllocateTexture(targetTextureDescription, "SceneViewTexture");
+                        //renderBackend->ResizeTexture();
+
+                        viewportSize = Vector2f(targetWidth, targetHeight);
+                    }
+                }
+
+                ImGui::Image(targetTexture->GetHandle().ToUnit64(), ImVec2(viewportSize.x, viewportSize.y), ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f));
+            }
         }
-        if (ImGui::ImageButtonEx(ImGui::GetID("##RenderDocCapture"), renderDocIconTexture.ToUnit64(), ImVec2(25, 25), ImVec2(0, 0), ImVec2(1, 1), ImVec4(0, 0, 0, 0), ImVec4(1, 1, 1, 1)))
-        {
-            RenderDocPluginTriggerCapture();
-        }
-
-        ImVec2 contentRegionAvail = ImGui::GetContentRegionAvail();
-
-        if  (targetTexture == nullptr || displayTexture == nullptr || static_cast<uint32>(viewportSize.x) != static_cast<uint32>(contentRegionAvail.x) || static_cast<uint32>(viewportSize.y) != static_cast<uint32>(contentRegionAvail.y))
-        {
-            RenderSystem* renderSystem = engine->GetSubsystem<RenderSystem>();
-            RenderGraphResourcePool* renderGraphResourcePool = renderSystem->GetRenderGraphResourcePool();
-
-            uint32 targetWidth = static_cast<uint32>(contentRegionAvail.x);
-            uint32 targetHeight = static_cast<uint32>(contentRegionAvail.y);
-
-            RenderBackendTextureFormat targetTextureFormat = RenderBackendTextureFormat::R10G10B10A2Unorm;
-            RenderGraphTextureDescription targetTextureDescription = RenderGraphTextureDescription::Create2D(
-                targetWidth,
-                targetHeight,
-                targetTextureFormat,
-                RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::UnorderedAccess | RenderBackendTextureCreateFlags::RenderTarget,
-                RenderBackendTextureClearValue::Black,
-                1,
-                1,
-                RenderBackendResourceState::ShaderResource); // TODO: handle transition
-            targetTexture = renderGraphResourcePool->AllocateTexture(targetTextureDescription, "SceneViewTexture");
-            //renderBackend->ResizeTexture();
-        }
-
-        viewportSize = Vector2f(contentRegionAvail.x, contentRegionAvail.y);
-
-        ImGui::Image(targetTexture->GetHandle().ToUnit64(), ImVec2(viewportSize.x, viewportSize.y), ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f));
-
         ImGui::End();
 
         ImGui::PopStyleVar();
@@ -2010,6 +2020,28 @@ namespace Horizon
         {
             if (ImGui::BeginMenu("File"))
             {
+                ImGui::Separator();
+
+                if (ImGui::BeginMenu("New"))
+                {
+                    if (ImGui::MenuItem("Scene"))
+                    {
+                        Scene* newScene = editorSceneManager->CreateScene("Empty");
+                        editorSceneManager->SetActiveScene(newScene);
+                    }
+                    ImGui::EndMenu();
+                }
+
+                if (ImGui::MenuItem("Open"))
+                {
+
+                }
+
+                if (ImGui::BeginMenu("Open Recent"))
+                {
+                    ImGui::EndMenu();
+                }
+
                 ImGui::Separator();
 
                 if (ImGui::BeginMenu("Import"))

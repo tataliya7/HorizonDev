@@ -129,6 +129,16 @@ namespace Horizon
 
     }
 
+    SkyLightRenderObject* RenderScene::GetActiveSkyLight() const
+    {
+        if (skyLights.empty())
+        {
+            return nullptr;
+        }
+
+        return skyLights[0];
+    }
+
     void RenderScene::AddSkyLight(SkyLightRenderObject* skyLight)
     {
         assert(skyLight != nullptr);
@@ -246,9 +256,12 @@ namespace Horizon
 
     void SetupDistantLightShaderParameters(DistantLightShaderParameters& outParameters, const LightRenderObject* light)
     {
-        outParameters.direction = light->direction;
-        outParameters.tangent = light->tangent;
-        outParameters.color = light->color;
+        if (light)
+        {
+            outParameters.direction = light->direction;
+            outParameters.tangent = light->tangent;
+            outParameters.color = light->color;
+        }
     }
 
     RayTracingScene* RenderScene::CreateRayTracingScene()
@@ -413,40 +426,43 @@ namespace Horizon
         }
 
         static int first = 0;
-        SkyLightRenderObject* skyLight = skyLights[0];
         if (first == 0)
         {
             first = 1;
 
-            uint32 cubemapSize = skyLight->cubemapSize;
+            SkyLightRenderObject* skyLight = skyLights[0];
+            if (skyLight)
+            {
+                uint32 cubemapSize = skyLight->cubemapSize;
 
-            RenderBackendTextureDesc convolvedEnvironmentMapTextureDesc = RenderBackendTextureDesc::CreateCube(
-                cubemapSize,
-                RenderBackendTextureFormat::R16G16B16A16Float,
-                RenderBackendTextureCreateFlags::UnorderedAccess | RenderBackendTextureCreateFlags::ShaderResource,
-                Math::MaxMipLevelCount(cubemapSize));
-            convolvedEnvironmentMapTexture = renderBackend->CreateTexture(&convolvedEnvironmentMapTextureDesc, nullptr, "ConvolvedEnvironmentMapTexture");
+                RenderBackendTextureDesc convolvedEnvironmentMapTextureDesc = RenderBackendTextureDesc::CreateCube(
+                    cubemapSize,
+                    RenderBackendTextureFormat::R16G16B16A16Float,
+                    RenderBackendTextureCreateFlags::UnorderedAccess | RenderBackendTextureCreateFlags::ShaderResource,
+                    Math::MaxMipLevelCount(cubemapSize));
+                convolvedEnvironmentMapTexture = renderBackend->CreateTexture(&convolvedEnvironmentMapTextureDesc, nullptr, "ConvolvedEnvironmentMapTexture");
 
-            RenderBackendTextureDesc irradianceEnvironmentMapTextureDesc = RenderBackendTextureDesc::CreateCube(
-                GIrradianceEnvironmentMapSize,
-                RenderBackendTextureFormat::R16G16B16A16Float,
-                RenderBackendTextureCreateFlags::UnorderedAccess | RenderBackendTextureCreateFlags::ShaderResource);
-            irradianceEnvironmentMapTexture = renderBackend->CreateTexture(&irradianceEnvironmentMapTextureDesc, nullptr, "IrradianceEnvironmentMapTexture");
+                RenderBackendTextureDesc irradianceEnvironmentMapTextureDesc = RenderBackendTextureDesc::CreateCube(
+                    GIrradianceEnvironmentMapSize,
+                    RenderBackendTextureFormat::R16G16B16A16Float,
+                    RenderBackendTextureCreateFlags::UnorderedAccess | RenderBackendTextureCreateFlags::ShaderResource);
+                irradianceEnvironmentMapTexture = renderBackend->CreateTexture(&irradianceEnvironmentMapTextureDesc, nullptr, "IrradianceEnvironmentMapTexture");
 
-            RenderBackendBufferDescription irradianceEnvironmentMapBufferDesc = RenderBackendBufferDescription::CreateByteAddress(sizeof(float) * 27);
-            irradianceEnvironmentMapBuffer = renderBackend->CreateBuffer(&irradianceEnvironmentMapBufferDesc, nullptr, "IrradianceEnvironmentMapBuffer");
-            irradianceEnvironmentMapBufferFast = renderBackend->CreateBuffer(&irradianceEnvironmentMapBufferDesc, nullptr, "IrradianceEnvironmentMapBufferFast");
+                RenderBackendBufferDescription irradianceEnvironmentMapBufferDesc = RenderBackendBufferDescription::CreateByteAddress(sizeof(float) * 27);
+                irradianceEnvironmentMapBuffer = renderBackend->CreateBuffer(&irradianceEnvironmentMapBufferDesc, nullptr, "IrradianceEnvironmentMapBuffer");
+                irradianceEnvironmentMapBufferFast = renderBackend->CreateBuffer(&irradianceEnvironmentMapBufferDesc, nullptr, "IrradianceEnvironmentMapBufferFast");
 
-            PrecomputeEnvironmentMaps(
-                renderBackend,
-                shaderRepository,
-                *commandList,
-                skyLight->cubemapSize,
-                skyLight->environmentMapTexture->GetHandle(),
-                convolvedEnvironmentMapTexture,
-                irradianceEnvironmentMapTexture,
-                irradianceEnvironmentMapBuffer,
-                irradianceEnvironmentMapBufferFast);
+                PrecomputeEnvironmentMaps(
+                    renderBackend,
+                    shaderRepository,
+                    *commandList,
+                    skyLight->cubemapSize,
+                    skyLight->environmentMapTexture->GetHandle(),
+                    convolvedEnvironmentMapTexture,
+                    irradianceEnvironmentMapTexture,
+                    irradianceEnvironmentMapBuffer,
+                    irradianceEnvironmentMapBufferFast);
+            }
         }
 
         if (ShouldUpdateRayTracingScene())

@@ -33,6 +33,11 @@ namespace Horizon
         activeScene = scene;
     }
 
+    void EditorSceneManager::OpenScene(const std::string& name)
+    {
+
+    }
+
     Scene* EditorSceneManager::GetActiveScene() const
     {
         return activeScene;

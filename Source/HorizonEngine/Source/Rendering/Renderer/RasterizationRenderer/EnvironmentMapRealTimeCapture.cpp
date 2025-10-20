@@ -74,7 +74,12 @@ namespace Horizon
     {
         RenderGraphDebugLabelRegion debugLabelRegion(renderGraph, "CaptureEnvironmentMap");
 
-        SkyLightRenderObject* skyLight = view.scene->skyLights[0];
+        SkyLightRenderObject* skyLight = view.scene->GetActiveSkyLight();
+
+        if (!skyLight)
+        {
+            return;
+        }
 
         const uint32 environmentMapTextureSize = skyLight->cubemapSize;
         const uint32 environmentMapTextureMipLevelCount = Math::MaxMipLevelCount(environmentMapTextureSize);

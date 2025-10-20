@@ -13,21 +13,11 @@ namespace Horizon
     {
         entityManager = new EntityManager();
 
-        // entityManager->OnConstruct<TransformComponent>().connect<&entt::registry::emplace_or_replace<TransformDirtyComponent>>();
-        // entityManager->OnUpdate<TransformComponent>().connect<&entt::registry::emplace_or_replace<TransformDirtyComponent>>();
-
-        // entityManager->OnConstruct<SkyLightComponent>().connect<&Scene::OnSkyLightComponentConstruct>(this);
-        // entityManager->OnDestroy<SkyLightComponent>().connect<&Scene::OnSkyLightComponentDestroy>(this);
-
-        // entityManager->OnConstruct<RigidBodyComponent>().connect<&Scene::OnRigidBodyComponentConstruct>(this);
-        // entityManager->OnDestroy<RigidBodyComponent>().connect<&Scene::OnRigidBodyComponentDestroy>(this);
-
-        //physicsScene = new PhysicsScene();
-
         RenderSystem* renderSystem = HorizonEngine::GetInstance()->GetSubsystem<RenderSystem>();
         RenderBackend* renderBackend = renderSystem->GetRenderBackend();
         ShaderRepository* shaderRepository = renderSystem->GetShaderRepository();
 
+        //physicsScene = new PhysicsScene();
         renderScene = new RenderScene(renderBackend, shaderRepository);
 
         if (renderSystem->enableHardwareRayTracing)
@@ -78,26 +68,6 @@ namespace Horizon
     //     entityManager->Clear();
     // }
 
-    /*void Scene::OnSkyLightComponentConstruct(entt::registry& registry, entt::entity entity)
-    {
-        if (!hasSkyLight)
-        {
-            auto& component = entityManager->GetComponent<SkyLightComponent>(entity);
-            component.renderObject = new SkyLightRenderObject(&component);
-            renderScene->SetSkyLight(component.renderObject);
-            hasSkyLight = true;
-        }
-        else
-        {
-            ASSERT(!hasSkyLight && "Can't create more than one SkyLightComponent!");
-        }
-    }
-
-    void Scene::OnSkyLightComponentDestroy(entt::registry& registry, entt::entity entity)
-    {
-
-    }*/
-
     SceneSettings* Scene::GetSceneSettings()
     {
         return &settings;
@@ -113,21 +83,6 @@ namespace Horizon
         return renderScene;
     }
 
-    // uint32 Scene::GetEntityCount() const
-    // {
-    //
-    // }
-    //
-    // void Scene::OnRigidBodyComponentConstruct(entt::registry& registry, entt::entity entity)
-    // {
-    //     physicsScene->CreateActor(entityManager, entity);
-    // }
-    //
-    // void Scene::OnRigidBodyComponentDestroy(entt::registry& registry, entt::entity entity)
-    // {
-    //     physicsScene->RemoveActor(entityManager, entity);
-    // }
-    //
     static void UpdateTransform_Deprecated(EntityManager* manager, EntityHandle entity)
     {
         const SceneHierarchyComponent& hierarchy = manager->GetComponent<SceneHierarchyComponent>(entity);
@@ -154,107 +109,9 @@ namespace Horizon
         // }
     }
 
-    // struct UpdateTransformJobData
-    // {
-    //     EntityManager* manager;
-    //     EntityHandle entity;
-    // };
-    //
-    // static void UpdateTransform(void* data)
-    // {
-    //     EntityManager* manager = ((UpdateTransformJobData*)data)->manager;
-    //     EntityHandle entity = ((UpdateTransformJobData*)data)->entity;
-    //     const SceneHierarchyComponent& hierarchy = manager->GetComponent<SceneHierarchyComponent>(entity);
-    //     TransformComponent& transform = manager->GetComponent<TransformComponent>(entity);
-    //     transform.Update();
-    //     EntityHandle currentEntity = hierarchy.firstChild;
-    //     for (uint32 i = 0; i < hierarchy.numChildren; i++)
-    //     {
-    //         if (manager->HasComponent<TransformDirtyComponent>(currentEntity))
-    //         {
-    //             continue;
-    //         }
-    //         UpdateTransform(data);
-    //         currentEntity = manager->GetComponent<SceneHierarchyComponent>(currentEntity).next;
-    //     }
-    //     manager->RemoveComponent<TransformDirtyComponent>(entity);
-    // }
-
     void Scene::Tick(float deltaTimeInSeconds)
     {
         OPTICK_EVENT();
-        // if (ShouldUpdateScripts())
-        // {
-        //     // Update scripts
-        //     entityManager->GetView<ScriptComponent>().each([&](EntityHandle entity, auto& script)
-        //     {
-        //         if (script.scriptable == nullptr)
-        //         {
-        //             script.ConstructorFunc();
-        //             script.scriptable->manager = entityManager;
-        //             script.scriptable->entity = entity;
-        //             if (script.OnCreateFunc)
-        //             {
-        //                 script.OnCreateFunc(script.scriptable);
-        //             }
-        //         }
-        //         if (script.OnUpdateFunc)
-        //         {
-        //             script.OnUpdateFunc(script.scriptable, deltaTime);
-        //         }
-        //     });
-        // }
-        //
-        // if (ShouldSimulate())
-        // {
-        //     physicsScene->Simulate(deltaTime);
-        // }
-
-        std::array<uint32, 10000> a = {};
-
-        JobSystemJobCounterReference job1 = JobSystemRunJob(
-            "Job1",
-            JobSystemJobPriority::High,
-            JobSystemJobCounterReference::Null,
-            [&a](const JobSystemJobContext& jobContext)
-            {
-                OPTICK_EVENT("Job1");
-                for (uint32 i = 0; i < 10000 / 2; i++)
-                {
-                    a[i] = i;
-                }
-            });
-
-        JobSystemJobCounterReference job2 = JobSystemRunJob(
-            "Job2",
-            JobSystemJobPriority::High,
-            JobSystemJobCounterReference::Null,
-            [&a](const JobSystemJobContext& jobContext)
-            {
-                OPTICK_EVENT("Job2");
-                for (uint32 i = 10000 / 2; i < 10000; i++)
-                {
-                    a[i] = i;
-                }
-            });
-
-        std::array<JobSystemJobCounterReference, 2> joba = { job1, job2 };
-        JobSystemJobCounterReference job12 = JobSystemCombineDependencies(joba.data(), joba.size());
-
-        JobSystemJobCounterReference job3 = JobSystemRunJob(
-            "Job3",
-            JobSystemJobPriority::High,
-            job12,
-            [&a](const JobSystemJobContext& jobContext)
-            {
-                OPTICK_EVENT("Job3");
-                for (uint32 i = 0; i < 10000 / 2; i++)
-                {
-                    a[i] += a[i + 10000 / 2];
-                }
-            });
-
-        JobSystemWaitForCounter(job3);
 
         // Update transforms
         JobSystemJobCounterReference transformComponentUpdateJob = JobSystemRunJob(
@@ -361,7 +218,6 @@ namespace Horizon
         entityManager->GetView<LocalFogVolumeComponent>().each([&](EntityHandle entity)
         {
             const TransformComponent& transformComponent = entityManager->GetComponent<TransformComponent>(entity);
-
             LocalFogVolumeComponent& localFogVolumeComponent = entityManager->GetComponent<LocalFogVolumeComponent>(entity);
             localFogVolumeComponent.UpdateRenderObject(transformComponent.localToWorldMatrix);
         });
