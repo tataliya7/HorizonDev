@@ -152,6 +152,11 @@ namespace Horizon
 
     }
 
+    bool RenderScene::HasSkyLight() const
+    {
+        return !skyLights.empty();
+    }
+
     bool RenderScene::HasAtmosphericLight() const
     {
         return atmosphericLight != nullptr;

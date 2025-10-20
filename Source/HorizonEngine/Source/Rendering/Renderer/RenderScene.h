@@ -564,8 +564,6 @@ namespace Horizon
          */
         virtual void RemoveLight(LightRenderObject* light);
 
-        virtual SkyLightRenderObject* GetActiveSkyLight() const;
-
         /**
          * Adds a new sky light to the scene.
          */
@@ -576,35 +574,90 @@ namespace Horizon
          */
         virtual void RemoveSkyLight(SkyLightRenderObject* skyLight);
 
-        // virtual void HasSkyLight() = 0;
-        //
-        // virtual void SetSkyLight(FSkyLightSceneProxy* component);
+        /**
+         * Checks if the scene has any sky light.
+         * @return true if the scene has at least one sky light, false otherwise
+         */
+        virtual bool HasSkyLight() const;
 
-        virtual bool HasAtmosphericLight() const;
+        /**
+         * Get the currently active sky light in the scene.
+         * @return Pointer to the active sky light object, or nullptr if none exists
+         */
+        virtual SkyLightRenderObject* GetActiveSkyLight() const;
 
-        virtual LightRenderObject* GetAtmosphericLight() const;
-
-        virtual bool HasActiveSkyAtmosphere() const;
-
-        virtual SkyAtmosphereRenderObject* GetActiveSkyAtmosphere() const;
-
+        /**
+         * Adds a new sky atmosphere to the scene.
+         */
         virtual void AddSkyAtmosphere(SkyAtmosphereRenderObject* skyAtmosphere);
 
+        /**
+         * Removes a sky atmosphere from the scene.
+         */
         virtual void RemoveSkyAtmosphere(SkyAtmosphereRenderObject* skyAtmosphere);
 
-        virtual bool HasActiveGlobalFog() const;
+        /**
+         * Checks if the scene has any active sky atmosphere.
+         * @return true if the scene has at least one active sky atmosphere, false otherwise
+         */
+        virtual bool HasActiveSkyAtmosphere() const;
 
-        virtual GlobalFogRenderObject* GetActiveGlobalFog() const;
+        /**
+         * Get the currently active sky atmosphere in the scene.
+         * @return Pointer to the active sky atmosphere object, or nullptr if none exists
+         */
+        virtual SkyAtmosphereRenderObject* GetActiveSkyAtmosphere() const;
 
-        virtual void AddGlobalFog(GlobalFogRenderObject* globalFog);
+        /**
+         * Checks if the scene has any atmospheric light.
+         * @return true if the scene has at least one atmospheric light, false otherwise
+         */
+        virtual bool HasAtmosphericLight() const;
 
+        /**
+         * Get the currently active atmospheric light in the scene.
+         * @return Pointer to the active atmospheric light object, or nullptr if none exists
+         */
+        virtual LightRenderObject* GetAtmosphericLight() const;
+
+        /**
+         * Adds a new global fog to the scene.
+         */
+        void AddGlobalFog(GlobalFogRenderObject* globalFog);
+
+        /**
+         * Removes a global fog from the scene.
+         */
         virtual void RemoveGlobalFog(GlobalFogRenderObject* globalFog);
 
-        virtual bool HasAnyLocalFogVolume() const;
+        /**
+         * Checks if the scene has any active global fog.
+         * @return true if the scene has at least one active global fog, false otherwise
+         */
+        virtual bool HasActiveGlobalFog() const;
 
+        /**
+         * Get the currently active global fog in the scene.
+         * @return Pointer to the active global fog object, or nullptr if none exists
+         */
+        virtual GlobalFogRenderObject* GetActiveGlobalFog() const;
+
+
+        /**
+         * Adds a new local fog volume to the scene.
+         */
         virtual void AddLocalFogVolume(LocalFogVolumeRenderObject* localFogVolume);
 
+        /**
+         * Removes a local fog volume from the scene.
+         */
         virtual void RemoveLocalFogVolume(LocalFogVolumeRenderObject* localFogVolume);
+
+        /**
+         * Checks if the scene has any local fog volume.
+         * @return true if the scene has at least one local fog volume, false otherwise
+         */
+        virtual bool HasAnyLocalFogVolume() const;
 
         void GetRenderStatistics(RenderStatistics& statistics) const;
 
