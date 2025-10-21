@@ -76,6 +76,92 @@ namespace Horizon
     {
     }
 
+    GPUScene::GPUScene(RenderScene* renderScene)
+        : renderScene(renderScene)
+    {
+
+    }
+
+    static void SetupLocalLightShaderParameters(LocalLightShaderParameters& outParameters, const LightRenderObject& light)
+    {
+        outParameters.data0 = Vector4f(light.position, light.radius);
+        outParameters.data1 = Vector4f(light.direction, 0.0f);
+        outParameters.data2 = Vector4f(light.tangent, 0.0f);
+        outParameters.data3 = Vector4f(light.color, 0.0f);
+        outParameters.data4 = Vector4f(0.0f);
+    }
+
+    void GPUScene::UploadLights(RenderGraph& renderGraph)
+    {
+        uint32 localLightCount = 0;
+        std::vector<LocalLightShaderParameters> localLightData;
+
+        uint32 lightCount = static_cast<uint32>(renderScene->lights.size());
+        for (uint32 i = 0; i < lightCount; ++i)
+        {
+            LightRenderObject* light = renderScene->lights[i];
+
+            if (light->IsDistantLight())
+            {
+
+            }
+            else
+            {
+                assert(light->IsLocalLight());
+
+                LocalLightShaderParameters& localLightShaderParameters = localLightData.emplace_back();
+                SetupLocalLightShaderParameters(localLightShaderParameters, *light);
+                localLightCount++;
+            }
+        }
+
+        uint64 localLightDataBufferSize = sizeof(LocalLightShaderParameters) * localLightCount;
+
+        if (localLightCount > 0)
+        {
+            RenderBackendBufferHandle& localLightDataUploadBuffer = localLightDataUploadBuffers[currentPerFrameDataBufferIndex];
+            RenderBackendBufferHandle& localLightDataBuffer = localLightDataBuffers[currentPerFrameDataBufferIndex];
+
+            // Resize buffer if needed
+            if (!localLightDataBuffer)
+            {
+                RenderBackendBufferDescription localLightDataUploadBufferDescription = RenderBackendBufferDescription::CreateUpload(sizeof(LocalLightShaderParameters) * localLightCount);
+                localLightDataUploadBuffer = renderGraph.GetRenderBackend()->CreateBuffer(&localLightDataUploadBufferDescription, nullptr, "LocalLightDataUploadBuffer");
+                RenderBackendBufferDescription localLightDataBufferDescription = RenderBackendBufferDescription::CreateStructured(sizeof(LocalLightShaderParameters), localLightCount);
+                localLightDataBuffer = renderGraph.GetRenderBackend()->CreateBuffer(&localLightDataBufferDescription, nullptr, "LocalLightDataBuffer");
+            }
+            renderGraph.GetRenderBackend()->UpdateBuffer(localLightDataUploadBuffer, 0, localLightData.data(), sizeof(LocalLightShaderParameters) * localLightCount);
+
+            renderGraph.AddPass(
+                std::format("UpdateLocalLightDataBuffer (Copy, {} bytes)", localLightDataBufferSize),
+                RenderGraphPassFlags::Copy,
+                [&](RenderGraphBuilder& builder)
+                {
+                    //builder.ReadBuffer(localLightDataUploadBuffer, RenderBackendResourceState::CopySrc);
+                    //builder.WriteBuffer(localLightDataBuffer, RenderBackendResourceState::CopyDst);
+
+                    return [=](RenderBackendCommandList& commandList, const RenderGraphResourceRegistry& resourceRegistry)
+                    {
+                        commandList.CopyBuffer(
+                            localLightDataUploadBuffer,
+                            0,
+                            localLightDataBuffer,
+                            0,
+                            localLightDataBufferSize);
+
+                        // @todo Remove this
+                        RenderBackendBarrier barrier[] =
+                        {
+                            RenderBackendBarrier(localLightDataBuffer, RenderBackendBufferSubresourceRange::Whole, RenderBackendResourceState::CopyDst, RenderBackendResourceState::ShaderResource)
+                        };
+                        commandList.Barriers(barrier, 1);
+                    };
+                });
+        }
+
+        currentPerFrameDataBufferIndex++;
+    }
+
     RenderScene::RenderScene(RenderBackend* renderBackend, ShaderRepository* shaderRepository)
         : renderBackend(renderBackend)
         , shaderRepository(shaderRepository)
@@ -83,7 +169,7 @@ namespace Horizon
         , activeSkyAtmosphere(nullptr)
         , activeGlobalFog(nullptr)
     {
-        gpuScene = new GPUScene();
+        gpuScene = new GPUScene(this);
 
         rayTracingScene = nullptr;
     }
@@ -252,11 +338,6 @@ namespace Horizon
             std::swap(*iter, localFogVolumes.back());
             localFogVolumes.pop_back();
         }
-    }
-
-    void RenderScene::GetRenderStatistics(RenderStatistics& statistics) const
-    {
-
     }
 
     void SetupDistantLightShaderParameters(DistantLightShaderParameters& outParameters, const LightRenderObject* light)

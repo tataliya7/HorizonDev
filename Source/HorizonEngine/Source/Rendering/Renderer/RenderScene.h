@@ -141,7 +141,6 @@ namespace Horizon
 
         uint32 transformMatrixCount = 0;
         uint64 transformBufferSize = 0;
-        std::vector<Matrix4x4f> rowMajorTransforms;
         RenderBackendBufferHandle transformBufferRowMajor;
         RenderBackendBufferHandle transformBufferRowMajorUpload;
 
@@ -494,9 +493,18 @@ namespace Horizon
         Vector2f textureCoordinates[VirtualGeometryVertexMaximumTextureCoordinateCount];
     };
 
+    /**
+     * Represents the GPU-side data of a RenderScene, responsible for uploading scene data
+     * (including geometry, materials, lights, etc.) to GPU.
+     */
     class GPUScene
     {
     public:
+
+        GPUScene(RenderScene* renderScene);
+
+        RenderScene* renderScene;
+
         // Geometries
         uint32 geometryCount = 0;
         uint32 geometryInstanceCount = 0;
@@ -520,9 +528,12 @@ namespace Horizon
         RenderBackendBufferHandle materialBuffer;
 
         // Lights
-        uint64 lightDataBufferSize = 0;
-        RenderBackendBufferHandle lightDataUploadBuffer;
-        RenderBackendBufferHandle lightDataBuffer;
+        static const int32 MaxNumFramesInFlight = 3; // @todo
+        int32 currentPerFrameDataBufferIndex = 0; // @todo
+        RenderBackendBufferHandle localLightDataUploadBuffers[MaxNumFramesInFlight];
+        RenderBackendBufferHandle localLightDataBuffers[MaxNumFramesInFlight];
+
+        void UploadLights(RenderGraph& renderGraph);
     };
 
     class RenderScene
@@ -543,6 +554,15 @@ namespace Horizon
          * Release this scene.
          */
         virtual void Release();
+
+        /**
+         * Get the GPU scene object.
+         * @return Pointer to the GPU scene object.
+         */
+        GPUScene* GetGPUScene() const
+        {
+            return gpuScene;
+        }
 
         /**
          * Adds a mesh to the scene.
@@ -576,13 +596,13 @@ namespace Horizon
 
         /**
          * Checks if the scene has any sky light.
-         * @return true if the scene has at least one sky light, false otherwise
+         * @return True if the scene has at least one sky light, false otherwise.
          */
         virtual bool HasSkyLight() const;
 
         /**
          * Get the currently active sky light in the scene.
-         * @return Pointer to the active sky light object, or nullptr if none exists
+         * @return Pointer to the active sky light object, or nullptr if none exists.
          */
         virtual SkyLightRenderObject* GetActiveSkyLight() const;
 
@@ -598,25 +618,25 @@ namespace Horizon
 
         /**
          * Checks if the scene has any active sky atmosphere.
-         * @return true if the scene has at least one active sky atmosphere, false otherwise
+         * @return True if the scene has at least one active sky atmosphere, false otherwise.
          */
         virtual bool HasActiveSkyAtmosphere() const;
 
         /**
          * Get the currently active sky atmosphere in the scene.
-         * @return Pointer to the active sky atmosphere object, or nullptr if none exists
+         * @return Pointer to the active sky atmosphere object, or nullptr if none exists.
          */
         virtual SkyAtmosphereRenderObject* GetActiveSkyAtmosphere() const;
 
         /**
          * Checks if the scene has any atmospheric light.
-         * @return true if the scene has at least one atmospheric light, false otherwise
+         * @return True if the scene has at least one atmospheric light, false otherwise.
          */
         virtual bool HasAtmosphericLight() const;
 
         /**
          * Get the currently active atmospheric light in the scene.
-         * @return Pointer to the active atmospheric light object, or nullptr if none exists
+         * @return Pointer to the active atmospheric light object, or nullptr if none exists.
          */
         virtual LightRenderObject* GetAtmosphericLight() const;
 
@@ -632,13 +652,13 @@ namespace Horizon
 
         /**
          * Checks if the scene has any active global fog.
-         * @return true if the scene has at least one active global fog, false otherwise
+         * @return True if the scene has at least one active global fog, false otherwise.
          */
         virtual bool HasActiveGlobalFog() const;
 
         /**
          * Get the currently active global fog in the scene.
-         * @return Pointer to the active global fog object, or nullptr if none exists
+         * @return Pointer to the active global fog object, or nullptr if none exists.
          */
         virtual GlobalFogRenderObject* GetActiveGlobalFog() const;
 
@@ -655,22 +675,15 @@ namespace Horizon
 
         /**
          * Checks if the scene has any local fog volume.
-         * @return true if the scene has at least one local fog volume, false otherwise
+         * @return True if the scene has at least one local fog volume, false otherwise.
          */
         virtual bool HasAnyLocalFogVolume() const;
-
-        void GetRenderStatistics(RenderStatistics& statistics) const;
 
         void UpdateGPUScene(RenderGraph& renderGraph, RenderBackendCommandList* commandList);
 
         bool ShouldUpdateRayTracingScene()
         {
             return rayTracingScene && true;
-        }
-
-        GPUScene* GetGPUScene() const
-        {
-            return gpuScene;
         }
 
         RayTracingScene* CreateRayTracingScene();
@@ -684,8 +697,6 @@ namespace Horizon
         RenderBackend* renderBackend;
 
         ShaderRepository* shaderRepository;
-
-        std::vector<MeshRenderObject*> meshes;
 
         std::vector<LightRenderObject*> lights;
 
@@ -702,8 +713,6 @@ namespace Horizon
         GlobalFogRenderObject* activeGlobalFog;
 
         std::vector<LocalFogVolumeRenderObject*> localFogVolumes;
-
-        GPUScene* gpuScene;
 
         RayTracingScene* rayTracingScene;
 
@@ -756,5 +765,15 @@ namespace Horizon
         // uint32 debugDrawLinesVertexBufferSize = 0;
         // RenderBackendBufferHandle debugDrawLinesVertexBuffer;
         // RenderBackendBufferHandle debugDrawLinesVertexUploadBuffer;
+
+    private:
+
+        GPUScene* gpuScene;
+
+    public:
+
+        std::vector<MeshRenderObject*> meshes;
+
+        std::vector<Matrix4x4f> meshTransforms;
     };
 }
