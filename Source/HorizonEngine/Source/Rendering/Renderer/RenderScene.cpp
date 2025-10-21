@@ -82,19 +82,19 @@ namespace Horizon
 
     }
 
-    static void SetupLocalLightShaderParameters(LocalLightShaderParameters& outParameters, const LightRenderObject& light)
+    static void SetupGPUSceneLocalLightShaderParameters(GPUSceneLocalLightShaderParameters& parameters, const LightRenderObject& light)
     {
-        outParameters.data0 = Vector4f(light.position, light.radius);
-        outParameters.data1 = Vector4f(light.direction, 0.0f);
-        outParameters.data2 = Vector4f(light.tangent, 0.0f);
-        outParameters.data3 = Vector4f(light.color, 0.0f);
-        outParameters.data4 = Vector4f(0.0f);
+        parameters.data0 = Vector4f(light.position, light.radius);
+        parameters.data1 = Vector4f(light.direction, 0.0f);
+        parameters.data2 = Vector4f(light.tangent, 0.0f);
+        parameters.data3 = Vector4f(light.color, 0.0f);
+        parameters.data4 = Vector4f(0.0f);
     }
 
     void GPUScene::UploadLights(RenderGraph& renderGraph)
     {
         uint32 localLightCount = 0;
-        std::vector<LocalLightShaderParameters> localLightData;
+        std::vector<GPUSceneLocalLightShaderParameters> localLightData;
 
         uint32 lightCount = static_cast<uint32>(renderScene->lights.size());
         for (uint32 i = 0; i < lightCount; ++i)
@@ -105,61 +105,25 @@ namespace Horizon
             {
 
             }
-            else
+            else if (light->IsLocalLight())
             {
-                assert(light->IsLocalLight());
-
-                LocalLightShaderParameters& localLightShaderParameters = localLightData.emplace_back();
-                SetupLocalLightShaderParameters(localLightShaderParameters, *light);
+                GPUSceneLocalLightShaderParameters& localLightShaderParameters = localLightData.emplace_back();
+                SetupGPUSceneLocalLightShaderParameters(localLightShaderParameters, *light);
                 localLightCount++;
             }
         }
 
-        uint64 localLightDataBufferSize = sizeof(LocalLightShaderParameters) * localLightCount;
+        uint32 localLightDataBufferElementCount = std::max(1u, localLightCount);
+        uint64 localLightDataBufferSize = localLightDataBufferElementCount * sizeof(GPUSceneLocalLightShaderParameters);
+        RenderGraphBufferDescription localLightDataBufferDescription = RenderGraphBufferDescription::CreateStructured(sizeof(GPUSceneLocalLightShaderParameters), localLightDataBufferElementCount);
+        RenderGraphBufferHandle localLightDataBuffer = renderGraph.CreateBuffer(localLightDataBufferDescription, "GPUSceneLocalLightDataBuffer");
 
         if (localLightCount > 0)
         {
-            RenderBackendBufferHandle& localLightDataUploadBuffer = localLightDataUploadBuffers[currentPerFrameDataBufferIndex];
-            RenderBackendBufferHandle& localLightDataBuffer = localLightDataBuffers[currentPerFrameDataBufferIndex];
-
-            // Resize buffer if needed
-            if (!localLightDataBuffer)
-            {
-                RenderBackendBufferDescription localLightDataUploadBufferDescription = RenderBackendBufferDescription::CreateUpload(sizeof(LocalLightShaderParameters) * localLightCount);
-                localLightDataUploadBuffer = renderGraph.GetRenderBackend()->CreateBuffer(&localLightDataUploadBufferDescription, nullptr, "LocalLightDataUploadBuffer");
-                RenderBackendBufferDescription localLightDataBufferDescription = RenderBackendBufferDescription::CreateStructured(sizeof(LocalLightShaderParameters), localLightCount);
-                localLightDataBuffer = renderGraph.GetRenderBackend()->CreateBuffer(&localLightDataBufferDescription, nullptr, "LocalLightDataBuffer");
-            }
-            renderGraph.GetRenderBackend()->UpdateBuffer(localLightDataUploadBuffer, 0, localLightData.data(), sizeof(LocalLightShaderParameters) * localLightCount);
-
-            renderGraph.AddPass(
-                std::format("UpdateLocalLightDataBuffer (Copy, {} bytes)", localLightDataBufferSize),
-                RenderGraphPassFlags::Copy,
-                [&](RenderGraphBuilder& builder)
-                {
-                    //builder.ReadBuffer(localLightDataUploadBuffer, RenderBackendResourceState::CopySrc);
-                    //builder.WriteBuffer(localLightDataBuffer, RenderBackendResourceState::CopyDst);
-
-                    return [=](RenderBackendCommandList& commandList, const RenderGraphResourceRegistry& resourceRegistry)
-                    {
-                        commandList.CopyBuffer(
-                            localLightDataUploadBuffer,
-                            0,
-                            localLightDataBuffer,
-                            0,
-                            localLightDataBufferSize);
-
-                        // @todo Remove this
-                        RenderBackendBarrier barrier[] =
-                        {
-                            RenderBackendBarrier(localLightDataBuffer, RenderBackendBufferSubresourceRange::Whole, RenderBackendResourceState::CopyDst, RenderBackendResourceState::ShaderResource)
-                        };
-                        commandList.Barriers(barrier, 1);
-                    };
-                });
+            renderGraph.UploadBufferDeferred(localLightDataBuffer, localLightData.data(), localLightDataBufferSize, RenderGraphSourceDataLifetimeHint::OnlyValidNow);
         }
 
-        currentPerFrameDataBufferIndex++;
+        renderGraph.ExportBufferDeferred(localLightDataBuffer, &persistentLocalLightDataBuffer);
     }
 
     RenderScene::RenderScene(RenderBackend* renderBackend, ShaderRepository* shaderRepository)
@@ -510,6 +474,8 @@ namespace Horizon
             // };
             // commandList->Barriers(barrier, 1);
         }
+
+        gpuScene->UploadLights(renderGraph);
 
         static int first = 0;
         if (first == 0)

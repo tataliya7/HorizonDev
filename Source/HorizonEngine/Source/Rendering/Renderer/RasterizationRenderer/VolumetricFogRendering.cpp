@@ -208,7 +208,8 @@ namespace Horizon
         RenderGraphTextureHandle volumetricFogLightScatteringTexture = renderGraph.CreateTexture(volumetricFogCommonTextureDescription, "VolumetricFogLightScatteringTexture");
 
         RasterizationRendererLightGridData& lightGridData = renderGraph.blackboard.Get<RasterizationRendererLightGridData>();
-        RenderBackendBufferHandle localLightDataBuffer = localLightDataBuffers[currentPerFrameDataBufferIndex];
+        GPUScene* gpuScene = view.scene->GetGPUScene();
+        RenderGraphBufferHandle localLightDataBuffer = renderGraph.ImportExternalBuffer(gpuScene->persistentLocalLightDataBuffer, "GPUSceneLocalLightDataBuffer");
 
         renderGraph.AddPass(
             std::format("VolumetricFogLightScattering (Compute, {}x{}x{})", volumetricFogTileCountX, volumetricFogTileCountY, volumetricFogDepthSliceCount),

@@ -549,9 +549,6 @@ namespace Horizon
         RenderBackendBufferHandle perFrameConstantUploadBuffers[MaxNumFramesInFlight];
         RenderBackendBufferHandle perFrameConstantBuffers[MaxNumFramesInFlight];
 
-        RenderBackendBufferHandle localLightDataUploadBuffers[MaxNumFramesInFlight];
-        RenderBackendBufferHandle localLightDataBuffers[MaxNumFramesInFlight];
-
         RenderBackendBufferHandle virtualShadowMapShaderParameterUploadBuffers[MaxNumFramesInFlight];
         RenderBackendBufferHandle virtualShadowMapShaderParameterBuffers[MaxNumFramesInFlight];
 

@@ -527,11 +527,7 @@ namespace Horizon
         RenderBackendBufferHandle materialUploadBuffer;
         RenderBackendBufferHandle materialBuffer;
 
-        // Lights
-        static const int32 MaxNumFramesInFlight = 3; // @todo
-        int32 currentPerFrameDataBufferIndex = 0; // @todo
-        RenderBackendBufferHandle localLightDataUploadBuffers[MaxNumFramesInFlight];
-        RenderBackendBufferHandle localLightDataBuffers[MaxNumFramesInFlight];
+        RenderGraphPersistentBuffer* persistentLocalLightDataBuffer;
 
         void UploadLights(RenderGraph& renderGraph);
     };

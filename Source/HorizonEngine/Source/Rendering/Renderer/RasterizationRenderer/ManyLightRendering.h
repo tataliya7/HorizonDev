@@ -4,7 +4,7 @@
 
 namespace Horizon
 {
-    struct LocalLightShaderParameters
+    struct GPUSceneLocalLightShaderParameters
     {
         Vector4f data0;
         Vector4f data1;

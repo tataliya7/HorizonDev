@@ -434,9 +434,8 @@ namespace Horizon
             skyAtmosphereTransmittanceLUT = skyAtmosphereLUTs.transmittanceLut;
         }
 
-        RenderBackendBufferHandle localLightDataBuffer = localLightDataBuffers[currentPerFrameDataBufferIndex];
-
         const GPUScene* gpuScene = sceneView->scene->GetGPUScene();
+        RenderGraphBufferHandle localLightDataBuffer = renderGraph.ImportExternalBuffer(gpuScene->persistentLocalLightDataBuffer, "GPUSceneLocalLightDataBuffer");
 
         renderGraph.AddPass(
             std::format("DirectLighting (Graphics, {}x{})", renderResolution.width, renderResolution.height),
@@ -484,18 +483,17 @@ namespace Horizon
                     pushConstantValues.BindTextureSRV(7, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(gbuffer1));
                     pushConstantValues.BindTextureSRV(8, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(gbuffer2));
                     pushConstantValues.BindTextureSRV(9, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(skyAtmosphereTransmittanceLUT));
-                    pushConstantValues.BindBufferSRV(10, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(gpuScene->localLightDataBuffers[currentPerFrameDataBufferIndex]));
-                    pushConstantValues.BindTextureSRV(11, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(screenSpaceShadowMaskTexture));
-                    pushConstantValues.BindTextureSRV(12, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(localLightShadowMapAtlas));
-                    pushConstantValues.BindBufferSRV(13, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(view.scene->distantLightDataBuffer));
-                    pushConstantValues.BindBufferSRV(14, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(localLightDataBuffer));
-                    pushConstantValues.BindBufferSRV(15, resourceRegistry.GetBufferSRVBindlessResourceDescriptorIndex(lightGridCellDataBuffer));
-                    pushConstantValues.BindBufferSRV(16, resourceRegistry.GetBufferSRVBindlessResourceDescriptorIndex(lightGridLightListBuffer));
+                    pushConstantValues.BindTextureSRV(10, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(screenSpaceShadowMaskTexture));
+                    pushConstantValues.BindTextureSRV(11, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(localLightShadowMapAtlas));
+                    pushConstantValues.BindBufferSRV(12, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(view.scene->distantLightDataBuffer));
+                    pushConstantValues.BindBufferSRV(13, resourceRegistry.GetBufferSRVBindlessResourceDescriptorIndex(localLightDataBuffer));
+                    pushConstantValues.BindBufferSRV(14, resourceRegistry.GetBufferSRVBindlessResourceDescriptorIndex(lightGridCellDataBuffer));
+                    pushConstantValues.BindBufferSRV(15, resourceRegistry.GetBufferSRVBindlessResourceDescriptorIndex(lightGridLightListBuffer));
 
                     // TODO
-                    pushConstantValues.OverrideShaderConstantValue(17, lightGridData.lightGridInfo.lightGridSizeX);
-                    pushConstantValues.OverrideShaderConstantValue(18, lightGridData.lightGridInfo.lightGridSizeY);
-                    pushConstantValues.OverrideShaderConstantValue(19, lightGridData.lightGridInfo.lightGridSizeZ);
+                    pushConstantValues.OverrideShaderConstantValue(16, lightGridData.lightGridInfo.lightGridSizeX);
+                    pushConstantValues.OverrideShaderConstantValue(17, lightGridData.lightGridInfo.lightGridSizeY);
+                    pushConstantValues.OverrideShaderConstantValue(18, lightGridData.lightGridInfo.lightGridSizeZ);
 
                     RenderBackendGraphicsPipelineStateDescription graphicsPipelineState = {};
                     graphicsPipelineState.rasterizationState.cullMode = RenderBackendRasterizationCullMode::None;
