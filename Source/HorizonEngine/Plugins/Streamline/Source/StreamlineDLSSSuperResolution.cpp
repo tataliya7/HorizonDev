@@ -130,7 +130,7 @@ namespace Horizon
         uint32 renderWidth = dlssOptimalSettings.optimalRenderWidth;
         uint32 renderHeight = dlssOptimalSettings.optimalRenderHeight;
 
-        float upscaleRatio = float(targetWidth) / float(renderWidth);
+        float upscaleRatio = static_cast<float>(targetWidth) / static_cast<float>(renderWidth);
         float renderResolutionPercentage = 1.0f / upscaleRatio;
 
         TemporalSuperSamplingOptimalSettings optimalSettings =

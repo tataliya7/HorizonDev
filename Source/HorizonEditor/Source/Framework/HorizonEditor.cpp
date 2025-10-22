@@ -107,7 +107,6 @@ namespace Horizon
         assetDatabase = new AssetDatabase();
 
         InitializeEngine();
-        streamlineContext = HorizonEngine::GetInstance()->streamlineContext;
 
         JobSystemInit(16);
 
