@@ -213,4 +213,3 @@ struct LightData
     int shadowMapIndex;
     int iesTextureIndex;
 };
-DECLARE_ALIASED_ARRAY_STRUCTURED_BUFFER_SRV(LightData);
