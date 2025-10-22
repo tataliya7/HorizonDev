@@ -119,6 +119,8 @@ namespace Horizon
                         {
                             RenderBackendPushConstantValues pushConstantValues = resourceRegistry.GetPushConstantValues();
 
+                            commandList.ClearTextureUAV(RenderBackendTextureUAVDesc(resourceRegistry.GetRenderBackendTextureHandle(outputTexture), 0), RenderBackendTextureClearValue::Black);
+
                             commandList.Dispatch(
                                 computeShader,
                                 pushConstantValues,
