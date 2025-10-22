@@ -12,7 +12,7 @@ namespace Horizon
        RenderGraph& renderGraph,
        const SceneView& view)
     {
-        std::vector<GPUSceneLocalLightShaderParameters> localLightData;
+        std::vector<GPUSceneLocalLightData> localLightData;
 
         const RenderScene* scene = view.scene;
         for (uint32 lightIndex = 0; lightIndex < uint32(scene->lights.size()); lightIndex++)
@@ -21,7 +21,7 @@ namespace Horizon
 
             if (lightRenderObject->IsLocalLight())
             {
-                GPUSceneLocalLightShaderParameters& localLightShaderParameters = localLightData.emplace_back();
+                GPUSceneLocalLightData& localLightShaderParameters = localLightData.emplace_back();
             }
         }
 

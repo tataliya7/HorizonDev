@@ -19,7 +19,7 @@ namespace Horizon
         IncompatiblePlatform,
         DriverOutOfDate,
         OperatingSystemOutOfDate,
-        HardewareSchedulingDisabled,
+        HardwareSchedulingDisabled,
         IncompatibleAPICaptureTool,
         UnknownError,
     };
@@ -123,30 +123,5 @@ namespace Horizon
         float StreamlineGetReflexGameToRenderLatencyInMiliseconds();
     private:
         void UpdateReflexOptionsIfChanged(const sl::ReflexOptions& reflexOptions);
-    };
-
-    struct FidelityFXSuperResolution2Constants
-    {
-        Matrix4x4 viewToClipMatrix;
-        Matrix4x4 clipToViewMatrix;
-        Matrix4x4 clipToPreviousClipMatrix;
-        Matrix4x4 previousClipToClipMatrix;
-        float jitterOffsetX;
-        float jitterOffsetY;
-        float motionVectorScaleX;
-        float motionVectorScaleY;
-        Vector3 cameraPosition;
-        Vector3 cameraUpVector;
-        Vector3 cameraRightVector;
-        Vector3 cameraForwardVector;
-        float cameraFarClippingPlane;
-        float cameraNearClippingPlane;
-        float cameraFovAngleVertical;
-        float cameraAspectRatio;
-        bool reset;
-        uint32 renderWidth;
-        uint32 renderHeight;
-        float deltaTime;
-        float preExposure;
     };
 }

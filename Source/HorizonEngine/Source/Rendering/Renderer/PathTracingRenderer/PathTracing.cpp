@@ -74,6 +74,10 @@ namespace Horizon
                 });
         }
 
+        RenderGraphBufferHandle geometryDataBuffer = renderGraph.ImportExternalBuffer(gpuScene->persistentGeometryDataBuffer);
+        RenderGraphBufferHandle geometryInstanceDataBuffer = renderGraph.ImportExternalBuffer(gpuScene->persistentGeometryInstanceDataBuffer);
+        RenderGraphBufferHandle distantLightDataBuffer = renderGraph.ImportExternalBuffer(gpuScene->persistentDistantLightDataBuffer);
+
         renderGraph.AddPass(
             std::format("PathTracing (RayTracing, {}x{})", renderResolution.width, renderResolution.height),
             RenderGraphPassFlags::RayTracing,
@@ -94,10 +98,10 @@ namespace Horizon
 
                     RenderBackendPushConstantValues pushConstantValues = {};
                     pushConstantValues.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(currentPerFrameConstantBuffer));
-                    pushConstantValues.BindBufferSRV(1, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(gpuScene->geometryDataBuffer));
-                    pushConstantValues.BindBufferSRV(2, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(gpuScene->geometryInstanceDataBuffer));
+                    pushConstantValues.BindBufferSRV(1, resourceRegistry.GetBufferSRVBindlessResourceDescriptorIndex(geometryDataBuffer));
+                    pushConstantValues.BindBufferSRV(2, resourceRegistry.GetBufferSRVBindlessResourceDescriptorIndex(geometryInstanceDataBuffer));
                     pushConstantValues.BindAccelerationStructure(3, renderBackend->GetAccelerationStructureSRVBindlessResourceDescriptorIndex(rayTracingScene->GetRayTracingTLAS()));
-                    pushConstantValues.BindBufferSRV(4, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(view.scene->distantLightDataBuffer));
+                    pushConstantValues.BindBufferSRV(4, resourceRegistry.GetBufferSRVBindlessResourceDescriptorIndex(distantLightDataBuffer));
                     pushConstantValues.BindTextureUAV(5, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(environmentMapTexture));
                     pushConstantValues.BindTextureUAV(6, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndex(colorTexture, 0));
                     pushConstantValues.BindTextureUAV(7, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndex(depthTexture, 0));

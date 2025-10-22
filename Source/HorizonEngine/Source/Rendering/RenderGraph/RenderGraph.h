@@ -118,13 +118,13 @@ namespace Horizon
          * Import an external texture to be accessed by the render graph.
          * @note The external texture's state must be RenderBackendResourceState::ShaderResource.
          */
-        RenderGraphTextureHandle ImportExternalTexture(RenderGraphPersistentTexture* externalTexture, char const* name);
+        RenderGraphTextureHandle ImportExternalTexture(RenderGraphPersistentTexture* externalTexture, const char* name = nullptr);
 
         /**
          * Import an external buffer to be accessed by the render graph.
          * @note The external buffer's state must be RenderBackendResourceState::ShaderResource.
          */
-        RenderGraphBufferHandle ImportExternalBuffer(RenderGraphPersistentBuffer* externalBuffer, char const* name);
+        RenderGraphBufferHandle ImportExternalBuffer(RenderGraphPersistentBuffer* externalBuffer, const char* name = nullptr);
 
         void ExportTextureDeferred(RenderGraphTextureHandle handle, RenderGraphPersistentTexture** persistentTexture);
 

@@ -80,13 +80,6 @@ namespace Horizon
         uint32 offset;
     };
 
-    struct DistantLightShaderParameters
-    {
-        Vector3f direction;
-        Vector3f tangent;
-        Vector3f color;
-    };
-
     struct DistantLightRenderData
     {
         CascadedShadowMapRenderData* cascadedShadowMapRenderData;

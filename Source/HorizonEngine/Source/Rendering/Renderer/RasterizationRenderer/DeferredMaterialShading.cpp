@@ -12,42 +12,41 @@ namespace Horizon
 
     void RasterizationRenderer::DispatchOpaqueGeometryPassDrawCommands(RenderBackendCommandList& commandList)
     {
-        const GeometryPassDrawCommandList& drawCommandList = geometryPassDrawCommandLists[uint32(GeometryPassType::Opaque)];
-        const GPUScene* gpuScene = sceneView->scene->GetGPUScene();//drawCommandList.setupJobData.scene->GetGPUScene();
-
-        RenderBackendShaderHandle vertexShader = shaderRepository->GetShader(ShaderID::VisibilityBufferVS);
-        RenderBackendShaderHandle pixelShader = shaderRepository->GetShader(ShaderID::VisibilityBufferPS);
-
-        for (uint32 drawCommandIndex = 0; drawCommandIndex < drawCommandList.drawCommandCount; drawCommandIndex++)
-        {
-            const GeometryPassDrawCommand& drawCommand = drawCommandList.commands[drawCommandIndex];
-
-            RenderBackendGraphicsPipelineStateDescription graphicsPipelineState = {};
-            graphicsPipelineState.rasterizationState.cullMode = RenderBackendRasterizationCullMode::Back;
-            graphicsPipelineState.rasterizationState.fillMode = RenderBackendRasterizationFillMode::Solid;
-            graphicsPipelineState.depthStencilState.depthTestEnable = true;
-            graphicsPipelineState.depthStencilState.depthWriteEnable = true;
-            graphicsPipelineState.depthStencilState.depthCompareFunction = RenderBackendCompareOp::GreaterOrEqual;
-
-            commandList.SetStencilReference(drawCommand.stencilReference);
-
-            RenderBackendPushConstantValues pushConstantValues = {};
-            pushConstantValues.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
-            pushConstantValues.BindBufferSRV(1, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(gpuScene->geometryDataBuffer));
-            pushConstantValues.BindBufferSRV(2, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(gpuScene->geometryInstanceDataBuffer));
-            pushConstantValues.BindBufferSRV(3, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(gpuScene->geometryInstanceDataBuffer));
-
-            commandList.Draw(
-                vertexShader,
-                pixelShader,
-                graphicsPipelineState,
-                pushConstantValues,
-                IndexCountPerMeshlet,
-                Math::CeilDiv(drawCommand.indexCount, IndexCountPerMeshlet),
-                0,
-                0,
-                drawCommand.topology);
-        }
+        // const GeometryPassDrawCommandList& drawCommandList = geometryPassDrawCommandLists[uint32(GeometryPassType::Opaque)];
+        // const GPUScene* gpuScene = sceneView->scene->GetGPUScene();//drawCommandList.setupJobData.scene->GetGPUScene();
+        //
+        // RenderBackendShaderHandle vertexShader = shaderRepository->GetShader(ShaderID::VisibilityBufferVS);
+        // RenderBackendShaderHandle pixelShader = shaderRepository->GetShader(ShaderID::VisibilityBufferPS);
+        //
+        // for (uint32 drawCommandIndex = 0; drawCommandIndex < drawCommandList.drawCommandCount; drawCommandIndex++)
+        // {
+        //     const GeometryPassDrawCommand& drawCommand = drawCommandList.commands[drawCommandIndex];
+        //
+        //     RenderBackendGraphicsPipelineStateDescription graphicsPipelineState = {};
+        //     graphicsPipelineState.rasterizationState.cullMode = RenderBackendRasterizationCullMode::Back;
+        //     graphicsPipelineState.rasterizationState.fillMode = RenderBackendRasterizationFillMode::Solid;
+        //     graphicsPipelineState.depthStencilState.depthTestEnable = true;
+        //     graphicsPipelineState.depthStencilState.depthWriteEnable = true;
+        //     graphicsPipelineState.depthStencilState.depthCompareFunction = RenderBackendCompareOp::GreaterOrEqual;
+        //
+        //     commandList.SetStencilReference(drawCommand.stencilReference);
+        //
+        //     RenderBackendPushConstantValues pushConstantValues = {};
+        //     pushConstantValues.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
+        //     pushConstantValues.BindBufferSRV(1, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(gpuScene->geometryDataBuffer));
+        //     pushConstantValues.BindBufferSRV(2, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(gpuScene->geometryInstanceDataBuffer));
+        //
+        //     commandList.Draw(
+        //         vertexShader,
+        //         pixelShader,
+        //         graphicsPipelineState,
+        //         pushConstantValues,
+        //         IndexCountPerMeshlet,
+        //         Math::CeilDiv(drawCommand.indexCount, IndexCountPerMeshlet),
+        //         0,
+        //         0,
+        //         drawCommand.topology);
+        // }
     }
 
     void RasterizationRenderer::RenderVisibilityBuffer(
@@ -55,7 +54,9 @@ namespace Horizon
         const SceneView& view)
     {
         const GeometryPassDrawCommandList& drawCommandList = geometryPassDrawCommandLists[uint32(GeometryPassType::Opaque)];
-        const GPUScene* gpuScene = sceneView->scene->GetGPUScene();//drawCommandList.setupJobData.scene->GetGPUScene();
+        const GPUScene* gpuScene = sceneView->scene->GetGPUScene();
+        RenderGraphBufferHandle geometryDataBuffer = renderGraph.ImportExternalBuffer(gpuScene->persistentGeometryDataBuffer);
+        RenderGraphBufferHandle geometryInstanceDataBuffer = renderGraph.ImportExternalBuffer(gpuScene->persistentGeometryInstanceDataBuffer);
 
         RasterizationRendererIntermediateResources& intermediateResources = renderGraph.blackboard.Get<RasterizationRendererIntermediateResources>();
 
@@ -112,7 +113,8 @@ namespace Horizon
                 };
             });
 
-        if (gpuScene->geometryInstanceCount > 0)
+        const uint32 geometryInstanceCount = gpuScene->geometryInstanceCount;
+        if (geometryInstanceCount > 0)
         {
             renderGraph.AddPass(
                 std::format("InstanceCulling (Compute)"),
@@ -123,7 +125,7 @@ namespace Horizon
 
                     RenderBackendShaderHandle computeShader = shaderRepository->GetShader(ShaderID::VirtualGeometryInstanceCulling);
 
-                    uint32 threadGroupCountX = ComputeShaderThreadGroupCount(gpuScene->geometryInstanceCount, 64);
+                    uint32 threadGroupCountX = ComputeShaderThreadGroupCount(geometryInstanceCount, 64);
                     uint32 threadGroupCountY = 1;
                     uint32 threadGroupCountZ = 1;
 
@@ -131,10 +133,10 @@ namespace Horizon
                     {
                         RenderBackendPushConstantValues pushConstantValues = {};
                         pushConstantValues.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
-                        pushConstantValues.BindBufferSRV(1, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(gpuScene->geometryDataBuffer));
-                        pushConstantValues.BindBufferSRV(2, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(gpuScene->geometryInstanceDataBuffer));
+                        pushConstantValues.BindBufferSRV(1, resourceRegistry.GetBufferSRVBindlessResourceDescriptorIndex(geometryDataBuffer));
+                        pushConstantValues.BindBufferSRV(2, resourceRegistry.GetBufferSRVBindlessResourceDescriptorIndex(geometryInstanceDataBuffer));
                         pushConstantValues.BindBufferUAV(3, resourceRegistry.GetBufferUAVBindlessResourceDescriptorIndex(meshletCullingArgumentBuffer));
-                        pushConstantValues.OverrideShaderConstantValue(4, gpuScene->geometryInstanceCount);
+                        pushConstantValues.OverrideShaderConstantValue(4, geometryInstanceCount);
 
                         commandList.Dispatch(
                             computeShader,
@@ -157,8 +159,8 @@ namespace Horizon
                 meshletCullingArgumentBuffer = builder.ReadBuffer(meshletCullingArgumentBuffer, RenderBackendResourceState::IndirectArgument);
 
                 builder.SetBindlessResourceSRV(0, GetCurrentPerFrameConstantBuffer());
-                builder.SetBindlessResourceSRV(1, gpuScene->geometryDataBuffer);
-                builder.SetBindlessResourceSRV(2, gpuScene->geometryInstanceDataBuffer);
+                builder.SetBindlessResourceSRV(1, geometryDataBuffer);
+                builder.SetBindlessResourceSRV(2, geometryInstanceDataBuffer);
                 builder.SetBindlessResourceSRV(3, previousMinDepthPyramidTexture);
                 builder.SetBindlessResourceUAV(4, visibleMeshletBuffer);
                 builder.SetBindlessResourceUAV(5, visibleMeshletCounterBuffer);
@@ -220,8 +222,8 @@ namespace Horizon
 
                         RenderBackendPushConstantValues pushConstantValues = {};
                         pushConstantValues.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
-                        pushConstantValues.BindBufferSRV(1, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(gpuScene->geometryDataBuffer));
-                        pushConstantValues.BindBufferSRV(2, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(gpuScene->geometryInstanceDataBuffer));
+                        pushConstantValues.BindBufferSRV(1, resourceRegistry.GetBufferSRVBindlessResourceDescriptorIndex(geometryDataBuffer));
+                        pushConstantValues.BindBufferSRV(2, resourceRegistry.GetBufferSRVBindlessResourceDescriptorIndex(geometryInstanceDataBuffer));
                         pushConstantValues.BindBufferSRV(3, resourceRegistry.GetBufferSRVBindlessResourceDescriptorIndex(visibleMeshletBuffer));
 
                         commandList.DrawIndirect(
@@ -334,6 +336,8 @@ namespace Horizon
         const SceneView& view)
     {
         const GPUScene* gpuScene = sceneView->scene->GetGPUScene();
+        RenderGraphBufferHandle geometryDataBuffer = renderGraph.ImportExternalBuffer(gpuScene->persistentGeometryDataBuffer);
+        RenderGraphBufferHandle geometryInstanceDataBuffer = renderGraph.ImportExternalBuffer(gpuScene->persistentGeometryInstanceDataBuffer);
 
         renderGraph.AddPass(
             std::format("GBuffer (Compute, {}x{})", renderResolution.width, renderResolution.height),
@@ -355,8 +359,8 @@ namespace Horizon
                 {
                     RenderBackendPushConstantValues pushConstantValues = {};
                     pushConstantValues.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
-                    pushConstantValues.BindBufferSRV(1, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(gpuScene->geometryDataBuffer));
-                    pushConstantValues.BindBufferSRV(2, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(gpuScene->geometryInstanceDataBuffer));
+                    pushConstantValues.BindBufferSRV(1, resourceRegistry.GetBufferSRVBindlessResourceDescriptorIndex(geometryDataBuffer));
+                    pushConstantValues.BindBufferSRV(2, resourceRegistry.GetBufferSRVBindlessResourceDescriptorIndex(geometryInstanceDataBuffer));
                     pushConstantValues.BindBufferSRV(3, resourceRegistry.GetBufferSRVBindlessResourceDescriptorIndex(visibleMeshletBuffer));
                     pushConstantValues.BindTextureSRV(4, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(vbuffer0));
                     pushConstantValues.BindTextureSRV(5, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(vbuffer1));
@@ -385,6 +389,8 @@ namespace Horizon
         const SceneView& view)
     {
         const GPUScene* gpuScene = sceneView->scene->GetGPUScene();
+        RenderGraphBufferHandle geometryDataBuffer = renderGraph.ImportExternalBuffer(gpuScene->persistentGeometryDataBuffer);
+        RenderGraphBufferHandle geometryInstanceDataBuffer = renderGraph.ImportExternalBuffer(gpuScene->persistentGeometryInstanceDataBuffer);
 
         RasterizationRendererIntermediateResources& intermediateResources = renderGraph.blackboard.Get<RasterizationRendererIntermediateResources>();
 
@@ -394,8 +400,8 @@ namespace Horizon
             [&](RenderGraphBuilder& builder)
             {
                 builder.SetBindlessResourceSRV(0, GetCurrentPerFrameConstantBuffer());
-                builder.SetBindlessResourceSRV(1, gpuScene->geometryDataBuffer);
-                builder.SetBindlessResourceSRV(2, gpuScene->geometryInstanceDataBuffer);
+                builder.SetBindlessResourceSRV(1, geometryDataBuffer);
+                builder.SetBindlessResourceSRV(2, geometryInstanceDataBuffer);
                 builder.SetBindlessResourceSRV(3, intermediateResources.visibleMeshletBuffer);
                 builder.SetBindlessResourceSRV(4, intermediateResources.depthTexture);
                 builder.SetBindlessResourceSRV(5, intermediateResources.vbuffer0);
@@ -435,7 +441,10 @@ namespace Horizon
         }
 
         const GPUScene* gpuScene = sceneView->scene->GetGPUScene();
-        RenderGraphBufferHandle localLightDataBuffer = renderGraph.ImportExternalBuffer(gpuScene->persistentLocalLightDataBuffer, "GPUSceneLocalLightDataBuffer");
+        RenderGraphBufferHandle geometryDataBuffer = renderGraph.ImportExternalBuffer(gpuScene->persistentGeometryDataBuffer);
+        RenderGraphBufferHandle geometryInstanceDataBuffer = renderGraph.ImportExternalBuffer(gpuScene->persistentGeometryInstanceDataBuffer);
+        RenderGraphBufferHandle distantLightDataBuffer = renderGraph.ImportExternalBuffer(gpuScene->persistentDistantLightDataBuffer);
+        RenderGraphBufferHandle localLightDataBuffer = renderGraph.ImportExternalBuffer(gpuScene->persistentLocalLightDataBuffer);
 
         renderGraph.AddPass(
             std::format("DirectLighting (Graphics, {}x{})", renderResolution.width, renderResolution.height),
@@ -474,8 +483,8 @@ namespace Horizon
                 {
                     RenderBackendPushConstantValues pushConstantValues = {};
                     pushConstantValues.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
-                    pushConstantValues.BindBufferSRV(1, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(gpuScene->geometryDataBuffer));  // TODO: fix crash when geometryBuffer is null
-                    pushConstantValues.BindBufferSRV(2, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(gpuScene->geometryInstanceDataBuffer));
+                    pushConstantValues.BindBufferSRV(1, resourceRegistry.GetBufferSRVBindlessResourceDescriptorIndex(geometryDataBuffer));  // TODO: fix crash when geometryBuffer is null
+                    pushConstantValues.BindBufferSRV(2, resourceRegistry.GetBufferSRVBindlessResourceDescriptorIndex(geometryInstanceDataBuffer));
                     pushConstantValues.BindTextureSRV(3, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(sceneDepthTexture));
                     pushConstantValues.BindTextureSRV(4, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(vbuffer0));
                     pushConstantValues.BindTextureSRV(5, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(vbuffer1));
@@ -485,7 +494,7 @@ namespace Horizon
                     pushConstantValues.BindTextureSRV(9, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(skyAtmosphereTransmittanceLUT));
                     pushConstantValues.BindTextureSRV(10, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(screenSpaceShadowMaskTexture));
                     pushConstantValues.BindTextureSRV(11, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(localLightShadowMapAtlas));
-                    pushConstantValues.BindBufferSRV(12, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(view.scene->distantLightDataBuffer));
+                    pushConstantValues.BindBufferSRV(12, resourceRegistry.GetBufferSRVBindlessResourceDescriptorIndex(distantLightDataBuffer));
                     pushConstantValues.BindBufferSRV(13, resourceRegistry.GetBufferSRVBindlessResourceDescriptorIndex(localLightDataBuffer));
                     pushConstantValues.BindBufferSRV(14, resourceRegistry.GetBufferSRVBindlessResourceDescriptorIndex(lightGridCellDataBuffer));
                     pushConstantValues.BindBufferSRV(15, resourceRegistry.GetBufferSRVBindlessResourceDescriptorIndex(lightGridLightListBuffer));
@@ -653,6 +662,8 @@ namespace Horizon
         const SceneView& view)
     {
         const GPUScene* gpuScene = sceneView->scene->GetGPUScene();
+        RenderGraphBufferHandle geometryDataBuffer = renderGraph.ImportExternalBuffer(gpuScene->persistentGeometryDataBuffer);
+        RenderGraphBufferHandle geometryInstanceDataBuffer = renderGraph.ImportExternalBuffer(gpuScene->persistentGeometryInstanceDataBuffer);
 
         const RasterizationRendererIntermediateResources& intermediateResources = renderGraph.blackboard.Get<RasterizationRendererIntermediateResources>();
 
@@ -690,8 +701,8 @@ namespace Horizon
 
                     RenderBackendPushConstantValues pushConstantValues = {};
                     pushConstantValues.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
-                    pushConstantValues.BindBufferSRV(1, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(gpuScene->geometryDataBuffer));
-                    pushConstantValues.BindBufferSRV(2, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(gpuScene->geometryInstanceDataBuffer));
+                    pushConstantValues.BindBufferSRV(1, resourceRegistry.GetBufferSRVBindlessResourceDescriptorIndex(geometryDataBuffer));
+                    pushConstantValues.BindBufferSRV(2, resourceRegistry.GetBufferSRVBindlessResourceDescriptorIndex(geometryInstanceDataBuffer));
                     pushConstantValues.BindBufferSRV(3, resourceRegistry.GetBufferSRVBindlessResourceDescriptorIndex(visibleMeshletBuffer));
                     pushConstantValues.BindTextureSRV(4, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(vbuffer0));
                     pushConstantValues.BindTextureUAV(5, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndex(outputTexture, 0));

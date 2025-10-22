@@ -82,47 +82,146 @@ namespace Horizon
 
     }
 
-    static void SetupGPUSceneLocalLightShaderParameters(GPUSceneLocalLightShaderParameters& parameters, const LightRenderObject& light)
+    static void SetupGPUSceneGeometryData(GPUSceneGeometryData& geometryData, const MeshRenderObject& mesh)
     {
-        parameters.data0 = Vector4f(light.position, light.radius);
-        parameters.data1 = Vector4f(light.direction, 0.0f);
-        parameters.data2 = Vector4f(light.tangent, 0.0f);
-        parameters.data3 = Vector4f(light.color, 0.0f);
-        parameters.data4 = Vector4f(0.0f);
+        auto renderBackend = mesh.renderScene->renderBackend;
+
+        geometryData.vertexBuffer0 = renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(mesh.vertexBuffers[0]);
+        geometryData.vertexBuffer1 = renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(mesh.vertexBuffers[1]);
+        geometryData.vertexBuffer2 = renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(mesh.vertexBuffers[2]);
+        geometryData.vertexBuffer3 = renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(mesh.vertexBuffers[3]);
+        geometryData.vertexBuffer = renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(mesh.vertexBuffer);
+        geometryData.indexBuffer = renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(mesh.indexBuffer);
+        geometryData.meshletBuffer = renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(mesh.meshletBuffer);
+        geometryData.meshletGroupBuffer = renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(mesh.meshletGroupBuffer);
+        geometryData.meshletVertexBuffer = renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(mesh.meshletVertexBuffer);
+        geometryData.meshletTriangleBuffer = renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(mesh.meshletTriangleBuffer);
+        geometryData.materialBuffer = renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(mesh.materialBuffer);
+        geometryData.materialIndexBuffer = renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(mesh.materialIndexBuffer);
+        geometryData.jointIndexBuffer = mesh.jointIndexBuffer ? renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(mesh.jointIndexBuffer) : -1;
+        geometryData.jointWeightBuffer = mesh.jointWeightBuffer ? renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(mesh.jointWeightBuffer) : -1;
+        geometryData.jointTransformBuffer = mesh.jointTransformBuffer ? renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(mesh.jointTransformBuffer) : -1;
+        geometryData.previousJointTransformBuffer = mesh.previousJointTransformBuffer ? renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(mesh.previousJointTransformBuffer) : -1;
+        geometryData.vertexCount = mesh.vertexCount;
+        geometryData.indexCount = mesh.indexCount;
+        //geometryData.boundsMin = mesh.boundsMin;
+        //geometryData.boundsMax = mesh.boundsMax;
+        geometryData.meshletCount = mesh.meshletCount;
+        geometryData.meshletGroupCount = mesh.meshletGroupCount;
+        geometryData.relevantJointCountPerVertex = mesh.relevantJointCountPerVertex;
+        geometryData.flags = 0;
+        if (mesh.UseGPUSkinning())
+        {
+            geometryData.flags |= GPU_SCENE_GEOMETRY_DATA_FLAG_USE_GPU_SKINNING;
+        }
+    }
+
+    static void SetupGPUSceneDistantLightData(GPUSceneDistantLightData& distanceLightData, const LightRenderObject& light)
+    {
+        distanceLightData.direction = light.direction;
+        distanceLightData.tangent = light.tangent;
+        distanceLightData.color = light.color;
+    }
+
+    static void SetupGPUSceneLocalLightData(GPUSceneLocalLightData& localLightData, const LightRenderObject& light)
+    {
+        localLightData.data0 = Vector4f(light.position, light.radius);
+        localLightData.data1 = Vector4f(light.direction, 0.0f);
+        localLightData.data2 = Vector4f(light.tangent, 0.0f);
+        localLightData.data3 = Vector4f(light.color, 0.0f);
+        localLightData.data4 = Vector4f(0.0f);
+    }
+
+    void GPUScene::UploadGeometries(RenderGraph& renderGraph)
+    {
+        std::vector<GPUSceneGeometryData> geometryDataToUpload;
+        std::vector<GPUSceneGeometryInstanceData> geometryInstanceDataToUpload;
+
+        // @todo
+        geometryCount = static_cast<uint32>(renderScene->meshes.size());
+        geometryInstanceCount = static_cast<uint32>(renderScene->meshes.size());
+        for (uint32 index = 0; index < geometryCount; index++)
+        {
+            const uint32 geometryID = index;
+            const MeshRenderObject& mesh = *renderScene->meshes[index];
+
+            GPUSceneGeometryData& geometryData = geometryDataToUpload.emplace_back();
+            SetupGPUSceneGeometryData(geometryData, mesh);
+
+            GPUSceneGeometryInstanceData& geometryInstanceData = geometryInstanceDataToUpload.emplace_back();
+            geometryInstanceData.localToWorldMatrix = mesh.localToWorldMatrix;
+            geometryInstanceData.worldToLocalMatrix = mesh.worldToLocalMatrix;
+            geometryInstanceData.previousLocalToWorldMatrix = mesh.localToWorldMatrix;
+            geometryInstanceData.previousWorldToLocalMatrix = mesh.worldToLocalMatrix;
+            geometryInstanceData.geometryID = geometryID;
+        }
+
+        uint32 geometryDataBufferElementCount = std::max(1u, geometryCount);
+        uint64 geometryDataBufferSize = geometryDataBufferElementCount * sizeof(GPUSceneGeometryData);
+        RenderGraphBufferDescription geometryDataBufferDescription = RenderGraphBufferDescription::CreateByteAddress(sizeof(GPUSceneGeometryData) * geometryDataBufferElementCount);
+        RenderGraphBufferHandle geometryDataBuffer = renderGraph.CreateBuffer(geometryDataBufferDescription, "GPUSceneGeometryDataBuffer");
+        if (geometryCount > 0)
+        {
+            renderGraph.UploadBufferDeferred(geometryDataBuffer, geometryDataToUpload.data(), geometryDataBufferSize, RenderGraphSourceDataLifetimeHint::OnlyValidNow);
+        }
+        renderGraph.ExportBufferDeferred(geometryDataBuffer, &persistentGeometryDataBuffer);
+
+        uint32 geometryInstanceDataBufferElementCount = std::max(1u, geometryInstanceCount);
+        uint64 geometryInstanceDataBufferSize = geometryInstanceDataBufferElementCount * sizeof(GPUSceneGeometryInstanceData);
+        RenderGraphBufferDescription geometryInstanceDataBufferDescription = RenderGraphBufferDescription::CreateByteAddress(sizeof(GPUSceneGeometryInstanceData) * geometryInstanceDataBufferElementCount);
+        RenderGraphBufferHandle geometryInstanceDataBuffer = renderGraph.CreateBuffer(geometryInstanceDataBufferDescription, "GPUSceneGeometryInstanceDataBuffer");
+        if (geometryInstanceCount > 0)
+        {
+            renderGraph.UploadBufferDeferred(geometryInstanceDataBuffer, geometryInstanceDataToUpload.data(), geometryInstanceDataBufferSize, RenderGraphSourceDataLifetimeHint::OnlyValidNow);
+        }
+        renderGraph.ExportBufferDeferred(geometryInstanceDataBuffer, &persistentGeometryInstanceDataBuffer);
     }
 
     void GPUScene::UploadLights(RenderGraph& renderGraph)
     {
-        uint32 localLightCount = 0;
-        std::vector<GPUSceneLocalLightShaderParameters> localLightData;
+        distantLightCount = 0;
+        std::vector<GPUSceneDistantLightData> distantLightDataToUpload;
+
+        localLightCount = 0;
+        std::vector<GPUSceneLocalLightData> localLightDataToUpload;
 
         uint32 lightCount = static_cast<uint32>(renderScene->lights.size());
-        for (uint32 i = 0; i < lightCount; ++i)
+        for (uint32 i = 0; i < lightCount; i++)
         {
-            LightRenderObject* light = renderScene->lights[i];
+            const LightRenderObject& light = *renderScene->lights[i];
 
-            if (light->IsDistantLight())
+            if (light.IsDistantLight())
             {
-
+                GPUSceneDistantLightData& distantLightData = distantLightDataToUpload.emplace_back();
+                SetupGPUSceneDistantLightData(distantLightData, light);
+                distantLightCount++;
             }
-            else if (light->IsLocalLight())
+            else if (light.IsLocalLight())
             {
-                GPUSceneLocalLightShaderParameters& localLightShaderParameters = localLightData.emplace_back();
-                SetupGPUSceneLocalLightShaderParameters(localLightShaderParameters, *light);
+                GPUSceneLocalLightData& localLightData = localLightDataToUpload.emplace_back();
+                SetupGPUSceneLocalLightData(localLightData, light);
                 localLightCount++;
             }
         }
 
-        uint32 localLightDataBufferElementCount = std::max(1u, localLightCount);
-        uint64 localLightDataBufferSize = localLightDataBufferElementCount * sizeof(GPUSceneLocalLightShaderParameters);
-        RenderGraphBufferDescription localLightDataBufferDescription = RenderGraphBufferDescription::CreateStructured(sizeof(GPUSceneLocalLightShaderParameters), localLightDataBufferElementCount);
-        RenderGraphBufferHandle localLightDataBuffer = renderGraph.CreateBuffer(localLightDataBufferDescription, "GPUSceneLocalLightDataBuffer");
+        uint32 distantLightDataBufferElementCount = std::max(1u, distantLightCount);
+        uint64 distantLightDataBufferSize = distantLightDataBufferElementCount * sizeof(GPUSceneDistantLightData);
+        RenderGraphBufferDescription distantLightDataBufferDescription = RenderGraphBufferDescription::CreateStructured(sizeof(GPUSceneDistantLightData), distantLightDataBufferElementCount);
+        RenderGraphBufferHandle distantLightDataBuffer = renderGraph.CreateBuffer(distantLightDataBufferDescription, "GPUSceneDistantLightDataBuffer");
+        if (distantLightCount > 0)
+        {
+            renderGraph.UploadBufferDeferred(distantLightDataBuffer, distantLightDataToUpload.data(), distantLightDataBufferSize, RenderGraphSourceDataLifetimeHint::OnlyValidNow);
+        }
+        renderGraph.ExportBufferDeferred(distantLightDataBuffer, &persistentDistantLightDataBuffer);
 
+        uint32 localLightDataBufferElementCount = std::max(1u, localLightCount);
+        uint64 localLightDataBufferSize = localLightDataBufferElementCount * sizeof(GPUSceneLocalLightData);
+        RenderGraphBufferDescription localLightDataBufferDescription = RenderGraphBufferDescription::CreateStructured(sizeof(GPUSceneLocalLightData), localLightDataBufferElementCount);
+        RenderGraphBufferHandle localLightDataBuffer = renderGraph.CreateBuffer(localLightDataBufferDescription, "GPUSceneLocalLightDataBuffer");
         if (localLightCount > 0)
         {
-            renderGraph.UploadBufferDeferred(localLightDataBuffer, localLightData.data(), localLightDataBufferSize, RenderGraphSourceDataLifetimeHint::OnlyValidNow);
+            renderGraph.UploadBufferDeferred(localLightDataBuffer, localLightDataToUpload.data(), localLightDataBufferSize, RenderGraphSourceDataLifetimeHint::OnlyValidNow);
         }
-
         renderGraph.ExportBufferDeferred(localLightDataBuffer, &persistentLocalLightDataBuffer);
     }
 
@@ -304,7 +403,7 @@ namespace Horizon
         }
     }
 
-    void SetupDistantLightShaderParameters(DistantLightShaderParameters& outParameters, const LightRenderObject* light)
+    void SetupDistantLightShaderParameters(GPUSceneDistantLightData& outParameters, const LightRenderObject* light)
     {
         if (light)
         {
@@ -322,158 +421,7 @@ namespace Horizon
 
     void RenderScene::UpdateGPUScene(RenderGraph& renderGraph, RenderBackendCommandList* commandList)
     {
-        gpuScene->geometryData.clear();
-        gpuScene->geometryInstanceData.clear();
-
-        uint32 geometryCount = uint32(meshes.size());
-        for (uint32 index  = 0; index < meshes.size(); index++)
-        {
-            uint32 geometryID = index;
-            MeshRenderObject* mesh = meshes[index];
-
-            GPUSceneGeometryData geometry;
-            geometry.vertexBuffer0 = renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(mesh->vertexBuffers[0]);
-            geometry.vertexBuffer1 = renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(mesh->vertexBuffers[1]);
-            geometry.vertexBuffer2 = renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(mesh->vertexBuffers[2]);
-            geometry.vertexBuffer3 = renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(mesh->vertexBuffers[3]);
-            geometry.vertexBuffer = renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(mesh->vertexBuffer);
-            geometry.previousVertexBuffer0 = -1;
-            geometry.indexBuffer = renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(mesh->indexBuffer);
-            geometry.meshletBuffer = renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(mesh->meshletBuffer);
-            geometry.meshletGroupBuffer = renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(mesh->meshletGroupBuffer);
-            geometry.meshletVertexBuffer = renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(mesh->meshletVertexBuffer);
-            geometry.meshletTriangleBuffer = renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(mesh->meshletTriangleBuffer);
-            geometry.materialBuffer = renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(mesh->materialBuffer);
-            geometry.materialIndexBuffer = renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(mesh->materialIndexBuffer);
-            geometry.jointIndexBuffer = mesh->jointIndexBuffer ? renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(mesh->jointIndexBuffer) : -1;
-            geometry.jointWeightBuffer = mesh->jointWeightBuffer ? renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(mesh->jointWeightBuffer) : -1;
-            geometry.jointTransformBuffer = mesh->jointTransformBuffer ? renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(mesh->jointTransformBuffer) : -1;
-            geometry.previousJointTransformBuffer = mesh->previousJointTransformBuffer ? renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(mesh->previousJointTransformBuffer) : -1;
-            geometry.vertexCount = mesh->vertexCount;
-            geometry.indexCount = mesh->indexCount;
-            //geometry.boundsMin = mesh.boundsMin;
-            //geometry.boundsMax = mesh.boundsMax;
-            geometry.meshletCount = mesh->meshletCount;
-            geometry.meshletGroupCount = mesh->meshletGroupCount;
-            geometry.relevantJointCountPerVertex = mesh->relevantJointCountPerVertex;
-            geometry.flags = 0;
-            if (mesh->UseGPUSkinning())
-            {
-                geometry.flags |= GPU_SCENE_GEOMETRY_DATA_FLAG_USE_GPU_SKINNING;
-            }
-            gpuScene->geometryData.emplace_back(geometry);
-
-            // TODO
-            GPUSceneGeometryInstanceData geometryInstance;
-            geometryInstance.localToWorldMatrix = mesh->localToWorldMatrix;
-            geometryInstance.worldToLocalMatrix = mesh->worldToLocalMatrix;
-            geometryInstance.previousLocalToWorldMatrix = geometryInstance.localToWorldMatrix;
-            geometryInstance.previousWorldToLocalMatrix = geometryInstance.worldToLocalMatrix;
-            geometryInstance.geometryID = geometryID;
-            gpuScene->geometryInstanceData.emplace_back(geometryInstance);
-        }
-
-        uint32 newGeometryDataBufferSize = geometryCount * sizeof(GPUSceneGeometryData);
-        if (gpuScene->geometryDataBuffer == RenderBackendBufferHandle::Null && newGeometryDataBufferSize > 0)
-        {
-            RenderBackendBufferDescription geometryUploadBufferDesc = RenderBackendBufferDescription::CreateUpload(newGeometryDataBufferSize);
-            gpuScene->geometryDataUploadBuffer = renderBackend->CreateBuffer(&geometryUploadBufferDesc, nullptr, "GeometryDataUploadBuffer");
-            RenderBackendBufferDescription geometryBufferDesc = RenderBackendBufferDescription::CreateByteAddress(newGeometryDataBufferSize);
-            gpuScene->geometryDataBuffer = renderBackend->CreateBuffer(&geometryBufferDesc, nullptr, "GeometryDataBuffer");
-            gpuScene->geometryDataBufferSize = newGeometryDataBufferSize;
-        }
-        else if (gpuScene->geometryDataBufferSize < newGeometryDataBufferSize)
-        {
-            renderBackend->ResizeBuffer(gpuScene->geometryDataUploadBuffer, newGeometryDataBufferSize);
-            renderBackend->ResizeBuffer(gpuScene->geometryDataBuffer, newGeometryDataBufferSize);
-            gpuScene->geometryDataBufferSize = newGeometryDataBufferSize;
-        }
-
-        if (gpuScene->geometryDataBuffer && geometryCount > 0)
-        {
-            renderBackend->UpdateBuffer(gpuScene->geometryDataUploadBuffer, 0, gpuScene->geometryData.data(), gpuScene->geometryDataBufferSize);
-
-            // {
-            //     RenderBackendBarrier barrier[] =
-            //     {
-            //         RenderBackendBarrier(gpuScene->geometryDataBuffer, RenderBackendBufferSubresourceRange::Whole, RenderBackendResourceState::Undefined, RenderBackendResourceState::CopyDst)
-            //     };
-            //     commandList->Barriers(barrier, 1);
-            // }
-            commandList->CopyBuffer(
-                gpuScene->geometryDataUploadBuffer,
-                0,
-                gpuScene->geometryDataBuffer,
-                0,
-                gpuScene->geometryDataBufferSize);
-            // {
-            //     RenderBackendBarrier barrier[] =
-            //     {
-            //         RenderBackendBarrier(gpuScene->geometryDataBuffer, RenderBackendBufferSubresourceRange::Whole, RenderBackendResourceState::CopyDst, RenderBackendResourceState::ShaderResource)
-            //     };
-            //     commandList->Barriers(barrier, 1);
-            // }
-        }
-
-        uint32 geometryInstanceCount = geometryCount;
-        uint32 newGeometryInstanceDataBufferSize = geometryInstanceCount * sizeof(GPUSceneGeometryInstanceData);
-        if (gpuScene->geometryInstanceDataBuffer == RenderBackendBufferHandle::Null && newGeometryInstanceDataBufferSize > 0)
-        {
-            RenderBackendBufferDescription geometryInstanceUploadBufferDesc = RenderBackendBufferDescription::CreateUpload(newGeometryInstanceDataBufferSize);
-            gpuScene->geometryInstanceDataUploadBuffer = renderBackend->CreateBuffer(&geometryInstanceUploadBufferDesc, nullptr, "GeometryInstanceDataUploadBuffer");
-            RenderBackendBufferDescription geometryInstanceBufferDesc = RenderBackendBufferDescription::CreateByteAddress(newGeometryInstanceDataBufferSize);
-            gpuScene->geometryInstanceDataBuffer = renderBackend->CreateBuffer(&geometryInstanceBufferDesc, nullptr, "GeometryInstanceDataBuffer");
-            gpuScene->geometryInstanceDataBufferSize = newGeometryInstanceDataBufferSize;
-        }
-        else if (gpuScene->geometryInstanceDataBufferSize < newGeometryInstanceDataBufferSize)
-        {
-            renderBackend->ResizeBuffer(gpuScene->geometryInstanceDataUploadBuffer, newGeometryInstanceDataBufferSize);
-            renderBackend->ResizeBuffer(gpuScene->geometryInstanceDataBuffer, newGeometryInstanceDataBufferSize);
-            gpuScene->geometryInstanceDataBufferSize = newGeometryInstanceDataBufferSize;
-        }
-
-        gpuScene->geometryInstanceCount = geometryInstanceCount;
-
-        if (gpuScene->geometryInstanceDataBuffer && geometryInstanceCount > 0)
-        {
-            renderBackend->UpdateBuffer(gpuScene->geometryInstanceDataUploadBuffer, 0, gpuScene->geometryInstanceData.data(), gpuScene->geometryInstanceDataBufferSize);
-            commandList->CopyBuffer(
-                gpuScene->geometryInstanceDataUploadBuffer,
-                0,
-                gpuScene->geometryInstanceDataBuffer,
-                0,
-                gpuScene->geometryInstanceDataBufferSize);
-            // RenderBackendBarrier barrier[] =
-            // {
-            //     RenderBackendBarrier(gpuScene->geometryInstanceDataBuffer, RenderBackendBufferSubresourceRange::Whole, RenderBackendResourceState::CopyDst, RenderBackendResourceState::ShaderResource)
-            // };
-            // commandList->Barriers(barrier, 1);
-        }
-
-        DistantLightShaderParameters distantLightShaderParameters;
-        SetupDistantLightShaderParameters(distantLightShaderParameters, atmosphericLight);
-
-        if (!distantLightDataBuffer)
-        {
-            RenderBackendBufferDescription distantLightDataUploadBufferDesc = RenderBackendBufferDescription::CreateUpload(sizeof(DistantLightShaderParameters));
-            distantLightDataUploadBuffer = renderBackend->CreateBuffer(&distantLightDataUploadBufferDesc, nullptr, "DistantLightDataUploadBuffer");
-            RenderBackendBufferDescription distantLightDataBufferDesc = RenderBackendBufferDescription::CreateStructured(sizeof(DistantLightShaderParameters), 1);
-            distantLightDataBuffer = renderBackend->CreateBuffer(&distantLightDataBufferDesc, nullptr, "DistantLightDataBuffer");
-        }
-        {
-            renderBackend->UpdateBuffer(distantLightDataUploadBuffer, 0, &distantLightShaderParameters, sizeof(DistantLightShaderParameters));
-            commandList->CopyBuffer(
-                distantLightDataUploadBuffer,
-                0,
-                distantLightDataBuffer,
-                0,
-                sizeof(DistantLightShaderParameters));
-            // RenderBackendBarrier barrier[] =
-            // {
-            //     RenderBackendBarrier(distantLightDataBuffer, RenderBackendBufferSubresourceRange::Whole, RenderBackendResourceState::CopyDst, RenderBackendResourceState::ShaderResource)
-            // };
-            // commandList->Barriers(barrier, 1);
-        }
+        gpuScene->UploadGeometries(renderGraph);
 
         gpuScene->UploadLights(renderGraph);
 

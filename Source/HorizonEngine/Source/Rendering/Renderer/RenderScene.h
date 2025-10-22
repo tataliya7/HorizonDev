@@ -110,6 +110,8 @@ namespace Horizon
 
         bool useGPUSkinning = false;
 
+        RenderScene* renderScene;
+
         Matrix4x4f localToWorldMatrix;
         Matrix4x4f worldToLocalMatrix;
 
@@ -478,6 +480,22 @@ namespace Horizon
         uint32 meshletID;
     };
 
+    struct GPUSceneDistantLightData
+    {
+        Vector3f direction;
+        Vector3f tangent;
+        Vector3f color;
+    };
+
+    struct GPUSceneLocalLightData
+    {
+        Vector4f data0;
+        Vector4f data1;
+        Vector4f data2;
+        Vector4f data3;
+        Vector4f data4;
+    };
+
     static constexpr uint32 MaximumVisibleMeshletCount = 1048576;
     static constexpr uint32 MaximumCandidateVisibleMeshletCount = 4 * 1048576;
 
@@ -505,21 +523,6 @@ namespace Horizon
 
         RenderScene* renderScene;
 
-        // Geometries
-        uint32 geometryCount = 0;
-        uint32 geometryInstanceCount = 0;
-
-        std::vector<GPUSceneGeometryData> geometryData;
-        std::vector<GPUSceneGeometryInstanceData> geometryInstanceData;
-
-        uint64 geometryDataBufferSize = 0;
-        RenderBackendBufferHandle geometryDataUploadBuffer;
-        RenderBackendBufferHandle geometryDataBuffer;
-
-        uint64 geometryInstanceDataBufferSize = 0;
-        RenderBackendBufferHandle geometryInstanceDataUploadBuffer;
-        RenderBackendBufferHandle geometryInstanceDataBuffer;
-
         // Materials
         uint32 materialCount = 0;
         uint64 materialBufferSize = 0;
@@ -527,8 +530,18 @@ namespace Horizon
         RenderBackendBufferHandle materialUploadBuffer;
         RenderBackendBufferHandle materialBuffer;
 
-        RenderGraphPersistentBuffer* persistentLocalLightDataBuffer;
+        uint32 geometryCount = 0;
+        uint32 geometryInstanceCount = 0;
+        uint32 distantLightCount = 0;
+        uint32 localLightCount = 0;
 
+        RenderGraphPersistentBuffer* persistentGeometryDataBuffer = nullptr;
+        RenderGraphPersistentBuffer* persistentGeometryInstanceDataBuffer = nullptr;
+        RenderGraphPersistentBuffer* persistentDistantLightDataBuffer = nullptr;
+        RenderGraphPersistentBuffer* persistentLocalLightDataBuffer = nullptr;
+
+        void UploadGeometries(RenderGraph& renderGraph);
+        void UploadMaterials(RenderGraph& renderGraph);
         void UploadLights(RenderGraph& renderGraph);
     };
 
@@ -739,12 +752,6 @@ namespace Horizon
         RenderBackendBufferHandle transformBuffer;
         RenderBackendBufferHandle transformUploadBuffer;
         RenderBackendBufferHandle previousTransformBuffer;
-
-        RenderBackendBufferHandle lightDataBuffer;
-        RenderBackendBufferHandle lightDataUploadBuffer;
-
-        RenderBackendBufferHandle distantLightDataBuffer;
-        RenderBackendBufferHandle distantLightDataUploadBuffer;
 
         RenderBackendBufferHandle localLightShadowMapBuffer;
         RenderBackendBufferHandle localLightShadowMapUploadBuffer;

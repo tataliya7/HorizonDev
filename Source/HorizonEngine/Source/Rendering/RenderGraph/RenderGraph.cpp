@@ -168,7 +168,7 @@ namespace Horizon
         return RenderGraphBufferHandle::Null;
     }
 
-    RenderGraphTextureHandle RenderGraph::ImportExternalTexture(RenderGraphPersistentTexture* externalTexture, char const* name)
+    RenderGraphTextureHandle RenderGraph::ImportExternalTexture(RenderGraphPersistentTexture* externalTexture, const char* name)
     {
         if (!externalTexture)
         {
@@ -188,6 +188,11 @@ namespace Horizon
         uint32 index = (uint32)textures.size();
         RenderGraphTextureHandle handle = RenderGraphTextureHandle(index, 0);
 
+        if (name == nullptr)
+        {
+            name = externalTexture->GetName();
+        }
+
         RenderGraphTexture* texture = AllocObject<RenderGraphTexture>(name, externalTexture->GetDesc());
         texture->imported = true;
         texture->initialState = RenderBackendResourceState::ShaderResource;
@@ -202,7 +207,7 @@ namespace Horizon
         return handle;
     }
 
-    RenderGraphBufferHandle RenderGraph::ImportExternalBuffer(RenderGraphPersistentBuffer* externalBuffer, char const* name)
+    RenderGraphBufferHandle RenderGraph::ImportExternalBuffer(RenderGraphPersistentBuffer* externalBuffer, const char* name)
     {
         if (!externalBuffer)
         {
@@ -225,6 +230,11 @@ namespace Horizon
         if (EnumClassHasFlags(bufferDesc.flags, RenderBackendBufferCreateFlags::Readback))
         {
             state = RenderBackendResourceState::CopyDst;
+        }
+
+        if (name == nullptr)
+        {
+            name = externalBuffer->GetName();
         }
 
         RenderGraphBuffer* buffer = AllocObject<RenderGraphBuffer>(name, bufferDesc);

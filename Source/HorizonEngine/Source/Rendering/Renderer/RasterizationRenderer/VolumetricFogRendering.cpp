@@ -209,7 +209,8 @@ namespace Horizon
 
         RasterizationRendererLightGridData& lightGridData = renderGraph.blackboard.Get<RasterizationRendererLightGridData>();
         GPUScene* gpuScene = view.scene->GetGPUScene();
-        RenderGraphBufferHandle localLightDataBuffer = renderGraph.ImportExternalBuffer(gpuScene->persistentLocalLightDataBuffer, "GPUSceneLocalLightDataBuffer");
+        RenderGraphBufferHandle distantLightDataBuffer = renderGraph.ImportExternalBuffer(gpuScene->persistentDistantLightDataBuffer);
+        RenderGraphBufferHandle localLightDataBuffer = renderGraph.ImportExternalBuffer(gpuScene->persistentLocalLightDataBuffer);
 
         renderGraph.AddPass(
             std::format("VolumetricFogLightScattering (Compute, {}x{}x{})", volumetricFogTileCountX, volumetricFogTileCountY, volumetricFogDepthSliceCount),
@@ -218,7 +219,7 @@ namespace Horizon
             {
                 builder.SetBindlessResourceSRV(0, GetCurrentPerFrameConstantBuffer());
                 builder.SetBindlessResourceSRV(1, volumetricFogShaderParameterBuffer);
-                builder.SetBindlessResourceSRV(2, view.GetRenderScene()->distantLightDataBuffer);
+                builder.SetBindlessResourceSRV(2, distantLightDataBuffer);
                 builder.SetBindlessResourceSRV(3, intermediateResources.cascadedShadowMapShaderParameterBuffer);
                 builder.SetBindlessResourceSRV(4, intermediateResources.cascadedShadowMapDepthTexture);
                 builder.SetBindlessResourceSRV(5, localLightDataBuffer);

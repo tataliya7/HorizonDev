@@ -4,9 +4,11 @@ namespace Horizon
 {
     const RenderGraphTextureSubresourceRange RenderGraphTextureSubresourceRange::WholeRange = RenderGraphTextureSubresourceRange(0, RenderBackendTextureSubresourceRange::RemainingMipLevels, 0, RenderBackendTextureSubresourceRange::RemainingArrayLayers);
 
+    static constexpr uint32 RenderGraphMaxTickCountToReleaseResources = 1024;
+
     RenderGraphResourcePool::RenderGraphResourcePool(RenderBackend* backend)
         : backend(backend)
-        , tickCount(0)
+        , frameCounter(0)
     {
 
     }
@@ -38,14 +40,22 @@ namespace Horizon
         {
             texture->active = false;
         }
-        for (RenderGraphPersistentBuffer* buffer : allocatedBuffers)
+
+        for (uint32 index = 0; index < allocatedBuffers.size(); index++)
         {
+            RenderGraphPersistentBuffer* buffer = allocatedBuffers[index];
             buffer->active = false;
+
+            const bool unused = (frameCounter - buffer->lastFrameUsed) > RenderGraphMaxTickCountToReleaseResources;
+            if (unused)
+            {
+                //allocatedBuffers.erase(allocatedBuffers.begin() + index);
+            }
         }
 
         // TODO: destroy unused resources here
 
-        tickCount++;
+        frameCounter++;
 
         currentFrameIndex = (currentFrameIndex + 1) % 3;
     }

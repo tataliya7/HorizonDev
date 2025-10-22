@@ -31,6 +31,7 @@ namespace Horizon
 
             renderObject = new MeshRenderObject();
 
+            renderObject->renderScene = scene;
             renderObject->vertexCount = vertexCount;
             renderObject->indexCount = indexCount;
 

@@ -75,50 +75,50 @@ namespace Horizon
         RenderBackendBufferHandle virtualShadowMapEntryBuffer,
         RenderBackendTextureHandle virtualShadowMapDepthTexture)
     {
-        const GeometryPassDrawCommandList& drawCommandList = geometryPassDrawCommandLists[uint32(GeometryPassType::VirtualShadowMap)];
-        const GPUScene* gpuScene = sceneView->scene->GetGPUScene();//drawCommandList.setupJobData.scene->GetGPUScene();
-
-        RenderBackendShaderHandle vertexShader = shaderRepository->GetShader(ShaderID::VirtualShadowMapDepthVS);
-        RenderBackendShaderHandle pixelShader = shaderRepository->GetShader(ShaderID::VirtualShadowMapDepthPS);
-
-        for (uint32 drawCommandIndex = 0; drawCommandIndex < drawCommandList.drawCommandCount; drawCommandIndex++)
-        {
-            const GeometryPassDrawCommand& drawCommand = drawCommandList.commands[drawCommandIndex];
-
-            RenderBackendGraphicsPipelineStateDescription graphicsPipelineState = {};
-            graphicsPipelineState.rasterizationState.cullMode = RenderBackendRasterizationCullMode::Back;
-            graphicsPipelineState.rasterizationState.fillMode = RenderBackendRasterizationFillMode::Solid;
-            graphicsPipelineState.depthStencilState.depthTestEnable = false; // Disable hardware depth testing
-            graphicsPipelineState.depthStencilState.depthWriteEnable = false;
-            graphicsPipelineState.depthStencilState.stencilTestEnable = false;
-
-            RenderBackendPushConstantValues pushConstantValues = {};
-            pushConstantValues.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
-            pushConstantValues.BindBufferSRV(1, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(virtualShadowMapShaderParameterBuffer));
-            pushConstantValues.BindBufferSRV(2, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(virtualShadowMapPageTableBuffer));
-            pushConstantValues.BindBufferSRV(3, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(gpuScene->geometryDataBuffer));
-            pushConstantValues.BindBufferSRV(4, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(gpuScene->geometryInstanceDataBuffer));
-            pushConstantValues.BindTextureUAV(5, renderBackend->GetTextureUAVBindlessResourceDescriptorIndex(virtualShadowMapDepthTexture, 0));
-            pushConstantValues.BindTextureSRV(6, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(virtualShadowMapEntryBuffer));
-
-            for (uint32 shadowViewIndex = 0; shadowViewIndex < virtualShadowMapManager->GetVirtualShadowMapEntryCount(); shadowViewIndex++)
-            {
-                pushConstantValues.OverrideShaderConstantValue(7, shadowViewIndex);
-
-                commandList.DrawIndexed(
-                    vertexShader,
-                    pixelShader,
-                    graphicsPipelineState,
-                    pushConstantValues,
-                    drawCommand.indexBuffer,
-                    drawCommand.indexCount,
-                    drawCommand.instanceCount,
-                    drawCommand.firstIndex,
-                    0, // TODO
-                    drawCommand.firstInstance,
-                    drawCommand.topology);
-            }
-        }
+        // const GeometryPassDrawCommandList& drawCommandList = geometryPassDrawCommandLists[uint32(GeometryPassType::VirtualShadowMap)];
+        // const GPUScene* gpuScene = sceneView->scene->GetGPUScene();//drawCommandList.setupJobData.scene->GetGPUScene();
+        //
+        // RenderBackendShaderHandle vertexShader = shaderRepository->GetShader(ShaderID::VirtualShadowMapDepthVS);
+        // RenderBackendShaderHandle pixelShader = shaderRepository->GetShader(ShaderID::VirtualShadowMapDepthPS);
+        //
+        // for (uint32 drawCommandIndex = 0; drawCommandIndex < drawCommandList.drawCommandCount; drawCommandIndex++)
+        // {
+        //     const GeometryPassDrawCommand& drawCommand = drawCommandList.commands[drawCommandIndex];
+        //
+        //     RenderBackendGraphicsPipelineStateDescription graphicsPipelineState = {};
+        //     graphicsPipelineState.rasterizationState.cullMode = RenderBackendRasterizationCullMode::Back;
+        //     graphicsPipelineState.rasterizationState.fillMode = RenderBackendRasterizationFillMode::Solid;
+        //     graphicsPipelineState.depthStencilState.depthTestEnable = false; // Disable hardware depth testing
+        //     graphicsPipelineState.depthStencilState.depthWriteEnable = false;
+        //     graphicsPipelineState.depthStencilState.stencilTestEnable = false;
+        //
+        //     RenderBackendPushConstantValues pushConstantValues = {};
+        //     pushConstantValues.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
+        //     pushConstantValues.BindBufferSRV(1, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(virtualShadowMapShaderParameterBuffer));
+        //     pushConstantValues.BindBufferSRV(2, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(virtualShadowMapPageTableBuffer));
+        //     pushConstantValues.BindBufferSRV(3, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(gpuScene->geometryDataBuffer));
+        //     pushConstantValues.BindBufferSRV(4, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(gpuScene->geometryInstanceDataBuffer));
+        //     pushConstantValues.BindTextureUAV(5, renderBackend->GetTextureUAVBindlessResourceDescriptorIndex(virtualShadowMapDepthTexture, 0));
+        //     pushConstantValues.BindTextureSRV(6, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(virtualShadowMapEntryBuffer));
+        //
+        //     for (uint32 shadowViewIndex = 0; shadowViewIndex < virtualShadowMapManager->GetVirtualShadowMapEntryCount(); shadowViewIndex++)
+        //     {
+        //         pushConstantValues.OverrideShaderConstantValue(7, shadowViewIndex);
+        //
+        //         commandList.DrawIndexed(
+        //             vertexShader,
+        //             pixelShader,
+        //             graphicsPipelineState,
+        //             pushConstantValues,
+        //             drawCommand.indexBuffer,
+        //             drawCommand.indexCount,
+        //             drawCommand.instanceCount,
+        //             drawCommand.firstIndex,
+        //             0, // TODO
+        //             drawCommand.firstInstance,
+        //             drawCommand.topology);
+        //     }
+        // }
     }
 
     void SetupVirtualShadowMapShaderParameters(VirtualShadowMapShaderParameters& outParameters, const SceneView& view, const LightRenderObject& light)
@@ -610,7 +610,10 @@ namespace Horizon
                 };
             });
 
-        if (gpuScene->geometryInstanceCount > 0)
+        RenderGraphBufferHandle geometryDataBuffer = renderGraph.ImportExternalBuffer(gpuScene->persistentGeometryDataBuffer);
+        RenderGraphBufferHandle geometryInstanceDataBuffer = renderGraph.ImportExternalBuffer(gpuScene->persistentGeometryInstanceDataBuffer);
+        const uint32 geometryInstanceCount = gpuScene->geometryInstanceCount;
+        if (geometryInstanceCount > 0)
         {
             renderGraph.AddPass(
                 std::format("VirtualShadowMapInstanceCulling (Compute)"),
@@ -621,7 +624,7 @@ namespace Horizon
 
                     RenderBackendShaderHandle computeShader = shaderRepository->GetShader(ShaderID::VirtualShadowMapInstanceCulling);
 
-                    uint32 threadGroupCountX = ComputeShaderThreadGroupCount(gpuScene->geometryInstanceCount, 64);
+                    uint32 threadGroupCountX = ComputeShaderThreadGroupCount(geometryInstanceCount, 64);
                     uint32 threadGroupCountY = 1;
                     uint32 threadGroupCountZ = 1;
 
@@ -629,10 +632,10 @@ namespace Horizon
                     {
                         RenderBackendPushConstantValues pushConstantValues = {};
                         pushConstantValues.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
-                        pushConstantValues.BindBufferSRV(1, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(gpuScene->geometryDataBuffer));
-                        pushConstantValues.BindBufferSRV(2, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(gpuScene->geometryInstanceDataBuffer));
+                        pushConstantValues.BindBufferSRV(1, resourceRegistry.GetBufferSRVBindlessResourceDescriptorIndex(geometryDataBuffer));
+                        pushConstantValues.BindBufferSRV(2, resourceRegistry.GetBufferSRVBindlessResourceDescriptorIndex(geometryInstanceDataBuffer));
                         pushConstantValues.BindBufferUAV(3, resourceRegistry.GetBufferUAVBindlessResourceDescriptorIndex(meshletCullingArgumentBuffer));
-                        pushConstantValues.OverrideShaderConstantValue(4, gpuScene->geometryInstanceCount);
+                        pushConstantValues.OverrideShaderConstantValue(4, geometryInstanceCount);
 
                         commandList.Dispatch(
                             computeShader,
@@ -655,8 +658,8 @@ namespace Horizon
                 meshletCullingArgumentBuffer = builder.ReadBuffer(meshletCullingArgumentBuffer, RenderBackendResourceState::IndirectArgument);
 
                 builder.SetBindlessResourceSRV(0, GetCurrentPerFrameConstantBuffer());
-                builder.SetBindlessResourceSRV(1, gpuScene->geometryDataBuffer);
-                builder.SetBindlessResourceSRV(2, gpuScene->geometryInstanceDataBuffer);
+                builder.SetBindlessResourceSRV(1, geometryDataBuffer);
+                builder.SetBindlessResourceSRV(2, geometryInstanceDataBuffer);
                 builder.SetBindlessResourceSRV(3, previousMinDepthPyramidTexture);
                 builder.SetBindlessResourceUAV(4, visibleMeshletBuffer);
                 builder.SetBindlessResourceUAV(5, visibleMeshletCounterBuffer);
@@ -712,8 +715,8 @@ namespace Horizon
                         pushConstantValues.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
                         pushConstantValues.BindBufferSRV(1, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(virtualShadowMapShaderParameterBuffer));
                         pushConstantValues.BindBufferSRV(2, resourceRegistry.GetBufferSRVBindlessResourceDescriptorIndex(virtualShadowMapPageTableBuffer));
-                        pushConstantValues.BindBufferSRV(3, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(gpuScene->geometryDataBuffer));
-                        pushConstantValues.BindBufferSRV(4, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(gpuScene->geometryInstanceDataBuffer));
+                        pushConstantValues.BindBufferSRV(3, resourceRegistry.GetBufferSRVBindlessResourceDescriptorIndex(geometryDataBuffer));
+                        pushConstantValues.BindBufferSRV(4, resourceRegistry.GetBufferSRVBindlessResourceDescriptorIndex(geometryInstanceDataBuffer));
                         pushConstantValues.BindBufferSRV(5, resourceRegistry.GetBufferSRVBindlessResourceDescriptorIndex(visibleMeshletBuffer));
                         pushConstantValues.BindTextureSRV(6, resourceRegistry.GetBufferSRVBindlessResourceDescriptorIndex(virtualShadowMapEntryBuffer));
                         pushConstantValues.BindTextureUAV(7, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndex(virtualShadowMapDepthTexture, 0));

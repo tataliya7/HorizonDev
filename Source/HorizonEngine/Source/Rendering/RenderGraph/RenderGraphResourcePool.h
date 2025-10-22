@@ -108,6 +108,7 @@ namespace Horizon
         std::string name;
         RenderBackendBufferDescription desc;
         RenderBackendBufferHandle handle;
+        uint32 lastFrameUsed = 0;
     };
 
     class RenderGraphStagingBuffer : public RenderGraphPersistentBuffer
@@ -138,7 +139,7 @@ namespace Horizon
     private:
         friend class RenderGraph;
         RenderBackend* backend;
-        uint32 tickCount;
+        uint32 frameCounter;
         std::vector<RenderGraphPersistentTexture*> allocatedTextures;
         std::vector<RenderGraphPersistentBuffer*> allocatedBuffers;
 
