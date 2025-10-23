@@ -450,7 +450,7 @@ namespace Horizon
         }
 
         renderSystem->UpdateImGuiData(commandList);
-        renderScene->UpdateGPUScene(renderGraph, commandList);
+        renderScene->UpdateGPUScene(renderGraph);
 
         renderGraph.Execute(*commandList);
 

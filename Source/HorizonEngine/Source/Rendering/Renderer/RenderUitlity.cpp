@@ -43,8 +43,8 @@ namespace Horizon
         whiteDummyTexture2D = renderGraphResourcePool->CacheTexture(whiteDummyTexture2DHandle, dummyTextureDesc, "WhiteDummyTexture2D");
 
         RenderBackendTextureDesc environmentBrdfLutTextureDesc = RenderBackendTextureDesc::Create2D(
-            GEnvironmentBrdfLutTextureSize,
-            GEnvironmentBrdfLutTextureSize,
+            EnvironmentBrdfLutTextureSize,
+            EnvironmentBrdfLutTextureSize,
             RenderBackendTextureFormat::R16G16Float,
             RenderBackendTextureCreateFlags::UnorderedAccess | RenderBackendTextureCreateFlags::ShaderResource);
         environmentBrdfLutTexture = renderBackend->CreateTexture(&environmentBrdfLutTextureDesc, nullptr, "EnvironmentBrdfLut");
@@ -82,7 +82,7 @@ namespace Horizon
             globalSamplerComparisonLessLinearClamp = renderBackend->CreateSampler(&globalSamplerComparisonLessLinearClampDesc, "GlobalSamplerComparisonLessLinearClamp");
         }
 
-        RenderEnvironmentBrdfLut(renderBackend, shaderRepository, commandList, environmentBrdfLutTexture);
+        PrecomputeEnvironmentBRDFLookupTable(renderBackend, shaderRepository, &commandList, environmentBrdfLutTexture);
 
         initialized = true;
     }

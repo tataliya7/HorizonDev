@@ -5,7 +5,7 @@
 SHADER_CONSTANTS_STRUCT_BEGIN();
 SHADER_CONSTANTS_TEXTURE_CUBE_DEFAULT_SRV(0, EnvironmentMapTextureSRV);
 SHADER_CONSTANTS_TEXTURE_2D_ARRAY_UAV(1, float4, IrradianceEnvironmentMapTextureUAV);
-SHADER_CONSTANTS_SCALAR(2, uint, SourceMipLevel);
+SHADER_CONSTANTS_SCALAR(2, uint, EnvironmentMapTextureMipLevel);
 SHADER_CONSTANTS_STRUCT_END();
 
 static const uint SampleCount = 1024;
@@ -24,7 +24,7 @@ void IrradianceEnvironmentMapReferenceCS(uint3 dispatchThreadID : SV_DispatchThr
     }
 
     TextureCube environmentMapTexture = ShaderConstants.GetEnvironmentMapTextureSRV();
-    uint environmentMapMipLevel = ShaderConstants.GetSourceMipLevel();
+    uint environmentMapTextureMipLevel = ShaderConstants.GetEnvironmentMapTextureMipLevel();
 
     uint3 pixelCoord = dispatchThreadID;
     float2 uv = (pixelCoord.xy + 0.5f) / float2(width, height);
@@ -41,7 +41,7 @@ void IrradianceEnvironmentMapReferenceCS(uint3 dispatchThreadID : SV_DispatchThr
         float NdotL = dot(N, L);
         if (NdotL > 0.0f)
         {
-            irradiance += environmentMapTexture.SampleLevel(GlobalSamplerLinearWarp, L, environmentMapMipLevel).rgb * NdotL;
+            irradiance += environmentMapTexture.SampleLevel(GlobalSamplerLinearWarp, L, environmentMapTextureMipLevel).rgb * NdotL;
         }
     }
 

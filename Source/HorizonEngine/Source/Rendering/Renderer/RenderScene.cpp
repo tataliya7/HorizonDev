@@ -46,6 +46,58 @@ namespace Horizon
     {
     }
 
+    void SkyLightRenderObject::UpdateEnvironmentMaps(ShaderRepository* shaderRepository, RenderBackendCommandList* commandList)
+    {
+        // @todo: Make this configurable.
+        static constexpr uint32 IrradianceEnvironmentMapTextureSize = 32;
+        static constexpr bool UseIrradianceEnvironmentMapTexture = false;
+
+        if (cubemapSize > 0)
+        {
+            RenderBackend* renderBackend = renderScene->renderBackend;
+
+            RenderBackendTextureDesc convolvedEnvironmentMapTextureDescription = RenderBackendTextureDesc::CreateCube(
+                cubemapSize,
+                RenderBackendTextureFormat::R16G16B16A16Float,
+                RenderBackendTextureCreateFlags::UnorderedAccess | RenderBackendTextureCreateFlags::ShaderResource,
+                Math::MaxMipLevelCount(cubemapSize));
+            convolvedEnvironmentMapTexture = renderBackend->CreateTexture(&convolvedEnvironmentMapTextureDescription, nullptr, "SkyLightConvolvedEnvironmentMapTexture");
+
+            if (UseIrradianceEnvironmentMapTexture)
+            {
+                RenderBackendTextureDesc irradianceEnvironmentMapTextureDescription = RenderBackendTextureDesc::CreateCube(
+                    IrradianceEnvironmentMapTextureSize,
+                    RenderBackendTextureFormat::R16G16B16A16Float,
+                    RenderBackendTextureCreateFlags::UnorderedAccess | RenderBackendTextureCreateFlags::ShaderResource);
+                    irradianceEnvironmentMapTexture = renderBackend->CreateTexture(&irradianceEnvironmentMapTextureDescription, nullptr, "SkyLightIrradianceEnvironmentMapTexture");
+
+                PrecomputeEnvironmentMaps(
+                    renderBackend,
+                    shaderRepository,
+                    commandList,
+                    cubemapSize,
+                    environmentMapTexture->GetHandle(),
+                    IrradianceEnvironmentMapTextureSize,
+                    convolvedEnvironmentMapTexture,
+                    irradianceEnvironmentMapTexture);
+            }
+            else
+            {
+                RenderBackendBufferDescription irradianceEnvironmentMapBufferDescription = RenderBackendBufferDescription::CreateByteAddress(sizeof(float) * 27); // @todo Use SH structure size instead of hard coding.
+                irradianceEnvironmentMapBuffer = renderBackend->CreateBuffer(&irradianceEnvironmentMapBufferDescription, nullptr, "SkyLightIrradianceEnvironmentMapBuffer");
+
+                PrecomputeEnvironmentMaps(
+                    renderBackend,
+                    shaderRepository,
+                    commandList,
+                    cubemapSize,
+                    environmentMapTexture->GetHandle(),
+                    convolvedEnvironmentMapTexture,
+                    irradianceEnvironmentMapBuffer);
+            }
+        }
+    }
+
     LocalFogVolumeRenderObject::LocalFogVolumeRenderObject()
         : transform(IdentityMatrix4x4f)
         , emission(Vector3f(0.0f, 0.0f, 0.0f))
@@ -403,67 +455,17 @@ namespace Horizon
         }
     }
 
-    void SetupDistantLightShaderParameters(GPUSceneDistantLightData& outParameters, const LightRenderObject* light)
-    {
-        if (light)
-        {
-            outParameters.direction = light->direction;
-            outParameters.tangent = light->tangent;
-            outParameters.color = light->color;
-        }
-    }
-
     RayTracingScene* RenderScene::CreateRayTracingScene()
     {
         rayTracingScene = new RayTracingScene();
         return rayTracingScene;
     }
 
-    void RenderScene::UpdateGPUScene(RenderGraph& renderGraph, RenderBackendCommandList* commandList)
+    void RenderScene::UpdateGPUScene(RenderGraph& renderGraph)
     {
         gpuScene->UploadGeometries(renderGraph);
 
         gpuScene->UploadLights(renderGraph);
-
-        static int first = 0;
-        if (first == 0)
-        {
-            first = 1;
-
-            SkyLightRenderObject* skyLight = skyLights[0];
-            if (skyLight)
-            {
-                uint32 cubemapSize = skyLight->cubemapSize;
-
-                RenderBackendTextureDesc convolvedEnvironmentMapTextureDesc = RenderBackendTextureDesc::CreateCube(
-                    cubemapSize,
-                    RenderBackendTextureFormat::R16G16B16A16Float,
-                    RenderBackendTextureCreateFlags::UnorderedAccess | RenderBackendTextureCreateFlags::ShaderResource,
-                    Math::MaxMipLevelCount(cubemapSize));
-                convolvedEnvironmentMapTexture = renderBackend->CreateTexture(&convolvedEnvironmentMapTextureDesc, nullptr, "ConvolvedEnvironmentMapTexture");
-
-                RenderBackendTextureDesc irradianceEnvironmentMapTextureDesc = RenderBackendTextureDesc::CreateCube(
-                    GIrradianceEnvironmentMapSize,
-                    RenderBackendTextureFormat::R16G16B16A16Float,
-                    RenderBackendTextureCreateFlags::UnorderedAccess | RenderBackendTextureCreateFlags::ShaderResource);
-                irradianceEnvironmentMapTexture = renderBackend->CreateTexture(&irradianceEnvironmentMapTextureDesc, nullptr, "IrradianceEnvironmentMapTexture");
-
-                RenderBackendBufferDescription irradianceEnvironmentMapBufferDesc = RenderBackendBufferDescription::CreateByteAddress(sizeof(float) * 27);
-                irradianceEnvironmentMapBuffer = renderBackend->CreateBuffer(&irradianceEnvironmentMapBufferDesc, nullptr, "IrradianceEnvironmentMapBuffer");
-                irradianceEnvironmentMapBufferFast = renderBackend->CreateBuffer(&irradianceEnvironmentMapBufferDesc, nullptr, "IrradianceEnvironmentMapBufferFast");
-
-                PrecomputeEnvironmentMaps(
-                    renderBackend,
-                    shaderRepository,
-                    *commandList,
-                    skyLight->cubemapSize,
-                    skyLight->environmentMapTexture->GetHandle(),
-                    convolvedEnvironmentMapTexture,
-                    irradianceEnvironmentMapTexture,
-                    irradianceEnvironmentMapBuffer,
-                    irradianceEnvironmentMapBufferFast);
-            }
-        }
 
         if (ShouldUpdateRayTracingScene())
         {

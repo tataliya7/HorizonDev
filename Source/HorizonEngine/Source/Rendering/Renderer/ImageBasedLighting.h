@@ -4,42 +4,51 @@
 
 namespace Horizon
 {
+    class RenderBackend;
     class ShaderRepository;
+    class RenderBackendCommandList;
 
-    extern uint32 GEnvironmentBrdfLutTextureSize;
-
-    extern uint32 GIrradianceEnvironmentMapSize;
-
-    extern void RenderEnvironmentBrdfLut(
-        RenderBackend* renderBackend,
-        ShaderRepository* shaderRepository,
-        RenderBackendCommandList& commandList,
-        RenderBackendTextureHandle environmentBrdfLutTexture);
-
-    // TODO: move to other place
+    // @todo Move this function to other place.
     extern void ConvertLatLongToCubemap(
         RenderBackend* renderBackend,
         ShaderRepository* shaderRepository,
-        RenderBackendCommandList& commandList,
+        RenderBackendCommandList* commandList,
         RenderBackendTextureHandle latLongTexture,
         RenderBackendTextureHandle cubemapTexture,
         uint32 cubemapTextureSize);
 
+    // @todo Move this function to other place.
     extern void GenerateCubemapMips(
         RenderBackend* renderBackend,
         ShaderRepository* shaderRepository,
-        RenderBackendCommandList& commandList,
+        RenderBackendCommandList* commandList,
         RenderBackendTextureHandle cubemapTexture,
         uint32 mipLevelCount);
+
+    extern uint32 EnvironmentBrdfLutTextureSize;
+
+    extern void PrecomputeEnvironmentBRDFLookupTable(
+        RenderBackend* renderBackend,
+        ShaderRepository* shaderRepository,
+        RenderBackendCommandList* commandList,
+        RenderBackendTextureHandle environmentBrdfLutTexture);
 
     extern void PrecomputeEnvironmentMaps(
         RenderBackend* renderBackend,
         ShaderRepository* shaderRepository,
-        RenderBackendCommandList& commandList,
-        uint32 cubemapSize,
+        RenderBackendCommandList* commandList,
+        uint32 environmentMapTextureSize,
         RenderBackendTextureHandle environmentMapTexture,
-        RenderBackendTextureHandle convolvedEnvironmentMap,
-        RenderBackendTextureHandle irradianceEnvironmentMapTexture,
-        RenderBackendBufferHandle irradianceEnvironmentMapBuffer,
-        RenderBackendBufferHandle irradianceEnvironmentMapBufferFast);
+        uint32 irradianceEnvironmentMapTextureSize,
+        RenderBackendTextureHandle convolvedEnvironmentMapTexture,
+        RenderBackendTextureHandle irradianceEnvironmentMapTexture);
+
+    extern void PrecomputeEnvironmentMaps(
+        RenderBackend* renderBackend,
+        ShaderRepository* shaderRepository,
+        RenderBackendCommandList* commandList,
+        uint32 environmentMapTextureSize,
+        RenderBackendTextureHandle environmentMapTexture,
+        RenderBackendTextureHandle convolvedEnvironmentMapTexture,
+        RenderBackendBufferHandle irradianceEnvironmentMapBuffer);
 }

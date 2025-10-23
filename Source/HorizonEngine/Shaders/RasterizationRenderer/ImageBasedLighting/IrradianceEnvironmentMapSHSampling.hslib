@@ -10,12 +10,12 @@ SHADER_CONSTANTS_SCALAR(3, uint, TotalSampleCount);
 SHADER_CONSTANTS_SCALAR(4, uint, SampleCountPerThread);
 SHADER_CONSTANTS_STRUCT_END();
 
-static const uint THREAD_GROUP_SIZE = 8;
+static const uint THREAD_GROUP_SIZE = 64;
 
-groupshared SH3CoefficientsRGB SharedSHCoefficients[THREAD_GROUP_SIZE * THREAD_GROUP_SIZE];
+groupshared SH3CoefficientsRGB SharedSHCoefficients[THREAD_GROUP_SIZE];
 
 [shader("compute")]
-[numthreads(THREAD_GROUP_SIZE, THREAD_GROUP_SIZE, 1)]
+[numthreads(THREAD_GROUP_SIZE, 1, 1)]
 void IrradianceEnvironmentMapSHSamplingCS(uint3 dispatchThreadID : SV_DispatchThreadID)
 {
     TextureCube environmentMapTexture = ShaderConstants.GetEnvironmentMapTextureSRV();
@@ -31,16 +31,13 @@ void IrradianceEnvironmentMapSHSamplingCS(uint3 dispatchThreadID : SV_DispatchTh
     for (uint i = 0; i < sampleCountPerThread; i++)
     {
         uint sampleIndex = threadIndex * sampleCountPerThread + i;
-        float2 lowDiscrepancyPoint2D = HammersleySequence2D(sampleIndex, totalSampleCount);
-        float3 sampleDirection = UniformSampleSphere((float2(dispatchThreadID.xy) + 0.5f) / float2(THREAD_GROUP_SIZE, THREAD_GROUP_SIZE));
+        float3 sampleDirection = UniformSampleSphere((float2(sampleIndex, sampleIndex) + 0.5f) / float2(totalSampleCount, totalSampleCount));
         float3 sampleColor = environmentMapTexture.SampleLevel(GlobalSamplerLinearClamp, sampleDirection, environmentMapMipLevel).rgb;
-        float weight = 4.0f * M_PI / float(SampleCount);
+        float weight = 4.0f * M_PI / float(totalSampleCount);
 
         SH3CoefficientsRGB sampleSHCoefficientsRGB = SampleSHCoefficientsRGB(sampleColor, sampleDirection, weight);
         SharedSHCoefficients = SHCoefficientsRGBAdd(shCoefficientsRGB, sampleSHCoefficientsRGB);
     }
-
-    // TODO: use wave intrinsics to optimize this.
 
     // All of the threads in the same wave are naturally at the same instruction.
     // Thus, it is safe to omit some group synchronizations when the group thread count is larger than the GPU's wave size.

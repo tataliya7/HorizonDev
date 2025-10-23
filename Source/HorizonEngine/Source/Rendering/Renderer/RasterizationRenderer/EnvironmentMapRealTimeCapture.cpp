@@ -81,7 +81,7 @@ namespace Horizon
             return;
         }
 
-        const uint32 environmentMapTextureSize = skyLight->cubemapSize;
+        const uint32 environmentMapTextureSize = skyLight->GetCubemapSize();
         const uint32 environmentMapTextureMipLevelCount = Math::MaxMipLevelCount(environmentMapTextureSize);
 
         RenderGraphTextureDescription capturedEnvironmentMapTextureDesc = RenderGraphTextureDescription::CreateCube(

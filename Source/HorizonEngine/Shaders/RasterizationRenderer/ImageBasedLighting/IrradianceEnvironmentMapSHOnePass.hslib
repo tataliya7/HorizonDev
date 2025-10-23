@@ -38,7 +38,6 @@ void IrradianceEnvironmentMapSHOnePassCS(uint3 dispatchThreadID : SV_DispatchThr
         {
             float3 sampleDirection = UniformSampleSphere((float2(dispatchThreadID.xy) + float2(u, v)) / float2(THREAD_GROUP_SIZE, THREAD_GROUP_SIZE));
             float3 sampleColor = environmentMapTexture.SampleLevel(GlobalSamplerLinearClamp, sampleDirection, environmentMapMipLevel).rgb;
-
             shCoefficientsRGB = SHCoefficientsRGBAdd(shCoefficientsRGB, SampleSHCoefficientsRGB(sampleColor, sampleDirection, weight));
         }
     }

@@ -315,14 +315,34 @@ namespace Horizon
     class SkyLightRenderObject
     {
     public:
+
         SkyLightRenderObject();
+
         virtual ~SkyLightRenderObject();
 
-        uint32 cubemapSize = 0;
+        uint32 GetCubemapSize() const
+        {
+            return cubemapSize;
+        }
+
+        uint32 cubemapSize;
 
         RenderGraphPersistentTexture* environmentMapTexture;
 
     private:
+
+        friend class RenderScene;
+
+        void UpdateEnvironmentMaps(ShaderRepository* shaderRepository, RenderBackendCommandList* commandList);
+
+        RenderScene* renderScene;
+
+
+        bool hasEnvironmentMaps;
+
+        RenderBackendTextureHandle convolvedEnvironmentMapTexture;
+        RenderBackendTextureHandle irradianceEnvironmentMapTexture;
+        RenderBackendBufferHandle irradianceEnvironmentMapBuffer;
     };
 
     class LocalFogVolumeRenderObject
@@ -512,8 +532,7 @@ namespace Horizon
     };
 
     /**
-     * Represents the GPU-side data of a RenderScene, responsible for uploading scene data
-     * (including geometry, materials, lights, etc.) to GPU.
+     * Represents the GPU-side data of a RenderScene, responsible for uploading scene data to GPU.
      */
     class GPUScene
     {
@@ -522,13 +541,6 @@ namespace Horizon
         GPUScene(RenderScene* renderScene);
 
         RenderScene* renderScene;
-
-        // Materials
-        uint32 materialCount = 0;
-        uint64 materialBufferSize = 0;
-        std::vector<MaterialShaderParameters> materials;
-        RenderBackendBufferHandle materialUploadBuffer;
-        RenderBackendBufferHandle materialBuffer;
 
         uint32 geometryCount = 0;
         uint32 geometryInstanceCount = 0;
@@ -541,7 +553,7 @@ namespace Horizon
         RenderGraphPersistentBuffer* persistentLocalLightDataBuffer = nullptr;
 
         void UploadGeometries(RenderGraph& renderGraph);
-        void UploadMaterials(RenderGraph& renderGraph);
+
         void UploadLights(RenderGraph& renderGraph);
     };
 
@@ -563,6 +575,15 @@ namespace Horizon
          * Release this scene.
          */
         virtual void Release();
+
+        /**
+         * Get the render backend.
+         * @return Pointer to the render backend.
+         */
+        RenderBackend* GetRenderBackend() const
+        {
+            return renderBackend;
+        }
 
         /**
          * Get the GPU scene object.
@@ -688,7 +709,7 @@ namespace Horizon
          */
         virtual bool HasAnyLocalFogVolume() const;
 
-        void UpdateGPUScene(RenderGraph& renderGraph, RenderBackendCommandList* commandList);
+        void UpdateGPUScene(RenderGraph& renderGraph);
 
         bool ShouldUpdateRayTracingScene()
         {
