@@ -114,31 +114,31 @@ namespace Horizon
         }
         {
             ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RasterizationRenderer/VisibilityCulling.hslib", "IndirectArgumentInitializationCS");
-            shaderDesc.AddDefine("GPU_SCENE_MAXIMUM_TRIANGLE_COUNT_PER_MESHLET", IndexCountPerMeshlet);
+            shaderDesc.AddDefine("GPU_SCENE_MAXIMUM_TRIANGLE_COUNT_PER_MESHLET", MaxTriangleCountPerMeshlet);
             shaderDesc.AddDefine("INDIRECT_ARGUMENT_INITIALIZATION", 1);
             shaderRepository->LoadShader(ShaderID::VisibilityCullingIndirectArgumentInitialization, shaderDesc);
         }
         {
             ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RasterizationRenderer/VisibilityCulling.hslib", "InstanceCullingCS");
-            shaderDesc.AddDefine("GPU_SCENE_MAXIMUM_TRIANGLE_COUNT_PER_MESHLET", IndexCountPerMeshlet);
+            shaderDesc.AddDefine("GPU_SCENE_MAXIMUM_TRIANGLE_COUNT_PER_MESHLET", MaxTriangleCountPerMeshlet);
             shaderDesc.AddDefine("INSTANCE_CULLING", 1);
             shaderRepository->LoadShader(ShaderID::VirtualGeometryInstanceCulling, shaderDesc);
         }
         {
             ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RasterizationRenderer/VisibilityCulling.hslib", "MeshletCullingCS");
-            shaderDesc.AddDefine("GPU_SCENE_MAXIMUM_TRIANGLE_COUNT_PER_MESHLET", IndexCountPerMeshlet);
+            shaderDesc.AddDefine("GPU_SCENE_MAXIMUM_TRIANGLE_COUNT_PER_MESHLET", MaxTriangleCountPerMeshlet);
             shaderDesc.AddDefine("MESHLET_CULLING", 1);
             shaderRepository->LoadShader(ShaderID::VirtualGeometryMeshletCulling, shaderDesc);
         }
         {
             ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Compute, "Shaders/RasterizationRenderer/VisibilityCulling.hslib", "MeshletGroupCullingCS");
-            shaderDesc.AddDefine("GPU_SCENE_MAXIMUM_TRIANGLE_COUNT_PER_MESHLET", IndexCountPerMeshlet);
+            shaderDesc.AddDefine("GPU_SCENE_MAXIMUM_TRIANGLE_COUNT_PER_MESHLET", MaxTriangleCountPerMeshlet);
             shaderDesc.AddDefine("MESHLET_GROUP_CULLING", 1);
             shaderRepository->LoadShader(ShaderID::VirtualGeometryMeshletGroupCulling, shaderDesc);
         }
         {
             ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::Vertex, "Shaders/RasterizationRenderer/VisibilityBuffer.hslib", "VisibilityBufferVS");
-            shaderDesc.AddDefine("GPU_SCENE_MAXIMUM_TRIANGLE_COUNT_PER_MESHLET", IndexCountPerMeshlet);
+            shaderDesc.AddDefine("GPU_SCENE_MAXIMUM_TRIANGLE_COUNT_PER_MESHLET", MaxTriangleCountPerMeshlet);
             shaderRepository->LoadShader(ShaderID::VisibilityBufferVS, shaderDesc);
         }
         {

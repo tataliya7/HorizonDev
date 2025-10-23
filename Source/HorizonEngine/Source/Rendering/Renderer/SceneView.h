@@ -7,10 +7,7 @@ namespace Horizon
 {
     class RenderScene;
 
-    constexpr float NearClippingPlaneDepthValue = 1.0f;
-    constexpr float FarClippingPlaneDepthValue = 0.0f;
-
-    constexpr float MinimumNearClippingPlane = 0.01f;
+    static constexpr float NearClippingPlaneMinDistance = 0.01f;
 
     struct CameraTransformations
     {

@@ -3,6 +3,40 @@
 
 namespace Horizon
 {
+    // Surfel hot data
+    struct SurfelHotData
+    {
+        Vector3f position;
+        Vector3f normal;
+        float radius;
+    };
+
+    // Surfel cold data
+    struct SurfelColdData
+    {
+        Vector3f position;
+        Vector3f normal;
+        Vector2i primitiveID;
+    };
+
+    struct CellHeader
+    {
+        uint32 capacity;
+        uint32 offset;
+    };
+
+    static const uint32 SurfelGIIndirectDispatchGroupThreadCount = 64;
+    static const uint32 SurfelGIMaxSurfelCount = 100000;
+    static const uint32 SurfelGIMaxSurfelCountPerCell = 10;
+    static const uint32 SurfelGIUniformGridCellSize = 2;
+    static const Vector3i SurfelGIUniformGridSize = Vector3i(128, 128, 64); // The size of each dimension must be a multiple of 2!
+    static const uint32 SurfelGIUniformGridCellCount = SurfelGIUniformGridSize.x * SurfelGIUniformGridSize.y * SurfelGIUniformGridSize.z;
+    static const float SurfelGICoverageThreshold = 0.5f;
+    static const uint32 SurfelGIScreenTileSize = 16;
+    static const uint32 SurfelGIInfoBufferOffset_AliveSurfelCount = 0;
+    static const uint32 SurfelGIInfoBufferOffset_DeadSurfelCount = SurfelGIInfoBufferOffset_AliveSurfelCount + 4;
+    static const uint32 SurfelGIInfoBufferSize = SurfelGIInfoBufferOffset_DeadSurfelCount + 4;
+
     bool RasterizationRenderer::IsSurfelGIEnabled() const
     {
         return renderFeatures.enableSurfelGI;

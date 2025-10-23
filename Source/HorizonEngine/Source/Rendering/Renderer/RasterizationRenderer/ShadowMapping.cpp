@@ -57,7 +57,7 @@ namespace Horizon
             RenderBackendTextureFormat::D32Float,
             RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::DepthStencil,
             shadowCascadeCount,
-            RenderBackendTextureClearValue::CreateDepthValue(FAR_CLIPPING_PLANE_DEPTH_VALUE));
+            RenderBackendTextureClearValue::CreateDepthValue(FarClippingPlaneDepthValue));
 
         RenderGraphTextureHandle cascadedShadowMapDepthTexture = renderGraph.CreateTexture(cascadedShadowMapDepthTextureDesc, "CascadedShadowMapDepthTexture");
 
@@ -184,7 +184,7 @@ namespace Horizon
             RenderBackendTextureFormat::D32Float,
             RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::DepthStencil,
             2,
-            RenderBackendTextureClearValue::CreateDepthValue(FAR_CLIPPING_PLANE_DEPTH_VALUE));
+            RenderBackendTextureClearValue::CreateDepthValue(FarClippingPlaneDepthValue));
         RenderGraphTextureHandle localLightShadowMapAtlas = renderGraph.CreateTexture(localLightShadowMapAtlasDesc, "LocalLightShadowMapAtlas");
 
         // uint32 numViewports = renderEngine->numCubeShadowMaps * 6;

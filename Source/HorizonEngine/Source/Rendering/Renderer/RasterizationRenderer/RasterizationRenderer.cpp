@@ -260,8 +260,6 @@ namespace Horizon
         const RenderScene* scene = view.GetRenderScene();
         const RenderSettings& renderSettings = view.GetRenderSettings();
 
-        visibleLocalLights.reserve(scene->lights.size());
-
         for (LightRenderObject* light : scene->lights)
         {
             if (light->IsDistantLight())
@@ -553,7 +551,7 @@ namespace Horizon
 #endif
 
     RenderBackendTextureClearValue clearColor = RenderBackendTextureClearValue::Black;
-    RenderBackendTextureClearValue clearDepth = RenderBackendTextureClearValue::CreateDepthValue(FAR_CLIPPING_PLANE_DEPTH_VALUE);
+    RenderBackendTextureClearValue clearDepth = RenderBackendTextureClearValue::CreateDepthValue(FarClippingPlaneDepthValue);
     RenderBackendTextureClearValue clearVisibilityBufferColor = RenderBackendTextureClearValue::CreateColorValueUnit4(0, 0, 0, 0);
 
     void RasterizationRenderer::Render(RenderGraph& renderGraph)

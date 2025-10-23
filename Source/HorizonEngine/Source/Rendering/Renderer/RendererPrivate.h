@@ -15,6 +15,12 @@ namespace Horizon
         TriangleWindingOrder = 0,
     };
 
+    // Must match shader.
+    static constexpr float NearClippingPlaneDepthValue = 1.0f;
+    static constexpr float FarClippingPlaneDepthValue = 0.0f;
+
+    static constexpr uint32 MaxTriangleCountPerMeshlet = 128;
+
     //static const Matrix4x4f CubeFaceMatrices[6] =
     //{
     //    /* +X */
