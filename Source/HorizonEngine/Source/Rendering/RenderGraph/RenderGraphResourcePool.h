@@ -55,6 +55,8 @@ namespace Horizon
             return renderTargetViews[mipLevel];
         }
 
+        RenderBackendResourceState state = RenderBackendResourceState::ShaderResource;
+
     private:
 
         friend class RenderGraphResourcePool;

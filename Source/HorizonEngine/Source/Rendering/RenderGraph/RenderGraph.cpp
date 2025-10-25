@@ -195,10 +195,10 @@ namespace Horizon
 
         RenderGraphTexture* texture = AllocObject<RenderGraphTexture>(name, externalTexture->GetDesc());
         texture->imported = true;
-        texture->initialState = RenderBackendResourceState::ShaderResource;
-        texture->finalState = RenderBackendResourceState::ShaderResource;
-        texture->intermediateState = RenderBackendResourceState::ShaderResource;
-        texture->SetInternalTexture(externalTexture, RenderBackendResourceState::ShaderResource);
+        texture->initialState = externalTexture->state;
+        texture->finalState = externalTexture->state;
+        texture->intermediateState = externalTexture->state;
+        texture->SetInternalTexture(externalTexture, externalTexture->state);
 
         dag.RegisterNode(texture);
         textures.push_back(texture);
@@ -251,13 +251,17 @@ namespace Horizon
         return handle;
     }
 
-    void RenderGraph::ExportTextureDeferred(RenderGraphTextureHandle handle, RenderGraphPersistentTexture** persistentTexture)
+    void RenderGraph::ExportTextureDeferred(
+        RenderGraphTextureHandle handle,
+        RenderBackendResourceState state,
+        RenderGraphPersistentTexture** persistentTexture)
     {
         if (handle && persistentTexture)
         {
             RenderGraphTexture* texture = textures[handle.GetIndex()];
             texture->exported = true;
             texture->NeverCull();
+            texture->finalState = state;
 
             assert(!texture->IsImported());
 
@@ -267,6 +271,14 @@ namespace Horizon
                 .target = persistentTexture,
             };
             exportedTextures.emplace_back(exportedTexture);
+        }
+    }
+
+    void RenderGraph::ExportTextureDeferred(RenderGraphTextureHandle handle, RenderGraphPersistentTexture** persistentTexture)
+    {
+        if (handle && persistentTexture && *persistentTexture)
+        {
+            ExportTextureDeferred(handle, (*persistentTexture)->state, persistentTexture);
         }
     }
 
@@ -413,6 +425,16 @@ namespace Horizon
             for (RenderGraphPass::TextureState& state : pass->textureStates)
             {
                 RenderGraphTexture* texture = state.texture;
+
+#if 0
+                LogVerbose(GLogger, std::format("Render Graph: Pass: {}, Texture State Transition: {}, initial state: {}, state before: {}, state after: {}",
+                    pass->GetName(),
+                    texture->GetName(),
+                    int(texture->initialState),
+                    int(texture->intermediateState),
+                    int(state.initialState)));
+#endif
+
                 if (state.initialState != texture->intermediateState)
                 {
                     RenderBackendBarrier barrier = RenderBackendBarrier(
@@ -422,12 +444,6 @@ namespace Horizon
                         state.initialState);
                     texture->intermediateState = state.initialState;
                     pass->barriers.push_back(barrier);
-
-                    // LogVerbose(GLogger, std::format("Render Graph: Texture State Transition: {}, initial state: {}, state before: {}, state after: {}",
-                    //     texture->GetName(),
-                    //     int(texture->initialState),
-                    //     int(texture->intermediateState),
-                    //     int(state.initialState)));
                 }
                 // TODO: mark write/read
                 else if ((state.initialState == RenderBackendResourceState::UnorderedAccess) && (texture->intermediateState == RenderBackendResourceState::UnorderedAccess))
@@ -543,19 +559,26 @@ namespace Horizon
 
         for (RenderGraphTexture* texture : textures)
         {
-            if (texture->intermediateState != texture->finalState)
+            if (texture->IsImported() || texture->IsExported())
             {
-                std::array<RenderBackendBarrier, 1> barriers =
+                if (texture->intermediateState != texture->finalState)
                 {
-                    RenderBackendBarrier(texture->GetRenderBackendTextureHandle(), RenderBackendTextureSubresourceRange::All, texture->intermediateState, texture->finalState)
-                };
-                commandList.Barriers(barriers.data(), (uint32)barriers.size());
+                    std::array<RenderBackendBarrier, 1> barriers =
+                    {
+                        RenderBackendBarrier(texture->GetRenderBackendTextureHandle(), RenderBackendTextureSubresourceRange::All, texture->intermediateState, texture->finalState)
+                    };
+                    commandList.Barriers(barriers.data(), (uint32)barriers.size());
 
-                // LogVerbose(GLogger, std::format("Render Graph: Texture State Transition: {}, initial state: {}, state before: {}, state after: {}",
-                //     texture->GetName(),
-                //     int(texture->initialState),
-                //     int(texture->intermediateState),
-                //     int(texture->finalState)));
+#if 0
+                    LogVerbose(GLogger, std::format("Render Graph: Texture State Transition: {}, initial state: {}, state before: {}, state after: {}",
+                        texture->GetName(),
+                        int(texture->initialState),
+                        int(texture->intermediateState),
+                        int(texture->finalState)));
+#endif
+
+                    texture->intermediateState = texture->finalState;
+                }
             }
         }
 
@@ -566,6 +589,7 @@ namespace Horizon
                 resourcePool->ReleaseTexture(*textureToExport.target);
             }
             *textureToExport.target = textureToExport.source->internalTexture;
+            (*textureToExport.target)->state = textureToExport.source->intermediateState;
             textureToExport.source->internalTexture = nullptr;
         }
 

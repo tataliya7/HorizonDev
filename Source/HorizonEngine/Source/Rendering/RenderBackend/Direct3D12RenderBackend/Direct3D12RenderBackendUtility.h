@@ -831,8 +831,8 @@ namespace Horizon
             break;
         case RenderBackendResourceState::DepthStencilReadOnly:
             outSyncBefore = D3D12_BARRIER_SYNC_ALL;
-            outAccessBefore = D3D12_BARRIER_ACCESS_DEPTH_STENCIL_READ;
-            outLayoutBefore = D3D12_BARRIER_LAYOUT_DEPTH_STENCIL_READ;
+            outAccessBefore = D3D12_BARRIER_ACCESS_DEPTH_STENCIL_READ | D3D12_BARRIER_ACCESS_SHADER_RESOURCE;
+            outLayoutBefore = D3D12_BARRIER_LAYOUT_DIRECT_QUEUE_GENERIC_READ; // Fix incompatible barrier layout.
             break;
         case RenderBackendResourceState::DepthStencil:
             outSyncBefore = D3D12_BARRIER_SYNC_ALL;
@@ -888,8 +888,8 @@ namespace Horizon
             break;
         case RenderBackendResourceState::DepthStencilReadOnly:
             outSyncAfter = D3D12_BARRIER_SYNC_ALL;
-            outAccessAfter = D3D12_BARRIER_ACCESS_DEPTH_STENCIL_READ;
-            outLayoutAfter = D3D12_BARRIER_LAYOUT_DEPTH_STENCIL_READ;
+            outAccessAfter = D3D12_BARRIER_ACCESS_DEPTH_STENCIL_READ | D3D12_BARRIER_ACCESS_SHADER_RESOURCE;
+            outLayoutAfter = D3D12_BARRIER_LAYOUT_DIRECT_QUEUE_GENERIC_READ; // Fix incompatible barrier layout.
             break;
         case RenderBackendResourceState::DepthStencil:
             outSyncAfter = D3D12_BARRIER_SYNC_ALL;

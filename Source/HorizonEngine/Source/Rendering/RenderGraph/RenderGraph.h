@@ -126,6 +126,8 @@ namespace Horizon
          */
         RenderGraphBufferHandle ImportExternalBuffer(RenderGraphPersistentBuffer* externalBuffer, const char* name = nullptr);
 
+        void ExportTextureDeferred(RenderGraphTextureHandle handle, RenderBackendResourceState state, RenderGraphPersistentTexture** persistentTexture);
+
         void ExportTextureDeferred(RenderGraphTextureHandle handle, RenderGraphPersistentTexture** persistentTexture);
 
         void ExportBufferDeferred(RenderGraphBufferHandle handle, RenderGraphPersistentBuffer** persistentBuffer);

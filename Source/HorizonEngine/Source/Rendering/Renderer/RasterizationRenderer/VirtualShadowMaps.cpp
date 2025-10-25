@@ -784,7 +784,7 @@ namespace Horizon
             {
                 RenderGraphBufferHandle virtualShadowMapPageTableBuffer = builder.ReadBuffer(intermediateResources.virtualShadowMapPageTableBuffer, RenderBackendResourceState::ShaderResource);
                 RenderGraphBufferHandle virtualShadowMapEntryBuffer = builder.ReadBuffer(intermediateResources.virtualShadowMapEntryBuffer, RenderBackendResourceState::ShaderResource);
-                RenderGraphTextureHandle sceneDepthTexture = builder.ReadTexture(intermediateResources.depthTexture, RenderBackendResourceState::ShaderResource);
+                RenderGraphTextureHandle depthTexture = builder.ReadTexture(intermediateResources.depthTexture, RenderBackendResourceState::ShaderResource);
                 RenderGraphTextureHandle virtualShadowMapDepthTexture = builder.ReadTexture(intermediateResources.virtualShadowMapDepthTexture, RenderBackendResourceState::ShaderResource);
                 screenSpaceShadowMaskTexture = builder.WriteTexture(screenSpaceShadowMaskTexture, RenderBackendResourceState::UnorderedAccess);
                 debugVisualizationTexture = builder.WriteTexture(debugVisualizationTexture, RenderBackendResourceState::UnorderedAccess);
@@ -800,7 +800,7 @@ namespace Horizon
                     pushConstantValues.BindBufferSRV(1, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(virtualShadowMapShaderParameterBuffer));
                     pushConstantValues.BindBufferSRV(2, resourceRegistry.GetBufferSRVBindlessResourceDescriptorIndex(virtualShadowMapPageTableBuffer));
                     pushConstantValues.BindBufferSRV(3, resourceRegistry.GetBufferSRVBindlessResourceDescriptorIndex(virtualShadowMapEntryBuffer));
-                    pushConstantValues.BindTextureSRV(4, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(sceneDepthTexture));
+                    pushConstantValues.BindTextureSRV(4, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(depthTexture));
                     pushConstantValues.BindTextureSRV(5, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(virtualShadowMapDepthTexture));
                     pushConstantValues.BindTextureUAV(6, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndex(screenSpaceShadowMaskTexture, 0));
                     pushConstantValues.BindTextureUAV(7, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndex(debugVisualizationTexture, 0));

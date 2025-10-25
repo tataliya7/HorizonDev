@@ -100,7 +100,7 @@ namespace Horizon
 
         {
             RenderGraphTextureHandle temporalFilteringInputTexture = ambientOcclusionTexture;
-            RenderGraphTextureHandle temporalFilteringHistoryTexture = renderGraph.ImportExternalTexture(historyFrame.ambientOcclusionTexture, "HistoryAmbientOcclusionTexture");
+            RenderGraphTextureHandle temporalFilteringHistoryTexture = renderGraph.ImportExternalTexture(historyFrame.ambientOcclusionTexture, "PreviousAmbientOcclusionTexture");
             if (temporalFilteringHistoryTexture.IsNull())
             {
                 temporalFilteringHistoryTexture = defaultResources->ImportWhiteDummyTexture2D(renderGraph);

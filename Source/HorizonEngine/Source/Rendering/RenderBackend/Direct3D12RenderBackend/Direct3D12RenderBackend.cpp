@@ -1875,7 +1875,7 @@ namespace Horizon
 
         for (auto& [fence, value] : workload->fencesToWait)
         {
-            D3D12_CHECK(commandQueue->GetID3D12CommandQueue()->Wait(fence.Get(), value));
+            D3D12_CHECK(commandQueue->GetID3D12CommandQueue()->Wait(fence.Get(), value)); // Fix me!
         }
 
         const uint32 numCommandListsToExecute = (uint32)workload->commandListsToExecute.size();
@@ -1970,9 +1970,9 @@ namespace Horizon
             {
                 d3d12InfoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_CORRUPTION, true);
                 d3d12InfoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_ERROR, true);
-                d3d12InfoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_WARNING, true);
-                d3d12InfoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_INFO, true);
-                d3d12InfoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_MESSAGE, true);
+                //d3d12InfoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_WARNING, true);
+                //d3d12InfoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_INFO, true);
+                //d3d12InfoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_MESSAGE, true);
 
                 std::vector<D3D12_MESSAGE_SEVERITY> enabledSeverities;
                 enabledSeverities.push_back(D3D12_MESSAGE_SEVERITY_CORRUPTION);

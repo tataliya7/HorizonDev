@@ -460,8 +460,7 @@ namespace Horizon
                 RenderGraphTextureHandle gbuffer1 = builder.ReadTexture(intermediateResources.gbuffer1, RenderBackendResourceState::ShaderResource);
                 RenderGraphTextureHandle gbuffer2 = builder.ReadTexture(intermediateResources.gbuffer2, RenderBackendResourceState::ShaderResource);
                 // TODO: which state should be?
-                //RenderGraphTextureHandle sceneDepthTexture = builder.ReadTexture(intermediateResources.sceneDepthTexture, RenderBackendResourceState::ShaderResource);
-                RenderGraphTextureHandle sceneDepthTexture = intermediateResources.depthTexture;
+                RenderGraphTextureHandle depthTexture = intermediateResources.depthTexture;
                 RenderGraphTextureHandle screenSpaceShadowMaskTexture = builder.ReadTexture(intermediateResources.shadowMaskTexture, RenderBackendResourceState::ShaderResource);
                 localLightShadowMapAtlas = builder.ReadTexture(localLightShadowMapAtlas, RenderBackendResourceState::ShaderResource);
                 skyAtmosphereTransmittanceLUT = builder.ReadTexture(skyAtmosphereTransmittanceLUT, RenderBackendResourceState::ShaderResource);
@@ -469,10 +468,10 @@ namespace Horizon
                 RenderGraphBufferHandle lightGridCellDataBuffer = builder.ReadBuffer(lightGridData.lightGridCellDataBuffer, RenderBackendResourceState::ShaderResource);
                 RenderGraphBufferHandle lightGridLightListBuffer = builder.ReadBuffer(lightGridData.lightGridLightListBuffer, RenderBackendResourceState::ShaderResource);
 
-                RenderGraphTextureHandle sceneColorTexture = intermediateResources.colorTexture;
+                RenderGraphTextureHandle colorTexture = intermediateResources.colorTexture;
 
-                builder.SetRenderTargetBinding(0, sceneColorTexture, RenderBackendRenderPassLoadOperation::Load, RenderBackendRenderPassStoreOperation::Store);
-                builder.SetDepthStencilBinding(sceneDepthTexture,
+                builder.SetRenderTargetBinding(0, colorTexture, RenderBackendRenderPassLoadOperation::Load, RenderBackendRenderPassStoreOperation::Store);
+                builder.SetDepthStencilBinding(depthTexture,
                     RenderBackendRenderPassLoadOperation::Load,
                     RenderBackendRenderPassStoreOperation::Store,
                     RenderBackendRenderPassLoadOperation::None,
@@ -485,7 +484,7 @@ namespace Horizon
                     pushConstantValues.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
                     pushConstantValues.BindBufferSRV(1, resourceRegistry.GetBufferSRVBindlessResourceDescriptorIndex(geometryDataBuffer));  // TODO: fix crash when geometryBuffer is null
                     pushConstantValues.BindBufferSRV(2, resourceRegistry.GetBufferSRVBindlessResourceDescriptorIndex(geometryInstanceDataBuffer));
-                    pushConstantValues.BindTextureSRV(3, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(sceneDepthTexture));
+                    pushConstantValues.BindTextureSRV(3, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(depthTexture));
                     pushConstantValues.BindTextureSRV(4, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(vbuffer0));
                     pushConstantValues.BindTextureSRV(5, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(vbuffer1));
                     pushConstantValues.BindTextureSRV(6, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(gbuffer0));
@@ -609,14 +608,14 @@ namespace Horizon
                 RenderGraphTextureHandle gbuffer0 = builder.ReadTexture(intermediateResources.gbuffer0, RenderBackendResourceState::ShaderResource);
                 RenderGraphTextureHandle gbuffer1 = builder.ReadTexture(intermediateResources.gbuffer1, RenderBackendResourceState::ShaderResource);
                 RenderGraphTextureHandle gbuffer2 = builder.ReadTexture(intermediateResources.gbuffer2, RenderBackendResourceState::ShaderResource);
-                RenderGraphTextureHandle sceneDepthTexture = intermediateResources.depthTexture;
+                RenderGraphTextureHandle depthTexture = intermediateResources.depthTexture;
                 RenderGraphTextureHandle indirectSpecularTexture = builder.ReadTexture(intermediateResources.indirectSpecularTexture, RenderBackendResourceState::ShaderResource);
                 RenderGraphTextureHandle ambientOcclusionTexture = builder.ReadTexture(intermediateResources.ambientOcclusionTexture, RenderBackendResourceState::ShaderResource);
                 RenderGraphTextureHandle convolvedEnvironmentMapTexture = builder.ReadTexture(intermediateResources.convolvedEnvironmentMapTexture, RenderBackendResourceState::ShaderResource);
                 RenderGraphTextureHandle sceneColorTexture = intermediateResources.colorTexture;
 
                 builder.SetRenderTargetBinding(0, sceneColorTexture, RenderBackendRenderPassLoadOperation::Load, RenderBackendRenderPassStoreOperation::Store);
-                builder.SetDepthStencilBinding(sceneDepthTexture,
+                builder.SetDepthStencilBinding(depthTexture,
                     RenderBackendRenderPassLoadOperation::Load,
                     RenderBackendRenderPassStoreOperation::Store,
                     RenderBackendRenderPassLoadOperation::None,
@@ -637,7 +636,7 @@ namespace Horizon
                     pushConstantValues.BindTextureSRV(1, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(gbuffer0));
                     pushConstantValues.BindTextureSRV(2, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(gbuffer1));
                     pushConstantValues.BindTextureSRV(3, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(gbuffer2));
-                    pushConstantValues.BindTextureSRV(4, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(sceneDepthTexture));
+                    pushConstantValues.BindTextureSRV(4, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(depthTexture));
                     pushConstantValues.BindTextureSRV(5, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(indirectSpecularTexture));
                     pushConstantValues.BindTextureSRV(6, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(ambientOcclusionTexture));
                     pushConstantValues.BindTextureSRV(7, renderBackend->GetTextureSRVBindlessResourceDescriptorIndex(environmentBrdfLutTexture));

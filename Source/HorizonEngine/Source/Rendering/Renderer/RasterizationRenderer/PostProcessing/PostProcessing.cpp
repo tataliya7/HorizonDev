@@ -24,28 +24,6 @@ namespace Horizon
         {
             exposureTexture = whiteDummyTexture;
         }
-        else if (renderBackend->GetType() == RenderBackendType::D3D12)
-        {
-            // @todo Fix me!
-            renderGraph.AddPass(
-                std::format("FixMe! (Compute, {}x{})", 1, 1),
-                RenderGraphPassFlags::Compute,
-                [&](RenderGraphBuilder& builder)
-                {
-                    return [=](RenderBackendCommandList& commandList, const RenderGraphResourceRegistry& resourceRegistry)
-                    {
-                        RenderBackendBarrier transitions[1] =
-                        {
-                            RenderBackendBarrier(
-                                resourceRegistry.GetRenderBackendTextureHandle(exposureTexture),
-                                RenderBackendTextureSubresourceRange(0, 1, 0, 1),
-                                RenderBackendResourceState::Undefined,
-                                RenderBackendResourceState::ShaderResource)
-                        };
-                        commandList.Barriers(transitions, 1);
-                    };
-                });
-        }
 
         RenderGraphBufferHandle previousAutoExposureBuffer = renderGraph.ImportExternalBuffer(historyFrame.autoExposureBuffer, "PreviousAutoExposureBuffer");
         RenderGraphBufferHandle autoExposureBuffer = previousAutoExposureBuffer;
@@ -89,7 +67,7 @@ namespace Horizon
             // Copy the final exposure value to a 1x1 texture.
             exposureTexture = AddCopyExposurePass(renderGraph, view, autoExposureBuffer);
 
-            renderGraph.ExportTextureDeferred(exposureTexture, &historyFrame.exposureTexture);
+            renderGraph.ExportTextureDeferred(exposureTexture, RenderBackendResourceState::ShaderResource, &historyFrame.exposureTexture);
         }
 
         RenderGraphTextureHandle localToneMappingTexture = whiteDummyTexture;

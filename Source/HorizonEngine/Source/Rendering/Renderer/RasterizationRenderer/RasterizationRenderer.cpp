@@ -557,10 +557,7 @@ namespace Horizon
     void RasterizationRenderer::Render(RenderGraph& renderGraph)
     {
         OPTICK_EVENT();
-
         RenderGraphDebugLabelRegion debugLabelRegion(renderGraph, "RasterizationRenderer");
-
-        // GatherRayTracingInstances();
 
         if (!perFrameConstantBuffers[currentPerFrameDataBufferIndex])
         {

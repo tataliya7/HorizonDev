@@ -178,6 +178,7 @@ namespace Horizon
             });
 
         // test
+        skyLight->environmentMapTexture->state = RenderBackendResourceState::ShaderResource;
         capturedEnvironmentMapTexture = renderGraph.ImportExternalTexture(skyLight->environmentMapTexture, "TestEnvironmentMapTexture");
 
         intermediateResources.environmentMapTexture = capturedEnvironmentMapTexture;

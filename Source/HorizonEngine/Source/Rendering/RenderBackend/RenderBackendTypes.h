@@ -63,20 +63,20 @@ namespace Horizon
 
     enum class RenderBackendResourceState
     {
-        Undefined = 0,
-        Present = 1,
-        IndirectArgument = 2,
-        VertexBuffer = 3,
-        IndexBuffer = 4,
-        ShaderResource = 5,
-        CopySrc = 6,
-        DepthStencilReadOnly = 7,
-        RenderTarget = 8,
-        CopyDst = 9,
-        UnorderedAccess = 10,
-        DepthStencil = 11,
-        RayTracingAccelerationStructureReadOnly = 12,
-        RayTracingAccelerationStructure = 13,
+        Undefined                                  = 0,
+        Present                                    = 1,
+        IndirectArgument                           = 2,
+        VertexBuffer                               = 3,
+        IndexBuffer                                = 4,
+        ShaderResource                             = 5,
+        CopySrc                                    = 6,
+        DepthStencilReadOnly                       = 7,
+        RenderTarget                               = 8,
+        CopyDst                                    = 9,
+        UnorderedAccess                            = 10,
+        DepthStencil                               = 11,
+        RayTracingAccelerationStructureReadOnly    = 12,
+        RayTracingAccelerationStructure            = 13,
     };
 
     enum class RenderBackendResourceStateFlags

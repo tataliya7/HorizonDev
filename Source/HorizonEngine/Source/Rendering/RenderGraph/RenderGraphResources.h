@@ -91,6 +91,7 @@ namespace Horizon
         bool exported = false;
         bool transient = false;
         bool usedByAsyncComputePass = false;
+        bool transitionToFinalState = false;
         RenderBackendResourceState initialState = RenderBackendResourceState::Undefined;
         RenderBackendResourceState finalState = RenderBackendResourceState::Undefined;
         RenderBackendResourceState intermediateState = RenderBackendResourceState::Undefined;
@@ -137,7 +138,6 @@ namespace Horizon
         {
             this->internalTexture = texture;
             this->initialState = initialState;
-            this->finalState = initialState;
             this->intermediateState = initialState;
         }
         const RenderGraphTextureDescription desc;

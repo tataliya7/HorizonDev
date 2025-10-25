@@ -531,6 +531,14 @@ namespace Horizon
         Vector2f textureCoordinates[VirtualGeometryVertexMaximumTextureCoordinateCount];
     };
 
+    struct GPUSceneRenderGraphResources
+    {
+        RenderGraphBufferHandle geometryDataBuffer;
+        RenderGraphBufferHandle geometryInstanceDataBuffer;
+        RenderGraphBufferHandle distantLightDataBuffer;
+        RenderGraphBufferHandle localLightDataBuffer;
+    };
+
     /**
      * Represents the GPU-side data of a RenderScene, responsible for uploading scene data to GPU.
      */

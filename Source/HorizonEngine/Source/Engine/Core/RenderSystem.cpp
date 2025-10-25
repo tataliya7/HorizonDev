@@ -441,7 +441,21 @@ namespace Horizon
 
                 return [=](RenderBackendCommandList& commandList, const RenderGraphResourceRegistry& resourceRegistry)
                 {
+                    #if HORIZON_EDITOR // Fix me!
+                    RenderBackendBarrier transitions1[] =
+                    {
+                        RenderBackendBarrier(view.targetTexture->GetHandle(), RenderBackendTextureSubresourceRange::All, RenderBackendResourceState::UnorderedAccess, RenderBackendResourceState::ShaderResource)
+                    };
+                    commandList.Barriers(transitions1, 1);
+                    #endif
                     DrawUI(commandList, resourceRegistry.GetRenderBackendTextureHandle(uiColorAndAlphaTexture));
+                    #if HORIZON_EDITOR // Fix me!
+                    RenderBackendBarrier transitions2[] =
+                    {
+                        RenderBackendBarrier(view.targetTexture->GetHandle(), RenderBackendTextureSubresourceRange::All, RenderBackendResourceState::ShaderResource, RenderBackendResourceState::UnorderedAccess)
+                    };
+                    commandList.Barriers(transitions2, 1);
+                    #endif
                 };
             });
 
@@ -454,7 +468,6 @@ namespace Horizon
             [&](RenderGraphBuilder& builder)
             {
                 builder.SetBindlessResourceSRV(0, uiColorAndAlphaTexture);
-
                 builder.SetRenderTargetBinding(0, displayTexture, offscreen ? RenderBackendRenderPassLoadOperation::Clear : RenderBackendRenderPassLoadOperation::Load, RenderBackendRenderPassStoreOperation::Store);
 
                 RenderBackendShaderHandle vertexShader = shaderRepository->GetShader(ShaderID::DrawFullscreenQuadVS);

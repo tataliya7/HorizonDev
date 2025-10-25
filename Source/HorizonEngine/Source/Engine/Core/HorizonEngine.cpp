@@ -39,8 +39,8 @@ namespace Horizon
 
     void HorizonEngine::RegisterAndInitializeSubsystems()
     {
-        streamlineContext = new StreamlineContext();
-        streamlineContext->Init();
+        //streamlineContext = new StreamlineContext();
+        //streamlineContext->Init();
 
         AssetSystem* assetSystem = subsystemRegistry.RegisterSubsystem<AssetSystem>();
         assetSystem->Init();
