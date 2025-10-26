@@ -331,7 +331,7 @@ namespace Horizon
 #endif
     }
 
-    void RasterizationRenderer::RenderGBuffer(
+    void RasterizationRenderer::RenderGeometryBuffer(
         RenderGraph& renderGraph,
         const SceneView& view)
     {
@@ -373,50 +373,6 @@ namespace Horizon
                     uint32 threadGroupCountZ = 1;
 
                     RenderBackendShaderHandle computeShader = shaderRepository->GetShader(ShaderID::GBuffer);
-
-                    commandList.Dispatch(
-                        computeShader,
-                        pushConstantValues,
-                        threadGroupCountX,
-                        threadGroupCountY,
-                        threadGroupCountZ);
-                };
-            });
-    }
-
-    void RasterizationRenderer::RenderMotionVectors(
-        RenderGraph& renderGraph,
-        const SceneView& view)
-    {
-        const GPUScene* gpuScene = sceneView->scene->GetGPUScene();
-        RenderGraphBufferHandle geometryDataBuffer = renderGraph.ImportExternalBuffer(gpuScene->persistentGeometryDataBuffer);
-        RenderGraphBufferHandle geometryInstanceDataBuffer = renderGraph.ImportExternalBuffer(gpuScene->persistentGeometryInstanceDataBuffer);
-
-        RasterizationRendererIntermediateResources& intermediateResources = renderGraph.blackboard.Get<RasterizationRendererIntermediateResources>();
-
-        renderGraph.AddPass(
-            std::format("ComputeMotionVectors (Compute, {}x{})", renderResolution.width, renderResolution.height),
-            RenderGraphPassFlags::Compute,
-            [&](RenderGraphBuilder& builder)
-            {
-                builder.SetBindlessResourceSRV(0, GetCurrentPerFrameConstantBuffer());
-                builder.SetBindlessResourceSRV(1, geometryDataBuffer);
-                builder.SetBindlessResourceSRV(2, geometryInstanceDataBuffer);
-                builder.SetBindlessResourceSRV(3, intermediateResources.visibleMeshletBuffer);
-                builder.SetBindlessResourceSRV(4, intermediateResources.depthTexture);
-                builder.SetBindlessResourceSRV(5, intermediateResources.vbuffer0);
-                builder.SetBindlessResourceSRV(6, intermediateResources.vbuffer1);
-                builder.SetBindlessResourceUAV(7, intermediateResources.motionVectorTexture, 0);
-
-                RenderBackendShaderHandle computeShader = shaderRepository->GetShader(ShaderID::ComputeMotionVectors);
-
-                uint32 threadGroupCountX = ComputeShaderThreadGroupCount(renderResolution.width, 8);
-                uint32 threadGroupCountY = ComputeShaderThreadGroupCount(renderResolution.height, 8);
-                uint32 threadGroupCountZ = 1;
-
-                return [=](RenderBackendCommandList& commandList, const RenderGraphResourceRegistry& resourceRegistry)
-                {
-                    RenderBackendPushConstantValues pushConstantValues = resourceRegistry.GetPushConstantValues();
 
                     commandList.Dispatch(
                         computeShader,

@@ -64,7 +64,7 @@ namespace Horizon
         ScreenSpaceShadowsStochastic,
         ScreenSpaceShadowsBend,
         ScreenSpaceShadowsComposition,
-        ComputeMotionVectors,
+        MotionVectorEstimation,
         SurfelGIFreeSurfels,
         SurfelGIGapFilling,
         SurfelGIIndirectArguments,

@@ -179,11 +179,11 @@ namespace Horizon
             RenderGraph& renderGraph,
             const SceneView& view);
 
-        void RenderGBuffer(
+        void RenderGeometryBuffer(
             RenderGraph& renderGraph,
             const SceneView& view);
 
-        void RenderMotionVectors(
+        void DispatchMotionVectorEstimation(
             RenderGraph& renderGraph,
             const SceneView& view);
 

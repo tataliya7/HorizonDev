@@ -15,7 +15,7 @@ SHADER_CONSTANTS_STRUCT_END();
 
 [shader("compute")]
 [numthreads(8, 8, 1)]
-void ComputeMotionVectorsCS(uint3 dispatchThreadID : SV_DispatchThreadID)
+void MotionVectorEstimationCS(uint3 dispatchThreadID : SV_DispatchThreadID)
 {
     StructuredBuffer<RasterizationRendererUniformVariables> frameShaderParameterBuffer = ShaderConstants.GetPerFrameShaderParameterBufferSRV();
     RasterizationRendererUniformVariables frameShaderParameters = frameShaderParameterBuffer[0];
