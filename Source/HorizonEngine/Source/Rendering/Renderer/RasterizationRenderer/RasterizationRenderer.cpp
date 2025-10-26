@@ -601,11 +601,11 @@ namespace Horizon
         GPUScene* gpuScene = renderScene->GetGPUScene();
 
         RasterizationRendererIntermediateResources& intermediateResources = renderGraph.blackboard.Create<RasterizationRendererIntermediateResources>();
-        // GPUSceneRenderGraphResources& gpuSceneResources = renderGraph.blackboard.Create<GPUSceneRenderGraphResources>();
-        // gpuSceneResources.geometryDataBuffer = renderGraph.ImportExternalBuffer(gpuScene->persistentGeometryDataBuffer);
-        // gpuSceneResources.geometryDataBuffer = renderGraph.ImportExternalBuffer(gpuScene->persistentGeometryInstanceDataBuffer);
-        // gpuSceneResources.geometryDataBuffer = renderGraph.ImportExternalBuffer(gpuScene->persistentDistantLightDataBuffer);
-        // gpuSceneResources.geometryDataBuffer = renderGraph.ImportExternalBuffer(gpuScene->persistentLocalLightDataBuffer);
+        GPUSceneRenderGraphResources& gpuSceneResources = renderGraph.blackboard.Create<GPUSceneRenderGraphResources>();
+        gpuSceneResources.geometryDataBuffer = renderGraph.ImportExternalBuffer(gpuScene->persistentGeometryDataBuffer);
+        gpuSceneResources.geometryInstanceDataBuffer = renderGraph.ImportExternalBuffer(gpuScene->persistentGeometryInstanceDataBuffer);
+        gpuSceneResources.distantLightDataBuffer = renderGraph.ImportExternalBuffer(gpuScene->persistentDistantLightDataBuffer);
+        gpuSceneResources.localLightDataBuffer = renderGraph.ImportExternalBuffer(gpuScene->persistentLocalLightDataBuffer);
         //RasterizationRendererDebugViewModeTextures& debugViewModeTextures = renderGraph.blackboard.Create<RasterizationRendererDebugViewModeTextures>();
 
         RenderGraphTextureDescription vbuffer0Desc = RenderGraphTextureDescription::Create2D(
@@ -669,13 +669,6 @@ namespace Horizon
             1,
             RenderBackendResourceState::DepthStencil);
         intermediateResources.depthTexture = renderGraph.CreateTexture(sceneDepthTextureDescription, "DepthTexture");
-
-        RenderGraphTextureDescription motionVectorTextureDescription = RenderGraphTextureDescription::Create2D(
-            renderResolution.width,
-            renderResolution.height,
-            RenderBackendTextureFormat::R16G16Float,
-            RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::UnorderedAccess);
-        intermediateResources.motionVectorTexture = renderGraph.CreateTexture(motionVectorTextureDescription, "MotionVectorTexture");
 
         if (renderFeatures.enableSkyAtmosphereRendering)
         {
