@@ -52,4 +52,48 @@ namespace Horizon
                 };
             });
     }
+
+    RenderGraphTextureHandle RasterizationRenderer::DispatchMotionVectorDebugVisualization(
+        RenderGraph& renderGraph,
+        const SceneView& view)
+    {
+        const RasterizationRendererIntermediateResources& intermediateResources = renderGraph.blackboard.Get<RasterizationRendererIntermediateResources>();
+
+        // TODO
+        RenderGraphTextureHandle outputTexture = renderGraph.ImportExternalTexture(view.targetTexture, "TargetTexture");
+        //RenderGraphTextureHandle outputTexture = renderGraph.CreateTexture(view.targetTexture->GetDesc(), "VisualizeMotionVectorsTexture");
+
+        renderGraph.AddPass(
+            std::format("VisualizeMotionVectors (Compute, {}x{}->{}x{})", renderResolution.width, renderResolution.height, targetResolution.width, targetResolution.height),
+            RenderGraphPassFlags::Compute,
+            [&](RenderGraphBuilder& builder)
+            {
+                RenderGraphTextureHandle motionVectorTexture = builder.ReadTexture(intermediateResources.motionVectorTexture, RenderBackendResourceState::ShaderResource);
+
+                outputTexture = builder.WriteTexture(outputTexture, RenderBackendResourceState::UnorderedAccess);
+
+                return [=](RenderBackendCommandList& commandList, const RenderGraphResourceRegistry& resourceRegistry)
+                {
+                    uint32 threadGroupCountX = ComputeShaderThreadGroupCount(targetResolution.width, PostProcessingThreadGroupSizeX);
+                    uint32 threadGroupCountY = ComputeShaderThreadGroupCount(targetResolution.height, PostProcessingThreadGroupSizeY);
+                    uint32 threadGroupCountZ = 1;
+
+                    RenderBackendPushConstantValues pushConstantValues = {};
+                    pushConstantValues.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
+                    pushConstantValues.BindTextureSRV(1, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(motionVectorTexture));
+                    pushConstantValues.BindTextureUAV(2, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndex(outputTexture, 0));
+
+                    RenderBackendShaderHandle computeShader = shaderRepository->GetShader(ShaderID::VisualizeMotionVectors);
+
+                    commandList.Dispatch(
+                        computeShader,
+                        pushConstantValues,
+                        threadGroupCountX,
+                        threadGroupCountY,
+                        threadGroupCountZ);
+                };
+            });
+
+        return outputTexture;
+    }
 }

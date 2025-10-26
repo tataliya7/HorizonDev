@@ -58,6 +58,8 @@ namespace Horizon
             RenderBackendRenderPassStoreOperation stencilStoreOperation,
             RenderBackendDepthStencilAccessType depthStencilAccessType);
 
+        void SetIndirectArguments(RenderGraphBufferHandle handle);
+
         void SetRenderArea(int32 x, int32 y, uint32 width, uint32 height);
 
         void SetAllowUAVWrites(bool value);

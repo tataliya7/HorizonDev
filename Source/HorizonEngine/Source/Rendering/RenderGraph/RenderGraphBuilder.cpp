@@ -220,4 +220,9 @@ namespace Horizon
 
         pass->allowUAVWrites = value;
     }
+
+    void RenderGraphBuilder::SetIndirectArguments(RenderGraphBufferHandle handle)
+    {
+        ReadBuffer(handle, RenderBackendResourceState::IndirectArgument);
+    }
 }
