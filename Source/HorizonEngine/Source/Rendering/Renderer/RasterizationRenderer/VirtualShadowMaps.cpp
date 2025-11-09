@@ -651,7 +651,7 @@ namespace Horizon
         const bool skipOcclusionCulling = previousMinDepthPyramidTexture.IsNull();
 
         renderGraph.AddPass(
-            std::format("MeshletCulling (Compute, Indirect)"),
+            std::format("VirtualShadowMapMeshletCulling (Compute, Indirect)"),
             RenderGraphPassFlags::Compute,
             [&](RenderGraphBuilder& builder)
             {
