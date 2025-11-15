@@ -303,86 +303,136 @@ namespace Horizon
         BINDLESS_RESOURCE_BINDING_ACCELERATION_STRUCTURE_SRV    = 5,
     };
 
-    struct VulkanBindlessConfig
+    class VulkanBindlessDescriptorIndexAllocator
     {
-        uint32 numSamplers;
-        uint32 numSampledImages;
-        uint32 numStorageImages;
-        uint32 numUniformBuffers;
-        uint32 numStorageBuffers;
-        uint32 numAccelerationStructures;
+    public:
+
+        VulkanBindlessDescriptorIndexAllocator(uint32 descriptorCount)
+        {
+            for (int32 index = descriptorCount - 1; index >= 0; index--)
+            {
+                freeDescriptorList.push_back(index);
+            }
+        }
+
+        int32 AllocateDescriptorIndex()
+        {
+            if (!freeDescriptorList.empty())
+            {
+                int32 index = freeDescriptorList.back();
+                freeDescriptorList.pop_back();
+                return index;
+            }
+            return -1;
+        }
+
+        void FreeDescriptorIndex(int32 descriptorIndex)
+        {
+            if (descriptorIndex >= 0)
+            {
+                freeDescriptorList.push_back(descriptorIndex);
+            }
+        }
+
+        std::list<int32> freeDescriptorList;
     };
 
-    struct VulkanBindlessDescriptorManager
+    class VulkanBindlessDescriptorManager
     {
-        VulkanBindlessConfig config;
+    public:
 
-        VkDevice device;
-        VkDescriptorPool pool;
-        VkDescriptorSetLayout layout;
-        VkDescriptorSet set;
+        static constexpr uint32 MaxSamplerDescriptorCount                  = 4 * 1024;
+        static constexpr uint32 MaxSampledImageDescriptorCount             = 16 * 1024;
+        static constexpr uint32 MaxStorageImageDescriptorCount             = 16 * 1024;
+        static constexpr uint32 MaxUniformBufferDescriptorCount            = 16;
+        static constexpr uint32 MaxStorageBufferDescriptorCount            = 8 * 1024;
+        static constexpr uint32 MaxAccelerationStructureDescriptorCount    = 8 * 1024;
 
-        uint32 pushConstantsSize;
+        VulkanBindlessDescriptorManager(VulkanDevice* device);
 
-        VkPipelineLayout compatibleComputePipelineLayout;
-        VkPipelineLayout compatibleGraphicsPipelineLayout;
-        VkPipelineLayout compatibleRayTracingPipelineLayout;
+        ~VulkanBindlessDescriptorManager();
 
-        std::vector<uint32> freeSamplers;
-        std::vector<uint32> freeSampledImages;
-        std::vector<uint32> freeStorageImages;
-        std::vector<uint32> freeUniformBuffers;
-        std::vector<uint32> freeStorageBuffers;
-        std::vector<uint32> freeAccelerationStructures;
+        void Initialize();
 
-        uint32 AllocateSampledImageIndex()
+        void Cleanup();
+
+        uint32 GetPushConstantSize() const
         {
-            uint32 index = freeSampledImages.back();
-            freeSampledImages.pop_back();
-            return index;
+            return RenderBackendPushConstantsBytes;
         }
 
-        uint32 AllocateSamplerIndex()
+        VkDescriptorSetLayout GetBindlessDescriptorSetLayout() const
         {
-            uint32 index = freeSamplers.back();
-            freeSamplers.pop_back();
-            return index;
+            return bindlessDescriptorSetLayout;
         }
 
-        uint32 AllocateStorageImageIndex()
+        VkPipelineLayout GetBindlessCompatiblePipelineLayout() const
         {
-            uint32 index = freeStorageImages.back();
-            freeStorageImages.pop_back();
-            return index;
+            return bindlessCompatiblePipelineLayout;
         }
 
-        uint32 AllocateStorageBufferIndex()
+        VkDescriptorSet GetBindlessDescriptorSet() const
         {
-            uint32 index = freeStorageBuffers.back();
-            freeStorageBuffers.pop_back();
-            return index;
+            return bindlessDescriptorSet;
         }
 
-        uint32 AllocateUniformBufferIndex()
+        int32 AllocateSamplerDescriptorIndex() const
         {
-            uint32 index = freeUniformBuffers.back();
-            freeUniformBuffers.pop_back();
-            return index;
+            return samplerDescriptorIndexAllocator->AllocateDescriptorIndex();
         }
 
-        uint32 AllocateAccelerationStructureIndex()
+        int32 AllocateSampledImageDescriptorIndex() const
         {
-            uint32 index = freeAccelerationStructures.back();
-            freeAccelerationStructures.pop_back();
-            return index;
+            return sampledImageDescriptorIndexAllocator->AllocateDescriptorIndex();
+        }
+
+        int32 AllocateStorageImageDescriptorIndex() const
+        {
+            return storageImageDescriptorIndexAllocator->AllocateDescriptorIndex();
+        }
+
+        int32 AllocateUniformBufferDescriptorIndex() const
+        {
+            return uniformBufferDescriptorIndexAllocator->AllocateDescriptorIndex();
+        }
+
+        int32 AllocateStorageBufferDescriptorIndex() const
+        {
+            return storageBufferDescriptorIndexAllocator->AllocateDescriptorIndex();
+        }
+
+        int32 AllocateAccelerationStructureDescriptorIndex() const
+        {
+            return accelerationStructureDescriptorIndexAllocator->AllocateDescriptorIndex();
         }
 
         void UpdateDescriptor(VulkanTextureView* textureView, uint32 descriptorIndex, bool shaderResourceView, const VulkanDeviceSpecificFunctionTable& deviceFunctions);
+
+    private:
+
+        VulkanDevice* device;
+
+        VkDescriptorSetLayout bindlessDescriptorSetLayout;
+        VkPipelineLayout bindlessCompatiblePipelineLayout;
+        //VkPipelineLayout bindlessCompatibleComputePipelineLayout;
+        //VkPipelineLayout bindlessCompatibleGraphicsPipelineLayout;
+        //VkPipelineLayout bindlessCompatibleRayTracingPipelineLayout;
+
+        VkDescriptorPool bindlessDescriptorPool;
+        VkDescriptorSet bindlessDescriptorSet;
+
+        VulkanBindlessDescriptorIndexAllocator* samplerDescriptorIndexAllocator;
+        VulkanBindlessDescriptorIndexAllocator* sampledImageDescriptorIndexAllocator;
+        VulkanBindlessDescriptorIndexAllocator* storageImageDescriptorIndexAllocator;
+        VulkanBindlessDescriptorIndexAllocator* uniformBufferDescriptorIndexAllocator;
+        VulkanBindlessDescriptorIndexAllocator* storageBufferDescriptorIndexAllocator;
+        VulkanBindlessDescriptorIndexAllocator* accelerationStructureDescriptorIndexAllocator;
     };
 
     struct VulkanPhysicalDevice
     {
         VkPhysicalDevice handle;
+
         VkPhysicalDeviceProperties properties;
         VkPhysicalDeviceMemoryProperties memoryProperties;
         VkPhysicalDeviceDescriptorIndexingProperties descriptorIndexingProperties;
@@ -710,7 +760,7 @@ namespace Horizon
     public:
         VulkanDevice();
         ~VulkanDevice();
-        bool Init(VulkanRenderBackend* backend, VulkanPhysicalDevice* physicalDevive, const VulkanBindlessConfig& bindlessConfig);
+        bool Init(VulkanRenderBackend* backend, VulkanPhysicalDevice* physicalDevive);
         void Shutdown();
         void Tick();
         void WaitIdle();
@@ -763,6 +813,16 @@ namespace Horizon
         //VulkanPipeline* FindOrCreateRayTracingPipeline(VulkanShader* shader, uint32 pushConstantsSize);
         void SetDebugUtilsObjectName(VkObjectType objectType, uint64 objectHandle, const char* objectName);
 
+        const VulkanRenderBackend& GetRenderBackend() const
+        {
+            return *backend;
+        }
+
+        const VulkanPhysicalDevice& GetPhysicalDevice() const
+        {
+            return *physicalDevice;
+        }
+
         VkPhysicalDevice GetPhysicalDeviceHandle() const
         {
             return physicalDevice->handle;
@@ -772,18 +832,27 @@ namespace Horizon
         {
             return handle;
         }
+
+        const VulkanDeviceSpecificFunctionTable& GetDeviceFunctions() const
+        {
+            return deviceFunctions;
+        }
+
         inline VulkanRenderBackend* GetBackend()
         {
             return backend;
         }
+
         inline uint32 GetDeviceMask() const
         {
             return deviceMask;
         }
+
         inline VkDescriptorSet GetBindlessGlobalSet() const
         {
-            return bindlessDescriptorManager.set;
+            return bindlessDescriptorManager->GetBindlessDescriptorSet();
         }
+
         inline uint32 GetQueueFamilyIndex(RenderBackendQueueFamily family) const
         {
             return physicalDevice->queueFamilyIndices[(uint32)family];
@@ -869,8 +938,7 @@ namespace Horizon
 
         void CreateVmaAllocator();
         void DestroyVmaAllocator();
-        bool CreateBindlessDescriptorManager(const VulkanBindlessConfig& bindlessConfig);
-        void DestroyBindlessDescriptorManager();
+
         uint32 CreateAccelerationStructure(VulkanRayTracingAccelerationStructure* accelerationStructure, VkAccelerationStructureTypeKHR type, uint32* primitiveCounts, const char* name);
 
         void BindBindlessDescriptorSets(VkCommandBuffer commandBuffer);
@@ -891,7 +959,8 @@ namespace Horizon
         uint32 numCommandQueues[RenderBackendQueueFamilyCount] = { 1, 1, 1, 1 };
         std::vector<VulkanQueue> commandQueues[RenderBackendQueueFamilyCount];
 
-        VulkanBindlessDescriptorManager bindlessDescriptorManager;
+        VulkanBindlessDescriptorManager* bindlessDescriptorManager;
+
         VulkanPipelineManager pipelineManager;
 
         struct FramebufferList
