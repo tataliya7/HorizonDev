@@ -2177,9 +2177,9 @@ namespace Horizon
         VkSemaphore& imageAcquiredSemaphore = swapchain->imageAcquiredSemaphores[semaphoreIndex];
         VkFence& imageAcquiredFence = swapchain->imageAcquiredFences[semaphoreIndex];
 
-        //deviceFunctions.vkDeviceWaitIdle(handle);
-
         // TODO: investigate this
+        deviceFunctions.vkDeviceWaitIdle(handle);
+
         if (deviceFunctions.vkGetFenceStatus(handle, imageAcquiredFence) == VK_NOT_READY)
         {
             VK_CHECK(deviceFunctions.vkWaitForFences(handle, 1, &imageAcquiredFence, VK_TRUE, UINT64_MAX));
@@ -2756,11 +2756,12 @@ namespace Horizon
             SetRenderBackendHandleRepresentation(swapchain.buffers[i].GetIndex(), textureIndex);
         }
 
-        AcquireImageIndex(index);
+        //AcquireImageIndex(index);
     }
 
     RenderBackendTextureHandle VulkanDevice::GetActiveSwapChainBackBuffer(uint32 index)
     {
+        AcquireImageIndex(index);
         return swapchains[index].buffers[swapchains[index].activeBackBufferIndex];
     }
 
@@ -2922,7 +2923,7 @@ namespace Horizon
         swapchains.emplace_back(swapchain);
         presentSemaphores.resize(swapchains.size());
 
-        AcquireImageIndex(swapchainIndex);
+        //AcquireImageIndex(swapchainIndex);
 
         return swapchainIndex;
     }
@@ -4191,7 +4192,7 @@ namespace Horizon
         VulkanSwapchain::Status status = device.PresentSwapChain(index, &device.presentSemaphores[index], 1);
         if (status == VulkanSwapchain::Status::Success)
         {
-            status = device.AcquireImageIndex(index);
+            //status = device.AcquireImageIndex(index);
         }
         if (status == VulkanSwapchain::Status::OutOfDate)
         {
@@ -4959,7 +4960,6 @@ namespace Horizon
                     .sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
                     .semaphore = swapchain->imageAcquiredSemaphores[swapchain->semaphoreIndex],
                     .stageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,
-                    //.deviceIndex = ,
                 };
                 waitSemaphoreInfos.emplace_back(waitSemaphoreInfo);
 
@@ -4968,7 +4968,6 @@ namespace Horizon
                     .sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
                     .semaphore = submitContext.completeSemaphore,
                     .stageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,
-                    //.deviceIndex = ,
                 };
                 signalSemaphoreInfos.emplace_back(signalSemaphoreInfo);
             }
@@ -4977,18 +4976,17 @@ namespace Horizon
             {
                 .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO,
                 .commandBuffer = primaryCommandBuffer->handle,
-                //.deviceMask = ,
             };
 
             VkSubmitInfo2 submitInfo =
             {
                 .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO_2,
                 .pNext = nullptr,
-                .waitSemaphoreInfoCount = (uint32)waitSemaphoreInfos.size(),
+                .waitSemaphoreInfoCount = static_cast<uint32>(waitSemaphoreInfos.size()),
                 .pWaitSemaphoreInfos = waitSemaphoreInfos.data(),
                 .commandBufferInfoCount = 1,
                 .pCommandBufferInfos = &commandBufferSubmitInfo,
-                .signalSemaphoreInfoCount = (uint32)signalSemaphoreInfos.size(),
+                .signalSemaphoreInfoCount = static_cast<uint32>(signalSemaphoreInfos.size()),
                 .pSignalSemaphoreInfos = signalSemaphoreInfos.data(),
             };
             submitInfos[queueFamily].emplace_back(submitInfo);
@@ -5007,7 +5005,7 @@ namespace Horizon
 
             VK_CHECK(device.deviceFunctions.vkQueueSubmit2(
                 device.GetCommandQueue(queueFamily, 0)->handle,
-                (uint32)submitInfos[queueFamily].size(),
+                static_cast<uint32>(submitInfos[queueFamily].size()),
                 submitInfos[queueFamily].data(),
                 submitContext.completeFence));
         }
