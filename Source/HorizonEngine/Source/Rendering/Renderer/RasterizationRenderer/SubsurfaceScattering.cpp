@@ -108,7 +108,7 @@ namespace Horizon
 
         renderGraph.AddPass(
             std::format("SubsurfaceScatteringConvolution (Compute, Tiled)"),
-            RenderGraphPassFlags::Graphics,
+            RenderGraphPassFlags::Compute,
             [&](RenderGraphBuilder& builder)
             {
                 builder.SetBindlessResourceSRV(0, GetCurrentPerFrameConstantBuffer());

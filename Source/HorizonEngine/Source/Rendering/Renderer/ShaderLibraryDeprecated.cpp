@@ -657,16 +657,16 @@ namespace Horizon
             shaderRepository->LoadShader(ShaderID::DebugDrawPS, shaderDesc);
         }
 
-        if (true)
+        if (false)
         {
             {
                 ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::RayGen, "Shaders/RasterizationRenderer/HardwareRayTracing/RayTracingShadows.hslib", "RayTracingShadowsRayGen");
                 shaderDesc.AddDefine("RAY_TRACING_ENABLED", 1);
-                //if (shaderRepository->renderBackend->GetType() == RenderBackendType::Vulkan) // Avoid vulkan validation errors.
-                //{
-                //    shaderDesc.shaderCompilerOptions.skipOptimization = false;
-                //    shaderDesc.shaderCompilerOptions.generateDebugInfo = false;
-                //}
+                if (shaderRepository->renderBackend->GetType() == RenderBackendType::Vulkan) // Avoid vulkan validation errors.
+                {
+                    shaderDesc.shaderCompilerOptions.skipOptimization = false;
+                    shaderDesc.shaderCompilerOptions.generateDebugInfo = false;
+                }
                 shaderRepository->LoadShader(ShaderID::RayTracingShadowsRayGen, shaderDesc);
             }
             {

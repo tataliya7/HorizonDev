@@ -823,8 +823,11 @@ namespace Horizon
             *outDstStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
             *outDstAccessMask = VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT;
             break;
-        case RenderBackendResourceState::VertexBuffer:
         case RenderBackendResourceState::IndexBuffer:
+            *outDstStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+            *outDstAccessMask = VK_ACCESS_2_INDEX_READ_BIT | VK_ACCESS_2_MEMORY_READ_BIT;
+            break;
+        case RenderBackendResourceState::VertexBuffer:
         case RenderBackendResourceState::ShaderResource:
             if (outNewLayout)
             {

@@ -171,6 +171,7 @@ namespace Horizon
             }
         }
 
+        // @todo Fix memory leak!
         RenderBackendBufferHandle bufferHandle = backend->CreateBuffer(&desc, nullptr, "RenderGraphStagingBuffer");
         RenderGraphStagingBuffer* buffer = new RenderGraphStagingBuffer("RenderGraphStagingBuffer", desc, bufferHandle);
 

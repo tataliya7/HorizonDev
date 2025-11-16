@@ -466,7 +466,7 @@ namespace Horizon
                     RenderBackendPushConstantValues pushConstantValues = {};
                     pushConstantValues.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(virtualShadowMapShaderParameterBuffer));
                     pushConstantValues.BindBufferSRV(1, resourceRegistry.GetBufferSRVBindlessResourceDescriptorIndex(virtualShadowMapPageRequestBuffer));
-                    pushConstantValues.BindBufferUAV(2, resourceRegistry.GetBufferSRVBindlessResourceDescriptorIndex(virtualShadowMapPhysicalPageListBuffer));
+                    pushConstantValues.BindBufferUAV(2, resourceRegistry.GetBufferUAVBindlessResourceDescriptorIndex(virtualShadowMapPhysicalPageListBuffer));
                     pushConstantValues.BindBufferUAV(3, resourceRegistry.GetBufferUAVBindlessResourceDescriptorIndex(virtualShadowMapPageTableBuffer));
                     pushConstantValues.BindBufferUAV(4, resourceRegistry.GetBufferUAVBindlessResourceDescriptorIndex(virtualShadowMapPhysicalPageDataBuffer));
 

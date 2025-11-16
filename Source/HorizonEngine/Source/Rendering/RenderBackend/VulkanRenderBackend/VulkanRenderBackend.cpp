@@ -2178,6 +2178,7 @@ namespace Horizon
         VkFence& imageAcquiredFence = swapchain->imageAcquiredFences[semaphoreIndex];
 
         //deviceFunctions.vkDeviceWaitIdle(handle);
+
         // TODO: investigate this
         if (deviceFunctions.vkGetFenceStatus(handle, imageAcquiredFence) == VK_NOT_READY)
         {
@@ -2204,7 +2205,9 @@ namespace Horizon
         OPTICK_EVENT();
 
         VulkanSwapchain* swapchain = &swapchains[index];
-        VkPresentInfoKHR presentInfo = {
+
+        VkPresentInfoKHR presentInfo =
+        {
             .sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
             .waitSemaphoreCount = waitSemaphoreCount,
             .pWaitSemaphores = waitSemaphores,
@@ -2212,13 +2215,17 @@ namespace Horizon
             .pSwapchains = &swapchain->handle,
             .pImageIndices = &swapchain->activeBackBufferIndex,
         };
+
         VkQueue presentQueue = commandQueues[(uint32)RenderBackendQueueFamily::Graphics][0].handle;
+
         VkResult result = deviceFunctions.vkQueuePresentKHR(presentQueue, &presentInfo);
         if (result == VK_ERROR_OUT_OF_DATE_KHR)
         {
             return VulkanSwapchain::Status::OutOfDate;
         }
+
         assert(result == VK_SUCCESS || result == VK_SUBOPTIMAL_KHR);
+
         return VulkanSwapchain::Status::Success;
     }
 
@@ -3130,13 +3137,16 @@ namespace Horizon
         return true;
     }
 
-
     void VulkanDevice::Shutdown()
     {
         WaitIdle();
 
-        bindlessDescriptorManager->Cleanup();
-        delete bindlessDescriptorManager;
+        if (bindlessDescriptorManager)
+        {
+            bindlessDescriptorManager->Cleanup();
+            delete bindlessDescriptorManager;
+            bindlessDescriptorManager = nullptr;
+        }
 
         delete commandBufferManager;
         for (uint32 i = 0; i < (uint32)swapchains.size(); i++)
@@ -3604,7 +3614,7 @@ namespace Horizon
         if (pushConstantsSize > 0)
         {
             const void* pushConstantsData = &pushConstantValues.data;
-            device->deviceFunctions.vkCmdPushConstants(commandBuffer, pipeline->layout, VK_SHADER_STAGE_COMPUTE_BIT, 0, pushConstantsSize, pushConstantsData);
+            device->deviceFunctions.vkCmdPushConstants(commandBuffer, pipeline->layout, VK_SHADER_STAGE_ALL, 0, pushConstantsSize, pushConstantsData);
         }
 
         return true;
@@ -4913,7 +4923,6 @@ namespace Horizon
             };
             VK_CHECK(device.deviceFunctions.vkBeginCommandBuffer(primaryCommandBuffer->handle, &commandBufferBeginInfo));
 
-            // Bindless, the global descriptor set is only bound once per frame
             device.BindBindlessDescriptorSets(primaryCommandBuffer->handle);
 
             if (false)
@@ -4943,7 +4952,7 @@ namespace Horizon
                 VulkanSwapchain* swapchain = &device.swapchains[swapchainIndex];
 
                 submitContext.completeSemaphore = primaryCommandBuffer->semaphore;
-                device.presentSemaphores[0] = submitContext.completeSemaphore;
+                device.presentSemaphores[swapchainIndex] = submitContext.completeSemaphore;
 
                 VkSemaphoreSubmitInfo waitSemaphoreInfo =
                 {
@@ -4954,7 +4963,8 @@ namespace Horizon
                 };
                 waitSemaphoreInfos.emplace_back(waitSemaphoreInfo);
 
-                VkSemaphoreSubmitInfo signalSemaphoreInfo = {
+                VkSemaphoreSubmitInfo signalSemaphoreInfo =
+                {
                     .sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
                     .semaphore = submitContext.completeSemaphore,
                     .stageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,

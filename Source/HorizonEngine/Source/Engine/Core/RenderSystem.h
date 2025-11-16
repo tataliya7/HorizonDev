@@ -153,33 +153,14 @@ namespace Horizon
         RenderGraphResourcePool* renderGraphResourcePool;
     //private:
 
+        uint64 frameCounter = 0;
+
         RenderBackend* renderBackend;
         ShaderRepository* shaderRepository;
 
         // TODO: rename
         RendererDefaultResources* rendererDefaultResources;
 
-        //
-        // void CompileShaders_Deprecated();
-        //
-        // void AddLight(const SceneView& view, LightComponent& lightComponent, const CameraComponent& camera);
-        //
-        // void UpdateRenderData(SceneView* view, RenderBackendCommandList* commandList);
-        // void UpdateSkyLight(EnvironmentLightComponent& skyLight);
-        //
-        // FrameAllocator* frameAllocator;
-        // RenderBackend* renderBackend;
-        // ShaderCompiler* shaderCompiler;
-        // ShaderLibrary* shaderRepository;
-        //
-        // RenderBackendTimingQueryHeapHandle timingQueryHeap;
-        //
-        // RenderBackendTextureHandle blueNoiseTexture;
-        //
-        // // UI
-        // ImGuiContext* context;
-        // RenderBackendTextureHandle defaultFontTexture;
-        //
         uint32 frameInFlightCounter = 0;
         static constexpr uint32 maxFramesInFlight = 3;
 
@@ -193,8 +174,6 @@ namespace Horizon
         RenderBackendBufferHandle indexBuffer[maxFramesInFlight];
         RenderBackendBufferHandle indexBufferUpload[maxFramesInFlight];
 
-        uint32 totalDrawCommandCount = 0;
-
         uint64 drawDataBufferSize[maxFramesInFlight];
         uint64 currentDrawDataBufferDataSize[maxFramesInFlight];
         RenderBackendBufferHandle drawDataBuffer[maxFramesInFlight];
@@ -204,10 +183,5 @@ namespace Horizon
         uint64 currentDrawIndexedIndirectCommandBufferDataSize[maxFramesInFlight];
         RenderBackendBufferHandle drawIndexedIndirectCommandBuffer[maxFramesInFlight];
         RenderBackendBufferHandle drawIndexedIndirectCommandBufferUpload[maxFramesInFlight];
-
-        //
-        // bool shouldUpdateRayTracingScene = false;
-        //
-        // void UpdateRayTracingAccelerationStructures(SceneView* view, RenderBackendCommandList* commandList);
     };
 }

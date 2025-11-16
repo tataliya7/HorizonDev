@@ -1,7 +1,5 @@
 #include "ShaderCommon.hsh"
 
-#define IM_GUI_ONE_DRAW_CALL 0
-
 struct ImGuiVertex
 {
     float2 position;
@@ -9,81 +7,6 @@ struct ImGuiVertex
     uint color;
 };
 DECLARE_ALIASED_ARRAY_STRUCTURED_BUFFER_SRV(ImGuiVertex);
-
-#if IM_GUI_ONE_DRAW_CALL
-
-struct ImGuiDrawData
-{
-    int textureID;
-    int vertexOffset;
-    int scissorOffset;
-    int scissorSize;
-    float2 scale;
-    float2 translate;
-};
-DECLARE_ALIASED_ARRAY_STRUCTURED_BUFFER_SRV(ImGuiDrawData);
-
-SHADER_CONSTANTS_STRUCT_BEGIN();
-SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, ImGuiVertex, VertexBufferSRV);
-SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(1, ImGuiDrawData, ImGuiDrawDataBufferSRV);
-SHADER_CONSTANTS_STRUCT_END();
-
-struct ImGuiVSOutput
-{
-    float4 color : COLOR0;
-    float2 textureCoord0 : TEXCOORD0;
-    nointerpolation int textureID: TEXCOORD1;
-    nointerpolation float4 scissor: TEXCOORD2;
-};
-
-[shader("vertex")]
-void ImGuiVS(
-    [[vk::builtin("BaseInstance")]] in uint startInstanceLocation : SV_StartInstanceLocation,
-    in uint vertexID : SV_VertexID,
-    out float4 position : SV_Position,
-    out ImGuiVSOutput output)
-{
-    StructuredBuffer<ImGuiDrawData> drawDataBuffer = ShaderConstants.GetImGuiDrawDataBufferSRV();
-    ImGuiDrawData drawData = drawDataBuffer[startInstanceLocation];
-
-    StructuredBuffer<ImGuiVertex> vertexBuffer = ShaderConstants.GetVertexBufferSRV();
-    ImGuiVertex vertex = vertexBuffer.Load(drawData.vertexOffset + vertexID);
-
-    uint4 packedColor = uint4(vertex.color & 0xff, (vertex.color >> 8) & 0xff, (vertex.color >> 16) & 0xff, (vertex.color >> 24) & 0xff);
-
-    float4 scissor = float4(
-        (drawData.scissorOffset >> 16) & 0xffff,
-        (drawData.scissorOffset & 0xffff),
-        (drawData.scissorSize >> 16) & 0xffff,
-        (drawData.scissorSize & 0xffff));
-
-    position = float4(vertex.position * drawData.scale + drawData.translate, 0.0f, 1.0f);
-
-    output.color = float4(packedColor) / 255.0f;
-    output.textureCoord0 = vertex.uv;
-    output.textureID = drawData.textureID;
-    output.scissor = scissor;
-}
-
-[shader("pixel")]
-void ImGuiPS(
-    in ImGuiVSOutput input,
-    in float4 position : SV_Position,
-    out float4 color : SV_Target)
-{
-    if (position.x < input.scissor.x ||
-        position.x > input.scissor.x + input.scissor.z ||
-        position.y < input.scissor.y ||
-        position.y > input.scissor.y + input.scissor.w)
-    {
-        discard;
-    }
-
-    Texture2D texture = GetTexture2D(input.textureID);
-    color = input.color * texture.SampleLevel(GlobalSamplerLinearWarp, input.textureCoord0, 0);
-}
-
-#else
 
 SHADER_CONSTANTS_STRUCT_BEGIN();
 SHADER_CONSTANTS_STRUCTURED_BUFFER_SRV(0, ImGuiVertex, VertexBufferSRV);
@@ -130,5 +53,3 @@ void ImGuiPS(
     Texture2D texture = ShaderConstants.GetImGuiTextureSRV();
     color = input.color * texture.SampleLevel(GlobalSamplerLinearWarp, input.textureCoord0, 0);
 }
-
-#endif

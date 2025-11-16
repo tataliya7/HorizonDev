@@ -82,13 +82,13 @@ namespace Horizon
 
         for (uint32 t = 0; t < maxFramesInFlight; t++)
         {
-            RenderBackendBufferDescription vertexBufferDesc = RenderBackendBufferDescription::CreateStructured(sizeof(ImDrawVert), 10000);
+            RenderBackendBufferDescription vertexBufferDesc = RenderBackendBufferDescription::CreateStructured(sizeof(ImDrawVert), 100000);
             vertexBuffer[t] = renderBackend->CreateBuffer(&vertexBufferDesc, nullptr, "ImGuiVertexBuffer");
 
             RenderBackendBufferDescription vertexBufferUploadDesc = RenderBackendBufferDescription::CreateUpload(vertexBufferDesc.size);
             vertexBufferUpload[t] = renderBackend->CreateBuffer(&vertexBufferUploadDesc, nullptr, "ImGuiVertexBufferUpload");
 
-            RenderBackendBufferDescription indexBufferDesc = RenderBackendBufferDescription::CreateIndex(sizeof(uint32), 10000);
+            RenderBackendBufferDescription indexBufferDesc = RenderBackendBufferDescription::CreateIndex(sizeof(uint32), 100000);
             indexBuffer[t] = renderBackend->CreateBuffer(&indexBufferDesc, nullptr, "ImGuiIndexBuffer");
 
             RenderBackendBufferDescription indexBufferUploadDesc = RenderBackendBufferDescription::CreateUpload(indexBufferDesc.size);
@@ -119,6 +119,8 @@ namespace Horizon
         shaderRepository->HotReload();
         renderGraphResourcePool->Tick();
         renderBackend->Tick();
+
+        frameCounter++;
     }
 
     SceneRenderer* RenderSystem::CreateSceneRenderer(SceneView* sceneView)
