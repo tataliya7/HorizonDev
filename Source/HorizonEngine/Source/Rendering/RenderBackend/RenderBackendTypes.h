@@ -156,12 +156,12 @@ namespace Horizon
         }
         static RenderBackendBufferDescription CreateUpload(uint64 bytes)
         {
-            RenderBackendBufferCreateFlags flags = RenderBackendBufferCreateFlags::Upload | RenderBackendBufferCreateFlags::CreateMapped;
+            RenderBackendBufferCreateFlags flags = RenderBackendBufferCreateFlags::Upload | RenderBackendBufferCreateFlags::CreateMapped | RenderBackendBufferCreateFlags::CpuOnly;
             return RenderBackendBufferDescription(4, (uint32)(bytes >> 2), flags);
         }
         static RenderBackendBufferDescription CreateUpload(uint64 bytes, RenderBackendBufferCreateFlags flags)
         {
-            flags |= RenderBackendBufferCreateFlags::Upload | RenderBackendBufferCreateFlags::CreateMapped;
+            flags |= RenderBackendBufferCreateFlags::Upload | RenderBackendBufferCreateFlags::CreateMapped | RenderBackendBufferCreateFlags::CpuOnly;
             return RenderBackendBufferDescription(4, (uint32)(bytes >> 2), flags);
         }
         static RenderBackendBufferDescription CreateReadback(uint64 bytes)

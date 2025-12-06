@@ -1517,20 +1517,6 @@ namespace Horizon
             //presentCounter++;
         }
 
-        // TODO: refactor this
-        {
-            uint32 bufferIndex = swapChain->GetCurrentBackBufferIndex();
-            ID3D12Fence* fence = swapChain->GetFrameFence(bufferIndex);
-            if (fence->GetCompletedValue() < 1)
-            {
-                // If hEvent is a null handle, then this API will not return until the specified fence value(s) have been reached.
-                hr = fence->SetEventOnCompletion(1, NULL);
-                assert(SUCCEEDED(hr));
-            }
-            hr = fence->Signal(0);
-            assert(SUCCEEDED(hr));
-        }
-
         return true;
     }
 
@@ -1538,6 +1524,19 @@ namespace Horizon
     {
         D3D12Device* device = devices[0];
         D3D12SwapChain* swapChain = device->GetSwapChain(handle);
+
+        // TODO: refactor this
+        {
+            uint32 bufferIndex = swapChain->GetCurrentBackBufferIndex();
+            ID3D12Fence* fence = swapChain->GetFrameFence(bufferIndex);
+            if (fence->GetCompletedValue() < 1)
+            {
+                // If hEvent is a null handle, then this API will not return until the specified fence value(s) have been reached.
+                assert(SUCCEEDED(fence->SetEventOnCompletion(1, NULL)));
+            }
+            assert(SUCCEEDED(fence->Signal(0)));
+        }
+
         return swapChain->buffers[swapChain->GetCurrentBackBufferIndex()];
     }
 

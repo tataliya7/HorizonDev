@@ -31,6 +31,10 @@ project "UniversalSceneDescription"
         "TBB_SUPPRESS_DEPRECATED_MESSAGES=1",
     }
 
+    links {
+        "HorizonEngine",
+    }
+
     filter "configurations:Debug"
         defines {
             "TBB_USE_DEBUG=1",

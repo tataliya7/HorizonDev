@@ -2178,8 +2178,6 @@ namespace Horizon
         VkFence& imageAcquiredFence = swapchain->imageAcquiredFences[semaphoreIndex];
 
         // TODO: investigate this
-        deviceFunctions.vkDeviceWaitIdle(handle);
-
         if (deviceFunctions.vkGetFenceStatus(handle, imageAcquiredFence) == VK_NOT_READY)
         {
             VK_CHECK(deviceFunctions.vkWaitForFences(handle, 1, &imageAcquiredFence, VK_TRUE, UINT64_MAX));
@@ -3408,33 +3406,27 @@ namespace Horizon
         {
             const RenderBackendBarrier& barrier = command.barriers[i];
 
-            // TODO: remove this
-            if (barrier.stateAfter == RenderBackendResourceState::Undefined)
-            {
-                continue;
-            }
-
             switch (barrier.type)
             {
             case RenderBackendBarrier::Type::Global:
             {
-                // VkPipelineStageFlags2 srcStageMask = VK_PIPELINE_STAGE_2_HOST_BIT;
-                // VkPipelineStageFlags2 dstStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT | VK_PIPELINE_STAGE_2_COPY_BIT | VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT_KHR;
-                //
-                // VkAccessFlags2 srcAccessMask = VK_ACCESS_2_HOST_WRITE_BIT;
-                // VkAccessFlags2 dstAccessMask = VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_TRANSFER_READ_BIT_KHR;
-                //
-                // VkMemoryBarrier2 memoryBarrier =
-                // {
-                //     .sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER_2,
-                //     .pNext = nullptr,
-                //     .srcStageMask = srcStageMask,
-                //     .srcAccessMask = srcAccessMask,
-                //     .dstStageMask = dstStageMask,
-                //     .dstAccessMask = dstAccessMask,
-                // };
-                //
-                // memoryBarriers.push_back(memoryBarrier);
+                VkPipelineStageFlags2 srcStageMask = VK_PIPELINE_STAGE_2_HOST_BIT | VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+                VkPipelineStageFlags2 dstStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+
+                VkAccessFlags2 srcAccessMask = VK_ACCESS_2_HOST_WRITE_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT;
+                VkAccessFlags2 dstAccessMask = VK_ACCESS_2_MEMORY_READ_BIT;
+
+                VkMemoryBarrier2 memoryBarrier =
+                {
+                    .sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER_2,
+                    .pNext = nullptr,
+                    .srcStageMask = srcStageMask,
+                    .srcAccessMask = srcAccessMask,
+                    .dstStageMask = dstStageMask,
+                    .dstAccessMask = dstAccessMask,
+                };
+
+                memoryBarriers.push_back(memoryBarrier);
             }
             break;
             case RenderBackendBarrier::Type::Texture:
@@ -4934,7 +4926,8 @@ namespace Horizon
             {
                 for (uint32 i = 0; i < numCommandLists; i++)
                 {
-                    BuildCommandBufferJobData jobData = {
+                    BuildCommandBufferJobData jobData =
+                    {
                         .backend = this,
                         .device = &device,
                         .queueFamily = RenderBackendQueueFamily::Graphics,
@@ -4959,6 +4952,7 @@ namespace Horizon
                 {
                     .sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
                     .semaphore = swapchain->imageAcquiredSemaphores[swapchain->semaphoreIndex],
+                    //.value = 1,
                     .stageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,
                 };
                 waitSemaphoreInfos.emplace_back(waitSemaphoreInfo);

@@ -436,8 +436,6 @@ namespace Horizon
         projectionMatrix_deprecated = sceneView.GetViewToClipMatrix();
 
         RenderSystem* renderSystem = engine->GetSubsystem<RenderSystem>();
-        RenderBackendCommandList* commandList = new RenderBackendCommandList(GArena);
-        RenderGraph renderGraph(GArena, renderSystem->renderGraphResourcePool, nullptr);
 
         // @todo
         if (Input::GetKeyDown(KeyCode::F8))
@@ -448,14 +446,6 @@ namespace Horizon
         {
             renderSystem->shaderRepository->shouldRecompileShaders = false;
         }
-
-        renderSystem->UpdateImGuiData(commandList);
-        renderScene->UpdateGPUScene(renderGraph);
-
-        renderGraph.Execute(*commandList);
-
-        renderBackend->SubmitCommandLists(&commandList, 1, RenderBackendSwapChainHandle::Null);
-        delete commandList;
 
         renderSystem->RenderSceneView(renderer, &sceneView);
 
