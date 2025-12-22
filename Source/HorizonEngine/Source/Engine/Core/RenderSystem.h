@@ -162,7 +162,7 @@ namespace Horizon
         RendererDefaultResources* rendererDefaultResources;
 
         uint32 frameInFlightCounter = 0;
-        static constexpr uint32 maxFramesInFlight = 3;
+        static constexpr uint32 maxFramesInFlight = 64; // TODO: why?
 
         uint64 vertexBufferSize[maxFramesInFlight];
         uint64 currentVertexBufferDataSize[maxFramesInFlight];

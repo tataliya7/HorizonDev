@@ -286,6 +286,10 @@ namespace Horizon
             RenderGraph& renderGraph,
             const SceneView& view);
 
+        void DispatchTranslucencyRendering(
+            RenderGraph& renderGraph,
+            const SceneView& view);
+
         void ExecutePostProcessingPipeline(
             RenderGraph& renderGraph,
             const SceneView& view);

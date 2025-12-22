@@ -861,6 +861,8 @@ namespace Horizon
 
         //RenderLocalFogVolumes(renderGraph, view);
 
+        DispatchTranslucencyRendering(renderGraph, view);
+
         if (renderFeatures.enableScreenSpaceLightShafts)
         {
             RenderScreenSpaceLightShafts(renderGraph, view);

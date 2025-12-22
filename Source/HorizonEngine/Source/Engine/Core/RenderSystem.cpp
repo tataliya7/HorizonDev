@@ -82,16 +82,18 @@ namespace Horizon
 
         for (uint32 t = 0; t < maxFramesInFlight; t++)
         {
-            RenderBackendBufferDescription vertexBufferDesc = RenderBackendBufferDescription::CreateStructured(sizeof(ImDrawVert), 100000);
+            RenderBackendBufferDescription vertexBufferDesc = RenderBackendBufferDescription::CreateStructured(sizeof(ImDrawVert), 64000);
             vertexBuffer[t] = renderBackend->CreateBuffer(&vertexBufferDesc, nullptr, "ImGuiVertexBuffer");
 
-            RenderBackendBufferDescription vertexBufferUploadDesc = RenderBackendBufferDescription::CreateUpload(vertexBufferDesc.size);
+            RenderBackendBufferDescription vertexBufferUploadDesc = RenderBackendBufferDescription::Create(sizeof(ImDrawVert), 64000, RenderBackendBufferCreateFlags::UnorderedAccess | RenderBackendBufferCreateFlags::ShaderResource | RenderBackendBufferCreateFlags::StructuredBuffer | RenderBackendBufferCreateFlags::CpuToGpu);
+            //RenderBackendBufferDescription vertexBufferUploadDesc = RenderBackendBufferDescription::CreateUpload(vertexBufferDesc.size);
             vertexBufferUpload[t] = renderBackend->CreateBuffer(&vertexBufferUploadDesc, nullptr, "ImGuiVertexBufferUpload");
 
-            RenderBackendBufferDescription indexBufferDesc = RenderBackendBufferDescription::CreateIndex(sizeof(uint32), 100000);
+            RenderBackendBufferDescription indexBufferDesc = RenderBackendBufferDescription::CreateIndex(sizeof(uint32), 64000);
             indexBuffer[t] = renderBackend->CreateBuffer(&indexBufferDesc, nullptr, "ImGuiIndexBuffer");
 
-            RenderBackendBufferDescription indexBufferUploadDesc = RenderBackendBufferDescription::CreateUpload(indexBufferDesc.size);
+            RenderBackendBufferDescription indexBufferUploadDesc = RenderBackendBufferDescription::Create(sizeof(uint32), 64000, RenderBackendBufferCreateFlags::IndexBuffer | RenderBackendBufferCreateFlags::ShaderResource | RenderBackendBufferCreateFlags::CpuToGpu);
+            //RenderBackendBufferDescription indexBufferUploadDesc = RenderBackendBufferDescription::CreateUpload(indexBufferDesc.size);
             indexBufferUpload[t] = renderBackend->CreateBuffer(&indexBufferUploadDesc, nullptr, "ImGuiIndexBufferUpload");
 
             vertexBufferSize[t] = vertexBufferDesc.size;
@@ -171,18 +173,26 @@ namespace Horizon
         RenderBackendCommandList* commandList = new RenderBackendCommandList(GArena);
 
         gpuProfiler->BeginFrame(commandList);
-
         uint32 frameTimingQueryRegion = gpuProfiler->BeginRegion(commandList, "GPU Frametime");
 
-        renderer->InitializeSceneView(sceneView);
+        {
+            RenderGraph renderGraph(GArena, renderGraphResourcePool, gpuProfiler);
+            sceneView->GetRenderScene()->UpdateGPUScene(renderGraph);
+            renderGraph.Execute(*commandList);
+        }
+        {
+            RenderGraph renderGraph(GArena, renderGraphResourcePool, gpuProfiler);
 
-        RenderGraph renderGraph(GArena, renderGraphResourcePool, gpuProfiler);
+            UpdateImGuiData(commandList);
 
-        renderer->Render(renderGraph);
+            renderer->InitializeSceneView(sceneView);
 
-        RenderUserInterface(renderGraph, *sceneView);
+            renderer->Render(renderGraph);
 
-        renderGraph.Execute(*commandList);
+            RenderUserInterface(renderGraph, *sceneView);
+
+            renderGraph.Execute(*commandList);
+        }
 
         gpuProfiler->EndRegion(frameTimingQueryRegion, commandList);
         gpuProfiler->EndFrame(commandList);
@@ -264,11 +274,11 @@ namespace Horizon
 
     void RenderSystem::UpdateImGuiData(RenderBackendCommandList* commandList)
     {
-        RenderBackendBarrier barrier[] =
+        RenderBackendBarrier barrier0[] =
         {
             RenderBackendBarrier()
         };
-        commandList->Barriers(barrier, 1);
+        commandList->Barriers(barrier0, 1);
 
         // Update vertex buffer and index buffer for ImGui
         {
@@ -311,6 +321,12 @@ namespace Horizon
                 };
                 commandList->Barriers(barrier2, 1);
             }
+
+            RenderBackendBarrier barrier3[] =
+            {
+                RenderBackendBarrier()
+            };
+            commandList->Barriers(barrier3, 1);
         }
     }
 
@@ -395,7 +411,7 @@ namespace Horizon
                 int vertexOffset = pcmd->VtxOffset + globalVertexOffset;
 
                 RenderBackendPushConstantValues pushConstantValues = {};
-                pushConstantValues.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(vertexBuffer[frameInFlightCounter]));
+                pushConstantValues.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(vertexBufferUpload[frameInFlightCounter]));
                 pushConstantValues.BindTextureSRV(1, renderBackend->GetTextureSRVBindlessResourceDescriptorIndex(RenderBackendTextureHandle(pcmd->TextureId)));
                 pushConstantValues.OverrideShaderConstantValue(2, scale.x);
                 pushConstantValues.OverrideShaderConstantValue(3, scale.y);
@@ -408,7 +424,7 @@ namespace Horizon
                     pixelShader,
                     graphicsPipelineState,
                     pushConstantValues,
-                    indexBuffer[frameInFlightCounter],
+                    indexBufferUpload[frameInFlightCounter],
                     pcmd->ElemCount,
                     1,
                     pcmd->IdxOffset + globalIndexOffset,

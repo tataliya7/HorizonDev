@@ -4,6 +4,13 @@
 
 namespace Horizon
 {
+    struct VirtualGeometryRasterizationPipeline
+    {
+        bool wireframe;
+        bool backfaceCulling;
+        bool skinnedMesh;
+    };
+
     enum class GeometryPassType : uint8
     {
         Opaque                = 0,
@@ -53,5 +60,10 @@ namespace Horizon
         uint32 drawCommandCount;
 
         std::vector<GeometryPassDrawCommand> commands;
+    };
+
+    class VirtualGeometryCollector
+    {
+
     };
 }

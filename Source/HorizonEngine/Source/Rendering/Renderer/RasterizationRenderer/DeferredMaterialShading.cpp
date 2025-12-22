@@ -185,7 +185,6 @@ namespace Horizon
                 builder.SetBindlessResourceSRV(1, gpuSceneResources.geometryDataBuffer);
                 builder.SetBindlessResourceSRV(2, gpuSceneResources.geometryInstanceDataBuffer);
                 builder.SetBindlessResourceSRV(3, visibleMeshletBuffer);
-                builder.SetIndirectArguments(drawIndirectArgumentBuffer);
                 builder.SetRenderTargetBinding(0, intermediateResources.vbuffer0, RenderBackendRenderPassLoadOperation::Clear, RenderBackendRenderPassStoreOperation::Store);
                 builder.SetRenderTargetBinding(1, intermediateResources.vbuffer1, RenderBackendRenderPassLoadOperation::Clear, RenderBackendRenderPassStoreOperation::Store);
                 builder.SetDepthStencilBinding(intermediateResources.depthTexture,
@@ -194,6 +193,7 @@ namespace Horizon
                     RenderBackendRenderPassLoadOperation::None,
                     RenderBackendRenderPassStoreOperation::None,
                     RenderBackendDepthStencilAccessType::DepthWrite_StencilNoAccess);
+                builder.SetIndirectArguments(drawIndirectArgumentBuffer);
 
                 RenderBackendShaderHandle vertexShader = shaderRepository->GetShader(ShaderID::VisibilityBufferVS);
                 RenderBackendShaderHandle pixelShader = shaderRepository->GetShader(ShaderID::VisibilityBufferPS);
