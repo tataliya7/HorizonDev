@@ -46,15 +46,15 @@ Features:
 
 ## Gallery
 
-![image](/ScreenShots/Editor.png)
+![image](/Screenshots/Editor.png)
 
-![image](/ScreenShots/Meshlet.png)
+![image](/Screenshots/Meshlet.png)
 
-![image](/ScreenShots/SkyAtmosphere.png)
+![image](/ScreenshotsSkyAtmosphere.png)
 
-![image](/ScreenShots/GTAO.png)
+![image](/Screenshots/GTAO.png)
 
-![image](/ScreenShots/SkeletalAnimation.png)
+![image](/Screenshots/SkeletalAnimation.png)
 
 ## Requirements
 * Operating System: Windows
