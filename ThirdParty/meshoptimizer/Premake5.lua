@@ -7,11 +7,11 @@ project "meshoptimizer"
     targetdir "%{wks.location}/Build/Bin/%{cfg.buildcfg}"
 
     files {
-        "meshoptimizer-0.24/src/*.h",
-        "meshoptimizer-0.24/src/*.cpp",
+        "meshoptimizer-1.0/src/*.h",
+        "meshoptimizer-1.0/src/*.cpp",
         "Premake5.lua",
     }
 
     includedirs {
-        thirdpartypath("meshoptimizer/meshoptimizer-0.24"),
+        thirdpartypath("meshoptimizer/meshoptimizer-1.0"),
     }

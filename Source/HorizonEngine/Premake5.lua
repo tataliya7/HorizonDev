@@ -92,7 +92,7 @@ project "HorizonEngine"
         thirdpartypath("streamline/Streamline-2.4.15/include"),
         thirdpartypath("concurrentqueue/include"),
         thirdpartypath("metis/metis-5.1.0/include"),
-        thirdpartypath("meshoptimizer/meshoptimizer-0.24/src"),
+        thirdpartypath("meshoptimizer/meshoptimizer-1.0/src"),
         thirdpartypath("FidelityFX/sdk/include"),
         thirdpartypath("toml/tomlplusplus-3.4.0/include"),
     }
