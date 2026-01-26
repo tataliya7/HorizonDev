@@ -16,6 +16,7 @@ Features:
 * Bindless Resources
 * Support for OpenUSD
 * Skeletal Animation
+* Job System
 * Render Graph
 * Path Tracing Renderer (In development)
 * Rasterization Renderer
