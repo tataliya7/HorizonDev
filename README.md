@@ -50,7 +50,7 @@ Features:
 
 ![image](/Screenshots/Meshlet.png)
 
-![image](/ScreenshotsSkyAtmosphere.png)
+![image](/Screenshots/SkyAtmosphere.png)
 
 ![image](/Screenshots/GTAO.png)
 
