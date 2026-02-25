@@ -18,7 +18,7 @@ namespace Horizon
         uint32 GetIndex() const { return index; }
         uint32 GetDeviceMask() const { return deviceMask; }
     private:
-        static constexpr  uint32 InvalidIndex = std::numeric_limits<uint32>::max();
+        static constexpr uint32 InvalidIndex = std::numeric_limits<uint32>::max();
         uint32 index = InvalidIndex;
         uint32 deviceMask = ~0u;
     };
