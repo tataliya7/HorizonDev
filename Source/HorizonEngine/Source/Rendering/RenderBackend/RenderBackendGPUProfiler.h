@@ -3,8 +3,7 @@
 #include "RenderBackendCommon.h"
 #include "RenderBackendConfig.h"
 #include "RenderBackendHandles.h"
-#include "RenderBackendTextureFormat.h"
-#include "RenderBackendTypes.h"
+#include "RenderBackendCore.h"
 #include "RenderBackendInterface.h"
 #include "RenderBackendCommandList.h"
 

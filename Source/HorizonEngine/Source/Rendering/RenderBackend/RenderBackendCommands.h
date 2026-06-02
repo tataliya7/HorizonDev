@@ -3,7 +3,7 @@
 #include "RenderBackendCommon.h"
 #include "RenderBackendConfig.h"
 #include "RenderBackendHandles.h"
-#include "RenderBackendTypes.h"
+#include "RenderBackendCore.h"
 
 namespace Horizon
 {
