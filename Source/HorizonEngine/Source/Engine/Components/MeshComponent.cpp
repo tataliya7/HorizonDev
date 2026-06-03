@@ -197,7 +197,7 @@ namespace Horizon
                 renderObject->useGPUSkinning = true;
             }
 
-            if (visible && false)
+            if (visible && renderSystem->enableHardwareRayTracing)
             {
                 Matrix4x4f transformData = IdentityMatrix4x4f;
                 RenderBackendBufferDescription transformBufferRowMajorDescription = RenderBackendBufferDescription::CreateByteAddress(sizeof(Matrix4x4f));
