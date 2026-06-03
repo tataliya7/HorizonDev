@@ -52,18 +52,21 @@ namespace Horizon
     {
         RenderBackendRayTracingAccelerationStructureHandle tlas = GetRayTracingTLAS();
 
-        renderGraph.AddPass(
-            std::format("BuildRayTracingScene"),
-            RenderGraphPassFlags::Compute | RenderGraphPassFlags::NoCulling,
-            [&](RenderGraphBuilder& builder)
-            {
-                // todo
-
-                return [=](RenderBackendCommandList& commandList, const RenderGraphResourceRegistry& resourceRegistry)
+        if (tlas)
+        {
+            renderGraph.AddPass(
+                std::format("BuildRayTracingScene"),
+                RenderGraphPassFlags::Compute | RenderGraphPassFlags::NoCulling,
+                [&](RenderGraphBuilder& builder)
                 {
-                    commandList.BuildRayTracingTopLevelAccelerationStructure(tlas);
-                };
-            });
+                    // todo
+
+                    return [=](RenderBackendCommandList& commandList, const RenderGraphResourceRegistry& resourceRegistry)
+                        {
+                            commandList.BuildRayTracingTopLevelAccelerationStructure(tlas);
+                        };
+                });
+        }
     }
 
     void RayTracingScene::RequestBuildRayTracingBLAS(RenderBackendRayTracingAccelerationStructureHandle blas)
