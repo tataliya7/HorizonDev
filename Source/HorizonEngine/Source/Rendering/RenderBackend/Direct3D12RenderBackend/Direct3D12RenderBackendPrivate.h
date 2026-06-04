@@ -1770,11 +1770,11 @@ namespace Horizon
                 for (uint32 i = 0; i < desc->instanceCount; i++)
                 {
                     D3D12_RAYTRACING_INSTANCE_DESC instanceDesc = {};
-                    instanceDesc.Transform[0][0] = instanceDesc.Transform[1][1] = instanceDesc.Transform[2][2] = 1; // TODO
+                    memcpy(&instanceDesc.Transform, &desc->instances[i].transformMatrix, sizeof(instanceDesc.Transform));
                     instanceDesc.InstanceID = desc->instances[i].instanceID;
                     instanceDesc.InstanceMask = desc->instances[i].instanceMask;
                     instanceDesc.InstanceContributionToHitGroupIndex = desc->instances[i].instanceContributionToHitGroupIndex;
-                    instanceDesc.Flags = desc->instances[i].instanceContributionToHitGroupIndex;
+                    instanceDesc.Flags = static_cast<D3D12_RAYTRACING_INSTANCE_FLAGS>(desc->instances[i].flags);
                     instanceDesc.AccelerationStructure = GetRayTracingAccelerationStructure(desc->instances[i].blas)->accelerationStructureBuffer->GetGPUVirtualAddress();
                     instances.emplace_back(instanceDesc);
                 }

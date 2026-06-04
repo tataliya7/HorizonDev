@@ -46,7 +46,7 @@ namespace Horizon
         Matrix4x4f reprojectionMatrix;
         Matrix4x4f inverseReprojectionMatrix;
 
-        RasterizationRendererSettings rendererSettings;
+        PathTracingRendererSettings rendererSettings;
         PostProcessingSettings finalPostProcessingSettings;
 
         PathTracingRendererUniformVariables uniformVariables = {};

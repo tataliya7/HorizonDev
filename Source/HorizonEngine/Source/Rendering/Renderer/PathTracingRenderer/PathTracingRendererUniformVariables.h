@@ -185,8 +185,8 @@ struct PathTracingRendererUniformVariables
 
     float whiteBalance;
     float vignetteIntensity;
-    float padding13;
-    float padding14;
+    uint samplesPerPixel;
+    uint maxBounces;
 
     //float3 lensDirtScaleFactor;
     //float4 colorCorrectionSaturation;

@@ -106,7 +106,10 @@ namespace Horizon
 
             uniformVariables.motionVectorScale = Vector2f(float(renderResolution.width), float(renderResolution.height));
 
-            uniformVariables.indirectLightingMultiplier = rendererSettings.globalIlluminationSettings.indirectLightingIntensity * rendererSettings.globalIlluminationSettings.indirectLightingColor;
+            uniformVariables.samplesPerPixel = rendererSettings.samplesPerPixel;
+            uniformVariables.maxBounces = rendererSettings.maxBounces;
+
+            uniformVariables.indirectLightingMultiplier = Vector3f(1.0f, 1.0f, 1.0f);
 
             if (scene != nullptr)
             {
@@ -223,8 +226,17 @@ namespace Horizon
     {
         sceneView = v;
         SceneView& view = *sceneView;
-        rendererSettings = view.renderSettings.rasterRenderingSettings;
-        finalPostProcessingSettings = rendererSettings.postProcessingSettings;
+
+        if (view.renderSettings.renderMode == RenderMode::RealTimePathTracing)
+        {
+            rendererSettings = view.renderSettings.realTimePathTracingSettings;
+        }
+        else if (view.renderSettings.renderMode == RenderMode::ReferencePathTracing)
+        {
+            rendererSettings = view.renderSettings.referencePathTracingSettings;
+        }
+
+        finalPostProcessingSettings = view.renderSettings.postProcessingSettings;
 
         {
             renderResolutionPercentage = 1.0f;

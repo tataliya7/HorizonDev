@@ -327,7 +327,7 @@ void PathTracingRayGen()
 
     int iteration = ShaderConstants.GetIteration();
     float accumulationFactor = ShaderConstants.GetAccumulationFactor();
-    uint maxBounces = 8;//frameShaderParameters.maxBounces;
+    uint maxBounces = frameShaderParameters.maxBounces;
 
     uint seed = tea(dispatchRaysIndex.y * frameShaderParameters.renderWidth + dispatchRaysIndex.x, frameShaderParameters.frameIndex);
     float2 subpixelJitter = float2(randf(seed), randf(seed));

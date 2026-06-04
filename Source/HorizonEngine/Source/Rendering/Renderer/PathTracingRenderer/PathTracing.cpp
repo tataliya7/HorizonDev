@@ -16,7 +16,7 @@ namespace Horizon
 
             RenderBackendRayTracingPipelineStateDesc pathTracingPipelineStateDesc =
             {
-                .maxRayRecursionDepth = 8,
+                .maxRayRecursionDepth = rendererSettings.maxBounces,
             };
 
             pathTracingPipelineStateDesc.shaders.push_back(shaderCollection->GetShader(ShaderID::PathTracingRayGen));
@@ -42,8 +42,7 @@ namespace Horizon
 
         const GPUScene* gpuScene = view.scene->GetGPUScene();
 
-        uint32 spp = 4096;
-        uint32 maxIteration = spp;
+        uint32 maxIteration = rendererSettings.samplesPerPixel;
 
         static int32 iteration = 0;
         float accumulationFactor = 1.0f / float(maxIteration);
