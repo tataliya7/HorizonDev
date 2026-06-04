@@ -1,14 +1,8 @@
-#include "../RasterizationRenderer.h"
-#include "PostProcessing.h"
+#include "PostProcessingPipeline.h"
 
 namespace Horizon
 {
-    bool RasterizationRenderer::IsLocalToneMappingEnabled() const
-    {
-        return renderFeatures.enableBilateralGridLocalToneMapping;
-    }
-
-    RenderGraphTextureHandle RasterizationRenderer::DispatchBilateralGridLocalToneMapping(
+    RenderGraphTextureHandle PostProcessingPipeline::DispatchBilateralGridLocalToneMapping(
         RenderGraph& renderGraph,
         const SceneView& view,
         RenderGraphTextureHandle colorTexture,
@@ -17,7 +11,7 @@ namespace Horizon
     {
         RenderGraphDebugLabelRegion debugLabelRegion(renderGraph, "LocalToneMapping");
 
-        const RasterizationRendererPostProcessingSettings& postProcessingSettings = rendererSettings.postProcessingSettings;
+        const PostProcessingSettings& settings = postProcessingSettings;
 
         const uint32 bilateralGridTextureWidth = Math::CeilDiv(renderResolution.width, 8 * 8);
         const uint32 bilateralGridTextureHeight = Math::CeilDiv(renderResolution.height, 8 * 8);
@@ -108,7 +102,6 @@ namespace Horizon
                 };
             });
 
-        // 2D Gaussian blur must be wide enough to avoid noticeable haloing.
         const uint32 GaussianFilterMaxRadius = 32u;
         const uint32 GaussianFilterMaxKernelSize = 2 * GaussianFilterMaxRadius + 1;
 
@@ -247,10 +240,10 @@ namespace Horizon
                     pushConstantValues.BindTextureSRV(3, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(gaussianFilteredLogLuminanceTexture));
                     pushConstantValues.BindBufferSRV(4, resourceRegistry.GetBufferSRVBindlessResourceDescriptorIndex(autoExposureBuffer));
                     pushConstantValues.BindTextureUAV(5, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndex(localToneMappingTexture, 0));
-                    pushConstantValues.OverrideShaderConstantValue(6, postProcessingSettings.bilateralGridLocalToneMappingShadows);
-                    pushConstantValues.OverrideShaderConstantValue(7, postProcessingSettings.bilateralGridLocalToneMappingHighlights);
-                    pushConstantValues.OverrideShaderConstantValue(8, postProcessingSettings.bilateralGridLocalToneMappingDetailStrength);
-                    pushConstantValues.OverrideShaderConstantValue(9, postProcessingSettings.bilateralGridLocalToneMappingGaussianFilterWeight);
+                    pushConstantValues.OverrideShaderConstantValue(6, settings.bilateralGridLocalToneMappingShadows);
+                    pushConstantValues.OverrideShaderConstantValue(7, settings.bilateralGridLocalToneMappingHighlights);
+                    pushConstantValues.OverrideShaderConstantValue(8, settings.bilateralGridLocalToneMappingDetailStrength);
+                    pushConstantValues.OverrideShaderConstantValue(9, settings.bilateralGridLocalToneMappingGaussianFilterWeight);
                     pushConstantValues.OverrideShaderConstantValue(10, 1.0f / float(bilateralGridTextureWidth));
                     pushConstantValues.OverrideShaderConstantValue(11, 1.0f / float(bilateralGridTextureHeight));
 
@@ -268,20 +261,20 @@ namespace Horizon
         return localToneMappingTexture;
     }
 
-    RenderGraphTextureHandle RasterizationRenderer::DispatchExposureFusionLocalToneMapping(
+    RenderGraphTextureHandle PostProcessingPipeline::DispatchExposureFusionLocalToneMapping(
         RenderGraph& renderGraph,
         const SceneView& view,
         RenderGraphTextureHandle colorTexture,
         const PostProcessingColorPyramid& colorPyramid,
         RenderGraphTextureHandle exposureTexture)
     {
-        const RasterizationRendererPostProcessingSettings& postProcessingSettings = rendererSettings.postProcessingSettings;
+        const PostProcessingSettings& settings = postProcessingSettings;
 
-        float highlights = 1.0f;//std::pow(2.0f, -postProcessingSettings.localToneMappingHighlights);
-        float shadows = 0.0f;//std::pow(2.0f, postProcessingSettings.localToneMappingShadows);
-        float sigma = 0.25f;//postProcessingSettings.localToneMappingPreferenceSigma * postProcessingSettings.localToneMappingPreferenceSigma;
-        int32 coarsestMipLevel = 0;//postProcessingSettings.localToneMappingCoarsestMipLevel;
-        int32 displayMipLevel = 1;//postProcessingSettings.localToneMappingDisplayMipLevel;
+        float highlights = 1.0f;
+        float shadows = 0.0f;
+        float sigma = 0.25f;
+        int32 coarsestMipLevel = 0;
+        int32 displayMipLevel = 1;
 
         uint32 downsampleFactor = 2;
 
@@ -348,132 +341,9 @@ namespace Horizon
                 };
             });
 
-#if 0
-        renderGraph.AddPass(
-            std::format("LocalToneMappingGenerateMipChain (Compute, {}x{})", width, height),
-            RenderGraphPassFlags::Compute,
-            [&](RenderGraphBuilder& builder)
-            {
-                localToneMappingLuminance = builder.ReadWriteTexture(localToneMappingLuminance, RenderBackendResourceState::ShaderResource);
-
-
-                {
-                    uint32 w = width;
-                    uint32 h = height;
-                    RenderBackendTextureHandle textureHandle = resourceRegistry.GetRenderBackendTextureHandle(localToneMappingLuminance);
-
-                    RenderBackendShaderHandle downsampleTexture2DCS = shaderRepository->GetShader(ShaderID::DownsampleTexture);
-
-                    for (uint32 mipLevel = 1; mipLevel < mipLevelCount; mipLevel++)
-                    {
-                        if (mipLevel == 1)
-                        {
-                            RenderBackendBarrier barriers[] =
-                            {
-                                RenderBackendBarrier(textureHandle, RenderBackendTextureSubresourceRange(mipLevel, 1, 0, RenderBackendTextureSubresourceRange::RemainingArrayLayers), RenderBackendResourceState::Undefined, RenderBackendResourceState::UnorderedAccess)
-                            };
-                            commandList.Barriers(barriers, 1);
-                        }
-                        else
-                        {
-                            RenderBackendBarrier barriers[] =
-                            {
-                                RenderBackendBarrier(textureHandle, RenderBackendTextureSubresourceRange(mipLevel - 1, 1, 0, RenderBackendTextureSubresourceRange::RemainingArrayLayers), RenderBackendResourceState::UnorderedAccess, RenderBackendResourceState::ShaderResource),
-                                RenderBackendBarrier(textureHandle, RenderBackendTextureSubresourceRange(mipLevel, 1, 0, RenderBackendTextureSubresourceRange::RemainingArrayLayers), RenderBackendResourceState::Undefined, RenderBackendResourceState::UnorderedAccess)
-                            };
-                            commandList.Barriers(barriers, 2);
-                        }
-
-                        w = w >> 1;
-                        h = h >> 1;
-
-                        uint32 threadGroupCountX = ComputeShaderThreadGroupCount(w, 8);
-                        uint32 threadGroupCountY = ComputeShaderThreadGroupCount(h, 8);
-
-                        RenderBackendPushConstantValues pushConstantValues = {};
-                        pushConstantValues.BindTextureSRV(0, RenderBackendTextureSRVDesc::Create(textureHandle));
-                        pushConstantValues.BindTextureUAV(1, RenderBackendTextureUAVDesc::Create(textureHandle, mipLevel));
-                        pushConstantValues.PushConstants(0, (float)(mipLevel - 1));
-
-                        commandList.Dispatch(
-                            computeShader,
-                            pushConstantValues,
-                            threadGroupCountX,
-                            threadGroupCountY,
-                            threadGroupCountZ);
-                    }
-                    RenderBackendBarrier transition = RenderBackendBarrier(textureHandle, RenderBackendTextureSubresourceRange(mipLevelCount - 1, RenderBackendTextureSubresourceRange::RemainingMipLevels, 0, RenderBackendTextureSubresourceRange::RemainingArrayLayers), RenderBackendResourceState::UnorderedAccess, RenderBackendResourceState::ShaderResource);
-                    commandList.Barriers(&transition, 1);
-                };
-            });
-
-
-        // TODO: Better downsampling filter? @see https://bartwronski.com/2021/07/20/processing-aware-image-filtering-compensating-for-the-upsampling/
-
-        // TODO: Create mips in one pass
-        renderGraph.AddPass(
-            std::format("LocalToneMappingGenerateMipChain (Compute, {}x{})", width, height),
-            RenderGraphPassFlags::Compute,
-            [&](RenderGraphBuilder& builder)
-            {
-                localToneMappingWeights = builder.ReadWriteTexture(localToneMappingWeights, RenderBackendResourceState::ShaderResource);
-
-
-                {
-                    uint32 w = width;
-                    uint32 h = height;
-                    RenderBackendTextureHandle textureHandle = resourceRegistry.GetRenderBackendTextureHandle(localToneMappingWeights);
-
-                    RenderBackendShaderHandle downsampleTexture2DCS = renderEngine->GetShaderRepository()->GetShader((uint32)ShaderPipelineID::DownsampleTexture2D);
-
-                    for (uint32 mipLevel = 1; mipLevel < mipLevelCount; mipLevel++)
-                    {
-                        if (mipLevel == 1)
-                        {
-                            RenderBackendBarrier barriers[] =
-                            {
-                                RenderBackendBarrier(textureHandle, RenderBackendTextureSubresourceRange(mipLevel, 1, 0, RenderBackendTextureSubresourceRange::RemainingArrayLayers), RenderBackendResourceState::Undefined, RenderBackendResourceState::UnorderedAccess)
-                            };
-                            commandList.Barriers(barriers, 1);
-                        }
-                        else
-                        {
-                            RenderBackendBarrier barriers[] =
-                            {
-                                RenderBackendBarrier(textureHandle, RenderBackendTextureSubresourceRange(mipLevel - 1, 1, 0, RenderBackendTextureSubresourceRange::RemainingArrayLayers), RenderBackendResourceState::UnorderedAccess, RenderBackendResourceState::ShaderResource),
-                                RenderBackendBarrier(textureHandle, RenderBackendTextureSubresourceRange(mipLevel, 1, 0, RenderBackendTextureSubresourceRange::RemainingArrayLayers), RenderBackendResourceState::Undefined, RenderBackendResourceState::UnorderedAccess)
-                            };
-                            commandList.Barriers(barriers, 2);
-                        }
-
-                        w = w >> 1;
-                        h = h >> 1;
-
-                        uint32 threadGroupCountX = ComputeShaderThreadGroupCount(w, 8);
-                        uint32 threadGroupCountY = ComputeShaderThreadGroupCount(h, 8);
-                        uint32 threadGroupCountZ = 1;
-
-                        RenderBackendPushConstantValues pushConstantValues = {};
-                        pushConstantValues.BindTextureSRV(0, RenderBackendTextureSRVDesc::Create(textureHandle));
-                        pushConstantValues.BindTextureUAV(1, RenderBackendTextureUAVDesc::Create(textureHandle, mipLevel));
-                        //pushConstantValues.PushConstants(0, (float)(mipLevel - 1));
-
-                        commandList.Dispatch(
-                            downsampleTexture2DCS,
-                            pushConstantValues,
-                            threadGroupCountX,
-                            threadGroupCountY,
-                            threadGroupCountZ);
-                    }
-                    RenderBackendBarrier transition = RenderBackendBarrier(textureHandle, RenderBackendTextureSubresourceRange(mipLevelCount - 1, RenderBackendTextureSubresourceRange::RemainingMipLevels, 0, RenderBackendTextureSubresourceRange::RemainingArrayLayers), RenderBackendResourceState::UnorderedAccess, RenderBackendResourceState::ShaderResource);
-                    commandList.Barriers(&transition, 1);
-                };
-            });
-#endif
         uint32 coarsestMipLevelWidth = width >> coarsestMipLevel;
         uint32 coarsestMipLevelHeight = height >> coarsestMipLevel;
 
-        // Blend the coarsest level - Gaussian.
         renderGraph.AddPass(
             std::format("LocalToneMappingBlendExposures (Compute, {}x{})", coarsestMipLevelWidth, coarsestMipLevelHeight),
             RenderGraphPassFlags::Compute,
@@ -495,7 +365,6 @@ namespace Horizon
                     pushConstantValues.BindTextureSRV(1, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(exposureFusionLuminanceTexture));
                     pushConstantValues.BindTextureSRV(2, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(exposureFusionWeightTexture));
                     pushConstantValues.BindTextureUAV(3, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndex(localToneMappingAssemble, coarsestMipLevel));
-                    //pushConstantValues.PushConstants(0, (float)coarsestMipLevel);
 
                     RenderBackendShaderHandle computeShader = shaderRepository->GetShader(ShaderID::LocalToneMappingBlendExposures);
 
@@ -544,7 +413,6 @@ namespace Horizon
                         pushConstantValues.BindTextureSRV(2, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(exposureFusionWeightTexture));
                         pushConstantValues.BindTextureSRV(3, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(localToneMappingAssemble));
                         pushConstantValues.BindTextureUAV(4, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndex(localToneMappingAssemble, mipLevel - 1));
-                        //pushConstantValues.PushConstants(0, (float)mipLevel);
 
                         RenderBackendShaderHandle computeShader = shaderRepository->GetShader(ShaderID::LocalToneMappingBlendLaplacian);
 
@@ -594,11 +462,6 @@ namespace Horizon
                     pushConstantValues.BindTextureSRV(2, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(exposureFusionLuminanceTexture));
                     pushConstantValues.BindTextureSRV(3, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(localToneMappingAssemble));
                     pushConstantValues.BindTextureUAV(4, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndex(localToneMappingTexture, 0));
-                    ///pushConstantValues.PushConstants(0, (float)displayMipLevel);
-                    ///pushConstantValues.PushConstants(1, (float)displayMipLevelWidth);
-                    ///pushConstantValues.PushConstants(2, (float)displayMipLevelHeight);
-                    ///pushConstantValues.PushConstants(3, 1.0f / (float)displayMipLevelWidth);
-                    ///pushConstantValues.PushConstants(4, 1.0f / (float)displayMipLevelHeight);
 
                     RenderBackendShaderHandle computeShader = shaderRepository->GetShader(ShaderID::ExposureFusionGuidedUpsampling);
 

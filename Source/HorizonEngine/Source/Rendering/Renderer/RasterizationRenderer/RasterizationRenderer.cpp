@@ -1,6 +1,5 @@
 #include "RasterizationRenderer.h"
 #include "AtmosphereRendering.h"
-#include "TemporalSuperSampling.h"
 #include "StreamlineModule.h"
 
 import FidelityFX.FSR2;
@@ -18,23 +17,8 @@ namespace Horizon
         , shaderRepository(shaderRepository)
         , defaultResources(defaultResources)
         , temporalSuperSamplingInterface(nullptr)
+        , postProcessingPipeline(renderBackend, resourcePool, shaderRepository, defaultResources)
     {
-        //RenderBackendBufferDesc perFrameConstantBufferDesc = RenderBackendBufferDesc::CreateStructured(sizeof(RasterizationRendererUniformVariables), 1);
-        //RenderBackendBufferDesc perFrameConstantUploadBufferDesc = RenderBackendBufferDesc::CreateUpload(sizeof(RasterizationRendererUniformVariables));
-        //for (uint32 index = 0; index < MaxNumFramesInFlight; index++)
-        //{
-        //    perFrameConstantBuffers[index] = renderBackend->CreateBuffer(&perFrameConstantBufferDesc, nullptr, "PerFrameConstantBuffer");
-        //    perFrameConstantUploadBuffers[index] = renderBackend->CreateBuffer(&perFrameConstantUploadBufferDesc, nullptr, "PerFrameConstantBufferUpload");
-        //}
-
-        AutoExposureData defaultAutoExposureData;
-        RenderBackendBufferDescription autoExposureReadbackBufferDesc = RenderBackendBufferDescription::CreateReadback(sizeof(AutoExposureData));
-        for (uint32 index = 0; index < AutoExposureReadbackBufferCount; index++)
-        {
-            RenderBackendBufferHandle autoExposureReadbackBuffer = renderBackend->CreateBuffer(&autoExposureReadbackBufferDesc, &defaultAutoExposureData, "AutoExposureReadBackBuffer");
-            autoExposureReadbackBuffers[index] = resourcePool->CacheBuffer(autoExposureReadbackBuffer, autoExposureReadbackBufferDesc, "AutoExposureReadBackBuffer");
-        }
-
         ResetHistoryFrame();
 
         virtualShadowMapManager = new VirtualShadowMapManager();
@@ -62,11 +46,6 @@ namespace Horizon
         historyFrame.transformations.Reset();
         historyFrame.preExposure = 1.0f;
 
-        AutoExposureData defaultAutoExposureData;
-        RenderBackendBufferDescription autoExposureBufferDesc = RenderBackendBufferDescription::Create(sizeof(AutoExposureData), 1, RenderBackendBufferCreateFlags::ShaderResource | RenderBackendBufferCreateFlags::UnorderedAccess);
-        RenderBackendBufferHandle autoExposureBuffer = renderBackend->CreateBuffer(&autoExposureBufferDesc, &defaultAutoExposureData, "AutoExposureBuffer");
-        historyFrame.autoExposureBuffer = resourcePool->CacheBuffer(autoExposureBuffer, autoExposureBufferDesc, "AutoExposureBuffer");
-
         historyFrame.volumetricFogLightScatteringTexture = nullptr;
         historyFrame.temporalSuperSamplingOutputTexture = nullptr;
     }
@@ -81,13 +60,11 @@ namespace Horizon
         SceneView& view = *sceneView;
         rendererSettings = view.renderSettings.rasterRenderingSettings;
 
-        // TODO: initialize buffer
-        UpdateAutoExposureDataFromReadbackBuffer();
+        postProcessingPipeline.UpdateAutoExposureDataFromReadbackBuffer();
 
-        // TODO
         if (view.frameIndex >= 3)
         {
-            preExposure = autoExposureData.adaptedExposure;
+            preExposure = postProcessingPipeline.GetAutoExposureData().adaptedExposure;
         }
         if (rendererSettings.enableFixedPreExposure)
         {
@@ -206,7 +183,7 @@ namespace Horizon
         renderFeatures.enableGaussianBloom = finalPostProcessingSettings.bloomIntensity > 0.0f;
         renderFeatures.enableLensFlare = finalPostProcessingSettings.lensFlareIntensity > 0.0f;
         renderFeatures.enableConvolutionBloom = false;
-        renderFeatures.enableEditorSelectionOutline = false;
+        renderFeatures.enableSelectionOutline = false;
         renderFeatures.enableSubsurfaceScattering = true;
         renderFeatures.enableBilateralGridLocalToneMapping = (finalPostProcessingSettings.localToneMappingMethod == LocalToneMappingMethod::BilateralGrid);
         renderFeatures.enableExposureFusionLocalToneMapping = (finalPostProcessingSettings.localToneMappingMethod == LocalToneMappingMethod::ExposureFusion);

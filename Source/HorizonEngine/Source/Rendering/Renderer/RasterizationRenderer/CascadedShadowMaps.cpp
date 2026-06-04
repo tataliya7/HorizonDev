@@ -200,46 +200,46 @@ namespace Horizon
 
     void RasterizationRenderer::DispatchCascadedShadowMapPassDrawCommands(RenderBackendCommandList& commandList, const LightRenderObject& light, uint32 cascadeIndex, RenderBackendBufferHandle cascadeShadowMapDataBuffer)
     {
-        // const GeometryPassDrawCommandList& drawCommandList = geometryPassDrawCommandLists[uint32(GeometryPassType::CascadedShadowMap)];
-        // const GPUScene* gpuScene = sceneView->scene->GetGPUScene();//drawCommandList.setupJobData.scene->GetGPUScene();
-        //
-        // RenderBackendShaderHandle vertexShader = shaderRepository->GetShader(ShaderID::CascadedShadowMapVS);
-        // RenderBackendShaderHandle pixelShader = shaderRepository->GetShader(ShaderID::CascadedShadowMapPS);
-        //
-        // for (uint32 drawCommandIndex = 0; drawCommandIndex < drawCommandList.drawCommandCount; drawCommandIndex++)
-        // {
-        //     const GeometryPassDrawCommand& drawCommand = drawCommandList.commands[drawCommandIndex];
-        //
-        //     RenderBackendGraphicsPipelineStateDescription graphicsPipelineState = {};
-        //     graphicsPipelineState.rasterizationState.cullMode = RenderBackendRasterizationCullMode::Back;
-        //     graphicsPipelineState.rasterizationState.fillMode = RenderBackendRasterizationFillMode::Solid;
-        //     graphicsPipelineState.depthStencilState.depthTestEnable = true;
-        //     graphicsPipelineState.depthStencilState.depthWriteEnable = true;
-        //     graphicsPipelineState.depthStencilState.depthCompareFunction = RenderBackendCompareOp::GreaterOrEqual;
-        //     // TODO:
-        //     graphicsPipelineState.rasterizationState.depthBiasConstantFactor = light.shadowMapDepthBiasConstantFactor;
-        //     graphicsPipelineState.rasterizationState.depthBiasSlopeFactor = light.shadowMapDepthBiasSlopeFactor;
-        //
-        //     RenderBackendPushConstantValues pushConstantValues = {};
-        //     pushConstantValues.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
-        //     pushConstantValues.BindBufferSRV(1, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(cascadeShadowMapDataBuffer));
-        //     pushConstantValues.BindBufferSRV(2, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(geometryDataBuffer));
-        //     pushConstantValues.BindBufferSRV(3, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(geometryInstanceDataBuffer));
-        //     pushConstantValues.OverrideShaderConstantValue(4, cascadeIndex);
-        //
-        //     commandList.DrawIndexed(
-        //         vertexShader,
-        //         pixelShader,
-        //         graphicsPipelineState,
-        //         pushConstantValues,
-        //         drawCommand.indexBuffer,
-        //         drawCommand.indexCount,
-        //         drawCommand.instanceCount,
-        //         drawCommand.firstIndex,
-        //         0, // TODO
-        //         drawCommand.firstInstance,
-        //         drawCommand.topology);
-        //}
+         const GeometryPassDrawCommandList& drawCommandList = geometryPassDrawCommandLists[uint32(GeometryPassType::CascadedShadowMap)];
+         const GPUScene* gpuScene = sceneView->scene->GetGPUScene();//drawCommandList.setupJobData.scene->GetGPUScene();
+
+         RenderBackendShaderHandle vertexShader = shaderRepository->GetShader(ShaderID::CascadedShadowMapVS);
+         RenderBackendShaderHandle pixelShader = shaderRepository->GetShader(ShaderID::CascadedShadowMapPS);
+
+         for (uint32 drawCommandIndex = 0; drawCommandIndex < drawCommandList.drawCommandCount; drawCommandIndex++)
+         {
+             const GeometryPassDrawCommand& drawCommand = drawCommandList.commands[drawCommandIndex];
+
+             RenderBackendGraphicsPipelineStateDescription graphicsPipelineState = {};
+             graphicsPipelineState.rasterizationState.cullMode = RenderBackendRasterizationCullMode::Back;
+             graphicsPipelineState.rasterizationState.fillMode = RenderBackendRasterizationFillMode::Solid;
+             graphicsPipelineState.depthStencilState.depthTestEnable = true;
+             graphicsPipelineState.depthStencilState.depthWriteEnable = true;
+             graphicsPipelineState.depthStencilState.depthCompareFunction = RenderBackendCompareOp::GreaterOrEqual;
+             // TODO:
+             graphicsPipelineState.rasterizationState.depthBiasConstantFactor = light.shadowMapDepthBiasConstantFactor;
+             graphicsPipelineState.rasterizationState.depthBiasSlopeFactor = light.shadowMapDepthBiasSlopeFactor;
+
+             RenderBackendPushConstantValues pushConstantValues = {};
+             pushConstantValues.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
+             pushConstantValues.BindBufferSRV(1, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(cascadeShadowMapDataBuffer));
+             pushConstantValues.BindBufferSRV(2, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(gpuScene->persistentGeometryDataBuffer->GetHandle()));
+             pushConstantValues.BindBufferSRV(3, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(gpuScene->persistentGeometryInstanceDataBuffer->GetHandle()));
+             pushConstantValues.OverrideShaderConstantValue(4, cascadeIndex);
+
+             commandList.DrawIndexed(
+                 vertexShader,
+                 pixelShader,
+                 graphicsPipelineState,
+                 pushConstantValues,
+                 drawCommand.indexBuffer,
+                 drawCommand.indexCount,
+                 drawCommand.instanceCount,
+                 drawCommand.firstIndex,
+                 0, // TODO
+                 drawCommand.firstInstance,
+                 drawCommand.topology);
+        }
     }
 
     RenderGraphTextureHandle RasterizationRenderer::DispatchCascadedShadowMapDebugVisualization(

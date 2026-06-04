@@ -1,20 +1,8 @@
-#include "../RasterizationRenderer.h"
-#include "PostProcessing.h"
-
-/**
- * Jump flood algorithm based outline
- * See: https://bgolus.medium.com/the-quest-for-very-wide-outlines-ba82ed442cd9
- * Source code: https://gist.github.com/bgolus/a18c1a3fc9af2d73cc19169a809eb195
- */
-
-// TODO:
-// 1. Use separable axis method
-// 2. Optimize the render target format
-// 3. Anti-aliased outline
+#include "PostProcessingPipeline.h"
 
 namespace Horizon
 {
-    RenderGraphTextureHandle RasterizationRenderer::DispatchEditorSelectionOutline(
+    RenderGraphTextureHandle PostProcessingPipeline::DispatchSelectionOutline(
         RenderGraph& renderGraph,
         const SceneView& view,
         RenderGraphTextureHandle sceneColorTexture)
@@ -37,7 +25,7 @@ namespace Horizon
                 builder.SetRenderTargetBinding(0, maskTexture, RenderBackendRenderPassLoadOperation::Clear, RenderBackendRenderPassStoreOperation::Store);
 
                 return [=](RenderBackendCommandList& commandList, const RenderGraphResourceRegistry& resourceRegistry)
-                    {
+                {
                         RenderBackendViewport viewport(0.0f, 0.0f, (float)targetResolution.width, (float)targetResolution.height);
                         commandList.SetViewports(&viewport, 1);
 
@@ -46,27 +34,6 @@ namespace Horizon
 
                         RenderBackendGraphicsPipelineStateDescription graphicsPipelineState = {};
                         graphicsPipelineState.rasterizationState.cullMode = RenderBackendRasterizationCullMode::Back;
-
-                        /*for (const auto& drawCallInfo : renderEngine->drawList)
-                        {
-                            RenderBackendPushConstantValues pushConstantValues = {};
-                            pushConstantValues.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
-                            pushConstantValues.BindBuffer(1, renderEngine->geometryBuffer, drawCallInfo.geometryIndex * sizeof(GeometryShaderParameters));
-                            pushConstantValues.BindBuffer(2, drawCallInfo.vertexBuffers[0], 0);
-
-                            RenderBackendShaderHandle graphicsShader = shaderRepository->GetShader(ShaderID::SelectionOutlineMaskGen);
-                            commandList.DrawIndexed(
-                                graphicsShader,
-                                graphicsPipelineState,
-                                pushConstantValues,
-                                drawCallInfo.indexBuffer,
-                                drawCallInfo.indexCount,
-                                1,
-                                drawCallInfo.firstIndex,
-                                0,
-                                0,
-                                RenderBackendPrimitiveTopology::TriangleList);
-                        }*/
                 };
             });
 
@@ -110,7 +77,6 @@ namespace Horizon
 
         RenderGraphTextureHandle jumpFloodTexture = jumpFloodTexture0;
 
-        // TODO: promoting parameters
         float outlineWidth = 2.0f;
         uint32 numSteps = (uint32)std::ceil(std::log(outlineWidth + 1.0f));
 

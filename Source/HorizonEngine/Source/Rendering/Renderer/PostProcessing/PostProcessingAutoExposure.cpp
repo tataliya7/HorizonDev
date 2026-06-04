@@ -1,12 +1,10 @@
-#include "../RasterizationRenderer.h"
-#include "PostProcessing.h"
+#include "PostProcessingPipeline.h"
 
 namespace Horizon
 {
-    // TODO: Make it configurable
     static constexpr uint32 AutoExposureHistogramBinCount = 256;
 
-    void RasterizationRenderer::UpdateAutoExposureDataFromReadbackBuffer()
+    void PostProcessingPipeline::UpdateAutoExposureDataFromReadbackBuffer()
     {
         RenderGraphPersistentBuffer* autoExposureReadbackBuffer = autoExposureReadbackBuffers[currentAutoExposureReadbackBufferIndex];
         if (autoExposureReadbackBuffer != nullptr)
@@ -24,7 +22,7 @@ namespace Horizon
         }
     }
 
-    RenderGraphBufferHandle RasterizationRenderer::DispatchHistogramBasedAutoExposure(
+    RenderGraphBufferHandle PostProcessingPipeline::DispatchHistogramBasedAutoExposure(
         RenderGraph& renderGraph,
         const SceneView& view,
         RenderGraphTextureHandle colorTexture,
@@ -123,12 +121,12 @@ namespace Horizon
                 };
             });
 
-        renderGraph.ExportBufferDeferred(autoExposureBuffer, &historyFrame.autoExposureBuffer);
+        renderGraph.ExportBufferDeferred(autoExposureBuffer, &historicalData.autoExposureBuffer);
 
         return autoExposureBuffer;
     }
 
-    RenderGraphTextureHandle RasterizationRenderer::AddCopyExposurePass(
+    RenderGraphTextureHandle PostProcessingPipeline::AddCopyExposurePass(
         RenderGraph& renderGraph,
         const SceneView& view,
         RenderGraphBufferHandle autoExposureBuffer)

@@ -1,6 +1,7 @@
 #pragma once
 
-#include "RasterizationRendererCommon.h"
+#include "RendererCommon.h"
+#include "SceneView.h"
 
 namespace Horizon
 {

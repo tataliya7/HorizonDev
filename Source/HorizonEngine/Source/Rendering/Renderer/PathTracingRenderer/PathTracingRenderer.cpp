@@ -12,6 +12,7 @@ namespace Horizon
         , resourcePool(resourcePool)
         , shaderCollection(shaderRepository)
         , defaultResources(defaultResources)
+        , postProcessingPipeline(renderBackend, resourcePool, shaderRepository, defaultResources)
     {
 
     }
@@ -66,10 +67,10 @@ namespace Horizon
             uniformVariables.viewFrustum[5] = Vector4f(view.viewFrustum.planes[5].normal, view.viewFrustum.planes[5].distance);
 
             uniformVariables.cameraJitterOffset = cameraJitterOffset;
-            uniformVariables.previousCameraJitterOffset = historyFrame.cameraJitterOffset;
-            uniformVariables.motionVectorJitterCancellation = (historyFrame.cameraJitterOffset - cameraJitterOffset) * Vector2f(1.0f / renderResolution.width, 1.0f / renderResolution.height);
+            uniformVariables.previousCameraJitterOffset = historicalData.cameraJitterOffset;
+            uniformVariables.motionVectorJitterCancellation = (historicalData.cameraJitterOffset - cameraJitterOffset) * Vector2f(1.0f / renderResolution.width, 1.0f / renderResolution.height);
 
-            uniformVariables.previousCameraPosition = historyFrame.cameraPosition;
+            uniformVariables.previousCameraPosition = historicalData.cameraPosition;
 
             uniformVariables.viewSpaceDepthToNDCSpaceDepthTransform = view.transformations.viewSpaceDepthToNDCSpaceDepthTransform;
 
@@ -82,13 +83,13 @@ namespace Horizon
             uniformVariables.nonJitteredWorldToClipMatrix = view.transformations.nonJitteredWorldToClipMatrix;
             uniformVariables.nonJitteredClipToWorldMatrix = view.transformations.nonJitteredClipToWorldMatrix;
 
-            uniformVariables.previousWorldToViewMatrix = historyFrame.transformations.worldToViewMatrix;
-            uniformVariables.previousViewToWorldMatrix = historyFrame.transformations.viewToWorldMatrix;
-            uniformVariables.previousViewToClipMatrix = historyFrame.transformations.viewToClipMatrix;
-            uniformVariables.previousClipToViewMatrix = historyFrame.transformations.clipToViewMatrix;
-            uniformVariables.previousWorldToClipMatrix = historyFrame.transformations.worldToClipMatrix;
-            uniformVariables.previousClipToWorldMatrix = historyFrame.transformations.clipToWorldMatrix;
-            uniformVariables.previousNonJitteredWorldToClipMatrix = historyFrame.transformations.nonJitteredWorldToClipMatrix;
+            uniformVariables.previousWorldToViewMatrix = historicalData.transformations.worldToViewMatrix;
+            uniformVariables.previousViewToWorldMatrix = historicalData.transformations.viewToWorldMatrix;
+            uniformVariables.previousViewToClipMatrix = historicalData.transformations.viewToClipMatrix;
+            uniformVariables.previousClipToViewMatrix = historicalData.transformations.clipToViewMatrix;
+            uniformVariables.previousWorldToClipMatrix = historicalData.transformations.worldToClipMatrix;
+            uniformVariables.previousClipToWorldMatrix = historicalData.transformations.clipToWorldMatrix;
+            uniformVariables.previousNonJitteredWorldToClipMatrix = historicalData.transformations.nonJitteredWorldToClipMatrix;
 
             // TODO: Precision loss
             reprojectionMatrix = uniformVariables.previousNonJitteredWorldToClipMatrix * uniformVariables.nonJitteredClipToWorldMatrix;
@@ -101,12 +102,9 @@ namespace Horizon
 
             uniformVariables.preExposure = preExposure;
             uniformVariables.inversePreExposure = 1.0f / preExposure;
-            uniformVariables.preExposureCorrection = preExposure / historyFrame.preExposure;
+            uniformVariables.preExposureCorrection = preExposure / historicalData.preExposure;
 
             uniformVariables.motionVectorScale = Vector2f(float(renderResolution.width), float(renderResolution.height));
-
-            // TODO: move this to other place?
-            historyFrame.preExposure = preExposure;
 
             uniformVariables.indirectLightingMultiplier = rendererSettings.globalIlluminationSettings.indirectLightingIntensity * rendererSettings.globalIlluminationSettings.indirectLightingColor;
 
@@ -219,15 +217,6 @@ namespace Horizon
             }
         }
 
-        if (!perFrameConstantBuffers[currentPerFrameDataBufferIndex])
-        {
-            RenderBackendBufferDescription perFrameConstantUploadBufferDesc = RenderBackendBufferDescription::CreateUpload(sizeof(PathTracingRendererUniformVariables));
-            perFrameConstantUploadBuffers[currentPerFrameDataBufferIndex] = renderBackend->CreateBuffer(&perFrameConstantUploadBufferDesc, nullptr, "PerFrameConstantUploadBuffer");
-            RenderBackendBufferDescription perFrameConstantBufferDesc = RenderBackendBufferDescription::CreateStructured(sizeof(PathTracingRendererUniformVariables), 1);
-            perFrameConstantBuffers[currentPerFrameDataBufferIndex] = renderBackend->CreateBuffer(&perFrameConstantBufferDesc, nullptr, "PerFrameConstantBuffer");
-        }
-        renderBackend->UpdateBuffer(perFrameConstantUploadBuffers[currentPerFrameDataBufferIndex], 0, &uniformVariables, sizeof(PathTracingRendererUniformVariables));
-        currentPerFrameConstantBuffer = perFrameConstantBuffers[currentPerFrameDataBufferIndex];
     }
 
     void PathTracingRenderer::InitializeSceneView(SceneView* v)
@@ -245,6 +234,8 @@ namespace Horizon
             displayResolution = Extent2D(view.targetWidth, view.targetHeight);
         }
 
+        view.transformations.Finalize();
+
         UpdateUniformVariables();
     }
 
@@ -253,6 +244,39 @@ namespace Horizon
         RenderGraphDebugLabelRegion debugLabelRegion(renderGraph, "PathTracingRenderer");
 
         const SceneView& view = *sceneView;
+
+        if (!perFrameConstantBuffers[currentPerFrameDataBufferIndex])
+        {
+            RenderBackendBufferDescription perFrameConstantUploadBufferDesc = RenderBackendBufferDescription::CreateUpload(sizeof(PathTracingRendererUniformVariables));
+            perFrameConstantUploadBuffers[currentPerFrameDataBufferIndex] = renderBackend->CreateBuffer(&perFrameConstantUploadBufferDesc, nullptr, "PerFrameConstantUploadBuffer");
+            RenderBackendBufferDescription perFrameConstantBufferDesc = RenderBackendBufferDescription::CreateStructured(sizeof(PathTracingRendererUniformVariables), 1);
+            perFrameConstantBuffers[currentPerFrameDataBufferIndex] = renderBackend->CreateBuffer(&perFrameConstantBufferDesc, nullptr, "PerFrameConstantBuffer");
+        }
+        renderBackend->UpdateBuffer(perFrameConstantUploadBuffers[currentPerFrameDataBufferIndex], 0, &uniformVariables, sizeof(PathTracingRendererUniformVariables));
+
+        RenderBackendBufferHandle perFrameConstantUploadBuffer = perFrameConstantUploadBuffers[currentPerFrameDataBufferIndex];
+        RenderBackendBufferHandle perFrameConstantBuffer = perFrameConstantBuffers[currentPerFrameDataBufferIndex];
+
+        currentPerFrameConstantBuffer = perFrameConstantBuffers[currentPerFrameDataBufferIndex];
+
+        renderGraph.AddPass(
+            std::format("UpdatePerFrameConstants"),
+            RenderGraphPassFlags::Copy,
+            [&](RenderGraphBuilder& builder)
+            {
+                return [=](RenderBackendCommandList& commandList, const RenderGraphResourceRegistry& resourceRegistry)
+                {
+                    commandList.CopyBuffer(
+                        perFrameConstantUploadBuffer,
+                        0,
+                        perFrameConstantBuffer,
+                        0,
+                        sizeof(PathTracingRendererUniformVariables));
+
+                    RenderBackendBarrier transitionAfter = RenderBackendBarrier(perFrameConstantBuffer, RenderBackendBufferSubresourceRange::Whole, RenderBackendResourceState::CopyDst, RenderBackendResourceState::ShaderResource);
+                    commandList.Barriers(&transitionAfter, 1);
+                };
+            });
 
         PathTracingRendererIntermediateResources& intermediateResources = renderGraph.blackboard.Create<PathTracingRendererIntermediateResources>();
 
@@ -276,8 +300,33 @@ namespace Horizon
         intermediateResources.depthTexture = renderGraph.CreateTexture(depthTextureDescription, "PathTracingDepthTexture");
 
         intermediateResources.environmentMapTexture = renderGraph.ImportExternalTexture(view.scene->skyLights[0]->environmentMapTexture, "SkyLightTexture");
-        //RenderSkyAtmosphereLUTs(renderGraph, view);
 
         DispatchPathTracing(renderGraph, view);
+
+        PostProcessingPipelineInputs postProcessingPipelineInputs;
+        postProcessingPipelineInputs.colorTexture = intermediateResources.colorTexture;
+        postProcessingPipelineInputs.depthTexture = intermediateResources.depthTexture;
+        postProcessingPipelineInputs.motionVectorTexture = RenderGraphTextureHandle::Null;
+        postProcessingPipelineInputs.renderResolution = renderResolution;
+        postProcessingPipelineInputs.targetResolution = targetResolution;
+        postProcessingPipelineInputs.perFrameConstantBuffer = currentPerFrameConstantBuffer;
+        postProcessingPipelineInputs.postProcessingSettings = finalPostProcessingSettings;
+        postProcessingPipelineInputs.featureFlags.enableDepthOfField = false;
+        postProcessingPipelineInputs.featureFlags.enableMotionBlur = false;//finalPostProcessingSettings.motionBlurIntensity > 0.0f;
+        postProcessingPipelineInputs.featureFlags.enableAutoExposure = (finalPostProcessingSettings.exposureMethod == ExposureMethod::AutoExposure);
+        postProcessingPipelineInputs.featureFlags.enableBilateralGridLocalToneMapping = (finalPostProcessingSettings.localToneMappingMethod == LocalToneMappingMethod::BilateralGrid);
+        postProcessingPipelineInputs.featureFlags.enableExposureFusionLocalToneMapping = (finalPostProcessingSettings.localToneMappingMethod == LocalToneMappingMethod::ExposureFusion);
+        postProcessingPipelineInputs.featureFlags.enableGaussianBloom = finalPostProcessingSettings.bloomIntensity > 0.0f;
+        postProcessingPipelineInputs.featureFlags.enableLensFlare = finalPostProcessingSettings.lensFlareIntensity > 0.0f;
+        postProcessingPipelineInputs.temporalSuperSamplingInterface = nullptr;
+        postProcessingPipelineInputs.viewNeedsReset = view.NeedToBeReset();
+        postProcessingPipeline.Execute(renderGraph, view, postProcessingPipelineInputs);
+
+        historicalData.preExposure = preExposure;
+        historicalData.cameraJitterOffset = cameraJitterOffset;
+        historicalData.cameraPosition = view.GetCameraPosition();
+        historicalData.transformations = view.GetCameraTransformations();
+
+        currentPerFrameDataBufferIndex = (currentPerFrameDataBufferIndex + 1) % MaxNumFramesInFlight;
     }
 }

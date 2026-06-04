@@ -3,7 +3,7 @@
 #include "RasterizationRendererCommon.h"
 #include "GeometryRendering.h"
 #include "ManyLightRendering.h"
-#include "PostProcessing/PostProcessing.h"
+#include "Rendering/Renderer/PostProcessing/PostProcessingPipeline.h"
 #include "RasterizationRendererUniformVariables.h"
 #include "ShadowMapping.h"
 #include "VirtualShadowMaps.h"
@@ -130,8 +130,6 @@ namespace Horizon
         //bool IsRayTracingReflectionsEnabled() const;
 
         //bool IsRayTracingAmbientOcclusionEnabled() const;
-
-        bool IsDepthOfFieldEnabled() const;
 
         bool IsLensFlareEnabled() const;
 
@@ -294,103 +292,6 @@ namespace Horizon
             RenderGraph& renderGraph,
             const SceneView& view);
 
-        RenderGraphTextureHandle DispatchDepthOfField(
-            RenderGraph& renderGraph,
-            const SceneView& view,
-            RenderGraphTextureHandle sceneColor);
-
-        RenderGraphBufferHandle DispatchHistogramBasedAutoExposure(
-            RenderGraph& renderGraph,
-            const SceneView& view,
-            RenderGraphTextureHandle colorTexture,
-            const PostProcessingColorPyramid& colorPyramid,
-            RenderGraphBufferHandle previousAutoExposureBuffer);
-
-        RenderGraphTextureHandle AddCopyExposurePass(
-            RenderGraph& renderGraph,
-            const SceneView& view,
-            RenderGraphBufferHandle autoExposureBuffer);
-
-        RenderGraphTextureHandle DispatchBilateralGridLocalToneMapping(
-            RenderGraph& renderGraph,
-            const SceneView& view,
-            RenderGraphTextureHandle colorTexture,
-            const PostProcessingColorPyramid& colorPyramid,
-            RenderGraphBufferHandle autoExposureBuffer);
-
-        RenderGraphTextureHandle DispatchExposureFusionLocalToneMapping(
-            RenderGraph& renderGraph,
-            const SceneView& view,
-            RenderGraphTextureHandle colorTexture,
-            const PostProcessingColorPyramid& colorPyramid,
-            RenderGraphTextureHandle exposureTexture);
-
-        RenderGraphTextureHandle RenderColorTransformLUT(
-            RenderGraph& renderGraph,
-            const SceneView& view);
-
-        RenderGraphTextureHandle DispatchFinalComposition(
-            RenderGraph& renderGraph,
-            const SceneView& view,
-            RenderGraphTextureHandle colorTexture,
-            RenderGraphTextureHandle bloomTexture,
-            RenderGraphTextureHandle localToneMappingTexture,
-            RenderGraphTextureHandle colorTransformLUTTexture,
-            RenderGraphBufferHandle autoExposureBuffer);
-
-        //void DenoiseShadowMaskSSD(
-        //    RenderGraph& renderGraph,
-        //    const SceneView& view,
-        //    RenderGraphTextureHandle& filteredShadowMask,
-        //    RenderGraphTextureHandle& shadowMask);
-
-        RenderGraphTextureHandle DispatchMotionBlur(
-            RenderGraph& renderGraph,
-            const SceneView& view,
-            RenderGraphTextureHandle colorTexture,
-            RenderGraphTextureHandle depthTexture,
-            RenderGraphTextureHandle velocityTexture);
-
-        RenderGraphTextureHandle DispatchLensFlarePass(
-            RenderGraph& renderGraph,
-            const SceneView& view,
-            RenderGraphTextureHandle colorTexture,
-            const PostProcessingColorPyramid& colorPyramid,
-            RenderGraphTextureHandle bloomTexture);
-
-        RenderGraphTextureHandle DispatchGaussianBloom(
-            RenderGraph& renderGraph,
-            const SceneView& view,
-            RenderGraphTextureHandle colorTexture,
-            const PostProcessingColorPyramid& colorPyramid);
-
-        RenderGraphTextureHandle DispatchConvolutionBloom(
-            RenderGraph& renderGraph,
-            const SceneView& view,
-            RenderGraphTextureHandle colorTexture,
-            const PostProcessingColorPyramid& colorPyramid);
-
-        RenderGraphTextureHandle AddDownsamplePass(
-            RenderGraph& renderGraph,
-            const SceneView& view,
-            uint32 inputTextureWidth,
-            uint32 inputTextureHeight,
-            uint32 outputTextureWidth,
-            uint32 outputTextureHeight,
-            RenderGraphTextureHandle inputTexture,
-            RenderGraphTextureHandle outputTexture);
-
-        void DispatchColorPyramidGeneration(
-            RenderGraph& renderGraph,
-            const SceneView& view,
-            RenderGraphTextureHandle sceneColorTexture,
-            PostProcessingColorPyramid* outMipChain);
-
-        RenderGraphTextureHandle DispatchEditorSelectionOutline(
-            RenderGraph& renderGraph,
-            const SceneView& view,
-            RenderGraphTextureHandle sceneColorTexture);
-
         RenderGraphTextureHandle DispatchDepthDebugVisualization(
             RenderGraph& renderGraph,
             const SceneView& view);
@@ -438,6 +339,7 @@ namespace Horizon
         RendererDefaultResources* defaultResources;
         SceneView* sceneView;
         TemporalSuperSamplingInterface* temporalSuperSamplingInterface;
+        PostProcessingPipeline postProcessingPipeline;
         RasterizationRendererSettings rendererSettings;
 
         struct RenderFeatures
@@ -465,9 +367,7 @@ namespace Horizon
             bool enableLensFlare;
             bool enableGaussianBloom;
             bool enableConvolutionBloom;
-#if HORIZON_EDITOR
-            bool enableEditorSelectionOutline;
-#endif
+            bool enableSelectionOutline;
         } renderFeatures;
 
         float renderResolutionPercentage = 1.0f;
@@ -481,7 +381,7 @@ namespace Horizon
         Matrix4x4f reprojectionMatrix;
         Matrix4x4f inverseReprojectionMatrix;
 
-        RasterizationRendererPostProcessingSettings finalPostProcessingSettings;
+        PostProcessingSettings finalPostProcessingSettings;
 
         RasterizationRendererUniformVariables perFrameShaderParameters = {};
 
@@ -521,21 +421,6 @@ namespace Horizon
 
         void DispatchCascadedShadowMapPassDrawCommands(RenderBackendCommandList& commandList, const LightRenderObject& light, uint32 cascadeIndex, RenderBackendBufferHandle cascadeShadowMapDataBuffer);
 
-        struct AutoExposureData
-        {
-            float adaptedExposure = 1.0f;
-            float targetExposure = 1.0f;
-            float exposureCompensation = 0.0f;
-            float averageSceneLuminance = 0.0f;
-        };
-        static const int32 AutoExposureReadbackBufferCount = 4;
-        int32 currentAutoExposureReadbackBufferIndex = 0;
-        RenderGraphPersistentBuffer* autoExposureReadbackBuffers[AutoExposureReadbackBufferCount];
-
-        AutoExposureData autoExposureData;
-
-        void UpdateAutoExposureDataFromReadbackBuffer();
-
         RenderBackendBufferHandle localFogVolumeInstanceDataBufferUpload;
         uint64 localFogVolumeInstanceDataBufferSize = 0;
 
@@ -554,8 +439,6 @@ namespace Horizon
             float preExposure;
             RenderGraphPersistentTexture* minDepthPyramidTexture = nullptr;
             RenderGraphPersistentTexture* maxDepthPyramidTexture = nullptr;
-            RenderGraphPersistentBuffer* autoExposureBuffer = nullptr;
-            RenderGraphPersistentTexture* exposureTexture = nullptr;
             RenderGraphPersistentTexture* sceneDepthTexture = nullptr;
             RenderGraphPersistentTexture* ambientOcclusionTexture = nullptr;
             RenderGraphPersistentTexture* screenSpaceLightShaftsTemporalFilteringTexture = nullptr;
@@ -564,9 +447,6 @@ namespace Horizon
         };
 
         HistoryFrame historyFrame;
-
-        RenderGraphPersistentTexture* cachedColorTransformLUTTexture = nullptr;
-        PostProcessingColorTransformLUTSettings cachedColorTransformLUTSettings;
 
         void ResetHistoryFrame();
 

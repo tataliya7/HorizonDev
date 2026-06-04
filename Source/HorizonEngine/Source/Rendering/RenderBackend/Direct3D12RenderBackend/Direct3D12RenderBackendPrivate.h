@@ -2621,6 +2621,11 @@ namespace Horizon
             return RenderBackendType::D3D12;
         }
 
+        bool IsHardwareRayTracingEnabled() const override
+        {
+            return enableHardwareRayTracing;
+        }
+
         bool Init(const RenderBackendDesc* desc);
         void Exit();
         void Tick() override;
@@ -2683,7 +2688,7 @@ namespace Horizon
         }
         bool useDebugLayers;
         bool useGPUBasedValidation;
-        bool enableHardwareRayTracing;
+        bool enableHardwareRayTracing = false;
         D3D12RenderBackendHandleManager handleManager;
     private:
         Microsoft::WRL::ComPtr<IDXGIFactory6> dxgiFactory;

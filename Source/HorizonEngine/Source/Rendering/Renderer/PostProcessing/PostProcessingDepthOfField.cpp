@@ -1,5 +1,4 @@
-#include "../RasterizationRenderer.h"
-#include "PostProcessing.h"
+#include "PostProcessingPipeline.h"
 
 namespace Horizon
 {
@@ -42,13 +41,7 @@ namespace Horizon
         }
     }
 
-    bool RasterizationRenderer::IsDepthOfFieldEnabled() const
-    {
-        return renderFeatures.enableDepthOfField;
-    }
-
-
-    RenderGraphTextureHandle RasterizationRenderer::DispatchDepthOfField(
+    RenderGraphTextureHandle PostProcessingPipeline::DispatchDepthOfField(
         RenderGraph& renderGraph,
         const SceneView& view,
         RenderGraphTextureHandle sceneColorTexture)

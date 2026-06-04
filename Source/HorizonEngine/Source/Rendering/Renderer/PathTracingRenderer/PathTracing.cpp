@@ -53,7 +53,7 @@ namespace Horizon
         RenderGraphTextureHandle depthTexture = intermediateResources.depthTexture;
         RenderGraphTextureHandle environmentMapTexture = intermediateResources.environmentMapTexture;
 
-        if (view.transformations.worldToClipMatrix != historyFrame.transformations.worldToClipMatrix)
+        if (view.transformations.worldToClipMatrix != historicalData.transformations.worldToClipMatrix)
         {
             iteration = 0;
 

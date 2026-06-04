@@ -148,7 +148,7 @@ namespace Horizon
 
         RenderBackendType renderBackendType = RenderBackendType::D3D12;
         bool enableDebugLayer = true;
-        bool enableHardwareRayTracing = true;
+        bool enableHardwareRayTracing = false;
 
         RenderGraphResourcePool* renderGraphResourcePool;
     //private:

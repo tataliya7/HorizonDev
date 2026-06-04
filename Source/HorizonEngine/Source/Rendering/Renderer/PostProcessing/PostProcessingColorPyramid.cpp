@@ -1,9 +1,8 @@
-#include "../RasterizationRenderer.h"
-#include "PostProcessing.h"
+#include "PostProcessingPipeline.h"
 
 namespace Horizon
 {
-    RenderGraphTextureHandle RasterizationRenderer::AddDownsamplePass(
+    RenderGraphTextureHandle PostProcessingPipeline::AddDownsamplePass(
         RenderGraph& renderGraph,
         const SceneView& view,
         uint32 inputTextureWidth,
@@ -45,17 +44,17 @@ namespace Horizon
         return outputTexture;
     }
 
-    void RasterizationRenderer::DispatchColorPyramidGeneration(
+    void PostProcessingPipeline::DispatchColorPyramidGeneration(
         RenderGraph& renderGraph,
         const SceneView& view,
-        RenderGraphTextureHandle sceneColorTexture,
+        RenderGraphTextureHandle colorTexture,
         PostProcessingColorPyramid* outMipChain)
     {
         RenderGraphDebugLabelRegion debugLabelRegion(renderGraph, "ColorPyramidGeneration");
 
         assert(outMipChain->mipLevelCount == 0);
 
-        RenderGraphTextureHandle inputTexture = sceneColorTexture;
+        RenderGraphTextureHandle inputTexture = colorTexture;
         uint32 inputTextureWidth = targetResolution.width;
         uint32 inputTextureHeight = targetResolution.height;
 

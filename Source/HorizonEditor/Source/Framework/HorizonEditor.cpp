@@ -269,7 +269,7 @@ namespace Horizon
         renderSettings.renderMode = RenderMode::RasterRendering;
         renderSettings.rasterRenderingSettings.debugVisualizationMode = RasterizationRendererDebugVisualizationMode::Lighting;
         renderSettings.rasterRenderingSettings.globalIlluminationSettings.indirectLightingIntensity = 1.0f;
-        renderSettings.rasterRenderingSettings.shadowsTechnique = RasterizationRendererShadowsTechnique::VirtualShadowMaps;
+        renderSettings.rasterRenderingSettings.shadowsTechnique = RasterizationRendererShadowsTechnique::ShadowMaps;
         renderSettings.rasterRenderingSettings.ambientOcclusionTechnique = RasterizationRendererAmbientOcclusionTechnique::GroundTruthAmbientOcclusion;
         renderSettings.rasterRenderingSettings.reflectionsTechnique = RasterizationRendererReflectionsTechnique::ScreenSpaceReflections;
         renderSettings.rasterRenderingSettings.superSamplingSettings.superSamplingTechnique = SuperSamplingTechnique::FSR2;

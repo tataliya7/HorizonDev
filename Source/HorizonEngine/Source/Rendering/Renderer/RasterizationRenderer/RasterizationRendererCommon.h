@@ -9,3 +9,5 @@
 #include "Rendering/Renderer/RenderUtility.h"
 #include "Rendering/Renderer/SceneRenderer.h"
 #include "Rendering/Renderer/ImageBasedLighting.h"
+#include "Rendering/Renderer/TemporalSuperSampling.h"
+#include "Rendering/Renderer/PostProcessing/PostProcessingPipeline.h"

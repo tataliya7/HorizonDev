@@ -1,6 +1,6 @@
 #pragma once
 
-#include "PathTracingRendererCommon.h"
+#include "Rendering/Renderer/PostProcessing/PostProcessingSettings.h"
 
 namespace Horizon
 {

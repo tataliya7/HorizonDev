@@ -657,7 +657,7 @@ namespace Horizon
             shaderRepository->LoadShader(ShaderID::DebugDrawPS, shaderDesc);
         }
 
-        if (false)
+        if (shaderRepository->renderBackend->IsHardwareRayTracingEnabled())
         {
             {
                 ShaderDesc shaderDesc = ShaderDesc::Create(ShaderStage::RayGen, "Shaders/RasterizationRenderer/HardwareRayTracing/RayTracingShadows.hslib", "RayTracingShadowsRayGen");

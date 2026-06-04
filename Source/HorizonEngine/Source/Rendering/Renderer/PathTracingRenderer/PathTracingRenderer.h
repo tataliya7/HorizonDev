@@ -2,6 +2,7 @@
 
 #include "PathTracingRendererCommon.h"
 #include "PathTracingRendererUniformVariables.h"
+#include "Rendering/Renderer/PostProcessing/PostProcessingPipeline.h"
 
 namespace Horizon
 {
@@ -36,6 +37,7 @@ namespace Horizon
         RenderGraphResourcePool* resourcePool;
         ShaderRepository* shaderCollection;
         RendererDefaultResources* defaultResources;
+        PostProcessingPipeline postProcessingPipeline;
 
         SceneView* sceneView;
 
@@ -45,7 +47,7 @@ namespace Horizon
         Matrix4x4f inverseReprojectionMatrix;
 
         RasterizationRendererSettings rendererSettings;
-        RasterizationRendererPostProcessingSettings finalPostProcessingSettings;
+        PostProcessingSettings finalPostProcessingSettings;
 
         PathTracingRendererUniformVariables uniformVariables = {};
         static constexpr uint32 MaxNumFramesInFlight = 3;
@@ -53,10 +55,6 @@ namespace Horizon
         RenderBackendBufferHandle currentPerFrameConstantBuffer;
         RenderBackendBufferHandle perFrameConstantUploadBuffers[MaxNumFramesInFlight];
         RenderBackendBufferHandle perFrameConstantBuffers[MaxNumFramesInFlight];
-
-        // RenderGraphPersistentTexture* colorTexture;
-        // RenderGraphPersistentTexture* depthTexture;
-        // RenderGraphPersistentTexture* normalTexture;
 
         float renderResolutionPercentage = 1.0f;
 
@@ -79,17 +77,8 @@ namespace Horizon
             Vector2f cameraJitterOffset;
             CameraTransformations transformations;
             float preExposure;
-            RenderGraphPersistentTexture* minDepthPyramidTexture = nullptr;
-            RenderGraphPersistentTexture* maxDepthPyramidTexture = nullptr;
-            RenderGraphPersistentBuffer* autoExposureBuffer = nullptr;
-            RenderGraphPersistentTexture* exposureTexture = nullptr;
-            RenderGraphPersistentTexture* sceneDepthTexture = nullptr;
-            RenderGraphPersistentTexture* ambientOcclusionTexture = nullptr;
-            RenderGraphPersistentTexture* screenSpaceLightShaftsTemporalFilteringTexture = nullptr;
-            RenderGraphPersistentTexture* volumetricFogLightScatteringTexture = nullptr;
-            RenderGraphPersistentTexture* temporalSuperSamplingOutputTexture = nullptr;
         };
 
-        HistoryFrame historyFrame;
+        HistoryFrame historicalData;
     };
 }

@@ -1,5 +1,4 @@
-#include "../RasterizationRenderer.h"
-#include "PostProcessing.h"
+#include "PostProcessingPipeline.h"
 
 namespace Horizon
 {
@@ -9,7 +8,7 @@ namespace Horizon
     static constexpr uint32 threadGroupCountY = ColorTransformLUTTextureSize / 8;
     static constexpr uint32 threadGroupCountZ = ColorTransformLUTTextureSize / 8;
 
-    bool PostProcessingColorTransformLUTSettings::Update(const SceneView& view, const RasterizationRendererPostProcessingSettings& postProcessingSettings)
+    bool PostProcessingColorTransformLUTSettings::Update(const SceneView& view, const PostProcessingSettings& postProcessingSettings)
     {
         bool changed = false;
 
@@ -31,11 +30,11 @@ namespace Horizon
         return changed;
     }
 
-    RenderGraphTextureHandle RasterizationRenderer::RenderColorTransformLUT(
+    RenderGraphTextureHandle PostProcessingPipeline::ComputeColorTransformLUT(
         RenderGraph& renderGraph,
         const SceneView& view)
     {
-        const bool shouldUpdateColorTransformLUT = cachedColorTransformLUTSettings.Update(view, finalPostProcessingSettings);
+        const bool shouldUpdateColorTransformLUT = cachedColorTransformLUTSettings.Update(view, postProcessingSettings);
         const bool forceUpdateColorTransformLUT = true;
 
         if (!shouldUpdateColorTransformLUT && !forceUpdateColorTransformLUT)
@@ -64,7 +63,6 @@ namespace Horizon
                     RenderBackendPushConstantValues pushConstantValues = {};
                     pushConstantValues.BindBufferSRV(0, renderBackend->GetBufferSRVBindlessResourceDescriptorIndex(GetCurrentPerFrameConstantBuffer()));
                     pushConstantValues.BindTextureUAV(1, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndex(colorTransformLUTTexture, 0));
-                    //pushConstantValues.PushConstants(0, (float)toneMappingOperator);
 
                     RenderBackendShaderHandle computeShader = shaderRepository->GetShader(ShaderID::ColorTransformLUT);
 

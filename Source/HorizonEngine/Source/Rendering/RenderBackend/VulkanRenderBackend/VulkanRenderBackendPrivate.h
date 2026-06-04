@@ -1237,6 +1237,11 @@ namespace Horizon
             return RenderBackendType::Vulkan;
         }
 
+        bool IsHardwareRayTracingEnabled() const override
+        {
+            return enableHardwareRayTracing;
+        }
+
         bool Init(const RenderBackendDesc* desc);
         void Exit();
 

@@ -1,13 +1,11 @@
-#include "../RasterizationRenderer.h"
-#include "PostProcessing.h"
+#include "PostProcessingPipeline.h"
 
 namespace Horizon
 {
-    // Must match shader
     static constexpr uint32 MotionBlurTileSize = 16;
     static constexpr uint32 MotionBlurQuadCountPerTile = 8;
 
-    RenderGraphTextureHandle RasterizationRenderer::DispatchMotionBlur(
+    RenderGraphTextureHandle PostProcessingPipeline::DispatchMotionBlur(
         RenderGraph& renderGraph,
         const SceneView& view,
         RenderGraphTextureHandle colorTexture,

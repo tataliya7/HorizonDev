@@ -1,14 +1,8 @@
-#include "../RasterizationRenderer.h"
-#include "PostProcessing.h"
+#include "PostProcessingPipeline.h"
 
 namespace Horizon
 {
-    bool RasterizationRenderer::IsLensFlareEnabled() const
-    {
-        return renderFeatures.enableLensFlare;
-    }
-
-    RenderGraphTextureHandle RasterizationRenderer::DispatchLensFlarePass(
+    RenderGraphTextureHandle PostProcessingPipeline::DispatchLensFlare(
         RenderGraph& renderGraph,
         const SceneView& view,
         RenderGraphTextureHandle colorTexture,
@@ -74,88 +68,6 @@ namespace Horizon
                         RenderBackendPrimitiveTopology::TriangleList);
                 };
             });
-
-        //RenderGraphTextureDesc lensFlareTileCullingTextureDesc = RenderGraphTextureDesc::Create2D(
-        //    (lensFlareTextureWidth + 1) / 2,
-        //    (lensFlareTextureHeight + 1) / 2,
-        //    RenderBackendTextureFormat::R11G11B10Float,
-        //    RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::UnorderedAccess);
-        //RenderGraphTextureHandle tileCullingTexture = renderGraph.CreateTexture(lensFlareTileCullingTextureDesc, "LensFlareTileCullingTexture");
-
-        //uint32 tileCount = lensFlareTileCullingTextureDesc.width * lensFlareTileCullingTextureDesc.height;
-
-        //renderGraph.AddPass(
-        //    std::format("LensFlareTileCulling (Compute, {}x{})", lensFlareTileCullingTextureDesc.width, lensFlareTileCullingTextureDesc.height),
-        //    RenderGraphPassFlags::Compute,
-        //    [&](RenderGraphBuilder& builder)
-        //    {
-        //        builder.ReadTexture(halfResolutionSceneColorTexture, RenderBackendResourceState::ShaderResource);
-
-        //        tileCullingTexture = builder.WriteTexture(tileCullingTexture, RenderBackendResourceState::UnorderedAccess);
-
-        //
-        //        {
-        //            uint32 threadGroupCountX = ComputeWorkGroupCount(lensFlareTileCullingTextureDesc.width, PostProcessingThreadGroupSizeX);
-        //            uint32 threadGroupCountY = ComputeWorkGroupCount(lensFlareTileCullingTextureDesc.height, PostProcessingThreadGroupSizeY);
-
-        //            RenderBackendPushConstantValues pushConstantValues = {};
-        //            pushConstantValues.BindTextureSRV(0, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(halfResolutionSceneColorTexture)));
-        //            pushConstantValues.BindTextureUAV(1, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndextileCullingTexture), 0));
-
-        //            RenderBackendShaderHandle computeShader = shaderRepository->GetShader(ShaderID::LensFlareTileCulling);
-        //            commandList.Dispatch2D(
-        //                computeShader,
-        //                pushConstantValues,
-        //                threadGroupCountX,
-        //                groupCountY);
-        //        };
-        //    });
-
-        //RenderGraphTextureDesc lensFlareGlareTextureDesc = RenderGraphTextureDesc::Create2D(
-        //    lensFlareTextureWidth,
-        //    lensFlareTextureHeight,
-        //    RenderBackendTextureFormat::R11G11B10Float,
-        //    RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::UnorderedAccess | RenderBackendTextureCreateFlags::RenderTarget);
-        //RenderGraphTextureHandle lensFlareGlareTexture = renderGraph.CreateTexture(lensFlareGlareTextureDesc, "LensFlareGlareTexture");
-
-        //renderGraph.AddPass(
-        //    std::format("LensFlareGlare (Graphics, {}x{})", lensFlareGlareTextureDesc.width, lensFlareGlareTextureDesc.height),
-        //    RenderGraphPassFlags::Graphics,
-        //    [&](RenderGraphBuilder& builder)
-        //    {
-        //        builder.ReadTexture(tileCullingTexture, RenderBackendResourceState::ShaderResource);
-
-        //        lensFlareGlareTexture = builder.WriteTexture(lensFlareGlareTexture, RenderBackendResourceState::RenderTarget);
-
-        //        builder.BindColorTarget(0, lensFlareGlareTexture, RenderBackendRenderPassLoadOperation::Clear, RenderBackendRenderPassStoreOperation::Load);
-
-        //
-        //        {
-        //            RenderBackendViewport viewport(0.0f, 0.0f, (float)lensFlareTextureWidth, (float)lensFlareTextureHeight);
-        //            commandList.SetViewports(&viewport, 1);
-
-        //            RenderBackendScissor scissor(0, 0, lensFlareTextureWidth, lensFlareTextureHeight);
-        //            commandList.SetScissors(&scissor, 1);
-
-        //            RenderBackendPushConstantValues pushConstantValues = {};
-        //            pushConstantValues.BindTextureSRV(0, RenderBackendTextureSRVDesc::Create(lensFlareGlareLUTTexture));
-        //            pushConstantValues.BindTextureSRV(1, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(tileCullingTexture)));
-        //            pushConstantValues.PushConstants(0, (float)lensFlareTextureWidth);
-        //            pushConstantValues.PushConstants(1, (float)lensFlareTextureHeight);
-
-        //            RenderBackendGraphicsPipelineStateDescription graphicsPipelineState = {};
-        //            graphicsPipelineState.colorBlendState.targetBlends[0] = additiveColorBlendAttachmentStateRGB;
-
-        //            RenderBackendShaderHandle graphicsShader = shaderRepository->GetShader(ShaderID::LensFlareGlare);
-
-        //            commandList.Draw(
-        //                graphicsShader,
-        //                graphicsPipelineState,
-        //                pushConstantValues,
-        //                4, tileCount * 3, 0, 0,
-        //                RenderBackendPrimitiveTopology::TriangleStrip);
-        //        };
-        //    });
 
         RenderGraphTextureHandle lensFlareGradientTexture = defaultResources->ImportWhiteDummyTexture2D(renderGraph);
         RenderGraphTextureHandle lensFlareGlareTexture = defaultResources->ImportBlackDummyTexture2D(renderGraph);

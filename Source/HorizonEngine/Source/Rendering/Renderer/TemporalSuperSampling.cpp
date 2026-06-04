@@ -1,5 +1,4 @@
 #include "TemporalSuperSampling.h"
-#include "RasterizationRenderer.h"
 
 namespace Horizon
 {
@@ -32,11 +31,6 @@ namespace Horizon
         // Unit pixel space offset
         Vector2f jitterOffset = Vector2f(offsetX, offsetY);
         return jitterOffset;
-    }
-
-    bool RasterizationRenderer::IsSuperResolutionEnabled() const
-    {
-        return renderFeatures.enableTemporalSuperSampling;
     }
 
     RenderGraphTextureHandle DispatchTemporalSuperSampling(TemporalSuperSamplingInterface* temporalSuperSamplingInterface, RenderGraph& renderGraph, const SceneView& view, const TemporalSuperSamplingDispatchDescription& dispatchDescription)

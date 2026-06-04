@@ -59,6 +59,8 @@ namespace Horizon
          */
         virtual RenderBackendType GetType() const { return RenderBackendType::Unknown; }
 
+        virtual bool IsHardwareRayTracingEnabled() const { return false; }
+
         /**
          * TBD.
          */

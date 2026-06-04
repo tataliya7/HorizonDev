@@ -1,9 +1,8 @@
-#include "../RasterizationRenderer.h"
-#include "PostProcessing.h"
+#include "PostProcessingPipeline.h"
 
 namespace Horizon
 {
-    RenderGraphTextureHandle RasterizationRenderer::DispatchFinalComposition(
+    RenderGraphTextureHandle PostProcessingPipeline::DispatchFinalComposition(
         RenderGraph& renderGraph,
         const SceneView& view,
         RenderGraphTextureHandle colorTexture,
@@ -24,37 +23,9 @@ namespace Horizon
             bloomTexture = defaultResources->ImportBlackDummyTexture2D(renderGraph);
         }
 
-        // if (!isLocalToneMappingTextureValid)
-        // {
-        //     localToneMappingTexture = defaultResources->ImportBlackDummyTexture2D(renderGraph);
-        // }
-        // TODO: Implement lens dirt
         RenderBackendTextureHandle lensDirtTexture = defaultResources->GetBlackDummyTexture2D()->GetHandle();
 
-        uint32 flags = 0;
-
-        // Chromatic Aberration
         Vector2f chromaticAberrationScale = Vector2f(0.0f, 0.0f);
-        // TODO: Implement chromatic aberration
-        // {
-        //     float chromaticAberrationIntensity = settings.postProcessingSettings.chromaticAberrationIntensity;
-        //     float chromaticAberrationOffset = settings.postProcessingSettings.chromaticAberrationOffset;
-        //
-        //     // Wavelength of primarie colors in nm
-        //     const float wavelengthR = 611.3f;
-        //     const float wavelengthG = 549.1f;
-        //     const float wavelengthB = 464.3f;
-        //
-        //     const float scaleR = 0.007f * (wavelengthR - wavelengthB);
-        //     const float scaleG = 0.007f * (wavelengthG - wavelengthB);
-        //
-        //     if (chromaticAberrationOffset < 1.0f)
-        //     {
-        //         float offset = chromaticAberrationIntensity * 0.01f;
-        //         float multiplier = 1.0f / (1.0f - chromaticAberrationOffset);
-        //         chromaticAberrationScale = Vector2f(scaleR * offset * multiplier, scaleG * offset * multiplier);
-        //     }
-        // }
 
         RenderBackendTextureFormat outputTextureFormat = RenderBackendTextureFormat::R10G10B10A2Unorm;
         RenderGraphTextureDescription outputTextureDesc = RenderGraphTextureDescription::Create2D(
@@ -63,8 +34,6 @@ namespace Horizon
             outputTextureFormat,
             RenderBackendTextureCreateFlags::ShaderResource | RenderBackendTextureCreateFlags::UnorderedAccess | RenderBackendTextureCreateFlags::RenderTarget);
 
-        // TODO
-        //RenderGraphTextureHandle outputTexture = renderGraph.CreateTexture(outputTextureDesc, "ToneMappingTexture");
         RenderGraphTextureHandle outputTexture = renderGraph.ImportExternalTexture(view.targetTexture, "TargetTexture");
 
         renderGraph.AddPass(
@@ -94,12 +63,6 @@ namespace Horizon
                     pushConstantValues.BindTextureSRV(5, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(colorTransformLUTTexture));
                     pushConstantValues.BindBufferSRV(6, resourceRegistry.GetBufferSRVBindlessResourceDescriptorIndex(autoExposureBuffer));
                     pushConstantValues.BindTextureUAV(7, resourceRegistry.GetTextureUAVBindlessResourceDescriptorIndex(outputTexture, 0));
-
-                    //pushConstantValues.BindTextureSRV(10, resourceRegistry.GetTextureSRVBindlessResourceDescriptorIndex(testTexture));
-
-                    //pushConstantValues.BindScalar(0, (float)flags);
-                    //pushConstantValues.BindScalar(1, chromaticAberrationScale.x);
-                    //pushConstantValues.BindScalar(2, chromaticAberrationScale.y);
 
                     RenderBackendShaderHandle computeShader = shaderRepository->GetShader(ShaderID::FinalComposition);
 
