@@ -1,6 +1,7 @@
 #include "../ShaderCommon.hsh"
 #include "../Random.hsh"
 #include "../GPUScene.hsh"
+#include "../PrincipledBSDF.hsh"
 #include "PathTracingRendererCommon.hsh"
 
 SHADER_CONSTANTS_STRUCT_BEGIN();
@@ -177,119 +178,203 @@ void PathTracingDefaultOpaqueClosestHit(inout PathTracingRayPayload payload : SV
     Material material = materialBuffer.Load<Material>(materialIndex * sizeof(Material));
 
     ByteAddressBuffer indexBuffer = GetByteAddressBufferNonUniform(geometryData.indexBuffer);
-    const uint index0 = indexBuffer.Load<uint>((/*geometry.baseIndex + */primitive_index * 3 + 0) * sizeof(uint));
-    const uint index1 = indexBuffer.Load<uint>((/*geometry.baseIndex + */primitive_index * 3 + 1) * sizeof(uint));
-    const uint index2 = indexBuffer.Load<uint>((/*geometry.baseIndex + */primitive_index * 3 + 2) * sizeof(uint));
+    const uint index0 = indexBuffer.Load<uint>((primitive_index * 3 + 0) * sizeof(uint));
+    const uint index1 = indexBuffer.Load<uint>((primitive_index * 3 + 1) * sizeof(uint));
+    const uint index2 = indexBuffer.Load<uint>((primitive_index * 3 + 2) * sizeof(uint));
 
-    ByteAddressBuffer vertexBuffer0 = GetByteAddressBufferNonUniform(geometryData.vertexBuffer0);
-    const float3 v0 = vertexBuffer0.Load<float3>(index0 * sizeof(float3));
-    const float3 v1 = vertexBuffer0.Load<float3>(index1 * sizeof(float3));
-    const float3 v2 = vertexBuffer0.Load<float3>(index2 * sizeof(float3));
+    // Load vertex attributes (position, normal, tangent, texCoords)
+    GPUSceneGeometryVertexAttributes vertexAttributes0 = GetGPUSceneGeometryVertexAttributes(geometryData, index0);
+    GPUSceneGeometryVertexAttributes vertexAttributes1 = GetGPUSceneGeometryVertexAttributes(geometryData, index1);
+    GPUSceneGeometryVertexAttributes vertexAttributes2 = GetGPUSceneGeometryVertexAttributes(geometryData, index2);
 
-    ByteAddressBuffer vertexBuffer3 = GetByteAddressBufferNonUniform(geometryData.vertexBuffer3);
-    float2 texCoord00 = vertexBuffer3.Load<float2>((primitive_index * 3 + 0) * sizeof(float2));
-    float2 texCoord01 = vertexBuffer3.Load<float2>((primitive_index * 3 + 1) * sizeof(float2));
-    float2 texCoord02 = vertexBuffer3.Load<float2>((primitive_index * 3 + 2) * sizeof(float2));
+    // Apply world transform
+    float4x4 worldTransform = instanceData.localToWorldMatrix;
+    float3 worldPosition0 = mul(worldTransform, float4(vertexAttributes0.position, 1.0f)).xyz;
+    float3 worldPosition1 = mul(worldTransform, float4(vertexAttributes1.position, 1.0f)).xyz;
+    float3 worldPosition2 = mul(worldTransform, float4(vertexAttributes2.position, 1.0f)).xyz;
+
+    float3 worldNormal0 = normalize(mul((float3x3)worldTransform, vertexAttributes0.normal));
+    float3 worldNormal1 = normalize(mul((float3x3)worldTransform, vertexAttributes1.normal));
+    float3 worldNormal2 = normalize(mul((float3x3)worldTransform, vertexAttributes2.normal));
+
+    float3 worldTangent0 = normalize(mul((float3x3)worldTransform, vertexAttributes0.tangent.xyz));
+    float3 worldTangent1 = normalize(mul((float3x3)worldTransform, vertexAttributes1.tangent.xyz));
+    float3 worldTangent2 = normalize(mul((float3x3)worldTransform, vertexAttributes2.tangent.xyz));
+
+    float3 worldBitangent0 = normalize(cross(worldNormal0, worldTangent0) * vertexAttributes0.tangent.w);
+    float3 worldBitangent1 = normalize(cross(worldNormal1, worldTangent1) * vertexAttributes1.tangent.w);
+    float3 worldBitangent2 = normalize(cross(worldNormal2, worldTangent2) * vertexAttributes2.tangent.w);
+
+    // Interpolate with barycentrics
+    float3 barycentrics = float3(1.0f - attributes.barycentrics.x - attributes.barycentrics.y, attributes.barycentrics.x, attributes.barycentrics.y);
+
+    float3 N = normalize(barycentrics.x * worldNormal0 + barycentrics.y * worldNormal1 + barycentrics.z * worldNormal2);
+    float3 T = normalize(barycentrics.x * worldTangent0 + barycentrics.y * worldTangent1 + barycentrics.z * worldTangent2);
+    float3 B = normalize(barycentrics.x * worldBitangent0 + barycentrics.y * worldBitangent1 + barycentrics.z * worldBitangent2);
+    float3x3 TBN = float3x3(T, B, N);
+
+    float2 texCoord0 = barycentrics.x * vertexAttributes0.textureCoordinates[0]
+                     + barycentrics.y * vertexAttributes1.textureCoordinates[0]
+                     + barycentrics.z * vertexAttributes2.textureCoordinates[0];
 
     const float materialTextureMipLodBias = frameShaderParameters.materialTextureMipLodBias;
 
-    const float2 texCoord0 = texCoord00 + attributes.barycentrics.x * (texCoord01 - texCoord00) + attributes.barycentrics.y * (texCoord02 - texCoord00);
-
     const float3 shading_point = ray_origin + t * ray_direction;
 
-    const float3 Ng = normalize(cross(v1 - v0, v2 - v0));
-    const float3 N = faceforward(Ng, ray_direction, Ng);
+    // Make sure normal faces the incoming ray
+    N = faceforward(N, ray_direction, N);
     const float3 V = normalize(frameShaderParameters.cameraPosition - shading_point);
 
-    payload.emitted = float3(0.0f, 0.0f, 0.0f);
-    if (payload.primary_ray == 1)
-    {
-        payload.emitted = material.emission.xyz;
-        payload.primary_ray = 0;
-    }
+    // Emitted light (pre-multiplied by current throughput)
+    float3 currentThroughput = payload.throughput;
+    payload.emitted = currentThroughput * material.emission.xyz * material.emissionStrength;
 
-    // BSDF bsdf = eval_bsdf();
-
-    const float P_a = length(cross(v1 - v0, v2 - v0));
+    // Texture LOD computation using world-space positions and texcoords
+    const float P_a = length(cross(worldPosition1 - worldPosition0, worldPosition2 - worldPosition0));
+    const float2 texCoord00 = vertexAttributes0.textureCoordinates[0];
+    const float2 texCoord01 = vertexAttributes1.textureCoordinates[0];
+    const float2 texCoord02 = vertexAttributes2.textureCoordinates[0];
     const float T_a = abs((texCoord01.x - texCoord00.x) * (texCoord02.y - texCoord00.y) - (texCoord02.x - texCoord00.x) * (texCoord01.y - texCoord00.y));
     const float baseTriangleLOD = 0.5f * log2(T_a / P_a);
 
-    const float spreadAngle = atan(2.0f * frameShaderParameters.clipToViewMatrix[1][1] / frameShaderParameters.renderHeight); // Eq. 30
+    const float spreadAngle = atan(2.0f * frameShaderParameters.clipToViewMatrix[1][1] / frameShaderParameters.renderHeight);
     const float rayConeWidth = length(frameShaderParameters.cameraPosition - shading_point) * spreadAngle;
 
-    Texture2D baseColorMap = GetTexture2DNonUniform(material.GetBaseColorMapIndex());
-    uint textureWidth, textureHeight;
-    baseColorMap.GetDimensions(textureWidth, textureHeight);
-    float mipLod = ComputeTextureLODRayCones(baseTriangleLOD, textureWidth, textureHeight, rayConeWidth, V, N);
-    float3 baseColor = material.baseColor.rgb * baseColorMap.SampleLevel(GlobalSamplerLinearWarp, texCoord0, mipLod + materialTextureMipLodBias).rgb;
+    // Save geometry normal for LOD computation before normal map perturbation
+    const float3 Ng = N;
 
-    uint seed = payload.seed;
+    // Normal map
+    if (material.GetNormalMapIndex() >= 0)
     {
-        const float randu = randf(seed);
-        const float randv = randf(seed);
-
-        float3 wi;
-        float pdf;
-        sample_uniform_hemisphere(N, randu, randv, wi, pdf);
-
-        // Secondary ray
-        payload.ray_origin    = shading_point;
-        payload.ray_direction = wi;
-        payload.throughput   *= baseColor;
+        Texture2D normalMap = GetTexture2DNonUniform(material.GetNormalMapIndex());
+        uint textureWidth, textureHeight;
+        normalMap.GetDimensions(textureWidth, textureHeight);
+        float mipLod = ComputeTextureLODRayCones(baseTriangleLOD, textureWidth, textureHeight, rayConeWidth, V, Ng);
+        float3 tangentSpaceNormal = normalize(normalMap.SampleLevel(GlobalSamplerLinearWarp, texCoord0, mipLod + materialTextureMipLodBias).xyz * 2.0f - 1.0f);
+        N = normalize(mul(tangentSpaceNormal, TBN));
+        // Re-apply faceforward after normal map perturbation
+        N = faceforward(N, ray_direction, N);
     }
 
-    const float randu = randf(seed);
-    const float randv = randf(seed);
-
-    StructuredBuffer<DistantLightData> distantLightDataBuffer = ShaderConstants.GetDistantLightDataBufferSRV();
-    DistantLightData distantLightData = distantLightDataBuffer[0];
-
-    LightSample light_sample;
-    sample_light(distantLightData, randu, randv, shading_point, light_sample);
-
-    const float distance  = light_sample.t;
-    const float cos_theta = dot(N, light_sample.wi);
-    const float cos_phi   = dot(light_sample.Ng, -light_sample.wi);
-
-    float attenuation = 1.0f;
-
-    float weight = 0.0f;
-    if (cos_theta > 0.0f && cos_phi > 0.0f)
+    float4 baseColor = material.baseColor;
+    if (material.GetBaseColorMapIndex() >= 0)
     {
-        const float3 shadow_ray_origin = shading_point;
-        const float3 shadow_ray_direction = light_sample.wi;
-        const float shadow_ray_tmin = 0.01f;
-        const float shadow_ray_tmax = light_sample.t - 0.01f;
+        Texture2D baseColorMap = GetTexture2DNonUniform(material.GetBaseColorMapIndex());
+        uint textureWidth, textureHeight;
+        baseColorMap.GetDimensions(textureWidth, textureHeight);
+        float mipLod = ComputeTextureLODRayCones(baseTriangleLOD, textureWidth, textureHeight, rayConeWidth, V, Ng);
+        baseColor *= baseColorMap.SampleLevel(GlobalSamplerLinearWarp, texCoord0, mipLod + materialTextureMipLodBias);
+    }
 
-        uint rayFlags = RAY_FLAG_ACCEPT_FIRST_HIT_AND_END_SEARCH | RAY_FLAG_SKIP_CLOSEST_HIT_SHADER;
-        uint instanceInclusionMask = 0xff;
+    float roughness = material.roughness;
+    float metallic = material.metallic;
+    if (material.GetMetallicRoughnessMapIndex() >= 0)
+    {
+        Texture2D metallicRoughnessMap = GetTexture2DNonUniform(material.GetMetallicRoughnessMapIndex());
+        uint textureWidth, textureHeight;
+        metallicRoughnessMap.GetDimensions(textureWidth, textureHeight);
+        float mipLod = ComputeTextureLODRayCones(baseTriangleLOD, textureWidth, textureHeight, rayConeWidth, V, Ng);
+        float4 metallicRoughness = metallicRoughnessMap.SampleLevel(GlobalSamplerLinearWarp, texCoord0, mipLod + materialTextureMipLodBias);
+        metallic *= metallicRoughness.b;
+        roughness *= metallicRoughness.g;
+    }
 
-        RayDesc shadowRay;
-        shadowRay.Origin = shadow_ray_origin;
-        shadowRay.Direction = shadow_ray_direction;
-        shadowRay.TMin = shadow_ray_tmin;
-        shadowRay.TMax = shadow_ray_tmax;
+    roughness = clamp(roughness, 0.001, 1.0);
+    metallic = clamp(metallic, 0.0, 1.0);
 
-        PathTracingShadowRayPayload shadowRayPayload;
-        shadowRayPayload.visibility = 0.0f;
+    uint seed = payload.seed;
 
-        TraceRay(
-            topLevelAccelerationStructure,
-            rayFlags,
-            instanceInclusionMask,
-            0, // SBT record offset
-            0, // SBT record stride
-            1, // Miss shader index
-            shadowRay,
-            shadowRayPayload);
+    // Indirect: sample BSDF direction and update throughput for next bounce
+    float3 wi_brdf;
+    float pdf_brdf;
+    {
+        float2 Xi = float2(randf(seed), randf(seed));
+        wi_brdf = SamplePrincipledBSDF(Xi, V, N, roughness, metallic, pdf_brdf);
 
-        if (shadowRayPayload.visibility > 0.0f)
+        float NdotL = dot(N, wi_brdf);
+        if (NdotL > 0.0 && pdf_brdf > 0.0)
         {
-            weight = cos_theta * cos_phi / (M_PI * attenuation * light_sample.pdf);
+            float3 f_brdf = PrincipledBSDF(
+                wi_brdf, V, N,
+                baseColor,
+                metallic,
+                roughness,
+                /*subsurface =*/0.0,
+                /*specular =*/material.specular,
+                /*specularTint =*/material.specularTint,
+                /*anisotropic =*/0.0,
+                /*sheen =*/0.0,
+                /*sheenTint =*/0.0,
+                /*clearcoat =*/0.0,
+                /*clearcoatGloss =*/0.0);
+            payload.throughput = currentThroughput * f_brdf * NdotL / pdf_brdf;
+        }
+        else
+        {
+            payload.throughput = float3(0.0, 0.0, 0.0);
+            payload.done = 1;
+        }
+
+        payload.ray_origin = shading_point;
+        payload.ray_direction = wi_brdf;
+    }
+
+    // Direct light (NEE, pre-multiplied by throughput before BRDF update)
+    float3 directLight = float3(0.0, 0.0, 0.0);
+    {
+        StructuredBuffer<DistantLightData> distantLightDataBuffer = ShaderConstants.GetDistantLightDataBufferSRV();
+        DistantLightData distantLightData = distantLightDataBuffer[0];
+
+        float3 wi_light = -distantLightData.direction;
+        float NdotL_light = dot(N, wi_light);
+
+        if (NdotL_light > 0.0)
+        {
+            float3 f_light = PrincipledBSDF(wi_light, V, N, baseColor, metallic, roughness,
+                0.0, material.specular, material.specularTint, 0.0, 0.0, 0.0, 0.0, 0.0);
+
+            float pdf_brdf_for_light = EvalPrincipledBSDF_PDF(wi_light, V, N, roughness, metallic);
+            float pdf_light = 1.0;
+
+            float mis_weight = (pdf_light * pdf_light) / max(pdf_light * pdf_light + pdf_brdf_for_light * pdf_brdf_for_light, 1e-6);
+
+            float3 shadow_ray_origin = shading_point;
+            float3 shadow_ray_direction = wi_light;
+            float shadow_ray_tmin = 0.01;
+            float shadow_ray_tmax = 10000.0;
+
+            uint rayFlags = RAY_FLAG_ACCEPT_FIRST_HIT_AND_END_SEARCH | RAY_FLAG_SKIP_CLOSEST_HIT_SHADER;
+            uint instanceInclusionMask = 0xff;
+
+            RayDesc shadowRay;
+            shadowRay.Origin = shadow_ray_origin;
+            shadowRay.Direction = shadow_ray_direction;
+            shadowRay.TMin = shadow_ray_tmin;
+            shadowRay.TMax = shadow_ray_tmax;
+
+            PathTracingShadowRayPayload shadowRayPayload;
+            shadowRayPayload.visibility = 0.0f;
+
+            TraceRay(
+                topLevelAccelerationStructure,
+                rayFlags,
+                instanceInclusionMask,
+                0, // SBT record offset
+                0, // SBT record stride
+                1, // Miss shader index
+                shadowRay,
+                shadowRayPayload);
+
+            if (shadowRayPayload.visibility > 0.0f)
+            {
+                directLight = distantLightData.color * f_light * NdotL_light * mis_weight / pdf_light;
+            }
         }
     }
 
-    payload.light_eval = distantLightData.color * weight;
+    payload.light_eval = currentThroughput * directLight;
+    payload.seed = seed;
+    payload.primary_ray = 0;
     if (payload.depth == 0)
     {
         payload.hitT = t;
@@ -302,7 +387,8 @@ void PathTracingDefaultMiss(inout PathTracingRayPayload payload : SV_RayPayload)
     TextureCube skyLightTexture = ShaderConstants.GetSkyLightTextureSRV();
     float3 skyColor = skyLightTexture.SampleLevel(GlobalSamplerLinearWarp, payload.ray_direction, 0).rgb;
 
-    payload.light_eval = skyColor;
+    payload.emitted = float3(0.0f, 0.0f, 0.0f);
+    payload.light_eval = payload.throughput * skyColor;
     payload.hitT = -1.0f;
     payload.done = 1;
 }
@@ -367,6 +453,9 @@ void PathTracingRayGen()
 
     for (uint bounce = 0; bounce < maxBounces; bounce++)
     {
+        payload.emitted = float3(0.0f, 0.0f, 0.0f);
+        payload.light_eval = float3(0.0f, 0.0f, 0.0f);
+
         RayDesc ray;
         ray.Origin = rayOrigin;
         ray.Direction = rayDirection;
@@ -383,7 +472,7 @@ void PathTracingRayGen()
             ray,
             payload);
 
-        float3 L = payload.emitted + payload.light_eval * payload.throughput;
+        float3 L = payload.emitted + payload.light_eval;
         accumulated_color += L * frameShaderParameters.preExposure;
 
         if (payload.done)

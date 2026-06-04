@@ -1,5 +1,7 @@
 #pragma once
 
+#include "BRDFCommon.hsh"
+
 float SchlickFresnel(float u)
 {
     float m = saturate(1 - u);
@@ -133,4 +135,86 @@ float3 PrincipledBSDF(
     return (INV_PI * lerp(Fd, ss, subsurface) * baseColor.rgb + sheenTerm)
         * (1.0f - metallic)
         + Gs * Fs * Ds + clearcoatTerm;
+}
+
+float EvalPrincipledBSDFDiffusePdf(float NdotL)
+{
+    if (NdotL <= 0.0) return 0.0;
+    return NdotL * INV_PI;
+}
+
+float EvalPrincipledBSDFSpecularPdf(float NdotH, float VdotH, float roughness)
+{
+    if (NdotH <= 0.0 || VdotH <= 0.0) return 0.0;
+    float alpha = max(roughness * roughness, 1e-4);
+    float D = GTR2(NdotH, alpha);
+    return D * NdotH / max(4.0 * VdotH, 1e-6);
+}
+
+float3 SamplePrincipledBSDFDiffuse(float2 Xi, float3 N, out float pdf)
+{
+    float3 localDir = CosineSampleHemisphere(Xi);
+    float3 T, B;
+    BuildOrthonormalBasis(N, T, B);
+    float3 L = T * localDir.x + B * localDir.y + N * localDir.z;
+    float NdotL = dot(N, L);
+    pdf = EvalPrincipledBSDFDiffusePdf(max(NdotL, 0.0));
+    return L;
+}
+
+float3 SamplePrincipledBSDFSpecular(float2 Xi, float3 V, float3 N, float roughness, out float pdf)
+{
+    float3 H = ImportanceSampleGGX(Xi, roughness);
+    float3 T, B;
+    BuildOrthonormalBasis(N, T, B);
+    H = normalize(T * H.x + B * H.y + N * H.z);
+    float3 L = reflect(-V, H);
+    float NdotL = dot(N, L);
+    float NdotH = saturate(dot(N, H));
+    float VdotH = saturate(dot(V, H));
+    if (NdotL <= 0.0)
+    {
+        pdf = 0.0;
+        return L;
+    }
+    pdf = EvalPrincipledBSDFSpecularPdf(NdotH, VdotH, roughness);
+    return L;
+}
+
+float3 SamplePrincipledBSDF(float2 Xi, float3 V, float3 N, float roughness, float metallic, out float pdf)
+{
+    metallic = saturate(metallic);
+    roughness = max(roughness, 0.001);
+    if (Xi.x < metallic)
+    {
+        float rXi = Xi.x / max(metallic, 1e-6);
+        float2 remappedXi = float2(rXi, Xi.y);
+        float specularPdf;
+        float3 L = SamplePrincipledBSDFSpecular(remappedXi, V, N, roughness, specularPdf);
+        pdf = specularPdf * metallic;
+        return L;
+    }
+    else
+    {
+        float rXi = (Xi.x - metallic) / max(1.0 - metallic, 1e-6);
+        float2 remappedXi = float2(rXi, Xi.y);
+        float diffusePdf;
+        float3 L = SamplePrincipledBSDFDiffuse(remappedXi, N, diffusePdf);
+        pdf = diffusePdf * (1.0 - metallic);
+        return L;
+    }
+}
+
+float EvalPrincipledBSDF_PDF(float3 L, float3 V, float3 N, float roughness, float metallic)
+{
+    metallic = saturate(metallic);
+    roughness = max(roughness, 0.001);
+    float NdotL = saturate(dot(N, L));
+    if (NdotL <= 0.0) return 0.0;
+    float3 H = normalize(L + V);
+    float NdotH = saturate(dot(N, H));
+    float VdotH = saturate(dot(V, H));
+    float specularPdf = EvalPrincipledBSDFSpecularPdf(NdotH, VdotH, roughness);
+    float diffusePdf = EvalPrincipledBSDFDiffusePdf(NdotL);
+    return specularPdf * metallic + diffusePdf * (1.0 - metallic);
 }
